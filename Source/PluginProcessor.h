@@ -1,167 +1,168 @@
 #pragma once
-#include <juce_audio_processors/juce_audio_processors.h>
-#include <juce_dsp/juce_dsp.h>
 
-// Forward declaration of templated chain
-template <typename SampleType>
-struct FieldChain;
+#include <JuceHeader.h>
 
-class MyPluginAudioProcessor : public juce::AudioProcessor, public juce::AudioProcessorValueTreeState::Listener
+// Forward decls used by the templated chain / processor snapshot
+struct HostParams;           // Double-domain snapshot built each block in the processor
+struct FloatReverbAdapter;   // Float-only reverb wrapper for the double chain
+
+// ===============================
+// Templated DSP Chain (declaration)
+// ===============================
+
+template <typename Sample>
+struct FieldChain
+{
+    using Block  = juce::dsp::AudioBlock<Sample>;
+    using CtxRep = juce::dsp::ProcessContextReplacing<Sample>;
+
+    // Lifecycle
+    void prepare (const juce::dsp::ProcessSpec& spec);
+    void reset();
+    void setParameters (const HostParams& hp);   // per-block ingress (double -> Sample)
+    void process (Block);                        // main process
+
+private:
+    // ----- helpers -----
+    void ensureOversampling (int osModeIndex);
+
+    // Filters / tone
+    void applyHP_LP     (Block, Sample hpHz, Sample lpHz);
+    void updateTiltEQ   (Sample tiltDb, Sample pivotHz);
+    void applyTiltEQ    (Block, Sample tiltDb, Sample pivotHz);
+    void applyScoopEQ   (Block, Sample scoopDb, Sample scoopFreq);
+    void applyBassShelf (Block, Sample bassDb, Sample bassFreq);
+    void applyAirBand   (Block, Sample airDb, Sample airFreq);
+
+    // Imaging / placement
+    void applyWidthMS (Block, Sample width);
+    void applyMonoMaker (Block, Sample monoHz);
+    void applyPan (Block, Sample pan);
+    void applySplitPan (Block, Sample panL, Sample panR);
+
+    // Nonlinear / dynamics / FX
+    void applySaturationOnBlock (juce::dsp::AudioBlock<Sample> b, Sample driveLin);
+    void applySaturation (Block, Sample driveLin, Sample mix01, int osModeIndex);
+    void applyDucking (Block, Sample ducking);
+    void applySpaceAlgorithm (Block, Sample depth01, int algo);
+
+    // ----- state -----
+    double sr { 48000.0 };
+
+    // Oversampling (created on demand)
+    std::unique_ptr<juce::dsp::Oversampling<Sample>> oversampling;
+    int lastOsMode { -1 };
+
+    // Core filters / EQ
+    juce::dsp::StateVariableTPTFilter<Sample> hpFilter, lpFilter, depthLPF;
+    juce::dsp::LinkwitzRileyFilter<Sample>    lowSplitL, lowSplitR;     // mono-maker lows
+    juce::dsp::IIR::Filter<Sample>            lowShelf, highShelf, airFilter, bassFilter, scoopFilter;
+
+    // Reverb (float adapter for double chain)
+    std::unique_ptr<FloatReverbAdapter>  reverbD;  // only used when Sample == double
+    std::unique_ptr<juce::dsp::Reverb>   reverbF;  // used when Sample == float
+    juce::dsp::Reverb::Parameters        rvParams;
+
+    // Per-block params converted to Sample domain
+    struct FieldParams
+    {
+        Sample gainLin{}, pan{}, panL{}, panR{}, depth{}, width{};
+        Sample tiltDb{}, scoopDb{}, monoHz{}, hpHz{}, lpHz{};
+        Sample satDriveLin{}, satMix{}; bool bypass{}; int spaceAlgo{};
+        Sample airDb{}, bassDb{}, ducking{}; int osMode{}; bool splitMode{};
+        Sample tiltFreq{}, scoopFreq{}, bassFreq{}, airFreq{};
+    } params;
+};
+
+// ===============================
+// HostParams (double snapshot)
+// ===============================
+
+struct HostParams
+{
+    double gainDb{}, pan{}, panL{}, panR{}, depth{}, width{};
+    double tiltDb{}, scoopDb{}, monoHz{}, hpHz{}, lpHz{};
+    double satDriveDb{}, satMix{}; bool bypass{}; int spaceAlgo{};
+    double airDb{}, bassDb{}, ducking{}; int osMode{}; bool splitMode{};
+    double tiltFreq{}, scoopFreq{}, bassFreq{}, airFreq{};
+};
+
+// ===============================
+// Audio Processor
+// ===============================
+
+class MyPluginAudioProcessor : public juce::AudioProcessor,
+                               private juce::AudioProcessorValueTreeState::Listener
 {
 public:
     MyPluginAudioProcessor();
     ~MyPluginAudioProcessor() override = default;
 
-    void prepareToPlay (double sampleRate, int samplesPerBlock) override;
-    void releaseResources() override {}
-    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
-    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
-    void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
-    bool supportsDoublePrecisionProcessing() const override { return true; }
+    // Capabilities / info
+    const juce::String getName() const override                { return "Field"; }
+    bool hasEditor() const override                            { return true; }
+    bool acceptsMidi() const override                          { return false; }
+    bool producesMidi() const override                         { return false; }
+    bool isMidiEffect() const override                         { return false; }
+    double getTailLengthSeconds() const override               { return 0.0; } // change to 2.0 if you want auto-tail renders
+    bool supportsDoublePrecisionProcessing() const override    { return true; }
 
-    juce::AudioProcessorEditor* createEditor() override;
-    bool hasEditor() const override { return true; }
-    
-    // Waveform display callback
-    std::function<void(double, double)> onAudioSample;
-
-    const juce::String getName() const override { return "Field"; }
-    double getTailLengthSeconds() const override { return 2.0; }
-
-    bool acceptsMidi() const override { return false; }
-    bool producesMidi() const override { return false; }
-    bool isMidiEffect() const override { return false; }
-    int getNumPrograms() override { return 1; }
-    int getCurrentProgram() override { return 0; }
-    void setCurrentProgram (int) override {}
-    const juce::String getProgramName (int) override { return {}; }
+    // Programs (single program)
+    int getNumPrograms() override                              { return 1; }
+    int getCurrentProgram() override                           { return 0; }
+    void setCurrentProgram (int) override                      {}
+    const juce::String getProgramName (int) override           { return {}; }
     void changeProgramName (int, const juce::String&) override {}
 
+    // Lifecycle
+    void prepareToPlay (double sampleRate, int samplesPerBlock) override;
+    void releaseResources() override                           {}
+
+    // Layout
+    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
+
+    // Processing (float & double paths)
+    void processBlock (juce::AudioBuffer<float>&,  juce::MidiBuffer&) override;
+    void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
+
+    // Editor
+    juce::AudioProcessorEditor* createEditor() override;
+
+    // State
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
-    
-    // Parameter listener callback
-    void parameterChanged(const juce::String& parameterID, float newValue) override;
 
+    // Parameters
     juce::AudioProcessorValueTreeState apvts;
+    juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+
+    // Optional: waveform display / metering callback (not required by DSP)
+    std::function<void(double, double)> onAudioSample;
 
 private:
-    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+    // APVTS listener
+    void parameterChanged (const juce::String& parameterID, float newValue) override;
 
-    // Templated DSP chains for float and double precision
-    std::unique_ptr<FieldChain<float>> chainF;
-    std::unique_ptr<FieldChain<double>> chainD;
-    bool isDoublePrecEnabled = false;
-
-    // Parameter smoothers (shared between chains)
-    juce::SmoothedValue<float> panSmoothed, panLSmoothed, panRSmoothed, depthSmoothed, widthSmoothed, gainSmoothed, tiltSmoothed;
-    juce::SmoothedValue<float> hpHzSmoothed, lpHzSmoothed, monoHzSmoothed;
-    juce::SmoothedValue<float> satDriveLin, satMixSmoothed, airSmoothed, bassSmoothed, duckingSmoothed;
-    juce::SmoothedValue<float> scoopSmoothed; // NEW: Scoop EQ smoother
-    juce::SmoothedValue<float> tiltFreqSmoothed, scoopFreqSmoothed, bassFreqSmoothed, airFreqSmoothed; // NEW: Frequency control smoothers
-
-    double currentSR = 48000.0;
-    float lastTilt = 1e9f; // Instance-specific tilt tracking
-
-    // Helpers
-    void updateTiltEQ (float tiltDb);
+    // Optional host sync hooks (stubs in .cpp)
     void syncWithHostParameters();
     void updateHostParameters();
 
+    // Chains (float & double)
+    std::unique_ptr<FieldChain<float>>  chainF;
+    std::unique_ptr<FieldChain<double>> chainD;
+    bool isDoublePrecEnabled { false };
+
+    // Smoothers (double-domain for precision)
+    juce::SmoothedValue<double> panSmoothed, panLSmoothed, panRSmoothed,
+                                depthSmoothed, widthSmoothed, gainSmoothed, tiltSmoothed,
+                                hpHzSmoothed, lpHzSmoothed, monoHzSmoothed,
+                                satDriveLin, satMixSmoothed, airSmoothed, bassSmoothed,
+                                duckingSmoothed;
+
+    // If you smooth the “start frequencies”, add them here as needed:
+    // juce::SmoothedValue<double> tiltFreqSmoothed, scoopFreqSmoothed, bassFreqSmoothed, airFreqSmoothed;
+
+    // Misc
+    double currentSR { 48000.0 };
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)
 };
-
-// Float Reverb Adapter for double precision processing
-struct FloatReverbAdapter
-{
-    juce::dsp::Reverb r;
-    juce::AudioBuffer<float> scratch;
-    juce::dsp::AudioBlock<float> scratchBlock { scratch };
-
-    void prepare (double sr, int block, int chans)
-    {
-        scratch.setSize (chans, block, false, false, true);
-        juce::dsp::ProcessSpec spec { sr, (juce::uint32)block, (juce::uint32)chans };
-        r.prepare (spec);
-    }
-
-    void processReplacing (juce::AudioBuffer<double>& buf)
-    {
-        const int ch = buf.getNumChannels(), n = buf.getNumSamples();
-        scratch.setSize (ch, n, false, false, true);
-
-        // Convert double -> float
-        for (int c = 0; c < ch; ++c)
-        {
-            auto* dst = scratch.getWritePointer (c);
-            auto* src = buf.getReadPointer (c);
-            juce::FloatVectorOperations::convert (dst, src, n);
-        }
-
-        // Reverb on float scratch
-        juce::dsp::ProcessContextReplacing<float> ctx (scratchBlock);
-        r.process (ctx);
-
-        // Convert back float -> double
-        for (int c = 0; c < ch; ++c)
-        {
-            auto* dst = buf.getWritePointer (c);
-            auto* src = scratch.getReadPointer  (c);
-            juce::FloatVectorOperations::convert (dst, src, n);
-        }
-    }
-
-    void processWetOnly (juce::AudioBuffer<double>& wet, const juce::AudioBuffer<double>& src, float wetLevel)
-    {
-        wet.makeCopyOf (src, true);
-        processReplacing (wet);
-        wet.applyGain (wetLevel);
-    }
-};
-
-// Templated DSP Chain
-template <typename SampleType>
-struct FieldChain
-{
-    using Block = juce::dsp::AudioBlock<SampleType>;
-    using CtxRep = juce::dsp::ProcessContextReplacing<SampleType>;
-    using IIR = juce::dsp::IIR::Filter<SampleType>;
-    using Smooth = juce::SmoothedValue<SampleType>;
-
-    // Filters
-    juce::dsp::StateVariableTPTFilter<SampleType> hpFilter, lpFilter;
-    juce::dsp::LinkwitzRileyFilter<SampleType> lowSplitL, lowSplitR;
-    juce::dsp::StateVariableTPTFilter<SampleType> depthLPF;
-
-    // Tilt EQ
-    juce::dsp::IIR::Filter<SampleType> lowShelf, highShelf, airFilter, bassFilter, scoopFilter;
-
-    // Oversampling
-    std::unique_ptr<juce::dsp::Oversampling<SampleType>> oversampling;
-    SampleType lastOsMode = -1.0;
-
-    // Reverb (float adapter for double precision)
-    std::conditional_t<std::is_same_v<SampleType, double>, FloatReverbAdapter, juce::dsp::Reverb> reverb;
-    juce::dsp::Reverb::Parameters rvParams;
-
-    void prepare (const juce::dsp::ProcessSpec& spec);
-    void process (Block block);
-    void reset();
-    
-    // Processing functions
-    void applyHP_LP (Block block, SampleType hpHz, SampleType lpHz);
-    void applyTiltEQ (Block block, SampleType tiltDb, SampleType tiltFreq);
-    void applyScoopEQ (Block block, SampleType scoopDb, SampleType scoopFreq);
-    void applyBassShelf (Block block, SampleType bassDb, SampleType bassFreq);
-    void applyWidthMS (Block block, SampleType width);
-    void applyMonoMaker (Block block, SampleType monoHz);
-    void applySaturation (Block block, SampleType driveLin, SampleType mix01, int osModeIndex);
-    void applySpaceAlgorithm (Block block, SampleType depth, int algorithm);
-    void applyDucking (Block block, SampleType ducking);
-    void applyAirBand (Block block, SampleType airDb, SampleType airFreq);
-    void applyDepthShaping (Block block, SampleType depth);
-    void applyPan (Block block, SampleType pan);
-    void applySplitPan (Block block, SampleType panL, SampleType panR);
-    void updateTiltEQ (SampleType tiltDb);
-    void ensureOversampling (int osModeIndex);
-}; 

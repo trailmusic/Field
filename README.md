@@ -242,6 +242,14 @@ Field features a comprehensive **21-icon vector system**:
 - **Latency**: Minimal (depends on oversampling setting)
 - **Pan Law**: **Ableton-accurate constant-power with sinusoidal curves**
 
+### **64‑bit Processing Upgrade**
+- **Precision**: Supports both 32‑bit float and 64‑bit double processing (host controlled)
+- **Templated DSP**: Unified `FieldChain<Sample>` instantiated for `float` and `double`
+- **Float Reverb Adapter**: Double path uses a float reverb adapter with wet‑only parallel mix to preserve double precision elsewhere
+- **Oversampling Island**: Oversampling (Off/2x/4x) is applied only to saturation for performance and quality
+- **Parameter Snapshot**: Per‑block `HostParams` snapshot passed into chains; internal `FieldParams` stored in sample domain
+- **Panning/Width**: Ableton‑accurate constant‑power panning and M/S width implemented identically across precisions
+
 ### **Panning Specifications (Ableton-Accurate)**
 - **Center Position**: 0dB (no attenuation)
 - **Hard Pan Extremes**: +3dB boost (constant-power behavior)
@@ -348,7 +356,7 @@ Field/
 │   └── CPM.cmake              # CPM dependency manager
 └── Source/
     ├── CMakeLists.txt         # Source CMake configuration
-    ├── PluginProcessor.h/cpp  # Audio processing engine with Ableton-accurate panning
+    ├── PluginProcessor.h/cpp  # 64-bit templated DSP engine (float/double), Ableton-accurate panning
     ├── PluginEditor.h/cpp     # Container-based UI with custom icons
     ├── FieldLookAndFeel.h/cpp # Neomorphic UI theme with custom components
     ├── IconSystem.h/cpp       # Custom vector icon system (21 icons)

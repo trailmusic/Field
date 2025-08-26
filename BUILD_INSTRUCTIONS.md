@@ -16,6 +16,13 @@ Field is a professional spatial audio processor with three build targets:
 
 This builds all three targets and ensures they are identical and up to date.
 
+### Build All (one-liner from build/)
+```bash
+cmake --build . --target Field_Standalone Field_AU Field_VST3 --config Debug -- -j 8
+```
+
+Use this when already inside the `build/` directory to always compile Standalone, AU, and VST3 together.
+
 ### Verify Builds
 ```bash
 ./verify_builds.sh
@@ -39,9 +46,14 @@ This verifies that all builds are recent and properly installed.
    cmake ..
    ```
 
-2. **Build all targets:**
+2. **Build all targets (always build Standalone, AU, and VST3):**
    ```bash
    cmake --build . --target Field_Standalone Field_AU Field_VST3 --config Debug -- -j 8
+   ```
+
+   For a Release build:
+   ```bash
+   cmake --build . --target Field_Standalone Field_AU Field_VST3 --config Release -- -j 8
    ```
 
 3. **Install plugins (automatic):**
