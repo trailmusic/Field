@@ -180,6 +180,18 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
 
     juce::dsp::AudioBlock<float> block (buffer);
     chainF->process (block);
+
+    // Feed XYPad waveform/spectral visuals
+    if (onAudioSample && buffer.getNumSamples() > 0)
+    {
+        const int chL = juce::jmin (0, buffer.getNumChannels()-1);
+        const int chR = juce::jmin (1, buffer.getNumChannels()-1);
+        auto* L = buffer.getReadPointer (chL);
+        auto* R = buffer.getReadPointer (chR);
+        const int stride = 64; // decimate to reduce UI overhead
+        for (int i = 0; i < buffer.getNumSamples(); i += stride)
+            onAudioSample ((double) L[i], (double) R[i]);
+    }
 }
 
 // Double path
@@ -193,6 +205,18 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
 
     juce::dsp::AudioBlock<double> block (buffer);
     chainD->process (block);
+
+    // Feed XYPad waveform/spectral visuals
+    if (onAudioSample && buffer.getNumSamples() > 0)
+    {
+        const int chL = juce::jmin (0, buffer.getNumChannels()-1);
+        const int chR = juce::jmin (1, buffer.getNumChannels()-1);
+        auto* L = buffer.getReadPointer (chL);
+        auto* R = buffer.getReadPointer (chR);
+        const int stride = 64;
+        for (int i = 0; i < buffer.getNumSamples(); i += stride)
+            onAudioSample (L[i], R[i]);
+    }
 }
 
 // =========================

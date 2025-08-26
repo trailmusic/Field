@@ -819,26 +819,24 @@ void XYPad::pushWaveformSample (double sampleL, double sampleR)
 
 void XYPad::drawWaveformBackground (juce::Graphics& g, juce::Rectangle<float> bounds)
 {
-    // Only draw waveforms if we have real audio data
-    if (!hasWaveformData) {
-        return; // Don't show any waveforms if no real audio
-    }
-    
-    // Use mix value for opacity control (set by editor)
-    
-    // Draw unified processed signal across entire field with REAL-TIME DSP effects
-    g.setColour (juce::Colour (0xFFFF8C00).withAlpha (0.9f * mixValue)); // Orange for processed signal (Drive)
-    juce::Path processedPath;
-    
-    // NEW: Individual visual effects for Gain, Drive, Mix, and Width
-    juce::Path gainEffectPath;
-    juce::Path driveEffectPath;
-    juce::Path mixEffectPath;
-    juce::Path widthEffectPath;
-    bool gainEffectStarted = false;
-    bool driveEffectStarted = false;
-    bool mixEffectStarted = false;
-    bool widthEffectStarted = false;
+    // Draw waveform visualizations only if real audio data is present
+    if (hasWaveformData)
+    {
+        // Use mix value for opacity control (set by editor)
+        
+        // Draw unified processed signal across entire field with REAL-TIME DSP effects
+        g.setColour (juce::Colour (0xFFFF8C00).withAlpha (0.9f * mixValue)); // Orange for processed signal (Drive)
+        juce::Path processedPath;
+        
+        // NEW: Individual visual effects for Gain, Drive, Mix, and Width
+        juce::Path gainEffectPath;
+        juce::Path driveEffectPath;
+        juce::Path mixEffectPath;
+        juce::Path widthEffectPath;
+        bool gainEffectStarted = false;
+        bool driveEffectStarted = false;
+        bool mixEffectStarted = false;
+        bool widthEffectStarted = false;
     
     for (int x = 0; x < static_cast<int>(bounds.getWidth()); ++x)
     {
@@ -920,32 +918,33 @@ void XYPad::drawWaveformBackground (juce::Graphics& g, juce::Rectangle<float> bo
             mixEffectPath.lineTo (bounds.getX() + x, mixEffectY);
             widthEffectPath.lineTo (bounds.getX() + x, widthEffectY);
         }
-    }
-    g.strokePath (processedPath, juce::PathStrokeType (1.5f));
-    
-    // NEW: Draw individual effect paths with different colors
-    if (gainValue != 0.0f) {
-        juce::Colour gainColor = isGreenMode ? juce::Colour(0xFF5AA95A) : juce::Colour(0xFF00FF00);
-        g.setColour (gainColor.withAlpha (0.6f)); // Green for Gain
-        g.strokePath (gainEffectPath, juce::PathStrokeType (1.0f));
-    }
-    
-    if (driveValue > 0.1f) {
-        juce::Colour driveColor = isGreenMode ? juce::Colour(0xFF68B568) : juce::Colour(0xFFFF0000);
-        g.setColour (driveColor.withAlpha (0.6f)); // Red/Green for Drive
-        g.strokePath (driveEffectPath, juce::PathStrokeType (1.0f));
-    }
-    
-    if (mixValue > 0.1f) {
-        juce::Colour mixColor = isGreenMode ? juce::Colour(0xFF8CAA00) : juce::Colour(0xFF0000FF);
-        g.setColour (mixColor.withAlpha (0.6f)); // Blue/Green for Mix
-        g.strokePath (mixEffectPath, juce::PathStrokeType (1.0f));
-    }
-    
-    if (widthValue != 1.0f) {
-        juce::Colour widthColor = isGreenMode ? juce::Colour(0xFF9B59B6) : juce::Colour(0xFFFFFF00);
-        g.setColour (widthColor.withAlpha (0.6f)); // Yellow/Purple for Width
-        g.strokePath (widthEffectPath, juce::PathStrokeType (1.0f));
+        }
+        g.strokePath (processedPath, juce::PathStrokeType (1.5f));
+        
+        // NEW: Draw individual effect paths with different colors
+        if (gainValue != 0.0f) {
+            juce::Colour gainColor = isGreenMode ? juce::Colour(0xFF5AA95A) : juce::Colour(0xFF00FF00);
+            g.setColour (gainColor.withAlpha (0.6f)); // Green for Gain
+            g.strokePath (gainEffectPath, juce::PathStrokeType (1.0f));
+        }
+        
+        if (driveValue > 0.1f) {
+            juce::Colour driveColor = isGreenMode ? juce::Colour(0xFF68B568) : juce::Colour(0xFFFF0000);
+            g.setColour (driveColor.withAlpha (0.6f)); // Red/Green for Drive
+            g.strokePath (driveEffectPath, juce::PathStrokeType (1.0f));
+        }
+        
+        if (mixValue > 0.1f) {
+            juce::Colour mixColor = isGreenMode ? juce::Colour(0xFF8CAA00) : juce::Colour(0xFF0000FF);
+            g.setColour (mixColor.withAlpha (0.6f)); // Blue/Green for Mix
+            g.strokePath (mixEffectPath, juce::PathStrokeType (1.0f));
+        }
+        
+        if (widthValue != 1.0f) {
+            juce::Colour widthColor = isGreenMode ? juce::Colour(0xFF9B59B6) : juce::Colour(0xFFFFFF00);
+            g.setColour (widthColor.withAlpha (0.6f)); // Yellow/Purple for Width
+            g.strokePath (widthEffectPath, juce::PathStrokeType (1.0f));
+        }
     }
     
     // Draw EQ curves for HP, LP, and Air filters
