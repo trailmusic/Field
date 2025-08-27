@@ -725,6 +725,61 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         });
     };
 
+    // Help button → FAQ dialog
+    addAndMakeVisible (helpButton);
+    helpButton.onClick = [this]
+    {
+        struct HelpFAQComponent : public juce::Component
+        {
+            HelpFAQComponent (FieldLNF& l) : lnf(l)
+            {
+                addAndMakeVisible (text);
+                text.setReadOnly (true);
+                text.setMultiLine (true);
+                text.setScrollbarsShown (true);
+                text.setCaretVisible (false);
+                text.setFont (juce::Font (juce::FontOptions (14.0f)));
+                text.setText (
+                    "FIELD — FAQ\n\n"
+                    "Q: How do I change color modes?\n"
+                    "A: Click the palette button in the header to cycle Ocean → Green → Pink → Yellow → Grey.\n\n"
+                    "Q: Where are colors defined?\n"
+                    "A: All colors live in FieldLookAndFeel (FieldLNF::theme). Components never hardcode colors.\n\n"
+                    "Q: Why don’t knobs move when I resize?\n"
+                    "A: Sizing happens in resized() only; layout is responsive via Layout::dp().\n\n"
+                    "Q: How do I reset a control?\n"
+                    "A: Double-click most knobs/sliders to reset to default.\n\n"
+                    "Q: Where are presets saved?\n"
+                    "A: In your user data folder under the plugin’s presets directory.\n\n"
+                );
+            }
+            void resized() override
+            {
+                text.setBounds (getLocalBounds().reduced (12));
+            }
+            void paint (juce::Graphics& g) override
+            {
+                g.fillAll (lnf.theme.panel);
+                g.setColour (lnf.theme.sh);
+                g.drawRoundedRectangle (getLocalBounds().toFloat().reduced (2.0f), 6.0f, 1.0f);
+            }
+            juce::TextEditor text;
+            FieldLNF& lnf;
+        };
+
+        auto* content = new HelpFAQComponent (lnf);
+        content->setSize (600, 400);
+
+        juce::DialogWindow::LaunchOptions opts;
+        opts.content.setOwned (content);
+        opts.dialogTitle = "Help / FAQ";
+        opts.componentToCentreAround = this;
+        opts.escapeKeyTriggersCloseButton = true;
+        opts.useNativeTitleBar = true;
+        opts.resizable = true;
+        (void) opts.launchAsync();
+    };
+
     // Bypass (attach to param if present)
     addAndMakeVisible (bypassButton);
     bypassButton.onClick = [this]
@@ -733,17 +788,29 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
             p->setValueNotifyingHost (bypassButton.getToggleState() ? 1.0f : 0.0f);
     };
 
-    // Green mode toggle (switch accent + propagate)
+    // Color mode cycle (Ocean → Green → Pink → Yellow → Grey)
     addAndMakeVisible (colorModeButton);
-    colorModeButton.setToggleState (isGreenMode, juce::dontSendNotification);
+    colorModeButton.setTooltip (FieldLNF::getThemeName (lnf.currentVariant));
     colorModeButton.onClick = [this]
     {
-        isGreenMode = !isGreenMode;
-        colorModeButton.setToggleState (isGreenMode, juce::dontSendNotification);
-        lnf.setGreenMode (isGreenMode);
-        spaceKnob.setGreenMode (isGreenMode);
-        spaceAlgorithmSwitch.setGreenMode (isGreenMode);
-        pad.setGreenMode (isGreenMode);
+        // Determine current by accent; rotate deterministically through variants
+        using TV = FieldLNF::ThemeVariant;
+        static TV order[] = { TV::Ocean, TV::Green, TV::Pink, TV::Yellow, TV::Grey };
+        auto currentAccent = lnf.theme.accent.getARGB();
+        int idx = 0;
+        if (currentAccent == juce::Colour (0xFF5AA9E6).getARGB()) idx = 0; // Ocean
+        else if (currentAccent == juce::Colour (0xFF5AA95A).getARGB()) idx = 1; // Green
+        else if (currentAccent == juce::Colour (0xFFE91E63).getARGB()) idx = 2; // Pink
+        else if (currentAccent == juce::Colour (0xFFFFC107).getARGB()) idx = 3; // Yellow
+        else if (currentAccent == juce::Colour (0xFF9EA3AA).getARGB()) idx = 4; // Grey
+        idx = (idx + 1) % 5;
+        lnf.setTheme (order[idx]);
+        colorModeButton.setTooltip (FieldLNF::getThemeName (order[idx]));
+        // Propagate to components that cache green flag
+        const bool greenNow = (order[idx] == TV::Green);
+        spaceKnob.setGreenMode (greenNow);
+        spaceAlgorithmSwitch.setGreenMode (greenNow);
+        pad.setGreenMode (greenNow);
         repaint();
     };
 
@@ -1280,11 +1347,13 @@ void MyPluginAudioProcessorEditor::resized()
                              .withTrimmedTop (Layout::dp (2, s));
     header.performLayout (headerArea);
 
-    // options at bottom-left
+    // options + help at bottom-left
     {
         auto bounds = getLocalBounds();
         const int pad = Layout::dp (8, s);
         optionsButton.setTopLeftPosition (bounds.getX() + pad, bounds.getBottom() - h - pad);
+        helpButton.setBounds (optionsButton.getRight() + Layout::dp (6, s), optionsButton.getY(), optionsButton.getWidth(), optionsButton.getHeight());
+        addAndMakeVisible (helpButton);
     }
 
     // divider left of split toggle

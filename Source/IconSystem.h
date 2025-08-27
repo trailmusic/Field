@@ -33,7 +33,9 @@ public:
         RightArrow,
         FullScreen,
         ExitFullScreen,
-        ColorPalette
+        ColorPalette,
+        Help,
+        X
     };
 
     static juce::Path createIcon (IconType type, float size = 16.0f);
@@ -70,4 +72,6 @@ private:
     static juce::Path createFullScreenIcon   (float size);
     static juce::Path createExitFullScreenIcon (float size);
     static juce::Path createColorPaletteIcon (float size);
+    static juce::Path createHelpIcon (float size);
+    static juce::Path createXIcon (float size);
 };

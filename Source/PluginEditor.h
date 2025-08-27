@@ -239,7 +239,8 @@ public:
     BypassButton() : juce::TextButton("")
     {
         setLookAndFeel(&customLookAndFeel);
-        startTimerHz(2); // Blink at 2Hz when bypassed
+        setClickingTogglesState(true);
+        startTimerHz(20); // High refresh so blink is obvious
     }
     
     ~BypassButton() override
@@ -250,8 +251,8 @@ public:
     
     void timerCallback() override
     {
-        if (getToggleState())
-            repaint(); // Trigger repaint for blinking effect
+        // Always repaint when visible to drive blink smoothly when toggled
+        if (isShowing()) repaint();
     }
     
 private:
@@ -263,18 +264,35 @@ private:
         {
             auto bounds = button.getLocalBounds().toFloat().reduced(0.5f, 0.5f);
             
-            // Read color mode from LNF accent 
+            // Read current theme
             juce::Colour accent = juce::Colour(0xFF2196F3);
-            if (auto* lf = dynamic_cast<FieldLNF*>(&button.getLookAndFeel()))
-                accent = lf->theme.accent;
+            juce::Colour textGrey = juce::Colour(0xFFB8BDC7);
+            juce::Colour panel = juce::Colour(0xFF3A3D45);
+            {
+                const juce::Component* c = &button;
+                while (c)
+                {
+                    if (auto* lf = dynamic_cast<FieldLNF*>(&c->getLookAndFeel()))
+                    {
+                        accent = lf->theme.accent;
+                        textGrey = lf->theme.textMuted; // theme font grey
+                        panel = lf->theme.panel;
+                        break;
+                    }
+                    c = c->getParentComponent();
+                }
+            }
 
             juce::Colour baseColour;
             if (button.getToggleState())
             {
-                baseColour = juce::Colour(0xFFE53935); // red when bypassed
+                // When bypassed: use theme font grey for the button body
+                baseColour = textGrey;
                 auto now = juce::Time::getMillisecondCounter();
-                if ((now / 250) % 2 == 0) baseColour = baseColour.darker(0.3f); // blink
-                g.setColour(juce::Colour(0x40FFEB3B)); // glow
+                const bool phase = ((now / 250) % 2) == 0;
+                // Blink by alternating brightness noticeably
+                baseColour = phase ? baseColour.darker(0.35f) : baseColour.brighter(0.05f);
+                g.setColour(baseColour.withAlpha(phase ? 0.35f : 0.18f)); // pulsing glow
                 g.fillRoundedRectangle(bounds.expanded(4.0f), 6.0f);
             }
             else
@@ -289,23 +307,35 @@ private:
             g.setColour(juce::Colour(0x40000000));
             g.fillRoundedRectangle(bounds.translated(2.0f, 2.0f), 4.0f);
             
-            // bg + border
+            // bg + border with animated stroke width when bypassed
             g.setColour(baseColour);
             g.fillRoundedRectangle(bounds, 4.0f);
-            g.setColour(baseColour.darker(0.3f));
-            g.drawRoundedRectangle(bounds, 4.0f, 1.0f);
+            auto now2 = juce::Time::getMillisecondCounter();
+            const float pulse = (float) ((now2 / 200) % 2 == 0 ? 2.0f : 1.0f);
+            g.setColour(baseColour.darker(0.45f));
+            g.drawRoundedRectangle(bounds, 4.0f, pulse);
         }
         
         void drawButtonText(juce::Graphics& g, juce::TextButton& button,
                             bool, bool) override
         {
             auto bounds = button.getLocalBounds().toFloat();
-            juce::Colour iconColour = button.getToggleState() ? juce::Colours::white
-                                                              : juce::Colour(0xFF1565C0);
-            if (auto* lf = dynamic_cast<FieldLNF*>(&button.getLookAndFeel()))
-                if (!button.getToggleState()) iconColour = lf->theme.textMuted;
+            FieldLNF* lf = nullptr;
+            {
+                const juce::Component* c = &button;
+                while (c)
+                {
+                    if (auto* l = dynamic_cast<FieldLNF*>(&c->getLookAndFeel())) { lf = l; break; }
+                    c = c->getParentComponent();
+                }
+            }
+            juce::Colour textGrey = lf ? lf->theme.textMuted : juce::Colour(0xFFB8BDC7);
+            // Ensure the bypassed X is very visible against grey background
+            juce::Colour iconColour = button.getToggleState() ? juce::Colours::black : textGrey;
 
-            IconSystem::drawIcon(g, IconSystem::Power, bounds.reduced(4.0f), iconColour);
+            auto icon = button.getToggleState() ? IconSystem::X : IconSystem::Power;
+            auto pad = button.getToggleState() ? 6.0f : 4.0f;
+            IconSystem::drawIcon(g, icon, bounds.reduced(pad), iconColour);
         }
     };
     
@@ -424,8 +454,24 @@ public:
     }
 };
 
-class ColorModeButton  : public ThemedIconButton { public: ColorModeButton()
-: ThemedIconButton(Options{ IconSystem::ColorPalette, true, ThemedIconButton::Style::SolidAccentWhenOn, 4.0f, 4.0f, false }) {} };
+class ColorModeButton  : public ThemedIconButton
+{
+public:
+    ColorModeButton() : ThemedIconButton(Options{ IconSystem::ColorPalette, true, ThemedIconButton::Style::GradientPanel, 4.0f, 4.0f, false }) {}
+    void paintButton(juce::Graphics& g, bool over, bool down) override
+    {
+        auto r = getLocalBounds().toFloat().reduced(2.0f);
+        drawBackground(g, r, over, down);
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
+            IconSystem::drawIcon(g, IconSystem::ColorPalette, r.reduced(4.0f), lf->theme.accent);
+        }
+        else
+        {
+            IconSystem::drawIcon(g, IconSystem::ColorPalette, r.reduced(4.0f), juce::Colour(0xFF5AA9E6));
+        }
+    }
+};
 
 class CopyButton       : public ThemedIconButton { public: CopyButton()
 : ThemedIconButton(Options{ IconSystem::Save, false, ThemedIconButton::Style::GradientPanel, 3.0f, 4.0f, false }) {} };
@@ -706,6 +752,9 @@ private:
     SnapButton       snapButton;
     FullScreenButton fullScreenButton;
     ColorModeButton  colorModeButton;
+    class HelpButton : public ThemedIconButton { public: HelpButton()
+    : ThemedIconButton(Options{ IconSystem::Help, false, ThemedIconButton::Style::GradientPanel, 3.0f, 4.0f, false }) {} };
+    HelpButton       helpButton;
     CopyButton       copyButton;
     LockButton       lockButton;
 

@@ -186,7 +186,8 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
 ### Look & Feel
 
 * Single **Look\&Feel** (`FieldLNF`) owns colors/gradients/shadows.
-* Vector **icon language** (20+ icons): Lock/Save/Power/Options, Pan/Space/Width/Tilt, HP/LP/Drive/Mix/Air, Link/Stereo/Split/Fullscreen.
+* **Color Modes:** Ocean (default), Green, Pink, Yellow, Grey. Use the palette button in the header to cycle modes; visuals are driven entirely by `FieldLNF::theme`.
+* Vector **icon language** (20+ icons): Lock/Save/Power/Options, Pan/Space/Width/Tilt, HP/LP/Drive/Mix/Air, Link/Stereo/Split/Fullscreen, Help.
 * Centered value labels below knobs; responsive scaling (≈50–200%); fullscreen toggle.
 
 ---

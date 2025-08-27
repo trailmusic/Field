@@ -32,6 +32,8 @@ juce::Path IconSystem::createIcon (IconType type, float size)
         case FullScreen:     return createFullScreenIcon (size);
         case ExitFullScreen: return createExitFullScreenIcon (size);
         case ColorPalette:   return createColorPaletteIcon (size);
+        case Help:           return createHelpIcon (size);
+        case X:              return createXIcon (size);
         default:             return {};
     }
 }
@@ -59,6 +61,21 @@ juce::Path IconSystem::createLockIcon (float size)
     path.addRectangle (10 * scale, 7 * scale, 1 * scale, 2 * scale);
     path.addEllipse   (7 * scale, 10 * scale, 2 * scale, 2 * scale); // keyhole
     path.addRectangle (7.5f * scale, 12 * scale, 1 * scale, 2 * scale);
+    return path;
+}
+
+juce::Path IconSystem::createXIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    // Two crossing rectangles for a clear X
+    juce::Path a, b;
+    a.addRectangle (7 * s, 3 * s, 2 * s, 10 * s);
+    a.applyTransform (juce::AffineTransform::rotation (juce::MathConstants<float>::pi * 0.25f, 8 * s, 8 * s));
+    b.addRectangle (7 * s, 3 * s, 2 * s, 10 * s);
+    b.applyTransform (juce::AffineTransform::rotation (-juce::MathConstants<float>::pi * 0.25f, 8 * s, 8 * s));
+    path.addPath (a);
+    path.addPath (b);
     return path;
 }
 
@@ -382,5 +399,25 @@ juce::Path IconSystem::createColorPaletteIcon (float size)
     path.addEllipse ( 7.0f * s, 9.0f * s, 2.0f * s, 2.0f * s);
     path.addEllipse (10.0f * s, 9.0f * s, 2.0f * s, 2.0f * s);
 
+    return path;
+}
+
+juce::Path IconSystem::createHelpIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    // Outer circle
+    path.addEllipse (2 * s, 2 * s, 12 * s, 12 * s);
+    // Question mark constructed from simple rectangles/lines
+    juce::Path q;
+    // dot
+    q.addRectangle (7 * s, 12 * s, 2 * s, 2 * s);
+    // stem
+    q.addRectangle (7 * s, 9 * s, 2 * s, 3 * s);
+    // hook (three small rectangles to suggest a curve)
+    q.addRectangle (7 * s, 8 * s, 3 * s, 1 * s);
+    q.addRectangle (9 * s, 7 * s, 1 * s, 1 * s);
+    q.addRectangle (6 * s, 6 * s, 4 * s, 1 * s);
+    path.addPath (q);
     return path;
 }

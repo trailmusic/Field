@@ -47,6 +47,20 @@ public:
     // Expose alias so cpp helpers can use FieldLNF::Theme
     using Theme = FieldTheme;
 
+    enum class ThemeVariant { Ocean, Green, Pink, Yellow, Grey };
+    static juce::String getThemeName (ThemeVariant v)
+    {
+        switch (v)
+        {
+            case ThemeVariant::Ocean:  return "Ocean";   // accent ~ Havelock Blue
+            case ThemeVariant::Green:  return "Green";   // accent ~ Apple Green
+            case ThemeVariant::Pink:   return "Pink";    // accent = Material Pink 500
+            case ThemeVariant::Yellow: return "Amber";   // accent = Material Amber 500
+            case ThemeVariant::Grey:   return "Slate";   // monochrome grey
+            default: return "Unknown";
+        }
+    }
+
     explicit FieldLNF (FieldTheme t = {}) : theme (t)
     {
         setDefaultSansSerifTypefaceName ("Inter");
@@ -65,54 +79,133 @@ public:
         setColour (juce::PopupMenu::textColourId,             theme.text);
     }
 
+    // New: set named theme variant (Ocean, Green, Pink, Yellow, Grey)
+    void setTheme (ThemeVariant variant)
+    {
+        switch (variant)
+        {
+            case ThemeVariant::Green:
+            {
+                // Green monochromatic palette
+                theme.base        = juce::Colour (0xFF0D1F0D);
+                theme.panel       = juce::Colour (0xFF1E2F1E);
+                theme.text        = juce::Colour (0xFFE8F4E8);
+                theme.textMuted   = juce::Colour (0xFFB0C5B0);
+                theme.accent      = juce::Colour (0xFF5AA95A);
+                theme.hl          = juce::Colour (0xFF2E4F2E);
+                theme.sh          = juce::Colour (0xFF0D1E0D);
+                theme.shadowDark  = juce::Colour (0xFF0D1E0D);
+                theme.shadowLight = juce::Colour (0xFF4E6F4E);
+
+                theme.eq.hp        = juce::Colour (0xFF6FBF73);
+                theme.eq.lp        = juce::Colour (0xFF66BB6A);
+                theme.eq.air       = juce::Colour (0xFFA5D6A7);
+                theme.eq.tilt      = juce::Colour (0xFF81C784);
+                theme.eq.bass      = juce::Colour (0xFF43A047);
+                theme.eq.scoop     = juce::Colour (0xFF98EE99);
+                theme.eq.monoShade = juce::Colour (0xFF0D1E0D).withAlpha (0.18f);
+                break;
+            }
+            case ThemeVariant::Pink:
+            {
+                // Keep neutral surfaces, swap accent to pink
+                theme.base        = juce::Colour (0xFF3C3F45);
+                theme.panel       = juce::Colour (0xFF454951);
+                theme.text        = juce::Colour (0xFFF0F2F5);
+                theme.textMuted   = juce::Colour (0xFFB8BDC7);
+                theme.accent      = juce::Colour (0xFFE91E63); // Pink
+                theme.hl          = juce::Colour (0xFF5A5E66);
+                theme.sh          = juce::Colour (0xFF2A2C30);
+                theme.shadowDark  = juce::Colour (0xFF1A1C20);
+                theme.shadowLight = juce::Colour (0xFF60646C);
+
+                // Pink-centric EQ palette
+                theme.eq.hp        = juce::Colour (0xFFF06292); // light rose
+                theme.eq.lp        = juce::Colour (0xFFC2185B); // deep pink
+                theme.eq.air       = juce::Colour (0xFFFFC1E3); // light pink
+                theme.eq.tilt      = juce::Colour (0xFFFF8A80); // soft coral
+                theme.eq.bass      = juce::Colour (0xFFEC407A); // vivid pink
+                theme.eq.scoop     = juce::Colour (0xFFBA68C8); // magenta/plum
+                theme.eq.monoShade = juce::Colour (0xFF2A2C30).withAlpha (0.15f);
+                break;
+            }
+            case ThemeVariant::Yellow:
+            {
+                theme.base        = juce::Colour (0xFF3C3F45);
+                theme.panel       = juce::Colour (0xFF454951);
+                theme.text        = juce::Colour (0xFFF0F2F5);
+                theme.textMuted   = juce::Colour (0xFFB8BDC7);
+                theme.accent      = juce::Colour (0xFFFFC107); // Amber/Yellow
+                theme.hl          = juce::Colour (0xFF5A5E66);
+                theme.sh          = juce::Colour (0xFF2A2C30);
+                theme.shadowDark  = juce::Colour (0xFF1A1C20);
+                theme.shadowLight = juce::Colour (0xFF60646C);
+
+                // Amber-centric EQ palette
+                theme.eq.hp        = juce::Colour (0xFFFFD54F); // lighter amber
+                theme.eq.lp        = juce::Colour (0xFFFFB300); // deeper amber
+                theme.eq.air       = juce::Colour (0xFFFFF59D); // pale yellow
+                theme.eq.tilt      = juce::Colour (0xFFFFCA28); // amber 400
+                theme.eq.bass      = juce::Colour (0xFFFFA000); // amber 700
+                theme.eq.scoop     = juce::Colour (0xFFFFB74D); // orange/amber
+                theme.eq.monoShade = juce::Colour (0xFF2A2C30).withAlpha (0.15f);
+                break;
+            }
+            case ThemeVariant::Grey:
+            {
+                // Monochromatic grey
+                theme.base        = juce::Colour (0xFF2E3034);
+                theme.panel       = juce::Colour (0xFF3A3D43);
+                theme.text        = juce::Colour (0xFFE6E8EB);
+                theme.textMuted   = juce::Colour (0xFFB3B8BF);
+                theme.accent      = juce::Colour (0xFF9EA3AA);
+                theme.hl          = juce::Colour (0xFF5A5D63);
+                theme.sh          = juce::Colour (0xFF202226);
+                theme.shadowDark  = juce::Colour (0xFF141518);
+                theme.shadowLight = juce::Colour (0xFF5F646B);
+
+                // EQ greys
+                theme.eq.hp        = juce::Colour (0xFFB0B5BC);
+                theme.eq.lp        = juce::Colour (0xFFA5ABB3);
+                theme.eq.air       = juce::Colour (0xFFE6E8EB);
+                theme.eq.tilt      = juce::Colour (0xFFD0D4D9);
+                theme.eq.bass      = juce::Colour (0xFF9EA3AA);
+                theme.eq.scoop     = juce::Colour (0xFFC7CCD3);
+                theme.eq.monoShade = juce::Colour (0xFF202226).withAlpha (0.16f);
+                break;
+            }
+            case ThemeVariant::Ocean:
+            default:
+            {
+                // Standard blue palette
+                theme.base        = juce::Colour (0xFF3C3F45);
+                theme.panel       = juce::Colour (0xFF454951);
+                theme.text        = juce::Colour (0xFFF0F2F5);
+                theme.textMuted   = juce::Colour (0xFFB8BDC7);
+                theme.accent      = juce::Colour (0xFF5AA9E6);
+                theme.hl          = juce::Colour (0xFF5A5E66);
+                theme.sh          = juce::Colour (0xFF2A2C30);
+                theme.shadowDark  = juce::Colour (0xFF1A1C20);
+                theme.shadowLight = juce::Colour (0xFF60646C);
+
+                theme.eq.hp        = juce::Colour (0xFF42A5F5); // HP: blue
+                theme.eq.lp        = juce::Colour (0xFF1E88E5); // LP: deeper blue
+                theme.eq.air       = juce::Colour (0xFFFFF59D); // Air: soft yellow
+                theme.eq.tilt      = juce::Colour (0xFFFFA726); // Tilt: orange
+                theme.eq.bass      = juce::Colour (0xFF66BB6A); // Bass: green
+                theme.eq.scoop     = juce::Colour (0xFFAB47BC); // Scoop: plum/purple
+                theme.eq.monoShade = juce::Colour (0xFF2A2C30).withAlpha (0.15f);
+                break;
+            }
+        }
+        currentVariant = variant;
+        setupColours();
+    }
+
     // Toggle green monochrome palette. Re-applies setupColours().
     void setGreenMode (bool enabled)
     {
-        if (enabled)
-        {
-            // Green monochromatic palette
-            theme.base        = juce::Colour (0xFF0D1F0D);
-            theme.panel       = juce::Colour (0xFF1E2F1E);
-            theme.text        = juce::Colour (0xFFE8F4E8);
-            theme.textMuted   = juce::Colour (0xFFB0C5B0);
-            theme.accent      = juce::Colour (0xFF5AA95A); // green accent
-            theme.hl          = juce::Colour (0xFF2E4F2E);
-            theme.sh          = juce::Colour (0xFF0D1E0D);
-            theme.shadowDark  = juce::Colour (0xFF0D1E0D);
-            theme.shadowLight = juce::Colour (0xFF4E6F4E);
-
-            // EQ palette (monochrome green variants)
-            theme.eq.hp        = juce::Colour (0xFF6FBF73);
-            theme.eq.lp        = juce::Colour (0xFF66BB6A);
-            theme.eq.air       = juce::Colour (0xFFA5D6A7);
-            theme.eq.tilt      = juce::Colour (0xFF81C784);
-            theme.eq.bass      = juce::Colour (0xFF43A047);
-            theme.eq.scoop     = juce::Colour (0xFF98EE99);
-            theme.eq.monoShade = juce::Colour (0xFF0D1E0D).withAlpha (0.18f);
-        }
-        else
-        {
-            // Standard blue palette
-            theme.base        = juce::Colour (0xFF3C3F45);
-            theme.panel       = juce::Colour (0xFF454951);
-            theme.text        = juce::Colour (0xFFF0F2F5);
-            theme.textMuted   = juce::Colour (0xFFB8BDC7);
-            theme.accent      = juce::Colour (0xFF5AA9E6);
-            theme.hl          = juce::Colour (0xFF5A5E66);
-            theme.sh          = juce::Colour (0xFF2A2C30);
-            theme.shadowDark  = juce::Colour (0xFF1A1C20);
-            theme.shadowLight = juce::Colour (0xFF60646C);
-
-            // EQ palette (colorful defaults)
-            theme.eq.hp        = juce::Colour (0xFF42A5F5); // HP: blue
-            theme.eq.lp        = juce::Colour (0xFF1E88E5); // LP: deeper blue
-            theme.eq.air       = juce::Colour (0xFFFFF59D); // Air: soft yellow
-            theme.eq.tilt      = juce::Colour (0xFFFFA726); // Tilt: orange (used dashed)
-            theme.eq.bass      = juce::Colour (0xFF66BB6A); // Bass: green
-            theme.eq.scoop     = juce::Colour (0xFFAB47BC); // Scoop: plum/purple
-            theme.eq.monoShade = juce::Colour (0xFF2A2C30).withAlpha (0.15f);
-        }
-        setupColours();
+        setTheme (enabled ? ThemeVariant::Green : ThemeVariant::Ocean);
     }
 
     // --- Custom primitives ----------------------------------------------------
@@ -147,6 +240,7 @@ public:
 
     // Active theme (mutable for runtime palette switching)
     FieldTheme theme;
+    ThemeVariant currentVariant { ThemeVariant::Ocean };
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FieldLNF)
