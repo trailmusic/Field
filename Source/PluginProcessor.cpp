@@ -30,6 +30,19 @@ namespace IDs {
     static constexpr const char* scoopFreq  = "scoop_freq";
     static constexpr const char* bassFreq   = "bass_freq";
     static constexpr const char* airFreq    = "air_freq";
+    // Imaging
+    static constexpr const char* xoverLoHz  = "xover_lo_hz";
+    static constexpr const char* xoverHiHz  = "xover_hi_hz";
+    static constexpr const char* widthLo    = "width_lo";
+    static constexpr const char* widthMid   = "width_mid";
+    static constexpr const char* widthHi    = "width_hi";
+    static constexpr const char* rotationDeg= "rotation_deg";
+    static constexpr const char* asymmetry  = "asymmetry";
+    static constexpr const char* shufLoPct  = "shuffler_lo_pct";
+    static constexpr const char* shufHiPct  = "shuffler_hi_pct";
+    static constexpr const char* shufXHz    = "shuffler_xover_hz";
+    static constexpr const char* monoSlope  = "mono_slope_db_oct";
+    static constexpr const char* monoAud    = "mono_audition";
 }
 
 // ================================================================
@@ -166,6 +179,19 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.scoopFreq= getParam(apvts, IDs::scoopFreq);
     p.bassFreq = getParam(apvts, IDs::bassFreq);
     p.airFreq  = getParam(apvts, IDs::airFreq);
+    // Imaging
+    p.xoverLoHz      = getParam(apvts, IDs::xoverLoHz);
+    p.xoverHiHz      = getParam(apvts, IDs::xoverHiHz);
+    p.widthLo        = getParam(apvts, IDs::widthLo);
+    p.widthMid       = getParam(apvts, IDs::widthMid);
+    p.widthHi        = getParam(apvts, IDs::widthHi);
+    p.rotationDeg    = getParam(apvts, IDs::rotationDeg);
+    p.asymmetry      = getParam(apvts, IDs::asymmetry);
+    p.shufflerLoPct  = getParam(apvts, IDs::shufLoPct);
+    p.shufflerHiPct  = getParam(apvts, IDs::shufHiPct);
+    p.shufflerXoverHz= getParam(apvts, IDs::shufXHz);
+    p.monoSlopeDbOct = (int) juce::roundToInt (getParam(apvts, IDs::monoSlope));
+    p.monoAudition   = (getParam(apvts, IDs::monoAud) >= 0.5f);
     return p;
 }
 
@@ -180,6 +206,20 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
 
     juce::dsp::AudioBlock<float> block (buffer);
     chainF->process (block);
+
+    // Correlation meter (simple block estimate)
+    if (buffer.getNumChannels() >= 2)
+    {
+        const int n = buffer.getNumSamples();
+        const float* L = buffer.getReadPointer(0);
+        const float* R = buffer.getReadPointer(1);
+        double sLL=0.0, sRR=0.0, sLR=0.0;
+        for (int i=0;i<n;++i){ const double l=L[i], r=R[i]; sLL+=l*l; sRR+=r*r; sLR+=l*r; }
+        const double denom = std::sqrt (sLL * sRR) + 1e-12;
+        const float corr = (float) juce::jlimit (-1.0, 1.0, sLR / denom);
+        const float old = meterCorrelation.load();
+        meterCorrelation.store (old + 0.1f * (corr - old));
+    }
 
     // Feed XYPad waveform/spectral visuals
     if (onAudioSample && buffer.getNumSamples() > 0)
@@ -205,6 +245,20 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
 
     juce::dsp::AudioBlock<double> block (buffer);
     chainD->process (block);
+
+    // Correlation meter
+    if (buffer.getNumChannels() >= 2)
+    {
+        const int n = buffer.getNumSamples();
+        const double* L = buffer.getReadPointer(0);
+        const double* R = buffer.getReadPointer(1);
+        long double sLL=0.0, sRR=0.0, sLR=0.0;
+        for (int i=0;i<n;++i){ const long double l=L[i], r=R[i]; sLL+=l*l; sRR+=r*r; sLR+=l*r; }
+        const long double denom = std::sqrt (sLL * sRR) + 1e-18L;
+        const float corr = (float) juce::jlimit (-1.0, 1.0, (double)(sLR / denom));
+        const float old = meterCorrelation.load();
+        meterCorrelation.store (old + 0.1f * (corr - old));
+    }
 
     // Feed XYPad waveform/spectral visuals
     if (onAudioSample && buffer.getNumSamples() > 0)
@@ -272,6 +326,20 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::bassFreq, 1 },  "Bass Frequency", juce::NormalisableRange<float> (50.0f, 500.0f, 1.0f, 0.5f), 150.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::airFreq, 1 },   "Air Frequency",  juce::NormalisableRange<float> (2000.0f, 20000.0f, 10.0f, 0.5f), 8000.0f));
 
+    // Imaging params (P0)
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::xoverLoHz, 1 },   "Xover Lo (Hz)", juce::NormalisableRange<float> (40.0f, 400.0f, 0.01f, 0.5f), 150.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::xoverHiHz, 1 },   "Xover Hi (Hz)", juce::NormalisableRange<float> (800.0f, 6000.0f, 0.01f, 0.5f), 2000.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthLo,   1 },   "Width Low",     juce::NormalisableRange<float> (0.0f, 2.0f, 0.0001f), 1.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthMid,  1 },   "Width Mid",     juce::NormalisableRange<float> (0.0f, 2.0f, 0.0001f), 1.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthHi,   1 },   "Width High",    juce::NormalisableRange<float> (0.0f, 2.0f, 0.0001f), 1.1f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::rotationDeg,1 },  "Rotation (deg)",juce::NormalisableRange<float> (-45.0f, 45.0f, 0.001f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::asymmetry, 1 },   "Asymmetry",     juce::NormalisableRange<float> (-1.0f, 1.0f, 0.0001f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::shufLoPct, 1 },   "Shuffler Low %",juce::NormalisableRange<float> (0.0f, 200.0f, 0.01f), 100.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::shufHiPct, 1 },   "Shuffler High %",juce::NormalisableRange<float> (0.0f, 200.0f, 0.01f), 110.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::shufXHz,   1 },   "Shuffler Xover (Hz)",juce::NormalisableRange<float> (150.0f, 2000.0f, 0.01f, 0.5f), 700.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::monoSlope,1 },   "Mono Slope (dB/oct)", juce::StringArray { "6", "12", "24" }, 1));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::monoAud, 1 },      "Mono Audition", false));
+
     return { params.begin(), params.end() };
 }
 
@@ -299,6 +367,12 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     lpFilter.prepare (spec);
     lowSplitL.prepare (spec);
     lowSplitR.prepare (spec);
+    bandLowLP_L.prepare (spec);
+    bandLowLP_R.prepare (spec);
+    bandHighHP_L.prepare (spec);
+    bandHighHP_R.prepare (spec);
+    shuffLP_L.prepare (spec);
+    shuffLP_R.prepare (spec);
     depthLPF.prepare (spec);
     lowShelf.prepare (spec);
     highShelf.prepare (spec);
@@ -310,6 +384,12 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     lpFilter.setType (juce::dsp::StateVariableTPTFilterType::lowpass);
     lowSplitL.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
     lowSplitR.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
+    bandLowLP_L.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
+    bandLowLP_R.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
+    bandHighHP_L.setType (juce::dsp::LinkwitzRileyFilterType::highpass);
+    bandHighHP_R.setType (juce::dsp::LinkwitzRileyFilterType::highpass);
+    shuffLP_L.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
+    shuffLP_R.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
     depthLPF.setType (juce::dsp::StateVariableTPTFilterType::lowpass);
     depthLPF.setCutoffFrequency ((Sample) 20000);
     depthLPF.setResonance ((Sample) 0.707);
@@ -379,6 +459,19 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.scoopFreq = (Sample) hp.scoopFreq;
     params.bassFreq  = (Sample) hp.bassFreq;
     params.airFreq   = (Sample) hp.airFreq;
+    // Imaging
+    params.xoverLoHz = (Sample) juce::jlimit (40.0, 400.0, hp.xoverLoHz);
+    params.xoverHiHz = (Sample) juce::jlimit (800.0, 6000.0, hp.xoverHiHz);
+    params.widthLo   = (Sample) juce::jlimit (0.0, 2.0, hp.widthLo);
+    params.widthMid  = (Sample) juce::jlimit (0.0, 2.0, hp.widthMid);
+    params.widthHi   = (Sample) juce::jlimit (0.0, 2.0, hp.widthHi);
+    params.rotationRad = (Sample) (hp.rotationDeg * juce::MathConstants<double>::pi / 180.0);
+    params.asymmetry = (Sample) juce::jlimit (-1.0, 1.0, hp.asymmetry);
+    params.shufflerLo = (Sample) juce::jlimit (0.0, 2.0, hp.shufflerLoPct * 0.01);
+    params.shufflerHi = (Sample) juce::jlimit (0.0, 2.0, hp.shufflerHiPct * 0.01);
+    params.shufflerXoverHz = (Sample) juce::jlimit (150.0, 2000.0, hp.shufflerXoverHz);
+    params.monoSlopeDbOct = hp.monoSlopeDbOct;
+    params.monoAudition   = hp.monoAudition;
 }
 
 // --------- processing utilities ---------
@@ -404,6 +497,10 @@ void FieldChain<Sample>::ensureOversampling (int osModeIndex)
 template <typename Sample>
 void FieldChain<Sample>::applyHP_LP (Block block, Sample hpHz, Sample lpHz)
 {
+    // If both are at defaults (fully open), skip entirely to avoid any sonic change
+    if (hpHz <= (Sample)20 && lpHz >= (Sample)20000)
+        return;
+
     hpHz = juce::jlimit ((Sample)20,  (Sample)1000,  hpHz);
     lpHz = juce::jlimit ((Sample)1000,(Sample)20000, lpHz);
     hpFilter.setCutoffFrequency (hpHz);
@@ -482,6 +579,164 @@ void FieldChain<Sample>::applyWidthMS (Block block, Sample width)
         else if (width > (Sample)1) S *= (Sample) (1.0 + (double)(width - (Sample)1.0) * 0.6);
         L[i] = k * (M + S);
         R[i] = k * (M - S);
+    }
+}
+
+// --- Imaging helpers ---
+template <typename Sample>
+void FieldChain<Sample>::applyThreeBandWidth (Block block,
+                                              Sample loHz, Sample hiHz,
+                                              Sample wLo, Sample wMid, Sample wHi)
+{
+    if (block.getNumChannels() < 2) return;
+    loHz = juce::jlimit ((Sample)40,  (Sample)400,  loHz);
+    hiHz = juce::jlimit ((Sample)800, (Sample)6000, hiHz);
+    wLo  = juce::jlimit ((Sample)0, (Sample)2, wLo);
+    wMid = juce::jlimit ((Sample)0, (Sample)2, wMid);
+    wHi  = juce::jlimit ((Sample)0, (Sample)2, wHi);
+
+    bandLowLP_L.setCutoffFrequency (loHz);
+    bandLowLP_R.setCutoffFrequency (loHz);
+    bandHighHP_L.setCutoffFrequency (hiHz);
+    bandHighHP_R.setCutoffFrequency (hiHz);
+
+    const int n  = (int) block.getNumSamples();
+    juce::AudioBuffer<Sample> low (2, n), high (2, n);
+    for (int c = 0; c < 2; ++c)
+    {
+        low.copyFrom  (c, 0, block.getChannelPointer (c), n);
+        high.copyFrom (c, 0, block.getChannelPointer (c), n);
+    }
+
+    // filter
+    {
+        juce::dsp::AudioBlock<Sample> lb (low), hb (high);
+        auto lL = lb.getSingleChannelBlock (0); auto lR = lb.getSingleChannelBlock (1);
+        auto hL = hb.getSingleChannelBlock (0); auto hR = hb.getSingleChannelBlock (1);
+        juce::dsp::ProcessContextReplacing<Sample> ctxLL (lL), ctxLR (lR), ctxHL (hL), ctxHR (hR);
+        bandLowLP_L.process (ctxLL); bandLowLP_R.process (ctxLR);
+        bandHighHP_L.process (ctxHL); bandHighHP_R.process (ctxHR);
+    }
+
+    // derive mid = full - low - high
+    juce::AudioBuffer<Sample> mid (2, n);
+    for (int c = 0; c < 2; ++c)
+    {
+        auto* full = block.getChannelPointer (c);
+        auto* lo   = low.getWritePointer (c);
+        auto* hi   = high.getWritePointer (c);
+        auto* md   = mid.getWritePointer (c);
+        for (int i = 0; i < n; ++i) md[i] = full[i] - lo[i] - hi[i];
+    }
+
+    auto msWidth = [] (Sample& L, Sample& R, Sample w)
+    {
+        const Sample k = (Sample)0.7071067811865476;
+        Sample M = k * (L + R);
+        Sample S = k * (L - R);
+        S *= w;
+        L = k * (M + S);
+        R = k * (M - S);
+    };
+
+    auto applyWidthToBuffer = [&] (juce::AudioBuffer<Sample>& buf, Sample w)
+    {
+        auto* L = buf.getWritePointer (0);
+        auto* R = buf.getWritePointer (1);
+        for (int i = 0; i < n; ++i) msWidth (L[i], R[i], w);
+    };
+
+    applyWidthToBuffer (low, wLo);
+    applyWidthToBuffer (mid, wMid);
+    applyWidthToBuffer (high, wHi);
+
+    // sum back
+    for (int c = 0; c < 2; ++c)
+    {
+        auto* dst = block.getChannelPointer (c);
+        auto* lo  = low.getReadPointer (c);
+        auto* md  = mid.getReadPointer (c);
+        auto* hi  = high.getReadPointer (c);
+        for (int i = 0; i < n; ++i) dst[i] = lo[i] + md[i] + hi[i];
+    }
+}
+
+template <typename Sample>
+void FieldChain<Sample>::applyShufflerWidth (Block block, Sample xoverHz, Sample wLow, Sample wHigh)
+{
+    if (block.getNumChannels() < 2) return;
+    xoverHz = juce::jlimit ((Sample)150, (Sample)2000, xoverHz);
+    shuffLP_L.setCutoffFrequency (xoverHz);
+    shuffLP_R.setCutoffFrequency (xoverHz);
+
+    const int n = (int) block.getNumSamples();
+    juce::AudioBuffer<Sample> low (2, n);
+    for (int c = 0; c < 2; ++c) low.copyFrom (c, 0, block.getChannelPointer (c), n);
+    {
+        juce::dsp::AudioBlock<Sample> lb (low);
+        auto lL = lb.getSingleChannelBlock (0), lR = lb.getSingleChannelBlock (1);
+        juce::dsp::ProcessContextReplacing<Sample> ctxL (lL), ctxR (lR);
+        shuffLP_L.process (ctxL); shuffLP_R.process (ctxR);
+    }
+    // high = full - low
+    juce::AudioBuffer<Sample> high (2, n);
+    for (int c = 0; c < 2; ++c)
+    {
+        auto* full = block.getChannelPointer (c);
+        auto* lo   = low.getWritePointer (c);
+        auto* hi   = high.getWritePointer (c);
+        for (int i = 0; i < n; ++i) hi[i] = full[i] - lo[i];
+    }
+
+    auto widthBuf = [&] (juce::AudioBuffer<Sample>& buf, Sample w)
+    {
+        auto* L = buf.getWritePointer (0);
+        auto* R = buf.getWritePointer (1);
+        const Sample k = (Sample)0.7071067811865476;
+        for (int i = 0; i < n; ++i)
+        {
+            Sample l=L[i], r=R[i];
+            Sample M = k * (l + r);
+            Sample S = k * (l - r) * w;
+            L[i] = k*(M+S); R[i] = k*(M-S);
+        }
+    };
+    widthBuf (low,  wLow);
+    widthBuf (high, wHigh);
+
+    for (int c = 0; c < 2; ++c)
+    {
+        auto* dst = block.getChannelPointer (c);
+        auto* lo  = low.getReadPointer (c);
+        auto* hi  = high.getReadPointer (c);
+        for (int i = 0; i < n; ++i) dst[i] = lo[i] + hi[i];
+    }
+}
+
+template <typename Sample>
+void FieldChain<Sample>::applyRotationAsym (Block block, Sample rotationRad, Sample asym)
+{
+    if (block.getNumChannels() < 2) return;
+    const Sample k = (Sample)0.7071067811865476;
+    const Sample c = std::cos (rotationRad);
+    const Sample s = std::sin (rotationRad);
+
+    auto* L = block.getChannelPointer (0);
+    auto* R = block.getChannelPointer (1);
+    const int n = (int) block.getNumSamples();
+    for (int i = 0; i < n; ++i)
+    {
+        const Sample l = L[i], r = R[i];
+        Sample M = k * (l + r);
+        Sample S = k * (l - r);
+        // rotation matrix in M/S
+        const Sample Mr = c * M - s * S;
+        const Sample Sr = s * M + c * S;
+        // asymmetry: small crossfeed
+        const Sample Mx = Mr + asym * Sr * (Sample)0.15;
+        const Sample Sx = Sr - asym * Mr * (Sample)0.15;
+        L[i] = k * (Mx + Sx);
+        R[i] = k * (Mx - Sx);
     }
 }
 
@@ -744,7 +999,14 @@ void FieldChain<Sample>::process (Block block)
     // Imaging & placement
     if (params.splitMode) applySplitPan (block, params.panL, params.panR);
     else                  applyPan     (block, params.pan);
-    applyWidthMS (block, params.width);
+
+    // Three-band width first
+    applyThreeBandWidth (block, params.xoverLoHz, params.xoverHiHz,
+                         params.widthLo, params.widthMid, params.widthHi);
+    // Shuffler (2-band lightweight)
+    applyShufflerWidth (block, params.shufflerXoverHz, params.shufflerLo, params.shufflerHi);
+    // Rotation + Asymmetry (global)
+    applyRotationAsym (block, params.rotationRad, params.asymmetry);
 
     // Core tone
     applyTiltEQ  (block, params.tiltDb,  params.tiltFreq);

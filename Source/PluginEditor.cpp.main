@@ -82,8 +82,8 @@ void ToggleSwitch::paint (juce::Graphics& g)
     }
     
     // Calculate slider position: much smaller travel distance for compact toggle
-    const float leftCenterX  = bounds.getX() + bounds.getWidth() * 0.4f;
-    const float rightCenterX = bounds.getX() + bounds.getWidth() * 0.6f;
+    const float leftCenterX  = bounds.getX() + bounds.getWidth() * 0.3f;
+    const float rightCenterX = bounds.getX() + bounds.getWidth() * 0.7f;
     const float sliderX = juce::jmap (sliderValue.getCurrentValue(), 0.0f, 1.0f,
                                       leftCenterX  - sliderRadius,
                                       rightCenterX - sliderRadius);
@@ -557,16 +557,30 @@ void XYPad::drawBalls (juce::Graphics& g, juce::Rectangle<float> bounds)
                                        bounds.getY() + (1.0f - pt.second) * bounds.getHeight());
             float ballSize = 10.0f * gainScale;
             
-            // Calculate tilt color
+            // Calculate tilt color - match the curve colors exactly
             juce::Colour ballColor;
-            if (tiltValue > 0.0f) {
-                float intensity = juce::jmap (tiltValue, 0.0f, 12.0f, 0.0f, 1.0f);
-                float hue = juce::jmap (intensity, 0.0f, 1.0f, 0.15f, 0.0f);
-                ballColor = juce::Colour::fromHSV (hue, 0.7f, 0.7f + intensity * 0.15f, 1.0f);
+            if (isGreenMode) {
+                // Green monochromatic palette - match curve colors exactly
+                if (tiltValue > 0.0f) {
+                    // Warm green (positive tilt)
+                    float intensity = juce::jmap(tiltValue, 0.0f, 12.0f, 0.0f, 1.0f);
+                    ballColor = juce::Colour(0xFF5AA95A).interpolatedWith(juce::Colour(0xFF8CAA00), intensity);
+                } else {
+                    // Cool green (negative tilt)
+                    float intensity = juce::jmap(std::abs(tiltValue), 0.0f, 12.0f, 0.0f, 1.0f);
+                    ballColor = juce::Colour(0xFF5AA95A).interpolatedWith(juce::Colour(0xFF68B568), intensity);
+                }
             } else {
-                float intensity = juce::jmap (std::abs(tiltValue), 0.0f, 12.0f, 0.0f, 1.0f);
-                float hue = juce::jmap (intensity, 0.0f, 1.0f, 0.3f, 0.8f);
-                ballColor = juce::Colour::fromHSV (hue, 0.7f, 0.7f + intensity * 0.15f, 1.0f);
+                // Standard color palette - match ball colors
+                if (tiltValue > 0.0f) {
+                    float intensity = juce::jmap (tiltValue, 0.0f, 12.0f, 0.0f, 1.0f);
+                    float hue = juce::jmap (intensity, 0.0f, 1.0f, 0.15f, 0.0f);
+                    ballColor = juce::Colour::fromHSV (hue, 0.7f, 0.7f + intensity * 0.15f, 1.0f);
+                } else {
+                    float intensity = juce::jmap (std::abs(tiltValue), 0.0f, 12.0f, 0.0f, 1.0f);
+                    float hue = juce::jmap (intensity, 0.0f, 1.0f, 0.3f, 0.8f);
+                    ballColor = juce::Colour::fromHSV (hue, 0.7f, 0.7f + intensity * 0.15f, 1.0f);
+                }
             }
             
             // Draw bottom ball (slightly larger)
@@ -612,18 +626,32 @@ void XYPad::drawBalls (juce::Graphics& g, juce::Rectangle<float> bounds)
             float leftSize = 10.0f * gainScale;
             g.setColour (juce::Colours::black.withAlpha (0.35f));
             g.fillEllipse (leftP.x - leftSize, leftP.y - leftSize * 0.6f, leftSize * 2, leftSize * 1.2f);
-            // Calculate tilt color with more tones (reduced vibrancy)
+            // Calculate tilt color with more tones (reduced vibrancy) - match curve colors
             juce::Colour ballColor;
-            if (tiltValue > 0.0f) {
-                // Warm colors: yellow -> orange -> red -> magenta
-                float intensity = juce::jmap (tiltValue, 0.0f, 12.0f, 0.0f, 1.0f);
-                float hue = juce::jmap (intensity, 0.0f, 1.0f, 0.15f, 0.0f);
-                ballColor = juce::Colour::fromHSV (hue, 0.7f, 0.7f + intensity * 0.15f, 1.0f);
+            if (isGreenMode) {
+                // Green monochromatic palette - match curve colors exactly
+                if (tiltValue > 0.0f) {
+                    // Warm green (positive tilt)
+                    float intensity = juce::jmap(tiltValue, 0.0f, 12.0f, 0.0f, 1.0f);
+                    ballColor = juce::Colour(0xFF5AA95A).interpolatedWith(juce::Colour(0xFF8CAA00), intensity);
+                } else {
+                    // Cool green (negative tilt)
+                    float intensity = juce::jmap(std::abs(tiltValue), 0.0f, 12.0f, 0.0f, 1.0f);
+                    ballColor = juce::Colour(0xFF5AA95A).interpolatedWith(juce::Colour(0xFF68B568), intensity);
+                }
             } else {
-                // Cool colors: green -> cyan -> blue -> purple
-                float intensity = juce::jmap (std::abs(tiltValue), 0.0f, 12.0f, 0.0f, 1.0f);
-                float hue = juce::jmap (intensity, 0.0f, 1.0f, 0.3f, 0.8f);
-                ballColor = juce::Colour::fromHSV (hue, 0.7f, 0.7f + intensity * 0.15f, 1.0f);
+                // Standard color palette - match ball colors
+                if (tiltValue > 0.0f) {
+                    // Warm colors: yellow -> orange -> red -> magenta
+                    float intensity = juce::jmap (tiltValue, 0.0f, 12.0f, 0.0f, 1.0f);
+                    float hue = juce::jmap (intensity, 0.0f, 1.0f, 0.15f, 0.0f);
+                    ballColor = juce::Colour::fromHSV (hue, 0.7f, 0.7f + intensity * 0.15f, 1.0f);
+                } else {
+                    // Cool colors: green -> cyan -> blue -> purple
+                    float intensity = juce::jmap (std::abs(tiltValue), 0.0f, 12.0f, 0.0f, 1.0f);
+                    float hue = juce::jmap (intensity, 0.0f, 1.0f, 0.3f, 0.8f);
+                    ballColor = juce::Colour::fromHSV (hue, 0.7f, 0.7f + intensity * 0.15f, 1.0f);
+                }
             }
             g.setColour (ballColor);
             g.fillEllipse (leftP.x - leftSize * 0.7f, leftP.y - leftSize * 0.7f, leftSize * 1.4f, leftSize * 1.4f);
@@ -690,18 +718,32 @@ void XYPad::drawBalls (juce::Graphics& g, juce::Rectangle<float> bounds)
         float ballSize = 10.0f * gainScale;
         g.setColour (juce::Colours::black.withAlpha (0.35f));
         g.fillEllipse (p.x - ballSize, p.y - ballSize * 0.6f, ballSize * 2, ballSize * 1.2f);
-        // Calculate tilt color for single ball with more tones (reduced vibrancy)
+        // Calculate tilt color for single ball with more tones (reduced vibrancy) - match curve colors
         juce::Colour ballColor;
-        if (tiltValue > 0.0f) {
-            // Warm colors: yellow -> orange -> red -> magenta
-            float intensity = juce::jmap (tiltValue, 0.0f, 12.0f, 0.0f, 1.0f);
-            float hue = juce::jmap (intensity, 0.0f, 1.0f, 0.15f, 0.0f);
-            ballColor = juce::Colour::fromHSV (hue, 0.7f, 0.7f + intensity * 0.15f, 1.0f);
+        if (isGreenMode) {
+            // Green monochromatic palette - match curve colors exactly
+            if (tiltValue > 0.0f) {
+                // Warm green (positive tilt)
+                float intensity = juce::jmap(tiltValue, 0.0f, 12.0f, 0.0f, 1.0f);
+                ballColor = juce::Colour(0xFF5AA95A).interpolatedWith(juce::Colour(0xFF8CAA00), intensity);
+            } else {
+                // Cool green (negative tilt)
+                float intensity = juce::jmap(std::abs(tiltValue), 0.0f, 12.0f, 0.0f, 1.0f);
+                ballColor = juce::Colour(0xFF5AA95A).interpolatedWith(juce::Colour(0xFF68B568), intensity);
+            }
         } else {
-            // Cool colors: green -> cyan -> blue -> purple
-            float intensity = juce::jmap (std::abs(tiltValue), 0.0f, 12.0f, 0.0f, 1.0f);
-            float hue = juce::jmap (intensity, 0.0f, 1.0f, 0.3f, 0.8f);
-            ballColor = juce::Colour::fromHSV (hue, 0.7f, 0.7f + intensity * 0.15f, 1.0f);
+            // Standard color palette - match ball colors
+            if (tiltValue > 0.0f) {
+                // Warm colors: yellow -> orange -> red -> magenta
+                float intensity = juce::jmap (tiltValue, 0.0f, 12.0f, 0.0f, 1.0f);
+                float hue = juce::jmap (intensity, 0.0f, 1.0f, 0.15f, 0.0f);
+                ballColor = juce::Colour::fromHSV (hue, 0.7f, 0.7f + intensity * 0.15f, 1.0f);
+            } else {
+                // Cool colors: green -> cyan -> blue -> purple
+                float intensity = juce::jmap (std::abs(tiltValue), 0.0f, 12.0f, 0.0f, 1.0f);
+                float hue = juce::jmap (intensity, 0.0f, 1.0f, 0.3f, 0.8f);
+                ballColor = juce::Colour::fromHSV (hue, 0.7f, 0.7f + intensity * 0.15f, 1.0f);
+            }
         }
         g.setColour (ballColor);
         g.fillEllipse (p.x - ballSize * 0.7f, p.y - ballSize * 0.7f, ballSize * 1.4f, ballSize * 1.4f);
@@ -767,7 +809,7 @@ std::pair<float,float> XYPad::getBallPosition (int ballIndex) const
     return {0.5f, 0.5f}; // Default center position
 }
 
-void XYPad::pushWaveformSample (float sampleL, float sampleR)
+void XYPad::pushWaveformSample (double sampleL, double sampleR)
 {
     waveformL[waveformWriteIndex] = sampleL;
     waveformR[waveformWriteIndex] = sampleR;
@@ -805,9 +847,9 @@ void XYPad::drawWaveformBackground (juce::Graphics& g, juce::Rectangle<float> bo
         if (sampleIndex < 0) sampleIndex += waveformBufferSize;
         
         // Combine left and right channels for unified waveform
-        float sampleL = waveformL[sampleIndex];
-        float sampleR = waveformR[sampleIndex];
-        float sample = (sampleL + sampleR) * 0.5f; // Mono mix for unified display
+        double sampleL = waveformL[sampleIndex];
+        double sampleR = waveformR[sampleIndex];
+        double sample = (sampleL + sampleR) * 0.5; // Mono mix for unified display
         
         // Apply REAL-TIME DSP effects to the waveform visualization
         // Apply HP/LP filter visualization
@@ -1278,7 +1320,14 @@ void XYPad::drawEQCurves (juce::Graphics& g, juce::Rectangle<float> bounds)
         scoopFillPath.closeSubPath();
         
         // Draw the gradient fill for SCOOP
-        juce::Colour scoopColor = isGreenMode ? juce::Colour(0xFF9B59B6) : juce::Colour(0xFF9B59B6);
+        juce::Colour scoopColor;
+        if (isGreenMode) {
+            // Green monochromatic palette - use a green variant for scoop
+            scoopColor = juce::Colour(0xFF8CAA00); // Green variant for scoop in green mode
+        } else {
+            // Standard purple color for scoop
+            scoopColor = juce::Colour(0xFF9B59B6);
+        }
         juce::ColourGradient fillGrad(
             scoopColor.withAlpha(0.6f), bounds.getX(), bounds.getY(),
             scoopColor.withAlpha(0.02f), bounds.getX(), bounds.getBottom(), false);
@@ -1547,9 +1596,9 @@ void XYPad::analyzeSpectralResponse (std::vector<float>& response, float width)
             int sampleIndex = (waveformWriteIndex - i + waveformBufferSize) % waveformBufferSize;
             
             // Combine left and right channels
-            float sampleL = waveformL[sampleIndex];
-            float sampleR = waveformR[sampleIndex];
-            float sample = (sampleL + sampleR) * 0.5f;
+            double sampleL = waveformL[sampleIndex];
+            double sampleR = waveformR[sampleIndex];
+            double sample = (sampleL + sampleR) * 0.5;
             
             // Simple frequency analysis using bandpass-like filtering
             // This is a simplified approach - in a real implementation you'd use FFT
@@ -2141,6 +2190,15 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     for (juce::Slider* s : { &tiltFreqSlider,&scoopFreqSlider,&bassFreqSlider,&airFreqSlider }) { 
         s->setSliderStyle(juce::Slider::LinearHorizontal);
         s->setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        s->setMouseDragSensitivity(100); // More responsive to mouse movement
+        s->setVelocityBasedMode(false); // Disable velocity mode for more direct control
+        s->setRepaintsOnMouseActivity(true); // Repaint on mouse activity for smooth feedback
+        s->setSliderSnapsToMousePosition(true); // Snap to mouse position for better control
+        s->setPopupDisplayEnabled(false, false, nullptr); // Disable popup to avoid interference
+        s->setWantsKeyboardFocus(false); // Disable keyboard focus to avoid interference
+        s->setMouseClickGrabsKeyboardFocus(false); // Don't grab keyboard focus on click
+        s->setInterceptsMouseClicks(true, true); // Ensure mouse clicks are intercepted
+        s->setDoubleClickReturnValue(true, 0.0f); // Allow double-click to reset
         // Sizing happens in resized() only
         addAndMakeVisible(*s); 
     }
@@ -2497,10 +2555,9 @@ void MyPluginAudioProcessorEditor::resized()
         juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))), // A
         juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))), // B
         juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))), // copy
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(20, s))), // right spacer (reduced by half)
         juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(120, s))),// split toggle (narrower)
-        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(2, s))),  // spacer after toggle
         juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))), // link (now large)
-        juce::Grid::TrackInfo(juce::Grid::Fr(1)),                 // right spacer
         juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))), // snap (now large)
         juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))), // color (now large)
         juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s)))  // fullscreen (now large)
@@ -2532,10 +2589,9 @@ void MyPluginAudioProcessorEditor::resized()
         juce::GridItem(abButtonA).withAlignSelf(juce::GridItem::AlignSelf::center),
         juce::GridItem(abButtonB).withAlignSelf(juce::GridItem::AlignSelf::center),
         juce::GridItem(copyButton).withAlignSelf(juce::GridItem::AlignSelf::center),
-        juce::GridItem(splitToggle).withAlignSelf(juce::GridItem::AlignSelf::center),
-        juce::GridItem().withWidth(Layout::dp(2, s)), // 2px spacer after toggle
-        juce::GridItem(linkButton).withAlignSelf(juce::GridItem::AlignSelf::center),
         juce::GridItem(), // right spacer
+        juce::GridItem(splitToggle).withAlignSelf(juce::GridItem::AlignSelf::center),
+        juce::GridItem(linkButton).withAlignSelf(juce::GridItem::AlignSelf::center),
         juce::GridItem(snapButton).withAlignSelf(juce::GridItem::AlignSelf::center),
         juce::GridItem(colorModeButton).withAlignSelf(juce::GridItem::AlignSelf::center),
         juce::GridItem(fullScreenButton).withAlignSelf(juce::GridItem::AlignSelf::center),
@@ -2559,7 +2615,7 @@ void MyPluginAudioProcessorEditor::resized()
     {
         auto b = splitToggle.getBounds();
         const int lineH = Layout::dp(24, s); // twice as tall
-        const int gapX = Layout::dp(2, s);   // bring divider closer to toggle
+        const int gapX = Layout::dp(8, s);   // bring divider farther from toggle
         auto centerY = b.getCentreY();
         splitDivider.setBounds(b.getX() - gapX - 1, centerY - lineH/2, 4, lineH); // twice as wide
         splitDivider.toFront(false);
@@ -2964,6 +3020,14 @@ void MyPluginAudioProcessorEditor::timerCallback()
     airValue.setText (juce::String (static_cast<int>(air.getValue())) + "dB", juce::dontSendNotification);
     bassValue.setText (juce::String (static_cast<int>(bass.getValue())) + "dB", juce::dontSendNotification);
     scoopValue.setText (juce::String (static_cast<int>(scoop.getValue())) + "dB", juce::dontSendNotification); // NEW: Scoop value
+    
+    // Dynamic scoop knob label: "SCOOP" when negative, "BOOST" when positive
+    float scoopValueFloat = scoop.getValue();
+    if (scoopValueFloat > 0.0f) {
+        scoop.setName("BOOST");
+    } else {
+        scoop.setName("SCOOP");
+    }
     
     // NEW: Frequency control value labels
     tiltFreqValue.setText (juce::String (static_cast<int>(tiltFreqSlider.getValue())) + "Hz", juce::dontSendNotification);

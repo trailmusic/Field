@@ -25,6 +25,12 @@ struct FieldChain
 private:
     // ----- helpers -----
     void ensureOversampling (int osModeIndex);
+    // Imaging helpers
+    void applyThreeBandWidth (Block block,
+                              Sample loHz, Sample hiHz,
+                              Sample wLo, Sample wMid, Sample wHi);
+    void applyShufflerWidth (Block block, Sample xoverHz, Sample wLow, Sample wHigh);
+    void applyRotationAsym (Block block, Sample rotationRad, Sample asym);
 
     // Filters / tone
     void applyHP_LP     (Block, Sample hpHz, Sample lpHz);
@@ -56,6 +62,11 @@ private:
     // Core filters / EQ
     juce::dsp::StateVariableTPTFilter<Sample> hpFilter, lpFilter, depthLPF;
     juce::dsp::LinkwitzRileyFilter<Sample>    lowSplitL, lowSplitR;     // mono-maker lows
+    // Imaging band split filters (3-band via LP@lo and HP@hi)
+    juce::dsp::LinkwitzRileyFilter<Sample>    bandLowLP_L, bandLowLP_R;
+    juce::dsp::LinkwitzRileyFilter<Sample>    bandHighHP_L, bandHighHP_R;
+    // Shuffler split (2-band LP@xover; HP via subtraction)
+    juce::dsp::LinkwitzRileyFilter<Sample>    shuffLP_L, shuffLP_R;
     juce::dsp::IIR::Filter<Sample>            lowShelf, highShelf, airFilter, bassFilter, scoopFilter;
 
     // Reverb (float adapter for double chain)
@@ -71,6 +82,15 @@ private:
         Sample satDriveLin{}, satMix{}; bool bypass{}; int spaceAlgo{};
         Sample airDb{}, bassDb{}, ducking{}; int osMode{}; bool splitMode{};
         Sample tiltFreq{}, scoopFreq{}, bassFreq{}, airFreq{};
+        // Imaging additions (Sample domain)
+        Sample xoverLoHz{}, xoverHiHz{};
+        Sample widthLo{}, widthMid{}, widthHi{};
+        Sample rotationRad{};
+        Sample asymmetry{};
+        Sample shufflerLo{}, shufflerHi{};
+        Sample shufflerXoverHz{};
+        int    monoSlopeDbOct{};
+        bool   monoAudition{};
     } params;
 };
 
@@ -85,6 +105,19 @@ struct HostParams
     double satDriveDb{}, satMix{}; bool bypass{}; int spaceAlgo{};
     double airDb{}, bassDb{}, ducking{}; int osMode{}; bool splitMode{};
     double tiltFreq{}, scoopFreq{}, bassFreq{}, airFreq{};
+    // Imaging additions
+    double xoverLoHz{};       // 40..400
+    double xoverHiHz{};       // 800..6000
+    double widthLo{};         // 0..2
+    double widthMid{};        // 0..2
+    double widthHi{};         // 0..2
+    double rotationDeg{};     // -45..+45
+    double asymmetry{};       // -1..+1
+    double shufflerLoPct{};   // 0..200
+    double shufflerHiPct{};   // 0..200
+    double shufflerXoverHz{}; // 150..2000
+    int    monoSlopeDbOct{};  // 6/12/24
+    bool   monoAudition{};    // 0/1
 };
 
 // ===============================
@@ -138,6 +171,8 @@ public:
 
     // Optional: waveform display / metering callback (not required by DSP)
     std::function<void(double, double)> onAudioSample;
+    // Meters
+    float getCorrelation() const { return meterCorrelation.load(); }
 
 private:
     // APVTS listener
@@ -164,5 +199,7 @@ private:
 
     // Misc
     double currentSR { 48000.0 };
+    // Metering
+    std::atomic<float> meterCorrelation { 0.0f };
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)
 };

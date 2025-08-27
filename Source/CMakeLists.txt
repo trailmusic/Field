@@ -12,8 +12,8 @@ set(SRC
 )
 
 juce_add_plugin(Field
-    COMPANY_NAME "Yucca Tree"
-    BUNDLE_ID com.yuccatree.field
+    COMPANY_NAME "Trail"
+    BUNDLE_ID com.trail.field
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE
     NEEDS_MIDI_OUTPUT FALSE
