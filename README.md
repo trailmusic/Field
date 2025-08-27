@@ -190,6 +190,23 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
 * Vector **icon language** (20+ icons): Lock/Save/Power/Options, Pan/Space/Width/Tilt, HP/LP/Drive/Mix/Air, Link/Stereo/Split/Fullscreen, Help.
 * Centered value labels below knobs; responsive scaling (≈50–200%); fullscreen toggle.
 
+### Layout Tokens (Source/Layout.h)
+
+All layout metrics and sizes are centralized in `Source/Layout.h`. Use these exclusively; avoid magic numbers in `resized()` and `paint()`.
+
+- Spacing: `Layout::PAD`, `PAD_S`, `PAD_L`, `GAP`, `GAP_S`, `GAP_L`
+- Corners/lines: `RADIUS_S`, `RADIUS`, `RADIUS_L`, `DIVIDER_THICK`
+- Breakpoints: `BP_WIDE`, `BP_NARROW`
+- Knobs: `Layout::Knob::{S, M, L, XL}` with `Layout::knobPx()` and helper `Layout::sizeKnob()`
+- Header: `HEADER_H`, `HEADER_ROW_H`, `HEADER_PRESET_W`, `HEADER_SPLIT_W`
+- XY/meters: `XY_MIN_H`, `METERS_W`, `CORR_METER_H`
+- Rows/labels: `ROW_SPACER_H`, `LABEL_BAND_TOP`, `LABEL_BAND_EXTRA`
+- Micros: `MICRO_W`, `MICRO_H` with `Layout::sizeMicro()`
+- Special: `ALGO_SWITCH_W`
+- Combo/Menu: `Layout::Combo::{H, W_MIN, PRESET_W}`, `Layout::Menu::{ITEM_H, SEP_PAD, CORNER_R}`
+
+DP helper: `Layout::dp(px, scale)`; always scale sizes with the editor `scaleFactor`.
+
 ---
 
 ## Preset System

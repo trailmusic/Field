@@ -4,7 +4,7 @@
 
 - **Single sources of truth**
   - **Theme/colors**: only from `FieldLNF::theme` (e.g., `theme.panel`, `theme.text`, `theme.accent`, `theme.hl`, `theme.sh`, `theme.shadowDark`, `theme.shadowLight`). No raw hex colours in components.
-  - **Layout metrics**: only from `Layout::*` and `Layout::dp(px, scaleFactor)`. No magic numbers in `resized()` or `paint()`.
+  - **Layout metrics**: only from tokens in `Source/Layout.h` (`Layout::*` and `Layout::Knob`, `Layout::knobPx`, helpers like `sizeKnob/sizeMicro`) and `Layout::dp(px, scaleFactor)`. No magic numbers in `resized()` or `paint()`.
   - **Angles & mapping**: use the control’s own parameters (e.g., `slider.getRotaryParameters()` or `valueToProportionOfLength`). Do not hardcode π spans.
 - **Sizing only in `resized()`**
   - Never call `setBounds`/`setSize` in constructors (except the top-level editor’s initial `setSize`).
@@ -38,10 +38,10 @@
 
 - **Scale-aware**
   - All pixel values pass through `Layout::dp(px, scaleFactor)`.
-  - Define rhythm in `Layout`: `PAD`, `GAP`, `KNOB`, `KNOB_L`, `MICRO_W/H`, breakpoints (`BP_WIDE`, etc.).
+  - Define rhythm in `Layout` (see `Source/Layout.h`): `PAD`, `GAP`, knob sizes via `Layout::Knob::{S,M,L,XL}`, micro sizes, and breakpoints.
 - **Where layout happens**
   - The editor owns grid/flow; containers arrange their children only (no sibling knowledge).
-  - Use `juce::Grid` for rows/columns; don’t manually sprinkle `setBounds` everywhere.
+  - Use `juce::Grid` for rows/columns; don’t manually sprinkle `setBounds` everywhere. Use layout tokens to size items prior to `performLayout()`.
 - **Breakpoints**
   - Use `getWidth()` vs `Layout::BP_WIDE` to switch grid templates (e.g., collapse “split pan” when narrow).
 

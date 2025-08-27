@@ -1,23 +1,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "Layout.h"
 
 //==============================================================
-// Layout helpers (kept from original)
-namespace Layout {
-    inline int dp (float px, float scale) { return juce::roundToInt (px * scale); }
-
-    constexpr int PAD   = 12;
-    constexpr int GAP   = 10;
-
-    constexpr int KNOB       = 70;
-    constexpr int KNOB_PAN   = 150;
-    constexpr int KNOB_SPACE = 100;
-
-    constexpr int MICRO_W = 60;
-    constexpr int MICRO_H = 20;
-
-    constexpr int BP_WIDE = 1200;
-}
 
 //==============================================================
 // ToggleSwitch (compact, slow animation, keeps original visual)
@@ -814,19 +799,36 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         repaint();
     };
 
-    // Full screen (simple maximize/restore)
+    // Full screen (top-level window kiosk toggle; restore original bounds)
     addAndMakeVisible (fullScreenButton);
     fullScreenButton.onClick = [this]
     {
-        const bool on = !fullScreenButton.getToggleState();
-        fullScreenButton.setToggleState (on, juce::dontSendNotification);
-        if (!on) { setSize (savedBounds.getWidth(), savedBounds.getHeight()); }
-        else
+        const bool on = fullScreenButton.getToggleState();
+
+        if (auto* tlw = getTopLevelComponent())
         {
-            savedBounds = getBounds();
-            auto& disp = juce::Desktop::getInstance().getDisplays().getMainDisplay();
-            setSize (disp.totalArea.getWidth(), disp.totalArea.getHeight());
+            if (auto* rw = dynamic_cast<juce::ResizableWindow*>(tlw))
+            {
+                if (on)
+                {
+                    // Save current window bounds to restore later
+                    savedBounds = rw->getBounds();
+                    rw->setFullScreen (true);
+                }
+                else
+                {
+                    rw->setFullScreen (false);
+                    if (!savedBounds.isEmpty())
+                        rw->setBounds (savedBounds);
+                }
+                return;
+            }
         }
+
+        // Fallback: if no top-level resizable window is accessible, do nothing to avoid bad states
+        // Reset the toggle to off if we couldn't enter fullscreen safely
+        if (on)
+            fullScreenButton.setToggleState (false, juce::dontSendNotification);
     };
 
     // Link + Snap
@@ -1388,8 +1390,8 @@ void MyPluginAudioProcessorEditor::resized()
     {
         auto bottom = r;
 
-        const int knobTop    = Layout::dp (Layout::KNOB, s);
-        const int knobBottom = Layout::dp (Layout::KNOB, s) + Layout::dp (20, s);
+        const int knobTop    = Layout::dp ((float) Layout::knobPx (Layout::Knob::M), s);
+        const int knobBottom = Layout::dp ((float) Layout::knobPx (Layout::Knob::M), s) + Layout::dp (Layout::LABEL_BAND_EXTRA, s);
         const int gap        = Layout::dp (Layout::GAP, s);
         const int eqGap      = juce::jmax (1, gap / 3);
 
@@ -1432,9 +1434,9 @@ void MyPluginAudioProcessorEditor::resized()
         auto setTop    = [&](juce::Component& c){ c.setBounds (0, 0, knobTop,    knobTop); };
         auto setBottom = [&](juce::Component& c){ c.setBounds (0, 0, knobBottom, knobBottom); };
 
-        panKnob.setBounds (0, 0, Layout::dp (Layout::KNOB_PAN, s), Layout::dp (Layout::KNOB_PAN, s));
+        panKnob.setBounds (0, 0, Layout::dp ((float) Layout::knobPx (Layout::Knob::XL), s), Layout::dp ((float) Layout::knobPx (Layout::Knob::XL), s));
         setTop (spaceKnob);
-        spaceAlgorithmSwitch.setBounds (0, 0, Layout::dp (56, s), knobTop);
+        spaceAlgorithmSwitch.setBounds (0, 0, Layout::dp (Layout::ALGO_SWITCH_W, s), knobTop);
         setTop (gain); setTop (satDrive); setTop (satMix); setTop (width); setTop (duckingKnob);
 
         setBottom (bass); setBottom (air); setBottom (tilt); setBottom (scoop);
