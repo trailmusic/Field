@@ -207,6 +207,14 @@ All layout metrics and sizes are centralized in `Source/Layout.h`. Use these exc
 
 DP helper: `Layout::dp(px, scale)`; always scale sizes with the editor `scaleFactor`.
 
+### Fullscreen Behavior
+
+- The header fullscreen button toggles the top-level window via JUCE’s `ResizableWindow::setFullScreen(true/false)`.
+- On enter: the current window bounds are saved; the window expands to fill the display.
+- On exit: fullscreen is turned off and the original bounds are restored exactly.
+- Safety: if the host/DAW does not allow fullscreen, the toggle is cancelled to avoid bad states.
+- Scope: intended primarily for the Standalone build. In plugin hosts, behavior depends on the host’s windowing rules.
+
 ---
 
 ## Preset System
