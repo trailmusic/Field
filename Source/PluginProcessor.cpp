@@ -538,7 +538,10 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     shuffLP_L.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
     shuffLP_R.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
     depthLPF.setType (juce::dsp::StateVariableTPTFilterType::lowpass);
-    depthLPF.setCutoffFrequency ((Sample) 20000);
+    {
+        const Sample nyq = (Sample) (sr * 0.49);
+        depthLPF.setCutoffFrequency (juce::jlimit ((Sample) 20, nyq, (Sample) 20000));
+    }
     depthLPF.setResonance ((Sample) 0.707);
 
     if constexpr (std::is_same_v<Sample, double>)
@@ -697,8 +700,9 @@ void FieldChain<Sample>::applyHP_LP (Block block, Sample hpHz, Sample lpHz)
     if (hpHz <= (Sample)20 && lpHz >= (Sample)20000)
         return;
 
-    hpHz = juce::jlimit ((Sample)20,  (Sample)1000,  hpHz);
-    lpHz = juce::jlimit ((Sample)1000,(Sample)20000, lpHz);
+    const Sample nyq = (Sample) (sr * 0.49);
+    hpHz = juce::jlimit ((Sample) 20,  juce::jmin ((Sample) 1000, nyq),  hpHz);
+    lpHz = juce::jlimit ((Sample) 1000, juce::jmin ((Sample) 20000, nyq), lpHz);
     hpFilter.setCutoffFrequency (hpHz);
     lpFilter.setCutoffFrequency (lpHz);
     CtxRep ctx (block);
@@ -711,8 +715,9 @@ void FieldChain<Sample>::updateTiltEQ (Sample tiltDb, Sample pivotHz)
 {
     const double fs = sr;
     // Map pivot to complementary shelves
+    const double nyq = fs * 0.49;
     const double lowFc  = juce::jlimit (50.0,  1000.0, (double) pivotHz * 0.30);
-    const double highFc = juce::jlimit (1500.0, 20000.0, (double) pivotHz * 12.0);
+    const double highFc = juce::jlimit (1500.0, juce::jmin (20000.0, nyq), (double) pivotHz * 12.0);
     const Sample lowGain  = (Sample) juce::Decibels::decibelsToGain ( juce::jlimit (-12.0, 12.0, (double) tiltDb));
     const Sample highGain = (Sample) juce::Decibels::decibelsToGain (-juce::jlimit (-12.0, 12.0, (double) tiltDb));
 
@@ -735,6 +740,8 @@ template <typename Sample>
 void FieldChain<Sample>::applyScoopEQ (Block block, Sample scoopDb, Sample scoopFreq)
 {
     if (std::abs ((double) scoopDb) < 0.1) return;
+    const Sample nyq = (Sample) (sr * 0.49);
+    scoopFreq = juce::jlimit ((Sample) 20, nyq, scoopFreq);
     auto coef = juce::dsp::IIR::Coefficients<Sample>::makePeakFilter (sr, scoopFreq, (Sample)1.0, (Sample) juce::Decibels::decibelsToGain ((double) scoopDb));
     scoopFilter.coefficients = coef;
     CtxRep ctx (block); scoopFilter.process (ctx);
@@ -744,6 +751,8 @@ template <typename Sample>
 void FieldChain<Sample>::applyBassShelf (Block block, Sample bassDb, Sample bassFreq)
 {
     if (std::abs ((double) bassDb) < 0.1) return;
+    const Sample nyq = (Sample) (sr * 0.49);
+    bassFreq = juce::jlimit ((Sample) 20, nyq, bassFreq);
     auto coef = juce::dsp::IIR::Coefficients<Sample>::makeLowShelf (sr, bassFreq, (Sample)0.7, (Sample) juce::Decibels::decibelsToGain ((double) bassDb));
     bassFilter.coefficients = coef; CtxRep ctx (block); bassFilter.process (ctx);
 }
@@ -752,6 +761,8 @@ template <typename Sample>
 void FieldChain<Sample>::applyAirBand (Block block, Sample airDb, Sample airFreq)
 {
     if (airDb <= (Sample)0.05) return; // positive-only air
+    const Sample nyq = (Sample) (sr * 0.49);
+    airFreq = juce::jlimit ((Sample) 1000, nyq, airFreq);
     auto coef = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf (sr, airFreq, (Sample)0.3, (Sample) juce::Decibels::decibelsToGain ((double) airDb));
     airFilter.coefficients = coef; CtxRep ctx (block); airFilter.process (ctx);
 }
@@ -785,8 +796,10 @@ void FieldChain<Sample>::applyThreeBandWidth (Block block,
                                               Sample wLo, Sample wMid, Sample wHi)
 {
     if (block.getNumChannels() < 2) return;
+    const Sample nyq = (Sample) (sr * 0.49);
     loHz = juce::jlimit ((Sample)40,  (Sample)400,  loHz);
-    hiHz = juce::jlimit ((Sample)800, (Sample)6000, hiHz);
+    hiHz = juce::jlimit ((Sample)800, juce::jmin ((Sample)6000, nyq), hiHz);
+    if (hiHz <= loHz) hiHz = juce::jlimit ((Sample) (loHz + (Sample) 10), juce::jmin ((Sample)6000, nyq), (Sample) (loHz + (Sample) 10));
     wLo  = juce::jlimit ((Sample)0, (Sample)2, wLo);
     wMid = juce::jlimit ((Sample)0, (Sample)2, wMid);
     wHi  = juce::jlimit ((Sample)0, (Sample)2, wHi);
@@ -861,7 +874,8 @@ template <typename Sample>
 void FieldChain<Sample>::applyShufflerWidth (Block block, Sample xoverHz, Sample wLow, Sample wHigh)
 {
     if (block.getNumChannels() < 2) return;
-    xoverHz = juce::jlimit ((Sample)150, (Sample)2000, xoverHz);
+    const Sample nyq = (Sample) (sr * 0.49);
+    xoverHz = juce::jlimit ((Sample)150, juce::jmin ((Sample)2000, nyq), xoverHz);
     shuffLP_L.setCutoffFrequency (xoverHz);
     shuffLP_R.setCutoffFrequency (xoverHz);
 
@@ -942,7 +956,8 @@ void FieldChain<Sample>::applyMonoMaker (Block block, Sample monoHz)
     if (block.getNumChannels() < 2) return;
     if (monoHz <= (Sample)0) return;
 
-    monoHz = juce::jlimit ((Sample)20, (Sample)300, monoHz);
+    const Sample nyq = (Sample) (sr * 0.49);
+    monoHz = juce::jlimit ((Sample)20, juce::jmin ((Sample)300, nyq), monoHz);
     lowSplitL.setCutoffFrequency (monoHz);
     lowSplitR.setCutoffFrequency (monoHz);
 
@@ -1077,8 +1092,7 @@ void FieldChain<Sample>::applySaturation (Block block, Sample driveLin, Sample m
     }
 }
 
-// removed legacy instantaneous ducking (replaced by look-ahead ducker)
-
+ 
 // Space algorithms (simplified, parallel reverb + light tone)
 
 template <typename Sample>
@@ -1094,9 +1108,13 @@ void FieldChain<Sample>::applySpaceAlgorithm (Block block, Sample depth01, int a
         const Sample lowShelfDb = (Sample) juce::jmap ((double) depth01, 0.0, 1.0, 0.0,  2.0);
 
         // Low shelf -> mid cut -> high shelf
-        auto lowC  = juce::dsp::IIR::Coefficients<Sample>::makeLowShelf  (sr, 120.0, (Sample)0.8, (Sample) juce::Decibels::decibelsToGain ((double) lowShelfDb));
-        auto midC  = juce::dsp::IIR::Coefficients<Sample>::makePeakFilter (sr, 350.0, (Sample)0.8, (Sample) juce::Decibels::decibelsToGain ((double) midCutDb));
-        auto highC = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf (sr, 6000.0,(Sample)0.7, (Sample) juce::Decibels::decibelsToGain ((double) highShelf));
+        const double nyq = sr * 0.49;
+        const double fLow  = juce::jlimit (20.0,  nyq, 120.0);
+        const double fMid  = juce::jlimit (60.0,  nyq, 350.0);
+        const double fHigh = juce::jlimit (1000.0, nyq, 6000.0);
+        auto lowC  = juce::dsp::IIR::Coefficients<Sample>::makeLowShelf  (sr, fLow,  (Sample)0.8, (Sample) juce::Decibels::decibelsToGain ((double) lowShelfDb));
+        auto midC  = juce::dsp::IIR::Coefficients<Sample>::makePeakFilter (sr, fMid,  (Sample)0.8, (Sample) juce::Decibels::decibelsToGain ((double) midCutDb));
+        auto highC = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf (sr, fHigh, (Sample)0.7, (Sample) juce::Decibels::decibelsToGain ((double) highShelf));
         juce::dsp::IIR::Filter<Sample> fL, fM, fH;
         fL.prepare ({ sr, (juce::uint32) block.getNumSamples(), (juce::uint32) block.getNumChannels() });
         fM.prepare ({ sr, (juce::uint32) block.getNumSamples(), (juce::uint32) block.getNumChannels() });

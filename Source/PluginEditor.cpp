@@ -733,6 +733,8 @@ void XYPad::drawBalls (juce::Graphics& g, juce::Rectangle<float> b)
 MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcessor& p)
 : AudioProcessorEditor (&p), proc (p)
 {
+    // Build knob cells once after all sliders/labels are created
+    buildCells();
     // Calculate minimum size based on layout requirements
     const float s = 1.0f;
     const int lPx  = Layout::dp ((float) Layout::knobPx (Layout::Knob::L),  s);
@@ -1013,8 +1015,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     addAndMakeVisible (spaceKnobContainer);    spaceKnobContainer.setTitle (""); spaceKnobContainer.setShowBorder (true);
     addAndMakeVisible (volumeContainer);       volumeContainer.setTitle ("");   volumeContainer.setShowBorder (true);
     addAndMakeVisible (delayContainer);        delayContainer.setTitle ("");     delayContainer.setShowBorder (true);
-    addAndMakeVisible (eqContainer);           eqContainer.setTitle ("");           eqContainer.setShowBorder (true);
-    addAndMakeVisible (imageContainer);        imageContainer.setTitle ("");     imageContainer.setShowBorder (true);
+    // Row containers for EQ/Image are no longer used
     addAndMakeVisible (metersContainer);       metersContainer.setTitle ("");         metersContainer.setShowBorder (true);
 
     // Width group (image row, bottom-right): invisible container + placeholder slots for spanning grid
@@ -1281,11 +1282,17 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     sliderValueChanged (&gain);
 
     // Mono Maker slope & audition controls
-    // Hide legacy dropdown; replaced by switch UI below
+    // Keep legacy ComboBox hidden for APVTS attachment; drive it from switch
     addChildComponent (monoSlopeChoice);
     monoSlopeChoice.addItem ("6",  1);
     monoSlopeChoice.addItem ("12", 2);
     monoSlopeChoice.addItem ("24", 3);
+    if (!monoSlopeSwitch)
+        monoSlopeSwitch = std::make_unique<MonoSlopeSwitch>();
+    monoSlopeSwitch->onChange = [this](int idx)
+    {
+        monoSlopeChoice.setSelectedItemIndex (juce::jlimit (0, 2, idx), juce::NotificationType::sendNotification);
+    };
     addAndMakeVisible (monoAuditionButton);
     monoAuditionButton.setButtonText ("AUD");
 
@@ -1308,7 +1315,11 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     {
         const int maxIdx = juce::jmax (0, c->choices.size() - 1);
         const int idx = juce::jlimit (0, maxIdx, (int) c->getIndex());
+        spaceAlgorithmSwitch.setOrientation (SpaceAlgorithmSwitch::Orientation::Vertical);
+        spaceAlgorithmSwitch.setSpacing (4.0f);
         spaceAlgorithmSwitch.setAlgorithmFromParameter (idx);
+        currentAlgorithm = idx;
+        pad.setSpaceAlgorithm (idx);
     }
     spaceAlgorithmSwitch.onAlgorithmChange = [this](int a)
     {
@@ -1318,6 +1329,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
             const int idx = juce::jlimit (0, maxIdx, a);
             const float norm = c->convertTo0to1 ((float) idx);
             c->beginChangeGesture(); c->setValueNotifyingHost (norm); c->endChangeGesture();
+            currentAlgorithm = idx;
+            pad.setSpaceAlgorithm (idx);
         }
     };
 
@@ -1474,9 +1487,61 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     monoGroupContainer.setTitle ("");
     monoGroupContainer.setShowBorder (true);
     // Reverb group container
-    addAndMakeVisible (reverbGroupContainer);
-    reverbGroupContainer.setTitle ("");
-    reverbGroupContainer.setShowBorder (true);
+    // Reverb row container no longer used; layout directly
+    resized();
+}
+
+void MyPluginAudioProcessorEditor::buildCells()
+{
+    // Row 1
+    if (!widthCell)   widthCell   = std::make_unique<KnobCell>(width,    widthValue,    "WIDTH");
+    if (!widthLoCell) widthLoCell = std::make_unique<KnobCell>(widthLo,  widthLoValue,  "W LO");
+    if (!widthMidCell)widthMidCell= std::make_unique<KnobCell>(widthMid, widthMidValue, "W MID");
+    if (!widthHiCell) widthHiCell = std::make_unique<KnobCell>(widthHi,  widthHiValue,  "W HI");
+    if (!gainCell)    gainCell    = std::make_unique<KnobCell>(gain,     gainValue,     "GAIN");
+    if (!satDriveCell)satDriveCell= std::make_unique<KnobCell>(satDrive, satDriveValue, "DRIVE");
+    if (!satMixCell)  satMixCell  = std::make_unique<KnobCell>(satMix,   satMixValue,   "MIX");
+    if (!monoCell)    monoCell    = std::make_unique<KnobCell>(monoHz,   monoValue,     "MONO");
+    if (!spaceCell)    spaceCell    = std::make_unique<KnobCell>(spaceKnob,    spaceValue,    "REVERB");
+    if (!duckCell)     duckCell     = std::make_unique<KnobCell>(duckingKnob,  duckingValue,  "DUCK");
+    if (!duckAttCell)  duckAttCell  = std::make_unique<KnobCell>(duckAttack,   duckAttackValue,   "ATT");
+    if (!duckRelCell)  duckRelCell  = std::make_unique<KnobCell>(duckRelease,  duckReleaseValue,  "REL");
+    if (!duckThrCell)  duckThrCell  = std::make_unique<KnobCell>(duckThreshold,duckThresholdValue,"THR");
+    if (!duckRatCell)  duckRatCell  = std::make_unique<KnobCell>(duckRatio,    duckRatioValue,    "RAT");
+
+    if (!bassCell)     bassCell     = std::make_unique<KnobCell>(bass,  bassValue,  "BASS");
+    if (!airCell)      airCell      = std::make_unique<KnobCell>(air,   airValue,   "AIR");
+    if (!tiltCell)     tiltCell     = std::make_unique<KnobCell>(tilt,  tiltValue,  "TILT");
+    if (!scoopCell)    scoopCell    = std::make_unique<KnobCell>(scoop, scoopValue, "SCOOP");
+    if (!hpCell)       hpCell       = std::make_unique<KnobCell>(hpHz,  hpValue,    "HP Hz");
+    if (!lpCell)       lpCell       = std::make_unique<KnobCell>(lpHz,  lpValue,    "LP Hz");
+
+    if (!xoverLoCell)  xoverLoCell  = std::make_unique<KnobCell>(xoverLoHz, xoverLoValue, "XO LO");
+    if (!xoverHiCell)  xoverHiCell  = std::make_unique<KnobCell>(xoverHiHz, xoverHiValue, "XO HI");
+    if (!rotationCell) rotationCell = std::make_unique<KnobCell>(rotationDeg, rotationValue, "ROT");
+    if (!asymCell)     asymCell     = std::make_unique<KnobCell>(asymmetry,   asymValue,     "ASYM");
+    if (!shufLoCell)   shufLoCell   = std::make_unique<KnobCell>(shufLoPct,   shufLoValue,   "SHUF LO");
+    if (!shufHiCell)   shufHiCell   = std::make_unique<KnobCell>(shufHiPct,   shufHiValue,   "SHUF HI");
+    if (!shufXCell)    shufXCell    = std::make_unique<KnobCell>(shufXHz,     shufXValue,    "SHUF XO");
+
+    if (!delayTimeCell)      delayTimeCell       = std::make_unique<KnobCell>(delayTime,      delayTimeValue,      "TIME");
+    if (!delayFeedbackCell)  delayFeedbackCell   = std::make_unique<KnobCell>(delayFeedback,  delayFeedbackValue,  "FB");
+    if (!delayWetCell)       delayWetCell        = std::make_unique<KnobCell>(delayWet,       delayWetValue,       "WET");
+    if (!delaySpreadCell)    delaySpreadCell     = std::make_unique<KnobCell>(delaySpread,    delaySpreadValue,    "SPREAD");
+    if (!delayWidthCell)     delayWidthCell      = std::make_unique<KnobCell>(delayWidth,     delayWidthValue,     "WIDTH");
+    if (!delayModRateCell)   delayModRateCell    = std::make_unique<KnobCell>(delayModRate,   delayModRateValue,   "MOD RATE");
+    if (!delayModDepthCell)  delayModDepthCell   = std::make_unique<KnobCell>(delayModDepth,  delayModDepthValue,  "MOD DEPTH");
+    if (!delayWowflutterCell)delayWowflutterCell = std::make_unique<KnobCell>(delayWowflutter,delayWowflutterValue,"WOW");
+    if (!delayJitterCell)    delayJitterCell     = std::make_unique<KnobCell>(delayJitter,    delayJitterValue,    "JITTER");
+    if (!delayHpCell)        delayHpCell         = std::make_unique<KnobCell>(delayHp,        delayHpValue,        "HP");
+    if (!delayLpCell)        delayLpCell         = std::make_unique<KnobCell>(delayLp,        delayLpValue,        "LP");
+    if (!delayTiltCell)      delayTiltCell       = std::make_unique<KnobCell>(delayTilt,      delayTiltValue,      "TILT");
+    if (!delaySatCell)       delaySatCell        = std::make_unique<KnobCell>(delaySat,       delaySatValue,       "SAT");
+    if (!delayDiffusionCell) delayDiffusionCell  = std::make_unique<KnobCell>(delayDiffusion, delayDiffusionValue, "DIFF");
+    if (!delayDiffuseSizeCell)delayDiffuseSizeCell= std::make_unique<KnobCell>(delayDiffuseSize, delayDiffuseSizeValue, "SIZE");
+    if (!delayDuckDepthCell) delayDuckDepthCell  = std::make_unique<KnobCell>(delayDuckDepth, delayDuckDepthValue, "DUCK DEPTH");
+    if (!delayDuckAttackCell)delayDuckAttackCell = std::make_unique<KnobCell>(delayDuckAttack,delayDuckAttackValue,"DUCK ATT");
+    if (!delayDuckReleaseCell)delayDuckReleaseCell=std::make_unique<KnobCell>(delayDuckRelease,delayDuckReleaseValue,"DUCK REL");
 }
 
 MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
@@ -1552,6 +1617,25 @@ void MyPluginAudioProcessorEditor::performLayout()
 {
     const float s = juce::jmax (0.6f, scaleFactor);
     auto r = getLocalBounds().reduced (Layout::dp (Layout::PAD, s)).withTrimmedBottom (50);
+    
+
+    // Ensure value labels are positioned in the same parent coordinate space
+    // as their corresponding controls, directly below the control.
+    auto placeLabelBelow = [&] (juce::Label& label, juce::Component& target, int yOffset)
+    {
+        if (auto* parent = target.getParentComponent())
+        {
+            if (label.getParentComponent() != parent)
+            {
+                if (auto* oldParent = label.getParentComponent())
+                    oldParent->removeChildComponent (&label);
+                parent->addAndMakeVisible (label);
+            }
+            auto b = target.getBounds();
+            label.setBounds (b.withY (b.getBottom() + yOffset));
+            label.toFront (false);
+        }
+    };
 
     // 1) wood bar controls (reduced height)
     auto woodBar = r.removeFromTop (Layout::dp (50, s));
@@ -1663,22 +1747,20 @@ void MyPluginAudioProcessorEditor::performLayout()
         lrMeters.setBounds (mB);
     }
 
-    r.removeFromTop (Layout::dp (Layout::GAP, s));
-
-    // --- ROWS (spec) with delay card on right side ------------------------------------------------------------
-    r.removeFromTop (Layout::dp (Layout::GAP, s));
+    // Remove vertical gaps between rows
 
     const int lPx       = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
     const int gapI      = Layout::dp (Layout::GAP_S, s);
     const int labelBand = Layout::dp (Layout::LABEL_BAND_EXTRA, s);
-    const int microH    = Layout::dp (18, s);
+    // microH no longer used (minis integrated into cells)
 
     // Container height calculation: knob height + label band + extra padding for labels
     const int containerHeight = lPx + labelBand + Layout::dp (Layout::LABEL_BAND_EXTRA, s);
-    
+
+    // All rows same height, no extra spacing between rows
     const int rowH1 = containerHeight;                // Row 1
     const int rowH2 = containerHeight;                // Row 2
-    const int rowH3 = containerHeight + microH + gapI;   // Row 3 (knobs + minis)
+    const int rowH3 = containerHeight;                // Row 3
     const int rowH4 = containerHeight;                // Row 4
 
     // Reserve space for delay card on the right side (use full available height across all rows)
@@ -1692,17 +1774,19 @@ void MyPluginAudioProcessorEditor::performLayout()
     auto row3 = r.removeFromTop (rowH3);
     auto row4 = r.removeFromTop (rowH4);
 
-    // ---------------- Row 1: Pan, MONO group, Width, Gain, Drive, Mix -----------
+    // ---------------- Row 1: Pan, MONO cell, Width cells, Gain, Drive, Mix -----------
     {
         auto row = row1;
 
         juce::Grid g;
         g.rowGap    = juce::Grid::Px (gapI);
         g.columnGap = juce::Grid::Px (gapI);
-        g.templateRows    = { juce::Grid::Px (lPx) };
+        const int valuePx = Layout::dp (14, s);
+        const int gapPx   = Layout::dp (0,  s);
+        const int labelGap = Layout::dp (4, s);
+        g.templateRows    = { juce::Grid::Px (lPx + gapPx + valuePx) };
         g.templateColumns = {
-            juce::Grid::Px (lPx),                       // Pan
-            juce::Grid::Px (lPx + Layout::dp (70, s)),  // Mono group (knob + mini ctrls)
+            juce::Grid::Px (lPx * 3 + gapPx * 2),       // Pan (triple wide)
             juce::Grid::Px (lPx),                       // Width
             juce::Grid::Px (lPx),                       // W LO
             juce::Grid::Px (lPx),                       // W MID
@@ -1713,174 +1797,168 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::Grid::Fr (1)                          // stretchy pad
         };
 
-        auto& panComp = pad.getSplitMode()
-            ? static_cast<juce::Component&>(panSplitContainer)
-            : static_cast<juce::Component&>(panKnob);
-        panComp.setVisible (true);
+        if (!panCell)
+            panCell = std::make_unique<KnobCell>(panKnob, panValue, "");
 
-        // Make sure these are visible for row 1
-        gain.setVisible (true);
-        satDrive.setVisible (true);
-        satMix.setVisible (true);
-        monoGroupContainer.setVisible (true);
-        // Width knobs visible in main editor (no custom sub-layout)
-        width.setVisible (true);
-        widthLo.setVisible (true);
-        widthMid.setVisible (true);
-        widthHi.setVisible (true);
+        panCell   ->setMetrics (lPx, valuePx, labelGap);
+        monoCell   ->setMetrics (lPx, valuePx, labelGap, Layout::dp (24, s));
+        widthCell  ->setMetrics (lPx, valuePx, labelGap);
+        widthLoCell->setMetrics (lPx, valuePx, labelGap);
+        widthMidCell->setMetrics (lPx, valuePx, labelGap);
+        widthHiCell->setMetrics (lPx, valuePx, labelGap);
+        gainCell   ->setMetrics (lPx, valuePx, labelGap);
+        satDriveCell->setMetrics (lPx, valuePx, labelGap);
+        satMixCell ->setMetrics (lPx, valuePx, labelGap);
+
+        addAndMakeVisible (*panCell);
+        addAndMakeVisible (*widthCell);
+        addAndMakeVisible (*widthLoCell);
+        addAndMakeVisible (*widthMidCell);
+        addAndMakeVisible (*widthHiCell);
+        addAndMakeVisible (*gainCell);
+        addAndMakeVisible (*satDriveCell);
+        addAndMakeVisible (*satMixCell);
 
         g.items = {
-            juce::GridItem (panComp)           .withWidth (lPx).withHeight (containerHeight),
-            juce::GridItem (monoGroupContainer).withWidth (lPx + Layout::dp (70, s)).withHeight (containerHeight),
-            juce::GridItem (width)             .withWidth (lPx).withHeight (containerHeight),
-            juce::GridItem (widthLo)           .withWidth (lPx).withHeight (containerHeight),
-            juce::GridItem (widthMid)          .withWidth (lPx).withHeight (containerHeight),
-            juce::GridItem (widthHi)           .withWidth (lPx).withHeight (containerHeight),
-            juce::GridItem (gain)              .withWidth (lPx).withHeight (containerHeight),
-            juce::GridItem (satDrive)          .withWidth (lPx).withHeight (containerHeight),
-            juce::GridItem (satMix)            .withWidth (lPx).withHeight (containerHeight)
+            juce::GridItem (*panCell)          .withWidth (lPx * 3 + gapPx * 2).withHeight (containerHeight),
+            juce::GridItem (*widthCell)        .withWidth (lPx).withHeight (containerHeight),
+            juce::GridItem (*widthLoCell)      .withWidth (lPx).withHeight (containerHeight),
+            juce::GridItem (*widthMidCell)     .withWidth (lPx).withHeight (containerHeight),
+            juce::GridItem (*widthHiCell)      .withWidth (lPx).withHeight (containerHeight),
+            juce::GridItem (*gainCell)         .withWidth (lPx).withHeight (containerHeight),
+            juce::GridItem (*satDriveCell)     .withWidth (lPx).withHeight (containerHeight),
+            juce::GridItem (*satMixCell)       .withWidth (lPx).withHeight (containerHeight)
         };
         g.performLayout (row);
 
-        // --- Mono sub-layout: [ Mono knob ] + [ slope, AUD ] --------------------
-        {
-            // Make sure components are children of the monoGroupContainer
-            // First remove from main editor if they're there
-            if (monoHz.getParentComponent() == this) removeChildComponent (&monoHz);
-            if (monoSlopeChoice.getParentComponent() == this) removeChildComponent (&monoSlopeChoice);
-            if (monoAuditionButton.getParentComponent() == this) removeChildComponent (&monoAuditionButton);
-            
-            // Then add to monoGroupContainer
-            monoGroupContainer.addAndMakeVisible (monoHz);
-            monoGroupContainer.addAndMakeVisible (monoSlopeChoice);
-            monoGroupContainer.addAndMakeVisible (monoAuditionButton);
-
-            // Add extra padding for labels - reduce less from top/bottom to leave space for labels
-            auto monoB = monoGroupContainer.getLocalBounds().reduced (gapI/2, Layout::dp (Layout::LABEL_BAND_EXTRA/2, s));
-
-            juce::Grid m;
-            m.rowGap    = juce::Grid::Px (gapI/2);
-            m.columnGap = juce::Grid::Px (gapI/2);
-            m.templateRows    = { juce::Grid::Fr (1), juce::Grid::Fr (1) };
-            m.templateColumns = { juce::Grid::Px (lPx), juce::Grid::Px (Layout::dp (70, s)) };
-
-            monoHz.setVisible (true);
-            // show the slope + AUD here (we hid slope combo earlier; turn it back on)
-            monoSlopeChoice.setVisible (true);
-            monoAuditionButton.setVisible (true);
-
-            m.items = {
-                juce::GridItem (monoHz)             .withArea (1,1,3,1), // spans both rows
-                juce::GridItem (monoSlopeChoice)    .withArea (1,2),
-                juce::GridItem (monoAuditionButton) .withArea (2,2)
-            };
-            m.performLayout (monoB);
-
-                    // Ensure components are brought to front within the container
-        monoHz.toFront (false);
-        monoSlopeChoice.toFront (false);
-        monoAuditionButton.toFront (false);
-        
-        // Position value labels below their corresponding knobs
-        monoValue.setBounds (monoHz.getBounds().withY (monoHz.getBottom() + 2));
-    }
-
-        // width knobs now live directly in the row grid, like other items
+        // Managed labels for row 1 cells
+        panCell   ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        panCell   ->setValueLabelGap (labelGap);
+        monoCell  ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        monoCell  ->setValueLabelGap (labelGap);
+        widthCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        widthLoCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        widthMidCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        widthHiCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        gainCell  ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        satDriveCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        satMixCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        widthCell ->setValueLabelGap (labelGap);
+        widthLoCell->setValueLabelGap (labelGap);
+        widthMidCell->setValueLabelGap (labelGap);
+        widthHiCell->setValueLabelGap (labelGap);
+        gainCell  ->setValueLabelGap (labelGap);
+        satDriveCell->setValueLabelGap (labelGap);
+        satMixCell ->setValueLabelGap (labelGap);
     }
 
     // -------------- Row 2: Reverb group (all Reverb + Ducking controls) ----------
     {
         auto row = row2;
-        reverbGroupContainer.setVisible (true);
 
-        juce::Grid g;
-        g.rowGap    = juce::Grid::Px (gapI);
-        g.columnGap = juce::Grid::Px (gapI);
-        g.templateRows    = { juce::Grid::Px (lPx) };
-        g.templateColumns = {
-            juce::Grid::Px (lPx + Layout::dp (70, s) + 5*lPx + 4*gapI),  // Reverb group (knob + switch + all ducking)
-            juce::Grid::Fr (1)                                            // Stretchy pad
-        };
-
-        g.items = {
-            juce::GridItem (reverbGroupContainer).withHeight (containerHeight)
-        };
-        g.performLayout (row);
-
-
-        // Reverb sub-grid: [ Reverb knob ] + [ switch ] + [ DUCK + ATT + REL + THR + RAT ]
-        {
-            // Add extra padding for labels - reduce less from top/bottom to leave space for labels
-            auto rg = reverbGroupContainer.getLocalBounds().reduced (gapI/2, Layout::dp (Layout::LABEL_BAND_EXTRA/2, s));
+        // Reverb sub-grid: [ Reverb cell ] + [ switch ] + [ DUCK + ATT + REL + THR + RAT ]
+         {
+            // Add extra padding horizontally only, within row area
+            auto rg = row.reduced (gapI/2, 0);
             juce::Grid reverbGrid;
             reverbGrid.rowGap    = juce::Grid::Px (gapI/2);
             reverbGrid.columnGap = juce::Grid::Px (gapI/2);
-            reverbGrid.templateRows    = { juce::Grid::Px (lPx) };
+            const int valuePx = Layout::dp (14, s);
+            const int gapPx   = Layout::dp (0,  s);
+            const int switchW = lPx; // vertical column sized like a knob cell
+            reverbGrid.templateRows    = { juce::Grid::Px (lPx + gapPx + valuePx) };
             reverbGrid.templateColumns = { 
-                juce::Grid::Px (lPx),                                    // Reverb knob
-                juce::Grid::Px (Layout::dp (70, s)),                     // Switch
+                juce::Grid::Px (lPx),                                    // Reverb cell
                 juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx),
-                juce::Grid::Px (lPx), juce::Grid::Px (lPx)              // DUCK, ATT, REL, THR, RAT
+                juce::Grid::Px (lPx), juce::Grid::Px (lPx),              // DUCK, ATT, REL, THR, RAT
+                juce::Grid::Px (switchW),                                // Switch
+                juce::Grid::Px (lPx * 3 + gapPx * 2)                     // Mono triple-wide at end
             };
-
-            // Ensure all components are visible and added to the container
-            spaceKnob.setVisible (true);
-            spaceAlgorithmSwitch.setVisible (true);
-            duckingKnob.setVisible (true);
-            duckAttack.setVisible (true);
-            duckRelease.setVisible (true);
-            duckThreshold.setVisible (true);
-            duckRatio.setVisible (true);
-
-            // Make sure components are children of the reverbGroupContainer
-            // First remove from main editor if they're there
+            // Ensure components are parented correctly (cells own knob+value)
             if (spaceKnob.getParentComponent() == this) removeChildComponent (&spaceKnob);
-            if (spaceAlgorithmSwitch.getParentComponent() == this) removeChildComponent (&spaceAlgorithmSwitch);
             if (duckingKnob.getParentComponent() == this) removeChildComponent (&duckingKnob);
             if (duckAttack.getParentComponent() == this) removeChildComponent (&duckAttack);
             if (duckRelease.getParentComponent() == this) removeChildComponent (&duckRelease);
             if (duckThreshold.getParentComponent() == this) removeChildComponent (&duckThreshold);
             if (duckRatio.getParentComponent() == this) removeChildComponent (&duckRatio);
-            
-            // Then add to reverbGroupContainer
-            reverbGroupContainer.addAndMakeVisible (spaceKnob);
-            reverbGroupContainer.addAndMakeVisible (spaceAlgorithmSwitch);
-            reverbGroupContainer.addAndMakeVisible (duckingKnob);
-            reverbGroupContainer.addAndMakeVisible (duckAttack);
-            reverbGroupContainer.addAndMakeVisible (duckRelease);
-            reverbGroupContainer.addAndMakeVisible (duckThreshold);
-            reverbGroupContainer.addAndMakeVisible (duckRatio);
+ 
+            spaceCell  ->setMetrics (lPx, valuePx, gapPx);
+            duckCell   ->setMetrics (lPx, valuePx, gapPx);
+            duckAttCell->setMetrics (lPx, valuePx, gapPx);
+            duckRelCell->setMetrics (lPx, valuePx, gapPx);
+            duckThrCell->setMetrics (lPx, valuePx, gapPx);
+            duckRatCell->setMetrics (lPx, valuePx, gapPx);
 
+            // Mono: triple-wide with slope segmented switch + AUD toggle to the right
+            monoCell   ->setMetrics (lPx, valuePx, gapPx, Layout::dp (24, s));
+            if (!monoSlopeSwitch)
+            {
+                monoSlopeSwitch = std::make_unique<MonoSlopeSwitch>();
+                monoSlopeSwitch->onChange = [this](int idx)
+                {
+                    monoSlopeChoice.setSelectedItemIndex (juce::jlimit (0, 2, idx), juce::NotificationType::sendNotification);
+                };
+            }
+            addAndMakeVisible (*monoSlopeSwitch);
+            monoCell   ->setMiniPlacementRight (true);
+            monoCell   ->setMiniThicknessPx (Layout::dp (12, s));
+            monoCell   ->setAuxComponents ({ monoSlopeSwitch.get(), &monoAuditionButton }, Layout::dp (90, s));
+
+            // Managed labels on reverb row
+            spaceCell   ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            duckCell    ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            duckAttCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            duckRelCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            duckThrCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            duckRatCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            const int rvGap = Layout::dp (6, s);
+            spaceCell   ->setValueLabelGap (rvGap);
+            duckCell    ->setValueLabelGap (rvGap);
+            duckAttCell ->setValueLabelGap (rvGap);
+            duckRelCell ->setValueLabelGap (rvGap);
+            duckThrCell ->setValueLabelGap (rvGap);
+            duckRatCell ->setValueLabelGap (rvGap);
+ 
+            addAndMakeVisible (*spaceCell);
+            addAndMakeVisible (spaceAlgorithmSwitch);
+            addAndMakeVisible (*duckCell);
+            addAndMakeVisible (*duckAttCell);
+            addAndMakeVisible (*duckRelCell);
+            addAndMakeVisible (*duckThrCell);
+            addAndMakeVisible (*duckRatCell);
+            addAndMakeVisible (*monoCell);
+ 
             reverbGrid.items = {
-                juce::GridItem (spaceKnob),
+                juce::GridItem (*spaceCell),
+                juce::GridItem (*duckCell),
+                juce::GridItem (*duckAttCell),
+                juce::GridItem (*duckRelCell),
+                juce::GridItem (*duckThrCell),
+                juce::GridItem (*duckRatCell),
                 juce::GridItem (spaceAlgorithmSwitch)
                     .withAlignSelf (juce::GridItem::AlignSelf::center)
                     .withJustifySelf (juce::GridItem::JustifySelf::center),
-                juce::GridItem (duckingKnob),
-                juce::GridItem (duckAttack),
-                juce::GridItem (duckRelease),
-                juce::GridItem (duckThreshold),
-                juce::GridItem (duckRatio)
+                juce::GridItem (*monoCell)
+                    .withWidth (lPx * 3 + gapPx * 2)
             };
             reverbGrid.performLayout (rg);
-
+ 
             // Ensure components are brought to front within the container
-            spaceKnob.toFront (false);
+            spaceCell->toFront (false);
             spaceAlgorithmSwitch.toFront (false);
-            duckingKnob.toFront (false);
-            duckAttack.toFront (false);
-            duckRelease.toFront (false);
-            duckThreshold.toFront (false);
-            duckRatio.toFront (false);
+            duckCell->toFront (false);
+            duckAttCell->toFront (false);
+            duckRelCell->toFront (false);
+            duckThrCell->toFront (false);
+            duckRatCell->toFront (false);
         }
     }
 
     // --------- Row 3: EQ (Bass/Air/Tilt/Scoop + minis) + HP + LP ---------------
     {
-        eqContainer.setBounds (row3);
-        eqContainer.setVisible (true);
+        // layout directly
 
-        // Make sure components are children of the eqContainer
+        // Make sure components are children of the editor (not eqContainer)
         // First remove from main editor if they're there
         if (bass.getParentComponent() == this) removeChildComponent (&bass);
         if (air.getParentComponent() == this) removeChildComponent (&air);
@@ -1893,79 +1971,131 @@ void MyPluginAudioProcessorEditor::performLayout()
         if (tiltFreqSlider.getParentComponent() == this) removeChildComponent (&tiltFreqSlider);
         if (scoopFreqSlider.getParentComponent() == this) removeChildComponent (&scoopFreqSlider);
         
-        // Then add to eqContainer
-        eqContainer.addAndMakeVisible (bass);
-        eqContainer.addAndMakeVisible (air);
-        eqContainer.addAndMakeVisible (tilt);
-        eqContainer.addAndMakeVisible (scoop);
-        eqContainer.addAndMakeVisible (hpHz);
-        eqContainer.addAndMakeVisible (lpHz);
-        eqContainer.addAndMakeVisible (bassFreqSlider);
-        eqContainer.addAndMakeVisible (airFreqSlider);
-        eqContainer.addAndMakeVisible (tiltFreqSlider);
-        eqContainer.addAndMakeVisible (scoopFreqSlider);
+        // Then add EQ cells (knob+value) directly to editor
+        addAndMakeVisible (*bassCell);
+        addAndMakeVisible (*airCell);
+        addAndMakeVisible (*tiltCell);
+        addAndMakeVisible (*scoopCell);
+        addAndMakeVisible (hpLpCombinedSlot);
+        // Micro sliders live inside cells
 
         // Add extra padding for labels - reduce less from top/bottom to leave space for labels
-        auto row = eqContainer.getLocalBounds().reduced (gapI, Layout::dp (Layout::LABEL_BAND_EXTRA/2, s));
+        auto row = row3.reduced (gapI, 0);
 
-        // Use grid layout for proper spacing
+        // Configure metrics for cells at current scale, and attach mini sliders
+        const int valuePx = Layout::dp (14, s);
+        const int gapPx   = Layout::dp (0,  s);
+        const int miniStripW = Layout::dp (90, s);   // right strip width
+        const int miniBarH   = Layout::dp (12, s);   // horizontal bar height
+        bassCell ->setMetrics (lPx, valuePx, gapPx, miniStripW);
+        airCell  ->setMetrics (lPx, valuePx, gapPx, miniStripW);
+        tiltCell ->setMetrics (lPx, valuePx, gapPx, miniStripW);
+        scoopCell->setMetrics (lPx, valuePx, gapPx, miniStripW);
+        // Move minis to the right for EQ primary four
+        bassCell ->setMiniPlacementRight (true);
+        airCell  ->setMiniPlacementRight (true);
+        tiltCell ->setMiniPlacementRight (true);
+        scoopCell->setMiniPlacementRight (true);
+        
+
+        // Managed value labels under knobs (EQ row)
+        bassCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        airCell  ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        tiltCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        scoopCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        
+        const int valueGap = Layout::dp (6, s);
+        bassCell ->setValueLabelGap (valueGap);
+        airCell  ->setValueLabelGap (valueGap);
+        tiltCell ->setValueLabelGap (valueGap);
+        scoopCell->setValueLabelGap (valueGap);
+        
+
+        bassCell ->setMini (&bassFreqSlider, miniStripW);
+        airCell  ->setMini (&airFreqSlider,  miniStripW);
+        tiltCell ->setMini (&tiltFreqSlider, miniStripW);
+        scoopCell->setMini (&scoopFreqSlider,miniStripW);
+
+        // Thicker bar rendering
+        bassCell ->setMiniThicknessPx (miniBarH);
+        airCell  ->setMiniThicknessPx (miniBarH);
+        tiltCell ->setMiniThicknessPx (miniBarH);
+        scoopCell->setMiniThicknessPx (miniBarH);
+
+        for (auto* mini : { &bassFreqSlider, &airFreqSlider, &tiltFreqSlider, &scoopFreqSlider })
+            mini->getProperties().set ("micro", true);
+
+        // Use grid layout for proper spacing: single row of cells (cells include mini sliders)
         juce::Grid g;
         g.rowGap    = juce::Grid::Px (gapI);
         g.columnGap = juce::Grid::Px (gapI);
-        g.templateRows    = { juce::Grid::Px (lPx), juce::Grid::Px (microH) };
+        g.templateRows    = { juce::Grid::Px (lPx + gapPx + valuePx) };
         g.templateColumns = {
-            juce::Grid::Px (lPx),  // Bass
-            juce::Grid::Px (lPx),  // Air  
-            juce::Grid::Px (lPx),  // Tilt
-            juce::Grid::Px (lPx),  // Scoop
-            juce::Grid::Px (lPx),  // HP
-            juce::Grid::Px (lPx)   // LP
+            juce::Grid::Px (lPx + miniStripW + gapPx),
+            juce::Grid::Px (lPx + miniStripW + gapPx),
+            juce::Grid::Px (lPx + miniStripW + gapPx),
+            juce::Grid::Px (lPx + miniStripW + gapPx),
+            juce::Grid::Fr (1)
         };
 
-        bass .setVisible (true);
-        air  .setVisible (true);
-        tilt .setVisible (true);
-        scoop.setVisible (true);
-        hpHz .setVisible (true);
-        lpHz .setVisible (true);
-        bassFreqSlider .setVisible (true);
-        airFreqSlider  .setVisible (true);
-        tiltFreqSlider .setVisible (true);
-        scoopFreqSlider.setVisible (true);
+        bassCell->setVisible (true);
+        airCell ->setVisible (true);
+        tiltCell->setVisible (true);
+        scoopCell->setVisible (true);
+        hpLpCombinedSlot.setVisible (true);
 
         g.items = {
-            juce::GridItem (bass)           .withArea (1,1),
-            juce::GridItem (air)            .withArea (1,2),
-            juce::GridItem (tilt)           .withArea (1,3),
-            juce::GridItem (scoop)          .withArea (1,4),
-            juce::GridItem (hpHz)           .withArea (1,5),
-            juce::GridItem (lpHz)           .withArea (1,6),
-            juce::GridItem (bassFreqSlider) .withArea (2,1),
-            juce::GridItem (airFreqSlider)  .withArea (2,2),
-            juce::GridItem (tiltFreqSlider) .withArea (2,3),
-            juce::GridItem (scoopFreqSlider).withArea (2,4)
+            juce::GridItem (*bassCell)      .withArea (1,1),
+            juce::GridItem (*airCell)       .withArea (1,2),
+            juce::GridItem (*tiltCell)      .withArea (1,3),
+            juce::GridItem (*scoopCell)     .withArea (1,4),
+            juce::GridItem (hpLpCombinedSlot).withArea (1,5,1,6)
         };
         g.performLayout (row);
 
+        // Consolidate HP and LP into one wide cell area (no extra borders): direct knob/label layout
+        {
+            auto b = hpLpCombinedSlot.getLocalBounds().reduced (gapI / 2, 0);
+            const int midGap = gapI;
+            auto left = b.removeFromLeft ((b.getWidth() - midGap) / 2).reduced (gapI / 4, 0);
+            auto right = b.removeFromLeft (midGap); (void) right; right = b.reduced (gapI / 4, 0);
+
+            {
+                const int k = juce::jmin (lPx, juce::jmin (left.getWidth(), left.getHeight()));
+                juce::Rectangle<int> knobBox (k, k);
+                knobBox = knobBox.withCentre ({ left.getCentreX(), left.getY() + k / 2 });
+                hpHz.setBounds (knobBox);
+                hpLpCombinedSlot.addAndMakeVisible (hpHz);
+                const int h = juce::jmax (valuePx, (int) std::ceil (hpValue.getFont().getHeight()) + 2);
+                hpValue.setBounds (knobBox.getX(), knobBox.getBottom() + Layout::dp (6, s), knobBox.getWidth(), h);
+                hpLpCombinedSlot.addAndMakeVisible (hpValue);
+            }
+
+            {
+                const int k = juce::jmin (lPx, juce::jmin (right.getWidth(), right.getHeight()));
+                juce::Rectangle<int> knobBox (k, k);
+                knobBox = knobBox.withCentre ({ right.getCentreX(), right.getY() + k / 2 });
+                lpHz.setBounds (knobBox);
+                hpLpCombinedSlot.addAndMakeVisible (lpHz);
+                const int h = juce::jmax (valuePx, (int) std::ceil (lpValue.getFont().getHeight()) + 2);
+                lpValue.setBounds (knobBox.getX(), knobBox.getBottom() + Layout::dp (6, s), knobBox.getWidth(), h);
+                hpLpCombinedSlot.addAndMakeVisible (lpValue);
+            }
+        }
+
         // Ensure components are brought to front within the container
-        bass.toFront (false);
-        air.toFront (false);
-        tilt.toFront (false);
-        scoop.toFront (false);
-        hpHz.toFront (false);
-        lpHz.toFront (false);
-        bassFreqSlider.toFront (false);
-        airFreqSlider.toFront (false);
-        tiltFreqSlider.toFront (false);
-        scoopFreqSlider.toFront (false);
+        bassCell->toFront (false);
+        airCell ->toFront (false);
+        tiltCell->toFront (false);
+        scoopCell->toFront (false);
+        hpLpCombinedSlot.toFront (false);
     }
 
     // ---------------- Row 4: Remaining Imaging items ---------------------------
     {
-        imageContainer.setBounds (row4);
-        imageContainer.setVisible (true);
+        // layout directly
 
-        // Make sure components are children of the imageContainer
+        // Make sure components are children of the editor
         // First remove from main editor if they're there
         if (xoverLoHz.getParentComponent() == this) removeChildComponent (&xoverLoHz);
         if (xoverHiHz.getParentComponent() == this) removeChildComponent (&xoverHiHz);
@@ -1975,38 +2105,57 @@ void MyPluginAudioProcessorEditor::performLayout()
         if (shufHiPct.getParentComponent() == this) removeChildComponent (&shufHiPct);
         if (shufXHz.getParentComponent() == this) removeChildComponent (&shufXHz);
         
-        // Then add to imageContainer
-        imageContainer.addAndMakeVisible (xoverLoHz);
-        imageContainer.addAndMakeVisible (xoverHiHz);
-        imageContainer.addAndMakeVisible (rotationDeg);
-        imageContainer.addAndMakeVisible (asymmetry);
-        imageContainer.addAndMakeVisible (shufLoPct);
-        imageContainer.addAndMakeVisible (shufHiPct);
-        imageContainer.addAndMakeVisible (shufXHz);
+        // Cells will manage parenting of knobs/labels; do not add raw knobs here
 
-        // Position knobs relative to imageContainer local bounds - left aligned for row consistency
-        auto containerBounds = imageContainer.getLocalBounds().reduced (0, Layout::dp (Layout::LABEL_BAND_EXTRA/2, s));
+        // Imaging row: use knob cells for uniform layout
+        const int valuePx = Layout::dp (14, s);
+        const int gapPx   = Layout::dp (0,  s);
+        xoverLoCell->setMetrics (lPx, valuePx, gapPx);
+        xoverHiCell->setMetrics (lPx, valuePx, gapPx);
+        rotationCell->setMetrics (lPx, valuePx, gapPx);
+        asymCell->setMetrics     (lPx, valuePx, gapPx);
+        shufLoCell->setMetrics   (lPx, valuePx, gapPx);
+        shufHiCell->setMetrics   (lPx, valuePx, gapPx);
+        shufXCell->setMetrics    (lPx, valuePx, gapPx);
+        // Managed labels on imaging row
+        xoverLoCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        xoverHiCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        rotationCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        asymCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        shufLoCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        shufHiCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        shufXCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        const int imgGap = Layout::dp (6, s);
+        xoverLoCell->setValueLabelGap (imgGap);
+        xoverHiCell->setValueLabelGap (imgGap);
+        rotationCell->setValueLabelGap (imgGap);
+        asymCell->setValueLabelGap (imgGap);
+        shufLoCell->setValueLabelGap (imgGap);
+        shufHiCell->setValueLabelGap (imgGap);
+        shufXCell->setValueLabelGap (imgGap);
 
-        juce::Component* items[] = {
-            &xoverLoHz, &xoverHiHz,
-            &rotationDeg, &asymmetry,
-            &shufLoPct, &shufHiPct, &shufXHz
+        addAndMakeVisible (*xoverLoCell);
+        addAndMakeVisible (*xoverHiCell);
+        addAndMakeVisible (*rotationCell);
+        addAndMakeVisible (*asymCell);
+        addAndMakeVisible (*shufLoCell);
+        addAndMakeVisible (*shufHiCell);
+        addAndMakeVisible (*shufXCell);
+
+        juce::Grid imgGrid;
+        imgGrid.rowGap    = juce::Grid::Px (gapI);
+        imgGrid.columnGap = juce::Grid::Px (gapI);
+        imgGrid.templateRows = { juce::Grid::Px (lPx + gapPx + valuePx) };
+        imgGrid.templateColumns = {
+            juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx),
+            juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx)
         };
-        const int N = (int) std::size (items);
-        // Left align (no centering)
-        int x = containerBounds.getX();
-        int y = containerBounds.getY();
-
-        for (auto* c : items) { c->setVisible (true); c->setBounds (x, y, lPx, lPx); x += lPx + gapI; }
-
-        // Ensure components are brought to front within the container
-        xoverLoHz.toFront (false);
-        xoverHiHz.toFront (false);
-        rotationDeg.toFront (false);
-        asymmetry.toFront (false);
-        shufLoPct.toFront (false);
-        shufHiPct.toFront (false);
-        shufXHz.toFront (false);
+        imgGrid.items = {
+            juce::GridItem (*xoverLoCell), juce::GridItem (*xoverHiCell), juce::GridItem (*rotationCell),
+            juce::GridItem (*asymCell), juce::GridItem (*shufLoCell), juce::GridItem (*shufHiCell), juce::GridItem (*shufXCell)
+        };
+        auto imgB = row4.reduced (0, 0);
+        imgGrid.performLayout (imgB);
     }
 
     // ---------------- Delay Card (Right Side, spans full height) ---------------------------
@@ -2017,107 +2166,117 @@ void MyPluginAudioProcessorEditor::performLayout()
         delayContainer.addAndMakeVisible (delayEnabled);
         delayContainer.addAndMakeVisible (delayMode);
         delayContainer.addAndMakeVisible (delaySync);
-        delayContainer.addAndMakeVisible (delayTime);
-        delayContainer.addAndMakeVisible (delayFeedback);
-        delayContainer.addAndMakeVisible (delayWet);
         delayContainer.addAndMakeVisible (delayFreeze);
         delayContainer.addAndMakeVisible (delayKillDry);
         
         delayContainer.addAndMakeVisible (delayPingpong);
-        delayContainer.addAndMakeVisible (delaySpread);
-        delayContainer.addAndMakeVisible (delayWidth);
-        delayContainer.addAndMakeVisible (delayModRate);
-        delayContainer.addAndMakeVisible (delayModDepth);
-        delayContainer.addAndMakeVisible (delayWowflutter);
-        delayContainer.addAndMakeVisible (delayJitter);
-        
-        delayContainer.addAndMakeVisible (delayHp);
-        delayContainer.addAndMakeVisible (delayLp);
-        delayContainer.addAndMakeVisible (delayTilt);
-        delayContainer.addAndMakeVisible (delaySat);
-        delayContainer.addAndMakeVisible (delayDiffusion);
-        delayContainer.addAndMakeVisible (delayDiffuseSize);
+        // Cells will parent knob components, so don't add raw knobs above
         
         // Add per-delay ducking controls
         delayContainer.addAndMakeVisible (delayDuckSource);
         delayContainer.addAndMakeVisible (delayDuckPost);
-        delayContainer.addAndMakeVisible (delayDuckDepth);
-        delayContainer.addAndMakeVisible (delayDuckAttack);
-        delayContainer.addAndMakeVisible (delayDuckRelease);
         delayContainer.addAndMakeVisible (delayDuckThreshold);
         
-        // Layout delay controls in a 5-row card grid (spans all rows)
-        auto delayB = delayContainer.getLocalBounds().reduced (gapI/2, Layout::dp (Layout::LABEL_BAND_EXTRA/2, s));
-        
+        // Layout delay controls using cells for knobs + direct items for buttons/combos
+        auto delayB = delayContainer.getLocalBounds().reduced (gapI/2, 0);
+
+        const int valuePx = Layout::dp (14, s);
+        const int gapPx   = Layout::dp (0,  s);
+        delayTimeCell      ->setMetrics (lPx, valuePx, gapPx);
+        delayFeedbackCell  ->setMetrics (lPx, valuePx, gapPx);
+        delayWetCell       ->setMetrics (lPx, valuePx, gapPx);
+        delaySpreadCell    ->setMetrics (lPx, valuePx, gapPx);
+        delayWidthCell     ->setMetrics (lPx, valuePx, gapPx);
+        delayModRateCell   ->setMetrics (lPx, valuePx, gapPx);
+        delayModDepthCell  ->setMetrics (lPx, valuePx, gapPx);
+        delayWowflutterCell->setMetrics (lPx, valuePx, gapPx);
+        delayJitterCell    ->setMetrics (lPx, valuePx, gapPx);
+        delayHpCell        ->setMetrics (lPx, valuePx, gapPx);
+        delayLpCell        ->setMetrics (lPx, valuePx, gapPx);
+        delayTiltCell      ->setMetrics (lPx, valuePx, gapPx);
+        delaySatCell       ->setMetrics (lPx, valuePx, gapPx);
+        delayDiffusionCell ->setMetrics (lPx, valuePx, gapPx);
+        delayDiffuseSizeCell->setMetrics (lPx, valuePx, gapPx);
+        delayDuckDepthCell ->setMetrics (lPx, valuePx, gapPx);
+        delayDuckAttackCell->setMetrics (lPx, valuePx, gapPx);
+        delayDuckReleaseCell->setMetrics (lPx, valuePx, gapPx);
+
+        for (auto* c : { delayTimeCell.get(),delayFeedbackCell.get(),delayWetCell.get(),delaySpreadCell.get(),delayWidthCell.get(),delayModRateCell.get(),
+                         delayModDepthCell.get(),delayWowflutterCell.get(),delayJitterCell.get(),delayHpCell.get(),delayLpCell.get(),delayTiltCell.get(),
+                         delaySatCell.get(),delayDiffusionCell.get(),delayDiffuseSizeCell.get(),delayDuckDepthCell.get(),delayDuckAttackCell.get(),
+                         delayDuckReleaseCell.get() })
+            delayContainer.addAndMakeVisible (*c);
+
         juce::Grid delayGrid;
         delayGrid.rowGap = juce::Grid::Px (gapI/2);
         delayGrid.columnGap = juce::Grid::Px (gapI/2);
-        delayGrid.templateRows = { juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx) };
-        delayGrid.templateColumns = { 
-            juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), 
-            juce::Grid::Px (lPx), juce::Grid::Px (lPx) 
+        delayGrid.templateRows = {
+            juce::Grid::Px (Layout::dp (24, s)),                                      // buttons/combos row height
+            juce::Grid::Px (lPx + gapPx + valuePx), juce::Grid::Px (lPx + gapPx + valuePx),
+            juce::Grid::Px (lPx + gapPx + valuePx), juce::Grid::Px (lPx + gapPx + valuePx)
         };
-        
+        delayGrid.templateColumns = { juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx) };
+
         delayGrid.items = {
-            // Row 1: Core controls
-            juce::GridItem (delayEnabled).withArea (1, 1),
-            juce::GridItem (delayMode).withArea (1, 2),
-            juce::GridItem (delaySync).withArea (1, 3),
-            juce::GridItem (delayTime).withArea (1, 4),
-            juce::GridItem (delayFeedback).withArea (1, 5),
-            juce::GridItem (delayWet).withArea (1, 6),
-            
-            // Row 2: Stereo/Movement controls
-            juce::GridItem (delayFreeze).withArea (2, 1),
-            juce::GridItem (delayKillDry).withArea (2, 2),
-            juce::GridItem (delayPingpong).withArea (2, 3),
-            juce::GridItem (delaySpread).withArea (2, 4),
-            juce::GridItem (delayWidth).withArea (2, 5),
-            juce::GridItem (delayModRate).withArea (2, 6),
-            
-            // Row 3: Modulation/Tone controls
-            juce::GridItem (delayModDepth).withArea (3, 1),
-            juce::GridItem (delayWowflutter).withArea (3, 2),
-            juce::GridItem (delayJitter).withArea (3, 3),
-            juce::GridItem (delayHp).withArea (3, 4),
-            juce::GridItem (delayLp).withArea (3, 5),
-            juce::GridItem (delayTilt).withArea (3, 6),
-            
-            // Row 4: Saturation/Diffusion/Ducking controls
-            juce::GridItem (delaySat).withArea (4, 1),
-            juce::GridItem (delayDiffusion).withArea (4, 2),
-            juce::GridItem (delayDiffuseSize).withArea (4, 3),
-            juce::GridItem (delayDuckDepth).withArea (4, 4),
-            juce::GridItem (delayDuckAttack).withArea (4, 5),
-            juce::GridItem (delayDuckRelease).withArea (4, 6),
+            // Row 1: Core toggles/combos (not cells)
+            juce::GridItem (delayEnabled).withArea (1,1),
+            juce::GridItem (delayMode).withArea (1,2),
+            juce::GridItem (delaySync).withArea (1,3),
+            juce::GridItem (delayFreeze).withArea (1,4),
+            juce::GridItem (delayKillDry).withArea (1,5),
+            juce::GridItem(),
+
+            // Row 2
+            juce::GridItem (*delayTimeCell).withArea (2,1),
+            juce::GridItem (*delayFeedbackCell).withArea (2,2),
+            juce::GridItem (*delayWetCell).withArea (2,3),
+            juce::GridItem (*delaySpreadCell).withArea (2,4),
+            juce::GridItem (*delayWidthCell).withArea (2,5),
+            juce::GridItem (*delayModRateCell).withArea (2,6),
+
+            // Row 3
+            juce::GridItem (*delayModDepthCell).withArea (3,1),
+            juce::GridItem (*delayWowflutterCell).withArea (3,2),
+            juce::GridItem (*delayJitterCell).withArea (3,3),
+            juce::GridItem (*delayHpCell).withArea (3,4),
+            juce::GridItem (*delayLpCell).withArea (3,5),
+            juce::GridItem (*delayTiltCell).withArea (3,6),
+
+            // Row 4
+            juce::GridItem (*delaySatCell).withArea (4,1),
+            juce::GridItem (*delayDiffusionCell).withArea (4,2),
+            juce::GridItem (*delayDiffuseSizeCell).withArea (4,3),
+            juce::GridItem (*delayDuckDepthCell).withArea (4,4),
+            juce::GridItem (*delayDuckAttackCell).withArea (4,5),
+            juce::GridItem (*delayDuckReleaseCell).withArea (4,6),
 
             // Row 5: Remaining ducking controls and options
-            juce::GridItem (delayDuckThreshold).withArea (5, 1),
-            juce::GridItem (delayDuckSource).withArea (5, 2),
-            juce::GridItem (delayDuckPost).withArea (5, 3)
+            juce::GridItem (delayDuckThreshold).withArea (5,1),
+            juce::GridItem (delayDuckSource).withArea (5,2),
+            juce::GridItem (delayDuckPost).withArea (5,3)
         };
-        
+
         delayGrid.performLayout (delayB);
         
-        // Position value labels below their corresponding knobs
-        delayTimeValue.setBounds (delayTime.getBounds().withY (delayTime.getBottom() + 2));
-        delayFeedbackValue.setBounds (delayFeedback.getBounds().withY (delayFeedback.getBottom() + 2));
-        delayWetValue.setBounds (delayWet.getBounds().withY (delayWet.getBottom() + 2));
-        delaySpreadValue.setBounds (delaySpread.getBounds().withY (delaySpread.getBottom() + 2));
-        delayWidthValue.setBounds (delayWidth.getBounds().withY (delayWidth.getBottom() + 2));
-        delayModRateValue.setBounds (delayModRate.getBounds().withY (delayModRate.getBottom() + 2));
-        delayModDepthValue.setBounds (delayModDepth.getBounds().withY (delayModDepth.getBottom() + 2));
-        delayWowflutterValue.setBounds (delayWowflutter.getBounds().withY (delayWowflutter.getBottom() + 2));
-        delayJitterValue.setBounds (delayJitter.getBounds().withY (delayJitter.getBottom() + 2));
-        delayHpValue.setBounds (delayHp.getBounds().withY (delayHp.getBottom() + 2));
-        delayLpValue.setBounds (delayLp.getBounds().withY (delayLp.getBottom() + 2));
-        delayTiltValue.setBounds (delayTilt.getBounds().withY (delayTilt.getBottom() + 2));
-        delaySatValue.setBounds (delaySat.getBounds().withY (delaySat.getBottom() + 2));
-        delayDiffusionValue.setBounds (delayDiffusion.getBounds().withY (delayDiffusion.getBottom() + 2));
-        delayDiffuseSizeValue.setBounds (delayDiffuseSize.getBounds().withY (delayDiffuseSize.getBottom() + 2));
-        delayDuckDepthValue.setBounds (delayDuckDepth.getBounds().withY (delayDuckDepth.getBottom() + 2));
-        delayDuckAttackValue.setBounds (delayDuckAttack.getBounds().withY (delayDuckAttack.getBottom() + 2));
-        delayDuckReleaseValue.setBounds (delayDuckRelease.getBounds().withY (delayDuckRelease.getBottom() + 2));
+        // Position value labels under their corresponding delay controls (correct parent)
+        placeLabelBelow (delayTimeValue,       delayTime,       Layout::dp (6, s));
+        placeLabelBelow (delayFeedbackValue,   delayFeedback,   Layout::dp (6, s));
+        placeLabelBelow (delayWetValue,        delayWet,        Layout::dp (6, s));
+        placeLabelBelow (delaySpreadValue,     delaySpread,     Layout::dp (6, s));
+        placeLabelBelow (delayWidthValue,      delayWidth,      Layout::dp (6, s));
+        placeLabelBelow (delayModRateValue,    delayModRate,    Layout::dp (6, s));
+        placeLabelBelow (delayModDepthValue,   delayModDepth,   Layout::dp (6, s));
+        placeLabelBelow (delayWowflutterValue, delayWowflutter, Layout::dp (6, s));
+        placeLabelBelow (delayJitterValue,     delayJitter,     Layout::dp (6, s));
+        placeLabelBelow (delayHpValue,         delayHp,         Layout::dp (6, s));
+        placeLabelBelow (delayLpValue,         delayLp,         Layout::dp (6, s));
+        placeLabelBelow (delayTiltValue,       delayTilt,       Layout::dp (6, s));
+        placeLabelBelow (delaySatValue,        delaySat,        Layout::dp (6, s));
+        placeLabelBelow (delayDiffusionValue,  delayDiffusion,  Layout::dp (6, s));
+        placeLabelBelow (delayDiffuseSizeValue, delayDiffuseSize, Layout::dp (6, s));
+        placeLabelBelow (delayDuckDepthValue,  delayDuckDepth,  Layout::dp (6, s));
+        placeLabelBelow (delayDuckAttackValue, delayDuckAttack, Layout::dp (6, s));
+        placeLabelBelow (delayDuckReleaseValue, delayDuckRelease, Layout::dp (6, s));
         
         // Bring components to front
         delayEnabled.toFront (false);
@@ -2263,8 +2422,7 @@ void MyPluginAudioProcessorEditor::timerCallback()
     pad.repaint();
 }
 
-void MyPluginAudioProcessorEditor::styleSlider (juce::Slider& s) { /* handled inline in ctor */ }
-void MyPluginAudioProcessorEditor::styleMainSlider (juce::Slider& s) { /* handled inline in ctor */ }
+ 
 
 void MyPluginAudioProcessorEditor::paintOverChildren (juce::Graphics& g)
 {

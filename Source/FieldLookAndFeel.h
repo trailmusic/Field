@@ -216,7 +216,7 @@ public:
     {
         g.fillAll (juce::Colours::transparentBlack);
         g.setColour (theme.textMuted);
-        g.setFont (getLabelFont (l));
+        g.setFont (getLabelFont (l).boldened());
         g.drawFittedText (l.getText(), l.getLocalBounds(), juce::Justification::centred, 1);
     }
 

@@ -5,6 +5,8 @@ set(SRC
   PluginEditor.cpp
   FieldLookAndFeel.h
   FieldLookAndFeel.cpp
+      KnobCell.h
+    KnobCell.cpp
       IconSystem.h
     IconSystem.cpp
     PresetSystem.h

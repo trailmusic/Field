@@ -507,6 +507,16 @@ cmake --build . --config Release
 
 ---
 
+## Stability Fix (Aug 2025)
+
+- DSP: Added Nyquist-safe clamping and sanity checks across filters to prevent JUCE IIR/SVTPT assertions at extreme sample rates and settings. Specifically, cutoffs are now clamped below Nyquist and relationships are enforced (e.g. HP < LP). Affected helpers: `applyHP_LP`, `updateTiltEQ`, `applyScoopEQ`, `applyBassShelf`, `applyAirBand`, `applyThreeBandWidth`, `applyShufflerWidth`, `applyMonoMaker`, and safe frequencies inside `applySpaceAlgorithm`. Also set a safe default for the depth lowpass in `prepare()`.
+- UI: Guarded creation of the `MonoSlopeSwitch` before `addAndMakeVisible` inside `performLayout()` to avoid a rare null dereference during first layout.
+- Verification: `./build_all.sh` then `./verify_builds.sh` — Standalone opens cleanly; AU validation `auval -v aufx Fld1 YTtr` passes.
+
+If a host still reports issues, clear plugin caches and rescan, then re-run the verification steps above.
+
+---
+
 ## Project Structure
 
 ```

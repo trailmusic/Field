@@ -2,6 +2,7 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "PluginProcessor.h"
 #include "FieldLookAndFeel.h"
+#include "KnobCell.h"
 #include "IconSystem.h"
 #include "PresetSystem.h"
 
@@ -10,7 +11,7 @@
     - This header keeps your visual design as-is while removing duplication.
     - Rotary drawing is centralized via ui::paintRotaryWithLNF.
     - Icon-style buttons share a single base: ThemedIconButton (consistent states).
-    - “Green mode” is inferred from FieldLNF::theme.accent instead of per-control flags.
+    - "Green mode" is inferred from FieldLNF::theme.accent instead of per-control flags.
     - XYPad public API is preserved to avoid .cpp breakage.
     - Attachment aliases reduce type noise.
 ==============================================================================*/
@@ -45,9 +46,7 @@ using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
 using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
 using ComboAttachment  = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
-//------------------------------------------------------------------------------
-// WaveformDisplay class removed - functionality integrated into XYPad background
-//------------------------------------------------------------------------------
+ 
 
 //==============================================================================
 // XYPad (kept API to avoid .cpp breakage)
@@ -84,7 +83,7 @@ public:
     }
     bool getLinked() const { return isLinked; }
     
-    // Visual links (XYPad paints reactively; these are “hints” from parameters)
+    // Visual links (XYPad paints reactively; these are "hints" from parameters)
     void setGainValue (float gainDb)       { gainValue  = gainDb; repaint(); }
     void setWidthValue (float widthPercent){ widthValue = widthPercent; repaint(); }
     void setTiltValue (float tiltDegrees)  { tiltValue  = tiltDegrees; repaint(); }
@@ -175,7 +174,7 @@ private:
 };
 
 //==============================================================================
-// ControlContainer (kept hover timer; purely cosmetic “soft fade” on hover)
+// ControlContainer (kept hover timer; purely cosmetic "soft fade" on hover)
 //==============================================================================
 class ControlContainer : public juce::Component, public juce::Timer
 {
@@ -897,93 +896,185 @@ private:
     class MonoSlopeSwitch;
     std::unique_ptr<MonoSlopeSwitch> monoSlopeSwitch;
     
-    // 3-way algorithm switch (colors derived from current LNF accent)
+    // 3-way segmented switch (Inner / Outer / Deep) with horizontal or vertical layout.
     class SpaceAlgorithmSwitch : public juce::Component
     {
     public:
-        SpaceAlgorithmSwitch() = default; // 0=Inner, 1=Outer, 2=Deep
-        void setGreenMode (bool) {}
-        
-        void setAlgorithm(int algorithm)             { currentPosition = juce::jlimit(0, 2, algorithm); repaint(); }
-        void setAlgorithmFromParameter(int algorithm){ setAlgorithm(algorithm); }
-        int  getAlgorithm() const                    { return currentPosition; }
-        
-        std::function<void(int)> onAlgorithmChange;
-        
-        void paint(juce::Graphics& g) override
+        enum class Orientation { Horizontal, Vertical };
+
+        SpaceAlgorithmSwitch()
         {
-            auto bounds = getLocalBounds().toFloat();
-            const float spacing = 6.0f;
-            const float availableH = juce::jmax(0.0f, bounds.getHeight() - 2.0f * spacing);
-            const float h = availableH / 3.0f;
-            
-            drawButton(g, {bounds.getX(), bounds.getY(), bounds.getWidth(), h},                            2, "Deep");
-            drawButton(g, {bounds.getX(), bounds.getY() + h + spacing, bounds.getWidth(), h},              1, "Outer");
-            drawButton(g, {bounds.getX(), bounds.getY() + 2.0f * (h + spacing), bounds.getWidth(), h},     0, "Inner");
+            items.add ("Inner");
+            items.add ("Outer");
+            items.add ("Deep");
         }
-        
-        void mouseDown(const juce::MouseEvent& e) override
+
+        void setGreenMode (bool) {}
+
+        // Orientation / labels
+        void setOrientation (Orientation o)          { orientation = o; repaint(); }
+        void setLabels (const juce::StringArray& ls) { items = ls; currentIndex = juce::jlimit (0, items.size() - 1, currentIndex); repaint(); }
+
+        // State
+        void setAlgorithm (int i)              { currentIndex = juce::jlimit (0, items.size() - 1, i); repaint(); }
+        void setAlgorithmFromParameter (int i) { setAlgorithm (i); }
+        int  getAlgorithm () const             { return currentIndex; }
+
+        std::function<void (int)> onAlgorithmChange;
+
+        void setSpacing (float px) { spacing = juce::jmax (0.0f, px); repaint(); }
+
+        void paint (juce::Graphics& g) override
+        {
+            const int n = items.size();
+            if (n == 0) return;
+
+            auto b = getLocalBounds().toFloat();
+
+            // DEV NOTE: Draw cell-like panel so this component can live as a standalone "cell"
+            if (auto* lfPanel = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            {
+                const float rad = 8.0f;
+                auto panel = b.reduced (3.0f);
+                g.setColour (lfPanel->theme.panel);
+                g.fillRoundedRectangle (panel, rad);
+                g.setColour (lfPanel->theme.sh.withAlpha (0.18f));
+                g.drawRoundedRectangle (panel.reduced (1.0f), rad - 1.0f, 0.8f);
+            }
+            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+            const auto outline = juce::Colour (0xFF1A1C20);
+            const float corner = 6.0f;
+
+            if (orientation == Orientation::Horizontal)
+            {
+                const float s = spacing;
+                // DEV NOTE: 4x larger feel – rely on wider column and use most of height/width
+                const float side = juce::jmin (b.getHeight() - 8.0f, (b.getWidth() - (n - 1) * s - 8.0f) / (float) n);
+                const float totalW = side * n + s * (n - 1);
+                juce::Rectangle<float> r (b.getX() + (b.getWidth() - totalW) * 0.5f,
+                                          b.getY() + (b.getHeight() - side) * 0.5f,
+                                          side, side);
+
+                for (int i = 0; i < n; ++i)
+                {
+                    const bool on = (currentIndex == i);
+                    drawButton (g, r, i, on, items[i], lf, outline, corner);
+                    r.setX (r.getX() + side + s);
+                }
+            }
+            else
+            {
+                const float s = spacing;
+                const float availableH = juce::jmax (0.0f, b.getHeight() - (n - 1) * s - 8.0f);
+                const float h = availableH / (float) n;
+
+                juce::Rectangle<float> r (b.getX(), b.getY() + 4.0f, b.getWidth(), h);
+                for (int i = n - 1; i >= 0; --i)
+                {
+                    const bool on = (currentIndex == i);
+                    drawButton (g, r, i, on, items[i], lf, outline, corner);
+                    r.setY (r.getY() + h + s);
+                }
+            }
+        }
+
+        void mouseDown (const juce::MouseEvent& e) override
         {
             if (e.mods.isPopupMenu())
             {
                 juce::PopupMenu m;
-                m.addItem(1, "Inner", true, currentPosition == 0);
-                m.addItem(2, "Outer", true, currentPosition == 1);
-                m.addItem(3, "Deep",  true, currentPosition == 2);
-                m.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(this),
-                    [this](int result)
-                    {
-                        if (result > 0) { currentPosition = result - 1; repaint(); if (onAlgorithmChange) onAlgorithmChange(currentPosition); }
-                    });
+                for (int i = 0; i < items.size(); ++i)
+                    m.addItem (i + 1, items[i], true, currentIndex == i);
+
+                m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this),
+                                 [this](int r){ if (r > 0) { currentIndex = r - 1; repaint(); if (onAlgorithmChange) onAlgorithmChange (currentIndex); }});
                 return;
             }
 
-            const float spacing = 6.0f;
-            const float availableH = juce::jmax(0.0f, (float)getHeight() - 2.0f * spacing);
-            const float h = availableH / 3.0f;
-            const float y = (float)e.y;
+            const int n = items.size();
+            if (n == 0) return;
 
-            int newPosition = (y <= h) ? 2 : (y <= h * 2 + spacing ? 1 : 0);
-            if (newPosition != currentPosition) { currentPosition = newPosition; repaint(); if (onAlgorithmChange) onAlgorithmChange(currentPosition); }
+            auto b = getLocalBounds().toFloat();
+            const float s = spacing;
+
+            if (orientation == Orientation::Horizontal)
+            {
+                const float side = juce::jmin (b.getHeight(), (b.getWidth() - (n - 1) * s) / (float) n);
+                const float totalW = side * n + s * (n - 1);
+                juce::Rectangle<float> r (b.getX() + (b.getWidth() - totalW) * 0.5f,
+                                          b.getY() + (b.getHeight() - side) * 0.5f,
+                                          side, side);
+
+                for (int i = 0; i < n; ++i)
+                {
+                    if (r.contains ((float) e.x, (float) e.y))
+                    {
+                        if (currentIndex != i) { currentIndex = i; repaint(); if (onAlgorithmChange) onAlgorithmChange (currentIndex); }
+                        return;
+                    }
+                    r.setX (r.getX() + side + s);
+                }
+            }
+            else
+            {
+                const float availableH = juce::jmax (0.0f, b.getHeight() - (n - 1) * s);
+                const float h = availableH / (float) n;
+                juce::Rectangle<float> r (b.getX(), b.getY(), b.getWidth(), h);
+
+                for (int i = n - 1; i >= 0; --i)
+                {
+                    if (r.contains ((float) e.x, (float) e.y))
+                    {
+                        if (currentIndex != i) { currentIndex = i; repaint(); if (onAlgorithmChange) onAlgorithmChange (currentIndex); }
+                        return;
+                    }
+                    r.setY (r.getY() + h + s);
+                }
+            }
         }
-        
-    private:
-        int currentPosition = 0;
 
-        juce::Colour activeColour (int algorithm) const
+    private:
+        int currentIndex { 0 };
+        juce::StringArray items;
+        Orientation orientation { Orientation::Vertical };
+        float spacing { 6.0f };
+
+        static juce::Colour activeColour (int idx, FieldLNF* lf)
         {
-            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            if (lf != nullptr)
             {
                 auto a = lf->theme.accent;
-                switch (algorithm) { case 0: return a; case 1: return a.brighter(0.2f); case 2: return a.darker(0.2f); }
+                // DEV NOTE: Ocean/default – stronger separation
+                switch (idx) {
+                    case 0: return a;                 // Inner
+                    case 1: return a.brighter (0.35f);// Outer
+                    case 2: return a.darker   (0.35f);// Deep
+                }
             }
-            switch (algorithm) { case 0: return juce::Colour(0xFF5AA9E6); case 1: return juce::Colour(0xFF2EC4B6); case 2: return juce::Colour(0xFF2A1B3D); }
-            return juce::Colour(0xFF5AA9E6);
+            switch (idx) { case 0: return juce::Colour (0xFF5AA9E6); case 1: return juce::Colour (0xFF2EC4B6); case 2: return juce::Colour (0xFF2A1B3D); }
+            return juce::Colour (0xFF5AA9E6);
         }
 
-        void drawButton(juce::Graphics& g, juce::Rectangle<float> r, int idx, const juce::String& label)
+        static void drawButton (juce::Graphics& g, juce::Rectangle<float> r, int idx, bool on, const juce::String& label,
+                                FieldLNF* lf, juce::Colour outline, float corner)
         {
-            const bool on = (currentPosition == idx);
+            juce::Colour base = juce::Colour (0xFF2A2C30);
+            juce::Colour fill = on ? activeColour (idx, lf) : base;
 
-            g.setColour(on ? activeColour(idx) : juce::Colour(0xFF2A2C30));
-            g.fillRoundedRectangle(r, 6.0f);
-            g.setColour(juce::Colour(0xFF1A1C20));
-            g.drawRoundedRectangle(r, 6.0f, 1.0f);
+            g.setColour (fill);
+            g.fillRoundedRectangle (r, corner);
 
-            if (on)  { g.setColour(juce::Colour(0x40000000)); g.fillRoundedRectangle(r.reduced(1.0f), 5.0f); }
-            else     { g.setColour(juce::Colour(0x20FFFFFF)); g.fillRoundedRectangle(r.reduced(1.0f).translated(-0.5f, -0.5f), 5.0f); }
+            g.setColour (outline);
+            g.drawRoundedRectangle (r, corner, 1.0f);
 
-            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                g.setColour(lf->theme.text);
-            else
-                g.setColour(juce::Colour(0xFFF0F2F5));
-
-            g.setFont(juce::Font(juce::FontOptions(12.0f).withStyle("Bold")));
-            g.drawText(label, r, juce::Justification::centred);
+            g.setColour (lf ? lf->theme.text : juce::Colour (0xFFF0F2F5));
+            g.setFont (juce::Font (juce::FontOptions (12.0f).withStyle ("Bold")));
+            g.drawText (label, r, juce::Justification::centred);
         }
     };
     
     SpaceAlgorithmSwitch spaceAlgorithmSwitch;
+    std::unique_ptr<SpaceAlgorithmSwitch> monoSlopeSegmentSwitch;
 
     // Dedicated Mono Slope Switch (6/12/24) with independent drawing but same visual language
     class MonoSlopeSwitch : public juce::Component
@@ -1064,9 +1155,9 @@ private:
     PresetManager presetManager;
     
     // Containers
-    ControlContainer mainControlsContainer, volumeContainer, eqContainer;
+    ControlContainer mainControlsContainer, volumeContainer;
     ControlContainer delayContainer;
-    ControlContainer imageContainer, metersContainer;
+    ControlContainer metersContainer;
     ControlContainer spaceKnobContainer, panKnobContainer;
     
     // Width grouping (Image row): large WIDTH + small W LO/MID/HI
@@ -1087,7 +1178,7 @@ private:
     ControlContainer imgGroupContainer;
     ControlContainer volGroupContainer2;
     ControlContainer monoGroupContainer;
-    ControlContainer reverbGroupContainer;
+ 
     juce::Component volSlot1, volSlot2, volSlot3, volSlot4, volSlot5, volSlot6, volSlot7;
 
     
@@ -1117,6 +1208,59 @@ private:
     // Text labels
     juce::Label gainL, widthL, tiltL, monoL, hpL, lpL, satDriveL, satMixL;
     juce::Label panL, spaceL, duckingL;
+
+    // Row 1 cells
+    std::unique_ptr<KnobCell> panCell;
+    std::unique_ptr<KnobCell> widthCell, widthLoCell, widthMidCell, widthHiCell;
+    std::unique_ptr<KnobCell> gainCell, satDriveCell, satMixCell, monoCell;
+
+    // EQ row cells (knob + value + optional mini)
+    std::unique_ptr<KnobCell> bassCell;
+    std::unique_ptr<KnobCell> airCell;
+    std::unique_ptr<KnobCell> tiltCell;
+    std::unique_ptr<KnobCell> scoopCell;
+    std::unique_ptr<KnobCell> hpCell;
+    std::unique_ptr<KnobCell> lpCell;
+
+    // Reverb/Duck cells
+    std::unique_ptr<KnobCell> spaceCell;
+    std::unique_ptr<KnobCell> duckCell;
+    std::unique_ptr<KnobCell> duckAttCell;
+    std::unique_ptr<KnobCell> duckRelCell;
+    std::unique_ptr<KnobCell> duckThrCell;
+    std::unique_ptr<KnobCell> duckRatCell;
+
+    // Imaging (row 4) cells
+    std::unique_ptr<KnobCell> xoverLoCell;
+    std::unique_ptr<KnobCell> xoverHiCell;
+    std::unique_ptr<KnobCell> rotationCell;
+    std::unique_ptr<KnobCell> asymCell;
+    std::unique_ptr<KnobCell> shufLoCell;
+    std::unique_ptr<KnobCell> shufHiCell;
+    std::unique_ptr<KnobCell> shufXCell;
+
+    // Delay cells (knob + value)
+    std::unique_ptr<KnobCell> delayTimeCell;
+    std::unique_ptr<KnobCell> delayFeedbackCell;
+    std::unique_ptr<KnobCell> delayWetCell;
+    std::unique_ptr<KnobCell> delaySpreadCell;
+    std::unique_ptr<KnobCell> delayWidthCell;
+    std::unique_ptr<KnobCell> delayModRateCell;
+    std::unique_ptr<KnobCell> delayModDepthCell;
+    std::unique_ptr<KnobCell> delayWowflutterCell;
+    std::unique_ptr<KnobCell> delayJitterCell;
+    std::unique_ptr<KnobCell> delayHpCell;
+    std::unique_ptr<KnobCell> delayLpCell;
+    std::unique_ptr<KnobCell> delayTiltCell;
+    std::unique_ptr<KnobCell> delaySatCell;
+    std::unique_ptr<KnobCell> delayDiffusionCell;
+    std::unique_ptr<KnobCell> delayDiffuseSizeCell;
+    std::unique_ptr<KnobCell> delayDuckDepthCell;
+    std::unique_ptr<KnobCell> delayDuckAttackCell;
+    std::unique_ptr<KnobCell> delayDuckReleaseCell;
+
+    ControlContainer hpLpCombinedSlot;
+    void buildCells();
 
     // Attachments
     std::vector<std::unique_ptr<SliderAttachment>>  attachments;
