@@ -39,6 +39,10 @@ public:
     /// Components are non-owned; they will be reparented to this cell when laid out.
     void setAuxComponents (const std::vector<juce::Component*>& components, int miniHeightPx);
 
+    /// Optional: set relative vertical weights for aux components when placed on the right.
+    /// Size must match auxComponents count. Values are normalized internally; defaults to equal.
+    void setAuxWeights (const std::vector<float>& weights);
+
  
 
     /// Draw outer border + hover halo (default: true).
@@ -78,6 +82,7 @@ private:
     juce::Label&  valueLabel;     // not positioned here; you do it via placeLabelBelow(...)
     juce::Component* mini { nullptr }; // legacy single-mini path
     std::vector<juce::Component*> auxComponents;     // arbitrary aux components (non-owned)
+    std::vector<float> auxWeights;                   // optional weights for aux vertical sizing
 
     // Layout targets (pixels)
     int K = 84;   // knob diameter

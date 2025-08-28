@@ -1903,6 +1903,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             monoCell   ->setMiniPlacementRight (true);
             monoCell   ->setMiniThicknessPx (Layout::dp (12, s));
             monoCell   ->setAuxComponents ({ monoSlopeSwitch.get(), &monoAuditionButton }, Layout::dp (90, s));
+            // Give the mono slope switch more vertical space than AUD
+            monoCell   ->setAuxWeights ({ 2.0f, 1.0f });
 
             // Managed labels on reverb row
             spaceCell   ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);

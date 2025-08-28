@@ -37,6 +37,13 @@ void KnobCell::setAuxComponents (const std::vector<juce::Component*>& components
     repaint();
 }
 
+void KnobCell::setAuxWeights (const std::vector<float>& weights)
+{
+    auxWeights = weights;
+    resized();
+    repaint();
+}
+
 // Title removed
 
 juce::Colour KnobCell::getPanelColour() const
@@ -129,17 +136,29 @@ void KnobCell::resized()
             }
             else if (! auxComponents.empty())
             {
-                // If stacking aux controls vertically, keep them centered too
+                // Stack aux controls vertically; respect optional weights for relative heights
                 const int count  = (int) auxComponents.size();
                 const int gapY   = juce::jmax (2, G);
                 const int totalG = gapY * juce::jmax (0, count - 1);
-                const int cellH  = juce::jmax (1, (miniStrip.getHeight() - totalG) / juce::jmax (1, count));
+                const int H      = juce::jmax (1, miniStrip.getHeight() - totalG);
+                juce::Array<float> normH;
+                float sum = 0.0f;
+                if ((int) auxWeights.size() == count)
+                {
+                    for (float v : auxWeights) { float t = juce::jmax (0.0f, v); normH.add (t); sum += t; }
+                }
+                if (sum <= 0.0001f) { normH.clear(); for (int i = 0; i < count; ++i) { normH.add (1.0f); } sum = (float) count; }
 
-                const int colH = cellH * count + totalG;
-                juce::Rectangle<int> col (miniStrip.getX(), miniStrip.getCentreY() - colH / 2,
-                                          miniStrip.getWidth(), colH);
+                juce::Rectangle<int> col = miniStrip;
+                int used = 0;
+                for (int i = 0; i < count; ++i) used += (int) std::round (H * (normH[i] / sum));
+                used += totalG;
+                col.setY (miniStrip.getCentreY() - used / 2);
+                col.setHeight (used);
+
                 for (int i = 0; i < count; ++i)
                 {
+                    const int cellH = (int) std::round (H * (normH[i] / sum));
                     auto* c = auxComponents[(size_t) i];
                     if (c != nullptr)
                         c->setBounds (col.removeFromTop (cellH));
@@ -158,14 +177,22 @@ void KnobCell::resized()
             }
             else if (! auxComponents.empty())
             {
-                // Simple horizontal layout for aux components with equal widths
+                // Horizontal layout for aux components; respect optional weights
                 const int count = (int) auxComponents.size();
                 const int gap = juce::jmax (2, G);
                 const int totalGap = gap * juce::jmax (0, count - 1);
-                const int cellW = juce::jmax (1, (miniArea.getWidth() - totalGap) / juce::jmax (1, count));
+                const int w = miniArea.getWidth() - totalGap;
+                juce::Array<float> normW;
+                float sum = 0.0f;
+                if ((int) auxWeights.size() == count)
+                {
+                    for (float v : auxWeights) { float t = juce::jmax (0.0f, v); normW.add (t); sum += t; }
+                }
+                if (sum <= 0.0001f) { normW.clear(); for (int i = 0; i < count; ++i) { normW.add (1.0f); } sum = (float) count; }
                 auto r = miniArea;
                 for (int i = 0; i < count; ++i)
                 {
+                    const int cellW = (int) std::round (w * (normW[i] / sum));
                     auto* c = auxComponents[(size_t) i];
                     if (c != nullptr)
                         c->setBounds (r.removeFromLeft (cellW));
