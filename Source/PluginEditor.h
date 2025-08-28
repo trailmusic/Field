@@ -97,6 +97,7 @@ public:
     void setLPValue (float lpHz)           { lpValue    = lpHz; repaint(); }
     void setPanValue (float pan)           { panValue   = pan; repaint(); }
     void setMonoValue (float monoHz)       { monoHzValue= monoHz; repaint(); }
+    void setMonoSlopeDbPerOct (int slope)  { monoSlopeDbPerOct = slope; repaint(); }
     void setSpaceValue (float depth)       { spaceValue = depth; repaint(); }
     void setSpaceAlgorithm (int algorithm) { spaceAlgorithm = algorithm; repaint(); }
     void setGreenMode (bool enabled)       { isGreenMode = enabled; repaint(); } // kept for .cpp compatibility
@@ -144,6 +145,7 @@ private:
     float lpValue = 20000.0f;
     float panValue = 0.0f;
     float monoHzValue = 0.0f;
+    int   monoSlopeDbPerOct = 12;
     float spaceValue = 0.0f;
     int   spaceAlgorithm = 0; // 0=Inner, 1=Outer, 2=Deep
     bool  isGreenMode = false; // kept for compatibility (XYPad paint may read this)
@@ -559,6 +561,8 @@ private:
 class MyPluginAudioProcessorEditor : public juce::AudioProcessorEditor,
                                      public juce::Timer,
                                      public juce::Slider::Listener,
+                                     public juce::ComboBox::Listener,
+                                     public juce::Button::Listener,
                                      public juce::AudioProcessorValueTreeState::Listener
 {
 public:
@@ -570,6 +574,9 @@ public:
     void resized() override;
     void timerCallback() override;
     void sliderValueChanged(juce::Slider* slider) override;
+    void comboBoxChanged(juce::ComboBox* comboBox) override;
+    void buttonClicked(juce::Button* button) override;
+    void parameterChanged(const juce::String& parameterID, float newValue) override;
 
     // Header hover (kept timer; cosmetic)
     void mouseEnter (const juce::MouseEvent& e) override
@@ -705,12 +712,109 @@ public:
 
         void paint(juce::Graphics& g) override
         {
-            auto b = getLocalBounds().toFloat().reduced(4.0f); // smaller footprint
+            auto b = getLocalBounds().toFloat().reduced(2.0f);
             if (hovered || active) b = b.expanded(1.5f);
+            // base rotary
             ui::paintRotaryWithLNF(g, *this, b);
+
+            // Secondary arc for current ducking amount (gain reduction)
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            {
+                const float grDb = currentGrDb;                 // 0..~24
+                const float maxDb = 24.0f;                      // visualize up to 24 dB
+                const float t = juce::jlimit (0.0f, 1.0f, grDb / maxDb);
+                if (t > 0.001f)
+                {
+                    const float start = juce::MathConstants<float>::pi;
+                    const float end   = start + juce::MathConstants<float>::twoPi * t;
+                    juce::Path arc;
+                    auto ring = b.reduced (b.getWidth() * 0.06f);
+                    arc.addArc (ring.getX(), ring.getY(), ring.getWidth(), ring.getHeight(), start, end, true);
+                    // use a secondary accent (textMuted) for contrast
+                    g.setColour (lf->theme.textMuted.withAlpha (0.85f));
+                    g.strokePath (arc, juce::PathStrokeType (3.0f));
+                }
+            }
         }
+        void setCurrentGrDb (float db) { currentGrDb = db; }
     private:
         bool hovered = false, active = false;
+        float currentGrDb = 0.0f;
+    };
+
+    // Generic duck parameter slider that supports a muted overlay state
+    class DuckParamSlider : public juce::Slider
+    {
+    public:
+        DuckParamSlider() : juce::Slider(RotaryHorizontalVerticalDrag, NoTextBox) {}
+        void setMuted (bool m) { muted = m; repaint(); }
+        bool isMuted() const { return muted; }
+
+        void paint (juce::Graphics& g) override
+        {
+            auto r = getLocalBounds().toFloat().reduced(2.0f);
+            ui::paintRotaryWithLNF(g, *this, r);
+            if (muted)
+            {
+                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                {
+                    // Soft wash to grey-out arcs
+                    g.setColour (lf->theme.panel.withAlpha (0.35f));
+                    g.fillEllipse (r);
+                    // Thin muted ring on top for clarity
+                    g.setColour (lf->theme.textMuted.withAlpha (0.85f));
+                    g.drawEllipse (r, 1.5f);
+                }
+            }
+        }
+    private:
+        bool muted { false };
+    };
+
+    // Duck ratio slider with stepped snapping and custom tick dots for allowed ratios only
+    class DuckRatioSlider : public juce::Slider
+    {
+    public:
+        DuckRatioSlider() : juce::Slider(RotaryHorizontalVerticalDrag, NoTextBox)
+        {
+            setMouseDragSensitivity(100);
+        }
+        void setMuted (bool m) { muted = m; repaint(); }
+        bool isMuted() const { return muted; }
+
+        double snapValue (double attemptedValue, DragMode) override
+        {
+            // Nearest value from allowed ratios
+            double best = allowed[0];
+            double bestErr = std::abs(attemptedValue - best);
+            for (double v : allowed)
+            {
+                const double err = std::abs(attemptedValue - v);
+                if (err < bestErr) { bestErr = err; best = v; }
+            }
+            return best;
+        }
+
+        void paint (juce::Graphics& g) override
+        {
+            auto r = getLocalBounds().toFloat().reduced(2.0f);
+            // Use default FieldLNF rotary rendering (with its default tick/dot system)
+            ui::paintRotaryWithLNF(g, *this, r);
+            if (muted)
+            {
+                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                {
+                    g.setColour (lf->theme.panel.withAlpha (0.35f));
+                    g.fillEllipse (r);
+                    g.setColour (lf->theme.textMuted.withAlpha (0.85f));
+                    g.drawEllipse (r, 1.5f);
+                }
+            }
+        }
+
+    private:
+        std::array<double,5> allowed { 2.0, 4.0, 8.0, 12.0, 20.0 };
+        bool muted { false };
     };
     
     // Resize handle functionality
@@ -718,10 +822,19 @@ public:
     void mouseDrag (const juce::MouseEvent& e) override;
     void mouseUp   (const juce::MouseEvent& e) override;
 
+    // Layout management
+    void performLayout();
+
 private:
     MyPluginAudioProcessor& proc;
     FieldLNF lnf;
     XYPad pad;
+    
+    // Resize constraints
+    int minWidth = 0;
+    int minHeight = 0;
+    int maxWidth = 3000;
+    int maxHeight = 2000;
     
     // UI Components
     GainSlider   gain;
@@ -736,6 +849,8 @@ private:
     PanSlider    panKnob;
     PanSlider    panKnobLeft, panKnobRight;  // split mode pan
     DuckingSlider duckingKnob;
+    DuckParamSlider duckAttack, duckRelease, duckThreshold; // Ducking advanced (UI knobs)
+    DuckRatioSlider duckRatio;
     juce::ComboBox osSelect;
 
     PresetComboBox   presetCombo;
@@ -745,6 +860,13 @@ private:
     
     // Frequency control sliders
     juce::Slider tiltFreqSlider, scoopFreqSlider, bassFreqSlider, airFreqSlider;
+    
+    // Delay controls
+    juce::Slider delayTime, delayFeedback, delayWet, delaySpread, delayWidth, delayModRate, delayModDepth, delayWowflutter, delayJitter;
+    juce::Slider delayHp, delayLp, delayTilt, delaySat, delayDiffusion, delayDiffuseSize;
+    juce::Slider delayDuckDepth, delayDuckAttack, delayDuckRelease, delayDuckThreshold, delayDuckRatio, delayDuckLookahead;
+    juce::ComboBox delayMode, delayTimeDiv, delayDuckSource;
+    juce::ToggleButton delayEnabled, delaySync, delayKillDry, delayFreeze, delayPingpong, delayDuckPost, delayDuckLinkGlobal;
     
     // Icon buttons (shared base)
     OptionsButton    optionsButton;
@@ -771,6 +893,9 @@ private:
         }
     };
     SpaceKnob spaceKnob;
+    // Placeholder for mono slope switch definition (defined after SpaceAlgorithmSwitch)
+    class MonoSlopeSwitch;
+    std::unique_ptr<MonoSlopeSwitch> monoSlopeSwitch;
     
     // 3-way algorithm switch (colors derived from current LNF accent)
     class SpaceAlgorithmSwitch : public juce::Component
@@ -859,6 +984,55 @@ private:
     };
     
     SpaceAlgorithmSwitch spaceAlgorithmSwitch;
+
+    // Dedicated Mono Slope Switch (6/12/24) with independent drawing but same visual language
+    class MonoSlopeSwitch : public juce::Component
+    {
+    public:
+        MonoSlopeSwitch() = default;
+        void setIndex (int idx) { current = juce::jlimit (0, 2, idx); repaint(); if (onChange) onChange (current); }
+        int  getIndex () const { return current; }
+        std::function<void(int)> onChange;
+        void paint (juce::Graphics& g) override
+        {
+            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+            auto accent = lf ? lf->theme.accent : juce::Colour (0xFF5AA9E6);
+            auto panel  = lf ? lf->theme.panel  : juce::Colour (0xFF2A2C30);
+            auto sh     = lf ? lf->theme.sh     : juce::Colour (0xFF1A1C20);
+            auto text   = lf ? lf->theme.text   : juce::Colours::white;
+
+            auto b = getLocalBounds().toFloat();
+            const float spacing = 6.0f;
+            const float availableH = juce::jmax (0.0f, b.getHeight() - 2.0f * spacing);
+            const float h = availableH / 3.0f;
+
+            auto draw = [&](juce::Rectangle<float> r, int idx, const juce::String& lbl)
+            {
+                const bool on = (current == idx);
+                g.setColour (on ? (idx==0? accent : (idx==1? accent.brighter(0.2f) : accent.darker(0.2f))) : panel);
+                g.fillRoundedRectangle (r, 6.0f);
+                g.setColour (sh);
+                g.drawRoundedRectangle (r, 6.0f, 1.0f);
+                g.setColour (text);
+                g.setFont (juce::Font (juce::FontOptions (12.0f).withStyle ("Bold")));
+                g.drawText (lbl, r, juce::Justification::centred);
+            };
+
+            draw ({ b.getX(), b.getY(),                     b.getWidth(), h },                 0, "6");
+            draw ({ b.getX(), b.getY() + h + spacing,       b.getWidth(), h },                 1, "12");
+            draw ({ b.getX(), b.getY() + 2*(h + spacing),   b.getWidth(), h },                 2, "24");
+        }
+        void mouseDown (const juce::MouseEvent& e) override
+        {
+            const float spacing = 6.0f;
+            const float availableH = juce::jmax (0.0f, (float)getHeight() - 2.0f * spacing);
+            const float h = availableH / 3.0f; const float y = (float) e.y;
+            int idx = (y <= h) ? 0 : (y <= h * 2 + spacing ? 1 : 2);
+            if (idx != current) { current = idx; repaint(); if (onChange) onChange (current); }
+        }
+    private:
+        int current { 1 }; // default to 12 dB/oct
+    };
     
     // A/B & presets
     class ABButton : public ThemedIconButton
@@ -891,21 +1065,54 @@ private:
     
     // Containers
     ControlContainer mainControlsContainer, volumeContainer, eqContainer;
+    ControlContainer delayContainer;
     ControlContainer imageContainer, metersContainer;
     ControlContainer spaceKnobContainer, panKnobContainer;
     
+    // Width grouping (Image row): large WIDTH + small W LO/MID/HI
+    ControlContainer widthGroupContainer;
+    juce::Component widthGroupSlot1, widthGroupSlot2, widthGroupSlot3; // grid placeholders to claim columns
+    
+    // Gain+Drive+Mix grouping (Volume row): invisible container spanning three columns (right side)
+    ControlContainer gainMixGroupContainer;
+    juce::Component gainMixSlot1, gainMixSlot2;
+
+    // Ducking group container (Depth, Attack, Release, Threshold)
+    ControlContainer duckGroupContainer;
+    juce::Component duckSlot1, duckSlot2, duckSlot3;
+    
+    // Volume row unified grouping
+    ControlContainer volGroupContainer;
+    ControlContainer eqGroupContainer;
+    ControlContainer imgGroupContainer;
+    ControlContainer volGroupContainer2;
+    ControlContainer monoGroupContainer;
+    ControlContainer reverbGroupContainer;
+    juce::Component volSlot1, volSlot2, volSlot3, volSlot4, volSlot5, volSlot6, volSlot7;
+
+    
+
     // Value indicators (if you keep them)
     juce::Label leftIndicator, rightIndicator;
     juce::Label gainValue, widthValue, tiltValue, monoValue, hpValue, lpValue, satDriveValue, satMixValue, airValue, bassValue, scoopValue;
     juce::Label monoSlopeName, monoAudName;
     juce::Label panValue, panValueLeft, panValueRight, spaceValue, duckingValue;
+    juce::Label duckAttackValue, duckReleaseValue, duckThresholdValue, duckRatioValue;
     juce::Label tiltFreqValue, scoopFreqValue, bassFreqValue, airFreqValue;
     juce::Label widthLoValue, widthMidValue, widthHiValue, xoverLoValue, xoverHiValue, rotationValue, asymValue, shufLoValue, shufHiValue, shufXValue;
+    juce::Label delayTimeValue, delayFeedbackValue, delayWetValue, delaySpreadValue, delayWidthValue, delayModRateValue, delayModDepthValue, delayWowflutterValue, delayJitterValue;
+    juce::Label delayHpValue, delayLpValue, delayTiltValue, delaySatValue, delayDiffusionValue, delayDiffuseSizeValue;
+    juce::Label delayDuckDepthValue, delayDuckAttackValue, delayDuckReleaseValue, delayDuckThresholdValue, delayDuckRatioValue, delayDuckLookaheadValue;
     // Imaging knob name labels (third row)
     juce::Label widthLoName, widthMidName, widthHiName;
     juce::Label xoverLoName, xoverHiName;
     juce::Label rotationName, asymName;
     juce::Label shufLoName, shufHiName, shufXName;
+    
+    // Delay name labels
+    juce::Label delayTimeName, delayFeedbackName, delayWetName, delaySpreadName, delayWidthName, delayModRateName, delayModDepthName, delayWowflutterName, delayJitterName;
+    juce::Label delayHpName, delayLpName, delayTiltName, delaySatName, delayDiffusionName, delayDiffuseSizeName;
+    juce::Label delayDuckDepthName, delayDuckAttackName, delayDuckReleaseName, delayDuckThresholdName, delayDuckRatioName, delayDuckLookaheadName;
     
     // Text labels
     juce::Label gainL, widthL, tiltL, monoL, hpL, lpL, satDriveL, satMixL;
@@ -918,9 +1125,10 @@ private:
     
     // Scaling
     float scaleFactor = 1.0f;
-    const int baseWidth  = 1500;
-    const int baseHeight = 1200;
+    const int baseWidth  = 1700;
+    const int baseHeight = 1250;
     const int standardKnobSize = 80;
+    bool resizingRowGuard = false;
     
     // Helpers
     void styleSlider (juce::Slider& s);
@@ -941,7 +1149,7 @@ private:
     class CorrelationMeter : public juce::Component, public juce::Timer
     {
     public:
-        CorrelationMeter (MyPluginAudioProcessor& p, FieldLNF& l) : proc (p), lnf (l) {}
+        CorrelationMeter (MyPluginAudioProcessor& p, FieldLNF& l) : proc (p), lnf (l) { startTimerHz (15); }
         void paint (juce::Graphics& g) override
         {
             auto r = getLocalBounds().toFloat();
@@ -974,7 +1182,7 @@ private:
 
             g.setColour (lnf.theme.textMuted);
             g.setFont (juce::Font (juce::FontOptions (12.0f).withStyle ("Bold")));
-            g.drawText ("Corr", r.reduced (4).withHeight (16), juce::Justification::centredTop);
+            g.drawText ("CORR", r.reduced (4).withHeight (16), juce::Justification::centredTop);
         }
         void timerCallback() override { repaint(); }
         void visibilityChanged() override { if (isVisible()) startTimerHz (15); else stopTimer(); }
@@ -984,6 +1192,75 @@ private:
     };
 
     CorrelationMeter corrMeter { proc, lnf };
+
+    // Horizontal L/R meters (RMS + Peak overlays)
+    class HorizontalLRMeters : public juce::Component, public juce::Timer
+    {
+    public:
+        HorizontalLRMeters (MyPluginAudioProcessor& p, FieldLNF& l) : proc(p), lnf(l) { startTimerHz (20); }
+        void paint (juce::Graphics& g) override
+        {
+            auto r = getLocalBounds().toFloat();
+            auto top = r.removeFromTop (r.getHeight() * 0.5f).reduced (2.0f);
+            auto bot = r.reduced (2.0f);
+
+            auto drawBar = [&] (juce::Rectangle<float> b, float rms, float peak, const juce::String& label)
+            {
+                g.setColour (lnf.theme.panel);
+                g.fillRoundedRectangle (b, 4.0f);
+                // Track
+                g.setColour (lnf.theme.hl.withAlpha (0.35f));
+                g.fillRoundedRectangle (b.reduced (1.0f), 3.5f);
+                // Border
+                g.setColour (lnf.theme.sh);
+                g.drawRoundedRectangle (b, 4.0f, 1.0f);
+
+                // scale 0..1 across width
+                auto wRms  = juce::jlimit (0.0f, 1.0f, rms ) * b.getWidth();
+                auto wPeak = juce::jlimit (0.0f, 1.0f, peak) * b.getWidth();
+                // RMS fill with color shift near clipping
+                const bool nearClip = peak >= 0.98f || rms >= 0.90f;
+                auto rmsCol = nearClip ? juce::Colour (0xFFE57373) /*red-ish*/ : lnf.theme.accent;
+                g.setColour (rmsCol.withAlpha (0.35f));
+                g.fillRoundedRectangle (juce::Rectangle<float> (b.getX(), b.getY(), wRms, b.getHeight()), 3.0f);
+                // Peak line
+                g.setColour (nearClip ? juce::Colour (0xFFE53935) : lnf.theme.accent);
+                g.fillRect (juce::Rectangle<float> (b.getX() + wPeak - 1.0f, b.getY(), 2.0f, b.getHeight()));
+
+                // Label
+                g.setColour (lnf.theme.textMuted);
+                g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
+                g.drawText (label, b.reduced (4.0f), juce::Justification::centredLeft);
+
+                // dB tick marks (approx) across the bar: -24, -12, -6, -3, -1 dBFS
+                auto drawTick = [&] (float db, const char* text)
+                {
+                    // map dB to linear magnitude (0..1). For UI, assume 0 = -inf, 1 = 0 dBFS
+                    const float lin = juce::Decibels::decibelsToGain (db, -60.0f);
+                    const float x   = b.getX() + juce::jlimit (0.0f, 1.0f, lin) * b.getWidth();
+                    g.setColour (lnf.theme.hl.withAlpha (0.6f));
+                    g.fillRect (juce::Rectangle<float> (x, b.getY(), 1.0f, b.getHeight()));
+                    g.setColour (lnf.theme.textMuted.withAlpha (0.8f));
+                    g.drawText (text, juce::Rectangle<int> ((int) x - 16, (int) (b.getBottom() + 1), 32, 12), juce::Justification::centredTop);
+                };
+                drawTick (-24.0f, "-24");
+                drawTick (-12.0f, "-12");
+                drawTick (-6.0f,  "-6");
+                drawTick (-3.0f,  "-3");
+                drawTick (-1.0f,  "-1");
+            };
+
+            drawBar (top, proc.getRmsL(), proc.getPeakL(), "L");
+            drawBar (bot, proc.getRmsR(), proc.getPeakR(), "R");
+        }
+        void timerCallback() override { if (isShowing()) repaint(); }
+        void visibilityChanged() override { if (isVisible()) startTimerHz (20); else stopTimer(); }
+    private:
+        MyPluginAudioProcessor& proc;
+        FieldLNF& lnf;
+    };
+
+    HorizontalLRMeters lrMeters { proc, lnf };
 
     // A/B state
     std::map<juce::String, float> stateA, stateB;
@@ -999,7 +1276,6 @@ private:
     void toggleABState();
     void copyState(bool copyFromA);
     void pasteState(bool pasteToA);
-    void parameterChanged(const juce::String& parameterID, float newValue) override;
     void updatePresetDisplay();
     
     // Header hover
@@ -1143,8 +1419,8 @@ private:
         FieldLNF& lnf;
     };
 
-    VerticalDivider splitDivider{lnf};
-    VerticalDivider eqDivLpMono{lnf}, eqDivScoopHp{lnf};
+    VerticalDivider splitDivider{lnf}, eqDivLpMono{lnf}, eqDivScoopHp{lnf};
+    VerticalDivider volDivPanSpace{lnf}, volDivDuckRight{lnf};
     // Horizontal dividers between rows
     class HorizontalDivider : public juce::Component {
     public:

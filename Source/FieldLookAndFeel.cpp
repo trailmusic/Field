@@ -88,7 +88,9 @@ void FieldLNF::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h,
 void FieldLNF::drawKnobLabel (juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& text)
 {
     g.setColour (theme.text);
-    g.setFont (juce::Font (juce::FontOptions (bounds.getHeight() * 0.12f + 2.0f).withStyle ("Bold")));
+    // Increase font size for better visibility
+    const float fontSize = juce::jmax (10.0f, bounds.getHeight() * 0.18f);
+    g.setFont (juce::Font (juce::FontOptions (fontSize).withStyle ("Bold")));
     g.drawText (text, bounds.toNearestInt(), juce::Justification::centred);
 }
 

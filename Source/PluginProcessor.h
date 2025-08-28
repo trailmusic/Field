@@ -1,6 +1,8 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "dsp/Ducker.h"
+#include "dsp/DelayEngine.h"
 
 // Forward decls used by the templated chain / processor snapshot
 struct HostParams;           // Double-domain snapshot built each block in the processor
@@ -21,6 +23,7 @@ struct FieldChain
     void reset();
     void setParameters (const HostParams& hp);   // per-block ingress (double -> Sample)
     void process (Block);                        // main process
+    float getCurrentDuckGrDb() const;            // meter: current GR dB
 
 private:
     // ----- helpers -----
@@ -49,8 +52,8 @@ private:
     // Nonlinear / dynamics / FX
     void applySaturationOnBlock (juce::dsp::AudioBlock<Sample> b, Sample driveLin);
     void applySaturation (Block, Sample driveLin, Sample mix01, int osModeIndex);
-    void applyDucking (Block, Sample ducking);
     void applySpaceAlgorithm (Block, Sample depth01, int algo);
+    void renderSpaceWet (juce::AudioBuffer<Sample>& wet);
 
     // ----- state -----
     double sr { 48000.0 };
@@ -74,6 +77,12 @@ private:
     std::unique_ptr<juce::dsp::Reverb>   reverbF;  // used when Sample == float
     juce::dsp::Reverb::Parameters        rvParams;
 
+    // Look-ahead ducker (per-Sample instance)
+    fielddsp::Ducker<Sample>             ducker;
+    
+    // Delay engine (per-Sample instance)
+    DelayEngine<Sample>                  delayEngine;
+
     // Per-block params converted to Sample domain
     struct FieldParams
     {
@@ -81,6 +90,15 @@ private:
         Sample tiltDb{}, scoopDb{}, monoHz{}, hpHz{}, lpHz{};
         Sample satDriveLin{}, satMix{}; bool bypass{}; int spaceAlgo{};
         Sample airDb{}, bassDb{}, ducking{}; int osMode{}; bool splitMode{};
+        // Ducking advanced params
+        Sample duckThresholdDb{};
+        Sample duckKneeDb{};
+        Sample duckRatio{};
+        Sample duckAttackMs{};
+        Sample duckReleaseMs{};
+        Sample duckLookaheadMs{};
+        Sample duckRmsMs{};
+        int    duckTarget{}; // 0=WetOnly, 1=Global
         Sample tiltFreq{}, scoopFreq{}, bassFreq{}, airFreq{};
         // Imaging additions (Sample domain)
         Sample xoverLoHz{}, xoverHiHz{};
@@ -91,6 +109,40 @@ private:
         Sample shufflerXoverHz{};
         int    monoSlopeDbOct{};
         bool   monoAudition{};
+        
+        // Delay parameters
+        bool   delayEnabled{};
+        int    delayMode{};
+        bool   delaySync{};
+        Sample delayTimeMs{};
+        int    delayTimeDiv{};
+        Sample delayFeedbackPct{};
+        Sample delayWet{};
+        bool   delayKillDry{};
+        bool   delayFreeze{};
+        bool   delayPingpong{};
+        Sample delayCrossfeedPct{};
+        Sample delayStereoSpreadPct{};
+        Sample delayWidth{};
+        Sample delayModRateHz{};
+        Sample delayModDepthMs{};
+        Sample delayWowflutter{};
+        Sample delayJitterPct{};
+        Sample delayHpHz{};
+        Sample delayLpHz{};
+        Sample delayTiltDb{};
+        Sample delaySat{};
+        Sample delayDiffusion{};
+        Sample delayDiffuseSizeMs{};
+        int    delayDuckSource{};
+        bool   delayDuckPost{};
+        Sample delayDuckDepth{};
+        Sample delayDuckAttackMs{};
+        Sample delayDuckReleaseMs{};
+        Sample delayDuckThresholdDb{};
+        Sample delayDuckRatio{};
+        Sample delayDuckLookaheadMs{};
+        bool   delayDuckLinkGlobal{};
     } params;
 };
 
@@ -104,6 +156,15 @@ struct HostParams
     double tiltDb{}, scoopDb{}, monoHz{}, hpHz{}, lpHz{};
     double satDriveDb{}, satMix{}; bool bypass{}; int spaceAlgo{};
     double airDb{}, bassDb{}, ducking{}; int osMode{}; bool splitMode{};
+    // Ducking advanced
+    double duckThresholdDb{};
+    double duckKneeDb{};
+    double duckRatio{};
+    double duckAttackMs{};
+    double duckReleaseMs{};
+    double duckLookaheadMs{};
+    double duckRmsMs{};
+    int    duckTarget{}; // 0 wet, 1 global
     double tiltFreq{}, scoopFreq{}, bassFreq{}, airFreq{};
     // Imaging additions
     double xoverLoHz{};       // 40..400
@@ -116,8 +177,42 @@ struct HostParams
     double shufflerLoPct{};   // 0..200
     double shufflerHiPct{};   // 0..200
     double shufflerXoverHz{}; // 150..2000
-    int    monoSlopeDbOct{};  // 6/12/24
-    bool   monoAudition{};    // 0/1
+            int    monoSlopeDbOct{};  // 6/12/24
+        bool   monoAudition{};    // 0/1
+        
+        // Delay parameters
+        bool   delayEnabled{};
+        int    delayMode{};       // 0=Digital, 1=Analog, 2=Tape
+        bool   delaySync{};
+        double delayTimeMs{};
+        int    delayTimeDiv{};
+        double delayFeedbackPct{};
+        double delayWet{};
+        bool   delayKillDry{};
+        bool   delayFreeze{};
+        bool   delayPingpong{};
+        double delayCrossfeedPct{};
+        double delayStereoSpreadPct{};
+        double delayWidth{};
+        double delayModRateHz{};
+        double delayModDepthMs{};
+        double delayWowflutter{};
+        double delayJitterPct{};
+        double delayHpHz{};
+        double delayLpHz{};
+        double delayTiltDb{};
+        double delaySat{};
+        double delayDiffusion{};
+        double delayDiffuseSizeMs{};
+        int    delayDuckSource{};
+        bool   delayDuckPost{};
+        double delayDuckDepth{};
+        double delayDuckAttackMs{};
+        double delayDuckReleaseMs{};
+        double delayDuckThresholdDb{};
+        double delayDuckRatio{};
+        double delayDuckLookaheadMs{};
+        bool   delayDuckLinkGlobal{};
 };
 
 // ===============================
@@ -173,6 +268,17 @@ public:
     std::function<void(double, double)> onAudioSample;
     // Meters
     float getCorrelation() const { return meterCorrelation.load(); }
+    float getRmsL() const { return meterRmsL.load(); }
+    float getRmsR() const { return meterRmsR.load(); }
+    float getPeakL() const { return meterPeakL.load(); }
+    float getPeakR() const { return meterPeakR.load(); }
+    // Current ducking gain reduction in dB (>=0), from active precision chain
+    float getCurrentDuckGrDb() const
+    {
+        if (isDoublePrecEnabled && chainD) return chainD->getCurrentDuckGrDb();
+        if (chainF) return chainF->getCurrentDuckGrDb();
+        return 0.0f;
+    }
 
 private:
     // APVTS listener
@@ -201,5 +307,7 @@ private:
     double currentSR { 48000.0 };
     // Metering
     std::atomic<float> meterCorrelation { 0.0f };
+    std::atomic<float> meterRmsL { 0.0f }, meterRmsR { 0.0f };
+    std::atomic<float> meterPeakL { 0.0f }, meterPeakR { 0.0f };
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)
 };

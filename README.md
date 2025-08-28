@@ -1,7 +1,3 @@
-Here’s a cleaned, consolidated, **industry-standard** README that merges the *relevant* parts of your old doc with everything we’ve planned in this thread—while dropping stale or redundant bits.
-
----
-
 # FIELD — Professional Spatial & Imaging Processor
 
 A modern spatial-imaging plugin built with JUCE. FIELD blends an expressive **XY Pad** (pan/depth), **multiband imaging** (per-band width + shuffler + rotation/asymmetry), tasteful **mono management**, **stereoize** options, **Brauer-style motion**, clear metering, and a **searchable preset system**—all under a consistent Look\&Feel and a maintainable codebase.
@@ -82,13 +78,26 @@ We drew from tools like **Basslane/Basslane Pro** (low-end mono & width treatmen
 * **Sync/Free:** DAW-sync divisions & free Hz rates
 * **Depth/Width/Phase/Center Bias** + optional **band-limited** motion
 
+### Delay System (NEW - Professional Grade)
+
+* **Three Delay Modes:** Digital (clean), Analog (BBD-style), Tape (wow/flutter)
+* **Stereo Processing:** Independent L/R delay lines with crossfeed and ping-pong
+* **Tempo Sync:** Musical divisions with dotted/triplet support (1/64T to 2/1D)
+* **Modulation:** LFO-based chorus, wow/flutter, and jitter for movement
+* **Tone Shaping:** HP/LP filters, tilt EQ, saturation in feedback loop
+* **Diffusion:** 4-stage all-pass chain for reverb-like effects
+* **Per-Delay Ducking:** Independent sidechain with attack/release/threshold/ratio
+* **Glitchless Time Changes:** Dual-reader crossfade prevents pops/clicks
+* **High-Quality Interpolation:** Cubic Lagrange for smooth modulation
+* **Feedback Safety:** Hard limits and auto-reduction for stability
+
 ### Presets
 
 * **Searchable** by text, **categorized**, **A/B** with **Copy A↔B**, JSON storage
 
 ### Visuals & Meters
 
-* **Correlation**, **mini vectorscope**, **L/R + M/S bars**, **waveform background**
+* **Correlation**, **mini vectorscope**, **L/R bars**, **waveform background**
 * **EQ curves:** HP/LP, Tilt, Air, Scoop/Boost — true RBJ magnitude; neutral at HP=20 Hz and LP=20 kHz
 * **Rulers & Grid:** dB ruler (±18 dB with soft mapping) and Pan subgrid (every 5 units, 50L…0…50R)
 
@@ -103,9 +112,20 @@ We drew from tools like **Basslane/Basslane Pro** (low-end mono & width treatmen
     → Per-Band M/S Width (Lo/Mid/Hi)
     → Shuffler LF/HF (with shuffler_xover_hz)
  → Global M/S: Rotation, Asymmetry
+ → Space Send → Reverb (wet-only) → Wet Ducking (look-ahead RMS, sidechain=dry)
+    ├── Dry bus ─────────────────────────────────────────────┐
+    └── Wet bus (100% wet, scaled by depth) → Look-Ahead DUCKER →┘
+ → Sum (Dry + Wet)
+ → DELAY PROCESSING (NEW):
+    ├── Mode Selection (Digital/Analog/Tape)
+    ├── Dual Delay Lines (L/R) with Cubic Lagrange Interpolation
+    ├── Modulation (LFO + Wow/Flutter + Jitter)
+    ├── Feedback Loop: HP → LP → Tilt → Saturation → Diffusion → Crossfeed
+    ├── Stereo Processing (Ping-Pong, Spread, Width)
+    └── Per-Delay Ducking (optional, independent of global duck)
  → Stereoize (Haas/AP/MicroPitch) + mono safety
  → Mono Maker (below mono_hz, slope, audition tap)
- → Saturation / Drive / Mix (existing)
+ → Saturation (Drive/Mix)
  → Output L/R
 
 Meters tap at safe points (LR+MS peaks, correlation, scope feed).
@@ -122,6 +142,7 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
 * `gain_db` (-12…+12, 0), `sat_drive_db` (0…36, 0), `sat_mix` (0…1, 1), `bypass` (0/1, 0)
 * `width` (0.5…2.0, 1.0), `pan` (-1…+1, 0), `pan_l` / `pan_r` (split), `split_mode` (0/1, 0)
 * `space_algo` (Inner/Outer/Deep, Inner), `depth` (0…1, 0.0), `ducking` (0…1, 0), `os_mode` (Off/2x/4x)
+* Ducking advanced: `duck_threshold_db` (-60..0), `duck_knee_db` (0..18), `duck_ratio` (1..20), `duck_attack_ms` (1..80), `duck_release_ms` (20..800), `duck_lookahead_ms` (0..20), `duck_rms_ms` (2..50), `duck_target` (WetOnly/Global)
 * `hp_hz` (20…1000, 20), `lp_hz` (1000…20000, 20000) — bypassed at extremes
 * `tilt` (-12…+12, 0), `air_db` (0…6, 0), `bass_db` (-12…+12, 0), `scoop` (-12…+12, 0)
 * (Mini-sliders) `tilt_freq` (100…1000), `scoop_freq` (200…2000), `bass_freq` (50…500), `air_freq` (2k…20k)
@@ -133,6 +154,41 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
 * `width_lo` (0…2, **1.0**), `width_mid` (0…2, **1.0**), `width_hi` (0…2, **1.1**)
 * `rotation_deg` (-45…+45, **0**), `asymmetry` (-1…+1, **0**)
 * `shuffler_lo_pct` (0…200, **100**), `shuffler_hi_pct` (0…200, **110**), `shuffler_xover_hz` (150…2000, **700**)
+
+**Delay System (NEW)**
+
+* `delay_enabled` (0/1, **0**) — Master delay enable/disable
+* `delay_mode` (Digital/Analog/Tape, **Digital**) — Delay character mode
+* `delay_sync` (0/1, **1**) — Tempo sync vs free time
+* `delay_time_ms` (1…4000, **350**) — Free time in milliseconds
+* `delay_time_div` (1/64T…2/1D, **1/4**) — Musical division when synced
+* `delay_feedback_pct` (0…98, **36**) — Feedback amount (hard-limited <99%)
+* `delay_wet` (0…1, **0.25**) — Delay wet level
+* `delay_kill_dry` (0/1, **0**) — Kill dry signal (wet only)
+* `delay_freeze` (0/1, **0**) — Freeze delay (input muted, 100% feedback)
+* `delay_pingpong` (0/1, **0**) — Ping-pong between L/R channels
+* `delay_crossfeed_pct` (0…100, **35**) — L/R crossfeed amount
+* `delay_stereo_spread_pct` (0…100, **25**) — Stereo time spread (L earlier/R later)
+* `delay_width` (0…2, **1.0**) — Delay wet width processing
+* `delay_mod_rate_hz` (0.01…12, **0.35**) — LFO modulation rate
+* `delay_mod_depth_ms` (0…12, **3.0**) — LFO modulation depth (Digital/Analog)
+* `delay_wowflutter` (0…1, **0.25**) — Tape wow/flutter amount (Tape mode)
+* `delay_jitter_pct` (0…10, **2**) — Random time jitter percentage
+* `delay_hp_hz` (20…2000, **120**) — Feedback loop high-pass filter
+* `delay_lp_hz` (2000…20000, **12000**) — Feedback loop low-pass filter
+* `delay_tilt_db` (-6…+6, **0**) — Feedback loop tilt EQ
+* `delay_sat` (0…1, **0.2**) — Feedback loop saturation amount
+* `delay_diffusion` (0…1, **0**) — All-pass diffusion amount (0=off)
+* `delay_diffuse_size_ms` (5…50, **18**) — All-pass diffusion time spread
+* `delay_duck_source` (Input/Wet/Both, **Input**) — Ducking sidechain source
+* `delay_duck_post` (0/1, **1**) — Duck post-wet vs pre-wet
+* `delay_duck_depth` (0…1, **0.6**) — Ducking depth amount
+* `delay_duck_attack_ms` (1…200, **12**) — Ducking attack time
+* `delay_duck_release_ms` (20…1000, **220**) — Ducking release time
+* `delay_duck_threshold_db` (-60…0, **-26**) — Ducking threshold level
+* `delay_duck_ratio` (1…8, **2**) — Ducking compression ratio
+* `delay_duck_lookahead_ms` (0…15, **5**) — Ducking lookahead time
+* `delay_duck_link_global` (0/1, **1**) — Link to global ducking settings
 
 **Stereoize**
 
@@ -161,7 +217,7 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
 
 **Meters (read-only)**
 
-* `meter_corr` (-1…+1), `meter_lr_peak`, `meter_ms_peak`, `scope_feed_x/y`
+* `meter_corr` (-1…+1), `meter_lr_peak`, `meter_ms_peak`, `scope_feed_x/y`, `duck_gr_db` (live GR dB)
 
 **Pan Law (spec)**
 
@@ -176,12 +232,19 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
 
 * **Header:** Bypass, Preset combo (searchable), Prev/Next, Save, A/B with Copy, Split, Link, Snap Grid, Color Mode, Fullscreen.
 * **Hero:** **XY Pad** (pan/depth) with split markers; waveform background; motion path overlay.
-* **Right Strip:** Correlation pill, mini vectorscope, L/R + M/S meters.
+* **Right Strip:** Vertical meter panel with correlation meter (top) and L/R meters (bottom).
 * **Bottom Rows:**
 
-  * **Volume row:** Pan (or L/R), Depth, Space Algo, Ducking, Gain, Drive, Width, Mix.
+  * **Volume row:** Pan (or L/R), Depth, Space Algo, Ducking (DUCK/ATT/REL/THR/RAT), Gain, Drive, Width, Mix.
+    - Ducking controls are size L and fully labeled; DUCK shows 0–100%.
+    - DUCK knob renders a secondary arc indicating live gain reduction.
   * **EQ row:** Bass, Air, Tilt (+ mini-freq sliders), HP, LP, Mono.
   * **Image row:** Width Lo/Mid/Hi, Rotation, Asymmetry, Shuffler, Stereoize card.
+* **Right Side Card:** **Delay Module** - Professional delay system as dedicated card-shaped module:
+  - **Row 1 (Core):** Enable, Mode (Digital/Analog/Tape), Sync, Time, Feedback, Wet
+  - **Row 2 (Stereo):** Freeze, Kill Dry, Ping-Pong, Spread, Width, Mod Rate
+  - **Row 3 (Modulation/Tone):** Mod Depth, Wow/Flutter, Jitter, HP, LP, Tilt
+  - **Row 4 (Advanced):** Saturation, Diffusion, Diffuse Size, Duck Depth, Duck Attack, Duck Release
 
 ### Look & Feel
 
@@ -232,7 +295,187 @@ DP helper: `Layout::dp(px, scale)`; always scale sizes with the editor `scaleFac
 * **EQ curves:** HP/LP (blue), Tilt (orange dashed), Air (white).
 * **Drive visualization** with fine lines.
 * **Pan split borders** show L/R split percentage.
-* **Meters:** L/R + M/S bars, **Correlation** (-1…+1), **mini vectorscope**.
+  - **CORR**: -1…+1 centered bar (neg=left/red, pos=right/green).
+  - **L/R bars**: stacked horizontal meters with RMS fill and peak marker; near-clip turns red; dB ticks at -24/-12/-6/-3/-1 dBFS.
+  - Scaled 0..1 (linear) with dB-to-gain mapping for tick placement. Values smoothed per block for stable visuals.
+
+---
+
+## Delay System Technical Specification
+
+FIELD's delay system is a professional-grade implementation designed for musical applications, featuring three distinct character modes, comprehensive modulation, and advanced stereo processing.
+
+### Core Architecture
+
+**Delay Line Engine**
+- **Dual DelayLine**: Independent L/R processing with up to 4 seconds maximum delay time
+- **Cubic Lagrange Interpolation**: High-quality fractional delay for smooth modulation without artifacts
+- **Dual-Reader Crossfade**: Glitchless time changes using 20ms linear crossfade between old/new delay times
+- **Automatic Safety**: Hard-limited feedback (<99%) with auto-reduction when saturation/diffusion high
+
+**System Architecture Diagram**
+
+```mermaid
+graph TD
+    A["Input L/R"] --> B["DelayEngine"]
+    
+    B --> B1["Mode Selection"]
+    B1 --> B1a["Digital<br/>(Clean)"]
+    B1 --> B1b["Analog<br/>(BBD)"]
+    B1 --> B1c["Tape<br/>(Wow/Flutter)"]
+    
+    B --> B2["Dual DelayLine"]
+    B2 --> B2a["DelayLine L<br/>(up to 4s)"]
+    B2 --> B2b["DelayLine R<br/>(up to 4s)"]
+    B2a --> B2c["Cubic Lagrange<br/>Interpolation"]
+    B2b --> B2c
+    B2c --> B2d["Dual-Reader<br/>Crossfade"]
+    
+    B --> B3["Modulation System"]
+    B3 --> B3a["LFO Modulation<br/>(0.01-12 Hz)"]
+    B3 --> B3b["Wow/Flutter<br/>(Tape Mode)"]
+    B3 --> B3c["Jitter<br/>(0-10%)"]
+    
+    B2d --> C["Feedback Loop"]
+    C --> C1["HP Filter<br/>(20-2000 Hz)"]
+    C1 --> C2["LP Filter<br/>(2000-20k Hz)"]
+    C2 --> C3["Tilt EQ<br/>(-6 to +6 dB)"]
+    C3 --> C4["Saturation<br/>(Per-Mode)"]
+    C4 --> C5["Diffusion<br/>(4-Stage All-Pass)"]
+    C5 --> C6["Crossfeed<br/>(L/R Interaction)"]
+    C6 --> C7["Feedback<br/>Accumulation"]
+    C7 --> B2["Return to DelayLine"]
+    
+    B2d --> D["Stereo Processing"]
+    D --> D1["Ping-Pong<br/>(L/R Alternation)"]
+    D --> D2["Stereo Spread<br/>(Time Offset)"]
+    D --> D3["Width Processing<br/>(M/S)"]
+    
+    D --> E["Per-Delay Ducking"]
+    E --> E1["Sidechain Sources"]
+    E1 --> E1a["Input"]
+    E1 --> E1b["Wet"]
+    E1 --> E1c["Both"]
+    E --> E2["RMS Detection<br/>(10-20ms)"]
+    E --> E3["Lookahead<br/>(0-15ms)"]
+    E --> E4["Compression<br/>(Attack/Release/Ratio)"]
+    
+    E --> F["Output Mix"]
+    F --> G["Wet + Dry<br/>Combination"]
+    G --> H["Output L/R"]
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#fff3e0
+    style D fill:#e8f5e8
+    style E fill:#fce4ec
+    style H fill:#e1f5fe
+```
+
+**Three Delay Modes**
+- **Digital**: Clean, flat frequency response with chorus-style modulation
+- **Analog (BBD)**: Gentle high-frequency rolloff per repeat, subtle noise, soft-saturating feedback
+- **Tape**: Tilt EQ boost, wow/flutter (dual-rate LFO), asymmetric saturation, head-bump simulation
+
+### Signal Processing Chain
+
+**Per-Channel Processing**
+```
+Input → Write to DelayLine → Read (interpolated) → Feedback Loop → Output Mix
+                                                      ↓
+                                    HP → LP → Tilt → Saturation → Diffusion → Crossfeed
+                                                      ↑
+                                            Feedback accumulation
+```
+
+**Modulation System**
+- **LFO Modulation**: Single sine wave LFO for Digital/Analog modes (0.01-12 Hz, 0-12ms depth)
+- **Tape Wow/Flutter**: Dual-rate LFO blend (~0.3-1.2 Hz wow + ~5-8 Hz flutter) with mechanical noise
+- **Jitter**: Random time variations (0-10% of base delay time) for vintage character
+- **Tempo Sync**: Full musical division support including dotted and triplet subdivisions
+
+**Stereo Processing**
+- **Ping-Pong**: True L/R alternation with high crossfeed (~1.0) and channel swapping
+- **Stereo Spread**: Time offset between L/R channels (L = time × (1-spread), R = time × (1+spread))
+- **Crossfeed**: Controllable L/R interaction (0-100%) for stereo width control
+- **Width Processing**: M/S processing on delay output with FIELD's width law integration
+
+**Tone Shaping (Feedback Loop)**
+- **HP/LP Filters**: State Variable TPT filters (HP: 20-2000 Hz, LP: 2000-20000 Hz)
+- **Tilt EQ**: Broad shelf EQ in feedback path (-6 to +6 dB)
+- **Saturation**: Per-mode soft clipping (tanh for Digital, asymmetric for Tape, gentle knee for Analog)
+- **Diffusion**: 4-stage all-pass chain (5-50ms spread) with 0.6-0.8 gain for reverb-like smearing
+
+### Per-Delay Ducking System
+
+Independent ducking system separate from global ducking, with full parameter control:
+
+**Sidechain Sources**
+- **Input**: Duck against dry input signal
+- **Wet**: Duck against delay wet signal (self-ducking)
+- **Both**: Duck against combined input + wet
+
+**Processing**
+- **RMS Detection**: 10-20ms RMS window with optional lookahead (0-15ms)
+- **Soft-Knee Compression**: Attack (1-200ms), Release (20-1000ms), Ratio (1:1-8:1)
+- **Insertion Point**: Pre-wet or post-wet processing with depth control (0-100%)
+- **Global Linking**: Optional multiplication with global duck settings
+
+### Safety and Stability
+
+**Feedback Protection**
+- Hard limit at 98% feedback to prevent runaway oscillation
+- Auto-reduction when diffusion + saturation create instability
+- DC blocking filter (10 Hz high-pass) in feedback loop
+- Denormal number elimination
+
+**Mono Compatibility**
+- Smart stereo spread reduction when mono maker is active (>150 Hz)
+- Width clamping (≤1.1) to prevent problematic L/R phase relationships
+- Ping-pong auto-adjustment for mono fold-down safety
+
+**Time Change Handling**
+- Small changes (≤32 samples): Direct interpolator adjustment
+- Large changes (>32 samples): 20ms crossfade between old/new positions
+- Sync mode changes: Automatic crossfade to prevent pitch artifacts
+
+### Performance Characteristics
+
+**Sample Rate Independence**
+- Identical musical character at 48/96/192 kHz
+- Automatic oversampling integration (follows global OS settings)
+- Consistent delay times across sample rates
+
+**CPU Optimization**
+- Efficient circular buffer implementation
+- SIMD-friendly processing where applicable
+- Minimal allocations (prepared buffers only)
+- Lock-free parameter updates
+
+---
+
+## Ducking (Wet-Only, Look-Ahead RMS)
+
+FIELD includes a musical, production-grade ducker that creates space for the dry signal by attenuating the Space return (wet bus). The dry bus acts as the sidechain; look‑ahead delays the wet path slightly to catch transients smoothly.
+
+- **Routing:** WetOnly by default. Space is rendered 100% wet, then ducked against the post‑tone/imaging dry bus, and finally summed back. Optional Global mode is present for experimentation.
+- **Sidechain:** Internal Dry (after Pre‑EQ, pan/width, rotation/asymmetry; before saturation on the wet path).
+- **Detector:** RMS with configurable window `duck_rms_ms`.
+- **Transfer curve:** Soft‑knee `duck_knee_db`, ratio `duck_ratio`. Ratio is snapped to musical values in the UI (2:1, 4:1, 8:1, 12:1, 20:1).
+- **Ballistics:** Attack `duck_attack_ms`, Release `duck_release_ms` smooth the gain reduction in dB.
+- **Look‑ahead:** `duck_lookahead_ms` (0–20 ms) applies delay on the wet bus only; no host PDC is introduced for the mix bus.
+- **Depth macro:** `ducking` 0–1 maps to a maximum GR cap (up to ~24 dB by default). In the UI, DUCK shows 0–100%.
+
+### UI specifics
+- Ducking group (Volume row): DUCK, ATT, REL, THR, RAT. All size L and labeled.
+- DUCK value label shows 0–100% depth; the knob renders a secondary arc showing the current, live gain reduction amount (GR) in real time.
+- Ratio (RAT) is stepped; default tick dots remain (no custom blue-dot painting).
+
+### DSP implementation
+- Implemented in `Source/dsp/Ducker.h` with an internal soft‑knee compressor‑style curve and RMS detector.
+- `Ducker::processWet()` applies look‑ahead by writing the wet signal to an internal delay line and reading it back delayed while applying sidechain‑driven gain.
+- Current smoothed GR dB is tracked and exposed via `getCurrentGainReductionDb()` for UI metering.
+- Integrated in the processor’s templated `FieldChain<Sample>` and used in `process()` right after Space wet rendering and (optional) saturation.
 
 ---
 
@@ -269,15 +512,22 @@ cmake --build . --config Release
 ```
 Source/
   dsp/
+    DelayEngine.h          // Professional delay system (NEW)
+      ├── CubicLagrange    // High-quality fractional delay interpolation
+      ├── DelayLine        // Dual-reader crossfade delay line
+      ├── Allpass          // 4-stage diffusion chain
+      ├── Ducker           // Per-delay ducking with lookahead
+      └── DelayEngine      // Main processor with all delay modes
     BandSplitter.*         // LR24 crossovers
     Imaging.*              // width (banded), rotation, asymmetry, shuffler
     Stereoize.*            // Haas/AP/MicroPitch + mono safety
     Motion.*               // autopan core + tempo sync
     Meters.*               // atomics/lock-free scope feeds
+    Ducker.h               // Global ducking system
   ui/
     XYPad.*                // split mode, link, grid, motion overlay
     Controls.*             // knobs, sliders, toggles, containers
-    Containers.*           // Space/Pan/Volume/EQ/Image rows
+    Containers.*           // Space/Pan/Volume/EQ/Image/Delay rows
     FieldLookAndFeel.*     // unified theme & drawing
     Presets.*              // searchable UI, A/B, save
   PluginProcessor.*        // APVTS, dsp graph, state
@@ -315,10 +565,6 @@ Source/
 15\. Minimum hit target ≥ **24 dp**; hand cursor for interactive; keyboard focus where useful.
 16\. Consistent iconography & centered labels for discoverability.
 
-**AI Builder Prompt (paste into your tool)**
-
-> Use JUCE 7+, C++17. Size in `resized()`, draw in `paint()`. Use `Grid`, dp helpers, and `FieldLNF`. Wire all controls to APVTS via attachments. Keep DSP/UI decoupled (no UI headers in DSP). No allocations/locks in audio thread. Implement the parameters and IDs exactly as in this README. Add A/B & searchable presets. Add mono-safety for stereoize and LR24 crossovers for band width. Write tests/checks from the QA list.
-
 ---
 
 ## Testing & QA Checklist
@@ -329,6 +575,15 @@ Source/
 * Crossovers null when recombined (phase-coherent LR24).
 * Rotation/Asymmetry maintain energy; automatable without clicks.
 * Motion remains in sync across transport start/stop & offline render.
+* **Delay System:**
+  - Time changes (free↔sync, division jumps) are pop-free with crossfade
+  - Feedback cannot runaway with saturation/diffusion (auto-trim works)
+  - Mono fold-down stable across Ping-Pong + Spread (no LF rocking)
+  - Per-delay ducking smooth with lookahead; no pre-echo when post-wet
+  - Offline render deterministic (LFO phase reset on transport)
+  - 48/96/192 kHz identical feel; no denormal spikes in tails
+  - All three modes (Digital/Analog/Tape) have distinct character
+  - Modulation (LFO/wow/flutter/jitter) musical and artifact-free
 
 **UI**
 
@@ -346,10 +601,43 @@ Source/
 
 ## Roadmap
 
+* **✅ COMPLETED:** Professional Delay System with 3 modes, comprehensive modulation, stereo processing, and per-delay ducking
 * **P0 (Ship):** Multiband imaging (width/shuffler/rotation/asym), Mono Maker slope+audition, meters, searchable presets, polished LNF.
-* **P1:** Stereoize Haas + mono safety, Motion (sine/tri), more presets.
+* **P1:** Stereoize Haas + mono safety, Motion (sine/tri), more presets, delay preset bank.
 * **P2:** Stereoize All-Pass & MicroPitch, advanced Motion (square/random, circle/∞), per-band meters & solos.
+* **Delay Enhancements:** 
+  - Complete tempo sync implementation for musical divisions
+  - Per-mode character refinement (Analog HF rolloff, Tape head-bump)
+  - Advanced modulation (mechanical wow/flutter noise, groove patterns)
+  - Preset categories: "Slap", "Dub", "Tape Space", "Cloudy Vox", "Guitar Analog", "Ping-Pong 1/8D", "Lo-Fi Ping"
 * **Nice-to-have:** Optional oversampling island for saturation; 64-bit path where host requests; preset cloud sync.
+
+---
+
+## Responsive Design & Resize Constraints
+
+The plugin now features intelligent resize constraints to ensure optimal usability:
+
+### Minimum Size Constraints
+- **Minimum Width**: Automatically calculated based on the layout requirements to ensure all controls remain accessible
+- **Minimum Height**: Ensures the XY pad and all control rows remain visible and usable
+- **Dynamic Calculation**: Minimum sizes are calculated based on the actual layout components and spacing
+
+### Maximum Size Constraints
+- **Maximum Width**: 3000 pixels
+- **Maximum Height**: 2000 pixels
+- **Prevents Oversizing**: Stops the plugin from becoming too large to be practical
+
+### Aspect Ratio Control
+- **Maintained by Default**: Resizing always maintains the original aspect ratio (1.36:1 - 1700×1250)
+- **Shift + Drag**: Hold Shift while resizing to disable aspect ratio constraints and resize freely
+- **Smart Constraint Handling**: When size limits conflict with aspect ratio, the system intelligently adjusts to maintain proportions
+- **Smooth Scaling**: The interface scales smoothly between minimum and maximum sizes while preserving the visual design
+
+### Responsive Layout
+- **Automatic Scaling**: All UI elements scale proportionally with the window size
+- **Maintained Proportions**: Control spacing and sizing remain consistent
+- **Optimal Readability**: Text and controls remain readable at all sizes
 
 ---
 

@@ -23,6 +23,14 @@ namespace IDs {
     static constexpr const char* airDb      = "air_db";
     static constexpr const char* bassDb     = "bass_db";
     static constexpr const char* ducking    = "ducking";
+    static constexpr const char* duckThrDb  = "duck_threshold_db";
+    static constexpr const char* duckKneeDb = "duck_knee_db";
+    static constexpr const char* duckRatio  = "duck_ratio";
+    static constexpr const char* duckAtkMs  = "duck_attack_ms";
+    static constexpr const char* duckRelMs  = "duck_release_ms";
+    static constexpr const char* duckLAms   = "duck_lookahead_ms";
+    static constexpr const char* duckRmsMs  = "duck_rms_ms";
+    static constexpr const char* duckTarget = "duck_target"; // 0 WetOnly, 1 Global
     static constexpr const char* osMode     = "os_mode";      // 0 Off, 1=2x, 2=4x
     static constexpr const char* splitMode  = "split_mode";   // 0 normal, 1 split
     // EQ start freqs
@@ -43,6 +51,40 @@ namespace IDs {
     static constexpr const char* shufXHz    = "shuffler_xover_hz";
     static constexpr const char* monoSlope  = "mono_slope_db_oct";
     static constexpr const char* monoAud    = "mono_audition";
+    
+    // Delay parameters
+    static constexpr const char* delayEnabled = "delay_enabled";
+    static constexpr const char* delayMode = "delay_mode";
+    static constexpr const char* delaySync = "delay_sync";
+    static constexpr const char* delayTimeMs = "delay_time_ms";
+    static constexpr const char* delayTimeDiv = "delay_time_div";
+    static constexpr const char* delayFeedbackPct = "delay_feedback_pct";
+    static constexpr const char* delayWet = "delay_wet";
+    static constexpr const char* delayKillDry = "delay_kill_dry";
+    static constexpr const char* delayFreeze = "delay_freeze";
+    static constexpr const char* delayPingpong = "delay_pingpong";
+    static constexpr const char* delayCrossfeedPct = "delay_crossfeed_pct";
+    static constexpr const char* delayStereoSpreadPct = "delay_stereo_spread_pct";
+    static constexpr const char* delayWidth = "delay_width";
+    static constexpr const char* delayModRateHz = "delay_mod_rate_hz";
+    static constexpr const char* delayModDepthMs = "delay_mod_depth_ms";
+    static constexpr const char* delayWowflutter = "delay_wowflutter";
+    static constexpr const char* delayJitterPct = "delay_jitter_pct";
+    static constexpr const char* delayHpHz = "delay_hp_hz";
+    static constexpr const char* delayLpHz = "delay_lp_hz";
+    static constexpr const char* delayTiltDb = "delay_tilt_db";
+    static constexpr const char* delaySat = "delay_sat";
+    static constexpr const char* delayDiffusion = "delay_diffusion";
+    static constexpr const char* delayDiffuseSizeMs = "delay_diffuse_size_ms";
+    static constexpr const char* delayDuckSource = "delay_duck_source";
+    static constexpr const char* delayDuckPost = "delay_duck_post";
+    static constexpr const char* delayDuckDepth = "delay_duck_depth";
+    static constexpr const char* delayDuckAttackMs = "delay_duck_attack_ms";
+    static constexpr const char* delayDuckReleaseMs = "delay_duck_release_ms";
+    static constexpr const char* delayDuckThresholdDb = "delay_duck_threshold_db";
+    static constexpr const char* delayDuckRatio = "delay_duck_ratio";
+    static constexpr const char* delayDuckLookaheadMs = "delay_duck_lookahead_ms";
+    static constexpr const char* delayDuckLinkGlobal = "delay_duck_link_global";
 }
 
 // ================================================================
@@ -173,6 +215,14 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.airDb    = getParam(apvts, IDs::airDb);
     p.bassDb   = getParam(apvts, IDs::bassDb);
     p.ducking  = getParam(apvts, IDs::ducking);
+    p.duckThresholdDb = getParam(apvts, IDs::duckThrDb);
+    p.duckKneeDb      = getParam(apvts, IDs::duckKneeDb);
+    p.duckRatio       = getParam(apvts, IDs::duckRatio);
+    p.duckAttackMs    = getParam(apvts, IDs::duckAtkMs);
+    p.duckReleaseMs   = getParam(apvts, IDs::duckRelMs);
+    p.duckLookaheadMs = getParam(apvts, IDs::duckLAms);
+    p.duckRmsMs       = getParam(apvts, IDs::duckRmsMs);
+    p.duckTarget      = (int) apvts.getParameterAsValue (IDs::duckTarget).getValue();
     p.osMode   = (int) apvts.getParameterAsValue (IDs::osMode).getValue();
     p.splitMode= (bool) apvts.getParameterAsValue (IDs::splitMode).getValue();
     p.tiltFreq = getParam(apvts, IDs::tiltFreq);
@@ -192,6 +242,41 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.shufflerXoverHz= getParam(apvts, IDs::shufXHz);
     p.monoSlopeDbOct = (int) juce::roundToInt (getParam(apvts, IDs::monoSlope));
     p.monoAudition   = (getParam(apvts, IDs::monoAud) >= 0.5f);
+    
+    // Delay parameters
+    p.delayEnabled = (getParam(apvts, IDs::delayEnabled) >= 0.5f);
+    p.delayMode = (int) apvts.getParameterAsValue(IDs::delayMode).getValue();
+    p.delaySync = (getParam(apvts, IDs::delaySync) >= 0.5f);
+    p.delayTimeMs = getParam(apvts, IDs::delayTimeMs);
+    p.delayTimeDiv = (int) apvts.getParameterAsValue(IDs::delayTimeDiv).getValue();
+    p.delayFeedbackPct = getParam(apvts, IDs::delayFeedbackPct);
+    p.delayWet = getParam(apvts, IDs::delayWet);
+    p.delayKillDry = (getParam(apvts, IDs::delayKillDry) >= 0.5f);
+    p.delayFreeze = (getParam(apvts, IDs::delayFreeze) >= 0.5f);
+    p.delayPingpong = (getParam(apvts, IDs::delayPingpong) >= 0.5f);
+    p.delayCrossfeedPct = getParam(apvts, IDs::delayCrossfeedPct);
+    p.delayStereoSpreadPct = getParam(apvts, IDs::delayStereoSpreadPct);
+    p.delayWidth = getParam(apvts, IDs::delayWidth);
+    p.delayModRateHz = getParam(apvts, IDs::delayModRateHz);
+    p.delayModDepthMs = getParam(apvts, IDs::delayModDepthMs);
+    p.delayWowflutter = getParam(apvts, IDs::delayWowflutter);
+    p.delayJitterPct = getParam(apvts, IDs::delayJitterPct);
+    p.delayHpHz = getParam(apvts, IDs::delayHpHz);
+    p.delayLpHz = getParam(apvts, IDs::delayLpHz);
+    p.delayTiltDb = getParam(apvts, IDs::delayTiltDb);
+    p.delaySat = getParam(apvts, IDs::delaySat);
+    p.delayDiffusion = getParam(apvts, IDs::delayDiffusion);
+    p.delayDiffuseSizeMs = getParam(apvts, IDs::delayDiffuseSizeMs);
+    p.delayDuckSource = (int) apvts.getParameterAsValue(IDs::delayDuckSource).getValue();
+    p.delayDuckPost = (getParam(apvts, IDs::delayDuckPost) >= 0.5f);
+    p.delayDuckDepth = getParam(apvts, IDs::delayDuckDepth);
+    p.delayDuckAttackMs = getParam(apvts, IDs::delayDuckAttackMs);
+    p.delayDuckReleaseMs = getParam(apvts, IDs::delayDuckReleaseMs);
+    p.delayDuckThresholdDb = getParam(apvts, IDs::delayDuckThresholdDb);
+    p.delayDuckRatio = getParam(apvts, IDs::delayDuckRatio);
+    p.delayDuckLookaheadMs = getParam(apvts, IDs::delayDuckLookaheadMs);
+    p.delayDuckLinkGlobal = (getParam(apvts, IDs::delayDuckLinkGlobal) >= 0.5f);
+    
     return p;
 }
 
@@ -207,25 +292,36 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     juce::dsp::AudioBlock<float> block (buffer);
     chainF->process (block);
 
-    // Correlation meter (simple block estimate)
+    // Correlation + RMS/Peak meters (simple block estimate)
     if (buffer.getNumChannels() >= 2)
     {
         const int n = buffer.getNumSamples();
         const float* L = buffer.getReadPointer(0);
         const float* R = buffer.getReadPointer(1);
         double sLL=0.0, sRR=0.0, sLR=0.0;
-        for (int i=0;i<n;++i){ const double l=L[i], r=R[i]; sLL+=l*l; sRR+=r*r; sLR+=l*r; }
+        float peakL=0.0f, peakR=0.0f;
+        for (int i=0;i<n;++i){ const float l=L[i], r=R[i]; sLL+= (double) l*l; sRR+= (double) r*r; sLR+= (double) l*r; peakL = juce::jmax (peakL, std::abs(l)); peakR = juce::jmax (peakR, std::abs(r)); }
         const double denom = std::sqrt (sLL * sRR) + 1e-12;
         const float corr = (float) juce::jlimit (-1.0, 1.0, sLR / denom);
         const float old = meterCorrelation.load();
         meterCorrelation.store (old + 0.1f * (corr - old));
+
+        // RMS (per block), convert to dBFS-ish 0..1 scaling for UI
+        const float rmsL = std::sqrt ((float) (sLL / (double) juce::jmax (1, n)));
+        const float rmsR = std::sqrt ((float) (sRR / (double) juce::jmax (1, n)));
+        // Smooth a bit for UI
+        auto smooth = [] (std::atomic<float>& a, float v){ float o = a.load(); a.store (o + 0.2f * (v - o)); };
+        smooth (meterRmsL,  rmsL);
+        smooth (meterRmsR,  rmsR);
+        smooth (meterPeakL, peakL);
+        smooth (meterPeakR, peakR);
     }
 
     // Feed XYPad waveform/spectral visuals
     if (onAudioSample && buffer.getNumSamples() > 0)
     {
-        const int chL = juce::jmin (0, buffer.getNumChannels()-1);
-        const int chR = juce::jmin (1, buffer.getNumChannels()-1);
+        const int chL = buffer.getNumChannels() > 0 ? 0 : 0;
+        const int chR = buffer.getNumChannels() > 1 ? 1 : 0;
         auto* L = buffer.getReadPointer (chL);
         auto* R = buffer.getReadPointer (chR);
         const int stride = 64; // decimate to reduce UI overhead
@@ -246,25 +342,34 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     juce::dsp::AudioBlock<double> block (buffer);
     chainD->process (block);
 
-    // Correlation meter
+    // Correlation + RMS/Peak meters
     if (buffer.getNumChannels() >= 2)
     {
         const int n = buffer.getNumSamples();
         const double* L = buffer.getReadPointer(0);
         const double* R = buffer.getReadPointer(1);
         long double sLL=0.0, sRR=0.0, sLR=0.0;
-        for (int i=0;i<n;++i){ const long double l=L[i], r=R[i]; sLL+=l*l; sRR+=r*r; sLR+=l*r; }
+        float peakL=0.0f, peakR=0.0f;
+        for (int i=0;i<n;++i){ const double l=L[i], r=R[i]; sLL+=l*l; sRR+=r*r; sLR+=l*r; peakL = juce::jmax (peakL, (float) std::abs(l)); peakR = juce::jmax (peakR, (float) std::abs(r)); }
         const long double denom = std::sqrt (sLL * sRR) + 1e-18L;
         const float corr = (float) juce::jlimit (-1.0, 1.0, (double)(sLR / denom));
         const float old = meterCorrelation.load();
         meterCorrelation.store (old + 0.1f * (corr - old));
+
+        const float rmsL = std::sqrt ((float) (sLL / (long double) juce::jmax (1, n)));
+        const float rmsR = std::sqrt ((float) (sRR / (long double) juce::jmax (1, n)));
+        auto smooth = [] (std::atomic<float>& a, float v){ float o = a.load(); a.store (o + 0.2f * (v - o)); };
+        smooth (meterRmsL,  rmsL);
+        smooth (meterRmsR,  rmsR);
+        smooth (meterPeakL, peakL);
+        smooth (meterPeakR, peakR);
     }
 
     // Feed XYPad waveform/spectral visuals
     if (onAudioSample && buffer.getNumSamples() > 0)
     {
-        const int chL = juce::jmin (0, buffer.getNumChannels()-1);
-        const int chR = juce::jmin (1, buffer.getNumChannels()-1);
+        const int chL = buffer.getNumChannels() > 0 ? 0 : 0;
+        const int chR = buffer.getNumChannels() > 1 ? 1 : 0;
         auto* L = buffer.getReadPointer (chL);
         auto* R = buffer.getReadPointer (chR);
         const int stride = 64;
@@ -319,6 +424,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::airDb, 1 }, "Air", juce::NormalisableRange<float> (0.0f, 6.0f, 0.1f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::bassDb, 1 }, "Bass", juce::NormalisableRange<float> (-6.0f, 6.0f, 0.1f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::ducking, 1 }, "Ducking", juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckThrDb, 1 },  "Duck Threshold (dB)", juce::NormalisableRange<float> (-60.0f, 0.0f, 0.01f), -18.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckKneeDb, 1 }, "Duck Knee (dB)",      juce::NormalisableRange<float> (0.0f, 18.0f, 0.01f), 6.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckRatio, 1 },  "Duck Ratio",          juce::NormalisableRange<float> (1.0f, 20.0f, 0.01f), 6.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckAtkMs, 1 },  "Duck Attack (ms)",    juce::NormalisableRange<float> (1.0f, 80.0f, 0.01f), 12.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckRelMs, 1 },  "Duck Release (ms)",   juce::NormalisableRange<float> (20.0f, 800.0f, 0.1f), 180.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckLAms, 1 },   "Duck Lookahead (ms)", juce::NormalisableRange<float> (0.0f, 20.0f, 0.01f), 5.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckRmsMs, 1 },  "Duck RMS (ms)",       juce::NormalisableRange<float> (2.0f, 50.0f, 0.01f), 15.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::duckTarget, 1 }, "Duck Target", juce::StringArray { "WetOnly", "Global" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osMode, 1 }, "Oversampling", juce::StringArray { "Off", "2x", "4x" }, 1));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::splitMode, 1 }, "Split Mode", false));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::tiltFreq, 1 },  "Tilt Frequency", juce::NormalisableRange<float> (100.0f, 1000.0f, 1.0f, 0.5f), 500.0f));
@@ -339,6 +452,40 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::shufXHz,   1 },   "Shuffler Xover (Hz)",juce::NormalisableRange<float> (150.0f, 2000.0f, 0.01f, 0.5f), 700.0f));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::monoSlope,1 },   "Mono Slope (dB/oct)", juce::StringArray { "6", "12", "24" }, 1));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::monoAud, 1 },      "Mono Audition", false));
+
+    // Delay parameters
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayEnabled, 1 }, "Delay Enabled", false));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayMode, 1 }, "Delay Mode", juce::StringArray { "Digital", "Analog", "Tape" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delaySync, 1 }, "Delay Sync", true));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayTimeMs, 1 }, "Delay Time (ms)", juce::NormalisableRange<float>(1.0f, 4000.0f, 0.1f, 0.5f), 350.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayTimeDiv, 1 }, "Delay Division", juce::StringArray { "1/64T", "1/64", "1/64D", "1/32T", "1/32", "1/32D", "1/16T", "1/16", "1/16D", "1/8T", "1/8", "1/8D", "1/4T", "1/4", "1/4D", "1/2T", "1/2", "1/2D", "1/1T", "1/1", "1/1D", "2/1T", "2/1", "2/1D" }, 12));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayFeedbackPct, 1 }, "Delay Feedback (%)", juce::NormalisableRange<float>(0.0f, 98.0f, 0.1f), 36.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayWet, 1 }, "Delay Wet", juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.25f));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayKillDry, 1 }, "Delay Kill Dry", false));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayFreeze, 1 }, "Delay Freeze", false));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayPingpong, 1 }, "Delay Ping-Pong", false));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayCrossfeedPct, 1 }, "Delay Crossfeed (%)", juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f), 35.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayStereoSpreadPct, 1 }, "Delay Stereo Spread (%)", juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f), 25.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayWidth, 1 }, "Delay Width", juce::NormalisableRange<float>(0.0f, 2.0f, 0.001f), 1.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayModRateHz, 1 }, "Delay Mod Rate (Hz)", juce::NormalisableRange<float>(0.01f, 12.0f, 0.01f, 0.5f), 0.35f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayModDepthMs, 1 }, "Delay Mod Depth (ms)", juce::NormalisableRange<float>(0.0f, 12.0f, 0.01f), 3.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayWowflutter, 1 }, "Delay Wow/Flutter", juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.25f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayJitterPct, 1 }, "Delay Jitter (%)", juce::NormalisableRange<float>(0.0f, 10.0f, 0.01f), 2.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayHpHz, 1 }, "Delay HP (Hz)", juce::NormalisableRange<float>(20.0f, 2000.0f, 0.1f, 0.5f), 120.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayLpHz, 1 }, "Delay LP (Hz)", juce::NormalisableRange<float>(2000.0f, 20000.0f, 1.0f, 0.5f), 12000.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayTiltDb, 1 }, "Delay Tilt (dB)", juce::NormalisableRange<float>(-6.0f, 6.0f, 0.01f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delaySat, 1 }, "Delay Saturation", juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.2f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDiffusion, 1 }, "Delay Diffusion", juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDiffuseSizeMs, 1 }, "Delay Diffuse Size (ms)", juce::NormalisableRange<float>(5.0f, 50.0f, 0.1f), 18.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayDuckSource, 1 }, "Delay Duck Source", juce::StringArray { "Input", "Wet", "Both" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayDuckPost, 1 }, "Delay Duck Post", true));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckDepth, 1 }, "Delay Duck Depth", juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.6f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckAttackMs, 1 }, "Delay Duck Attack (ms)", juce::NormalisableRange<float>(1.0f, 200.0f, 0.1f), 12.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckReleaseMs, 1 }, "Delay Duck Release (ms)", juce::NormalisableRange<float>(20.0f, 1000.0f, 0.1f), 220.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckThresholdDb, 1 }, "Delay Duck Threshold (dB)", juce::NormalisableRange<float>(-60.0f, 0.0f, 0.01f), -26.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckRatio, 1 }, "Delay Duck Ratio", juce::NormalisableRange<float>(1.0f, 8.0f, 0.01f), 2.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckLookaheadMs, 1 }, "Delay Duck Lookahead (ms)", juce::NormalisableRange<float>(0.0f, 15.0f, 0.01f), 5.0f));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayDuckLinkGlobal, 1 }, "Delay Duck Link Global", true));
 
     return { params.begin(), params.end() };
 }
@@ -417,6 +564,12 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     // No OS by default
     oversampling.reset();
     lastOsMode = -1;
+
+    // Prepare ducker
+    ducker.prepare (sr, (int) spec.maximumBlockSize, 24);
+    
+    // Prepare delay engine
+    delayEngine.prepare (sr, (int) spec.numChannels);
 }
 
 template <typename Sample>
@@ -459,6 +612,15 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.scoopFreq = (Sample) hp.scoopFreq;
     params.bassFreq  = (Sample) hp.bassFreq;
     params.airFreq   = (Sample) hp.airFreq;
+    // Ducking advanced
+    params.duckThresholdDb = (Sample) hp.duckThresholdDb;
+    params.duckKneeDb      = (Sample) hp.duckKneeDb;
+    params.duckRatio       = (Sample) hp.duckRatio;
+    params.duckAttackMs    = (Sample) hp.duckAttackMs;
+    params.duckReleaseMs   = (Sample) hp.duckReleaseMs;
+    params.duckLookaheadMs = (Sample) hp.duckLookaheadMs;
+    params.duckRmsMs       = (Sample) hp.duckRmsMs;
+    params.duckTarget      = hp.duckTarget;
     // Imaging
     params.xoverLoHz = (Sample) juce::jlimit (40.0, 400.0, hp.xoverLoHz);
     params.xoverHiHz = (Sample) juce::jlimit (800.0, 6000.0, hp.xoverHiHz);
@@ -472,6 +634,40 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.shufflerXoverHz = (Sample) juce::jlimit (150.0, 2000.0, hp.shufflerXoverHz);
     params.monoSlopeDbOct = hp.monoSlopeDbOct;
     params.monoAudition   = hp.monoAudition;
+    
+    // Delay parameters
+    params.delayEnabled = hp.delayEnabled;
+    params.delayMode = hp.delayMode;
+    params.delaySync = hp.delaySync;
+    params.delayTimeMs = (Sample)hp.delayTimeMs;
+    params.delayTimeDiv = hp.delayTimeDiv;
+    params.delayFeedbackPct = (Sample)hp.delayFeedbackPct;
+    params.delayWet = (Sample)hp.delayWet;
+    params.delayKillDry = hp.delayKillDry;
+    params.delayFreeze = hp.delayFreeze;
+    params.delayPingpong = hp.delayPingpong;
+    params.delayCrossfeedPct = (Sample)hp.delayCrossfeedPct;
+    params.delayStereoSpreadPct = (Sample)hp.delayStereoSpreadPct;
+    params.delayWidth = (Sample)hp.delayWidth;
+    params.delayModRateHz = (Sample)hp.delayModRateHz;
+    params.delayModDepthMs = (Sample)hp.delayModDepthMs;
+    params.delayWowflutter = (Sample)hp.delayWowflutter;
+    params.delayJitterPct = (Sample)hp.delayJitterPct;
+    params.delayHpHz = (Sample)hp.delayHpHz;
+    params.delayLpHz = (Sample)hp.delayLpHz;
+    params.delayTiltDb = (Sample)hp.delayTiltDb;
+    params.delaySat = (Sample)hp.delaySat;
+    params.delayDiffusion = (Sample)hp.delayDiffusion;
+    params.delayDiffuseSizeMs = (Sample)hp.delayDiffuseSizeMs;
+    params.delayDuckSource = hp.delayDuckSource;
+    params.delayDuckPost = hp.delayDuckPost;
+    params.delayDuckDepth = (Sample)hp.delayDuckDepth;
+    params.delayDuckAttackMs = (Sample)hp.delayDuckAttackMs;
+    params.delayDuckReleaseMs = (Sample)hp.delayDuckReleaseMs;
+    params.delayDuckThresholdDb = (Sample)hp.delayDuckThresholdDb;
+    params.delayDuckRatio = (Sample)hp.delayDuckRatio;
+    params.delayDuckLookaheadMs = (Sample)hp.delayDuckLookaheadMs;
+    params.delayDuckLinkGlobal = hp.delayDuckLinkGlobal;
 }
 
 // --------- processing utilities ---------
@@ -881,22 +1077,7 @@ void FieldChain<Sample>::applySaturation (Block block, Sample driveLin, Sample m
     }
 }
 
-template <typename Sample>
-void FieldChain<Sample>::applyDucking (Block block, Sample ducking)
-{
-    if (ducking <= (Sample)0.01) return;
-    auto* L = block.getChannelPointer (0);
-    auto* R = (block.getNumChannels() > 1 ? block.getChannelPointer (1) : L);
-    const int N = (int) block.getNumSamples();
-    for (int i = 0; i < N; ++i)
-    {
-        const Sample lvl = std::sqrt (L[i]*L[i] + R[i]*R[i]);
-        Sample duckAmt = (Sample) juce::jmap ((double) lvl, 0.0, 1.0, 0.0, (double) ducking);
-        duckAmt = std::pow (duckAmt, (Sample)0.5);
-        const Sample g = (Sample)1 - duckAmt;
-        L[i] *= g; R[i] *= g;
-    }
-}
+// removed legacy instantaneous ducking (replaced by look-ahead ducker)
 
 // Space algorithms (simplified, parallel reverb + light tone)
 
@@ -983,6 +1164,42 @@ void FieldChain<Sample>::applySpaceAlgorithm (Block block, Sample depth01, int a
     }
 }
 
+// Render space into a provided wet buffer (same channels/samples as current block)
+template <typename Sample>
+void FieldChain<Sample>::renderSpaceWet (juce::AudioBuffer<Sample>& wet)
+{
+    const int ch = wet.getNumChannels();
+    const int n  = wet.getNumSamples();
+    if constexpr (std::is_same_v<Sample, double>)
+    {
+        juce::dsp::AudioBlock<double> b (wet);
+        if (reverbD)
+        {
+            auto cur = rvParams; cur.dryLevel = 0.0f; cur.wetLevel = rvParams.wetLevel;
+            reverbD->setParameters (cur);
+            reverbD->processParallelMix (b, cur.wetLevel); // adds wet into buffer
+        }
+    }
+    else
+    {
+        if (reverbF)
+        {
+            reverbF->setParameters (rvParams);
+            juce::dsp::AudioBlock<float> fblk (wet);
+            juce::dsp::ProcessContextReplacing<float> fctx (fblk);
+            // Clear first then render
+            for (int c = 0; c < ch; ++c) wet.clear (c, 0, n);
+            reverbF->process (fctx);
+            // At this point wet contains 100% wet; scale by wetLevel to match Space depth
+            for (int c = 0; c < ch; ++c)
+            {
+                auto* d = wet.getWritePointer (c);
+                for (int i = 0; i < n; ++i) d[i] *= (Sample) rvParams.wetLevel;
+            }
+        }
+    }
+}
+
 // --------- main process (Sample) ---------
 
 template <typename Sample>
@@ -1014,17 +1231,115 @@ void FieldChain<Sample>::process (Block block)
     applyBassShelf (block, params.bassDb, params.bassFreq);
     applyAirBand   (block, params.airDb,  params.airFreq);
 
-    // Space
+    // Space: compute rvParams then render wet-only to buffer 'wet'
     applySpaceAlgorithm (block, params.depth, params.spaceAlgo);
+
+    // Build dry (post tone/imaging) and wet buses
+    const int ch = (int) block.getNumChannels();
+    const int n  = (int) block.getNumSamples();
+    juce::AudioBuffer<Sample> dryBus (ch, n), wetBus (ch, n);
+    for (int c = 0; c < ch; ++c)
+    {
+        auto* dst = dryBus.getWritePointer (c);
+        auto* src = block.getChannelPointer (c);
+        std::memcpy (dst, src, sizeof (Sample) * (size_t) n);
+    }
+    // Start wet from silence; render space into it (using current rvParams)
+    wetBus.clear();
+    renderSpaceWet (wetBus);
 
     // LF mono
     applyMonoMaker (block, params.monoHz);
 
-    // Nonlinear
-    applySaturation (block, params.satDriveLin, params.satMix, params.osMode);
+    // Nonlinear (apply saturation equally to dry and wet prior to sum) to preserve FX tone
+    {
+        juce::dsp::AudioBlock<Sample> dryBlock (dryBus);
+        juce::dsp::AudioBlock<Sample> wetBlock (wetBus);
+        applySaturation (dryBlock, params.satDriveLin, params.satMix, params.osMode);
+        applySaturation (wetBlock, params.satDriveLin, params.satMix, params.osMode);
+    }
+    
+    // Delay processing
+    if (params.delayEnabled)
+    {
+        // Convert parameters to DelayParams structure
+        DelayParams delayParams;
+        delayParams.enabled = params.delayEnabled;
+        delayParams.mode = params.delayMode;
+        delayParams.sync = params.delaySync;
+        delayParams.timeMs = params.delayTimeMs;
+        delayParams.timeDiv = params.delayTimeDiv;
+        delayParams.feedbackPct = params.delayFeedbackPct;
+        delayParams.wet = params.delayWet;
+        delayParams.killDry = params.delayKillDry;
+        delayParams.freeze = params.delayFreeze;
+        delayParams.pingpong = params.delayPingpong;
+        delayParams.crossfeedPct = params.delayCrossfeedPct;
+        delayParams.stereoSpreadPct = params.delayStereoSpreadPct;
+        delayParams.width = params.delayWidth;
+        delayParams.modRateHz = params.delayModRateHz;
+        delayParams.modDepthMs = params.delayModDepthMs;
+        delayParams.wowflutter = params.delayWowflutter;
+        delayParams.jitterPct = params.delayJitterPct;
+        delayParams.hpHz = params.delayHpHz;
+        delayParams.lpHz = params.delayLpHz;
+        delayParams.tiltDb = params.delayTiltDb;
+        delayParams.sat = params.delaySat;
+        delayParams.diffusion = params.delayDiffusion;
+        delayParams.diffuseSizeMs = params.delayDiffuseSizeMs;
+        delayParams.duckSource = params.delayDuckSource;
+        delayParams.duckPost = params.delayDuckPost;
+        delayParams.duckDepth = params.delayDuckDepth;
+        delayParams.duckAttackMs = params.delayDuckAttackMs;
+        delayParams.duckReleaseMs = params.delayDuckReleaseMs;
+        delayParams.duckThresholdDb = params.delayDuckThresholdDb;
+        delayParams.duckRatio = params.delayDuckRatio;
+        delayParams.duckLookaheadMs = params.delayDuckLookaheadMs;
+        delayParams.duckLinkGlobal = params.delayDuckLinkGlobal;
+        
+        delayEngine.setParameters(delayParams);
+        
+        // Process delay on the main block
+        float scL = 0.0f, scR = 0.0f;
+        if (ch > 0) scL = (float)block.getSample(0, 0);
+        if (ch > 1) scR = (float)block.getSample(1, 0);
+        delayEngine.process(block, scL, scR);
+    }
 
-    // Duck last
-    applyDucking (block, params.ducking);
+    // Duck wet against dry (WetOnly)
+    if (params.ducking > (Sample) 0.001)
+    {
+        fielddsp::DuckParams p;
+        p.maxDepthDb  = (float) juce::jlimit ((double)0.0, (double)36.0, (double) params.ducking * 24.0);
+        p.thresholdDb = (float) params.duckThresholdDb;
+        p.kneeDb      = (float) params.duckKneeDb;
+        p.ratio       = (float) params.duckRatio;
+        p.attackMs    = (float) params.duckAttackMs;
+        p.releaseMs   = (float) params.duckReleaseMs;
+        p.lookaheadMs = (float) params.duckLookaheadMs;
+        p.rmsMs       = (float) params.duckRmsMs;
+        p.bypass      = (p.maxDepthDb <= 0.001f);
+        ducker.setParams (p);
+
+        ducker.processWet (wetBus.getWritePointer (0), wetBus.getWritePointer (juce::jmin (1, ch-1)),
+                           dryBus.getReadPointer (0), dryBus.getReadPointer (juce::jmin (1, ch-1)), n);
+    }
+
+    // Sum Dry + Wet back to output block
+    for (int c = 0; c < ch; ++c)
+    {
+        auto* out = block.getChannelPointer (c);
+        const Sample* d = dryBus.getReadPointer (c);
+        const Sample* w = wetBus.getReadPointer (c);
+        for (int i = 0; i < n; ++i) out[i] = d[i] + w[i];
+    }
+}
+
+template <typename Sample>
+float FieldChain<Sample>::getCurrentDuckGrDb() const
+{
+    // Return current gain reduction in dB (>=0). Safe cast to float for metering.
+    return (float) ducker.getCurrentGainReductionDb();
 }
 
 // Explicit instantiation

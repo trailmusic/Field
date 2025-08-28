@@ -65,6 +65,7 @@ namespace Layout
 
 	// Special controls
 	constexpr int ALGO_SWITCH_W = 56;
+	constexpr float ALGO_SWITCH_W_RATIO = 0.7f; // preferred relative width factor
 
 	// Combo & menus
 	namespace Combo {
