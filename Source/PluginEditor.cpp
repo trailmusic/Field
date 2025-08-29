@@ -616,46 +616,66 @@ void XYPad::drawEQCurves (juce::Graphics& g, juce::Rectangle<float> b)
     }
     stroke (scoopP, scoopCol);
 
-    // Mono cutoff visualization: render a sloped wedge reflecting selected slope instead of a vertical line
+    // Mono cutoff visualization (filter-accurate shading with stronger distinction and side-curve)
     if (monoHzValue > 20.0f)
     {
+        auto* lf2 = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+        const auto baseEq = lf2 ? lf2->theme.eq.hp : juce::Colours::lightblue;
+
         const float minHz = 20.0f, maxHz = 20000.0f;
-        const float t = (float) (std::log10 (juce::jlimit (minHz, maxHz, monoHzValue) / minHz) / std::log10 (maxHz / minHz));
-        const float xMono = juce::jmap (t, 0.0f, 1.0f, b.getX(), b.getRight());
+        const float Fc = juce::jlimit (minHz, maxHz, monoHzValue);
 
-        // Use slope provided by editor (via setter)
-        int slopeDbPerOct = juce::jlimit (6, 24, monoSlopeDbPerOct);
+        // Slope order from 6/12/24 -> 1/2/4
+        const int order = (monoSlopeDbPerOct <= 6 ? 1 : monoSlopeDbPerOct <= 12 ? 2 : 4);
+        const juce::Colour tint = (order == 1 ? baseEq.brighter (0.25f)
+                                              : order == 2 ? baseEq
+                                                           : baseEq.darker (0.25f));
 
-        // Map slope to visual transition width (gentler slope = wider transition)
-        const float w = b.getWidth();
-        float transition = (slopeDbPerOct == 6 ? 0.36f : slopeDbPerOct == 12 ? 0.22f : 0.12f) * w;
-        transition = juce::jmin (transition, xMono - b.getX());
+        auto xAtHz = [&] (float hz)
+        {
+            const float t = (float) (std::log10 (hz / minHz) / std::log10 (maxHz / minHz));
+            return juce::jmap (juce::jlimit (0.0f, 1.0f, t), 0.0f, 1.0f, b.getX(), b.getRight());
+        };
 
-        // Build wedge polygon to the left of xMono
-        juce::Path wedge;
-        const float xL = xMono - transition;
-        // Sloped boundary pivots to mid-height so wedge reads as a curve proxy
-        juce::Point<float> pTop (xMono, b.getY());
-        juce::Point<float> pBot (xMono, b.getBottom());
-        juce::Point<float> pSlope (xL, b.getCentreY());
-        wedge.startNewSubPath (pTop);
-        wedge.lineTo (pSlope);
-        wedge.lineTo (pBot);
-        wedge.closeSubPath();
+        // Shade by Butterworth magnitude: |H(jw)| = 1/sqrt(1+(w/wc)^(2N))
+        // Increase distinction between orders by non-linear alpha mapping
+        const int cols = juce::jmax (192, (int) b.getWidth());
+        juce::Path sideCurve; bool sideStarted = false;
+        for (int i = 0; i < cols; ++i)
+        {
+            const float t01 = (float) i / (float) (cols - 1);
+            const float hz  = 20.0f * std::pow (1000.0f, t01 * 3.0f);
+            const float ratio = hz / Fc;
+            const float mag = 1.0f / std::sqrt (1.0f + std::pow (juce::jmax (ratio, 1.0e-6f), (float) (2 * order)));
 
-        // Fill: subtle, uses HP/LP colour family
-        g.setColour (hpLpCol.withAlpha (0.18f));
-        g.fillPath (wedge);
+            // Mono weight ~ |H_lp|. Use exponent and scaling per-order to exaggerate visual separation
+            const float monoWeight = mag; // 0..1
+            const float shape = (order == 1 ? 0.85f : order == 2 ? 1.10f : 1.45f);
+            const float alpha = juce::jlimit (0.0f, 1.0f, 0.06f + 0.70f * std::pow (monoWeight, shape));
 
-        // Left region soft wash (very light) so mono area still indicated
-        juce::ColourGradient grad (hpLpCol.withAlpha (0.20f), xMono, b.getCentreY(), hpLpCol.withAlpha (0.00f), b.getX(), b.getCentreY(), true);
-        g.setGradientFill (grad);
-        g.fillRect (juce::Rectangle<float> (b.getX(), b.getY(), xL - b.getX(), b.getHeight()));
+            const float x = xAtHz (hz);
+            g.setColour (tint.withAlpha (alpha * (hz <= Fc ? 0.85f : 0.6f)));
+            g.fillRect (juce::Rectangle<float> (x, b.getY(), 2.0f, b.getHeight()));
 
-        // Sloped edge stroke
-        g.setColour (hpLpCol.withAlpha (0.85f));
-        g.drawLine (juce::Line<float> (pTop, pSlope), 1.6f);
-        g.drawLine (juce::Line<float> (pSlope, pBot), 1.6f);
+            // Optional dashed curve: stereo width multiplier ~ |1 - H_lp|
+            const float sideWeight = juce::jlimit (0.0f, 1.0f, 1.0f - mag);
+            const float y = b.getY() + (1.0f - sideWeight) * b.getHeight();
+            if (!sideStarted) { sideCurve.startNewSubPath (x, y); sideStarted = true; }
+            else              { sideCurve.lineTo (x, y); }
+        }
+
+        const float xFc = xAtHz (Fc);
+        g.setColour (tint.withAlpha (0.80f));
+        g.drawLine (xFc, b.getY(), xFc, b.getBottom(), 1.4f);
+
+        // Draw dashed side curve on top
+        {
+            juce::Path dashed;
+            const float dashes[] = { 6.0f, 4.0f };
+            juce::PathStrokeType (2.0f).createDashedStroke (dashed, sideCurve, dashes, 2);
+            g.setColour (tint.withAlpha (0.55f));
+            g.strokePath (dashed, juce::PathStrokeType (1.8f));
+        }
     }
 
     // dB scale labels on left (match curve pixel mapping using softPix)
@@ -745,7 +765,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     const int numItems = 1 + 1 + 1 + 5 + 3; // pan, space, switch, duck(5), gain/drive/mix(3)
     const int gaps = numItems - 1;
     const int gapS = Layout::dp (Layout::GAP_S, s);
-    const int calculatedMinWidth = xlPx + lPx + swW + 5*lPx + 3*lPx + gaps * gapS + Layout::dp (Layout::PAD, s) * 2;
+    const int delayCardWMin = Layout::dp (620, s); // match delay card reserved width
+    const int calculatedMinWidth = xlPx + lPx + swW + 5*lPx + 3*lPx + gaps * gapS
+                                   + Layout::dp (Layout::PAD, s) * 2
+                                   + delayCardWMin + Layout::dp (Layout::GAP, s);
     
     // Calculate minimum height based on layout structure
     const int headerH = Layout::dp (50, s);
@@ -1784,9 +1807,9 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int valuePx = Layout::dp (14, s);
         const int gapPx   = Layout::dp (0,  s);
         const int labelGap = Layout::dp (4, s);
-        g.templateRows    = { juce::Grid::Px (lPx + gapPx + valuePx) };
+        g.templateRows    = { juce::Grid::Px (containerHeight) };
         g.templateColumns = {
-            juce::Grid::Px (lPx * 3 + gapPx * 2),       // Pan (triple wide)
+            juce::Grid::Px (lPx * 3 + gapI * 2),       // Pan (triple wide)
             juce::Grid::Px (lPx),                       // Width
             juce::Grid::Px (lPx),                       // W LO
             juce::Grid::Px (lPx),                       // W MID
@@ -1820,7 +1843,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         addAndMakeVisible (*satMixCell);
 
         g.items = {
-            juce::GridItem (*panCell)          .withWidth (lPx * 3 + gapPx * 2).withHeight (containerHeight),
+            juce::GridItem (*panCell)          .withWidth (lPx * 3 + gapI * 2).withHeight (containerHeight),
             juce::GridItem (*widthCell)        .withWidth (lPx).withHeight (containerHeight),
             juce::GridItem (*widthLoCell)      .withWidth (lPx).withHeight (containerHeight),
             juce::GridItem (*widthMidCell)     .withWidth (lPx).withHeight (containerHeight),
@@ -1858,21 +1881,21 @@ void MyPluginAudioProcessorEditor::performLayout()
 
         // Reverb sub-grid: [ Reverb cell ] + [ switch ] + [ DUCK + ATT + REL + THR + RAT ]
          {
-            // Add extra padding horizontally only, within row area
-            auto rg = row.reduced (gapI/2, 0);
+            // Use consistent row gap with no fractional reductions
+            auto rg = row.reduced (0, 0);
             juce::Grid reverbGrid;
-            reverbGrid.rowGap    = juce::Grid::Px (gapI/2);
-            reverbGrid.columnGap = juce::Grid::Px (gapI/2);
+            reverbGrid.rowGap    = juce::Grid::Px (gapI);
+            reverbGrid.columnGap = juce::Grid::Px (gapI);
             const int valuePx = Layout::dp (14, s);
             const int gapPx   = Layout::dp (0,  s);
             const int switchW = lPx; // vertical column sized like a knob cell
-            reverbGrid.templateRows    = { juce::Grid::Px (lPx + gapPx + valuePx) };
+            reverbGrid.templateRows    = { juce::Grid::Px (containerHeight) };
             reverbGrid.templateColumns = { 
                 juce::Grid::Px (lPx),                                    // Reverb cell
                 juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx),
                 juce::Grid::Px (lPx), juce::Grid::Px (lPx),              // DUCK, ATT, REL, THR, RAT
                 juce::Grid::Px (switchW),                                // Switch
-                juce::Grid::Px (lPx * 3 + gapPx * 2)                     // Mono triple-wide at end
+                juce::Grid::Px (lPx * 3 + gapI * 2)                      // Mono triple-wide at end
             };
             // Ensure components are parented correctly (cells own knob+value)
             if (spaceKnob.getParentComponent() == this) removeChildComponent (&spaceKnob);
@@ -1931,17 +1954,19 @@ void MyPluginAudioProcessorEditor::performLayout()
             addAndMakeVisible (*monoCell);
  
             reverbGrid.items = {
-                juce::GridItem (*spaceCell),
-                juce::GridItem (*duckCell),
-                juce::GridItem (*duckAttCell),
-                juce::GridItem (*duckRelCell),
-                juce::GridItem (*duckThrCell),
-                juce::GridItem (*duckRatCell),
+                juce::GridItem (*spaceCell)         .withHeight (containerHeight),
+                juce::GridItem (*duckCell)          .withHeight (containerHeight),
+                juce::GridItem (*duckAttCell)       .withHeight (containerHeight),
+                juce::GridItem (*duckRelCell)       .withHeight (containerHeight),
+                juce::GridItem (*duckThrCell)       .withHeight (containerHeight),
+                juce::GridItem (*duckRatCell)       .withHeight (containerHeight),
                 juce::GridItem (spaceAlgorithmSwitch)
                     .withAlignSelf (juce::GridItem::AlignSelf::center)
-                    .withJustifySelf (juce::GridItem::JustifySelf::center),
+                    .withJustifySelf (juce::GridItem::JustifySelf::center)
+                    .withHeight (containerHeight),
                 juce::GridItem (*monoCell)
-                    .withWidth (lPx * 3 + gapPx * 2)
+                    .withWidth (lPx * 3 + gapI * 2)
+                    .withHeight (containerHeight)
             };
             reverbGrid.performLayout (rg);
  
@@ -1981,8 +2006,8 @@ void MyPluginAudioProcessorEditor::performLayout()
         addAndMakeVisible (hpLpCombinedSlot);
         // Micro sliders live inside cells
 
-        // Add extra padding for labels - reduce less from top/bottom to leave space for labels
-        auto row = row3.reduced (gapI, 0);
+        // Use consistent gap; no extra horizontal reductions (now placed in row4)
+        auto row = row4.reduced (0, 0);
 
         // Configure metrics for cells at current scale, and attach mini sliders
         const int valuePx = Layout::dp (14, s);
@@ -2027,17 +2052,14 @@ void MyPluginAudioProcessorEditor::performLayout()
         for (auto* mini : { &bassFreqSlider, &airFreqSlider, &tiltFreqSlider, &scoopFreqSlider })
             mini->getProperties().set ("micro", true);
 
-        // Use grid layout for proper spacing: single row of cells (cells include mini sliders)
+        // Use grid layout with consistent gaps: five double-wide cells (cells include mini sliders)
         juce::Grid g;
         g.rowGap    = juce::Grid::Px (gapI);
         g.columnGap = juce::Grid::Px (gapI);
-        g.templateRows    = { juce::Grid::Px (lPx + gapPx + valuePx) };
+        g.templateRows    = { juce::Grid::Px (containerHeight) };
+        const int doubleW = lPx * 2 + gapI;
         g.templateColumns = {
-            juce::Grid::Px (lPx + miniStripW + gapPx),
-            juce::Grid::Px (lPx + miniStripW + gapPx),
-            juce::Grid::Px (lPx + miniStripW + gapPx),
-            juce::Grid::Px (lPx + miniStripW + gapPx),
-            juce::Grid::Fr (1)
+            juce::Grid::Px (doubleW), juce::Grid::Px (doubleW), juce::Grid::Px (doubleW), juce::Grid::Px (doubleW), juce::Grid::Px (doubleW)
         };
 
         bassCell->setVisible (true);
@@ -2047,20 +2069,20 @@ void MyPluginAudioProcessorEditor::performLayout()
         hpLpCombinedSlot.setVisible (true);
 
         g.items = {
-            juce::GridItem (*bassCell)      .withArea (1,1),
-            juce::GridItem (*airCell)       .withArea (1,2),
-            juce::GridItem (*tiltCell)      .withArea (1,3),
-            juce::GridItem (*scoopCell)     .withArea (1,4),
-            juce::GridItem (hpLpCombinedSlot).withArea (1,5,1,6)
+            juce::GridItem (*bassCell)       .withHeight (containerHeight),
+            juce::GridItem (*airCell)        .withHeight (containerHeight),
+            juce::GridItem (*tiltCell)       .withHeight (containerHeight),
+            juce::GridItem (*scoopCell)      .withHeight (containerHeight),
+            juce::GridItem (hpLpCombinedSlot).withHeight (containerHeight)
         };
         g.performLayout (row);
 
         // Consolidate HP and LP into one wide cell area (no extra borders): direct knob/label layout
         {
-            auto b = hpLpCombinedSlot.getLocalBounds().reduced (gapI / 2, 0);
+            auto b = hpLpCombinedSlot.getLocalBounds();
             const int midGap = gapI;
-            auto left = b.removeFromLeft ((b.getWidth() - midGap) / 2).reduced (gapI / 4, 0);
-            auto right = b.removeFromLeft (midGap); (void) right; right = b.reduced (gapI / 4, 0);
+            auto left = b.removeFromLeft ((b.getWidth() - midGap) / 2);
+            auto right = b.removeFromLeft (midGap); (void) right; right = b;
 
             {
                 const int k = juce::jmin (lPx, juce::jmin (left.getWidth(), left.getHeight()));
@@ -2147,16 +2169,21 @@ void MyPluginAudioProcessorEditor::performLayout()
         juce::Grid imgGrid;
         imgGrid.rowGap    = juce::Grid::Px (gapI);
         imgGrid.columnGap = juce::Grid::Px (gapI);
-        imgGrid.templateRows = { juce::Grid::Px (lPx + gapPx + valuePx) };
+        imgGrid.templateRows = { juce::Grid::Px (containerHeight) };
         imgGrid.templateColumns = {
             juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx),
             juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx)
         };
         imgGrid.items = {
-            juce::GridItem (*xoverLoCell), juce::GridItem (*xoverHiCell), juce::GridItem (*rotationCell),
-            juce::GridItem (*asymCell), juce::GridItem (*shufLoCell), juce::GridItem (*shufHiCell), juce::GridItem (*shufXCell)
+            juce::GridItem (*xoverLoCell) .withHeight (containerHeight),
+            juce::GridItem (*xoverHiCell) .withHeight (containerHeight),
+            juce::GridItem (*rotationCell).withHeight (containerHeight),
+            juce::GridItem (*asymCell)    .withHeight (containerHeight),
+            juce::GridItem (*shufLoCell)  .withHeight (containerHeight),
+            juce::GridItem (*shufHiCell)  .withHeight (containerHeight),
+            juce::GridItem (*shufXCell)   .withHeight (containerHeight)
         };
-        auto imgB = row4.reduced (0, 0);
+        auto imgB = row3.reduced (0, 0);
         imgGrid.performLayout (imgB);
     }
 
@@ -2180,7 +2207,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         delayContainer.addAndMakeVisible (delayDuckThreshold);
         
         // Layout delay controls using cells for knobs + direct items for buttons/combos
-        auto delayB = delayContainer.getLocalBounds().reduced (gapI/2, 0);
+        auto delayB = delayContainer.getLocalBounds();
 
         const int valuePx = Layout::dp (14, s);
         const int gapPx   = Layout::dp (0,  s);
@@ -2210,8 +2237,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             delayContainer.addAndMakeVisible (*c);
 
         juce::Grid delayGrid;
-        delayGrid.rowGap = juce::Grid::Px (gapI/2);
-        delayGrid.columnGap = juce::Grid::Px (gapI/2);
+        delayGrid.rowGap = juce::Grid::Px (gapI);
+        delayGrid.columnGap = juce::Grid::Px (gapI);
         delayGrid.templateRows = {
             juce::Grid::Px (Layout::dp (24, s)),                                      // buttons/combos row height
             juce::Grid::Px (lPx + gapPx + valuePx), juce::Grid::Px (lPx + gapPx + valuePx),
@@ -2571,10 +2598,11 @@ void MyPluginAudioProcessorEditor::parameterChanged (const juce::String& id, flo
     }
     else if (id == "mono_slope_db_oct")
     {
-        const int s = (int) std::round (nv);
-        juce::MessageManager::callAsync ([this, s]
+        const int idx = (int) std::round (nv); // 0,1,2 from choice
+        const int slope = (idx == 0 ? 6 : idx == 1 ? 12 : 24);
+        juce::MessageManager::callAsync ([this, slope]
         {
-            pad.setMonoSlopeDbPerOct (s);
+            pad.setMonoSlopeDbPerOct (slope);
         });
     }
 }

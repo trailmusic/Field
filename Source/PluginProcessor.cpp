@@ -512,8 +512,7 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
 
     hpFilter.prepare (spec);
     lpFilter.prepare (spec);
-    lowSplitL.prepare (spec);
-    lowSplitR.prepare (spec);
+    monoLP.prepare (spec.sampleRate);
     bandLowLP_L.prepare (spec);
     bandLowLP_R.prepare (spec);
     bandHighHP_L.prepare (spec);
@@ -529,8 +528,7 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
 
     hpFilter.setType (juce::dsp::StateVariableTPTFilterType::highpass);
     lpFilter.setType (juce::dsp::StateVariableTPTFilterType::lowpass);
-    lowSplitL.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
-    lowSplitR.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
+    // monoLP type handled internally (Butterworth sections)
     bandLowLP_L.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
     bandLowLP_R.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
     bandHighHP_L.setType (juce::dsp::LinkwitzRileyFilterType::highpass);
@@ -578,7 +576,7 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
 template <typename Sample>
 void FieldChain<Sample>::reset()
 {
-    hpFilter.reset(); lpFilter.reset(); lowSplitL.reset(); lowSplitR.reset(); depthLPF.reset();
+    hpFilter.reset(); lpFilter.reset(); monoLP.reset(); depthLPF.reset();
     lowShelf.reset(); highShelf.reset(); airFilter.reset(); bassFilter.reset(); scoopFilter.reset();
     if (oversampling) oversampling->reset();
     if constexpr (std::is_same_v<Sample, double>) { if (reverbD) reverbD->reverbF.reset(); }
@@ -958,22 +956,23 @@ void FieldChain<Sample>::applyMonoMaker (Block block, Sample monoHz)
 
     const Sample nyq = (Sample) (sr * 0.49);
     monoHz = juce::jlimit ((Sample)20, juce::jmin ((Sample)300, nyq), monoHz);
-    lowSplitL.setCutoffFrequency (monoHz);
-    lowSplitR.setCutoffFrequency (monoHz);
+
+    // Slope from params (6/12/24 dB/oct)
+    // Convert APVTS choice index (0/1/2) to dB/oct (6/12/24) if needed
+    const int slopeDb = (params.monoSlopeDbOct <= 3 ? (params.monoSlopeDbOct == 0 ? 6 : params.monoSlopeDbOct == 1 ? 12 : 24)
+                                                    : params.monoSlopeDbOct);
+    monoLP.setSlopeDbPerOct (slopeDb > 0 ? slopeDb : 12);
+    monoLP.setCutoff (monoHz);
 
     // Create temp low buffer (copy)
     juce::AudioBuffer<Sample> low (2, (int) block.getNumSamples());
     for (int c = 0; c < 2; ++c)
         low.copyFrom (c, 0, block.getChannelPointer (c), (int) block.getNumSamples());
 
-    // Filter lows per channel
+    // Filter lows per channel with variable slope
     {
         juce::dsp::AudioBlock<Sample> lb (low);
-        auto cl = lb.getSingleChannelBlock (0);
-        auto cr = lb.getSingleChannelBlock (1);
-        juce::dsp::ProcessContextReplacing<Sample> ctxL (cl), ctxR (cr);
-        lowSplitL.process (ctxL);
-        lowSplitR.process (ctxR);
+        monoLP.processToLow (lb);
     }
 
     auto* L = block.getChannelPointer (0);

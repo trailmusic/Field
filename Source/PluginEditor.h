@@ -1142,7 +1142,7 @@ private:
         void paint (juce::Graphics& g) override
         {
             auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-            auto accent = lf ? lf->theme.accent : juce::Colour (0xFF5AA9E6);
+            auto accent = lf ? lf->theme.eq.hp : juce::Colour (0xFF5AA9E6);
             auto panel  = lf ? lf->theme.panel  : juce::Colour (0xFF2A2C30);
             auto sh     = lf ? lf->theme.sh     : juce::Colour (0xFF1A1C20);
             auto hl     = lf ? lf->theme.hl     : juce::Colour (0xFF4A4A4A);
@@ -1162,7 +1162,9 @@ private:
 
                 if (on)
                 {
-                    auto bg = accent;
+                    juce::Colour bg = accent;
+                    if (idx == 0) bg = accent.brighter (0.25f);    // 6 dB
+                    else if (idx == 2) bg = accent.darker (0.25f); // 24 dB
                     g.setColour (bg);
                     g.fillRoundedRectangle (r, 6.0f);
                     g.setColour (bg.darker (0.30f));

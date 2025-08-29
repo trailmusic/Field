@@ -12,6 +12,80 @@ struct FloatReverbAdapter;   // Float-only reverb wrapper for the double chain
 // Templated DSP Chain (declaration)
 // ===============================
 
+// MonoLowpassBank: 6/12/24 dB/oct via 1st/2nd/4th-order Butterworth
+template <typename Sample>
+struct MonoLowpassBank
+{
+    void prepare (double sampleRate)
+    {
+        sr = sampleRate;
+        reset();
+        updateCoeffs();
+    }
+
+    void reset()
+    {
+        lp1L.reset(); lp1R.reset();
+        lp2aL.reset(); lp2aR.reset();
+        lp2bL.reset(); lp2bR.reset();
+    }
+
+    void setCutoff (Sample hz)
+    {
+        cutoff = juce::jlimit<Sample> ((Sample)20, (Sample)300, hz);
+        updateCoeffs();
+    }
+
+    void setSlopeDbPerOct (int slope)
+    {
+        slopeDbPerOct = juce::jlimit (6, 24, slope);
+        if (slopeDbPerOct == 18) slopeDbPerOct = 12;
+        updateCoeffs();
+    }
+
+    // Process in-place on a 2ch low-band copy
+    void processToLow (juce::dsp::AudioBlock<Sample> lowBlock)
+    {
+        jassert (lowBlock.getNumChannels() >= 2);
+        auto L = lowBlock.getSingleChannelBlock (0);
+        auto R = lowBlock.getSingleChannelBlock (1);
+
+        juce::dsp::ProcessContextReplacing<Sample> ctxL (L);
+        juce::dsp::ProcessContextReplacing<Sample> ctxR (R);
+
+        if (slopeDbPerOct == 6)
+        {
+            lp1L.process (ctxL); lp1R.process (ctxR);
+        }
+        else if (slopeDbPerOct == 12)
+        {
+            lp2aL.process (ctxL); lp2aR.process (ctxR);
+        }
+        else
+        {
+            lp2aL.process (ctxL); lp2aR.process (ctxR);
+            lp2bL.process (ctxL); lp2bR.process (ctxR);
+        }
+    }
+
+    double sr = 48000.0;
+    Sample cutoff = (Sample)120;
+    int    slopeDbPerOct = 12;
+
+    juce::dsp::IIR::Filter<Sample> lp1L,  lp1R;                  // 1st order
+    juce::dsp::IIR::Filter<Sample> lp2aL, lp2aR, lp2bL, lp2bR;   // 2nd order sections
+
+private:
+    void updateCoeffs()
+    {
+        if (sr <= 0.0) return;
+        lp1L.coefficients  = juce::dsp::IIR::Coefficients<Sample>::makeFirstOrderLowPass (sr, cutoff);
+        lp1R.coefficients  = juce::dsp::IIR::Coefficients<Sample>::makeFirstOrderLowPass (sr, cutoff);
+        auto c2 = juce::dsp::IIR::Coefficients<Sample>::makeLowPass (sr, cutoff);
+        lp2aL.coefficients = c2; lp2aR.coefficients = c2; lp2bL.coefficients = c2; lp2bR.coefficients = c2;
+    }
+};
+
 template <typename Sample>
 struct FieldChain
 {
@@ -64,7 +138,7 @@ private:
 
     // Core filters / EQ
     juce::dsp::StateVariableTPTFilter<Sample> hpFilter, lpFilter, depthLPF;
-    juce::dsp::LinkwitzRileyFilter<Sample>    lowSplitL, lowSplitR;     // mono-maker lows
+    MonoLowpassBank<Sample>                   monoLP;                   // mono-maker lows with variable slope
     // Imaging band split filters (3-band via LP@lo and HP@hi)
     juce::dsp::LinkwitzRileyFilter<Sample>    bandLowLP_L, bandLowLP_R;
     juce::dsp::LinkwitzRileyFilter<Sample>    bandHighHP_L, bandHighHP_R;
