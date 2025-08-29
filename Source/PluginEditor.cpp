@@ -521,13 +521,20 @@ void XYPad::drawEQCurves (juce::Graphics& g, juce::Rectangle<float> b)
         // Skip HP/LP visual influence when they are at neutral extremes to avoid phantom curvature at 20/20000
         const bool hpNeutral = hpValue <= 20.0f;
         const bool lpNeutral = lpValue >= 20000.0f;
-        auto bHP    = hpNeutral ? VizEQ::highpassRBJ(Fs, 20.0, VizEQ::kSqrt2Inv) : VizEQ::highpassRBJ (Fs, juce::jlimit (20.0f, 20000.0f, hpValue));
-        auto bLP    = lpNeutral ? VizEQ::lowpassRBJ (Fs, 20000.0, VizEQ::kSqrt2Inv) : VizEQ::lowpassRBJ  (Fs, juce::jlimit (20.0f, 20000.0f, lpValue));
-        auto bBass  = VizEQ::lowshelfRBJ (Fs, juce::jlimit (20.0f, 20000.0f, bassFreqValue),  bassValue, 0.9);
-        auto bAir   = VizEQ::highshelfRBJ(Fs, juce::jlimit (20.0f, 20000.0f, airFreqValue),   airValue,  0.9);
-        // Musical tilt: ±G/2 complementary shelves at pivot
-        auto bTiltLo= VizEQ::lowshelfRBJ (Fs, juce::jlimit (20.0f, 20000.0f, tiltFreqValue), +0.5*tiltValue, 0.9);
-        auto bTiltHi= VizEQ::highshelfRBJ(Fs, juce::jlimit (20.0f, 20000.0f, tiltFreqValue), -0.5*tiltValue, 0.9);
+        // Shelves use S; Tilt optionally inherits S
+        auto bBass  = VizEQ::lowshelfRBJ (Fs, juce::jlimit (20.0f, 20000.0f, bassFreqValue),  bassValue, shelfShapeS);
+        auto bAir   = VizEQ::highshelfRBJ(Fs, juce::jlimit (20.0f, 20000.0f, airFreqValue),   airValue,  shelfShapeS);
+        const float tiltS = tiltUsesShelfS ? shelfShapeS : 0.90f;
+        auto bTiltLo= VizEQ::lowshelfRBJ (Fs, juce::jlimit (20.0f, 20000.0f, tiltFreqValue), +0.5f*tiltValue, tiltS);
+        auto bTiltHi= VizEQ::highshelfRBJ(Fs, juce::jlimit (20.0f, 20000.0f, tiltFreqValue), -0.5f*tiltValue, tiltS);
+        
+        // HP/LP use Q (global or per-filter); neutral at extremes uses sqrt2 for flatness
+        const double qHP = qLink ? (double) filterQGlobal : (double) hpQ;
+        const double qLP = qLink ? (double) filterQGlobal : (double) lpQ;
+        auto bHP    = hpNeutral ? VizEQ::highpassRBJ(Fs, 20.0, VizEQ::kSqrt2Inv)
+                                : VizEQ::highpassRBJ (Fs, juce::jlimit (20.0f, 20000.0f, hpValue), qHP);
+        auto bLP    = lpNeutral ? VizEQ::lowpassRBJ (Fs, 20000.0, VizEQ::kSqrt2Inv)
+                                : VizEQ::lowpassRBJ  (Fs, juce::jlimit (20.0f, 20000.0f, lpValue), qLP);
         // Peak bell for scoop/boost
         const double qPeak = 1.0; // could adapt with gain if desired
         auto bPeak  = VizEQ::peakingRBJ_Q(Fs, juce::jlimit (20.0f, 20000.0f, scoopFreqValue), scoopValue, qPeak);
@@ -1493,6 +1500,13 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     proc.apvts.addParameterListener ("pan",        this);
     proc.apvts.addParameterListener ("depth",      this);
     proc.apvts.addParameterListener ("mono_slope_db_oct", this);
+    // EQ shape/Q visual linkage (live updates)
+    proc.apvts.addParameterListener ("eq_shelf_shape", this);
+    proc.apvts.addParameterListener ("eq_q_link",      this);
+    proc.apvts.addParameterListener ("eq_filter_q",    this);
+    proc.apvts.addParameterListener ("hp_q",           this);
+    proc.apvts.addParameterListener ("lp_q",           this);
+    proc.apvts.addParameterListener ("tilt_link_s",    this);
 
     // audio callback -> XY waveform (safe: no repaint in push)
     proc.onAudioSample = [this](float L, float R) { pad.pushWaveformSample (L, R); };
@@ -2636,6 +2650,14 @@ void MyPluginAudioProcessorEditor::parameterChanged (const juce::String& id, flo
             pad.setMonoSlopeDbPerOct (slope);
         });
     }
+    else if (id == "eq_shelf_shape" || id == "eq_q_link" || id == "eq_filter_q"
+          || id == "hp_q" || id == "lp_q" || id == "tilt_link_s")
+    {
+        juce::MessageManager::callAsync ([this]
+        {
+            syncXYPadWithParameters();
+        });
+    }
 }
 
 void MyPluginAudioProcessorEditor::updatePresetDisplay() { /* hook to PresetManager */ }
@@ -2717,6 +2739,30 @@ void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
     pad.setBassValue  ((float) bass .getValue());
     pad.setScoopValue ((float) scoop.getValue());
     pad.setGainValue  ((float) gain .getValue());
+
+    // Push EQ S/Q and link states from APVTS to XYPad and UI
+    if (auto* pS = proc.apvts.getRawParameterValue ("eq_shelf_shape"))
+        pad.setShelfShapeS ((float) pS->load());
+    if (auto* pLink = proc.apvts.getRawParameterValue ("eq_q_link"))
+    {
+        const bool link = pLink->load() >= 0.5f;
+        pad.setQLink (link);
+        // Reflect minis enabled state
+        hpQSlider.setEnabled (!link);
+        lpQSlider.setEnabled (!link);
+        if (link)
+        {
+            if (auto* pQ = proc.apvts.getRawParameterValue ("eq_filter_q"))
+                pad.setFilterQ ((float) pQ->load());
+        }
+        else
+        {
+            if (auto* pHP = proc.apvts.getRawParameterValue ("hp_q")) pad.setHPQ ((float) pHP->load());
+            if (auto* pLP = proc.apvts.getRawParameterValue ("lp_q")) pad.setLPQ ((float) pLP->load());
+        }
+    }
+    if (auto* pTiltS = proc.apvts.getRawParameterValue ("tilt_link_s"))
+        pad.setTiltUseS (pTiltS->load() >= 0.5f);
 }
 
 // end

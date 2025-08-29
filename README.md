@@ -651,7 +651,57 @@ The plugin now features intelligent resize constraints to ensure optimal usabili
 
 ---
 
+# Why these defaults?
 
+We pick defaults that are **neutral, robust across content**, and match industry-standard practice—so you can twist aggressively without the plugin ever “biting back.”
 
+## HP/LP Q = **0.707** (Butterworth)
 
+* **Maximally flat** 2nd-order response: no resonant bump, no dips near cutoff.
+* **Mono compatibility** stays clean; no low-end build-ups when summing.
+* **Cascades well**: stacking 12/24 dB/oct sections forms Linkwitz–Riley-style alignments with predictable phase.
+* **Safe headroom**: less overshoot/ringing on transients than higher-Q defaults.
+
+> If you expose per-filter Q later, keep HP-Q/LP-Q default at **0.707**. (For peaking bells, a separate default of **Q=1.0** is a musical starting point.)
+
+## Shelf “Shape” S = **0.9** (not 1.0 on purpose)
+
+* **S controls the knee sharpness** (RBJ shelf formulation). S↓ → broader, gentler knee; S↑ → tighter/kinked knee.
+* Starting slightly below 1.0 gives a **smoother hand-off** that avoids subtle gain ripple and “edge” around the transition at strong boosts/cuts.
+* **Stable across sample rates / oversampling**: small changes in `w0` don’t flip the subjective feel.
+* **Plays well with Tilt**: when Tilt is built from complementary shelves, S=0.9 helps the low/high pair sum more smoothly around the pivot.
+
+> We cap the top end of S to avoid unintended emphasis or phase “bite.” Broad range below 1.0 is musically useful; pushing far above ~**1.2–1.25** can get edgy with no practical upside for most sources.
+
+## Mono Maker slope: 6/12/24 dB/oct
+
+* Slope **changes how fast lows collapse to mono**, not tonal balance per se.
+* **12 dB/oct** is a great general default: natural, unobtrusive.
+  **6 dB** = gentler/roomy; **24 dB** = tight/clinical control.
+* In visuals, we show a **slope-aware transition** (not just a vertical line) so what you see matches what you hear.
+
+## Visuals are truthful (and readable)
+
+* The XY/EQ overlay uses the same math family as the DSP (RBJ biquads) and reflects **current Q, Shape, gains, and cutoffs** live.
+* We apply a mild visual “softening” (to avoid jaggy hard knees) **only in the drawing**, not in the audio.
+* Default curves look **boringly flat—by design**. That’s your safe baseline.
+
+## Practical guardrails (so you never hurt the signal)
+
+* **HP/LP Q range**: keep roughly **0.5–1.2**. Below ~0.5 gets too blunted; above ~1.2 risks audible peaking.
+* **Shelf Shape S range**: keep roughly **0.6–1.25**. Wider below 1.0 is musical; much above 1.25 can accent the knee and “etch” transients.
+* **Tilt shelves** inherit the global Shape by default, ensuring the pair stays smooth around the pivot.
+
+## QA checklist we used (you can repeat)
+
+* **Pink-noise sweeps**: confirm smooth shoulder with Q=0.707 and S≈0.9 at various gains.
+* **Mono-sum & null tests**: no mysterious LF bumps at the defaults.
+* **Impulse/step response**: no overshoot at defaults; controlled overshoot as Q/S increase.
+* **Oversampling on/off**: consistent tonal shape at the same settings.
+
+**TL;DR**
+
+* Keep **HP/LP Q = 0.707** as the neutral “do no harm” default.
+* Keep **Shelf Shape S = 0.9** for a smooth, musical knee (and smooth Tilt behavior).
+* Visuals mirror those choices so users trust what they see.
 

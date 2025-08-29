@@ -108,6 +108,14 @@ public:
     void setBassFreqValue (float f)  { bassFreqValue  = f; repaint(); }
     void setAirFreqValue (float f)   { airFreqValue   = f; repaint(); }
     
+    // EQ S/Q shaping and links for visualization
+    void setShelfShapeS (float s)     { shelfShapeS = juce::jlimit (0.25f, 1.25f, s); repaint(); }
+    void setQLink       (bool on)     { qLink = on; repaint(); }
+    void setFilterQ     (float q)     { filterQGlobal = juce::jlimit (0.5f, 1.2f, q); repaint(); }
+    void setHPQ         (float q)     { hpQ = juce::jlimit (0.5f, 1.2f, q); if (!qLink) repaint(); }
+    void setLPQ         (float q)     { lpQ = juce::jlimit (0.5f, 1.2f, q); if (!qLink) repaint(); }
+    void setTiltUseS    (bool on)     { tiltUsesShelfS = on; repaint(); }
+    
     void pushWaveformSample (double sampleL, double sampleR); // for background waveform
     void setSampleRate (double fs) { vizSampleRate = fs > 0.0 ? fs : 48000.0; }
 
@@ -155,6 +163,14 @@ private:
     float scoopFreqValue = 800.0f;
     float bassFreqValue = 150.0f;
     float airFreqValue = 8000.0f;
+    
+    // EQ S/Q state for drawing (mirrors APVTS)
+    float shelfShapeS    = 0.90f;
+    bool  qLink          = true;
+    float filterQGlobal  = 0.7071f;
+    float hpQ            = 0.7071f;
+    float lpQ            = 0.7071f;
+    bool  tiltUsesShelfS = true;
     
     // Waveform buffer
     static constexpr int waveformBufferSize = 512;
