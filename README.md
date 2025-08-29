@@ -153,7 +153,7 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
 * `xover_hi_hz` (800…6000, **2000**)
 * `width_lo` (0…2, **1.0**), `width_mid` (0…2, **1.0**), `width_hi` (0…2, **1.1**)
 * `rotation_deg` (-45…+45, **0**), `asymmetry` (-1…+1, **0**)
-* `shuffler_lo_pct` (0…200, **100**), `shuffler_hi_pct` (0…200, **110**), `shuffler_xover_hz` (150…2000, **700**)
+* `shuffler_lo_pct` (0…200, **100**), `shuffler_hi_pct` (0…200, **100**), `shuffler_xover_hz` (150…2000, **700**)
 
 **Delay System (NEW)**
 

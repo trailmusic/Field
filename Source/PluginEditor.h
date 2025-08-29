@@ -115,6 +115,16 @@ public:
     void setHPQ         (float q)     { hpQ = juce::jlimit (0.5f, 1.2f, q); if (!qLink) repaint(); }
     void setLPQ         (float q)     { lpQ = juce::jlimit (0.5f, 1.2f, q); if (!qLink) repaint(); }
     void setTiltUseS    (bool on)     { tiltUsesShelfS = on; repaint(); }
+
+    // Imaging/shuffler overlays state
+    void setXoverLoHz   (float hz) { xoverLoHz = juce::jlimit (40.0f, 400.0f, hz); repaint(); }
+    void setXoverHiHz   (float hz) { xoverHiHz = juce::jlimit (800.0f, 6000.0f, hz); if (xoverHiHz <= xoverLoHz) xoverHiHz = juce::jlimit (xoverLoHz + 10.0f, 6000.0f, xoverHiHz); repaint(); }
+    void setRotationDeg (float d)  { rotationDeg = juce::jlimit (-45.0f, 45.0f, d); repaint(); }
+    void setAsymmetry   (float a)  { asym = juce::jlimit (-1.0f, 1.0f, a); repaint(); }
+    void setShuffler    (float loPct, float hiPct, float xHz)
+    {
+        shufLoPct = loPct; shufHiPct = hiPct; shufXHz = juce::jlimit (150.0f, 2000.0f, xHz); repaint();
+    }
     
     void pushWaveformSample (double sampleL, double sampleR); // for background waveform
     void setSampleRate (double fs) { vizSampleRate = fs > 0.0 ? fs : 48000.0; }
@@ -171,6 +181,15 @@ private:
     float hpQ            = 0.7071f;
     float lpQ            = 0.7071f;
     bool  tiltUsesShelfS = true;
+
+    // Imaging/shuffler overlay state (mirrors APVTS)
+    float xoverLoHz = 150.0f;
+    float xoverHiHz = 2000.0f;
+    float rotationDeg = 0.0f;
+    float asym = 0.0f; // -1..+1
+    float shufLoPct = 100.0f;
+    float shufHiPct = 100.0f;
+    float shufXHz   = 700.0f;
     
     // Waveform buffer
     static constexpr int waveformBufferSize = 512;
@@ -186,6 +205,7 @@ private:
     void drawWaveformBackground (juce::Graphics& g, juce::Rectangle<float> bounds);
     void drawEQCurves (juce::Graphics& g, juce::Rectangle<float> bounds);
     void drawFrequencyRegions (juce::Graphics& g, juce::Rectangle<float> bounds);
+    void drawImagingOverlays (juce::Graphics& g, juce::Rectangle<float> bounds);
     void analyzeSpectralResponse (std::vector<float>& response, float width); // optional; keep if used
     int  getBallAtPosition (juce::Point<float> pos, juce::Rectangle<float> bounds);
 };

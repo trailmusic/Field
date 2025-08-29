@@ -270,6 +270,7 @@ void XYPad::paint (juce::Graphics& g)
     drawFrequencyRegions  (g, padBounds);
     drawEQCurves          (g, padBounds);
     drawBalls             (g, padBounds);
+    drawImagingOverlays   (g, padBounds);
 
     // center crosshair (subtle)
     g.setColour ((lf ? lf->theme.textMuted : juce::Colours::white).withAlpha (0.4f));
@@ -277,6 +278,156 @@ void XYPad::paint (juce::Graphics& g)
     g.drawLine (r.getX() + 40, r.getCentreY(), r.getRight() - 40, r.getCentreY(), 1.5f);
 }
 
+void XYPad::drawImagingOverlays (juce::Graphics& g, juce::Rectangle<float> b)
+{
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    auto gridCol = lf ? lf->theme.hl.withAlpha (0.30f)    : juce::Colours::grey.withAlpha (0.30f);
+    auto textCol = lf ? lf->theme.textMuted.withAlpha(.8f): juce::Colours::lightgrey.withAlpha(.8f);
+    auto acc     = lf ? lf->theme.accent.withAlpha(0.85f) : juce::Colours::lightblue.withAlpha(0.85f);
+
+    auto xAtHz = [&] (float hz)
+    {
+        const float minHz = 20.0f, maxHz = 20000.0f;
+        float t = (float) (std::log10 (juce::jlimit(minHz, maxHz, hz) / minHz) / std::log10 (maxHz / minHz));
+        return juce::jmap (t, 0.0f, 1.0f, b.getX(), b.getRight());
+    };
+
+    // 1) Three-band crossovers (clamped like DSP)
+    {
+        float lo = juce::jlimit (40.0f, 400.0f, xoverLoHz);
+        float hi = juce::jlimit (800.0f, 6000.0f, xoverHiHz);
+        if (hi <= lo) hi = juce::jlimit (lo + 10.0f, 6000.0f, hi);
+        const float xLo = xAtHz (lo);
+        const float xHi = xAtHz (hi);
+
+        auto drawDashed = [&] (float x)
+        {
+            juce::Path p; p.startNewSubPath (x, b.getY()); p.lineTo (x, b.getBottom());
+            const float dashes[] = { 5.0f, 4.0f };
+            juce::Path dashed; juce::PathStrokeType (1.2f).createDashedStroke (dashed, p, dashes, 2);
+            // Slightly brighter guides
+            g.setColour (gridCol.withAlpha (0.8f));
+            g.strokePath (dashed, juce::PathStrokeType (1.6f));
+        };
+        drawDashed (xLo);
+        drawDashed (xHi);
+
+        // band tags with accent-blue backgrounds at the top of the pad
+        auto loRect  = juce::Rectangle<float> (b.getX(), b.getY() + 4.0f, xLo - b.getX(), 16.0f);
+        auto midRect = juce::Rectangle<float> (xLo,      b.getY() + 4.0f, xHi - xLo,      16.0f);
+        auto hiRect  = juce::Rectangle<float> (xHi,      b.getY() + 4.0f, b.getRight()-xHi,16.0f);
+
+        auto badge = [&] (juce::Rectangle<float> r, const juce::String& txt)
+        {
+            auto bg = (lf ? lf->theme.accent : juce::Colours::cornflowerblue).withAlpha (0.35f);
+            g.setColour (bg);
+            g.fillRoundedRectangle (r.reduced (2.0f), 6.0f);
+            g.setColour (bg.darker (0.35f));
+            g.drawRoundedRectangle (r.reduced (2.0f), 6.0f, 1.0f);
+            g.setColour (lf ? lf->theme.text : juce::Colours::white);
+            g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
+            g.drawText (txt, r, juce::Justification::centred);
+        };
+        badge (loRect,  "LO");
+        badge (midRect, "MID");
+        badge (hiRect,  "HI");
+    }
+
+    // 2) Rotation compass (larger: half the pad height diameter)
+    {
+        auto c = b.getCentre();
+        const float r = b.getHeight() * 0.25f;
+        g.setColour (gridCol.withAlpha (0.6f));
+        g.drawEllipse (c.x - r, c.y - r, r*2, r*2, 1.0f);
+
+        // ticks at ±45°
+        auto drawTick = [&] (float deg)
+        {
+            const float ang = juce::degreesToRadians (deg);
+            juce::Point<float> a (c.x + (r-2.0f) * std::cos (ang), c.y - (r-2.0f) * std::sin (ang));
+            juce::Point<float> b2(c.x + (r+2.0f) * std::cos (ang), c.y - (r+2.0f) * std::sin (ang));
+            g.drawLine (a.x, a.y, b2.x, b2.y, 1.0f);
+        };
+        drawTick (-45.0f);
+        drawTick (+45.0f);
+
+        const float ang = juce::degreesToRadians (juce::jlimit (-45.0f, 45.0f, rotationDeg));
+        juce::Point<float> tip (c.x + r * std::cos (ang), c.y - r * std::sin (ang));
+        g.setColour (acc);
+        g.drawLine (c.x, c.y, tip.x, tip.y, 1.8f);
+    }
+
+    // 3) Asymmetry wash + triangle (larger marker + shadow, patterned bias)
+    {
+        float aSigned = juce::jlimit (-1.0f, 1.0f, asym);
+        const float dx = (b.getWidth() * 0.12f) * aSigned;
+        // Patterned bias region using diagonal hatch on the biased side
+        if (std::abs (aSigned) > 0.001f)
+        {
+            juce::Rectangle<float> side = (aSigned > 0)
+                ? juce::Rectangle<float> (b.getCentreX(), b.getY(), b.getRight()-b.getCentreX(), b.getHeight())
+                : juce::Rectangle<float> (b.getX(), b.getY(), b.getCentreX()-b.getX(), b.getHeight());
+            juce::Graphics::ScopedSaveState save (g);
+            g.reduceClipRegion (side.getSmallestIntegerContainer());
+            const float spacing = 6.0f;
+            const float extra = b.getHeight() + b.getWidth();
+            auto hatchCol = (lf ? lf->theme.accent : juce::Colours::lightblue)
+                                .withAlpha (juce::jlimit (0.08f, 0.18f, 0.10f + 0.12f * std::abs (aSigned)));
+            g.setColour (hatchCol);
+            // draw diagonal lines (/) across the clipped half
+            for (float t = -extra; t < extra; t += spacing)
+            {
+                g.drawLine (b.getX() + t, b.getBottom(), b.getX() + t + b.getHeight(), b.getY(), 1.0f);
+            }
+        }
+
+        // Triangle marker with shadow (like XY ball)
+        auto cc = b.getCentre();
+        const float size = 20.0f; // one step larger than before
+        const float h = size * 0.8660254f; // sqrt(3)/2 * size
+        juce::Point<float> center (cc.x + dx, cc.y);
+        juce::Point<float> p1 (center.x,              center.y - h * 0.6667f);
+        juce::Point<float> p2 (center.x - size * 0.5f, center.y + h * 0.3333f);
+        juce::Point<float> p3 (center.x + size * 0.5f, center.y + h * 0.3333f);
+        juce::Path tri; tri.startNewSubPath (p1); tri.lineTo (p2); tri.lineTo (p3); tri.closeSubPath();
+        // shadow
+        g.setColour (juce::Colours::black.withAlpha (0.4f));
+        juce::Path triShadow = tri;
+        triShadow.applyTransform (juce::AffineTransform::translation (2.0f, 2.0f));
+        g.fillPath (triShadow);
+        // fill
+        g.setColour (acc);
+        g.fillPath (tri);
+    }
+
+    // 4) Shuffler width strip (bottom, 3x taller)
+    {
+        auto band = b.removeFromBottom (36.0f);
+        const float xX = xAtHz (juce::jlimit (150.0f, 2000.0f, shufXHz));
+
+        auto widthH = [&] (float pct)
+        {
+            pct = juce::jlimit (50.0f, 200.0f, pct);
+            return juce::jmap (pct, 50.0f, 200.0f, band.getHeight() * 0.2f, band.getHeight());
+        };
+
+        // baseline @100%
+        g.setColour (gridCol.withAlpha (0.9f));
+        const float yBase = band.getBottom() - widthH (100.0f);
+        g.drawLine (band.getX(), yBase, band.getRight(), yBase, 1.0f);
+
+        // left segment (Lo%)
+        g.setColour (acc.withAlpha (0.25f));
+        g.fillRect (juce::Rectangle<float> (band.getX(), band.getBottom() - widthH (shufLoPct), xX - band.getX(), widthH (shufLoPct)));
+        // right segment (Hi%)
+        g.setColour (acc.withAlpha (0.35f));
+        g.fillRect (juce::Rectangle<float> (xX, band.getBottom() - widthH (shufHiPct), band.getRight() - xX, widthH (shufHiPct)));
+
+        // crossover tick and optional full-height dotted discovery guide
+        g.setColour (gridCol.withAlpha (0.8f));
+        g.drawLine (xX, band.getY(), xX, band.getBottom(), 1.0f);
+    }
+}
 // ---- grid / frequency regions / EQ / balls ----
 // Minimal implementations to satisfy drawing helpers used by XYPad::paint
 void XYPad::drawGrid (juce::Graphics& g, juce::Rectangle<float> b)
@@ -1507,6 +1658,14 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     proc.apvts.addParameterListener ("hp_q",           this);
     proc.apvts.addParameterListener ("lp_q",           this);
     proc.apvts.addParameterListener ("tilt_link_s",    this);
+    // Imaging overlays
+    proc.apvts.addParameterListener ("xover_lo_hz",    this);
+    proc.apvts.addParameterListener ("xover_hi_hz",    this);
+    proc.apvts.addParameterListener ("rotation_deg",   this);
+    proc.apvts.addParameterListener ("asymmetry",      this);
+    proc.apvts.addParameterListener ("shuffler_lo_pct", this);
+    proc.apvts.addParameterListener ("shuffler_hi_pct", this);
+    proc.apvts.addParameterListener ("shuffler_xover_hz", this);
 
     // audio callback -> XY waveform (safe: no repaint in push)
     proc.onAudioSample = [this](float L, float R) { pad.pushWaveformSample (L, R); };
@@ -2658,6 +2817,14 @@ void MyPluginAudioProcessorEditor::parameterChanged (const juce::String& id, flo
             syncXYPadWithParameters();
         });
     }
+    else if (id == "xover_lo_hz" || id == "xover_hi_hz" || id == "rotation_deg" || id == "asymmetry"
+          || id == "shuffler_lo_pct" || id == "shuffler_hi_pct" || id == "shuffler_xover_hz")
+    {
+        juce::MessageManager::callAsync ([this]
+        {
+            syncXYPadWithParameters();
+        });
+    }
 }
 
 void MyPluginAudioProcessorEditor::updatePresetDisplay() { /* hook to PresetManager */ }
@@ -2763,6 +2930,13 @@ void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
     }
     if (auto* pTiltS = proc.apvts.getRawParameterValue ("tilt_link_s"))
         pad.setTiltUseS (pTiltS->load() >= 0.5f);
+
+    // Imaging/shuffler overlays
+    pad.setXoverLoHz   ((float) xoverLoHz.getValue());
+    pad.setXoverHiHz   ((float) xoverHiHz.getValue());
+    pad.setRotationDeg ((float) rotationDeg.getValue());
+    pad.setAsymmetry   ((float) asymmetry.getValue());
+    pad.setShuffler    ((float) shufLoPct.getValue(), (float) shufHiPct.getValue(), (float) shufXHz.getValue());
 }
 
 // end
