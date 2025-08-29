@@ -1167,7 +1167,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     {
         addAndMakeVisible (*l);
         l->setJustificationType (juce::Justification::centred);
-        l->setFont (juce::Font (juce::FontOptions (13.0f * scaleFactor).withStyle ("Bold")));
+        l->setFont (juce::Font (juce::FontOptions (15.0f * scaleFactor).withStyle ("Bold")));
         l->setColour (juce::Label::textColourId, lnf.theme.text);
         l->setColour (juce::Label::backgroundColourId, juce::Colours::transparentBlack);
         l->setColour (juce::Label::outlineColourId, juce::Colours::transparentBlack);
@@ -2003,7 +2003,8 @@ void MyPluginAudioProcessorEditor::performLayout()
         addAndMakeVisible (*airCell);
         addAndMakeVisible (*tiltCell);
         addAndMakeVisible (*scoopCell);
-        addAndMakeVisible (hpLpCombinedSlot);
+        if (!hpLpCell) hpLpCell = std::make_unique<DoubleKnobCell>(hpHz, hpValue, lpHz, lpValue);
+        addAndMakeVisible (*hpLpCell);
         // Micro sliders live inside cells
 
         // Use consistent gap; no extra horizontal reductions (now placed in row4)
@@ -2066,53 +2067,24 @@ void MyPluginAudioProcessorEditor::performLayout()
         airCell ->setVisible (true);
         tiltCell->setVisible (true);
         scoopCell->setVisible (true);
-        hpLpCombinedSlot.setVisible (true);
+        hpLpCell->setVisible (true);
 
+        hpLpCell->setMetrics (lPx, valuePx, gapPx);
         g.items = {
-            juce::GridItem (*bassCell)       .withHeight (containerHeight),
-            juce::GridItem (*airCell)        .withHeight (containerHeight),
-            juce::GridItem (*tiltCell)       .withHeight (containerHeight),
-            juce::GridItem (*scoopCell)      .withHeight (containerHeight),
-            juce::GridItem (hpLpCombinedSlot).withHeight (containerHeight)
+            juce::GridItem (*bassCell) .withHeight (containerHeight),
+            juce::GridItem (*airCell)  .withHeight (containerHeight),
+            juce::GridItem (*tiltCell) .withHeight (containerHeight),
+            juce::GridItem (*scoopCell).withHeight (containerHeight),
+            juce::GridItem (*hpLpCell) .withHeight (containerHeight)
         };
         g.performLayout (row);
 
-        // Consolidate HP and LP into one wide cell area (no extra borders): direct knob/label layout
-        {
-            auto b = hpLpCombinedSlot.getLocalBounds();
-            const int midGap = gapI;
-            auto left = b.removeFromLeft ((b.getWidth() - midGap) / 2);
-            auto right = b.removeFromLeft (midGap); (void) right; right = b;
-
-            {
-                const int k = juce::jmin (lPx, juce::jmin (left.getWidth(), left.getHeight()));
-                juce::Rectangle<int> knobBox (k, k);
-                knobBox = knobBox.withCentre ({ left.getCentreX(), left.getY() + k / 2 });
-                hpHz.setBounds (knobBox);
-                hpLpCombinedSlot.addAndMakeVisible (hpHz);
-                const int h = juce::jmax (valuePx, (int) std::ceil (hpValue.getFont().getHeight()) + 2);
-                hpValue.setBounds (knobBox.getX(), knobBox.getBottom() + Layout::dp (6, s), knobBox.getWidth(), h);
-                hpLpCombinedSlot.addAndMakeVisible (hpValue);
-            }
-
-            {
-                const int k = juce::jmin (lPx, juce::jmin (right.getWidth(), right.getHeight()));
-                juce::Rectangle<int> knobBox (k, k);
-                knobBox = knobBox.withCentre ({ right.getCentreX(), right.getY() + k / 2 });
-                lpHz.setBounds (knobBox);
-                hpLpCombinedSlot.addAndMakeVisible (lpHz);
-                const int h = juce::jmax (valuePx, (int) std::ceil (lpValue.getFont().getHeight()) + 2);
-                lpValue.setBounds (knobBox.getX(), knobBox.getBottom() + Layout::dp (6, s), knobBox.getWidth(), h);
-                hpLpCombinedSlot.addAndMakeVisible (lpValue);
-            }
-        }
-
-        // Ensure components are brought to front within the container
+        // Ensure components are brought to front
         bassCell->toFront (false);
         airCell ->toFront (false);
         tiltCell->toFront (false);
         scoopCell->toFront (false);
-        hpLpCombinedSlot.toFront (false);
+        hpLpCell->toFront (false);
     }
 
     // ---------------- Row 4: Remaining Imaging items ---------------------------

@@ -63,8 +63,8 @@ juce::Colour KnobCell::getTextColour() const
 juce::Colour KnobCell::getAccentColour() const
 {
     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        return lf->theme.accent;
-    return juce::Colour (0xFF5AA9E6);
+        return lf->theme.accentSecondary; // use neutral dark accent for borders
+    return juce::Colour (0xFF202226);
 }
 
 juce::Colour KnobCell::getShadowDark() const
@@ -217,7 +217,7 @@ void KnobCell::resized()
     // Managed value label placement (optional)
     if (valueLabelMode == ValueLabelMode::Managed)
     {
-        const int h = juce::jmax (V, (int) std::ceil (valueLabel.getFont().getHeight()) + 2);
+        const int h = juce::jmax (V, (int) std::ceil (valueLabel.getFont().getHeight()));
         juce::Rectangle<int> lb (knobBox.getX(), knobBox.getBottom() + valueLabelGap, knobBox.getWidth(), h);
         if (valueLabel.getParentComponent() != this)
             addAndMakeVisible (valueLabel);
@@ -270,6 +270,55 @@ void KnobCell::paint (juce::Graphics& g)
     }
 
     // No title: knob name already shown by LNF; retain only numeric/value labels via valueLabel
+
+    // Recessed background badge behind value label text (slightly larger + darker + stronger inner shadow)
+    if (valueLabel.isShowing())
+    {
+        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+        auto lb = valueLabel.getBounds().toFloat();
+        auto f  = valueLabel.getFont();
+        const juce::String txt = valueLabel.getText();
+
+        const float th = std::ceil (f.getHeight());
+        const float tw = f.getStringWidthFloat (txt);
+
+        // Slightly larger than text bounds
+        const float padX = 4.0f;
+        const float padY = 2.0f;
+
+        const float x = lb.getCentreX() - tw * 0.5f - padX;
+        const float y = lb.getY() + (lb.getHeight() - th) * 0.5f - padY * 0.5f;
+        juce::Rectangle<float> badge (x, y, tw + padX * 2.0f, th + padY);
+
+        const float cr = 4.0f;
+
+        juce::Colour base = lf ? lf->theme.panel : juce::Colour (0xFF2A2C30);
+        juce::Colour top  = base.darker (0.70f);  // darker overall
+        juce::Colour bot  = base.darker (0.38f);
+
+        juce::ColourGradient grad (top, badge.getX(), badge.getY(),
+                                   bot, badge.getX(), badge.getBottom(), false);
+        g.setGradientFill (grad);
+        g.fillRoundedRectangle (badge, cr);
+
+        // Stronger inner shadow using multiple inset strokes
+        for (int i = 0; i < 3; ++i)
+        {
+            const float inset = 0.8f + i * 0.8f;
+            const float alpha = 0.28f - i * 0.06f;
+            g.setColour (juce::Colours::black.withAlpha (alpha));
+            g.drawRoundedRectangle (badge.reduced (inset), juce::jmax (0.0f, cr - inset * 0.6f), 1.2f);
+        }
+
+        // Top inner highlight and bottom inner shadow lines for accent
+        g.setColour (juce::Colours::white.withAlpha (0.18f));
+        g.drawLine (badge.getX() + 1.0f, badge.getY() + 1.0f,
+                    badge.getRight() - 1.0f, badge.getY() + 1.0f, 1.0f);
+
+        g.setColour (juce::Colours::black.withAlpha (0.22f));
+        g.drawLine (badge.getX() + 1.0f, badge.getBottom() - 1.0f,
+                    badge.getRight() - 1.0f, badge.getBottom() - 1.0f, 1.0f);
+    }
 }
 
 

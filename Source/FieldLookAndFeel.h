@@ -28,6 +28,8 @@ struct FieldTheme
     // Nature accent default: Ocean (#5AA9E6). Other options:
     // Moss #7FB069, Sand #C6AD8F, Copper #C5865C, Plum #8B6FA1
     juce::Colour accent     { 0xFF5AA9E6 };
+    // Secondary accent for borders/accents needing neutral tone (dark charcoal)
+    juce::Colour accentSecondary { 0xFF202226 };
 
     // EQ palette (defaults set in FieldLNF::setGreenMode(false))
     struct EqPalette {
@@ -97,6 +99,7 @@ public:
                 theme.shadowDark  = juce::Colour (0xFF0D1E0D);
                 theme.shadowLight = juce::Colour (0xFF4E6F4E);
 
+                theme.accentSecondary = juce::Colour (0xFF202226);
                 theme.eq.hp        = juce::Colour (0xFF6FBF73);
                 theme.eq.lp        = juce::Colour (0xFF66BB6A);
                 theme.eq.air       = juce::Colour (0xFFA5D6A7);
@@ -120,6 +123,7 @@ public:
                 theme.shadowLight = juce::Colour (0xFF60646C);
 
                 // Pink-centric EQ palette
+                theme.accentSecondary = juce::Colour (0xFF202226);
                 theme.eq.hp        = juce::Colour (0xFFF06292); // light rose
                 theme.eq.lp        = juce::Colour (0xFFC2185B); // deep pink
                 theme.eq.air       = juce::Colour (0xFFFFC1E3); // light pink
@@ -141,6 +145,7 @@ public:
                 theme.shadowDark  = juce::Colour (0xFF1A1C20);
                 theme.shadowLight = juce::Colour (0xFF60646C);
 
+                theme.accentSecondary = juce::Colour (0xFF202226);
                 // Amber-centric EQ palette
                 theme.eq.hp        = juce::Colour (0xFFFFD54F); // lighter amber
                 theme.eq.lp        = juce::Colour (0xFFFFB300); // deeper amber
@@ -164,6 +169,7 @@ public:
                 theme.shadowDark  = juce::Colour (0xFF141518);
                 theme.shadowLight = juce::Colour (0xFF5F646B);
 
+                theme.accentSecondary = juce::Colour (0xFF202226);
                 // EQ greys
                 theme.eq.hp        = juce::Colour (0xFFB0B5BC);
                 theme.eq.lp        = juce::Colour (0xFFA5ABB3);
@@ -188,6 +194,7 @@ public:
                 theme.shadowDark  = juce::Colour (0xFF1A1C20);
                 theme.shadowLight = juce::Colour (0xFF60646C);
 
+                theme.accentSecondary = juce::Colour (0xFF202226);
                 theme.eq.hp        = juce::Colour (0xFF42A5F5); // HP: blue
                 theme.eq.lp        = juce::Colour (0xFF1E88E5); // LP: deeper blue
                 theme.eq.air       = juce::Colour (0xFFFFF59D); // Air: soft yellow

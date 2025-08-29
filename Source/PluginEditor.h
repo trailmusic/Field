@@ -3,6 +3,7 @@
 #include "PluginProcessor.h"
 #include "FieldLookAndFeel.h"
 #include "KnobCell.h"
+#include "KnobCellDual.h"
 #include "IconSystem.h"
 #include "PresetSystem.h"
 
@@ -1336,7 +1337,7 @@ private:
     std::unique_ptr<KnobCell> delayDuckAttackCell;
     std::unique_ptr<KnobCell> delayDuckReleaseCell;
 
-    ControlContainer hpLpCombinedSlot;
+    std::unique_ptr<class DoubleKnobCell> hpLpCell;
     void buildCells();
 
     // Attachments
