@@ -162,6 +162,13 @@ private:
     {
         Sample gainLin{}, pan{}, panL{}, panR{}, depth{}, width{};
         Sample tiltDb{}, scoopDb{}, monoHz{}, hpHz{}, lpHz{};
+        // New EQ shape/Q
+        Sample shelfShapeS{};     // 0.25..1.25
+        Sample filterQ{};         // 0.50..1.20
+        Sample hpQ{};             // per-filter Q
+        Sample lpQ{};             // per-filter Q
+        bool   tiltLinkS{};       // use shelfShapeS for tilt shelves
+        bool   eqQLink{};         // link HP/LP Q to filterQ
         Sample satDriveLin{}, satMix{}; bool bypass{}; int spaceAlgo{};
         Sample airDb{}, bassDb{}, ducking{}; int osMode{}; bool splitMode{};
         // Ducking advanced params
@@ -228,6 +235,13 @@ struct HostParams
 {
     double gainDb{}, pan{}, panL{}, panR{}, depth{}, width{};
     double tiltDb{}, scoopDb{}, monoHz{}, hpHz{}, lpHz{};
+    // New EQ shape/Q
+    double eqShelfShapeS{}; // S
+    double eqFilterQ{};     // global Q
+    double hpQ{};           // per-filter
+    double lpQ{};           // per-filter
+    bool   tiltLinkS{};
+    bool   eqQLink{};
     double satDriveDb{}, satMix{}; bool bypass{}; int spaceAlgo{};
     double airDb{}, bassDb{}, ducking{}; int osMode{}; bool splitMode{};
     // Ducking advanced

@@ -136,33 +136,54 @@ void KnobCell::resized()
             }
             else if (! auxComponents.empty())
             {
-                // Stack aux controls vertically; respect optional weights for relative heights
-                const int count  = (int) auxComponents.size();
-                const int gapY   = juce::jmax (2, G);
-                const int totalG = gapY * juce::jmax (0, count - 1);
-                const int H      = juce::jmax (1, miniStrip.getHeight() - totalG);
-                juce::Array<float> normH;
-                float sum = 0.0f;
-                if ((int) auxWeights.size() == count)
+                if (auxAsBars)
                 {
-                    for (float v : auxWeights) { float t = juce::jmax (0.0f, v); normH.add (t); sum += t; }
+                    // Centered thin bars (EQ-mini style)
+                    const int count  = (int) auxComponents.size();
+                    const int gapY   = juce::jmax (2, G);
+                    const int hBar   = juce::jlimit (8, 24, miniThicknessPx);
+                    const int totalH = count * hBar + gapY * juce::jmax (0, count - 1);
+                    juce::Rectangle<int> col = miniStrip;
+                    col.setY (miniStrip.getCentreY() - totalH / 2);
+                    col.setHeight (totalH);
+                    for (int i = 0; i < count; ++i)
+                    {
+                        auto* c = auxComponents[(size_t) i];
+                        if (c != nullptr)
+                            c->setBounds (col.removeFromTop (hBar));
+                        if (i < count - 1) col.removeFromTop (gapY);
+                    }
                 }
-                if (sum <= 0.0001f) { normH.clear(); for (int i = 0; i < count; ++i) { normH.add (1.0f); } sum = (float) count; }
-
-                juce::Rectangle<int> col = miniStrip;
-                int used = 0;
-                for (int i = 0; i < count; ++i) used += (int) std::round (H * (normH[i] / sum));
-                used += totalG;
-                col.setY (miniStrip.getCentreY() - used / 2);
-                col.setHeight (used);
-
-                for (int i = 0; i < count; ++i)
+                else
                 {
-                    const int cellH = (int) std::round (H * (normH[i] / sum));
-                    auto* c = auxComponents[(size_t) i];
-                    if (c != nullptr)
-                        c->setBounds (col.removeFromTop (cellH));
-                    if (i < count - 1) col.removeFromTop (gapY);
+                    // Natural weighted vertical stack
+                    const int count  = (int) auxComponents.size();
+                    const int gapY   = juce::jmax (2, G);
+                    const int totalG = gapY * juce::jmax (0, count - 1);
+                    const int H      = juce::jmax (1, miniStrip.getHeight() - totalG);
+                    juce::Array<float> normH;
+                    float sum = 0.0f;
+                    if ((int) auxWeights.size() == count)
+                    {
+                        for (float v : auxWeights) { float t = juce::jmax (0.0f, v); normH.add (t); sum += t; }
+                    }
+                    if (sum <= 0.0001f) { normH.clear(); for (int i = 0; i < count; ++i) { normH.add (1.0f); } sum = (float) count; }
+
+                    juce::Rectangle<int> col = miniStrip;
+                    int used = 0;
+                    for (int i = 0; i < count; ++i) used += (int) std::round (H * (normH[i] / sum));
+                    used += totalG;
+                    col.setY (miniStrip.getCentreY() - used / 2);
+                    col.setHeight (used);
+
+                    for (int i = 0; i < count; ++i)
+                    {
+                        const int cellH = (int) std::round (H * (normH[i] / sum));
+                        auto* c = auxComponents[(size_t) i];
+                        if (c != nullptr)
+                            c->setBounds (col.removeFromTop (cellH));
+                        if (i < count - 1) col.removeFromTop (gapY);
+                    }
                 }
             }
 
@@ -209,16 +230,29 @@ void KnobCell::resized()
         content.removeFromBottom (V + G);
 
     // Fit the knob at the top-center with requested diameter K
-    const int k = juce::jmin (K, juce::jmin (content.getWidth(), content.getHeight()));
-    juce::Rectangle<int> knobBox (k, k);
-    knobBox = knobBox.withCentre ({ content.getCentreX(), content.getY() + k / 2 });
-    knob.setBounds (knobBox);
+    if (showKnob)
+    {
+        const int k = juce::jmin (K, juce::jmin (content.getWidth(), content.getHeight()));
+        juce::Rectangle<int> knobBox (k, k);
+        knobBox = knobBox.withCentre ({ content.getCentreX(), content.getY() + k / 2 });
+        knob.setBounds (knobBox);
+    }
 
     // Managed value label placement (optional)
     if (valueLabelMode == ValueLabelMode::Managed)
     {
         const int h = juce::jmax (V, (int) std::ceil (valueLabel.getFont().getHeight()));
-        juce::Rectangle<int> lb (knobBox.getX(), knobBox.getBottom() + valueLabelGap, knobBox.getWidth(), h);
+        int lx = content.getX();
+        int lw = content.getWidth();
+        int ly = content.getY() + valueLabelGap + (showKnob ? 0 : 0);
+        if (showKnob)
+        {
+            const int k = juce::jmin (K, juce::jmin (content.getWidth(), content.getHeight()));
+            juce::Rectangle<int> kb (k, k);
+            kb = kb.withCentre ({ content.getCentreX(), content.getY() + k / 2 });
+            lx = kb.getX(); lw = kb.getWidth(); ly = kb.getBottom() + valueLabelGap;
+        }
+        juce::Rectangle<int> lb (lx, ly, lw, h);
         if (valueLabel.getParentComponent() != this)
             addAndMakeVisible (valueLabel);
         valueLabel.setBounds (lb);

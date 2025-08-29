@@ -57,10 +57,16 @@ public:
     /// Set thickness (height in px) of the right-side mini bar when miniOnRight = true
     void setMiniThicknessPx (int px) { miniThicknessPx = juce::jmax (6, px); }
 
+    /// Layout auxComponents as thin horizontal bars (true) or natural weighted heights (false, default)
+    void setAuxAsBars (bool bars) { auxAsBars = bars; resized(); repaint(); }
+
     // Managed value-label layout (optional)
     enum class ValueLabelMode { External, Managed };
     void setValueLabelMode (ValueLabelMode m) { valueLabelMode = m; resized(); }
     void setValueLabelGap  (int px)           { valueLabelGap  = juce::jmax (0, px); resized(); }
+
+    // Optional: hide the rotary knob entirely (for cluster/aux-only cells)
+    void setShowKnob (bool on) { showKnob = on; resized(); repaint(); }
 
     // juce::Component
     void paint   (juce::Graphics& g) override;
@@ -93,6 +99,8 @@ private:
     bool showBorder  = true;
     bool hoverActive = false;
     bool miniOnRight = false;
+    bool auxAsBars   = false;
+    bool showKnob    = true;
     int  miniThicknessPx { 12 };
     ValueLabelMode valueLabelMode { ValueLabelMode::External };
     int valueLabelGap { 4 };

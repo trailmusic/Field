@@ -1104,7 +1104,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
 
     // main rotary
     for (juce::Slider* slider : { &width,&tilt,&monoHz,&hpHz,&lpHz,&satDrive,&satMix,&air,&bass,&scoop,
-                              &widthLo,&widthMid,&widthHi,&xoverLoHz,&xoverHiHz,&rotationDeg,&asymmetry,&shufLoPct,&shufHiPct,&shufXHz })
+                              &widthLo,&widthMid,&widthHi,&xoverLoHz,&xoverHiHz,&rotationDeg,&asymmetry,&shufLoPct,&shufHiPct,&shufXHz,
+                              &shelfShapeS,&filterQ })
     {
         addAndMakeVisible (*slider);
         style (*slider);
@@ -1112,8 +1113,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     }
     addAndMakeVisible (gain); style (gain); gain.addListener (this);
 
-    // micro sliders (freq)
-    for (juce::Slider* slider : { &tiltFreqSlider,&scoopFreqSlider,&bassFreqSlider,&airFreqSlider })
+    // micro sliders (freq) + HP/LP Q minis
+    for (juce::Slider* slider : { &tiltFreqSlider,&scoopFreqSlider,&bassFreqSlider,&airFreqSlider, &hpQSlider, &lpQSlider })
     {
         addAndMakeVisible (*slider);
         slider->setSliderStyle (juce::Slider::LinearHorizontal);
@@ -1125,6 +1126,14 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         slider->setLookAndFeel (&lnf);
         slider->addListener (this);
     }
+
+    // link buttons (will be placed inside a cell later)
+    addAndMakeVisible (tiltLinkSButton);
+    addAndMakeVisible (qLinkButton);
+    tiltLinkSButton.setLookAndFeel (&lnf);
+    qLinkButton.setLookAndFeel (&lnf);
+    tiltLinkSButton.setButtonText ("Tilt uses S");
+    qLinkButton.setButtonText (""); // visual icon-only; state-driven paint
 
     // Ducking advanced knobs (3 generics + custom ratio)
     for (juce::Slider* slider : { &duckAttack, &duckRelease, &duckThreshold })
@@ -1156,7 +1165,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     addAndMakeVisible (duckingKnob); style (duckingKnob);   duckingKnob.addListener (this);
 
     // values
-    for (juce::Label* l : { &gainValue,&widthValue,&tiltValue,&monoValue,&hpValue,&lpValue,&satDriveValue,&satMixValue,&airValue,&bassValue,&scoopValue,
+    for (juce::Label* l : { &gainValue,&widthValue,&tiltValue,&monoValue,&hpValue,&lpValue,&satDriveValue,&satMixValue,&airValue,&bassValue,&scoopValue,&shelfShapeValue,&filterQValue,
                              &panValue,&panValueLeft,&panValueRight,&spaceValue,&duckingValue,&duckAttackValue,&duckReleaseValue,&duckThresholdValue,&duckRatioValue,
                              &tiltFreqValue,&scoopFreqValue,&bassFreqValue,&airFreqValue,
                              &widthLoValue,&widthMidValue,&widthHiValue,&xoverLoValue,&xoverHiValue,
@@ -1191,13 +1200,14 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
             pad.repaint();
         };
     };
-    for (juce::Slider* slider : { &tilt,&hpHz,&lpHz,&air,&bass,&scoop,&tiltFreqSlider,&scoopFreqSlider,&bassFreqSlider,&airFreqSlider,&monoHz })
+    for (juce::Slider* slider : { &tilt,&hpHz,&lpHz,&air,&bass,&scoop,&tiltFreqSlider,&scoopFreqSlider,&bassFreqSlider,&airFreqSlider,&monoHz,&shelfShapeS,&filterQ,&hpQSlider,&lpQSlider })
         addLiveRepaint (*slider);
 
     // slider names (for LNF knob labels)
     gain.setName ("GAIN"); width.setName ("WIDTH"); tilt.setName ("TILT"); monoHz.setName ("MONO");
     hpHz.setName ("HP Hz"); lpHz.setName ("LP Hz"); satDrive.setName ("DRIVE"); satMix.setName ("MIX");
     air.setName ("AIR"); bass.setName ("BASS"); scoop.setName ("SCOOP"); spaceKnob.setName ("REVERB");
+    shelfShapeS.setName ("Shape"); filterQ.setName ("Q");
     duckingKnob.setName ("DUCK"); panKnob.setName ("PAN"); panKnobLeft.setName ("PAN L"); panKnobRight.setName ("PAN R");
     duckAttack.setName ("ATT"); duckRelease.setName ("REL"); duckThreshold.setName ("THR"); duckRatio.setName ("RAT");
     tiltFreqSlider.setName ("TILT F"); scoopFreqSlider.setName ("SCOOP F"); bassFreqSlider.setName ("BASS F"); airFreqSlider.setName ("AIR F");
@@ -1432,6 +1442,13 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     attachments.push_back (std::make_unique<SA> (proc.apvts, "scoop_freq",    scoopFreqSlider));
     attachments.push_back (std::make_unique<SA> (proc.apvts, "bass_freq",     bassFreqSlider));
     attachments.push_back (std::make_unique<SA> (proc.apvts, "air_freq",      airFreqSlider));
+    // New EQ params
+    attachments.push_back (std::make_unique<SA> (proc.apvts, "eq_shelf_shape", shelfShapeS));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, "eq_filter_q",    filterQ));
+    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "tilt_link_s", tiltLinkSButton));
+    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "eq_q_link",   qLinkButton));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, "hp_q", hpQSlider));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, "lp_q", lpQSlider));
 
     buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "bypass", bypassButton));
     comboAttachments .push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "os_mode", osSelect));
@@ -2007,8 +2024,8 @@ void MyPluginAudioProcessorEditor::performLayout()
         addAndMakeVisible (*hpLpCell);
         // Micro sliders live inside cells
 
-        // Use consistent gap; no extra horizontal reductions (now placed in row4)
-        auto row = row4.reduced (0, 0);
+        // Use consistent gap
+        auto row = row3.reduced (0, 0);
 
         // Configure metrics for cells at current scale, and attach mini sliders
         const int valuePx = Layout::dp (14, s);
@@ -2053,14 +2070,18 @@ void MyPluginAudioProcessorEditor::performLayout()
         for (auto* mini : { &bassFreqSlider, &airFreqSlider, &tiltFreqSlider, &scoopFreqSlider })
             mini->getProperties().set ("micro", true);
 
-        // Use grid layout with consistent gaps: five double-wide cells (cells include mini sliders)
+        // Use grid layout: classic four + HP/LP (S/Q live on imaging row per spec)
         juce::Grid g;
         g.rowGap    = juce::Grid::Px (gapI);
         g.columnGap = juce::Grid::Px (gapI);
         g.templateRows    = { juce::Grid::Px (containerHeight) };
         const int doubleW = lPx * 2 + gapI;
         g.templateColumns = {
-            juce::Grid::Px (doubleW), juce::Grid::Px (doubleW), juce::Grid::Px (doubleW), juce::Grid::Px (doubleW), juce::Grid::Px (doubleW)
+            juce::Grid::Px (doubleW), // Bass
+            juce::Grid::Px (doubleW), // Air
+            juce::Grid::Px (doubleW), // Tilt
+            juce::Grid::Px (doubleW), // Scoop
+            juce::Grid::Px (doubleW)  // HP/LP
         };
 
         bassCell->setVisible (true);
@@ -2087,7 +2108,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         hpLpCell->toFront (false);
     }
 
-    // ---------------- Row 4: Remaining Imaging items ---------------------------
+    // ---------------- Row 4: Remaining Imaging items (+ S/Q + Q cluster) ---------------------------
     {
         // layout directly
 
@@ -2142,20 +2163,54 @@ void MyPluginAudioProcessorEditor::performLayout()
         imgGrid.rowGap    = juce::Grid::Px (gapI);
         imgGrid.columnGap = juce::Grid::Px (gapI);
         imgGrid.templateRows = { juce::Grid::Px (containerHeight) };
+        // Columns: 1..7 imaging, 8 S, 9 Q, 10 Q-cluster
         imgGrid.templateColumns = {
             juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx),
-            juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx)
+            juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx),
+            juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx)
         };
+
+        // Build S/Q cells
+        if (!shelfShapeCell) shelfShapeCell = std::make_unique<KnobCell>(shelfShapeS, shelfShapeValue, "Shape");
+        if (!filterQCell)    filterQCell    = std::make_unique<KnobCell>(filterQ,     filterQValue,    "Q");
+        shelfShapeCell->setMetrics (lPx, valuePx, gapPx);
+        filterQCell   ->setMetrics (lPx, valuePx, gapPx);
+        // Managed value labels for new cells
+        shelfShapeCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        filterQCell   ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        const int sqGap = Layout::dp (6, s);
+        shelfShapeCell->setValueLabelGap (sqGap);
+        filterQCell   ->setValueLabelGap (sqGap);
+        addAndMakeVisible (*shelfShapeCell);
+        addAndMakeVisible (*filterQCell);
+
+        // Q cluster cell: aux-only; hide its knob (use internal dummy slider/value)
+        if (!qClusterCell) qClusterCell = std::make_unique<KnobCell>(qClusterDummySlider, qClusterDummyValue, "Q LINK");
+        qClusterCell->setShowKnob (false);
+        qClusterCell->setMiniPlacementRight (true);
+        qClusterCell->setMiniThicknessPx (Layout::dp (12, s));
+        qClusterCell->setAuxAsBars (true);
+        qClusterCell->setAuxComponents ({ &qLinkButton, &hpQSlider, &lpQSlider }, Layout::dp (90, s));
+        // Style minis like EQ minis
+        hpQSlider.getProperties().set ("micro", true);
+        lpQSlider.getProperties().set ("micro", true);
+        addAndMakeVisible (*qClusterCell);
+
         imgGrid.items = {
+            // 1..7 imaging
             juce::GridItem (*xoverLoCell) .withHeight (containerHeight),
             juce::GridItem (*xoverHiCell) .withHeight (containerHeight),
             juce::GridItem (*rotationCell).withHeight (containerHeight),
             juce::GridItem (*asymCell)    .withHeight (containerHeight),
             juce::GridItem (*shufLoCell)  .withHeight (containerHeight),
             juce::GridItem (*shufHiCell)  .withHeight (containerHeight),
-            juce::GridItem (*shufXCell)   .withHeight (containerHeight)
+            juce::GridItem (*shufXCell)   .withHeight (containerHeight),
+            // 8..10 extras
+            juce::GridItem (*shelfShapeCell).withHeight (containerHeight),
+            juce::GridItem (*filterQCell)   .withHeight (containerHeight),
+            juce::GridItem (*qClusterCell)  .withHeight (containerHeight)
         };
-        auto imgB = row3.reduced (0, 0);
+        auto imgB = row4.reduced (0, 0);
         imgGrid.performLayout (imgB);
     }
 
@@ -2493,6 +2548,10 @@ void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
     else if (s == &scoopFreqSlider) set (scoopFreqValue, Hz (scoopFreqSlider.getValue()));
     else if (s == &bassFreqSlider)  set (bassFreqValue,  Hz (bassFreqSlider.getValue()));
     else if (s == &airFreqSlider)   set (airFreqValue,   Hz (airFreqSlider.getValue()));
+    else if (s == &shelfShapeS)     set (shelfShapeValue, juce::String (shelfShapeS.getValue(), 2));
+    else if (s == &filterQ)         set (filterQValue,    juce::String (filterQ.getValue(), 2));
+    else if (s == &hpQSlider)       set (hpValue,         juce::String (hpQSlider.getValue(), 2));
+    else if (s == &lpQSlider)       set (lpValue,         juce::String (lpQSlider.getValue(), 2));
 
     // Imaging value labels with units
     else if (s == &widthLo)  set (widthLoValue,  juce::String (juce::roundToInt (widthLo.getValue()  * 100.0))  + "%");

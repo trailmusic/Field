@@ -52,6 +52,14 @@ namespace IDs {
     static constexpr const char* monoSlope  = "mono_slope_db_oct";
     static constexpr const char* monoAud    = "mono_audition";
     
+    // EQ shaping/Q link additions
+    static constexpr const char* eqShelfShape = "eq_shelf_shape";  // S: 0.25..1.25
+    static constexpr const char* eqFilterQ    = "eq_filter_q";     // global Q: 0.50..1.20
+    static constexpr const char* tiltLinkS    = "tilt_link_s";     // link Tilt shelves to S
+    static constexpr const char* eqQLink      = "eq_q_link";       // link HP/LP Q to global
+    static constexpr const char* hpQ          = "hp_q";            // per-filter Q
+    static constexpr const char* lpQ          = "lp_q";            // per-filter Q
+    
     // Delay parameters
     static constexpr const char* delayEnabled = "delay_enabled";
     static constexpr const char* delayMode = "delay_mode";
@@ -242,6 +250,13 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.shufflerXoverHz= getParam(apvts, IDs::shufXHz);
     p.monoSlopeDbOct = (int) juce::roundToInt (getParam(apvts, IDs::monoSlope));
     p.monoAudition   = (getParam(apvts, IDs::monoAud) >= 0.5f);
+    // New EQ/link params
+    p.eqShelfShapeS  = getParam(apvts, IDs::eqShelfShape);
+    p.eqFilterQ      = getParam(apvts, IDs::eqFilterQ);
+    p.tiltLinkS      = (getParam(apvts, IDs::tiltLinkS) >= 0.5f);
+    p.eqQLink        = (getParam(apvts, IDs::eqQLink)   >= 0.5f);
+    p.hpQ            = getParam(apvts, IDs::hpQ);
+    p.lpQ            = getParam(apvts, IDs::lpQ);
     
     // Delay parameters
     p.delayEnabled = (getParam(apvts, IDs::delayEnabled) >= 0.5f);
@@ -453,6 +468,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::monoSlope,1 },   "Mono Slope (dB/oct)", juce::StringArray { "6", "12", "24" }, 1));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::monoAud, 1 },      "Mono Audition", false));
 
+    // EQ shape/Q additions
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqShelfShape, 1 }, "Shelf Shape (S)", juce::NormalisableRange<float> (0.25f, 1.25f, 0.001f), 0.90f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqFilterQ,    1 }, "Filter Q",        juce::NormalisableRange<float> (0.50f, 1.20f, 0.001f), 0.7071f));
+    params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID{ IDs::tiltLinkS,    1 }, "Tilt Uses Shelf S", true));
+    params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID{ IDs::eqQLink,      1 }, "Link HP/LP Q",      true));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::hpQ,          1 }, "HP Q",             juce::NormalisableRange<float> (0.50f, 1.20f, 0.001f), 0.7071f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::lpQ,          1 }, "LP Q",             juce::NormalisableRange<float> (0.50f, 1.20f, 0.001f), 0.7071f));
+
     // Delay parameters
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayEnabled, 1 }, "Delay Enabled", false));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayMode, 1 }, "Delay Mode", juce::StringArray { "Digital", "Analog", "Tape" }, 0));
@@ -600,6 +623,13 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.monoHz    = (Sample) hp.monoHz;
     params.hpHz      = (Sample) hp.hpHz;
     params.lpHz      = (Sample) hp.lpHz;
+    // New EQ shape/Q
+    params.shelfShapeS = (Sample) juce::jlimit (0.25, 1.25, hp.eqShelfShapeS);
+    params.filterQ     = (Sample) juce::jlimit (0.50, 1.20, hp.eqFilterQ);
+    params.hpQ         = (Sample) juce::jlimit (0.50, 1.20, hp.hpQ);
+    params.lpQ         = (Sample) juce::jlimit (0.50, 1.20, hp.lpQ);
+    params.tiltLinkS   = hp.tiltLinkS;
+    params.eqQLink     = hp.eqQLink;
     params.satDriveLin = (Sample) juce::Decibels::decibelsToGain (hp.satDriveDb);
     params.satMix    = (Sample) juce::jlimit (0.0, 1.0, hp.satMix);
     params.bypass    = hp.bypass;
@@ -701,8 +731,14 @@ void FieldChain<Sample>::applyHP_LP (Block block, Sample hpHz, Sample lpHz)
     const Sample nyq = (Sample) (sr * 0.49);
     hpHz = juce::jlimit ((Sample) 20,  juce::jmin ((Sample) 1000, nyq),  hpHz);
     lpHz = juce::jlimit ((Sample) 1000, juce::jmin ((Sample) 20000, nyq), lpHz);
+    // Set cutoffs
     hpFilter.setCutoffFrequency (hpHz);
     lpFilter.setCutoffFrequency (lpHz);
+    // Set resonance (Q): either global or per-filter
+    const Sample Qhp = params.eqQLink ? params.filterQ : params.hpQ;
+    const Sample Qlp = params.eqQLink ? params.filterQ : params.lpQ;
+    hpFilter.setResonance (juce::jlimit ((Sample)0.5, (Sample)1.2, Qhp));
+    lpFilter.setResonance (juce::jlimit ((Sample)0.5, (Sample)1.2, Qlp));
     CtxRep ctx (block);
     hpFilter.process (ctx);
     lpFilter.process (ctx);
@@ -719,8 +755,9 @@ void FieldChain<Sample>::updateTiltEQ (Sample tiltDb, Sample pivotHz)
     const Sample lowGain  = (Sample) juce::Decibels::decibelsToGain ( juce::jlimit (-12.0, 12.0, (double) tiltDb));
     const Sample highGain = (Sample) juce::Decibels::decibelsToGain (-juce::jlimit (-12.0, 12.0, (double) tiltDb));
 
-    auto lowCoef  = juce::dsp::IIR::Coefficients<Sample>::makeLowShelf  (fs, lowFc,  (Sample)1.0, lowGain);
-    auto highCoef = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf (fs, highFc, (Sample)1.0, highGain);
+    const Sample S = params.tiltLinkS ? params.shelfShapeS : (Sample)0.90;
+    auto lowCoef  = juce::dsp::IIR::Coefficients<Sample>::makeLowShelf  (fs, lowFc,  S, lowGain);
+    auto highCoef = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf (fs, highFc, S, highGain);
     lowShelf.coefficients  = lowCoef;
     highShelf.coefficients = highCoef;
 }
@@ -751,7 +788,8 @@ void FieldChain<Sample>::applyBassShelf (Block block, Sample bassDb, Sample bass
     if (std::abs ((double) bassDb) < 0.1) return;
     const Sample nyq = (Sample) (sr * 0.49);
     bassFreq = juce::jlimit ((Sample) 20, nyq, bassFreq);
-    auto coef = juce::dsp::IIR::Coefficients<Sample>::makeLowShelf (sr, bassFreq, (Sample)0.7, (Sample) juce::Decibels::decibelsToGain ((double) bassDb));
+    const Sample S = params.shelfShapeS;
+    auto coef = juce::dsp::IIR::Coefficients<Sample>::makeLowShelf (sr, bassFreq, S, (Sample) juce::Decibels::decibelsToGain ((double) bassDb));
     bassFilter.coefficients = coef; CtxRep ctx (block); bassFilter.process (ctx);
 }
 
@@ -761,7 +799,8 @@ void FieldChain<Sample>::applyAirBand (Block block, Sample airDb, Sample airFreq
     if (airDb <= (Sample)0.05) return; // positive-only air
     const Sample nyq = (Sample) (sr * 0.49);
     airFreq = juce::jlimit ((Sample) 1000, nyq, airFreq);
-    auto coef = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf (sr, airFreq, (Sample)0.3, (Sample) juce::Decibels::decibelsToGain ((double) airDb));
+    const Sample S = params.shelfShapeS * (Sample)0.3333333; // keep air gentle; scale S
+    auto coef = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf (sr, airFreq, juce::jlimit ((Sample)0.2, (Sample)1.25, S), (Sample) juce::Decibels::decibelsToGain ((double) airDb));
     airFilter.coefficients = coef; CtxRep ctx (block); airFilter.process (ctx);
 }
 

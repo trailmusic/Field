@@ -915,6 +915,13 @@ private:
     
     // Frequency control sliders
     juce::Slider tiltFreqSlider, scoopFreqSlider, bassFreqSlider, airFreqSlider;
+    // EQ shape/Q controls
+    juce::Slider shelfShapeS, filterQ;
+    juce::ToggleButton tiltLinkSButton, qLinkButton;
+    juce::Slider hpQSlider, lpQSlider;
+    // Q-cluster dummy hosts (no visible knob in cluster)
+    juce::Slider qClusterDummySlider;
+    juce::Label  qClusterDummyValue;
     
     // Delay controls
     juce::Slider delayTime, delayFeedback, delayWet, delaySpread, delayWidth, delayModRate, delayModDepth, delayWowflutter, delayJitter;
@@ -1264,6 +1271,7 @@ private:
     // Value indicators (if you keep them)
     juce::Label leftIndicator, rightIndicator;
     juce::Label gainValue, widthValue, tiltValue, monoValue, hpValue, lpValue, satDriveValue, satMixValue, airValue, bassValue, scoopValue;
+    juce::Label shelfShapeValue, filterQValue;
     juce::Label monoSlopeName, monoAudName;
     juce::Label panValue, panValueLeft, panValueRight, spaceValue, duckingValue;
     juce::Label duckAttackValue, duckReleaseValue, duckThresholdValue, duckRatioValue;
@@ -1316,6 +1324,9 @@ private:
     std::unique_ptr<KnobCell> shufLoCell;
     std::unique_ptr<KnobCell> shufHiCell;
     std::unique_ptr<KnobCell> shufXCell;
+    std::unique_ptr<KnobCell> shelfShapeCell;
+    std::unique_ptr<KnobCell> filterQCell;
+    std::unique_ptr<KnobCell> qClusterCell;
 
     // Delay cells (knob + value)
     std::unique_ptr<KnobCell> delayTimeCell;
