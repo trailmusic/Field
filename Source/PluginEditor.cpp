@@ -953,6 +953,13 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     const int initialWidth = juce::jmax (baseWidth, calculatedMinWidth);
     const int initialHeight = juce::jmax (baseHeight, calculatedMinHeight);
     setSize (initialWidth, initialHeight);
+    // Force initial layout so all cells (including SwitchCell) get bounds before first paint
+    performLayout();
+    if (spaceSwitchCell)
+    {
+        spaceSwitchCell->resized();
+        spaceAlgorithmSwitch.repaint();
+    }
     lnf.theme.accent = juce::Colour (0xFF5AA9E6); // ocean default
     lnf.setupColours();
     setLookAndFeel (&lnf);
@@ -1997,17 +2004,18 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int valuePx = Layout::dp (14, s);
         const int gapPx   = Layout::dp (0,  s);
         const int labelGap = Layout::dp (4, s);
+        const int cellW = lPx + Layout::dp (8, s); // widen all single cells slightly
         g.templateRows    = { juce::Grid::Px (containerHeight) };
         g.templateColumns = {
-            juce::Grid::Px (lPx * 3 + gapI * 2),       // Pan (triple wide)
-            juce::Grid::Px (lPx),                       // Width
-            juce::Grid::Px (lPx),                       // W LO
-            juce::Grid::Px (lPx),                       // W MID
-            juce::Grid::Px (lPx),                       // W HI
-            juce::Grid::Px (lPx),                       // Gain
-            juce::Grid::Px (lPx),                       // Drive
-            juce::Grid::Px (lPx),                       // Mix
-            juce::Grid::Fr (1)                          // stretchy pad
+            juce::Grid::Px (cellW * 3 + gapI * 2),     // Pan (triple wide)
+            juce::Grid::Px (cellW),                    // Width
+            juce::Grid::Px (cellW),                    // W LO
+            juce::Grid::Px (cellW),                    // W MID
+            juce::Grid::Px (cellW),                    // W HI
+            juce::Grid::Px (cellW),                    // Gain
+            juce::Grid::Px (cellW),                    // Drive
+            juce::Grid::Px (cellW),                    // Mix
+            juce::Grid::Fr (1)                         // stretchy pad
         };
 
         if (!panCell)
@@ -2033,14 +2041,14 @@ void MyPluginAudioProcessorEditor::performLayout()
         addAndMakeVisible (*satMixCell);
 
         g.items = {
-            juce::GridItem (*panCell)          .withWidth (lPx * 3 + gapI * 2).withHeight (containerHeight),
-            juce::GridItem (*widthCell)        .withWidth (lPx).withHeight (containerHeight),
-            juce::GridItem (*widthLoCell)      .withWidth (lPx).withHeight (containerHeight),
-            juce::GridItem (*widthMidCell)     .withWidth (lPx).withHeight (containerHeight),
-            juce::GridItem (*widthHiCell)      .withWidth (lPx).withHeight (containerHeight),
-            juce::GridItem (*gainCell)         .withWidth (lPx).withHeight (containerHeight),
-            juce::GridItem (*satDriveCell)     .withWidth (lPx).withHeight (containerHeight),
-            juce::GridItem (*satMixCell)       .withWidth (lPx).withHeight (containerHeight)
+            juce::GridItem (*panCell)          .withWidth (cellW * 3 + gapI * 2).withHeight (containerHeight),
+            juce::GridItem (*widthCell)        .withWidth (cellW).withHeight (containerHeight),
+            juce::GridItem (*widthLoCell)      .withWidth (cellW).withHeight (containerHeight),
+            juce::GridItem (*widthMidCell)     .withWidth (cellW).withHeight (containerHeight),
+            juce::GridItem (*widthHiCell)      .withWidth (cellW).withHeight (containerHeight),
+            juce::GridItem (*gainCell)         .withWidth (cellW).withHeight (containerHeight),
+            juce::GridItem (*satDriveCell)     .withWidth (cellW).withHeight (containerHeight),
+            juce::GridItem (*satMixCell)       .withWidth (cellW).withHeight (containerHeight)
         };
         g.performLayout (row);
 
@@ -2078,14 +2086,15 @@ void MyPluginAudioProcessorEditor::performLayout()
             reverbGrid.columnGap = juce::Grid::Px (gapI);
             const int valuePx = Layout::dp (14, s);
             const int gapPx   = Layout::dp (0,  s);
-            const int switchW = lPx; // vertical column sized like a knob cell
+            const int switchW = lPx + Layout::dp (8, s); // match standard cell width
             reverbGrid.templateRows    = { juce::Grid::Px (containerHeight) };
+            const int cellW = lPx + Layout::dp (8, s);
             reverbGrid.templateColumns = { 
-                juce::Grid::Px (lPx * 3 + gapI * 2),                     // Mono triple-wide at front
-                juce::Grid::Px (lPx),                                    // Reverb cell
-                juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx),
-                juce::Grid::Px (lPx), juce::Grid::Px (lPx),              // DUCK, ATT, REL, THR, RAT
-                juce::Grid::Px (switchW)                                 // Switch
+                juce::Grid::Px (cellW * 3 + gapI * 2),                   // Mono triple-wide at front
+                juce::Grid::Px (cellW),                                   // Reverb cell
+                juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
+                juce::Grid::Px (cellW), juce::Grid::Px (cellW),           // DUCK, ATT, REL, THR, RAT
+                juce::Grid::Px (switchW)                                  // Switch
             };
             // Ensure components are parented correctly (cells own knob+value)
             if (spaceKnob.getParentComponent() == this) removeChildComponent (&spaceKnob);
@@ -2135,7 +2144,15 @@ void MyPluginAudioProcessorEditor::performLayout()
             duckRatCell ->setValueLabelGap (rvGap);
  
             addAndMakeVisible (*spaceCell);
-            addAndMakeVisible (spaceAlgorithmSwitch);
+            if (!spaceSwitchCell)
+            {
+                // Ensure the child switch does not draw its own panel when hosted in a cell
+                spaceAlgorithmSwitch.setOpaque (false);
+                spaceAlgorithmSwitch.setDrawOwnPanel (false);
+                spaceAlgorithmSwitch.setLookAndFeel (nullptr); // inherit parent LAF
+                spaceSwitchCell = std::make_unique<SwitchCell>(spaceAlgorithmSwitch);
+            }
+            addAndMakeVisible (*spaceSwitchCell);
             addAndMakeVisible (*duckCell);
             addAndMakeVisible (*duckAttCell);
             addAndMakeVisible (*duckRelCell);
@@ -2145,7 +2162,7 @@ void MyPluginAudioProcessorEditor::performLayout()
  
             reverbGrid.items = {
                 juce::GridItem (*monoCell)
-                    .withWidth (lPx * 3 + gapI * 2)
+                    .withWidth (cellW * 3 + gapI * 2)
                     .withHeight (containerHeight),
                 juce::GridItem (*spaceCell)         .withHeight (containerHeight),
                 juce::GridItem (*duckCell)          .withHeight (containerHeight),
@@ -2153,7 +2170,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                 juce::GridItem (*duckRelCell)       .withHeight (containerHeight),
                 juce::GridItem (*duckThrCell)       .withHeight (containerHeight),
                 juce::GridItem (*duckRatCell)       .withHeight (containerHeight),
-                juce::GridItem (spaceAlgorithmSwitch)
+                juce::GridItem (*spaceSwitchCell)
                     .withAlignSelf (juce::GridItem::AlignSelf::center)
                     .withJustifySelf (juce::GridItem::JustifySelf::center)
                     .withHeight (containerHeight)
@@ -2249,7 +2266,8 @@ void MyPluginAudioProcessorEditor::performLayout()
         g.justifyContent = juce::Grid::JustifyContent::start;
         g.alignContent   = juce::Grid::AlignContent::start;
         g.templateRows    = { juce::Grid::Px (containerHeight) };
-        const int doubleW = lPx * 2 + gapI;
+        const int cellW = lPx + Layout::dp (8, s);
+        const int doubleW = cellW * 2 + gapI;
         g.templateColumns = {
             juce::Grid::Px (doubleW), // Bass
             juce::Grid::Px (doubleW), // Air
@@ -2341,11 +2359,14 @@ void MyPluginAudioProcessorEditor::performLayout()
         imgGrid.alignContent   = juce::Grid::AlignContent::start;
         imgGrid.templateRows = { juce::Grid::Px (containerHeight) };
         // Columns: 1..7 imaging, 8 S; reserve right strip for combined HP/LP+Q group
-        imgGrid.templateColumns = {
-            juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx),
-            juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx),
-            juce::Grid::Px (lPx)
-        };
+        {
+            const int cellW = lPx + Layout::dp (8, s);
+            imgGrid.templateColumns = {
+                juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
+                juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
+                juce::Grid::Px (cellW)
+            };
+        }
 
         // Build S/Q cells
         if (!shelfShapeCell) shelfShapeCell = std::make_unique<KnobCell>(shelfShapeS, shelfShapeValue, "Shape");
@@ -2385,11 +2406,15 @@ void MyPluginAudioProcessorEditor::performLayout()
             // 8: S only (Q and Q-cluster moved to combined strip)
             juce::GridItem (*shelfShapeCell).withHeight (containerHeight)
         };
-        const int doubleW = lPx * 2 + gapI;
-        // Reserve left strip for HP/LP+Q cluster, lay out remaining imaging/S cells across remaining area
-        auto imgB = row4;
-        imgB.removeFromLeft (doubleW + gapI); // leave standard gap between 2x2 and first imaging cell
-        imgGrid.performLayout (imgB);
+        // Reserve left strip for HP/LP+Q cluster using standard cell width, then leave a standard gap
+        {
+            const int cellW = lPx + Layout::dp (8, s);
+            const int doubleW = cellW * 2 + gapI;
+            auto imgB = row4;
+            imgB.removeFromLeft (doubleW + gapI); // leave standard gap between 2x2 and first imaging cell
+            imgGrid.performLayout (imgB);
+        }
+        
 
         // Note: filterQCell and qClusterCell are laid out in the combined right strip below
     }
@@ -2397,8 +2422,10 @@ void MyPluginAudioProcessorEditor::performLayout()
     // ----- Combined HP/LP + Q + Q-Link as one 2x2 composite cell -----
     {
         const int doubleW = lPx * 2 + gapI;
-        // Anchor composite strip to the left edge; spans rows 3 and 4
-        juce::Rectangle<int> strip (row3.getX(), row3.getY(), doubleW, row3.getHeight() + row4.getHeight());
+        // Anchor composite strip to the left edge; spans rows 3 and 4 with standard gap between
+        const int cellW_eq = lPx + Layout::dp (8, s);
+        const int doubleW_eq = cellW_eq * 2 + gapI;
+        juce::Rectangle<int> strip (row3.getX(), row3.getY(), doubleW_eq, row3.getHeight() + gapI + row4.getHeight());
 
         if (!hpLpQClusterCell)
         {
@@ -2416,7 +2443,8 @@ void MyPluginAudioProcessorEditor::performLayout()
         }
 
         addAndMakeVisible (*hpLpQClusterCell);
-        hpLpQClusterCell->setMetrics (lPx, Layout::dp (14, s), Layout::dp (0, s));
+        // Use standard internal gap so the 2x2 grid matches cell/column spacing
+        hpLpQClusterCell->setMetrics (lPx, Layout::dp (14, s), gapI);
         hpLpQClusterCell->setBounds (strip);
         hpLpQClusterCell->toFront (false);
     }

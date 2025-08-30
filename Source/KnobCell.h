@@ -91,7 +91,7 @@ private:
     std::vector<float> auxWeights;                   // optional weights for aux vertical sizing
 
     // Layout targets (pixels)
-    int K = 84;   // knob diameter
+    int K = 88;   // knob diameter (slightly wider overall cell)
     int V = 14;   // value label band height (space reservation)
     int G = 4;    // gap between elements
     int M = 0;    // mini height (0 = none)

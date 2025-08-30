@@ -30,7 +30,7 @@ private:
     juce::Slider& lKnob;  juce::Label& lLabel;
     juce::Slider& rKnob;  juce::Label& rLabel;
 
-    int K = 84, V = 14, G = 4;
+    int K = 88, V = 14, G = 4; // slightly wider
     bool showBorder = true;
 };
 

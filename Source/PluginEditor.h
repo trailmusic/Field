@@ -865,6 +865,44 @@ public:
         bool muted { false };
     };
     
+    // Lightweight container cell for non-knob components (e.g., switches)
+    class SwitchCell : public juce::Component
+    {
+    public:
+        explicit SwitchCell(juce::Component& contentToHost) : content(contentToHost) { setOpaque(false); }
+        void setMetrics (int /*knobPx*/, int /*valuePx*/, int /*gapPx*/) { resized(); }
+        void setShowBorder (bool show) { showBorder = show; repaint(); }
+        void resized() override
+        {
+            if (content.getParentComponent() != this)
+                addAndMakeVisible (content);
+            auto b = getLocalBounds().reduced (6); // inset to reveal panel border fully
+            content.setBounds (b);
+        }
+        void paint (juce::Graphics& g) override
+        {
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                lf->paintCellPanel (g, *this, showBorder, isMouseOverOrDragging() || hoverActive);
+        }
+        void visibilityChanged() override
+        {
+            if (isVisible())
+            {
+                if (content.getParentComponent() != this)
+                    addAndMakeVisible (content);
+                resized();
+                content.setVisible (true);
+                repaint();
+            }
+        }
+        void mouseEnter (const juce::MouseEvent&) override { hoverActive = true;  repaint(); }
+        void mouseExit  (const juce::MouseEvent&) override { hoverActive = false; repaint(); }
+    private:
+        juce::Component& content;
+        bool showBorder { true };
+        bool hoverActive { false };
+    };
+    
     // Resize handle functionality
     void mouseDown (const juce::MouseEvent& e) override;
     void mouseDrag (const juce::MouseEvent& e) override;
@@ -1035,6 +1073,7 @@ private:
         std::function<void (int)> onAlgorithmChange;
 
         void setSpacing (float px) { spacing = juce::jmax (0.0f, px); repaint(); }
+        void setDrawOwnPanel (bool on) { drawOwnPanel = on; repaint(); }
 
         void paint (juce::Graphics& g) override
         {
@@ -1043,15 +1082,18 @@ private:
 
             auto b = getLocalBounds().toFloat();
 
-            // DEV NOTE: Draw cell-like panel so this component can live as a standalone "cell"
-            if (auto* lfPanel = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            // Draw own panel only when not hosted in SwitchCell
+            if (drawOwnPanel)
             {
-                const float rad = 8.0f;
-                auto panel = b.reduced (3.0f);
-                g.setColour (lfPanel->theme.panel);
-                g.fillRoundedRectangle (panel, rad);
-                g.setColour (lfPanel->theme.sh.withAlpha (0.18f));
-                g.drawRoundedRectangle (panel.reduced (1.0f), rad - 1.0f, 0.8f);
+                if (auto* lfPanel = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                {
+                    const float rad = 8.0f;
+                    auto panel = b.reduced (3.0f);
+                    g.setColour (lfPanel->theme.panel);
+                    g.fillRoundedRectangle (panel, rad);
+                    g.setColour (lfPanel->theme.sh.withAlpha (0.18f));
+                    g.drawRoundedRectangle (panel.reduced (1.0f), rad - 1.0f, 0.8f);
+                }
             }
             auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
             const auto outline = juce::Colour (0xFF1A1C20);
@@ -1150,6 +1192,7 @@ private:
         juce::StringArray items;
         Orientation orientation { Orientation::Vertical };
         float spacing { 6.0f };
+        bool  drawOwnPanel { true };
         bool  muted { false };
 
         static juce::Colour activeColour (int idx, FieldLNF* lf)
@@ -1190,6 +1233,7 @@ private:
     
     SpaceAlgorithmSwitch spaceAlgorithmSwitch;
     std::unique_ptr<SpaceAlgorithmSwitch> monoSlopeSegmentSwitch;
+    std::unique_ptr<SwitchCell> spaceSwitchCell;
 
     // Dedicated Mono Slope Switch (6/12/24) with independent drawing but same visual language
     class MonoSlopeSwitch : public juce::Component

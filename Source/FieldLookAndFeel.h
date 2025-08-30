@@ -218,6 +218,42 @@ public:
     // --- Custom primitives ----------------------------------------------------
     void drawNeoPanel (juce::Graphics& g, juce::Rectangle<float> r, float radius = 16.0f) const;
 
+    // Shared painter for cell panels (KnobCell, SwitchCell) to ensure identical look
+    void paintCellPanel (juce::Graphics& g, juce::Component& c, bool showBorder, bool hover) const
+    {
+        auto r = c.getLocalBounds().toFloat();
+        const float rad = 8.0f;
+
+        g.setColour (theme.panel);
+        g.fillRoundedRectangle (r.reduced (3.0f), rad);
+
+        juce::DropShadow ds1 (theme.shadowDark.withAlpha (0.35f), 12, { -1, -1 });
+        juce::DropShadow ds2 (theme.shadowLight.withAlpha (0.25f),  6, { -1, -1 });
+        ds1.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
+        ds2.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
+
+        g.setColour (theme.sh.withAlpha (0.18f));
+        g.drawRoundedRectangle (r.reduced (4.0f), rad - 1.0f, 0.8f);
+
+        if (showBorder)
+        {
+            auto border = r.reduced (2.0f);
+            g.setColour (theme.accentSecondary);
+            if (hover)
+            {
+                for (int i = 1; i <= 6; ++i)
+                {
+                    const float t = (float) i / 6.0f;
+                    const float expand = 2.0f + t * 8.0f;
+                    g.setColour (theme.accentSecondary.withAlpha ((1.0f - t) * 0.22f));
+                    g.drawRoundedRectangle (border.expanded (expand), rad + expand * 0.35f, 2.0f);
+                }
+            }
+            g.setColour (theme.accentSecondary);
+            g.drawRoundedRectangle (border, rad, 1.5f);
+        }
+    }
+
     // Label styling (inline to keep behaviour identical to your original header)
     void drawLabel (juce::Graphics& g, juce::Label& l) override
     {
