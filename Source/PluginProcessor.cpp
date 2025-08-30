@@ -1138,6 +1138,15 @@ void FieldChain<Sample>::applySpaceAlgorithm (Block block, Sample depth01, int a
 {
     depth01 = juce::jlimit ((Sample)0, (Sample)1, depth01);
 
+    // When depth is effectively zero, ensure no algorithm alters the dry path
+    // and force wetLevel to zero. This prevents audible changes from the switch
+    // while Reverb is off and saves CPU.
+    if (depth01 <= (Sample) 0.0001)
+    {
+        rvParams.wetLevel = 0.0f;
+        return;
+    }
+
     float wet = 0.0f, damp = 0.35f, room = 0.45f, width = 1.0f;
     if (algo == 0) // Inner (EQ sculpt + subtle comp)
     {
@@ -1362,8 +1371,9 @@ void FieldChain<Sample>::process (Block block)
         delayEngine.process(block, scL, scR);
     }
 
-    // Duck wet against dry (WetOnly)
-    if (params.ducking > (Sample) 0.001)
+    // Duck wet against dry (WetOnly), only when Space wet is active to save CPU
+    const bool spaceWetActive = (rvParams.wetLevel > 0.0001f);
+    if (params.ducking > (Sample) 0.001 && spaceWetActive)
     {
         fielddsp::DuckParams p;
         p.maxDepthDb  = (float) juce::jlimit ((double)0.0, (double)36.0, (double) params.ducking * 24.0);
@@ -1379,6 +1389,10 @@ void FieldChain<Sample>::process (Block block)
 
         ducker.processWet (wetBus.getWritePointer (0), wetBus.getWritePointer (juce::jmin (1, ch-1)),
                            dryBus.getReadPointer (0), dryBus.getReadPointer (juce::jmin (1, ch-1)), n);
+    }
+    else
+    {
+        // Skip ducking entirely when reverb wet is zero; UI will idle the GR meter
     }
 
     // Sum Dry + Wet back to output block

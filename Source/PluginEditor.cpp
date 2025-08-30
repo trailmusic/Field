@@ -923,7 +923,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     const int numItems = 1 + 1 + 1 + 5 + 3; // pan, space, switch, duck(5), gain/drive/mix(3)
     const int gaps = numItems - 1;
     const int gapS = Layout::dp (Layout::GAP_S, s);
-    const int delayCardWMin = Layout::dp (620, s); // match delay card reserved width
+    const int delayCardWMin = Layout::dp (720, s); // widened to fit one extra column
     const int calculatedMinWidth = xlPx + lPx + swW + 5*lPx + 3*lPx + gaps * gapS
                                    + Layout::dp (Layout::PAD, s) * 2
                                    + delayCardWMin + Layout::dp (Layout::GAP, s);
@@ -1977,7 +1977,7 @@ void MyPluginAudioProcessorEditor::performLayout()
     const int rowH4 = containerHeight;                // Row 4
 
     // Reserve space for delay card on the right side (use full available height across all rows)
-    const int delayCardW = Layout::dp (620, s); // Width for delay card (fits ~6-8 knobs)
+    const int delayCardW = Layout::dp (720, s); // Widened to fit 7 columns
     auto delayCardArea = r.removeFromRight (delayCardW);
     delayContainer.setBounds (delayCardArea);
 
@@ -2444,41 +2444,45 @@ void MyPluginAudioProcessorEditor::performLayout()
         auto delayB = delayContainer.getLocalBounds();
 
         const int valuePx = Layout::dp (14, s);
-        const int gapPx   = Layout::dp (0,  s);
-        delayTimeCell      ->setMetrics (lPx, valuePx, gapPx);
-        delayFeedbackCell  ->setMetrics (lPx, valuePx, gapPx);
-        delayWetCell       ->setMetrics (lPx, valuePx, gapPx);
-        delaySpreadCell    ->setMetrics (lPx, valuePx, gapPx);
-        delayWidthCell     ->setMetrics (lPx, valuePx, gapPx);
-        delayModRateCell   ->setMetrics (lPx, valuePx, gapPx);
-        delayModDepthCell  ->setMetrics (lPx, valuePx, gapPx);
-        delayWowflutterCell->setMetrics (lPx, valuePx, gapPx);
-        delayJitterCell    ->setMetrics (lPx, valuePx, gapPx);
-        delayHpCell        ->setMetrics (lPx, valuePx, gapPx);
-        delayLpCell        ->setMetrics (lPx, valuePx, gapPx);
-        delayTiltCell      ->setMetrics (lPx, valuePx, gapPx);
-        delaySatCell       ->setMetrics (lPx, valuePx, gapPx);
-        delayDiffusionCell ->setMetrics (lPx, valuePx, gapPx);
-        delayDiffuseSizeCell->setMetrics (lPx, valuePx, gapPx);
-        delayDuckDepthCell ->setMetrics (lPx, valuePx, gapPx);
-        delayDuckAttackCell->setMetrics (lPx, valuePx, gapPx);
-        delayDuckReleaseCell->setMetrics (lPx, valuePx, gapPx);
+        const int labelGap = Layout::dp (4, s);
+        delayTimeCell      ->setMetrics (lPx, valuePx, labelGap);
+        delayFeedbackCell  ->setMetrics (lPx, valuePx, labelGap);
+        delayWetCell       ->setMetrics (lPx, valuePx, labelGap);
+        delaySpreadCell    ->setMetrics (lPx, valuePx, labelGap);
+        delayWidthCell     ->setMetrics (lPx, valuePx, labelGap);
+        delayModRateCell   ->setMetrics (lPx, valuePx, labelGap);
+        delayModDepthCell  ->setMetrics (lPx, valuePx, labelGap);
+        delayWowflutterCell->setMetrics (lPx, valuePx, labelGap);
+        delayJitterCell    ->setMetrics (lPx, valuePx, labelGap);
+        delayHpCell        ->setMetrics (lPx, valuePx, labelGap);
+        delayLpCell        ->setMetrics (lPx, valuePx, labelGap);
+        delayTiltCell      ->setMetrics (lPx, valuePx, labelGap);
+        delaySatCell       ->setMetrics (lPx, valuePx, labelGap);
+        delayDiffusionCell ->setMetrics (lPx, valuePx, labelGap);
+        delayDiffuseSizeCell->setMetrics (lPx, valuePx, labelGap);
+        delayDuckDepthCell ->setMetrics (lPx, valuePx, labelGap);
+        delayDuckAttackCell->setMetrics (lPx, valuePx, labelGap);
+        delayDuckReleaseCell->setMetrics (lPx, valuePx, labelGap);
 
         for (auto* c : { delayTimeCell.get(),delayFeedbackCell.get(),delayWetCell.get(),delaySpreadCell.get(),delayWidthCell.get(),delayModRateCell.get(),
                          delayModDepthCell.get(),delayWowflutterCell.get(),delayJitterCell.get(),delayHpCell.get(),delayLpCell.get(),delayTiltCell.get(),
                          delaySatCell.get(),delayDiffusionCell.get(),delayDiffuseSizeCell.get(),delayDuckDepthCell.get(),delayDuckAttackCell.get(),
                          delayDuckReleaseCell.get() })
+        {
             delayContainer.addAndMakeVisible (*c);
+            c->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            c->setValueLabelGap (labelGap);
+        }
 
         juce::Grid delayGrid;
         delayGrid.rowGap = juce::Grid::Px (gapI);
         delayGrid.columnGap = juce::Grid::Px (gapI);
         delayGrid.templateRows = {
-            juce::Grid::Px (Layout::dp (24, s)),                                      // buttons/combos row height
-            juce::Grid::Px (lPx + gapPx + valuePx), juce::Grid::Px (lPx + gapPx + valuePx),
-            juce::Grid::Px (lPx + gapPx + valuePx), juce::Grid::Px (lPx + gapPx + valuePx)
+            juce::Grid::Px (Layout::dp (24, s)),
+            juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight),
+            juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight)
         };
-        delayGrid.templateColumns = { juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx) };
+        delayGrid.templateColumns = { juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx) };
 
         delayGrid.items = {
             // Row 1: Core toggles/combos (not cells)
@@ -2496,6 +2500,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*delaySpreadCell).withArea (2,4),
             juce::GridItem (*delayWidthCell).withArea (2,5),
             juce::GridItem (*delayModRateCell).withArea (2,6),
+            juce::GridItem(),
 
             // Row 3
             juce::GridItem (*delayModDepthCell).withArea (3,1),
@@ -2504,6 +2509,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*delayHpCell).withArea (3,4),
             juce::GridItem (*delayLpCell).withArea (3,5),
             juce::GridItem (*delayTiltCell).withArea (3,6),
+            juce::GridItem(),
 
             // Row 4
             juce::GridItem (*delaySatCell).withArea (4,1),
@@ -2512,6 +2518,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*delayDuckDepthCell).withArea (4,4),
             juce::GridItem (*delayDuckAttackCell).withArea (4,5),
             juce::GridItem (*delayDuckReleaseCell).withArea (4,6),
+            juce::GridItem(),
 
             // Row 5: Remaining ducking controls and options
             juce::GridItem (delayDuckThreshold).withArea (5,1),
@@ -2521,25 +2528,7 @@ void MyPluginAudioProcessorEditor::performLayout()
 
         delayGrid.performLayout (delayB);
         
-        // Position value labels under their corresponding delay controls (correct parent)
-        placeLabelBelow (delayTimeValue,       delayTime,       Layout::dp (6, s));
-        placeLabelBelow (delayFeedbackValue,   delayFeedback,   Layout::dp (6, s));
-        placeLabelBelow (delayWetValue,        delayWet,        Layout::dp (6, s));
-        placeLabelBelow (delaySpreadValue,     delaySpread,     Layout::dp (6, s));
-        placeLabelBelow (delayWidthValue,      delayWidth,      Layout::dp (6, s));
-        placeLabelBelow (delayModRateValue,    delayModRate,    Layout::dp (6, s));
-        placeLabelBelow (delayModDepthValue,   delayModDepth,   Layout::dp (6, s));
-        placeLabelBelow (delayWowflutterValue, delayWowflutter, Layout::dp (6, s));
-        placeLabelBelow (delayJitterValue,     delayJitter,     Layout::dp (6, s));
-        placeLabelBelow (delayHpValue,         delayHp,         Layout::dp (6, s));
-        placeLabelBelow (delayLpValue,         delayLp,         Layout::dp (6, s));
-        placeLabelBelow (delayTiltValue,       delayTilt,       Layout::dp (6, s));
-        placeLabelBelow (delaySatValue,        delaySat,        Layout::dp (6, s));
-        placeLabelBelow (delayDiffusionValue,  delayDiffusion,  Layout::dp (6, s));
-        placeLabelBelow (delayDiffuseSizeValue, delayDiffuseSize, Layout::dp (6, s));
-        placeLabelBelow (delayDuckDepthValue,  delayDuckDepth,  Layout::dp (6, s));
-        placeLabelBelow (delayDuckAttackValue, delayDuckAttack, Layout::dp (6, s));
-        placeLabelBelow (delayDuckReleaseValue, delayDuckRelease, Layout::dp (6, s));
+        // Delay cell value labels are managed by KnobCell (Managed mode)
         
         // Bring components to front
         delayEnabled.toFront (false);
@@ -2666,16 +2655,24 @@ void MyPluginAudioProcessorEditor::resized()
 void MyPluginAudioProcessorEditor::timerCallback()
 {
     if (! isShowing()) return;
-    // Update ducking meter overlay on knob
-    const float grDb = proc.getCurrentDuckGrDb();
+    // Update ducking meter overlay on knob; idle when reverb wet is zero
+    float grDb = proc.getCurrentDuckGrDb();
+    if (spaceKnob.getValue() <= 0.0001)
+        grDb = 0.0f;
     duckingKnob.setCurrentGrDb (grDb);
 
-    // Grey-out ATT/REL/THR/RAT when DUCK=0%
-    const bool duckActive = duckingKnob.getValue() > 0.0001;
+    // Grey-out ATT/REL/THR/RAT when DUCK=0% or REVERB=0; also grey the Space algo switch
+    const bool reverbActive = spaceKnob.getValue() > 0.0001;
+    const bool duckActive = (duckingKnob.getValue() > 0.0001) && reverbActive;
+    spaceAlgorithmSwitch.setAlpha (reverbActive ? 1.0f : 0.35f);
+    spaceAlgorithmSwitch.setMuted (!reverbActive);
     duckAttack.setMuted (!duckActive);
     duckRelease.setMuted(!duckActive);
     duckThreshold.setMuted(!duckActive);
     duckRatio.setMuted(!duckActive);
+    // Parent ring for the DUCK knob itself tracks reverb (parent) state
+    duckingKnob.setMuted (!reverbActive);
+    spaceAlgorithmSwitch.repaint();
 
     duckingKnob.repaint();
     duckAttack.repaint();

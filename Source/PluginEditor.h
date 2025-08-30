@@ -771,12 +771,23 @@ public:
                     g.setColour (lf->theme.textMuted.withAlpha (0.85f));
                     g.strokePath (arc, juce::PathStrokeType (3.0f));
                 }
+
+                // Muted overlay ring to indicate parent (Reverb) off state controlling this knob
+                if (muted)
+                {
+                    g.setColour (lf->theme.panel.withAlpha (0.35f));
+                    g.fillEllipse (b);
+                    g.setColour (lf->theme.textMuted.withAlpha (0.85f));
+                    g.drawEllipse (b, 1.5f);
+                }
             }
         }
         void setCurrentGrDb (float db) { currentGrDb = db; }
+        void setMuted (bool m) { muted = m; repaint(); }
     private:
         bool hovered = false, active = false;
         float currentGrDb = 0.0f;
+        bool muted = false;
     };
 
     // Generic duck parameter slider that supports a muted overlay state
@@ -1019,6 +1030,7 @@ private:
         void setAlgorithm (int i)              { currentIndex = juce::jlimit (0, items.size() - 1, i); repaint(); }
         void setAlgorithmFromParameter (int i) { setAlgorithm (i); }
         int  getAlgorithm () const             { return currentIndex; }
+        void setMuted (bool m)                 { muted = m; repaint(); }
 
         std::function<void (int)> onAlgorithmChange;
 
@@ -1058,7 +1070,7 @@ private:
                 for (int i = 0; i < n; ++i)
                 {
                     const bool on = (currentIndex == i);
-                    drawButton (g, r, i, on, items[i], lf, outline, corner);
+                    drawButton (g, r, i, on, items[i], lf, outline, corner, muted);
                     r.setX (r.getX() + side + s);
                 }
             }
@@ -1072,7 +1084,7 @@ private:
                 for (int i = n - 1; i >= 0; --i)
                 {
                     const bool on = (currentIndex == i);
-                    drawButton (g, r, i, on, items[i], lf, outline, corner);
+                    drawButton (g, r, i, on, items[i], lf, outline, corner, muted);
                     r.setY (r.getY() + h + s);
                 }
             }
@@ -1138,6 +1150,7 @@ private:
         juce::StringArray items;
         Orientation orientation { Orientation::Vertical };
         float spacing { 6.0f };
+        bool  muted { false };
 
         static juce::Colour activeColour (int idx, FieldLNF* lf)
         {
@@ -1156,7 +1169,7 @@ private:
         }
 
         static void drawButton (juce::Graphics& g, juce::Rectangle<float> r, int idx, bool on, const juce::String& label,
-                                FieldLNF* lf, juce::Colour outline, float corner)
+                                FieldLNF* lf, juce::Colour outline, float corner, bool muted)
         {
             juce::Colour base = juce::Colour (0xFF2A2C30);
             juce::Colour fill = on ? activeColour (idx, lf) : base;
@@ -1167,7 +1180,9 @@ private:
             g.setColour (outline);
             g.drawRoundedRectangle (r, corner, 1.0f);
 
-            g.setColour (lf ? lf->theme.text : juce::Colour (0xFFF0F2F5));
+            juce::Colour textCol = lf ? lf->theme.text : juce::Colour (0xFFF0F2F5);
+            if (muted) textCol = textCol.withAlpha (0.45f);
+            g.setColour (textCol);
             g.setFont (juce::Font (juce::FontOptions (12.0f).withStyle ("Bold")));
             g.drawText (label, r, juce::Justification::centred);
         }
