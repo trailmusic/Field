@@ -2264,7 +2264,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         hpLpCell->setVisible (true);
 
         hpLpCell->setMetrics (lPx, valuePx, gapPx);
-        // Reserve left strip for HP/LP+Q cluster, lay out remaining EQ cells
+        // Reserve left strip for HP/LP+Q cluster, lay out remaining EQ cells across remaining area
         auto row = row3;
         row.removeFromLeft (doubleW + gapI); // leave standard gap between 2x2 and first EQ cell
         g.items = {
@@ -2386,7 +2386,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*shelfShapeCell).withHeight (containerHeight)
         };
         const int doubleW = lPx * 2 + gapI;
-        // Reserve left strip for HP/LP+Q cluster, lay out remaining imaging/S cells
+        // Reserve left strip for HP/LP+Q cluster, lay out remaining imaging/S cells across remaining area
         auto imgB = row4;
         imgB.removeFromLeft (doubleW + gapI); // leave standard gap between 2x2 and first imaging cell
         imgGrid.performLayout (imgB);
