@@ -4,6 +4,7 @@
 #include "FieldLookAndFeel.h"
 #include "KnobCell.h"
 #include "KnobCellDual.h"
+#include "KnobCellQuad.h"
 #include "IconSystem.h"
 #include "PresetSystem.h"
 
@@ -1385,6 +1386,7 @@ private:
     std::unique_ptr<KnobCell> delayDuckReleaseCell;
 
     std::unique_ptr<class DoubleKnobCell> hpLpCell;
+    std::unique_ptr<class QuadKnobCell> hpLpQClusterCell;
     void buildCells();
 
     // Attachments

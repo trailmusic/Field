@@ -2081,11 +2081,11 @@ void MyPluginAudioProcessorEditor::performLayout()
             const int switchW = lPx; // vertical column sized like a knob cell
             reverbGrid.templateRows    = { juce::Grid::Px (containerHeight) };
             reverbGrid.templateColumns = { 
+                juce::Grid::Px (lPx * 3 + gapI * 2),                     // Mono triple-wide at front
                 juce::Grid::Px (lPx),                                    // Reverb cell
                 juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx),
                 juce::Grid::Px (lPx), juce::Grid::Px (lPx),              // DUCK, ATT, REL, THR, RAT
-                juce::Grid::Px (switchW),                                // Switch
-                juce::Grid::Px (lPx * 3 + gapI * 2)                      // Mono triple-wide at end
+                juce::Grid::Px (switchW)                                 // Switch
             };
             // Ensure components are parented correctly (cells own knob+value)
             if (spaceKnob.getParentComponent() == this) removeChildComponent (&spaceKnob);
@@ -2144,6 +2144,9 @@ void MyPluginAudioProcessorEditor::performLayout()
             addAndMakeVisible (*monoCell);
  
             reverbGrid.items = {
+                juce::GridItem (*monoCell)
+                    .withWidth (lPx * 3 + gapI * 2)
+                    .withHeight (containerHeight),
                 juce::GridItem (*spaceCell)         .withHeight (containerHeight),
                 juce::GridItem (*duckCell)          .withHeight (containerHeight),
                 juce::GridItem (*duckAttCell)       .withHeight (containerHeight),
@@ -2153,9 +2156,6 @@ void MyPluginAudioProcessorEditor::performLayout()
                 juce::GridItem (spaceAlgorithmSwitch)
                     .withAlignSelf (juce::GridItem::AlignSelf::center)
                     .withJustifySelf (juce::GridItem::JustifySelf::center)
-                    .withHeight (containerHeight),
-                juce::GridItem (*monoCell)
-                    .withWidth (lPx * 3 + gapI * 2)
                     .withHeight (containerHeight)
             };
             reverbGrid.performLayout (rg);
@@ -2198,7 +2198,6 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Micro sliders live inside cells
 
         // Use consistent gap
-        auto row = row3.reduced (0, 0);
 
         // Configure metrics for cells at current scale, and attach mini sliders
         const int valuePx = Layout::dp (14, s);
@@ -2243,18 +2242,19 @@ void MyPluginAudioProcessorEditor::performLayout()
         for (auto* mini : { &bassFreqSlider, &airFreqSlider, &tiltFreqSlider, &scoopFreqSlider })
             mini->getProperties().set ("micro", true);
 
-        // Use grid layout: classic four + HP/LP (S/Q live on imaging row per spec)
+        // Use grid layout: classic four; reserve right strip for combined HP/LP+Q group
         juce::Grid g;
         g.rowGap    = juce::Grid::Px (gapI);
         g.columnGap = juce::Grid::Px (gapI);
+        g.justifyContent = juce::Grid::JustifyContent::start;
+        g.alignContent   = juce::Grid::AlignContent::start;
         g.templateRows    = { juce::Grid::Px (containerHeight) };
         const int doubleW = lPx * 2 + gapI;
         g.templateColumns = {
             juce::Grid::Px (doubleW), // Bass
             juce::Grid::Px (doubleW), // Air
             juce::Grid::Px (doubleW), // Tilt
-            juce::Grid::Px (doubleW), // Scoop
-            juce::Grid::Px (doubleW)  // HP/LP
+            juce::Grid::Px (doubleW)  // Scoop
         };
 
         bassCell->setVisible (true);
@@ -2264,12 +2264,14 @@ void MyPluginAudioProcessorEditor::performLayout()
         hpLpCell->setVisible (true);
 
         hpLpCell->setMetrics (lPx, valuePx, gapPx);
+        // Reserve left strip for HP/LP+Q cluster, lay out remaining EQ cells
+        auto row = row3;
+        row.removeFromLeft (doubleW + gapI); // leave standard gap between 2x2 and first EQ cell
         g.items = {
             juce::GridItem (*bassCell) .withHeight (containerHeight),
             juce::GridItem (*airCell)  .withHeight (containerHeight),
             juce::GridItem (*tiltCell) .withHeight (containerHeight),
-            juce::GridItem (*scoopCell).withHeight (containerHeight),
-            juce::GridItem (*hpLpCell) .withHeight (containerHeight)
+            juce::GridItem (*scoopCell).withHeight (containerHeight)
         };
         g.performLayout (row);
 
@@ -2335,12 +2337,14 @@ void MyPluginAudioProcessorEditor::performLayout()
         juce::Grid imgGrid;
         imgGrid.rowGap    = juce::Grid::Px (gapI);
         imgGrid.columnGap = juce::Grid::Px (gapI);
+        imgGrid.justifyContent = juce::Grid::JustifyContent::start;
+        imgGrid.alignContent   = juce::Grid::AlignContent::start;
         imgGrid.templateRows = { juce::Grid::Px (containerHeight) };
-        // Columns: 1..7 imaging, 8 S, 9 Q, 10 Q-cluster
+        // Columns: 1..7 imaging, 8 S; reserve right strip for combined HP/LP+Q group
         imgGrid.templateColumns = {
             juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx),
             juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx),
-            juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx)
+            juce::Grid::Px (lPx)
         };
 
         // Build S/Q cells
@@ -2378,13 +2382,43 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*shufLoCell)  .withHeight (containerHeight),
             juce::GridItem (*shufHiCell)  .withHeight (containerHeight),
             juce::GridItem (*shufXCell)   .withHeight (containerHeight),
-            // 8..10 extras
-            juce::GridItem (*shelfShapeCell).withHeight (containerHeight),
-            juce::GridItem (*filterQCell)   .withHeight (containerHeight),
-            juce::GridItem (*qClusterCell)  .withHeight (containerHeight)
+            // 8: S only (Q and Q-cluster moved to combined strip)
+            juce::GridItem (*shelfShapeCell).withHeight (containerHeight)
         };
-        auto imgB = row4.reduced (0, 0);
+        const int doubleW = lPx * 2 + gapI;
+        // Reserve left strip for HP/LP+Q cluster, lay out remaining imaging/S cells
+        auto imgB = row4;
+        imgB.removeFromLeft (doubleW + gapI); // leave standard gap between 2x2 and first imaging cell
         imgGrid.performLayout (imgB);
+
+        // Note: filterQCell and qClusterCell are laid out in the combined right strip below
+    }
+
+    // ----- Combined HP/LP + Q + Q-Link as one 2x2 composite cell -----
+    {
+        const int doubleW = lPx * 2 + gapI;
+        // Anchor composite strip to the left edge; spans rows 3 and 4
+        juce::Rectangle<int> strip (row3.getX(), row3.getY(), doubleW, row3.getHeight() + row4.getHeight());
+
+        if (!hpLpQClusterCell)
+        {
+            if (!filterQCell)    filterQCell    = std::make_unique<KnobCell>(filterQ,     filterQValue,    "Q");
+            if (!qClusterCell)   qClusterCell   = std::make_unique<KnobCell>(qClusterDummySlider, qClusterDummyValue, "Q LINK");
+            qClusterCell->setShowKnob (false);
+            qClusterCell->setMiniPlacementRight (true);
+            qClusterCell->setMiniThicknessPx (Layout::dp (12, s));
+            qClusterCell->setAuxAsBars (true);
+            qClusterCell->setAuxComponents ({ &qLinkButton, &hpQSlider, &lpQSlider }, Layout::dp (90, s));
+            hpQSlider.getProperties().set ("micro", true);
+            lpQSlider.getProperties().set ("micro", true);
+
+            hpLpQClusterCell = std::make_unique<QuadKnobCell>(hpHz, hpValue, lpHz, lpValue, filterQ, filterQValue, *qClusterCell);
+        }
+
+        addAndMakeVisible (*hpLpQClusterCell);
+        hpLpQClusterCell->setMetrics (lPx, Layout::dp (14, s), Layout::dp (0, s));
+        hpLpQClusterCell->setBounds (strip);
+        hpLpQClusterCell->toFront (false);
     }
 
     // ---------------- Delay Card (Right Side, spans full height) ---------------------------
