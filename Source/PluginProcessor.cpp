@@ -53,7 +53,7 @@ namespace IDs {
     static constexpr const char* monoAud    = "mono_audition";
     
     // EQ shaping/Q link additions
-    static constexpr const char* eqShelfShape = "eq_shelf_shape";  // S: 0.25..1.25
+    static constexpr const char* eqShelfShape = "eq_shelf_shape";  // S: 0.25..1.50
     static constexpr const char* eqFilterQ    = "eq_filter_q";     // global Q: 0.50..1.20
     static constexpr const char* tiltLinkS    = "tilt_link_s";     // link Tilt shelves to S
     static constexpr const char* eqQLink      = "eq_q_link";       // link HP/LP Q to global
@@ -469,7 +469,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::monoAud, 1 },      "Mono Audition", false));
 
     // EQ shape/Q additions
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqShelfShape, 1 }, "Shelf Shape (S)", juce::NormalisableRange<float> (0.25f, 1.25f, 0.001f), 0.90f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqShelfShape, 1 }, "Shelf Shape (S)", juce::NormalisableRange<float> (0.25f, 1.50f, 0.001f), 0.90f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqFilterQ,    1 }, "Filter Q",        juce::NormalisableRange<float> (0.50f, 1.20f, 0.001f), 0.7071f));
     params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID{ IDs::tiltLinkS,    1 }, "Tilt Uses Shelf S", true));
     params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID{ IDs::eqQLink,      1 }, "Link HP/LP Q",      true));
@@ -624,7 +624,7 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.hpHz      = (Sample) hp.hpHz;
     params.lpHz      = (Sample) hp.lpHz;
     // New EQ shape/Q
-    params.shelfShapeS = (Sample) juce::jlimit (0.25, 1.25, hp.eqShelfShapeS);
+    params.shelfShapeS = (Sample) juce::jlimit (0.25, 1.50, hp.eqShelfShapeS);
     params.filterQ     = (Sample) juce::jlimit (0.50, 1.20, hp.eqFilterQ);
     params.hpQ         = (Sample) juce::jlimit (0.50, 1.20, hp.hpQ);
     params.lpQ         = (Sample) juce::jlimit (0.50, 1.20, hp.lpQ);
@@ -777,7 +777,10 @@ void FieldChain<Sample>::applyScoopEQ (Block block, Sample scoopDb, Sample scoop
     if (std::abs ((double) scoopDb) < 0.1) return;
     const Sample nyq = (Sample) (sr * 0.49);
     scoopFreq = juce::jlimit ((Sample) 20, nyq, scoopFreq);
-    auto coef = juce::dsp::IIR::Coefficients<Sample>::makePeakFilter (sr, scoopFreq, (Sample)1.0, (Sample) juce::Decibels::decibelsToGain ((double) scoopDb));
+    // Map shelf shape S (0.25..1.25) to a reasonable peaking Q range (wider→narrower)
+    const Sample Sshape = params.shelfShapeS;
+    const Sample qPeak  = juce::jlimit ((Sample)0.5, (Sample)2.0, (Sample) juce::jmap ((double) Sshape, 0.25, 1.25, 0.5, 2.0));
+    auto coef = juce::dsp::IIR::Coefficients<Sample>::makePeakFilter (sr, scoopFreq, qPeak, (Sample) juce::Decibels::decibelsToGain ((double) scoopDb));
     scoopFilter.coefficients = coef;
     CtxRep ctx (block); scoopFilter.process (ctx);
 }
@@ -800,7 +803,7 @@ void FieldChain<Sample>::applyAirBand (Block block, Sample airDb, Sample airFreq
     const Sample nyq = (Sample) (sr * 0.49);
     airFreq = juce::jlimit ((Sample) 1000, nyq, airFreq);
     const Sample S = params.shelfShapeS * (Sample)0.3333333; // keep air gentle; scale S
-    auto coef = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf (sr, airFreq, juce::jlimit ((Sample)0.2, (Sample)1.25, S), (Sample) juce::Decibels::decibelsToGain ((double) airDb));
+    auto coef = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf (sr, airFreq, juce::jlimit ((Sample)0.2, (Sample)1.50, S), (Sample) juce::Decibels::decibelsToGain ((double) airDb));
     airFilter.coefficients = coef; CtxRep ctx (block); airFilter.process (ctx);
 }
 

@@ -673,8 +673,8 @@ void XYPad::drawEQCurves (juce::Graphics& g, juce::Rectangle<float> b)
         const bool hpNeutral = hpValue <= 20.0f;
         const bool lpNeutral = lpValue >= 20000.0f;
         // Shelves use S; Tilt optionally inherits S
-        auto bBass  = VizEQ::lowshelfRBJ (Fs, juce::jlimit (20.0f, 20000.0f, bassFreqValue),  bassValue, shelfShapeS);
-        auto bAir   = VizEQ::highshelfRBJ(Fs, juce::jlimit (20.0f, 20000.0f, airFreqValue),   airValue,  shelfShapeS);
+        auto bBass  = VizEQ::lowshelfRBJ (Fs, juce::jlimit (20.0f, 20000.0f, bassFreqValue),  bassValue,  shelfShapeS);
+        auto bAir   = VizEQ::highshelfRBJ(Fs, juce::jlimit (20.0f, 20000.0f, airFreqValue),   airValue,   shelfShapeS);
         const float tiltS = tiltUsesShelfS ? shelfShapeS : 0.90f;
         auto bTiltLo= VizEQ::lowshelfRBJ (Fs, juce::jlimit (20.0f, 20000.0f, tiltFreqValue), +0.5f*tiltValue, tiltS);
         auto bTiltHi= VizEQ::highshelfRBJ(Fs, juce::jlimit (20.0f, 20000.0f, tiltFreqValue), -0.5f*tiltValue, tiltS);
@@ -686,8 +686,8 @@ void XYPad::drawEQCurves (juce::Graphics& g, juce::Rectangle<float> b)
                                 : VizEQ::highpassRBJ (Fs, juce::jlimit (20.0f, 20000.0f, hpValue), qHP);
         auto bLP    = lpNeutral ? VizEQ::lowpassRBJ (Fs, 20000.0, VizEQ::kSqrt2Inv)
                                 : VizEQ::lowpassRBJ  (Fs, juce::jlimit (20.0f, 20000.0f, lpValue), qLP);
-        // Peak bell for scoop/boost
-        const double qPeak = 1.0; // could adapt with gain if desired
+        // Peak bell for scoop/boost: adapt Q from shelf shape S (wider at low S, tighter at high S)
+        const double qPeak = juce::jlimit (0.5, 2.0, juce::jmap ((double) shelfShapeS, 0.25, 1.50, 0.5, 2.0));
         auto bPeak  = VizEQ::peakingRBJ_Q(Fs, juce::jlimit (20.0f, 20000.0f, scoopFreqValue), scoopValue, qPeak);
 
         const double w = 2.0 * juce::MathConstants<double>::pi * (double)hz / Fs;
@@ -955,11 +955,17 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     setSize (initialWidth, initialHeight);
     // Force initial layout so all cells (including SwitchCell) get bounds before first paint
     performLayout();
-    if (spaceSwitchCell)
+    // Defer one tick to ensure LookAndFeel and attachments settle, then repaint
+    juce::MessageManager::callAsync ([this]
     {
-        spaceSwitchCell->resized();
+        if (spaceSwitchCell)
+        {
+            spaceSwitchCell->resized();
+            spaceSwitchCell->repaint();
+        }
         spaceAlgorithmSwitch.repaint();
-    }
+        repaint();
+    });
     lnf.theme.accent = juce::Colour (0xFF5AA9E6); // ocean default
     lnf.setupColours();
     setLookAndFeel (&lnf);
@@ -1478,6 +1484,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     sliderValueChanged (&bassFreqSlider);
     sliderValueChanged (&airFreqSlider);
     sliderValueChanged (&gain);
+    updateMutedKnobVisuals();
 
     // Mono Maker slope & audition controls
     // Keep legacy ComboBox hidden for APVTS attachment; drive it from switch
@@ -2245,10 +2252,10 @@ void MyPluginAudioProcessorEditor::performLayout()
         scoopCell->setValueLabelGap (valueGap);
         
 
-        bassCell ->setMini (&bassFreqSlider, miniStripW);
-        airCell  ->setMini (&airFreqSlider,  miniStripW);
-        tiltCell ->setMini (&tiltFreqSlider, miniStripW);
-        scoopCell->setMini (&scoopFreqSlider,miniStripW);
+        bassCell ->setMiniWithLabel (&bassFreqSlider, &bassFreqValue, miniStripW);
+        airCell  ->setMiniWithLabel (&airFreqSlider,  &airFreqValue,  miniStripW);
+        tiltCell ->setMiniWithLabel (&tiltFreqSlider, &tiltFreqValue, miniStripW);
+        scoopCell->setMiniWithLabel (&scoopFreqSlider,&scoopFreqValue,miniStripW);
 
         // Thicker bar rendering
         bassCell ->setMiniThicknessPx (miniBarH);
@@ -2380,7 +2387,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         shelfShapeCell->setValueLabelGap (sqGap);
         filterQCell   ->setValueLabelGap (sqGap);
         addAndMakeVisible (*shelfShapeCell);
-        addAndMakeVisible (*filterQCell);
+        // Do not add filterQCell to the editor; its knob/value are hosted inside the QuadKnobCell
 
         // Q cluster cell: aux-only; hide its knob (use internal dummy slider/value)
         if (!qClusterCell) qClusterCell = std::make_unique<KnobCell>(qClusterDummySlider, qClusterDummyValue, "Q LINK");
@@ -2392,7 +2399,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Style minis like EQ minis
         hpQSlider.getProperties().set ("micro", true);
         lpQSlider.getProperties().set ("micro", true);
-        addAndMakeVisible (*qClusterCell);
+        // Do not add qClusterCell to the editor; it will be reparented into the QuadKnobCell
 
         imgGrid.items = {
             // 1..7 imaging
@@ -2430,22 +2437,52 @@ void MyPluginAudioProcessorEditor::performLayout()
         if (!hpLpQClusterCell)
         {
             if (!filterQCell)    filterQCell    = std::make_unique<KnobCell>(filterQ,     filterQValue,    "Q");
+            filterQCell->setShowPanel (false); // Use the 2x2 background; no inner panel
             if (!qClusterCell)   qClusterCell   = std::make_unique<KnobCell>(qClusterDummySlider, qClusterDummyValue, "Q LINK");
             qClusterCell->setShowKnob (false);
+            qClusterCell->setShowPanel (false); // lower-right quadrant has no extra panel
             qClusterCell->setMiniPlacementRight (true);
             qClusterCell->setMiniThicknessPx (Layout::dp (12, s));
-            qClusterCell->setAuxAsBars (true);
-            qClusterCell->setAuxComponents ({ &qLinkButton, &hpQSlider, &lpQSlider }, Layout::dp (90, s));
+            qClusterCell->setAuxAsBars (false);
+            // Larger labeled Link button + two minis centered vertically
+            qLinkButton.setButtonText ("Link");
+            qLinkButton.setClickingTogglesState (true);
+            // Hint layout to render as square inside the cluster
+            qLinkButton.getProperties().set ("square", true);
+            // Invert active state: Unlinked = active (accent)
+            qLinkButton.getProperties().set ("invertActive", true);
+            // Make button taller relative to width via aspect ratio (height/width)
+            qLinkButton.getProperties().set ("aspect", 1.2f);
+            qClusterCell->setAuxComponents ({ &qLinkButton, &hpQSlider, &lpQSlider }, Layout::dp (96, s));
+            qClusterCell->setAuxWeights ({ 2.0f, 1.0f, 1.0f });
+            qClusterCell->setAuxComponents ({ &qLinkButton, &hpQSlider, &lpQSlider }, Layout::dp (96, s));
+            qClusterCell->setAuxWeights ({ 2.0f, 1.0f, 1.0f });
             hpQSlider.getProperties().set ("micro", true);
             lpQSlider.getProperties().set ("micro", true);
+            // Hide the dummy value label to avoid stray badge in the cluster
+            qClusterDummyValue.setVisible (false);
 
             hpLpQClusterCell = std::make_unique<QuadKnobCell>(hpHz, hpValue, lpHz, lpValue, filterQ, filterQValue, *qClusterCell);
         }
 
         addAndMakeVisible (*hpLpQClusterCell);
+        hpLpQClusterCell->setVisible (true);
         // Use standard internal gap so the 2x2 grid matches cell/column spacing
         hpLpQClusterCell->setMetrics (lPx, Layout::dp (14, s), gapI);
+        // Re-apply cluster quadrant styles every layout to ensure no inner panels
+        if (qClusterCell)
+        {
+            qClusterCell->setShowPanel (false);
+            qClusterCell->setShowBorder (false);
+        }
+        if (filterQCell)
+        {
+            filterQCell->setShowPanel (false);
+            filterQCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            filterQCell->setValueLabelGap (Layout::dp (6, s));
+        }
         hpLpQClusterCell->setBounds (strip);
+        hpLpQClusterCell->resized(); // force initial child layout
         hpLpQClusterCell->toFront (false);
     }
 
@@ -2780,10 +2817,9 @@ void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
     else if (s == &scoopFreqSlider) set (scoopFreqValue, Hz (scoopFreqSlider.getValue()));
     else if (s == &bassFreqSlider)  set (bassFreqValue,  Hz (bassFreqSlider.getValue()));
     else if (s == &airFreqSlider)   set (airFreqValue,   Hz (airFreqSlider.getValue()));
-    else if (s == &shelfShapeS)     set (shelfShapeValue, juce::String (shelfShapeS.getValue(), 2));
+    else if (s == &shelfShapeS)     { set (shelfShapeValue, juce::String (shelfShapeS.getValue(), 2)); shelfShapeS.getProperties().set ("S_value", (double) shelfShapeS.getValue()); shelfShapeS.repaint(); }
     else if (s == &filterQ)         set (filterQValue,    juce::String (filterQ.getValue(), 2));
-    else if (s == &hpQSlider)       set (hpValue,         juce::String (hpQSlider.getValue(), 2));
-    else if (s == &lpQSlider)       set (lpValue,         juce::String (lpQSlider.getValue(), 2));
+    // Q minis update their own badges; do not overwrite HP/LP knob value labels
 
     // Imaging value labels with units
     else if (s == &widthLo)  set (widthLoValue,  juce::String (juce::roundToInt (widthLo.getValue()  * 100.0))  + "%");
@@ -2819,6 +2855,9 @@ void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
     else if (s == &delayDuckThreshold) set (delayDuckThresholdValue, juce::String ((int) delayDuckThreshold.getValue()) + " dB");
     else if (s == &delayDuckRatio) set (delayDuckRatioValue, juce::String (delayDuckRatio.getValue(), 1) + ":1");
     else if (s == &delayDuckLookahead) set (delayDuckLookaheadValue, juce::String ((int) delayDuckLookahead.getValue()) + " ms");
+
+    // Refresh muted visuals when any control changes
+    updateMutedKnobVisuals();
 }
 
 void MyPluginAudioProcessorEditor::comboBoxChanged(juce::ComboBox* comboBox)
@@ -2844,6 +2883,38 @@ void MyPluginAudioProcessorEditor::applyGlobalCursorPolicy()
         for (int i = 0; i < c.getNumChildComponents(); ++i) ref (*c.getChildComponent (i), ref);
     };
     setCursor (*this, setCursor);
+}
+
+void MyPluginAudioProcessorEditor::updateMutedKnobVisuals()
+{
+    auto setMutedIf = [] (juce::Slider& s, bool muted)
+    {
+        s.getProperties().set ("muted", muted);
+        s.repaint();
+    };
+
+    // Neutral/default states considered inactive (greyed): tilt=0, scoop=0, gain=0, width=1, monoHz=0, hp=20, lp=20000, air=0, bass=0, ducking=0, etc.
+    setMutedIf (gain,    std::abs ((float) gain.getValue()) < 0.0001f);
+    setMutedIf (width,   std::abs ((float) width.getValue() - 1.0f) < 0.0001f);
+    setMutedIf (tilt,    std::abs ((float) tilt.getValue()) < 0.0001f);
+    setMutedIf (monoHz,  (float) monoHz.getValue() <= 0.0001f);
+    setMutedIf (hpHz,    (float) hpHz.getValue() <= 20.0f + 0.001f);
+    setMutedIf (lpHz,    (float) lpHz.getValue() >= 20000.0f - 0.001f);
+    setMutedIf (air,     std::abs ((float) air.getValue()) < 0.0001f);
+    setMutedIf (bass,    std::abs ((float) bass.getValue()) < 0.0001f);
+    setMutedIf (scoop,   std::abs ((float) scoop.getValue()) < 0.0001f);
+    setMutedIf (spaceKnob, std::abs ((float) spaceKnob.getValue()) < 0.0001f);
+    setMutedIf (panKnob,  std::abs ((float) panKnob.getValue())  < 0.0001f);
+    setMutedIf (satDrive, std::abs ((float) satDrive.getValue()) < 0.0001f);
+    // Mix: only greyed when 0% (default is 100% but should NOT be greyed)
+    setMutedIf (satMix,   (float) satMix.getValue() <= 0.0001f);
+    // EQ Q link logic handled elsewhere; ensure Q shows greyed ring when unlinked
+    if (auto* pLink = proc.apvts.getRawParameterValue ("eq_q_link"))
+    {
+        const bool link = pLink->load() >= 0.5f;
+        filterQ.getProperties().set ("muted", !link);
+        filterQ.repaint();
+    }
 }
 
 void MyPluginAudioProcessorEditor::parameterChanged (const juce::String& id, float nv)
@@ -2968,14 +3039,22 @@ void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
 
     // Push EQ S/Q and link states from APVTS to XYPad and UI
     if (auto* pS = proc.apvts.getRawParameterValue ("eq_shelf_shape"))
-        pad.setShelfShapeS ((float) pS->load());
+        {
+            const float S = (float) pS->load();
+            pad.setShelfShapeS (S);
+            shelfShapeS.getProperties().set ("S_value", (double) S); // expose to LNF for warning segment
+            shelfShapeS.repaint();
+        }
     if (auto* pLink = proc.apvts.getRawParameterValue ("eq_q_link"))
     {
         const bool link = pLink->load() >= 0.5f;
         pad.setQLink (link);
-        // Reflect minis enabled state
+        // Reflect minis enabled state + muted visuals
         hpQSlider.setEnabled (!link);
         lpQSlider.setEnabled (!link);
+        hpQSlider.getProperties().set ("muted", link);
+        lpQSlider.getProperties().set ("muted", link);
+        filterQ.getProperties().set ("muted", !link); // unlinked => grey ring on global Q
         if (link)
         {
             if (auto* pQ = proc.apvts.getRawParameterValue ("eq_filter_q"))
@@ -2996,6 +3075,7 @@ void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
     pad.setRotationDeg ((float) rotationDeg.getValue());
     pad.setAsymmetry   ((float) asymmetry.getValue());
     pad.setShuffler    ((float) shufLoPct.getValue(), (float) shufHiPct.getValue(), (float) shufXHz.getValue());
+    updateMutedKnobVisuals();
 }
 
 // end

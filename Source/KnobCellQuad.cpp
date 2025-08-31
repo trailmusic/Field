@@ -12,6 +12,9 @@ void QuadKnobCell::paint (juce::Graphics& g)
 {
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
     auto r = getLocalBounds().toFloat();
+    // Trim right/bottom a touch to visually align with grid gaps of neighboring cells
+    r.removeFromRight (2.0f);
+    r.removeFromBottom (1.0f);
     const float rad = 8.0f;
     juce::Colour panel = juce::Colour (0xFF3A3D45);
     juce::Colour sh    = juce::Colour (0xFF2A2C30);
@@ -71,7 +74,8 @@ void QuadKnobCell::resized()
     bottom.removeFromLeft (G);
     auto rightB = bottom;
     layoutKnob (leftB, q, qVal);
-    cluster.setBounds (rightB);
+    // Center the cluster contents with a small inset so badges are visible
+    cluster.setBounds (rightB.reduced (2, 2));
     cluster.toFront (false);
 }
 
@@ -86,9 +90,12 @@ void QuadKnobCell::ensureChildren()
 
 void QuadKnobCell::layoutKnob (juce::Rectangle<int> area, juce::Slider& knob, juce::Label& label)
 {
-    const int k = juce::jmin (K, juce::jmin (area.getWidth(), area.getHeight()));
+    // Ensure there is room for the value label; reserve V + G at the bottom
+    auto content = area;
+    content.removeFromBottom (V + G);
+    const int k = juce::jmin (K, juce::jmin (content.getWidth(), content.getHeight()));
     juce::Rectangle<int> knobBox (k, k);
-    knobBox = knobBox.withCentre ({ area.getCentreX(), area.getY() + k / 2 });
+    knobBox = knobBox.withCentre ({ content.getCentreX(), content.getY() + k / 2 });
     knob.setBounds (knobBox);
 
     const int lh = (int) std::ceil (label.getFont().getHeight());

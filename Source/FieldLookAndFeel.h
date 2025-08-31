@@ -273,6 +273,10 @@ public:
 
     int  getSliderThumbRadius (juce::Slider&) override;
 
+    // Toggle button (used for qLinkButton) with accent/grey states and optional inverted logic
+    void drawToggleButton (juce::Graphics& g, juce::ToggleButton& button,
+                           bool isMouseOverButton, bool isButtonDown) override;
+
     // Gain-specific rotary with delta overlay (called by your custom GainSlider)
     void drawGainSlider (juce::Graphics& g, int x, int y, int w, int h,
                          float sliderPosProportional, float rotaryStartAngle,

@@ -53,12 +53,33 @@ void FieldLNF::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h,
     g.setColour (theme.base.darker (0.2f));
     g.strokePath (ring, juce::PathStrokeType (trackThickness, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-    // Value arc
+    // Value arc, with warning segment for S>1.25 if provided via slider property "S_value"
     const auto angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
+    const float ringR = radius * 0.86f;
     juce::Path valueArc;
-    valueArc.addCentredArc (centre.x, centre.y, radius * 0.86f, radius * 0.86f, 0.0f, rotaryStartAngle, angle, true);
+    valueArc.addCentredArc (centre.x, centre.y, ringR, ringR, 0.0f, rotaryStartAngle, angle, true);
+    // Default arc in accent
     g.setColour (theme.accent.withAlpha (0.9f));
     g.strokePath (valueArc, juce::PathStrokeType (trackThickness, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+    // If this is the Shape knob and S > 1.25, overlay the excess (1.25..S) in light yellow
+    if (auto* prop = slider.getProperties().getVarPointer ("S_value"))
+    {
+        const double Sval = (double) *prop;
+        if (Sval > 1.25)
+        {
+            const float pWarn     = (float) juce::jlimit (0.0, 1.0, slider.valueToProportionOfLength (1.25f));
+            const float startWarn = rotaryStartAngle + pWarn * (rotaryEndAngle - rotaryStartAngle);
+            const float endWarn   = rotaryStartAngle + juce::jlimit (0.0f, 1.0f, (float) sliderPosProportional) * (rotaryEndAngle - rotaryStartAngle);
+            if (endWarn > startWarn)
+            {
+                juce::Path warnArc;
+                warnArc.addCentredArc (centre.x, centre.y, ringR, ringR, 0.0f, startWarn, endWarn, true);
+                g.setColour (juce::Colour (0xFFFFF59D).withAlpha (0.9f)); // light yellow
+                g.strokePath (warnArc, juce::PathStrokeType (trackThickness * 0.85f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+            }
+        }
+    }
 
     // Tick marks at quarter points across whatever arc span we're given
     const float tickRadius = radius * 0.86f;
@@ -78,6 +99,15 @@ void FieldLNF::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h,
         g.fillEllipse (centre.x + tickRadius * std::cos (a) - tickSize,
                        centre.y + tickRadius * std::sin (a) - tickSize,
                        tickSize * 2.0f, tickSize * 2.0f);
+
+    // Optional muted overlay ring (match duck param greyed style)
+    if ((bool) slider.getProperties().getWithDefault ("muted", false))
+    {
+        g.setColour (theme.panel.withAlpha (0.35f));
+        g.fillEllipse (bounds);
+        g.setColour (theme.textMuted.withAlpha (0.85f));
+        g.drawEllipse (bounds, 1.5f);
+    }
 
     // Knob label in the center
     const juce::String knobName = slider.getName();
@@ -198,8 +228,10 @@ void FieldLNF::drawLinearSlider (juce::Graphics& g, int x, int y, int w, int h,
     }
 
     // Background track
-    juce::ColourGradient bgGrad (theme.panel.darker (0.3f), bounds.getX(), bounds.getY(),
-                                 theme.panel.darker (0.1f), bounds.getX(), bounds.getBottom(), false);
+    const bool inactive = (! slider.isEnabled()) || (bool) slider.getProperties().getWithDefault ("muted", false);
+    juce::Colour bgTop = theme.panel.darker (inactive ? 0.45f : 0.30f);
+    juce::Colour bgBot = theme.panel.darker (inactive ? 0.25f : 0.10f);
+    juce::ColourGradient bgGrad (bgTop, bounds.getX(), bounds.getY(), bgBot, bounds.getX(), bounds.getBottom(), false);
     g.setGradientFill (bgGrad);
     g.fillRoundedRectangle (bounds.reduced (1.0f), 3.0f);
 
@@ -212,8 +244,9 @@ void FieldLNF::drawLinearSlider (juce::Graphics& g, int x, int y, int w, int h,
 
     if (progress.getWidth() > 0.0f)
     {
-        juce::ColourGradient progressGrad (theme.accent.brighter (0.2f), progress.getX(), progress.getY(),
-                                           theme.accent,                  progress.getX(), progress.getBottom(), false);
+        juce::Colour cTop = inactive ? theme.textMuted.brighter (0.20f) : theme.accent.brighter (0.20f);
+        juce::Colour cBot = inactive ? theme.textMuted                 : theme.accent;
+        juce::ColourGradient progressGrad (cTop, progress.getX(), progress.getY(), cBot, progress.getX(), progress.getBottom(), false);
         g.setGradientFill (progressGrad);
         g.fillRoundedRectangle (progress, 3.0f);
     }
@@ -241,7 +274,7 @@ void FieldLNF::drawLinearSlider (juce::Graphics& g, int x, int y, int w, int h,
     g.fillRoundedRectangle (thumbX, thumbY, thumbW, thumbH, 5.0f);
 
     // Thumb border
-    g.setColour (theme.accent);
+    g.setColour (inactive ? theme.textMuted.withAlpha (0.8f) : theme.accent);
     g.drawRoundedRectangle (thumbX, thumbY, thumbW, thumbH, 5.0f, 2.0f);
 
     // Hover/drag feedback
@@ -268,4 +301,33 @@ void FieldLNF::drawLinearSlider (juce::Graphics& g, int x, int y, int w, int h,
 int FieldLNF::getSliderThumbRadius (juce::Slider&)
 {
     return 8;
+}
+
+void FieldLNF::drawToggleButton (juce::Graphics& g, juce::ToggleButton& button,
+                                 bool isMouseOver, bool isButtonDown)
+{
+    auto r = button.getLocalBounds().toFloat().reduced (2.0f);
+    auto bg = theme.panel;
+    auto sh = theme.sh;
+    auto hl = theme.hl;
+    auto accent = theme.accent;
+    auto grey = theme.textMuted;
+
+    const bool invert = (bool) button.getProperties().getWithDefault ("invertActive", false);
+    const bool active = invert ? (! button.getToggleState()) : button.getToggleState();
+
+    juce::Colour fill = active ? accent : grey;
+    if (isButtonDown) fill = fill.darker (0.25f);
+    else if (isMouseOver) fill = fill.brighter (0.10f);
+
+    // Fill square/rounded rect
+    const float cr = 4.0f;
+    g.setColour (fill);
+    g.fillRoundedRectangle (r, cr);
+
+    // Border contrasts better when active (darker tone), otherwise panel shadow
+    g.setColour (active ? fill.darker (0.35f) : sh);
+    g.drawRoundedRectangle (r, cr, 1.5f);
+
+    // Optional icon/text is omitted; qLinkButton uses empty text and we draw via its own paint
 }

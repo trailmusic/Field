@@ -110,7 +110,7 @@ public:
     void setAirFreqValue (float f)   { airFreqValue   = f; repaint(); }
     
     // EQ S/Q shaping and links for visualization
-    void setShelfShapeS (float s)     { shelfShapeS = juce::jlimit (0.25f, 1.25f, s); repaint(); }
+    void setShelfShapeS (float s)     { shelfShapeS = juce::jlimit (0.25f, 1.50f, s); repaint(); }
     void setQLink       (bool on)     { qLink = on; repaint(); }
     void setFilterQ     (float q)     { filterQGlobal = juce::jlimit (0.5f, 1.2f, q); repaint(); }
     void setHPQ         (float q)     { hpQ = juce::jlimit (0.5f, 1.2f, q); if (!qLink) repaint(); }
@@ -424,7 +424,8 @@ protected:
         auto sh = lf ? lf->theme.sh : juce::Colour(0xFF2A2A2A);
         auto hl = lf ? lf->theme.hl : juce::Colour(0xFF4A4A4A);
 
-        const bool on = getToggleState();
+        const bool invert = (bool) getProperties().getWithDefault ("invertActive", false);
+        const bool on = invert ? (! getToggleState()) : getToggleState();
 
         auto drawGradient = [&] {
             juce::Colour top = panel.brighter(0.10f), bot = panel.darker(0.10f);
@@ -460,7 +461,8 @@ protected:
         auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
         auto textMuted = lf ? lf->theme.textMuted : juce::Colour(0xFF888888);
         auto onCol = juce::Colours::white;
-        const bool on = getToggleState();
+        const bool invert = (bool) getProperties().getWithDefault ("invertActive", false);
+        const bool on = invert ? (! getToggleState()) : getToggleState();
 
         IconSystem::drawIcon(g, options.icon, r, on ? onCol : textMuted);
     }
@@ -775,10 +777,11 @@ public:
                 // Muted overlay ring to indicate parent (Reverb) off state controlling this knob
                 if (muted)
                 {
+                    auto inner = b.reduced (6.0f); // match rotary painter's reduced bounds for tight ring
                     g.setColour (lf->theme.panel.withAlpha (0.35f));
-                    g.fillEllipse (b);
+                    g.fillEllipse (inner);
                     g.setColour (lf->theme.textMuted.withAlpha (0.85f));
-                    g.drawEllipse (b, 1.5f);
+                    g.drawEllipse (inner, 1.5f);
                 }
             }
         }
@@ -806,12 +809,13 @@ public:
             {
                 if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
                 {
+                    auto inner = r.reduced (6.0f); // align with LNF rotary bounds for no-gap ring
                     // Soft wash to grey-out arcs
                     g.setColour (lf->theme.panel.withAlpha (0.35f));
-                    g.fillEllipse (r);
+                    g.fillEllipse (inner);
                     // Thin muted ring on top for clarity
                     g.setColour (lf->theme.textMuted.withAlpha (0.85f));
-                    g.drawEllipse (r, 1.5f);
+                    g.drawEllipse (inner, 1.5f);
                 }
             }
         }
@@ -852,10 +856,11 @@ public:
             {
                 if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
                 {
+                    auto inner = r.reduced (6.0f); // align with LNF rotary bounds for no-gap ring
                     g.setColour (lf->theme.panel.withAlpha (0.35f));
-                    g.fillEllipse (r);
+                    g.fillEllipse (inner);
                     g.setColour (lf->theme.textMuted.withAlpha (0.85f));
-                    g.drawEllipse (r, 1.5f);
+                    g.drawEllipse (inner, 1.5f);
                 }
             }
         }
@@ -1618,6 +1623,7 @@ private:
 
     // Cursor policy
     void applyGlobalCursorPolicy();
+    void updateMutedKnobVisuals();
     void childrenChanged() override { juce::Component::childrenChanged(); applyGlobalCursorPolicy(); }
 
     // Shade overlay for XYPad (block-vision control)

@@ -35,6 +35,17 @@ public:
     /// Backwards-compatible helper; internally uses the aux area.
     void setMini (juce::Slider* miniSlider, int miniHeightPx);
 
+    /// Attach a mini slider with a value label to render inside the mini/aux area
+    void setMiniWithLabel (juce::Slider* miniSlider, juce::Label* miniValue, int miniHeightPx)
+    {
+        mini = miniSlider;
+        miniLabel = miniValue;
+        auxComponents.clear();
+        M = juce::jmax (0, miniHeightPx);
+        resized();
+        repaint();
+    }
+
     /// Set arbitrary auxiliary components to render in the mini area under the knob.
     /// Components are non-owned; they will be reparented to this cell when laid out.
     void setAuxComponents (const std::vector<juce::Component*>& components, int miniHeightPx);
@@ -47,6 +58,9 @@ public:
 
     /// Draw outer border + hover halo (default: true).
     void setShowBorder (bool shouldDrawBorder) { showBorder = shouldDrawBorder; repaint(); }
+
+    /// Show/hide the cell's panel background (true by default). When false, only content and badges draw.
+    void setShowPanel (bool shouldDrawPanel) { showPanel = shouldDrawPanel; repaint(); }
 
     /// External hover flag to keep halo visible while interacting elsewhere.
     void setHoverActive (bool on) { hoverActive = on; repaint(); }
@@ -87,6 +101,7 @@ private:
     juce::Slider& knob;
     juce::Label&  valueLabel;     // not positioned here; you do it via placeLabelBelow(...)
     juce::Component* mini { nullptr }; // legacy single-mini path
+    juce::Label*     miniLabel { nullptr }; // optional label for mini
     std::vector<juce::Component*> auxComponents;     // arbitrary aux components (non-owned)
     std::vector<float> auxWeights;                   // optional weights for aux vertical sizing
 
@@ -97,6 +112,7 @@ private:
     int M = 0;    // mini height (0 = none)
 
     bool showBorder  = true;
+    bool showPanel   = true;
     bool hoverActive = false;
     bool miniOnRight = false;
     bool auxAsBars   = false;

@@ -97,6 +97,11 @@ void KnobCell::ensureChildrenAreHere()
     // Reparent mini if present
     if (mini != nullptr && mini->getParentComponent() != this)
         addAndMakeVisible (*mini);
+    if (miniLabel != nullptr && miniLabel->getParentComponent() != this)
+    {
+        addAndMakeVisible (*miniLabel);
+        miniLabel->setInterceptsMouseClicks (false, false);
+    }
 
     // Reparent aux components if present
     for (auto* c : auxComponents)
@@ -123,7 +128,10 @@ void KnobCell::resized()
         if (miniOnRight)
         {
             // Wider, easier-to-hit right strip
-            const int stripW = juce::jmin (juce::jmax (M, content.getWidth() / 2), juce::jmax (32, content.getWidth() - 40));
+            int stripWtmp = juce::jmin (juce::jmax (M, content.getWidth() / 2), juce::jmax (32, content.getWidth() - 40));
+            if (! showKnob)
+                stripWtmp = content.getWidth(); // when no knob, let the aux/right strip take full width
+            const int stripW = stripWtmp;
             auto miniStrip = content.removeFromRight (stripW).reduced (2, 2);
 
             if (mini != nullptr)
@@ -133,6 +141,13 @@ void KnobCell::resized()
                 juce::Rectangle<int> bar (miniStrip.getX(), miniStrip.getCentreY() - h / 2,
                                           miniStrip.getWidth(), h);
                 mini->setBounds (bar);
+                if (miniLabel != nullptr)
+                {
+                    const int lh = (int) std::ceil (miniLabel->getFont().getHeight());
+                    const int smallGap = 2; // very small vertical spacing
+                    miniLabel->setBounds (bar.withY (bar.getBottom() + smallGap).withHeight (juce::jmax (V, lh)));
+                    miniLabel->toFront (false);
+                }
             }
             else if (! auxComponents.empty())
             {
@@ -140,7 +155,7 @@ void KnobCell::resized()
                 {
                     // Centered thin bars (EQ-mini style)
                     const int count  = (int) auxComponents.size();
-                    const int gapY   = juce::jmax (2, G);
+                    const int gapY   = juce::jmax (6, G); // add more vertical padding between minis
                     const int hBar   = juce::jlimit (8, 24, miniThicknessPx);
                     const int totalH = count * hBar + gapY * juce::jmax (0, count - 1);
                     juce::Rectangle<int> col = miniStrip;
@@ -156,7 +171,7 @@ void KnobCell::resized()
                 }
                 else
                 {
-                    // Natural weighted vertical stack
+                    // Natural weighted vertical stack (with special handling for square buttons and micro bars)
                     const int count  = (int) auxComponents.size();
                     const int gapY   = juce::jmax (2, G);
                     const int totalG = gapY * juce::jmax (0, count - 1);
@@ -180,8 +195,51 @@ void KnobCell::resized()
                     {
                         const int cellH = (int) std::round (H * (normH[i] / sum));
                         auto* c = auxComponents[(size_t) i];
+                        juce::Rectangle<int> rCell = col.removeFromTop (cellH);
                         if (c != nullptr)
-                            c->setBounds (col.removeFromTop (cellH));
+                        {
+                            // If first component wants a specific aspect (height/width), center rectangle accordingly
+                            if (i == 0)
+                            {
+                                const bool wantsSquare = (bool) c->getProperties().getWithDefault ("square", false);
+                                const float aspect = (float) c->getProperties().getWithDefault ("aspect", wantsSquare ? 1.0f : 0.0f); // height/width
+                                if (aspect > 0.0f || wantsSquare || dynamic_cast<juce::Button*>(c) != nullptr)
+                                {
+                                    float useAspect = aspect;
+                                    if (useAspect <= 0.0f) useAspect = 1.0f; // square fallback
+                                    // Compute size that fits inside rCell with given aspect (height = aspect * width)
+                                    int maxW = rCell.getWidth();
+                                    int maxH = rCell.getHeight();
+                                    int wA = juce::jmin (maxW, (int) std::round ((double) maxH / (double) useAspect));
+                                    int hA = (int) std::round ((double) wA * (double) useAspect);
+                                    juce::Rectangle<int> ar (wA, hA);
+                                    ar = ar.withCentre (rCell.getCentre());
+                                    // Clip to bounds just in case
+                                    if (ar.getX() < rCell.getX()) ar.setX (rCell.getX());
+                                    if (ar.getY() < rCell.getY()) ar.setY (rCell.getY());
+                                    if (ar.getRight() > rCell.getRight()) ar.setRight (rCell.getRight());
+                                    if (ar.getBottom() > rCell.getBottom()) ar.setBottom (rCell.getBottom());
+                                    c->setBounds (ar);
+                                    goto placed;
+                                }
+                            }
+                            else
+                            {
+                                // Micro sliders: render as thin bars centered vertically
+                                const bool isMicro = (bool) c->getProperties().getWithDefault ("micro", false);
+                                if (isMicro)
+                                {
+                                    const int hBar = juce::jlimit (8, 24, miniThicknessPx);
+                                    juce::Rectangle<int> bar (rCell.getX(), rCell.getCentreY() - hBar / 2, rCell.getWidth(), hBar);
+                                    c->setBounds (bar);
+                                }
+                                else
+                                {
+                                    c->setBounds (rCell);
+                                }
+                            }
+                        placed: ;
+                        }
                         if (i < count - 1) col.removeFromTop (gapY);
                     }
                 }
@@ -194,7 +252,18 @@ void KnobCell::resized()
             auto miniArea = content.removeFromBottom (M).reduced (4, 2);
             if (mini != nullptr)
             {
-                mini->setBounds (miniArea);
+                const int barH = juce::jlimit (8, 24, miniThicknessPx);
+                juce::Rectangle<int> bar = miniArea.removeFromTop (barH);
+                mini->setBounds (bar);
+                if (miniLabel != nullptr)
+                {
+                    const int lh = (int) std::ceil (miniLabel->getFont().getHeight());
+                    const int smallGap = 2; // very small vertical spacing
+                    auto lb = miniArea;
+                    lb.removeFromTop (smallGap);
+                    miniLabel->setBounds (lb.withHeight (juce::jmax (V, lh)));
+                    miniLabel->toFront (false);
+                }
             }
             else if (! auxComponents.empty())
             {
@@ -269,19 +338,28 @@ void KnobCell::paint (juce::Graphics& g)
     auto r = getLocalBounds().toFloat();
     const float rad = 8.0f;
 
-    // Panel fill
-    g.setColour (getPanelColour());
-    g.fillRoundedRectangle (r.reduced (3.0f), rad);
+    // Panel fill (optional)
+    if (showPanel)
+    {
+        g.setColour (getPanelColour());
+        g.fillRoundedRectangle (r.reduced (3.0f), rad);
+    }
 
     // Depth (soft)
-    juce::DropShadow ds1 (getShadowDark().withAlpha (0.35f), 12, { -1, -1 });
-    juce::DropShadow ds2 (getShadowLight().withAlpha (0.25f),  6, { -1, -1 });
-    ds1.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
-    ds2.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
+    if (showPanel)
+    {
+        juce::DropShadow ds1 (getShadowDark().withAlpha (0.35f), 12, { -1, -1 });
+        juce::DropShadow ds2 (getShadowLight().withAlpha (0.25f),  6, { -1, -1 });
+        ds1.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
+        ds2.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
+    }
 
     // Inner rim
-    g.setColour (getRimColour().withAlpha (0.18f));
-    g.drawRoundedRectangle (r.reduced (4.0f), rad - 1.0f, 0.8f);
+    if (showPanel)
+    {
+        g.setColour (getRimColour().withAlpha (0.18f));
+        g.drawRoundedRectangle (r.reduced (4.0f), rad - 1.0f, 0.8f);
+    }
 
     if (showBorder)
     {
@@ -352,6 +430,106 @@ void KnobCell::paint (juce::Graphics& g)
         g.setColour (juce::Colours::black.withAlpha (0.22f));
         g.drawLine (badge.getX() + 1.0f, badge.getBottom() - 1.0f,
                     badge.getRight() - 1.0f, badge.getBottom() - 1.0f, 1.0f);
+    }
+
+    // Draw mini label badge (if present) with the same style but smaller padding
+    if (miniLabel != nullptr && miniLabel->isShowing())
+    {
+        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+        auto lb = miniLabel->getBounds().toFloat();
+        auto f  = miniLabel->getFont();
+        const juce::String txt = miniLabel->getText();
+
+        const float th = std::ceil (f.getHeight());
+        const float tw = f.getStringWidthFloat (txt);
+
+        const float padX = 3.0f; // slightly smaller than main
+        const float padY = 1.0f;
+
+        const float x = lb.getCentreX() - tw * 0.5f - padX;
+        const float y = lb.getY() + (lb.getHeight() - th) * 0.5f - padY * 0.5f;
+        juce::Rectangle<float> badge (x, y, tw + padX * 2.0f, th + padY);
+
+        const float cr = 4.0f;
+
+        juce::Colour base = lf ? lf->theme.panel : juce::Colour (0xFF2A2C30);
+        juce::Colour top  = base.darker (0.70f);
+        juce::Colour bot  = base.darker (0.38f);
+
+        juce::ColourGradient grad (top, badge.getX(), badge.getY(),
+                                   bot, badge.getX(), badge.getBottom(), false);
+        g.setGradientFill (grad);
+        g.fillRoundedRectangle (badge, cr);
+
+        for (int i = 0; i < 3; ++i)
+        {
+            const float inset = 0.8f + i * 0.8f;
+            const float alpha = 0.28f - i * 0.06f;
+            g.setColour (juce::Colours::black.withAlpha (alpha));
+            g.drawRoundedRectangle (badge.reduced (inset), juce::jmax (0.0f, cr - inset * 0.6f), 1.2f);
+        }
+
+        g.setColour (juce::Colours::white.withAlpha (0.18f));
+        g.drawLine (badge.getX() + 1.0f, badge.getY() + 1.0f,
+                    badge.getRight() - 1.0f, badge.getY() + 1.0f, 1.0f);
+
+        g.setColour (juce::Colours::black.withAlpha (0.22f));
+        g.drawLine (badge.getX() + 1.0f, badge.getBottom() - 1.0f,
+                    badge.getRight() - 1.0f, badge.getBottom() - 1.0f, 1.0f);
+    }
+
+    // Draw value badges for right-strip micro aux sliders to match EQ mini labels
+    if (! auxComponents.empty())
+    {
+        for (auto* c : auxComponents)
+        {
+            if (auto* s = dynamic_cast<juce::Slider*>(c))
+            {
+                const bool isMicro = (bool) s->getProperties().getWithDefault ("micro", false);
+                if (!isMicro || !s->isShowing())
+                    continue;
+
+                auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+                auto bar = s->getBounds().toFloat();
+                const float lh = (float) juce::jmax (V, 12);
+                const float smallGap = 2.0f;
+                juce::Rectangle<float> lb (bar.getX(), bar.getBottom() + smallGap, bar.getWidth(), lh);
+
+                juce::String txt = juce::String (s->getValue(), 2);
+                auto f = valueLabel.getFont();
+                const float th = std::ceil (f.getHeight());
+                const float tw = f.getStringWidthFloat (txt);
+                const float padX = 3.0f;
+                const float padY = 1.0f;
+                const float x = lb.getCentreX() - tw * 0.5f - padX;
+                const float y = lb.getY() + (lb.getHeight() - th) * 0.5f - padY * 0.5f;
+                juce::Rectangle<float> badge (x, y, tw + padX * 2.0f, th + padY);
+                const float cr = 4.0f;
+                juce::Colour base = lf ? lf->theme.panel : juce::Colour (0xFF2A2C30);
+                juce::Colour top  = base.darker (0.70f);
+                juce::Colour bot  = base.darker (0.38f);
+                juce::ColourGradient grad (top, badge.getX(), badge.getY(), bot, badge.getX(), badge.getBottom(), false);
+                g.setGradientFill (grad);
+                g.fillRoundedRectangle (badge, cr);
+                for (int i = 0; i < 3; ++i)
+                {
+                    const float inset = 0.8f + i * 0.8f;
+                    const float alpha = 0.28f - i * 0.06f;
+                    g.setColour (juce::Colours::black.withAlpha (alpha));
+                    g.drawRoundedRectangle (badge.reduced (inset), juce::jmax (0.0f, cr - inset * 0.6f), 1.2f);
+                }
+                g.setColour (juce::Colours::white.withAlpha (0.18f));
+                g.drawLine (badge.getX() + 1.0f, badge.getY() + 1.0f,
+                            badge.getRight() - 1.0f, badge.getY() + 1.0f, 1.0f);
+                g.setColour (juce::Colours::black.withAlpha (0.22f));
+                g.drawLine (badge.getX() + 1.0f, badge.getBottom() - 1.0f,
+                            badge.getRight() - 1.0f, badge.getBottom() - 1.0f, 1.0f);
+                // Draw text
+                g.setColour (getTextColour());
+                g.setFont (f);
+                g.drawFittedText (txt, badge.toNearestInt(), juce::Justification::centred, 1);
+            }
+        }
     }
 }
 

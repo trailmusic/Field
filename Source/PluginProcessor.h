@@ -163,7 +163,7 @@ private:
         Sample gainLin{}, pan{}, panL{}, panR{}, depth{}, width{};
         Sample tiltDb{}, scoopDb{}, monoHz{}, hpHz{}, lpHz{};
         // New EQ shape/Q
-        Sample shelfShapeS{};     // 0.25..1.25
+        Sample shelfShapeS{};     // 0.25..1.50
         Sample filterQ{};         // 0.50..1.20
         Sample hpQ{};             // per-filter Q
         Sample lpQ{};             // per-filter Q
