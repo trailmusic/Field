@@ -64,6 +64,7 @@ namespace IDs {
     static constexpr const char* delayEnabled = "delay_enabled";
     static constexpr const char* delayMode = "delay_mode";
     static constexpr const char* delaySync = "delay_sync";
+    static constexpr const char* delayGridFlavor = "delay_grid_flavor";
     static constexpr const char* delayTimeMs = "delay_time_ms";
     static constexpr const char* delayTimeDiv = "delay_time_div";
     static constexpr const char* delayFeedbackPct = "delay_feedback_pct";
@@ -302,6 +303,12 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     isDoublePrecEnabled = false;
 
     auto hp = makeHostParams (apvts);
+    // Sync helpers (UI → chain)
+    hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
+    {
+        double bpm = 120.0; if (auto* ph = getPlayHead()) { juce::AudioPlayHead::CurrentPositionInfo pos{}; if (ph->getCurrentPosition (pos) && pos.bpm > 0.0) bpm = pos.bpm; }
+        hp.tempoBpm = bpm;
+    }
     chainF->setParameters (hp);     // cast/copy inside chain
 
     juce::dsp::AudioBlock<float> block (buffer);
@@ -352,6 +359,11 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     isDoublePrecEnabled = true;
 
     auto hp = makeHostParams (apvts);
+    hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
+    {
+        double bpm = 120.0; if (auto* ph = getPlayHead()) { juce::AudioPlayHead::CurrentPositionInfo pos{}; if (ph->getCurrentPosition (pos) && pos.bpm > 0.0) bpm = pos.bpm; }
+        hp.tempoBpm = bpm;
+    }
     chainD->setParameters (hp);
 
     juce::dsp::AudioBlock<double> block (buffer);
@@ -480,6 +492,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayEnabled, 1 }, "Delay Enabled", false));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayMode, 1 }, "Delay Mode", juce::StringArray { "Digital", "Analog", "Tape" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delaySync, 1 }, "Delay Sync", true));
+    // Grid flavor: Straight / Dotted / Triplet
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayGridFlavor, 1 }, "Delay Grid Flavor", juce::StringArray { "Straight", "Dotted", "Triplet" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayTimeMs, 1 }, "Delay Time (ms)", juce::NormalisableRange<float>(1.0f, 4000.0f, 0.1f, 0.5f), 350.0f));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayTimeDiv, 1 }, "Delay Division", juce::StringArray { "1/64T", "1/64", "1/64D", "1/32T", "1/32", "1/32D", "1/16T", "1/16", "1/16D", "1/8T", "1/8", "1/8D", "1/4T", "1/4", "1/4D", "1/2T", "1/2", "1/2D", "1/1T", "1/1", "1/1D", "2/1T", "2/1", "2/1D" }, 12));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayFeedbackPct, 1 }, "Delay Feedback (%)", juce::NormalisableRange<float>(0.0f, 98.0f, 0.1f), 36.0f));
@@ -500,7 +514,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delaySat, 1 }, "Delay Saturation", juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.2f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDiffusion, 1 }, "Delay Diffusion", juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDiffuseSizeMs, 1 }, "Delay Diffuse Size (ms)", juce::NormalisableRange<float>(5.0f, 50.0f, 0.1f), 18.0f));
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayDuckSource, 1 }, "Delay Duck Source", juce::StringArray { "Input", "Wet", "Both" }, 0));
+    // Duck source: In (Pre), In (Post), External (SC)
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayDuckSource, 1 }, "Delay Duck Source", juce::StringArray { "In (Pre)", "In (Post)", "External (SC)" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayDuckPost, 1 }, "Delay Duck Post", true));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckDepth, 1 }, "Delay Duck Depth", juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.6f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckAttackMs, 1 }, "Delay Duck Attack (ms)", juce::NormalisableRange<float>(1.0f, 200.0f, 0.1f), 12.0f));
@@ -699,6 +714,9 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.delayDuckRatio = (Sample)hp.delayDuckRatio;
     params.delayDuckLookaheadMs = (Sample)hp.delayDuckLookaheadMs;
     params.delayDuckLinkGlobal = hp.delayDuckLinkGlobal;
+    // Sync helpers
+    params.delayGridFlavor = hp.delayGridFlavor;
+    params.tempoBpm        = hp.tempoBpm;
 }
 
 // --------- processing utilities ---------
@@ -1337,6 +1355,9 @@ void FieldChain<Sample>::process (Block block)
         delayParams.sync = params.delaySync;
         delayParams.timeMs = params.delayTimeMs;
         delayParams.timeDiv = params.delayTimeDiv;
+        // Pass grid flavor and tempo for sync mode from FieldParams snapshot
+        delayParams.gridFlavor = params.delayGridFlavor;
+        delayParams.tempoBpm   = params.tempoBpm;
         delayParams.feedbackPct = params.delayFeedbackPct;
         delayParams.wet = params.delayWet;
         delayParams.killDry = params.delayKillDry;

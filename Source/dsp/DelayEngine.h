@@ -210,6 +210,8 @@ struct DelayParams
     bool sync = true;
     double timeMs = 350.0;
     int timeDiv = 4; // 1/4 note default
+    int gridFlavor = 0; // 0=Straight, 1=Dotted, 2=Triplet
+    double tempoBpm = 120.0; // host tempo (fallback)
     double feedbackPct = 36.0;
     double wet = 0.25;
     bool killDry = false;
@@ -300,8 +302,25 @@ struct DelayEngine
         
         // Compute delay times
         if (p.sync) {
-            // TODO: Implement tempo sync
-            currentDelaySamples = p.timeMs * 0.001 * sampleRate;
+            // Convert musical division to beats (assuming timeDiv encoded as index into a fixed table)
+            // Expectation: timeDiv is an index into the UI division list (same ordering as APVTS delay_time_div)
+            const int idx = juce::jlimit (0, 26, p.timeDiv); // 27 entries in the division list
+            static const double beatsTable[] = {
+                1.0/6.0, 1.0/4.0, 1.0/3.0,  // 1/64T, 1/64, 1/64D
+                1.0/3.0, 1.0/2.0, 2.0/3.0,  // 1/32T, 1/32, 1/32D
+                1.0/1.5, 1.0/1.0, 2.0/1.5,  // 1/16T, 1/16, 1/16D
+                2.0/3.0, 0.5,       1.0,    // 1/8T,  1/8,  1/8D
+                4.0/3.0, 1.0,       2.0,    // 1/4T,  1/4,  1/4D
+                8.0/3.0, 2.0,       4.0,    // 1/2T,  1/2,  1/2D
+                4.0,     8.0/3.0,   16.0/3.0, // 1/1T,  1/1,  1/1D
+                16.0/3.0, 8.0,      16.0     // 2/1T,  2/1,  2/1D
+            };
+            double beats = beatsTable[idx];
+            // Apply S/D/T flavor multiplier
+            double mul = (p.gridFlavor == 1) ? 1.5 : (p.gridFlavor == 2) ? (2.0/3.0) : 1.0;
+            beats *= mul;
+            const double sec = (60.0 / juce::jmax (1.0, p.tempoBpm)) * beats;
+            currentDelaySamples = sec * sampleRate;
         } else {
             currentDelaySamples = p.timeMs * 0.001 * sampleRate;
         }

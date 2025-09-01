@@ -224,6 +224,9 @@ private:
         Sample delayDuckRatio{};
         Sample delayDuckLookaheadMs{};
         bool   delayDuckLinkGlobal{};
+        // Sync helpers
+        int    delayGridFlavor{};   // 0=S,1=D,2=T
+        double tempoBpm{120.0};
     } params;
 };
 
@@ -265,42 +268,45 @@ struct HostParams
     double shufflerLoPct{};   // 0..200
     double shufflerHiPct{};   // 0..200
     double shufflerXoverHz{}; // 150..2000
-            int    monoSlopeDbOct{};  // 6/12/24
-        bool   monoAudition{};    // 0/1
+    int    monoSlopeDbOct{};  // 6/12/24
+    bool   monoAudition{};    // 0/1
         
-        // Delay parameters
-        bool   delayEnabled{};
-        int    delayMode{};       // 0=Digital, 1=Analog, 2=Tape
-        bool   delaySync{};
-        double delayTimeMs{};
-        int    delayTimeDiv{};
-        double delayFeedbackPct{};
-        double delayWet{};
-        bool   delayKillDry{};
-        bool   delayFreeze{};
-        bool   delayPingpong{};
-        double delayCrossfeedPct{};
-        double delayStereoSpreadPct{};
-        double delayWidth{};
-        double delayModRateHz{};
-        double delayModDepthMs{};
-        double delayWowflutter{};
-        double delayJitterPct{};
-        double delayHpHz{};
-        double delayLpHz{};
-        double delayTiltDb{};
-        double delaySat{};
-        double delayDiffusion{};
-        double delayDiffuseSizeMs{};
-        int    delayDuckSource{};
-        bool   delayDuckPost{};
-        double delayDuckDepth{};
-        double delayDuckAttackMs{};
-        double delayDuckReleaseMs{};
-        double delayDuckThresholdDb{};
-        double delayDuckRatio{};
-        double delayDuckLookaheadMs{};
-        bool   delayDuckLinkGlobal{};
+    // Delay parameters
+    bool   delayEnabled{};
+    int    delayMode{};       // 0=Digital, 1=Analog, 2=Tape
+    bool   delaySync{};
+    double delayTimeMs{};
+    int    delayTimeDiv{};
+    double delayFeedbackPct{};
+    double delayWet{};
+    bool   delayKillDry{};
+    bool   delayFreeze{};
+    bool   delayPingpong{};
+    double delayCrossfeedPct{};
+    double delayStereoSpreadPct{};
+    double delayWidth{};
+    double delayModRateHz{};
+    double delayModDepthMs{};
+    double delayWowflutter{};
+    double delayJitterPct{};
+    double delayHpHz{};
+    double delayLpHz{};
+    double delayTiltDb{};
+    double delaySat{};
+    double delayDiffusion{};
+    double delayDiffuseSizeMs{};
+    int    delayDuckSource{};
+    bool   delayDuckPost{};
+    double delayDuckDepth{};
+    double delayDuckAttackMs{};
+    double delayDuckReleaseMs{};
+    double delayDuckThresholdDb{};
+    double delayDuckRatio{};
+    double delayDuckLookaheadMs{};
+    bool   delayDuckLinkGlobal{};
+    // Sync helpers
+    int    delayGridFlavor{};   // 0=S,1=D,2=T
+    double tempoBpm{120.0};
 };
 
 // ===============================

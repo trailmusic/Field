@@ -82,11 +82,11 @@ We drew from tools like **Basslane/Basslane Pro** (low-end mono & width treatmen
 
 * **Three Delay Modes:** Digital (clean), Analog (BBD-style), Tape (wow/flutter)
 * **Stereo Processing:** Independent L/R delay lines with crossfeed and ping-pong
-* **Tempo Sync:** Musical divisions with dotted/triplet support (1/64T to 2/1D)
+* **Tempo Sync:** Musical divisions with dotted/triplet support via compact S/D/T selector (1/64T to 2/1)
 * **Modulation:** LFO-based chorus, wow/flutter, and jitter for movement
 * **Tone Shaping:** HP/LP filters, tilt EQ, saturation in feedback loop
 * **Diffusion:** 4-stage all-pass chain for reverb-like effects
-* **Per-Delay Ducking:** Independent sidechain with attack/release/threshold/ratio
+* **Per-Delay Ducking:** Independent sidechain with attack/release/threshold/ratio; smart Source with External (SC) support
 * **Glitchless Time Changes:** Dual-reader crossfade prevents pops/clicks
 * **High-Quality Interpolation:** Cubic Lagrange for smooth modulation
 * **Feedback Safety:** Hard limits and auto-reduction for stability
@@ -240,11 +240,11 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
     - DUCK knob renders a secondary arc indicating live gain reduction.
   * **EQ row:** Bass, Air, Tilt (+ mini-freq sliders), HP, LP, Mono.
   * **Image row:** Width Lo/Mid/Hi, Rotation, Asymmetry, Shuffler, Stereoize card.
-* **Right Side Card:** **Delay Module** - Professional delay system as dedicated card-shaped module:
-  - **Row 1 (Core):** Enable, Mode (Digital/Analog/Tape), Sync, Time, Feedback, Wet
-  - **Row 2 (Stereo):** Freeze, Kill Dry, Ping-Pong, Spread, Width, Mod Rate
-  - **Row 3 (Modulation/Tone):** Mod Depth, Wow/Flutter, Jitter, HP, LP, Tilt
-  - **Row 4 (Advanced):** Saturation, Diffusion, Diffuse Size, Duck Depth, Duck Attack, Duck Release
+* **Right Side Card:** **Delay Module** — 4×7 grid, panel-styled cells with unified spacing:
+  - **Row 1 — Switches/Combos:** Enable, Mode, Sync, S/D/T (grid flavor), Ping-Pong, Freeze, Kill Dry
+  - **Row 2 — Time & Mod:** Time, Feedback, Mix, Rate, Depth, Spread, Width
+  - **Row 3 — Tone & Space:** Saturation, Diffusion, Size, HP, LP, Tilt, Wow/Flutter
+  - **Row 4 — Ducking:** Duck Source (In Pre/Post/External), Post, Threshold (THR), Depth, Attack (ATT), Release (REL), Lookahead (LA)
 
 ### Look & Feel
 
@@ -392,7 +392,7 @@ Input → Write to DelayLine → Read (interpolated) → Feedback Loop → Outpu
 - **LFO Modulation**: Single sine wave LFO for Digital/Analog modes (0.01-12 Hz, 0-12ms depth)
 - **Tape Wow/Flutter**: Dual-rate LFO blend (~0.3-1.2 Hz wow + ~5-8 Hz flutter) with mechanical noise
 - **Jitter**: Random time variations (0-10% of base delay time) for vintage character
-- **Tempo Sync**: Full musical division support including dotted and triplet subdivisions
+- **Tempo Sync**: Full musical divisions; S/D/T segmented selector applies dotted/triplet multipliers
 
 **Stereo Processing**
 - **Ping-Pong**: True L/R alternation with high crossfeed (~1.0) and channel swapping
@@ -410,16 +410,24 @@ Input → Write to DelayLine → Read (interpolated) → Feedback Loop → Outpu
 
 Independent ducking system separate from global ducking, with full parameter control:
 
-**Sidechain Sources**
-- **Input**: Duck against dry input signal
-- **Wet**: Duck against delay wet signal (self-ducking)
-- **Both**: Duck against combined input + wet
+**Sidechain Sources (UI: Duck Source)**
+- **In (Pre)**: Detector listens to dry input before delay (classic vocal-duck feel)
+- **In (Post)**: Detector listens post-wet (self-duck/pumpy FX)
+- **External (SC)**: Host sidechain bus; auto-fallback to In (Pre) if no SC present
+
+**Post Toggle Behavior**
+- Post is meaningful with In-source only. When External (SC) is selected, Post is disabled in the UI.
 
 **Processing**
 - **RMS Detection**: 10-20ms RMS window with optional lookahead (0-15ms)
 - **Soft-Knee Compression**: Attack (1-200ms), Release (20-1000ms), Ratio (1:1-8:1)
 - **Insertion Point**: Pre-wet or post-wet processing with depth control (0-100%)
 - **Global Linking**: Optional multiplication with global duck settings
+
+**Recommended Defaults**
+- Source: In (Pre), Post: Off
+- Threshold: ≈ -24 dBFS, Depth: 6–10 dB, Attack: 5–10 ms, Release: 150–300 ms
+- Lookahead: 3–5 ms (if available)
 
 ### Safety and Stability
 

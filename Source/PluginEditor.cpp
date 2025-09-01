@@ -1419,7 +1419,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     }
     
     // Delay combo boxes
-    for (juce::ComboBox* combo : { &delayMode, &delayTimeDiv, &delayDuckSource })
+    for (juce::ComboBox* combo : { &delayMode, &delayTimeDiv, &delayDuckSource, &delayGridFlavor })
     {
         addAndMakeVisible (*combo);
         combo->setLookAndFeel (&lnf);
@@ -1433,6 +1433,14 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         button->setLookAndFeel (&lnf);
         button->addListener (this);
     }
+
+    // Delay row-1 explicit captions (ensure text visible in SwitchCell)
+    delayEnabled.setButtonText ("Enable"); delayEnabled.setToggleState (delayEnabled.getToggleState(), juce::dontSendNotification);
+    delaySync.setButtonText ("Sync");      delaySync.setToggleState (delaySync.getToggleState(), juce::dontSendNotification);
+    delayPingpong.setButtonText ("Ping-Pong"); delayPingpong.setToggleState (delayPingpong.getToggleState(), juce::dontSendNotification);
+    delayFreeze.setButtonText ("Freeze");  delayFreeze.setToggleState (delayFreeze.getToggleState(), juce::dontSendNotification);
+    delayKillDry.setButtonText ("Kill Dry"); delayKillDry.setToggleState (delayKillDry.getToggleState(), juce::dontSendNotification);
+    delayMode.setTextWhenNothingSelected ("Mode");
     
     // Delay value labels
     for (juce::Label* l : { &delayTimeValue, &delayFeedbackValue, &delayWetValue, &delaySpreadValue, &delayWidthValue, &delayModRateValue, &delayModDepthValue, &delayWowflutterValue, &delayJitterValue,
@@ -1636,6 +1644,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_enabled", delayEnabled));
     comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_mode", delayMode));
     buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_sync", delaySync));
+    comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_grid_flavor", delayGridFlavor));
     attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_time_ms", delayTime));
     comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_time_div", delayTimeDiv));
     attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_feedback_pct", delayFeedback));
@@ -1763,8 +1772,8 @@ void MyPluginAudioProcessorEditor::buildCells()
     if (!delayWetCell)       delayWetCell        = std::make_unique<KnobCell>(delayWet,       delayWetValue,       "WET");
     if (!delaySpreadCell)    delaySpreadCell     = std::make_unique<KnobCell>(delaySpread,    delaySpreadValue,    "SPREAD");
     if (!delayWidthCell)     delayWidthCell      = std::make_unique<KnobCell>(delayWidth,     delayWidthValue,     "WIDTH");
-    if (!delayModRateCell)   delayModRateCell    = std::make_unique<KnobCell>(delayModRate,   delayModRateValue,   "MOD RATE");
-    if (!delayModDepthCell)  delayModDepthCell   = std::make_unique<KnobCell>(delayModDepth,  delayModDepthValue,  "MOD DEPTH");
+    if (!delayModRateCell)   delayModRateCell    = std::make_unique<KnobCell>(delayModRate,   delayModRateValue,   "RATE");
+    if (!delayModDepthCell)  delayModDepthCell   = std::make_unique<KnobCell>(delayModDepth,  delayModDepthValue,  "DEPTH");
     if (!delayWowflutterCell)delayWowflutterCell = std::make_unique<KnobCell>(delayWowflutter,delayWowflutterValue,"WOW");
     if (!delayJitterCell)    delayJitterCell     = std::make_unique<KnobCell>(delayJitter,    delayJitterValue,    "JITTER");
     if (!delayHpCell)        delayHpCell         = std::make_unique<KnobCell>(delayHp,        delayHpValue,        "HP");
@@ -1773,9 +1782,9 @@ void MyPluginAudioProcessorEditor::buildCells()
     if (!delaySatCell)       delaySatCell        = std::make_unique<KnobCell>(delaySat,       delaySatValue,       "SAT");
     if (!delayDiffusionCell) delayDiffusionCell  = std::make_unique<KnobCell>(delayDiffusion, delayDiffusionValue, "DIFF");
     if (!delayDiffuseSizeCell)delayDiffuseSizeCell= std::make_unique<KnobCell>(delayDiffuseSize, delayDiffuseSizeValue, "SIZE");
-    if (!delayDuckDepthCell) delayDuckDepthCell  = std::make_unique<KnobCell>(delayDuckDepth, delayDuckDepthValue, "DUCK DEPTH");
-    if (!delayDuckAttackCell)delayDuckAttackCell = std::make_unique<KnobCell>(delayDuckAttack,delayDuckAttackValue,"DUCK ATT");
-    if (!delayDuckReleaseCell)delayDuckReleaseCell=std::make_unique<KnobCell>(delayDuckRelease,delayDuckReleaseValue,"DUCK REL");
+    if (!delayDuckDepthCell) delayDuckDepthCell  = std::make_unique<KnobCell>(delayDuckDepth, delayDuckDepthValue, "DEPTH");
+    if (!delayDuckAttackCell)delayDuckAttackCell = std::make_unique<KnobCell>(delayDuckAttack,delayDuckAttackValue,"ATT");
+    if (!delayDuckReleaseCell)delayDuckReleaseCell=std::make_unique<KnobCell>(delayDuckRelease,delayDuckReleaseValue,"REL");
 }
 
 MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
@@ -2508,12 +2517,15 @@ void MyPluginAudioProcessorEditor::performLayout()
         if (!delayEnabledCell) delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled);
         if (!delayModeCell)    delayModeCell    = std::make_unique<SwitchCell> (delayMode);
         if (!delaySyncCell)    delaySyncCell    = std::make_unique<SwitchCell> (delaySync);
+        if (!delayGridFlavorSegments) delayGridFlavorSegments = std::make_unique<Segmented3Control>(proc.apvts, "delay_grid_flavor", juce::StringArray{ "S", "D", "T" });
+        if (!delayGridFlavorCell) delayGridFlavorCell = std::make_unique<SwitchCell> (*delayGridFlavorSegments);
+        if (!delayPingpongCell) delayPingpongCell = std::make_unique<SwitchCell> (delayPingpong);
         if (!delayFreezeCell)  delayFreezeCell  = std::make_unique<SwitchCell> (delayFreeze);
         if (!delayKillDryCell) delayKillDryCell = std::make_unique<SwitchCell> (delayKillDry);
         if (!delayDuckSourceCell) delayDuckSourceCell = std::make_unique<SwitchCell> (delayDuckSource);
         if (!delayDuckPostCell)   delayDuckPostCell   = std::make_unique<SwitchCell> (delayDuckPost);
 
-        for (auto* c : { delayEnabledCell.get(), delayModeCell.get(), delaySyncCell.get(), delayFreezeCell.get(), delayKillDryCell.get(), delayDuckSourceCell.get(), delayDuckPostCell.get() })
+        for (auto* c : { delayEnabledCell.get(), delayModeCell.get(), delaySyncCell.get(), delayGridFlavorCell.get(), delayPingpongCell.get(), delayFreezeCell.get(), delayKillDryCell.get(), delayDuckSourceCell.get(), delayDuckPostCell.get() })
         {
             if (c) { addAndMakeVisible (*c); c->setShowBorder (true); }
         }
@@ -2530,8 +2542,8 @@ void MyPluginAudioProcessorEditor::performLayout()
 
         const int valuePx = Layout::dp (14, s);
         const int labelGap = Layout::dp (4, s);
-        for (auto* c : { delayTimeCell.get(),delayFeedbackCell.get(),delayWetCell.get(),delaySpreadCell.get(),delayWidthCell.get(),delayModRateCell.get(),
-                         delayModDepthCell.get(),delayWowflutterCell.get(),delayJitterCell.get(),delayHpCell.get(),delayLpCell.get(),delayTiltCell.get(),
+        for (auto* c : { delayTimeCell.get(),delayFeedbackCell.get(),delayWetCell.get(),delayModRateCell.get(),delayModDepthCell.get(),delaySpreadCell.get(),delayWidthCell.get(),
+                         delayWowflutterCell.get(),delayJitterCell.get(),delayHpCell.get(),delayLpCell.get(),delayTiltCell.get(),
                          delaySatCell.get(),delayDiffusionCell.get(),delayDiffuseSizeCell.get(),delayDuckDepthCell.get(),delayDuckAttackCell.get(),
                          delayDuckReleaseCell.get() })
         {
@@ -2539,11 +2551,18 @@ void MyPluginAudioProcessorEditor::performLayout()
         }
 
         // Create a cell for duck threshold so it aligns like a knob if desired
-        if (!delayDuckThresholdCell) delayDuckThresholdCell = std::make_unique<KnobCell>(delayDuckThreshold, delayDuckThresholdValue, "DUCK THR");
+        if (!delayDuckThresholdCell) delayDuckThresholdCell = std::make_unique<KnobCell>(delayDuckThreshold, delayDuckThresholdValue, "THR");
         delayDuckThresholdCell->setMetrics (lPx, valuePx, labelGap);
         delayDuckThresholdCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
         delayDuckThresholdCell->setValueLabelGap (labelGap);
         addAndMakeVisible (*delayDuckThresholdCell);
+
+        // Optional duck lookahead cell
+        if (!delayDuckLookaheadCell) delayDuckLookaheadCell = std::make_unique<KnobCell>(delayDuckLookahead, delayDuckLookaheadValue, "LA");
+        delayDuckLookaheadCell->setMetrics (lPx, valuePx, labelGap);
+        delayDuckLookaheadCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        delayDuckLookaheadCell->setValueLabelGap (labelGap);
+        addAndMakeVisible (*delayDuckLookaheadCell);
 
         juce::Grid delayGrid;
         delayGrid.rowGap = juce::Grid::Px (0);
@@ -2564,39 +2583,41 @@ void MyPluginAudioProcessorEditor::performLayout()
         // - Move last two items from row 5 (delayDuckSource, delayDuckPost) to row 1 at cols 6 and 7
         // - Move first knob from row 5 (delayDuckThreshold) to be 4th knob on row 4
         delayGrid.items = {
-            // Row 1: add duck source/post at columns 6 and 7
+            // Row 1 — Switches/Combos
             juce::GridItem (*delayEnabledCell).withArea (1,1),
             juce::GridItem (*delayModeCell).withArea (1,2),
             juce::GridItem (*delaySyncCell).withArea (1,3),
-            juce::GridItem (*delayFreezeCell).withArea (1,4),
-            juce::GridItem (*delayKillDryCell).withArea (1,5),
-            juce::GridItem (*delayDuckSourceCell).withArea (1,6),
-            juce::GridItem (*delayDuckPostCell).withArea (1,7),
+            juce::GridItem (*delayGridFlavorCell).withArea (1,4),
+            juce::GridItem (*delayPingpongCell).withArea (1,5),
+            juce::GridItem (*delayFreezeCell).withArea (1,6),
+            juce::GridItem (*delayKillDryCell).withArea (1,7),
 
-            // Row 2
+            // Row 2 — Time & Mod Essentials
             juce::GridItem (*delayTimeCell).withArea (2,1),
             juce::GridItem (*delayFeedbackCell).withArea (2,2),
             juce::GridItem (*delayWetCell).withArea (2,3),
-            juce::GridItem (*delaySpreadCell).withArea (2,4),
-            juce::GridItem (*delayWidthCell).withArea (2,5),
-            juce::GridItem (*delayModRateCell).withArea (2,6),
+            juce::GridItem (*delayModRateCell).withArea (2,4),
+            juce::GridItem (*delayModDepthCell).withArea (2,5),
+            juce::GridItem (*delaySpreadCell).withArea (2,6),
+            juce::GridItem (*delayWidthCell).withArea (2,7),
 
-            // Row 3
-            juce::GridItem (*delayModDepthCell).withArea (3,1),
-            juce::GridItem (*delayWowflutterCell).withArea (3,2),
-            juce::GridItem (*delayJitterCell).withArea (3,3),
+            // Row 3 — Tone & Space
+            juce::GridItem (*delaySatCell).withArea (3,1),
+            juce::GridItem (*delayDiffusionCell).withArea (3,2),
+            juce::GridItem (*delayDiffuseSizeCell).withArea (3,3),
             juce::GridItem (*delayHpCell).withArea (3,4),
             juce::GridItem (*delayLpCell).withArea (3,5),
             juce::GridItem (*delayTiltCell).withArea (3,6),
+            juce::GridItem (*delayWowflutterCell).withArea (3,7),
 
-            // Row 4: make duck threshold the 4th item
-            juce::GridItem (*delaySatCell).withArea (4,1),
-            juce::GridItem (*delayDiffusionCell).withArea (4,2),
-            juce::GridItem (*delayDiffuseSizeCell).withArea (4,3),
-            juce::GridItem (*delayDuckThresholdCell).withArea (4,4),
-            juce::GridItem (*delayDuckDepthCell).withArea (4,5),
-            juce::GridItem (*delayDuckAttackCell).withArea (4,6),
-            juce::GridItem (*delayDuckReleaseCell).withArea (4,7)
+            // Row 4 — Ducking Cluster
+            juce::GridItem (*delayDuckSourceCell).withArea (4,1),
+            juce::GridItem (*delayDuckPostCell).withArea (4,2),
+            juce::GridItem (*delayDuckThresholdCell).withArea (4,3),
+            juce::GridItem (*delayDuckDepthCell).withArea (4,4),
+            juce::GridItem (*delayDuckAttackCell).withArea (4,5),
+            juce::GridItem (*delayDuckReleaseCell).withArea (4,6),
+            juce::GridItem (*delayDuckLookaheadCell).withArea (4,7)
         };
 
         delayGrid.performLayout (delayB);
