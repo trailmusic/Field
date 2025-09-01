@@ -876,14 +876,34 @@ public:
     class SwitchCell : public juce::Component
     {
     public:
-        explicit SwitchCell(juce::Component& contentToHost) : content(contentToHost) { setOpaque(false); }
+        explicit SwitchCell(juce::Component& contentToHost) : content(contentToHost)
+        {
+            setOpaque(false);
+            caption.setJustificationType (juce::Justification::centred);
+            caption.setInterceptsMouseClicks (false, false);
+            addAndMakeVisible (caption);
+        }
         void setMetrics (int /*knobPx*/, int /*valuePx*/, int /*gapPx*/) { resized(); }
         void setShowBorder (bool show) { showBorder = show; repaint(); }
+        void setCaption (const juce::String& text)
+        {
+            captionText = text;
+            caption.setText (captionText, juce::dontSendNotification);
+            repaint();
+        }
         void resized() override
         {
             if (content.getParentComponent() != this)
                 addAndMakeVisible (content);
             auto b = getLocalBounds().reduced (6); // inset to reveal panel border fully
+            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+            // Caption height
+            const int capH = captionText.isNotEmpty() ? 14 : 0;
+            if (captionText.isNotEmpty())
+            {
+                caption.setBounds (b.removeFromTop (capH));
+                if (lf) caption.setColour (juce::Label::textColourId, lf->theme.textMuted);
+            }
             content.setBounds (b);
         }
         void paint (juce::Graphics& g) override
@@ -906,6 +926,8 @@ public:
         void mouseExit  (const juce::MouseEvent&) override { hoverActive = false; repaint(); }
     private:
         juce::Component& content;
+        juce::Label caption;
+        juce::String captionText;
         bool showBorder { true };
         bool hoverActive { false };
     };

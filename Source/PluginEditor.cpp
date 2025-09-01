@@ -2514,16 +2514,16 @@ void MyPluginAudioProcessorEditor::performLayout()
     // ---------------- Delay Right-Side Area (no container; 7-column grid) ---------------------------
     {
         // Wrap top-row toggles/combos in SwitchCell panels for visual consistency
-        if (!delayEnabledCell) delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled);
-        if (!delayModeCell)    delayModeCell    = std::make_unique<SwitchCell> (delayMode);
-        if (!delaySyncCell)    delaySyncCell    = std::make_unique<SwitchCell> (delaySync);
+        if (!delayEnabledCell) { delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled); delayEnabledCell->setCaption ("Enable"); }
+        if (!delayModeCell)    { delayModeCell    = std::make_unique<SwitchCell> (delayMode);    delayModeCell->setCaption ("Mode"); }
+        if (!delaySyncCell)    { delaySyncCell    = std::make_unique<SwitchCell> (delaySync);    delaySyncCell->setCaption ("Sync"); }
         if (!delayGridFlavorSegments) delayGridFlavorSegments = std::make_unique<Segmented3Control>(proc.apvts, "delay_grid_flavor", juce::StringArray{ "S", "D", "T" });
         if (!delayGridFlavorCell) delayGridFlavorCell = std::make_unique<SwitchCell> (*delayGridFlavorSegments);
-        if (!delayPingpongCell) delayPingpongCell = std::make_unique<SwitchCell> (delayPingpong);
-        if (!delayFreezeCell)  delayFreezeCell  = std::make_unique<SwitchCell> (delayFreeze);
-        if (!delayKillDryCell) delayKillDryCell = std::make_unique<SwitchCell> (delayKillDry);
-        if (!delayDuckSourceCell) delayDuckSourceCell = std::make_unique<SwitchCell> (delayDuckSource);
-        if (!delayDuckPostCell)   delayDuckPostCell   = std::make_unique<SwitchCell> (delayDuckPost);
+        if (!delayPingpongCell)   { delayPingpongCell = std::make_unique<SwitchCell> (delayPingpong); delayPingpongCell->setCaption ("Ping-Pong"); }
+        if (!delayFreezeCell)     { delayFreezeCell  = std::make_unique<SwitchCell> (delayFreeze);   delayFreezeCell->setCaption ("Freeze"); }
+        if (!delayKillDryCell)    { delayKillDryCell = std::make_unique<SwitchCell> (delayKillDry);  delayKillDryCell->setCaption ("Kill Dry"); }
+        if (!delayDuckSourceCell) { delayDuckSourceCell = std::make_unique<SwitchCell> (delayDuckSource); delayDuckSourceCell->setCaption ("Duck Source"); }
+        if (!delayDuckPostCell)   { delayDuckPostCell   = std::make_unique<SwitchCell> (delayDuckPost);   delayDuckPostCell->setCaption ("Post"); }
 
         for (auto* c : { delayEnabledCell.get(), delayModeCell.get(), delaySyncCell.get(), delayGridFlavorCell.get(), delayPingpongCell.get(), delayFreezeCell.get(), delayKillDryCell.get(), delayDuckSourceCell.get(), delayDuckPostCell.get() })
         {
