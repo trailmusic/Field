@@ -923,7 +923,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     const int numItems = 1 + 1 + 1 + 5 + 3; // pan, space, switch, duck(5), gain/drive/mix(3)
     const int gaps = numItems - 1;
     const int gapS = Layout::dp (Layout::GAP_S, s);
-    const int delayCardWMin = Layout::dp (720, s); // widened to fit one extra column
+    // Compute minimum delay card width based on 7 columns using same cell width and inner gap
+    const int cellW_delay_min = lPx + Layout::dp (8, s);
+    const int delayColsMin = 7;
+    const int delayCardWMin = delayColsMin * cellW_delay_min + gapS * (delayColsMin - 1) + Layout::dp (Layout::GAP, s);
     const int calculatedMinWidth = xlPx + lPx + swW + 5*lPx + 3*lPx + gaps * gapS
                                    + Layout::dp (Layout::PAD, s) * 2
                                    + delayCardWMin + Layout::dp (Layout::GAP, s);
@@ -1207,9 +1210,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     addAndMakeVisible (panKnobContainer);      panKnobContainer.setTitle ("");     panKnobContainer.setShowBorder (true);
     addAndMakeVisible (spaceKnobContainer);    spaceKnobContainer.setTitle (""); spaceKnobContainer.setShowBorder (true);
     addAndMakeVisible (volumeContainer);       volumeContainer.setTitle ("");   volumeContainer.setShowBorder (true);
-    addAndMakeVisible (delayContainer);        delayContainer.setTitle ("");     delayContainer.setShowBorder (true);
+    // Delay container will be removed; lay out directly on right side
+    // addAndMakeVisible (delayContainer);        delayContainer.setTitle ("");     delayContainer.setShowBorder (true);
     // Row containers for EQ/Image are no longer used
-    addAndMakeVisible (metersContainer);       metersContainer.setTitle ("");         metersContainer.setShowBorder (true);
+    addAndMakeVisible (metersContainer);       metersContainer.setTitle ("");         metersContainer.setShowBorder (false);
 
     // Width group (image row, bottom-right): invisible container + placeholder slots for spanning grid
     addChildComponent (widthGroupContainer);
@@ -1972,8 +1976,8 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Layout vertical meters: Corr (top) + LR bars (bottom)
         addAndMakeVisible (corrMeter);
         addAndMakeVisible (lrMeters);
-        auto mB = metersContainer.getBounds();
-        const int corrH = Layout::dp (Layout::CORR_METER_H, s);
+        auto mB = metersContainer.getBounds().reduced (Layout::dp (Layout::GAP, s));
+        const int corrH = juce::roundToInt (Layout::dp (Layout::CORR_METER_H, s) * 0.75f);
         auto corrB = mB.removeFromTop (corrH);
         corrMeter.setBounds (corrB);
         lrMeters.setBounds (mB);
@@ -1996,9 +2000,12 @@ void MyPluginAudioProcessorEditor::performLayout()
     const int rowH4 = containerHeight;                // Row 4
 
     // Reserve space for delay card on the right side (use full available height across all rows)
-    const int delayCardW = Layout::dp (720, s); // Widened to fit 7 columns
+    // Compute card width to fit 7 columns with left-row cell width + inner gaps
+    const int delayCols = 7;
+    const int cellW_right = lPx + Layout::dp (8, s);
+    const int delayCardW = delayCols * cellW_right + gapI * (delayCols - 1) + Layout::dp (Layout::PAD, s);
     auto delayCardArea = r.removeFromRight (delayCardW);
-    delayContainer.setBounds (delayCardArea);
+    // delayContainer.setBounds (delayCardArea);
 
 
     auto row1 = r.removeFromTop (rowH1);
@@ -2064,7 +2071,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         };
         g.performLayout (row);
 
-        // Managed labels for row 1 cells
+        // Managed labels for row 1 cells (ensure labels visible in all states)
         panCell   ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
         panCell   ->setValueLabelGap (labelGap);
         monoCell  ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
@@ -2495,77 +2502,76 @@ void MyPluginAudioProcessorEditor::performLayout()
         hpLpQClusterCell->toFront (false);
     }
 
-    // ---------------- Delay Card (Right Side, spans full height) ---------------------------
+    // ---------------- Delay Right-Side Area (no container; 7-column grid) ---------------------------
     {
-        delayContainer.setVisible (true);
-        
-        // Add delay controls to the delay container
-        delayContainer.addAndMakeVisible (delayEnabled);
-        delayContainer.addAndMakeVisible (delayMode);
-        delayContainer.addAndMakeVisible (delaySync);
-        delayContainer.addAndMakeVisible (delayFreeze);
-        delayContainer.addAndMakeVisible (delayKillDry);
-        
-        delayContainer.addAndMakeVisible (delayPingpong);
-        // Cells will parent knob components, so don't add raw knobs above
-        
-        // Add per-delay ducking controls
-        delayContainer.addAndMakeVisible (delayDuckSource);
-        delayContainer.addAndMakeVisible (delayDuckPost);
-        delayContainer.addAndMakeVisible (delayDuckThreshold);
-        
-        // Layout delay controls using cells for knobs + direct items for buttons/combos
-        auto delayB = delayContainer.getLocalBounds();
+        // Wrap top-row toggles/combos in SwitchCell panels for visual consistency
+        if (!delayEnabledCell) delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled);
+        if (!delayModeCell)    delayModeCell    = std::make_unique<SwitchCell> (delayMode);
+        if (!delaySyncCell)    delaySyncCell    = std::make_unique<SwitchCell> (delaySync);
+        if (!delayFreezeCell)  delayFreezeCell  = std::make_unique<SwitchCell> (delayFreeze);
+        if (!delayKillDryCell) delayKillDryCell = std::make_unique<SwitchCell> (delayKillDry);
+        if (!delayDuckSourceCell) delayDuckSourceCell = std::make_unique<SwitchCell> (delayDuckSource);
+        if (!delayDuckPostCell)   delayDuckPostCell   = std::make_unique<SwitchCell> (delayDuckPost);
+
+        for (auto* c : { delayEnabledCell.get(), delayModeCell.get(), delaySyncCell.get(), delayFreezeCell.get(), delayKillDryCell.get(), delayDuckSourceCell.get(), delayDuckPostCell.get() })
+        {
+            if (c) { addAndMakeVisible (*c); c->setShowBorder (true); }
+        }
+        addAndMakeVisible (delayDuckThreshold);
+
+        // Place a vertical divider at left edge of delay area
+        addAndMakeVisible (delayDivider);
+        // Place divider with symmetric margins using the same inner gap
+        auto dd = delayCardArea;
+        delayDivider.setBounds (juce::Rectangle<int> (dd.getX() - gapI, dd.getY(), 2, dd.getHeight()));
+
+        // Lay out cells directly
+        auto delayB = delayCardArea.reduced (gapI, 0);
 
         const int valuePx = Layout::dp (14, s);
         const int labelGap = Layout::dp (4, s);
-        delayTimeCell      ->setMetrics (lPx, valuePx, labelGap);
-        delayFeedbackCell  ->setMetrics (lPx, valuePx, labelGap);
-        delayWetCell       ->setMetrics (lPx, valuePx, labelGap);
-        delaySpreadCell    ->setMetrics (lPx, valuePx, labelGap);
-        delayWidthCell     ->setMetrics (lPx, valuePx, labelGap);
-        delayModRateCell   ->setMetrics (lPx, valuePx, labelGap);
-        delayModDepthCell  ->setMetrics (lPx, valuePx, labelGap);
-        delayWowflutterCell->setMetrics (lPx, valuePx, labelGap);
-        delayJitterCell    ->setMetrics (lPx, valuePx, labelGap);
-        delayHpCell        ->setMetrics (lPx, valuePx, labelGap);
-        delayLpCell        ->setMetrics (lPx, valuePx, labelGap);
-        delayTiltCell      ->setMetrics (lPx, valuePx, labelGap);
-        delaySatCell       ->setMetrics (lPx, valuePx, labelGap);
-        delayDiffusionCell ->setMetrics (lPx, valuePx, labelGap);
-        delayDiffuseSizeCell->setMetrics (lPx, valuePx, labelGap);
-        delayDuckDepthCell ->setMetrics (lPx, valuePx, labelGap);
-        delayDuckAttackCell->setMetrics (lPx, valuePx, labelGap);
-        delayDuckReleaseCell->setMetrics (lPx, valuePx, labelGap);
-
         for (auto* c : { delayTimeCell.get(),delayFeedbackCell.get(),delayWetCell.get(),delaySpreadCell.get(),delayWidthCell.get(),delayModRateCell.get(),
                          delayModDepthCell.get(),delayWowflutterCell.get(),delayJitterCell.get(),delayHpCell.get(),delayLpCell.get(),delayTiltCell.get(),
                          delaySatCell.get(),delayDiffusionCell.get(),delayDiffuseSizeCell.get(),delayDuckDepthCell.get(),delayDuckAttackCell.get(),
                          delayDuckReleaseCell.get() })
         {
-            delayContainer.addAndMakeVisible (*c);
-            c->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            c->setValueLabelGap (labelGap);
+            if (c) { addAndMakeVisible (*c); c->setMetrics (lPx, valuePx, labelGap); c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGap); }
         }
 
+        // Create a cell for duck threshold so it aligns like a knob if desired
+        if (!delayDuckThresholdCell) delayDuckThresholdCell = std::make_unique<KnobCell>(delayDuckThreshold, delayDuckThresholdValue, "DUCK THR");
+        delayDuckThresholdCell->setMetrics (lPx, valuePx, labelGap);
+        delayDuckThresholdCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        delayDuckThresholdCell->setValueLabelGap (labelGap);
+        addAndMakeVisible (*delayDuckThresholdCell);
+
         juce::Grid delayGrid;
-        delayGrid.rowGap = juce::Grid::Px (gapI);
+        delayGrid.rowGap = juce::Grid::Px (0);
         delayGrid.columnGap = juce::Grid::Px (gapI);
         delayGrid.templateRows = {
-            juce::Grid::Px (Layout::dp (24, s)),
+            juce::Grid::Px (containerHeight),
             juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight),
             juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight)
         };
-        delayGrid.templateColumns = { juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx), juce::Grid::Px (lPx) };
+        const int cellW_delay = lPx + Layout::dp (8, s);
+        delayGrid.templateColumns = {
+            juce::Grid::Px (cellW_delay), juce::Grid::Px (cellW_delay), juce::Grid::Px (cellW_delay),
+            juce::Grid::Px (cellW_delay), juce::Grid::Px (cellW_delay), juce::Grid::Px (cellW_delay), juce::Grid::Px (cellW_delay),
+            juce::Grid::Fr (1)
+        };
 
+        // Rearrangement per request:
+        // - Move last two items from row 5 (delayDuckSource, delayDuckPost) to row 1 at cols 6 and 7
+        // - Move first knob from row 5 (delayDuckThreshold) to be 4th knob on row 4
         delayGrid.items = {
-            // Row 1: Core toggles/combos (not cells)
-            juce::GridItem (delayEnabled).withArea (1,1),
-            juce::GridItem (delayMode).withArea (1,2),
-            juce::GridItem (delaySync).withArea (1,3),
-            juce::GridItem (delayFreeze).withArea (1,4),
-            juce::GridItem (delayKillDry).withArea (1,5),
-            juce::GridItem(),
+            // Row 1: add duck source/post at columns 6 and 7
+            juce::GridItem (*delayEnabledCell).withArea (1,1),
+            juce::GridItem (*delayModeCell).withArea (1,2),
+            juce::GridItem (*delaySyncCell).withArea (1,3),
+            juce::GridItem (*delayFreezeCell).withArea (1,4),
+            juce::GridItem (*delayKillDryCell).withArea (1,5),
+            juce::GridItem (*delayDuckSourceCell).withArea (1,6),
+            juce::GridItem (*delayDuckPostCell).withArea (1,7),
 
             // Row 2
             juce::GridItem (*delayTimeCell).withArea (2,1),
@@ -2574,7 +2580,6 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*delaySpreadCell).withArea (2,4),
             juce::GridItem (*delayWidthCell).withArea (2,5),
             juce::GridItem (*delayModRateCell).withArea (2,6),
-            juce::GridItem(),
 
             // Row 3
             juce::GridItem (*delayModDepthCell).withArea (3,1),
@@ -2583,55 +2588,26 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*delayHpCell).withArea (3,4),
             juce::GridItem (*delayLpCell).withArea (3,5),
             juce::GridItem (*delayTiltCell).withArea (3,6),
-            juce::GridItem(),
 
-            // Row 4
+            // Row 4: make duck threshold the 4th item
             juce::GridItem (*delaySatCell).withArea (4,1),
             juce::GridItem (*delayDiffusionCell).withArea (4,2),
             juce::GridItem (*delayDiffuseSizeCell).withArea (4,3),
-            juce::GridItem (*delayDuckDepthCell).withArea (4,4),
-            juce::GridItem (*delayDuckAttackCell).withArea (4,5),
-            juce::GridItem (*delayDuckReleaseCell).withArea (4,6),
-            juce::GridItem(),
-
-            // Row 5: Remaining ducking controls and options
-            juce::GridItem (delayDuckThreshold).withArea (5,1),
-            juce::GridItem (delayDuckSource).withArea (5,2),
-            juce::GridItem (delayDuckPost).withArea (5,3)
+            juce::GridItem (*delayDuckThresholdCell).withArea (4,4),
+            juce::GridItem (*delayDuckDepthCell).withArea (4,5),
+            juce::GridItem (*delayDuckAttackCell).withArea (4,6),
+            juce::GridItem (*delayDuckReleaseCell).withArea (4,7)
         };
 
         delayGrid.performLayout (delayB);
-        
-        // Delay cell value labels are managed by KnobCell (Managed mode)
-        
+
         // Bring components to front
-        delayEnabled.toFront (false);
-        delayMode.toFront (false);
-        delaySync.toFront (false);
-        delayTime.toFront (false);
-        delayFeedback.toFront (false);
-        delayWet.toFront (false);
-        delayFreeze.toFront (false);
-        delayKillDry.toFront (false);
-        delayPingpong.toFront (false);
-        delaySpread.toFront (false);
-        delayWidth.toFront (false);
-        delayModRate.toFront (false);
-        delayModDepth.toFront (false);
-        delayWowflutter.toFront (false);
-        delayJitter.toFront (false);
-        delayHp.toFront (false);
-        delayLp.toFront (false);
-        delayTilt.toFront (false);
-        delaySat.toFront (false);
-        delayDiffusion.toFront (false);
-        delayDiffuseSize.toFront (false);
-        delayDuckSource.toFront (false);
-        delayDuckPost.toFront (false);
-        delayDuckDepth.toFront (false);
-        delayDuckAttack.toFront (false);
-        delayDuckRelease.toFront (false);
-        delayDuckThreshold.toFront (false);
+        for (juce::Component* c : std::initializer_list<juce::Component*>{
+                &delayEnabled,&delayMode,&delaySync,&delayFreeze,&delayKillDry,&delayPingpong,&delayDuckSource,&delayDuckPost,
+                &delayTime,&delayFeedback,&delayWet,&delaySpread,&delayWidth,&delayModRate,&delayModDepth,&delayWowflutter,&delayJitter,
+                &delayHp,&delayLp,&delayTilt,&delaySat,&delayDiffusion,&delayDiffuseSize,&delayDuckThreshold,
+            })
+            if (c) c->toFront (false);
     }
 }
 

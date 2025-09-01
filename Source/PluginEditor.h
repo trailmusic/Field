@@ -1450,6 +1450,16 @@ private:
     std::unique_ptr<KnobCell> delayDuckDepthCell;
     std::unique_ptr<KnobCell> delayDuckAttackCell;
     std::unique_ptr<KnobCell> delayDuckReleaseCell;
+    std::unique_ptr<KnobCell> delayDuckThresholdCell;
+
+    // Delay control cells (buttons/combos, styled like KnobCell panels)
+    std::unique_ptr<SwitchCell> delayEnabledCell;
+    std::unique_ptr<SwitchCell> delayModeCell;
+    std::unique_ptr<SwitchCell> delaySyncCell;
+    std::unique_ptr<SwitchCell> delayFreezeCell;
+    std::unique_ptr<SwitchCell> delayKillDryCell;
+    std::unique_ptr<SwitchCell> delayDuckSourceCell;
+    std::unique_ptr<SwitchCell> delayDuckPostCell;
 
     std::unique_ptr<class DoubleKnobCell> hpLpCell;
     std::unique_ptr<class QuadKnobCell> hpLpQClusterCell;
@@ -1758,7 +1768,7 @@ private:
     };
 
     VerticalDivider splitDivider{lnf}, eqDivLpMono{lnf}, eqDivScoopHp{lnf};
-    VerticalDivider volDivPanSpace{lnf}, volDivDuckRight{lnf};
+    VerticalDivider volDivPanSpace{lnf}, volDivDuckRight{lnf}, delayDivider{lnf};
     // Horizontal dividers between rows
     class HorizontalDivider : public juce::Component {
     public:
