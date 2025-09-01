@@ -953,8 +953,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     const int initialWidth = juce::jmax (baseWidth, calculatedMinWidth);
     const int initialHeight = juce::jmax (baseHeight, calculatedMinHeight);
     setSize (initialWidth, initialHeight);
-    // Force initial layout so all cells (including SwitchCell) get bounds before first paint
-    performLayout();
+    // Initial layout deferred until layoutReady is true
     // Defer one tick to ensure LookAndFeel and attachments settle, then repaint
     juce::MessageManager::callAsync ([this]
     {
@@ -1494,6 +1493,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     monoSlopeChoice.addItem ("24", 3);
     if (!monoSlopeSwitch)
         monoSlopeSwitch = std::make_unique<MonoSlopeSwitch>();
+    addAndMakeVisible (*monoSlopeSwitch);
     monoSlopeSwitch->onChange = [this](int idx)
     {
         monoSlopeChoice.setSelectedItemIndex (juce::jlimit (0, 2, idx), juce::NotificationType::sendNotification);
@@ -1512,6 +1512,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, "shuffler_lo_pct",  shufLoPct));
     attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, "shuffler_hi_pct",  shufHiPct));
     attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, "shuffler_xover_hz", shufXHz));
+
+    // All children created; allow layout from now on
+    layoutReady = true;
 
     // space algo switch
     addAndMakeVisible (spaceAlgorithmSwitch);
@@ -1842,10 +1845,12 @@ void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
 
 void MyPluginAudioProcessorEditor::performLayout()
 {
+    if (!layoutReady) return;
+
     const float s = juce::jmax (0.6f, scaleFactor);
     auto r = getLocalBounds().reduced (Layout::dp (Layout::PAD, s)).withTrimmedBottom (50);
     
-
+    
     // Ensure value labels are positioned in the same parent coordinate space
     // as their corresponding controls, directly below the control.
     auto placeLabelBelow = [&] (juce::Label& label, juce::Component& target, int yOffset)
@@ -2119,21 +2124,24 @@ void MyPluginAudioProcessorEditor::performLayout()
             duckRatCell->setMetrics (lPx, valuePx, gapPx);
 
             // Mono: triple-wide with slope segmented switch + AUD toggle to the right
+            if (!monoCell) return; // safety
             monoCell   ->setMetrics (lPx, valuePx, gapPx, Layout::dp (24, s));
-            if (!monoSlopeSwitch)
-            {
-                monoSlopeSwitch = std::make_unique<MonoSlopeSwitch>();
-                monoSlopeSwitch->onChange = [this](int idx)
-                {
-                    monoSlopeChoice.setSelectedItemIndex (juce::jlimit (0, 2, idx), juce::NotificationType::sendNotification);
-                };
-            }
-            addAndMakeVisible (*monoSlopeSwitch);
+            // monoSlopeSwitch is created in ctor; only wire into aux below
             monoCell   ->setMiniPlacementRight (true);
-            monoCell   ->setMiniThicknessPx (Layout::dp (12, s));
-            monoCell   ->setAuxComponents ({ monoSlopeSwitch.get(), &monoAuditionButton }, Layout::dp (90, s));
-            // Give the mono slope switch more vertical space than AUD
-            monoCell   ->setAuxWeights ({ 2.0f, 1.0f });
+            monoCell   ->setMiniThicknessPx (juce::jmax (8, Layout::dp (12, s)));
+            if (monoSlopeSwitch != nullptr)
+            {
+                monoCell->setAuxComponents ({ monoSlopeSwitch.get(), &monoAuditionButton }, juce::jmax (32, Layout::dp (90, s)));
+                // Give the mono slope switch more vertical space than AUD
+                monoCell->setAuxWeights ({ 2.0f, 1.0f });
+                monoCell->setAuxAsBars (false);
+            }
+            monoCell   ->setAuxAsBars (false);
+            if (monoSlopeSwitch)
+            {
+                monoSlopeSwitch->setVisible (true);
+                monoSlopeSwitch->toFront (false);
+            }
 
             // Managed labels on reverb row
             spaceCell   ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
@@ -2183,6 +2191,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                     .withHeight (containerHeight)
             };
             reverbGrid.performLayout (rg);
+            monoCell->resized();
  
             // Ensure components are brought to front within the container
             spaceCell->toFront (false);
@@ -2713,6 +2722,7 @@ void MyPluginAudioProcessorEditor::resized()
     scaleFactor = juce::jlimit (0.6f, 2.0f, scaleFactor);
     
     // Call the existing layout code with the calculated scale factor
+    if (!layoutReady) return;
     performLayout();
 }
 

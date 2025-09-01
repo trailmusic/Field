@@ -171,75 +171,34 @@ void KnobCell::resized()
                 }
                 else
                 {
-                    // Natural weighted vertical stack (with special handling for square buttons and micro bars)
+                    // Natural weighted vertical stack (robust; always assigns bounds)
                     const int count  = (int) auxComponents.size();
-                    const int gapY   = juce::jmax (2, G);
+                    const int gapY   = juce::jmax (6, G);
                     const int totalG = gapY * juce::jmax (0, count - 1);
                     const int H      = juce::jmax (1, miniStrip.getHeight() - totalG);
-                    juce::Array<float> normH;
-                    float sum = 0.0f;
-                    if ((int) auxWeights.size() == count)
-                    {
-                        for (float v : auxWeights) { float t = juce::jmax (0.0f, v); normH.add (t); sum += t; }
+
+                    juce::Array<float> weights;
+                    if ((int) auxWeights.size() == count) {
+                        for (float v : auxWeights) weights.add (juce::jmax (0.0f, v));
+                    } else {
+                        for (int i = 0; i < count; ++i) weights.add (1.0f);
                     }
-                    if (sum <= 0.0001f) { normH.clear(); for (int i = 0; i < count; ++i) { normH.add (1.0f); } sum = (float) count; }
+                    float sum = 0.0f; for (auto w : weights) sum += w; if (sum <= 0.0001f) sum = (float) count;
+
+                    juce::Array<int> heights; heights.resize (count);
+                    int acc = 0;
+                    for (int i = 0; i < count; ++i) { int h = (int) std::round (H * (weights[i] / sum)); heights.set (i, h); acc += h; }
+                    for (int d = 0; d < H - acc; ++d) heights.set (d % count, heights[d % count] + 1);
 
                     juce::Rectangle<int> col = miniStrip;
-                    int used = 0;
-                    for (int i = 0; i < count; ++i) used += (int) std::round (H * (normH[i] / sum));
-                    used += totalG;
-                    col.setY (miniStrip.getCentreY() - used / 2);
-                    col.setHeight (used);
-
+                    col.setY (miniStrip.getCentreY() - (H + totalG) / 2);
+                    col.setHeight (H + totalG);
                     for (int i = 0; i < count; ++i)
                     {
-                        const int cellH = (int) std::round (H * (normH[i] / sum));
                         auto* c = auxComponents[(size_t) i];
-                        juce::Rectangle<int> rCell = col.removeFromTop (cellH);
+                        auto rCell = col.removeFromTop (heights[i]).reduced (2, 2);
                         if (c != nullptr)
-                        {
-                            // If first component wants a specific aspect (height/width), center rectangle accordingly
-                            if (i == 0)
-                            {
-                                const bool wantsSquare = (bool) c->getProperties().getWithDefault ("square", false);
-                                const float aspect = (float) c->getProperties().getWithDefault ("aspect", wantsSquare ? 1.0f : 0.0f); // height/width
-                                if (aspect > 0.0f || wantsSquare || dynamic_cast<juce::Button*>(c) != nullptr)
-                                {
-                                    float useAspect = aspect;
-                                    if (useAspect <= 0.0f) useAspect = 1.0f; // square fallback
-                                    // Compute size that fits inside rCell with given aspect (height = aspect * width)
-                                    int maxW = rCell.getWidth();
-                                    int maxH = rCell.getHeight();
-                                    int wA = juce::jmin (maxW, (int) std::round ((double) maxH / (double) useAspect));
-                                    int hA = (int) std::round ((double) wA * (double) useAspect);
-                                    juce::Rectangle<int> ar (wA, hA);
-                                    ar = ar.withCentre (rCell.getCentre());
-                                    // Clip to bounds just in case
-                                    if (ar.getX() < rCell.getX()) ar.setX (rCell.getX());
-                                    if (ar.getY() < rCell.getY()) ar.setY (rCell.getY());
-                                    if (ar.getRight() > rCell.getRight()) ar.setRight (rCell.getRight());
-                                    if (ar.getBottom() > rCell.getBottom()) ar.setBottom (rCell.getBottom());
-                                    c->setBounds (ar);
-                                    goto placed;
-                                }
-                            }
-                            else
-                            {
-                                // Micro sliders: render as thin bars centered vertically
-                                const bool isMicro = (bool) c->getProperties().getWithDefault ("micro", false);
-                                if (isMicro)
-                                {
-                                    const int hBar = juce::jlimit (8, 24, miniThicknessPx);
-                                    juce::Rectangle<int> bar (rCell.getX(), rCell.getCentreY() - hBar / 2, rCell.getWidth(), hBar);
-                                    c->setBounds (bar);
-                                }
-                                else
-                                {
-                                    c->setBounds (rCell);
-                                }
-                            }
-                        placed: ;
-                        }
+                            c->setBounds (rCell);
                         if (i < count - 1) col.removeFromTop (gapY);
                     }
                 }

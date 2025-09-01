@@ -645,6 +645,8 @@ public:
     void syncXYPadWithParameters();
     void setupTooltips();
     
+    bool layoutReady { false };
+    
     //--- custom sliders --------------------------------------------------------
     class GainSlider : public juce::Slider
     {
