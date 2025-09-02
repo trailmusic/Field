@@ -1954,13 +1954,12 @@ void MyPluginAudioProcessorEditor::performLayout()
     const int rowH3 = containerHeight;                // Row 3
     const int rowH4 = containerHeight;                // Row 4
 
-    // Reserve space for delay card on the right side (use full available height across all rows)
-    // Compute card width to fit 7 columns with left-row cell width + inner gaps
+    // Compute desired delay column width, but do not carve a separate right-hand container.
+    // We'll integrate delay into the same 4-row system and just reserve a right strip later.
     const int delayCols = 7;
     const int cellW_right = lPx + Layout::dp (8, s);
     const int delayCardW = delayCols * cellW_right + Layout::dp (Layout::PAD, s);
-    auto delayCardArea = r.removeFromRight (delayCardW);
-    // delayContainer.setBounds (delayCardArea);
+    juce::Rectangle<int> delayArea; // to be computed after rows are defined
 
 
     auto row1 = r.removeFromTop (rowH1);
@@ -1971,6 +1970,8 @@ void MyPluginAudioProcessorEditor::performLayout()
     // ---------------- Row 1: Pan, Width cells, Gain, Mix, Wet Only -----------
     {
         auto row = row1;
+        // Reserve right strip for delay column within the same 4-row system
+        row.removeFromRight (delayCardW);
 
         juce::Grid g;
         g.rowGap    = juce::Grid::Px (gapI);
@@ -2057,7 +2058,8 @@ void MyPluginAudioProcessorEditor::performLayout()
 
         // Reverb sub-grid: [ Reverb cell ] + [ switch ] + [ DUCK + ATT + REL + THR + RAT ]
          {
-            // Use consistent row gap with no fractional reductions
+            // Reserve right strip for delay column, then use consistent row gap
+            row.removeFromRight (delayCardW);
             auto rg = row.reduced (0, 0);
             juce::Grid reverbGrid;
             reverbGrid.rowGap    = juce::Grid::Px (gapI);
@@ -2274,6 +2276,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         hpLpCell->setMetrics (lPx, valuePx, gapPx);
         // Reserve left strip for HP/LP+Q cluster, lay out remaining EQ cells across remaining area
         auto row = row3;
+        row.removeFromRight (delayCardW);
         row.removeFromLeft (doubleW); // no gap between 2x2 and first EQ cell
         g.items = {
             juce::GridItem (*bassCell) .withHeight (containerHeight),
@@ -2401,6 +2404,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             const int cellW = lPx + Layout::dp (8, s);
             const int doubleW = cellW * 2;
             auto imgB = row4;
+            imgB.removeFromRight (delayCardW);
             imgB.removeFromLeft (doubleW); // no gap between 2x2 and first imaging cell
             imgGrid.performLayout (imgB);
         }
@@ -2469,7 +2473,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         hpLpQClusterCell->toFront (false);
     }
 
-    // ---------------- Delay Right-Side Area (no container; 7-column grid) ---------------------------
+    // ---------------- Delay Right-Side Area integrated into main 4 rows ---------------------------
     {
         // Wrap top-row toggles/combos in SwitchCell panels for visual consistency
         if (!delayEnabledCell) { delayEnabled.setComponentID ("delayEnabled"); delayEnabled.getProperties().set ("iconType", (int) IconSystem::Power); delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled); delayEnabledCell->setCaption ("Enable"); }
@@ -2489,14 +2493,21 @@ void MyPluginAudioProcessorEditor::performLayout()
         }
         addAndMakeVisible (delayDuckThreshold);
 
+        // Compute a single delay area spanning the 4 rows on the right
+        delayArea = juce::Rectangle<int> (
+            row1.getRight() - delayCardW,
+            row1.getY(),
+            delayCardW,
+            row1.getHeight() + row2.getHeight() + row3.getHeight() + row4.getHeight());
+
         // Place a vertical divider at left edge of delay area
         addAndMakeVisible (delayDivider);
-        // Place divider with symmetric margins using the same inner gap
-        auto dd = delayCardArea;
+        // Divider aligns to the computed right-hand strip
+        auto dd = delayArea;
         delayDivider.setBounds (juce::Rectangle<int> (dd.getX(), dd.getY(), 2, dd.getHeight()));
 
         // Lay out cells directly
-        auto delayB = delayCardArea.reduced (0, 0);
+        auto delayB = delayArea.reduced (0, 0);
 
         const int valuePx = Layout::dp (14, s);
         const int labelGap = Layout::dp (4, s);
@@ -2528,7 +2539,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         delayGrid.templateRows = {
             juce::Grid::Px (containerHeight),
             juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight),
-            juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight)
+            juce::Grid::Px (containerHeight)
         };
         const int cellW_delay = lPx + Layout::dp (8, s);
         delayGrid.templateColumns = {
