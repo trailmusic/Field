@@ -2104,6 +2104,9 @@ void MyPluginAudioProcessorEditor::performLayout()
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW),           // DUCK, ATT, REL, THR, RAT
                 juce::Grid::Px (cellW),                                   // Algo Switch (moved left of divider to align)
                 juce::Grid::Px (2),                                       // Divider column (global alignment)
+                // Delay Row 2: Time, Feedback, Wet, Mod Rate, Mod Depth, Spread, Width
+                juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
+                juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
                 juce::Grid::Fr (1)
             };
             // Ensure components are parented correctly (cells own knob+value)
@@ -2195,7 +2198,15 @@ void MyPluginAudioProcessorEditor::performLayout()
                     .withHeight (containerHeight),
                 juce::GridItem() // divider spacer column (2px)
                     .withWidth (2)
-                    .withHeight (containerHeight)
+                    .withHeight (containerHeight),
+                // Delay Row 2 items
+                juce::GridItem (*delayTimeCell)       .withHeight (containerHeight),
+                juce::GridItem (*delayFeedbackCell)   .withHeight (containerHeight),
+                juce::GridItem (*delayWetCell)        .withHeight (containerHeight),
+                juce::GridItem (*delayModRateCell)    .withHeight (containerHeight),
+                juce::GridItem (*delayModDepthCell)   .withHeight (containerHeight),
+                juce::GridItem (*delaySpreadCell)     .withHeight (containerHeight),
+                juce::GridItem (*delayWidthCell)      .withHeight (containerHeight)
             };
             reverbGrid.performLayout (rg);
             monoCell->resized();
@@ -2297,7 +2308,10 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::Grid::Px (doubleW), // Air
             juce::Grid::Px (doubleW), // Tilt
             juce::Grid::Px (doubleW), // Scoop
-            juce::Grid::Px (2)        // Divider column (align with other rows)
+            juce::Grid::Px (2),       // Divider column (align with other rows)
+            // Delay Row 3: Sat, Diffusion, Diffuse Size, HP, LP, Tilt, Wow/Flutter
+            juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
+            juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW)
         };
 
         bassCell->setVisible (true);
@@ -2315,7 +2329,15 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*airCell)  .withHeight (containerHeight),
             juce::GridItem (*tiltCell) .withHeight (containerHeight),
             juce::GridItem (*scoopCell).withHeight (containerHeight),
-            juce::GridItem().withWidth (2).withHeight (containerHeight)
+            juce::GridItem().withWidth (2).withHeight (containerHeight),
+            // Delay Row 3 items
+            juce::GridItem (*delaySatCell)         .withHeight (containerHeight),
+            juce::GridItem (*delayDiffusionCell)   .withHeight (containerHeight),
+            juce::GridItem (*delayDiffuseSizeCell) .withHeight (containerHeight),
+            juce::GridItem (*delayHpCell)          .withHeight (containerHeight),
+            juce::GridItem (*delayLpCell)          .withHeight (containerHeight),
+            juce::GridItem (*delayTiltCell)        .withHeight (containerHeight),
+            juce::GridItem (*delayWowflutterCell)  .withHeight (containerHeight)
         };
         g.performLayout (row);
 
@@ -2391,7 +2413,10 @@ void MyPluginAudioProcessorEditor::performLayout()
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
                 juce::Grid::Px (cellW),
-                juce::Grid::Px (2) // Divider column (align with other rows)
+                juce::Grid::Px (2), // Divider column (align with other rows)
+                // Delay Row 4: Duck Source, Post, THR, Depth, ATT, REL, Lookahead
+                juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
+                juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW)
             };
         }
 
@@ -2432,7 +2457,15 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*shufXCell)   .withHeight (containerHeight),
             // 8: S only (Q and Q-cluster moved to combined strip)
             juce::GridItem (*shelfShapeCell).withHeight (containerHeight),
-            juce::GridItem().withWidth (2).withHeight (containerHeight)
+            juce::GridItem().withWidth (2).withHeight (containerHeight),
+            // Delay Row 4 items
+            juce::GridItem (*delayDuckSourceCell) .withHeight (containerHeight),
+            juce::GridItem (*delayDuckPostCell)   .withHeight (containerHeight),
+            juce::GridItem (*delayDuckThresholdCell).withHeight (containerHeight),
+            juce::GridItem (*delayDuckDepthCell)  .withHeight (containerHeight),
+            juce::GridItem (*delayDuckAttackCell) .withHeight (containerHeight),
+            juce::GridItem (*delayDuckReleaseCell).withHeight (containerHeight),
+            juce::GridItem (*delayDuckLookaheadCell).withHeight (containerHeight)
         };
         // Reserve left strip for HP/LP+Q cluster using standard cell width, then leave a standard gap
         {
