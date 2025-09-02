@@ -2446,6 +2446,29 @@ void MyPluginAudioProcessorEditor::performLayout()
         lpQSlider.getProperties().set ("micro", true);
         // Do not add qClusterCell to the editor; it will be reparented into the QuadKnobCell
 
+        // Ensure delay row-4 items exist and are visible before layout (avoid zero-size until resize)
+        {
+            const int labelGap = Layout::dp (4, s);
+            if (!delayDuckSourceCell) { delayDuckSourceCell = std::make_unique<SwitchCell> (delayDuckSource); delayDuckSourceCell->setCaption ("Duck Source"); }
+            if (!delayDuckPostCell)   { delayDuckPost.getProperties().set ("iconType", (int) IconSystem::RightArrow); delayDuckPostCell = std::make_unique<SwitchCell> (delayDuckPost); delayDuckPostCell->setCaption ("Post"); }
+            if (!delayDuckThresholdCell) delayDuckThresholdCell = std::make_unique<KnobCell>(delayDuckThreshold, delayDuckThresholdValue, "THR");
+            if (!delayDuckLookaheadCell) delayDuckLookaheadCell = std::make_unique<KnobCell>(delayDuckLookahead, delayDuckLookaheadValue, "LA");
+
+            // Apply metrics so these align with imaging row
+            delayDuckThresholdCell->setMetrics (lPx, valuePx, labelGap);
+            delayDuckThresholdCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            delayDuckThresholdCell->setValueLabelGap (labelGap);
+            delayDuckLookaheadCell->setMetrics (lPx, valuePx, labelGap);
+            delayDuckLookaheadCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            delayDuckLookaheadCell->setValueLabelGap (labelGap);
+
+            // Make visible before performLayout
+            for (auto* c : { delayDuckSourceCell.get(), delayDuckPostCell.get() })
+                if (c) addAndMakeVisible (*c);
+            addAndMakeVisible (*delayDuckThresholdCell);
+            addAndMakeVisible (*delayDuckLookaheadCell);
+        }
+
         imgGrid.items = {
             // 1..7 imaging
             juce::GridItem (*xoverLoCell) .withHeight (containerHeight),
