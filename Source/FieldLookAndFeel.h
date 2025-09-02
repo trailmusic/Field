@@ -217,6 +217,10 @@ public:
 
     // --- Custom primitives ----------------------------------------------------
     void drawNeoPanel (juce::Graphics& g, juce::Rectangle<float> r, float radius = 16.0f) const;
+    // Rotation pad renderer: energy circle + rotated M'/S' basis + orthonormal S-curve
+    void drawRotationPad (juce::Graphics& g, juce::Rectangle<float> bounds,
+                          float rotationDeg, float asymmetry,
+                          juce::Colour accent, juce::Colour text, juce::Colour panel) const;
     // ComboBox overrides to allow icon-only dropdown (chevron) rendering
     void drawComboBox (juce::Graphics& g, int width, int height, bool isButtonDown,
                        int buttonX, int buttonY, int buttonW, int buttonH, juce::ComboBox& box) override;

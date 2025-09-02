@@ -333,71 +333,13 @@ void XYPad::drawImagingOverlays (juce::Graphics& g, juce::Rectangle<float> b)
         badge (hiRect,  "HI");
     }
 
-    // 2) Rotation compass (larger: half the pad height diameter)
+    // 2) True M/S rotation renderer (energy circle + rotated basis + S-curve)
+    if (lf)
     {
-        auto c = b.getCentre();
-        const float r = b.getHeight() * 0.25f;
-        g.setColour (gridCol.withAlpha (0.6f));
-        g.drawEllipse (c.x - r, c.y - r, r*2, r*2, 1.0f);
-
-        // ticks at ±45°
-        auto drawTick = [&] (float deg)
-        {
-            const float ang = juce::degreesToRadians (deg);
-            juce::Point<float> a (c.x + (r-2.0f) * std::cos (ang), c.y - (r-2.0f) * std::sin (ang));
-            juce::Point<float> b2(c.x + (r+2.0f) * std::cos (ang), c.y - (r+2.0f) * std::sin (ang));
-            g.drawLine (a.x, a.y, b2.x, b2.y, 1.0f);
-        };
-        drawTick (-45.0f);
-        drawTick (+45.0f);
-
-        const float ang = juce::degreesToRadians (juce::jlimit (-45.0f, 45.0f, rotationDeg));
-        juce::Point<float> tip (c.x + r * std::cos (ang), c.y - r * std::sin (ang));
-        g.setColour (acc);
-        g.drawLine (c.x, c.y, tip.x, tip.y, 1.8f);
-    }
-
-    // 3) Asymmetry wash + triangle (larger marker + shadow, patterned bias)
-    {
-        float aSigned = juce::jlimit (-1.0f, 1.0f, asym);
-        const float dx = (b.getWidth() * 0.12f) * aSigned;
-        // Patterned bias region using diagonal hatch on the biased side
-        if (std::abs (aSigned) > 0.001f)
-        {
-            juce::Rectangle<float> side = (aSigned > 0)
-                ? juce::Rectangle<float> (b.getCentreX(), b.getY(), b.getRight()-b.getCentreX(), b.getHeight())
-                : juce::Rectangle<float> (b.getX(), b.getY(), b.getCentreX()-b.getX(), b.getHeight());
-            juce::Graphics::ScopedSaveState save (g);
-            g.reduceClipRegion (side.getSmallestIntegerContainer());
-            const float spacing = 6.0f;
-            const float extra = b.getHeight() + b.getWidth();
-            auto hatchCol = (lf ? lf->theme.accent : juce::Colours::lightblue)
-                                .withAlpha (juce::jlimit (0.08f, 0.18f, 0.10f + 0.12f * std::abs (aSigned)));
-            g.setColour (hatchCol);
-            // draw diagonal lines (/) across the clipped half
-            for (float t = -extra; t < extra; t += spacing)
-            {
-                g.drawLine (b.getX() + t, b.getBottom(), b.getX() + t + b.getHeight(), b.getY(), 1.0f);
-            }
-        }
-
-        // Triangle marker with shadow (like XY ball)
-        auto cc = b.getCentre();
-        const float size = 20.0f; // one step larger than before
-        const float h = size * 0.8660254f; // sqrt(3)/2 * size
-        juce::Point<float> center (cc.x + dx, cc.y);
-        juce::Point<float> p1 (center.x,              center.y - h * 0.6667f);
-        juce::Point<float> p2 (center.x - size * 0.5f, center.y + h * 0.3333f);
-        juce::Point<float> p3 (center.x + size * 0.5f, center.y + h * 0.3333f);
-        juce::Path tri; tri.startNewSubPath (p1); tri.lineTo (p2); tri.lineTo (p3); tri.closeSubPath();
-        // shadow
-        g.setColour (juce::Colours::black.withAlpha (0.4f));
-        juce::Path triShadow = tri;
-        triShadow.applyTransform (juce::AffineTransform::translation (2.0f, 2.0f));
-        g.fillPath (triShadow);
-        // fill
-        g.setColour (acc);
-        g.fillPath (tri);
+        const float side = b.getHeight() * 0.50f; // diameter ~ previous compass
+        auto rotRect = juce::Rectangle<float> (0.0f, 0.0f, side, side).withCentre (b.getCentre());
+        lf->drawRotationPad (g, rotRect, rotationDeg, asym,
+                             lf->theme.accent, lf->theme.text, lf->theme.panel);
     }
 
     // 4) Shuffler width strip (bottom, 3x taller)

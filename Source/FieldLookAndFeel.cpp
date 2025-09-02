@@ -23,6 +23,93 @@ void FieldLNF::drawNeoPanel (juce::Graphics& g, juce::Rectangle<float> r, float 
     g.drawRoundedRectangle (inner.reduced (1.0f), juce::jmax (0.0f, radius - 1.0f), 1.0f);
 }
 
+void FieldLNF::drawRotationPad (juce::Graphics& g, juce::Rectangle<float> b,
+                                float rotationDeg, float a,
+                                juce::Colour accent, juce::Colour text, juce::Colour panel) const
+{
+    b = b.reduced (4.0f);
+    const auto c   = b.getCentre();
+    const float r  = 0.5f * std::min (b.getWidth(), b.getHeight()) - 4.0f;
+
+    // Background panel
+    drawNeoPanel (g, b.toFloat(), 10.0f);
+
+    // Energy circle
+    g.setColour (panel.brighter (0.25f));
+    g.drawEllipse (c.x - r, c.y - r, 2*r, 2*r, 1.2f);
+
+    // Basis vectors (screen Y goes down)
+    const float th = juce::degreesToRadians (rotationDeg);
+    auto u = juce::Point<float> ( std::cos (th), -std::sin (th)); // M'
+    auto v = juce::Point<float> ( std::sin (th),  std::cos (th)); // S'
+
+    auto line = [&] (juce::Point<float> dir, juce::Colour col, float w)
+    {
+        juce::Path p;
+        p.startNewSubPath (c + (-r) * dir);
+        p.lineTo          (c + ( r) * dir);
+        g.setColour (col);
+        g.strokePath (p, juce::PathStrokeType (w, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+    };
+
+    // Original M/S (faint)
+    line ({0,-1}, panel.darker (0.10f), 1.0f);
+    line ({1, 0}, panel.darker (0.10f), 1.0f);
+
+    // Rotated M'/S' (bold)
+    line (u, accent.withAlpha (0.85f), 2.0f);
+    line (v, accent.withAlpha (0.55f), 1.6f);
+
+    // Orthonormal S-curve (cubic Bézier)
+    const float baseH = r * 0.75f;
+    const float bend  = 1.0f;
+    const float aCl   = juce::jlimit (-1.0f, 1.0f, a);
+    const float h1    = baseH * (1.0f + 0.35f * aCl);
+    const float h2    = baseH * (1.0f - 0.35f * aCl);
+
+    const auto P0 = c + (-r) * u;
+    const auto P3 = c + ( r) * u;
+    const auto P1 = P0 + ( bend * h1) * v; // +S'
+    const auto P2 = P3 + (-bend * h2) * v; // -S'
+
+    juce::Path S; S.startNewSubPath (P0); S.cubicTo (P1, P2, P3);
+
+    // Softly tint circle, then carve a neutral band where the S-curve runs
+    g.setColour (accent.withAlpha (0.10f));
+    g.fillEllipse (c.x - r, c.y - r, 2*r, 2*r);
+
+    juce::Path Swide; juce::PathStrokeType (2.0f).createStrokedPath (Swide, S);
+    g.setColour (panel);
+    g.fillPath (Swide);
+
+    // Draw S curve on top
+    g.setColour (accent.withAlpha (0.85f));
+    g.strokePath (S, juce::PathStrokeType (2.2f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+    // Labels M' / S'
+    g.setColour (text.withAlpha (0.75f));
+    g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
+    auto labelAt = [&] (juce::String t, juce::Point<float> dir, float d)
+    {
+        auto p = c + dir * d;
+        g.drawFittedText (t, juce::Rectangle<int> ((int) (p.x - 12), (int) (p.y - 8), 24, 16), juce::Justification::centred, 1);
+    };
+    labelAt ("M′", u, r * 0.55f);
+    labelAt ("S′", v, r * 0.55f);
+
+    // Angle tick on rim (dual-ended)
+    auto rimTick = [&] (float ang, juce::Colour col)
+    {
+        juce::Point<float> d (std::cos (ang), -std::sin (ang));
+        auto p0 = c + d * (r - 6.0f);
+        auto p1 = c + d * (r);
+        g.setColour (col);
+        g.drawLine ({ p0, p1 }, 2.0f);
+        g.drawLine ({ c - d * (r - 6.0f), c - d * r }, 2.0f);
+    };
+    rimTick (th, accent.withAlpha (0.8f));
+}
+
 void FieldLNF::drawComboBox (juce::Graphics& g, int width, int height, bool isButtonDown,
                              int /*buttonX*/, int /*buttonY*/, int /*buttonW*/, int /*buttonH*/, juce::ComboBox& box)
 {
