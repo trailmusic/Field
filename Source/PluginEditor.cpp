@@ -1832,7 +1832,7 @@ void MyPluginAudioProcessorEditor::performLayout()
     auto woodBar = r.removeFromTop (Layout::dp (50, s));
     juce::Grid header;
     header.rowGap = juce::Grid::Px (Layout::dp (4, s));
-    header.columnGap = juce::Grid::Px (Layout::dp (6, s));
+    header.columnGap = juce::Grid::Px (0);
     header.alignContent = juce::Grid::AlignContent::center;
     header.justifyContent = juce::Grid::JustifyContent::center;
     header.alignItems = juce::Grid::AlignItems::center;
@@ -1958,7 +1958,7 @@ void MyPluginAudioProcessorEditor::performLayout()
     // Compute card width to fit 7 columns with left-row cell width + inner gaps
     const int delayCols = 7;
     const int cellW_right = lPx + Layout::dp (8, s);
-    const int delayCardW = delayCols * cellW_right + gapI * (delayCols - 1) + Layout::dp (Layout::PAD, s);
+    const int delayCardW = delayCols * cellW_right + Layout::dp (Layout::PAD, s);
     auto delayCardArea = r.removeFromRight (delayCardW);
     // delayContainer.setBounds (delayCardArea);
 
@@ -1974,14 +1974,14 @@ void MyPluginAudioProcessorEditor::performLayout()
 
         juce::Grid g;
         g.rowGap    = juce::Grid::Px (gapI);
-        g.columnGap = juce::Grid::Px (gapI);
+        g.columnGap = juce::Grid::Px (0);
         const int valuePx = Layout::dp (14, s);
         const int gapPx   = Layout::dp (0,  s);
         const int labelGap = Layout::dp (4, s);
         const int cellW = lPx + Layout::dp (8, s); // widen all single cells slightly
         g.templateRows    = { juce::Grid::Px (containerHeight) };
         g.templateColumns = {
-            juce::Grid::Px (cellW * 3 + gapI * 2),     // Pan (triple wide)
+            juce::Grid::Px (cellW * 3),                // Pan (triple wide)
             juce::Grid::Px (cellW),                    // Width
             juce::Grid::Px (cellW),                    // W LO
             juce::Grid::Px (cellW),                    // W MID
@@ -2021,7 +2021,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         addAndMakeVisible (*wetOnlyCell);
 
         g.items = {
-            juce::GridItem (*panCell)          .withWidth (cellW * 3 + gapI * 2).withHeight (containerHeight),
+            juce::GridItem (*panCell)          .withWidth (cellW * 3).withHeight (containerHeight),
             juce::GridItem (*widthCell)        .withWidth (cellW).withHeight (containerHeight),
             juce::GridItem (*widthLoCell)      .withWidth (cellW).withHeight (containerHeight),
             juce::GridItem (*widthMidCell)     .withWidth (cellW).withHeight (containerHeight),
@@ -2061,14 +2061,14 @@ void MyPluginAudioProcessorEditor::performLayout()
             auto rg = row.reduced (0, 0);
             juce::Grid reverbGrid;
             reverbGrid.rowGap    = juce::Grid::Px (gapI);
-            reverbGrid.columnGap = juce::Grid::Px (gapI);
+            reverbGrid.columnGap = juce::Grid::Px (0);
             const int valuePx = Layout::dp (14, s);
             const int gapPx   = Layout::dp (0,  s);
             const int switchW = lPx + Layout::dp (8, s); // match standard cell width
             reverbGrid.templateRows    = { juce::Grid::Px (containerHeight) };
             const int cellW = lPx + Layout::dp (8, s);
             reverbGrid.templateColumns = { 
-                juce::Grid::Px (cellW * 2 + gapI),                        // Mono now double-wide at front
+                juce::Grid::Px (cellW * 2),                               // Mono now double-wide at front
                 juce::Grid::Px (cellW),                                   // Drive (moved here)
                 juce::Grid::Px (cellW),                                   // Reverb cell
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
@@ -2119,6 +2119,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             duckRelCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             duckThrCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             duckRatCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            monoCell    ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             const int rvGap = Layout::dp (6, s);
             spaceCell   ->setValueLabelGap (rvGap);
             duckCell    ->setValueLabelGap (rvGap);
@@ -2126,6 +2127,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             duckRelCell ->setValueLabelGap (rvGap);
             duckThrCell ->setValueLabelGap (rvGap);
             duckRatCell ->setValueLabelGap (rvGap);
+            monoCell    ->setValueLabelGap (rvGap);
  
             addAndMakeVisible (*spaceCell);
             if (!spaceSwitchCell)
@@ -2147,7 +2149,7 @@ void MyPluginAudioProcessorEditor::performLayout()
  
             reverbGrid.items = {
                 juce::GridItem (*monoCell)
-                    .withWidth (cellW * 2 + gapI)
+                    .withWidth (cellW * 2)
                     .withHeight (containerHeight),
                 juce::GridItem (*satDriveCell)     .withHeight (containerHeight),
                 juce::GridItem (*spaceCell)         .withHeight (containerHeight),
@@ -2249,12 +2251,13 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Use grid layout: classic four; reserve right strip for combined HP/LP+Q group
         juce::Grid g;
         g.rowGap    = juce::Grid::Px (gapI);
-        g.columnGap = juce::Grid::Px (gapI);
+        g.columnGap = juce::Grid::Px (0);
+        g.columnGap = juce::Grid::Px (0);
         g.justifyContent = juce::Grid::JustifyContent::start;
         g.alignContent   = juce::Grid::AlignContent::start;
         g.templateRows    = { juce::Grid::Px (containerHeight) };
         const int cellW = lPx + Layout::dp (8, s);
-        const int doubleW = cellW * 2 + gapI;
+        const int doubleW = cellW * 2;
         g.templateColumns = {
             juce::Grid::Px (doubleW), // Bass
             juce::Grid::Px (doubleW), // Air
@@ -2271,7 +2274,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         hpLpCell->setMetrics (lPx, valuePx, gapPx);
         // Reserve left strip for HP/LP+Q cluster, lay out remaining EQ cells across remaining area
         auto row = row3;
-        row.removeFromLeft (doubleW + gapI); // leave standard gap between 2x2 and first EQ cell
+        row.removeFromLeft (doubleW); // no gap between 2x2 and first EQ cell
         g.items = {
             juce::GridItem (*bassCell) .withHeight (containerHeight),
             juce::GridItem (*airCell)  .withHeight (containerHeight),
@@ -2341,7 +2344,7 @@ void MyPluginAudioProcessorEditor::performLayout()
 
         juce::Grid imgGrid;
         imgGrid.rowGap    = juce::Grid::Px (gapI);
-        imgGrid.columnGap = juce::Grid::Px (gapI);
+        imgGrid.columnGap = juce::Grid::Px (0);
         imgGrid.justifyContent = juce::Grid::JustifyContent::start;
         imgGrid.alignContent   = juce::Grid::AlignContent::start;
         imgGrid.templateRows = { juce::Grid::Px (containerHeight) };
@@ -2396,9 +2399,9 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Reserve left strip for HP/LP+Q cluster using standard cell width, then leave a standard gap
         {
             const int cellW = lPx + Layout::dp (8, s);
-            const int doubleW = cellW * 2 + gapI;
+            const int doubleW = cellW * 2;
             auto imgB = row4;
-            imgB.removeFromLeft (doubleW + gapI); // leave standard gap between 2x2 and first imaging cell
+            imgB.removeFromLeft (doubleW); // no gap between 2x2 and first imaging cell
             imgGrid.performLayout (imgB);
         }
         
@@ -2408,10 +2411,10 @@ void MyPluginAudioProcessorEditor::performLayout()
 
     // ----- Combined HP/LP + Q + Q-Link as one 2x2 composite cell -----
     {
-        const int doubleW = lPx * 2 + gapI;
+        const int doubleW = lPx * 2;
         // Anchor composite strip to the left edge; spans rows 3 and 4 with standard gap between
         const int cellW_eq = lPx + Layout::dp (8, s);
-        const int doubleW_eq = cellW_eq * 2 + gapI;
+        const int doubleW_eq = cellW_eq * 2;
         juce::Rectangle<int> strip (row3.getX(), row3.getY(), doubleW_eq, row3.getHeight() + gapI + row4.getHeight());
 
         if (!hpLpQClusterCell)
@@ -2490,10 +2493,10 @@ void MyPluginAudioProcessorEditor::performLayout()
         addAndMakeVisible (delayDivider);
         // Place divider with symmetric margins using the same inner gap
         auto dd = delayCardArea;
-        delayDivider.setBounds (juce::Rectangle<int> (dd.getX() - gapI, dd.getY(), 2, dd.getHeight()));
+        delayDivider.setBounds (juce::Rectangle<int> (dd.getX(), dd.getY(), 2, dd.getHeight()));
 
         // Lay out cells directly
-        auto delayB = delayCardArea.reduced (gapI, 0);
+        auto delayB = delayCardArea.reduced (0, 0);
 
         const int valuePx = Layout::dp (14, s);
         const int labelGap = Layout::dp (4, s);
@@ -2521,7 +2524,7 @@ void MyPluginAudioProcessorEditor::performLayout()
 
         juce::Grid delayGrid;
         delayGrid.rowGap = juce::Grid::Px (0);
-        delayGrid.columnGap = juce::Grid::Px (gapI);
+        delayGrid.columnGap = juce::Grid::Px (0);
         delayGrid.templateRows = {
             juce::Grid::Px (containerHeight),
             juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight),
