@@ -49,8 +49,18 @@ void KnobCell::setAuxWeights (const std::vector<float>& weights)
 juce::Colour KnobCell::getPanelColour() const
 {
     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        return lf->theme.panel;
-    return juce::Colour (0xFF3A3D45);
+    {
+        auto base = lf->theme.panel;
+        const double brighten = (double) getProperties().getWithDefault ("panelBrighten", 0.0);
+        if (brighten > 0.0) return base.brighter ((float) brighten);
+        if (brighten < 0.0) return base.darker   ((float) -brighten);
+        return base;
+    }
+    auto base = juce::Colour (0xFF3A3D45);
+    const double brighten = (double) getProperties().getWithDefault ("panelBrighten", 0.0);
+    if (brighten > 0.0) return base.brighter ((float) brighten);
+    if (brighten < 0.0) return base.darker   ((float) -brighten);
+    return base;
 }
 
 juce::Colour KnobCell::getTextColour() const
@@ -63,8 +73,18 @@ juce::Colour KnobCell::getTextColour() const
 juce::Colour KnobCell::getAccentColour() const
 {
     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        return lf->theme.accentSecondary; // use neutral dark accent for borders
-    return juce::Colour (0xFF202226);
+    {
+        auto base = lf->theme.accentSecondary; // neutral dark accent for borders
+        const double brighten = (double) getProperties().getWithDefault ("borderBrighten", 0.0);
+        if (brighten > 0.0) return base.brighter ((float) brighten);
+        if (brighten < 0.0) return base.darker   ((float) -brighten);
+        return base;
+    }
+    auto base = juce::Colour (0xFF202226);
+    const double brighten = (double) getProperties().getWithDefault ("borderBrighten", 0.0);
+    if (brighten > 0.0) return base.brighter ((float) brighten);
+    if (brighten < 0.0) return base.darker   ((float) -brighten);
+    return base;
 }
 
 juce::Colour KnobCell::getShadowDark() const
@@ -336,7 +356,13 @@ void KnobCell::paint (juce::Graphics& g)
                 g.drawRoundedRectangle (border.expanded (expand), rad + expand * 0.35f, 2.0f);
             }
         }
-        g.setColour (getAccentColour());
+        // Use theme text colour for delay-themed cells' borders if requested via property
+        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+        const bool delayTheme = (bool) getProperties().getWithDefault ("delayThemeBorderTextGrey", false);
+        if (delayTheme && lf != nullptr)
+            g.setColour (lf->theme.text.withAlpha (0.85f));
+        else
+            g.setColour (getAccentColour());
         g.drawRoundedRectangle (border, rad, 1.5f);
     }
 

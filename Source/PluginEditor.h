@@ -887,6 +887,7 @@ public:
         }
         void setMetrics (int /*knobPx*/, int /*valuePx*/, int /*gapPx*/) { resized(); }
         void setShowBorder (bool show) { showBorder = show; repaint(); }
+        void setDelayTheme (bool on) { isDelayTheme = on; repaint(); }
         void setCaption (const juce::String& text)
         {
             captionText = text;
@@ -911,7 +912,20 @@ public:
         void paint (juce::Graphics& g) override
         {
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                lf->paintCellPanel (g, *this, showBorder, isMouseOverOrDragging() || hoverActive);
+            {
+                if (isDelayTheme)
+                {
+                    auto r = getLocalBounds().toFloat().reduced (3.0f);
+                    auto panel  = lf->theme.panel.brighter (0.10f);
+                    auto border = lf->theme.text; // use default font grey for border
+                    g.setColour (panel);  g.fillRoundedRectangle (r, 8.0f);
+                    if (showBorder) { g.setColour (border); g.drawRoundedRectangle (r, 8.0f, 1.5f); }
+                }
+                else
+                {
+                    lf->paintCellPanel (g, *this, showBorder, isMouseOverOrDragging() || hoverActive);
+                }
+            }
         }
         void visibilityChanged() override
         {
@@ -932,6 +946,7 @@ public:
         juce::String captionText;
         bool showBorder { true };
         bool hoverActive { false };
+        bool isDelayTheme { false };
     };
     
     // Compact 3-segment control bound to an APVTS choice parameter (0..2)
@@ -1978,9 +1993,16 @@ private:
         VerticalDivider(FieldLNF& l) : lnf(l) {}
         void paint(juce::Graphics& g) override {
             g.fillAll(juce::Colours::transparentBlack);
-            g.setColour(lnf.theme.hl.withAlpha(0.6f));
             auto b = getLocalBounds().toFloat();
-            g.drawLine(b.getCentreX(), b.getY(), b.getCentreX(), b.getBottom(), 1.0f);
+            // Thicker divider with subtle insets for spacing
+            const float w = juce::jmax (2.0f, b.getWidth());
+            const float x = b.getX();
+            // Outer soft lines
+            g.setColour(lnf.theme.sh.withAlpha(0.25f));
+            g.fillRect (juce::Rectangle<float> (x, b.getY(), w, b.getHeight()));
+            // Inner highlight
+            g.setColour(lnf.theme.hl.withAlpha(0.65f));
+            g.fillRect (juce::Rectangle<float> (x + w * 0.5f - 0.5f, b.getY(), 1.0f, b.getHeight()));
         }
     private:
         FieldLNF& lnf;
