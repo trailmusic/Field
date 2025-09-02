@@ -1471,8 +1471,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     delayWowflutter.setName ("WOW"); delayJitter.setName ("JITTER");
     delayHp.setName ("HP"); delayLp.setName ("LP"); delayTilt.setName ("TILT"); delaySat.setName ("SAT");
     delayDiffusion.setName ("DIFF"); delayDiffuseSize.setName ("SIZE");
-    delayDuckDepth.setName ("DUCK DEPTH"); delayDuckAttack.setName ("DUCK ATT"); delayDuckRelease.setName ("DUCK REL");
-    delayDuckThreshold.setName ("DUCK THR"); delayDuckRatio.setName ("DUCK RAT"); delayDuckLookahead.setName ("DUCK LA");
+    delayDuckDepth.setName ("DEPTH"); delayDuckAttack.setName ("ATT"); delayDuckRelease.setName ("REL");
+    delayDuckThreshold.setName ("THR"); delayDuckRatio.setName ("DUCK RAT"); delayDuckLookahead.setName ("LA");
 
     // seed value labels with current values
     sliderValueChanged (&width);
