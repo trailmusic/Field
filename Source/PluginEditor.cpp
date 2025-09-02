@@ -2102,7 +2102,9 @@ void MyPluginAudioProcessorEditor::performLayout()
                 juce::Grid::Px (cellW),                                   // Reverb cell
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW),           // DUCK, ATT, REL, THR, RAT
-                juce::Grid::Px (switchW)                                  // Switch
+                juce::Grid::Px (cellW),                                   // Algo Switch (moved left of divider to align)
+                juce::Grid::Px (2),                                       // Divider column (global alignment)
+                juce::Grid::Fr (1)
             };
             // Ensure components are parented correctly (cells own knob+value)
             if (spaceKnob.getParentComponent() == this) removeChildComponent (&spaceKnob);
@@ -2190,6 +2192,9 @@ void MyPluginAudioProcessorEditor::performLayout()
                 juce::GridItem (*spaceSwitchCell)
                     .withAlignSelf (juce::GridItem::AlignSelf::center)
                     .withJustifySelf (juce::GridItem::JustifySelf::center)
+                    .withHeight (containerHeight),
+                juce::GridItem() // divider spacer column (2px)
+                    .withWidth (2)
                     .withHeight (containerHeight)
             };
             reverbGrid.performLayout (rg);
@@ -2291,7 +2296,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::Grid::Px (doubleW), // Bass
             juce::Grid::Px (doubleW), // Air
             juce::Grid::Px (doubleW), // Tilt
-            juce::Grid::Px (doubleW)  // Scoop
+            juce::Grid::Px (doubleW), // Scoop
+            juce::Grid::Px (2)        // Divider column (align with other rows)
         };
 
         bassCell->setVisible (true);
@@ -2308,7 +2314,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*bassCell) .withHeight (containerHeight),
             juce::GridItem (*airCell)  .withHeight (containerHeight),
             juce::GridItem (*tiltCell) .withHeight (containerHeight),
-            juce::GridItem (*scoopCell).withHeight (containerHeight)
+            juce::GridItem (*scoopCell).withHeight (containerHeight),
+            juce::GridItem().withWidth (2).withHeight (containerHeight)
         };
         g.performLayout (row);
 
@@ -2383,7 +2390,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             imgGrid.templateColumns = {
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
-                juce::Grid::Px (cellW)
+                juce::Grid::Px (cellW),
+                juce::Grid::Px (2) // Divider column (align with other rows)
             };
         }
 
@@ -2423,7 +2431,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*shufHiCell)  .withHeight (containerHeight),
             juce::GridItem (*shufXCell)   .withHeight (containerHeight),
             // 8: S only (Q and Q-cluster moved to combined strip)
-            juce::GridItem (*shelfShapeCell).withHeight (containerHeight)
+            juce::GridItem (*shelfShapeCell).withHeight (containerHeight),
+            juce::GridItem().withWidth (2).withHeight (containerHeight)
         };
         // Reserve left strip for HP/LP+Q cluster using standard cell width, then leave a standard gap
         {
