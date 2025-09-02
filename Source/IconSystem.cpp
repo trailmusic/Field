@@ -453,7 +453,7 @@ juce::Path IconSystem::createSnowflakeIcon (float size)
     // Radial spokes
     for (int i = 0; i < 6; ++i)
     {
-        const float a = juce::MathConstants<float>::pi * (i / 3.0f) / 2.0f; // 0,30,60,... simplistic
+        const float a = juce::MathConstants<float>::twoPi * (i / 6.0f); // 0,60,120,180,240,300 degrees
         const float x1 = cx + r * std::cos (a);
         const float y1 = cy + r * std::sin (a);
         path.addLineSegment (juce::Line<float> (cx, cy, x1, y1), 1.2f * s);
@@ -461,7 +461,7 @@ juce::Path IconSystem::createSnowflakeIcon (float size)
     // Small ticks on ends
     for (int i = 0; i < 6; ++i)
     {
-        const float a = juce::MathConstants<float>::pi * (i / 3.0f) / 2.0f;
+        const float a = juce::MathConstants<float>::twoPi * (i / 6.0f);
         const float x1 = cx + r * std::cos (a);
         const float y1 = cy + r * std::sin (a);
         const float tx = -std::sin (a), ty = std::cos (a);
