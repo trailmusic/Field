@@ -336,7 +336,9 @@ void XYPad::drawImagingOverlays (juce::Graphics& g, juce::Rectangle<float> b)
     // 2) True M/S rotation renderer (energy circle + rotated basis + S-curve)
     if (lf)
     {
-        const float side = b.getHeight() * 0.50f; // diameter ~ previous compass
+        // Slightly smaller ring: 45% of pad height is the radius
+        const float radius = b.getHeight() * 0.45f;
+        const float side   = radius * 2.0f;
         auto rotRect = juce::Rectangle<float> (0.0f, 0.0f, side, side).withCentre (b.getCentre());
         lf->drawRotationPad (g, rotRect, rotationDeg, asym,
                              lf->theme.accent, lf->theme.text, lf->theme.panel);

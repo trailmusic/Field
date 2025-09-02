@@ -89,7 +89,21 @@ R  = k*(Mx − Sx)
 - **Placement in signal flow**: After per‑band width and shuffler; before Tone EQ (Tilt/Scoop/Bass/Air), Space, Delay, Stereoize, Mono Maker, and Saturation. See the Signal Flow section for the full chain.
 - **Mono behavior**: Mono sum energy remains stable due to the orthonormal transform. Mono Maker runs later in the chain; low frequencies collapsed to mono are post‑rotation.
 - **Automation**: Smooth and click‑free. Safe to automate across the full range.
-- **UI**: In the Image row as “Rotation” and “Asymmetry.” A rotation compass in the XY visuals reflects the current rotation.
+- **UI**: In the Image row as “Rotation” and “Asymmetry.” A rotation pad in the XY visuals reflects the current rotation.
+
+#### Rotation Pad Visualization
+
+- **Energy circle (ring)**: The ring represents unit energy. Any point on it has the same overall energy, communicating that rotation is an orthonormal transform (no gain cheating).
+- **Rotated basis (M/S → M′/S′)**: We draw the current rotated axes computed from the angle θ, with the axes labelled outside the ring as **M** (along M′) and **S** (along S′). A subtle dual tick on the rim marks θ.
+- **S‑curve (Mid↔Side exchange)**: A cubic Bézier runs from −M′ rim to +M′ rim with end tangents aligned to ±S′. This visually encodes how Mid and Side exchange under rotation (reads as true M/S rotation, not pan).
+- **Asymmetry shading**: A soft linear gradient is applied within the circle along the S′ axis. The tint intensity scales with |asymmetry|, and its direction flips with the sign of asymmetry (heavier tint toward +S′ for positive values, toward −S′ for negative).
+- **Design notes**: No background panel—only the ring, axes, gradient, and S‑curve—keeps focus and avoids “right‑leaning pan” cues while conveying both orthonormal rotation and directional bias.
+
+Plain terms
+
+- Clockwise rotation (θ > 0): The stereo image feels wider and slightly less centered. The S‑curve bows toward the +S side and the rim tick sits at a positive angle. With Asymmetry, the gradient tint is stronger toward +S.
+- Counterclockwise rotation (θ < 0): The image tightens/narrows with more center focus. The S‑curve bows toward the −S side and the rim tick sits at a negative angle. With Asymmetry, the gradient tint is stronger toward −S.
+- Constant energy: The ring stays the same size because rotation is energy‑preserving; you’re rebalancing Mid/Side, not changing overall loudness.
 
 ### Mono Management
 

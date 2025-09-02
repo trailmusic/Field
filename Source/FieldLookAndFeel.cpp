@@ -31,12 +31,9 @@ void FieldLNF::drawRotationPad (juce::Graphics& g, juce::Rectangle<float> b,
     const auto c   = b.getCentre();
     const float r  = 0.5f * std::min (b.getWidth(), b.getHeight()) - 4.0f;
 
-    // Background panel
-    drawNeoPanel (g, b.toFloat(), 10.0f);
-
-    // Energy circle
+    // Energy circle (ring only, no container background)
     g.setColour (panel.brighter (0.25f));
-    g.drawEllipse (c.x - r, c.y - r, 2*r, 2*r, 1.2f);
+    g.drawEllipse (c.x - r, c.y - r, 2*r, 2*r, 1.6f);
 
     // Basis vectors (screen Y goes down)
     const float th = juce::degreesToRadians (rotationDeg);
@@ -74,28 +71,41 @@ void FieldLNF::drawRotationPad (juce::Graphics& g, juce::Rectangle<float> b,
 
     juce::Path S; S.startNewSubPath (P0); S.cubicTo (P1, P2, P3);
 
-    // Softly tint circle, then carve a neutral band where the S-curve runs
-    g.setColour (accent.withAlpha (0.10f));
-    g.fillEllipse (c.x - r, c.y - r, 2*r, 2*r);
+    // Gradient shade the asymmetry lobes inside the ring
+    {
+        juce::Graphics::ScopedSaveState save (g);
+        // Clip to circle
+        juce::Path circ; circ.addEllipse (c.x - r, c.y - r, 2*r, 2*r);
+        g.reduceClipRegion (circ);
 
-    juce::Path Swide; juce::PathStrokeType (2.0f).createStrokedPath (Swide, S);
-    g.setColour (panel);
-    g.fillPath (Swide);
+        // Linear gradient along S' axis (v). Bias alpha by asymmetry sign/magnitude
+        const float intensity = 0.26f * std::abs (aCl); // heavier tint
+        const bool positive   = (aCl >= 0.0f);
+        const float aNear = positive ? 0.06f : intensity;
+        const float aFar  = positive ? intensity : 0.06f;
 
-    // Draw S curve on top
+        auto p0 = c - v * r;
+        auto p1 = c + v * r;
+        juce::ColourGradient grad (accent.withAlpha (aNear), p0.x, p0.y,
+                                   accent.withAlpha (aFar),  p1.x, p1.y, false);
+        g.setGradientFill (grad);
+        g.fillEllipse (c.x - r, c.y - r, 2*r, 2*r);
+    }
+
+    // Draw S curve on top (solid)
     g.setColour (accent.withAlpha (0.85f));
     g.strokePath (S, juce::PathStrokeType (2.2f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-    // Labels M' / S'
-    g.setColour (text.withAlpha (0.75f));
-    g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
+    // Labels M' / S' outside the rim (smaller font)
+    g.setColour (text.withAlpha (0.70f));
+    g.setFont (juce::Font (juce::FontOptions (10.0f).withStyle ("Bold")));
     auto labelAt = [&] (juce::String t, juce::Point<float> dir, float d)
     {
         auto p = c + dir * d;
         g.drawFittedText (t, juce::Rectangle<int> ((int) (p.x - 12), (int) (p.y - 8), 24, 16), juce::Justification::centred, 1);
     };
-    labelAt ("M′", u, r * 0.55f);
-    labelAt ("S′", v, r * 0.55f);
+    labelAt ("M", u, r + 12.0f);
+    labelAt ("S", v, r + 12.0f);
 
     // Angle tick on rim (dual-ended)
     auto rimTick = [&] (float ang, juce::Colour col)
