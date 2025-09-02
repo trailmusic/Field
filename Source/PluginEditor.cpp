@@ -1980,6 +1980,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int gapPx   = Layout::dp (0,  s);
         const int labelGap = Layout::dp (4, s);
         const int cellW = lPx + Layout::dp (8, s); // widen all single cells slightly
+        const int switchW = lPx + Layout::dp (8, s);
         g.templateRows    = { juce::Grid::Px (containerHeight) };
         g.templateColumns = {
             juce::Grid::Px (cellW * 3),                // Pan (triple wide)
@@ -1990,6 +1991,14 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::Grid::Px (cellW),                    // Gain
             juce::Grid::Px (cellW),                    // Mix
             juce::Grid::Px (cellW),                    // Wet Only switch
+            juce::Grid::Px (2),                        // Divider column (visual divider component overlays here)
+            juce::Grid::Px (switchW),                  // Delay Enable
+            juce::Grid::Px (switchW),                  // Delay Mode
+            juce::Grid::Px (switchW),                  // Delay Sync
+            juce::Grid::Px (switchW),                  // Delay Grid Flavor
+            juce::Grid::Px (switchW),                  // Delay Ping-Pong
+            juce::Grid::Px (switchW),                  // Delay Freeze
+            juce::Grid::Px (switchW),                  // Delay Wet Only
             juce::Grid::Fr (1)                         // stretchy pad
         };
 
@@ -2020,6 +2029,17 @@ void MyPluginAudioProcessorEditor::performLayout()
             wetOnlyCell->setCaption ("Wet Only");
         }
         addAndMakeVisible (*wetOnlyCell);
+        // Ensure delay switch cells exist and are visible
+        if (!delayEnabledCell) { delayEnabled.setComponentID ("delayEnabled"); delayEnabled.getProperties().set ("iconType", (int) IconSystem::Power); delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled); delayEnabledCell->setCaption ("Enable"); }
+        if (!delayModeCell)    { delayModeCell    = std::make_unique<SwitchCell> (delayMode);    delayModeCell->setCaption ("Mode"); delayMode.getProperties().set ("iconOnly", true); }
+        if (!delaySyncCell)    { delaySync.getProperties().set ("iconType", (int) IconSystem::Link); delaySyncCell    = std::make_unique<SwitchCell> (delaySync);    delaySyncCell->setCaption ("Sync"); }
+        if (!delayGridFlavorSegments) delayGridFlavorSegments = std::make_unique<Segmented3Control>(proc.apvts, "delay_grid_flavor", juce::StringArray{ "S", "D", "T" });
+        if (!delayGridFlavorCell) delayGridFlavorCell = std::make_unique<SwitchCell> (*delayGridFlavorSegments);
+        if (!delayPingpongCell)   { delayPingpong.getProperties().set ("iconType", (int) IconSystem::Stereo); delayPingpongCell = std::make_unique<SwitchCell> (delayPingpong); delayPingpongCell->setCaption ("Ping-Pong"); }
+        if (!delayFreezeCell)     { delayFreeze.getProperties().set ("iconType", (int) IconSystem::Snowflake); delayFreezeCell  = std::make_unique<SwitchCell> (delayFreeze);   delayFreezeCell->setCaption ("Freeze"); }
+        if (!delayKillDryCell)    { delayKillDry.getProperties().set ("iconType", (int) IconSystem::Mix); delayKillDryCell = std::make_unique<SwitchCell> (delayKillDry);  delayKillDryCell->setCaption ("Wet Only"); delayKillDry.setTooltip ("Wet Only: Removes the dry signal from the output (effects only)"); }
+        for (auto* c : { delayEnabledCell.get(), delayModeCell.get(), delaySyncCell.get(), delayGridFlavorCell.get(), delayPingpongCell.get(), delayFreezeCell.get(), delayKillDryCell.get() })
+            if (c) { addAndMakeVisible (*c); c->setShowBorder (true); }
 
         g.items = {
             juce::GridItem (*panCell)          .withWidth (cellW * 3).withHeight (containerHeight),
@@ -2029,7 +2049,15 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*widthHiCell)      .withWidth (cellW).withHeight (containerHeight),
             juce::GridItem (*gainCell)         .withWidth (cellW).withHeight (containerHeight),
             juce::GridItem (*satMixCell)       .withWidth (cellW).withHeight (containerHeight),
-            juce::GridItem (*wetOnlyCell)      .withWidth (cellW).withHeight (containerHeight)
+            juce::GridItem (*wetOnlyCell)      .withWidth (cellW).withHeight (containerHeight),
+            juce::GridItem ().withWidth (2).withHeight (containerHeight), // divider spacer in grid
+            juce::GridItem (*delayEnabledCell) .withWidth (switchW).withHeight (containerHeight),
+            juce::GridItem (*delayModeCell)    .withWidth (switchW).withHeight (containerHeight),
+            juce::GridItem (*delaySyncCell)    .withWidth (switchW).withHeight (containerHeight),
+            juce::GridItem (*delayGridFlavorCell).withWidth (switchW).withHeight (containerHeight),
+            juce::GridItem (*delayPingpongCell).withWidth (switchW).withHeight (containerHeight),
+            juce::GridItem (*delayFreezeCell)  .withWidth (switchW).withHeight (containerHeight),
+            juce::GridItem (*delayKillDryCell) .withWidth (switchW).withHeight (containerHeight)
         };
         g.performLayout (row);
 
@@ -2058,8 +2086,7 @@ void MyPluginAudioProcessorEditor::performLayout()
 
         // Reverb sub-grid: [ Reverb cell ] + [ switch ] + [ DUCK + ATT + REL + THR + RAT ]
          {
-            // Reserve right strip for delay column, then use consistent row gap
-            row.removeFromRight (delayCardW);
+            // No separate right strip anymore; use full row width
             auto rg = row.reduced (0, 0);
             juce::Grid reverbGrid;
             reverbGrid.rowGap    = juce::Grid::Px (gapI);
@@ -2276,7 +2303,6 @@ void MyPluginAudioProcessorEditor::performLayout()
         hpLpCell->setMetrics (lPx, valuePx, gapPx);
         // Reserve left strip for HP/LP+Q cluster, lay out remaining EQ cells across remaining area
         auto row = row3;
-        row.removeFromRight (delayCardW);
         row.removeFromLeft (doubleW); // no gap between 2x2 and first EQ cell
         g.items = {
             juce::GridItem (*bassCell) .withHeight (containerHeight),
@@ -2404,7 +2430,6 @@ void MyPluginAudioProcessorEditor::performLayout()
             const int cellW = lPx + Layout::dp (8, s);
             const int doubleW = cellW * 2;
             auto imgB = row4;
-            imgB.removeFromRight (delayCardW);
             imgB.removeFromLeft (doubleW); // no gap between 2x2 and first imaging cell
             imgGrid.performLayout (imgB);
         }
@@ -2473,7 +2498,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         hpLpQClusterCell->toFront (false);
     }
 
-    // ---------------- Delay Right-Side Area integrated into main 4 rows ---------------------------
+    // ---------------- Delay controls integrated inline with the 4-row system ----------------------
     {
         // Wrap top-row toggles/combos in SwitchCell panels for visual consistency
         if (!delayEnabledCell) { delayEnabled.setComponentID ("delayEnabled"); delayEnabled.getProperties().set ("iconType", (int) IconSystem::Power); delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled); delayEnabledCell->setCaption ("Enable"); }
@@ -2493,21 +2518,8 @@ void MyPluginAudioProcessorEditor::performLayout()
         }
         addAndMakeVisible (delayDuckThreshold);
 
-        // Compute a single delay area spanning the 4 rows on the right
-        delayArea = juce::Rectangle<int> (
-            row1.getRight() - delayCardW,
-            row1.getY(),
-            delayCardW,
-            row1.getHeight() + row2.getHeight() + row3.getHeight() + row4.getHeight());
-
-        // Place a vertical divider at left edge of delay area
-        addAndMakeVisible (delayDivider);
-        // Divider aligns to the computed right-hand strip
-        auto dd = delayArea;
-        delayDivider.setBounds (juce::Rectangle<int> (dd.getX(), dd.getY(), 2, dd.getHeight()));
-
-        // Lay out cells directly
-        auto delayB = delayArea.reduced (0, 0);
+        // Do not compute or use a separate right-hand area; controls are placed into row grids.
+        // Divider is now a 2px grid column in row 1; remove standalone divider usage here.
 
         const int valuePx = Layout::dp (14, s);
         const int labelGap = Layout::dp (4, s);
@@ -2536,11 +2548,8 @@ void MyPluginAudioProcessorEditor::performLayout()
         juce::Grid delayGrid;
         delayGrid.rowGap = juce::Grid::Px (0);
         delayGrid.columnGap = juce::Grid::Px (0);
-        delayGrid.templateRows = {
-            juce::Grid::Px (containerHeight),
-            juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight),
-            juce::Grid::Px (containerHeight)
-        };
+        // Delay grid is no longer used as a separate right-hand column. Keeping code for future inline cluster use if needed.
+        delayGrid.templateRows = { juce::Grid::Px (containerHeight) };
         const int cellW_delay = lPx + Layout::dp (8, s);
         delayGrid.templateColumns = {
             juce::Grid::Px (cellW_delay), juce::Grid::Px (cellW_delay), juce::Grid::Px (cellW_delay),
@@ -2589,7 +2598,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*delayDuckLookaheadCell).withArea (4,7)
         };
 
-        delayGrid.performLayout (delayB);
+        // Not performing standalone delay layout; delay items are distributed across row 1 only for now.
 
         // Bring components to front
         for (juce::Component* c : std::initializer_list<juce::Component*>{
