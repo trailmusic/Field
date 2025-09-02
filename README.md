@@ -62,6 +62,35 @@ We drew from tools like **Basslane/Basslane Pro** (low-end mono & width treatmen
 * **Rotation & Asymmetry:** S1-style field rotation and center offset
 * **Accurate Curves:** RBJ biquad-magnitude visualization (HP/LP/Shelves/Peak) with soft-knee pixel mapping
 
+#### Rotation & Asymmetry (details)
+
+- **What it does**: Global Mid/Side rotation of the stereo field. It is not a pan or width control; it rotates the M/S vector by an angle and converts back to L/R. The transform is energy‑preserving (orthonormal).
+- **Parameters**: `rotation_deg` (−45…+45, default 0), `asymmetry` (−1…+1, default 0).
+- **Audible effect**:
+  - **Positive rotation**: Injects Mid into Side → perceived wider, slightly less center focus.
+  - **Negative rotation**: Injects Side into Mid → tighter/narrower, stronger center focus.
+  - Designed to avoid overall loudness jumps.
+- **DSP math** (applied only when there are ≥2 channels):
+
+```
+k  = 1/√2
+θ  = radians(rotation_deg)
+M  = k*(L + R)
+S  = k*(L − R)
+Mr = cos(θ)*M − sin(θ)*S
+Sr = sin(θ)*M + cos(θ)*S
+// Asymmetry: subtle crossfeed between rotated M and S
+Mx = Mr + asymmetry * Sr * 0.15
+Sx = Sr − asymmetry * Mr * 0.15
+L  = k*(Mx + Sx)
+R  = k*(Mx − Sx)
+```
+
+- **Placement in signal flow**: After per‑band width and shuffler; before Tone EQ (Tilt/Scoop/Bass/Air), Space, Delay, Stereoize, Mono Maker, and Saturation. See the Signal Flow section for the full chain.
+- **Mono behavior**: Mono sum energy remains stable due to the orthonormal transform. Mono Maker runs later in the chain; low frequencies collapsed to mono are post‑rotation.
+- **Automation**: Smooth and click‑free. Safe to automate across the full range.
+- **UI**: In the Image row as “Rotation” and “Asymmetry.” A rotation compass in the XY visuals reflects the current rotation.
+
 ### Mono Management
 
 * **Mono Maker:** Sums under a cutoff with selectable **slope (6/12/24 dB/oct)**
