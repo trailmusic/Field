@@ -1,4 +1,5 @@
 #include "FieldLookAndFeel.h"
+#include "IconSystem.h"
 #include <vector>   // for std::vector
 
 void FieldLNF::drawNeoPanel (juce::Graphics& g, juce::Rectangle<float> r, float radius) const
@@ -20,6 +21,61 @@ void FieldLNF::drawNeoPanel (juce::Graphics& g, juce::Rectangle<float> r, float 
     // Subtle inner rim for inset effect
     g.setColour (theme.sh.withAlpha (0.2f));
     g.drawRoundedRectangle (inner.reduced (1.0f), juce::jmax (0.0f, radius - 1.0f), 1.0f);
+}
+
+void FieldLNF::drawComboBox (juce::Graphics& g, int width, int height, bool isButtonDown,
+                             int /*buttonX*/, int /*buttonY*/, int /*buttonW*/, int /*buttonH*/, juce::ComboBox& box)
+{
+    auto r = juce::Rectangle<float> (0, 0, (float) width, (float) height).reduced (2.0f);
+    auto bg = theme.panel;
+    auto sh = theme.sh;
+    auto hl = theme.hl;
+    auto accent = theme.accent;
+
+    // Background: mimic SwitchCell panel (mode cell style)
+    drawNeoPanel (g, r, 5.0f);
+
+    // Large chevron-only indicator (centered)
+    const bool over = box.isMouseOver (true);
+    const bool down = isButtonDown;
+    juce::Colour arrow = over ? accent : theme.text;
+    if (down) arrow = arrow.brighter (0.2f);
+
+    auto icon = r.reduced (6.0f);
+    const float cx = icon.getCentreX();
+    const float cy = icon.getCentreY();
+    const float w  = juce::jmin (icon.getWidth(), icon.getHeight()) * 0.50f;
+    juce::Path chevron;
+    chevron.startNewSubPath (cx - w * 0.45f, cy - w * 0.10f);
+    chevron.lineTo       (cx,               cy + w * 0.25f);
+    chevron.lineTo       (cx + w * 0.45f,   cy - w * 0.10f);
+    // Subtle shadow under arrow for weight
+    g.setColour (juce::Colours::black.withAlpha (0.18f));
+    g.strokePath (chevron, juce::PathStrokeType (3.6f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+    // Main arrow
+    g.setColour (arrow.withAlpha (0.98f));
+    g.strokePath (chevron, juce::PathStrokeType (3.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+    // Inner glow on hover
+    if (over)
+    {
+        g.setColour (accent.withAlpha (0.10f));
+        g.fillRoundedRectangle (icon, 5.0f);
+    }
+}
+
+void FieldLNF::positionComboBoxText (juce::ComboBox& box, juce::Label& label)
+{
+    // Hide text for icon-only dropdowns if property is set
+    const bool iconOnly = (bool) box.getProperties().getWithDefault ("iconOnly", false);
+    if (iconOnly)
+    {
+        label.setText ("", juce::dontSendNotification);
+        label.setBounds (0, 0, 0, 0);
+        label.setVisible (false);
+        return;
+    }
+    LookAndFeel_V4::positionComboBoxText (box, label);
 }
 
 void FieldLNF::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h,
@@ -329,5 +385,17 @@ void FieldLNF::drawToggleButton (juce::Graphics& g, juce::ToggleButton& button,
     g.setColour (active ? fill.darker (0.35f) : sh);
     g.drawRoundedRectangle (r, cr, 1.5f);
 
-    // Optional icon/text is omitted; qLinkButton uses empty text and we draw via its own paint
+    // Icon rendering (iconOnly style via property 'iconType')
+    int iconInt = (int) button.getProperties().getWithDefault ("iconType", -1);
+    if (iconInt >= 0)
+    {
+        auto inner = r.reduced (4.0f);
+        juce::Colour iconCol = active ? accent : theme.text.withAlpha (0.75f);
+        // Shadow pass for weight
+        g.setColour (juce::Colours::black.withAlpha (0.18f));
+        IconSystem::drawIcon (g, (IconSystem::IconType) iconInt, inner.translated (0.7f, 1.0f), iconCol);
+        // Main icon
+        g.setColour (iconCol);
+        IconSystem::drawIcon (g, (IconSystem::IconType) iconInt, inner, iconCol);
+    }
 }

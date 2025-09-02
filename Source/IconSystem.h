@@ -35,7 +35,14 @@ public:
         ExitFullScreen,
         ColorPalette,
         Help,
-        X
+        X,
+        Snowflake,
+        Note,
+        NoteDotted,
+        Triplet3,
+        Droplet,
+        DropletSlash,
+        SidechainKey
     };
 
     static juce::Path createIcon (IconType type, float size = 16.0f);
@@ -74,4 +81,11 @@ private:
     static juce::Path createColorPaletteIcon (float size);
     static juce::Path createHelpIcon (float size);
     static juce::Path createXIcon (float size);
+    static juce::Path createSnowflakeIcon (float size);
+    static juce::Path createNoteIcon (float size);
+    static juce::Path createNoteDottedIcon (float size);
+    static juce::Path createTriplet3Icon (float size);
+    static juce::Path createDropletIcon (float size);
+    static juce::Path createDropletSlashIcon (float size);
+    static juce::Path createSidechainKeyIcon (float size);
 };

@@ -1435,11 +1435,11 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     }
 
     // Delay row-1 explicit captions (ensure text visible in SwitchCell)
-    delayEnabled.setButtonText ("Enable"); delayEnabled.setToggleState (delayEnabled.getToggleState(), juce::dontSendNotification);
-    delaySync.setButtonText ("Sync");      delaySync.setToggleState (delaySync.getToggleState(), juce::dontSendNotification);
-    delayPingpong.setButtonText ("Ping-Pong"); delayPingpong.setToggleState (delayPingpong.getToggleState(), juce::dontSendNotification);
-    delayFreeze.setButtonText ("Freeze");  delayFreeze.setToggleState (delayFreeze.getToggleState(), juce::dontSendNotification);
-    delayKillDry.setButtonText ("Kill Dry"); delayKillDry.setToggleState (delayKillDry.getToggleState(), juce::dontSendNotification);
+    delayEnabled.setButtonText (""); delayEnabled.setToggleState (delayEnabled.getToggleState(), juce::dontSendNotification);
+    delaySync.setButtonText ("");      delaySync.setToggleState (delaySync.getToggleState(), juce::dontSendNotification);
+    delayPingpong.setButtonText (""); delayPingpong.setToggleState (delayPingpong.getToggleState(), juce::dontSendNotification);
+    delayFreeze.setButtonText ("");  delayFreeze.setToggleState (delayFreeze.getToggleState(), juce::dontSendNotification);
+    delayKillDry.setButtonText (""); delayKillDry.setToggleState (delayKillDry.getToggleState(), juce::dontSendNotification);
     delayMode.setTextWhenNothingSelected ("Mode");
     
     // Delay value labels
@@ -2514,16 +2514,16 @@ void MyPluginAudioProcessorEditor::performLayout()
     // ---------------- Delay Right-Side Area (no container; 7-column grid) ---------------------------
     {
         // Wrap top-row toggles/combos in SwitchCell panels for visual consistency
-        if (!delayEnabledCell) { delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled); delayEnabledCell->setCaption ("Enable"); }
-        if (!delayModeCell)    { delayModeCell    = std::make_unique<SwitchCell> (delayMode);    delayModeCell->setCaption ("Mode"); }
-        if (!delaySyncCell)    { delaySyncCell    = std::make_unique<SwitchCell> (delaySync);    delaySyncCell->setCaption ("Sync"); }
+        if (!delayEnabledCell) { delayEnabled.setComponentID ("delayEnabled"); delayEnabled.getProperties().set ("iconType", (int) IconSystem::Power); delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled); delayEnabledCell->setCaption ("Enable"); }
+        if (!delayModeCell)    { delayModeCell    = std::make_unique<SwitchCell> (delayMode);    delayModeCell->setCaption ("Mode"); delayMode.getProperties().set ("iconOnly", true); }
+        if (!delaySyncCell)    { delaySync.getProperties().set ("iconType", (int) IconSystem::Link); delaySyncCell    = std::make_unique<SwitchCell> (delaySync);    delaySyncCell->setCaption ("Sync"); }
         if (!delayGridFlavorSegments) delayGridFlavorSegments = std::make_unique<Segmented3Control>(proc.apvts, "delay_grid_flavor", juce::StringArray{ "S", "D", "T" });
         if (!delayGridFlavorCell) delayGridFlavorCell = std::make_unique<SwitchCell> (*delayGridFlavorSegments);
-        if (!delayPingpongCell)   { delayPingpongCell = std::make_unique<SwitchCell> (delayPingpong); delayPingpongCell->setCaption ("Ping-Pong"); }
-        if (!delayFreezeCell)     { delayFreezeCell  = std::make_unique<SwitchCell> (delayFreeze);   delayFreezeCell->setCaption ("Freeze"); }
-        if (!delayKillDryCell)    { delayKillDryCell = std::make_unique<SwitchCell> (delayKillDry);  delayKillDryCell->setCaption ("Kill Dry"); }
-        if (!delayDuckSourceCell) { delayDuckSourceCell = std::make_unique<SwitchCell> (delayDuckSource); delayDuckSourceCell->setCaption ("Duck Source"); }
-        if (!delayDuckPostCell)   { delayDuckPostCell   = std::make_unique<SwitchCell> (delayDuckPost);   delayDuckPostCell->setCaption ("Post"); }
+        if (!delayPingpongCell)   { delayPingpong.getProperties().set ("iconType", (int) IconSystem::Stereo); delayPingpongCell = std::make_unique<SwitchCell> (delayPingpong); delayPingpongCell->setCaption ("Ping-Pong"); }
+        if (!delayFreezeCell)     { delayFreeze.getProperties().set ("iconType", (int) IconSystem::Snowflake); delayFreezeCell  = std::make_unique<SwitchCell> (delayFreeze);   delayFreezeCell->setCaption ("Freeze"); }
+        if (!delayKillDryCell)    { delayKillDry.getProperties().set ("iconType", (int) IconSystem::Mix); delayKillDryCell = std::make_unique<SwitchCell> (delayKillDry);  delayKillDryCell->setCaption ("Wet Only"); delayKillDry.setTooltip ("Wet Only: Removes the dry signal from the output (effects only)"); }
+        if (!delayDuckSourceCell) { delayDuckSourceCell = std::make_unique<SwitchCell> (delayDuckSource); delayDuckSourceCell->setCaption ("Duck Source"); delayDuckSource.getProperties().set ("iconOnly", true); }
+        if (!delayDuckPostCell)   { delayDuckPost.getProperties().set ("iconType", (int) IconSystem::RightArrow); delayDuckPostCell   = std::make_unique<SwitchCell> (delayDuckPost);   delayDuckPostCell->setCaption ("Post"); }
 
         for (auto* c : { delayEnabledCell.get(), delayModeCell.get(), delaySyncCell.get(), delayGridFlavorCell.get(), delayPingpongCell.get(), delayFreezeCell.get(), delayKillDryCell.get(), delayDuckSourceCell.get(), delayDuckPostCell.get() })
         {

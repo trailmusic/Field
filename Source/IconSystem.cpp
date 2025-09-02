@@ -1,4 +1,11 @@
 #include "IconSystem.h"
+using IT = IconSystem::IconType;
+
+static inline juce::AffineTransform toCenter (juce::Rectangle<float> area, float size)
+{
+    return juce::AffineTransform::translation (area.getCentreX() - size * 0.5f,
+                                               area.getCentreY() - size * 0.5f);
+}
 
 juce::Path IconSystem::createIcon (IconType type, float size)
 {
@@ -34,18 +41,33 @@ juce::Path IconSystem::createIcon (IconType type, float size)
         case ColorPalette:   return createColorPaletteIcon (size);
         case Help:           return createHelpIcon (size);
         case X:              return createXIcon (size);
+        case Snowflake:      return createSnowflakeIcon (size);
+        case Note:           return createNoteIcon (size);
+        case NoteDotted:     return createNoteDottedIcon (size);
+        case Triplet3:       return createTriplet3Icon (size);
+        case Droplet:        return createDropletIcon (size);
+        case DropletSlash:   return createDropletSlashIcon (size);
+        case SidechainKey:   return createSidechainKeyIcon (size);
         default:             return {};
     }
 }
 
-void IconSystem::drawIcon (juce::Graphics& g, IconType type,
-                           juce::Rectangle<float> bounds, juce::Colour colour)
+void IconSystem::drawIcon (juce::Graphics& g, IT type, juce::Rectangle<float> area, juce::Colour colour)
 {
-    const auto s = juce::jmin (bounds.getWidth(), bounds.getHeight());
-    auto iconPath = createIcon (type, s);
-    g.setColour (colour);
-    g.fillPath (iconPath,
-                juce::AffineTransform::translation (bounds.getX(), bounds.getY()));
+    const float size = juce::jmin (area.getWidth(), area.getHeight());
+    const float stroke = juce::jlimit (1.0f, 4.0f, size * 0.085f);
+
+    auto P = createIcon (type, size);
+
+    // shadow pass
+    g.setColour (juce::Colours::black.withAlpha (0.18f));
+    g.strokePath (P, juce::PathStrokeType (stroke, juce::PathStrokeType::curved, juce::PathStrokeType::rounded),
+                  toCenter (area.translated (0.7f, 1.0f), size));
+
+    // main pass
+    g.setColour (colour.withAlpha (0.98f));
+    g.strokePath (P, juce::PathStrokeType (stroke, juce::PathStrokeType::curved, juce::PathStrokeType::rounded),
+                  toCenter (area, size));
 }
 
 // --- individual icons ---
@@ -420,4 +442,112 @@ juce::Path IconSystem::createHelpIcon (float size)
     q.addRectangle (6 * s, 6 * s, 4 * s, 1 * s);
     path.addPath (q);
     return path;
+}
+
+juce::Path IconSystem::createSnowflakeIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    const float cx = 8 * s, cy = 8 * s;
+    const float r = 6 * s;
+    // Radial spokes
+    for (int i = 0; i < 6; ++i)
+    {
+        const float a = juce::MathConstants<float>::pi * (i / 3.0f) / 2.0f; // 0,30,60,... simplistic
+        const float x1 = cx + r * std::cos (a);
+        const float y1 = cy + r * std::sin (a);
+        path.addLineSegment (juce::Line<float> (cx, cy, x1, y1), 1.2f * s);
+    }
+    // Small ticks on ends
+    for (int i = 0; i < 6; ++i)
+    {
+        const float a = juce::MathConstants<float>::pi * (i / 3.0f) / 2.0f;
+        const float x1 = cx + r * std::cos (a);
+        const float y1 = cy + r * std::sin (a);
+        const float tx = -std::sin (a), ty = std::cos (a);
+        path.addLineSegment (juce::Line<float> (x1 - 2 * s * tx, y1 - 2 * s * ty, x1 + 2 * s * tx, y1 + 2 * s * ty), 1.0f * s);
+    }
+    return path;
+}
+
+// --- musical note family ---
+static void addNotehead(juce::Path& p, float cx, float cy, float rx, float ry)
+{
+    juce::Path e; e.addEllipse (cx - rx, cy - ry, rx * 2.0f, ry * 2.0f); p.addPath (e);
+}
+static void addStem(juce::Path& p, float x, float yTop, float yBot, float w)
+{
+    juce::Rectangle<float> r (x - w * 0.5f, yTop, w, yBot - yTop); p.addRectangle (r);
+}
+
+juce::Path IconSystem::createNoteIcon (float size)
+{
+    juce::Path p; const float s = size;
+    const float cx = s * 0.52f, cy = s * 0.60f;
+    addNotehead (p, cx, cy, s * 0.20f, s * 0.15f);
+    addStem     (p, cx + s * 0.20f, cy - s * 0.35f, cy - s * 0.02f, s * 0.08f);
+    return p;
+}
+
+juce::Path IconSystem::createNoteDottedIcon (float size)
+{
+    auto p = createNoteIcon (size);
+    const float s = size; float r = s * 0.07f;
+    juce::Path dot; dot.addEllipse (s * 0.78f - r, s * 0.58f - r, 2 * r, 2 * r);
+    p.addPath (dot);
+    return p;
+}
+
+juce::Path IconSystem::createTriplet3Icon (float size)
+{
+    juce::Path p; const float s = size;
+    for (int i = 0; i < 3; ++i)
+    {
+        float t = (i - 1) * 0.28f;
+        addNotehead (p, s * (0.50f + t), s * (0.60f - std::abs (t) * 0.12f), s * 0.13f, s * 0.10f);
+    }
+    juce::Path br; float xL = s * 0.24f, xR = s * 0.76f, y = s * 0.36f;
+    br.startNewSubPath (xL, y); br.lineTo (xL, y + s * 0.10f);
+    br.startNewSubPath (xR, y); br.lineTo (xR, y + s * 0.10f);
+    br.startNewSubPath (xL, y); br.lineTo (xR, y);
+    p.addPath (br);
+    return p;
+}
+
+// --- droplet family ---
+juce::Path IconSystem::createDropletIcon (float size)
+{
+    juce::Path p; const float s = size;
+    float cx = s * 0.5f, cy = s * 0.58f, r = s * 0.22f;
+    p.startNewSubPath (cx, cy - r * 1.5f);
+    p.cubicTo (cx + r, cy - r, cx + r * 0.9f, cy + r * 0.5f, cx, cy + r);
+    p.cubicTo (cx - r * 0.9f, cy + r * 0.5f, cx - r, cy - r, cx, cy - r * 1.5f);
+    return p;
+}
+
+juce::Path IconSystem::createDropletSlashIcon (float size)
+{
+    auto p = createDropletIcon (size);
+    const float s = size; float x0 = s * 0.25f, y0 = s * 0.78f, x1 = s * 0.78f, y1 = s * 0.25f;
+    juce::Path slash; slash.addLineSegment ({ { x0, y0 }, { x1, y1 } }, s * 0.10f);
+    p.addPath (slash);
+    return p;
+}
+
+juce::Path IconSystem::createSidechainKeyIcon (float size)
+{
+    juce::Path p; const float s = size;
+    // keyhole
+    p.addEllipse (s * 0.62f, s * 0.26f, s * 0.20f, s * 0.24f);
+    p.addRectangle (s * 0.69f, s * 0.48f, s * 0.06f, s * 0.22f);
+    // incoming mini-wave
+    juce::Path w; float x = s * 0.15f, y = s * 0.56f, dx = s * 0.10f, a = s * 0.08f;
+    w.startNewSubPath (x, y);
+    for (int i = 0; i < 3; ++i)
+    {
+        w.cubicTo (x + dx * 0.5f, y - a, x + dx * 0.5f, y + a, x + dx, y);
+        x += dx;
+    }
+    p.addPath (w);
+    return p;
 }

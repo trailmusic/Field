@@ -217,6 +217,10 @@ public:
 
     // --- Custom primitives ----------------------------------------------------
     void drawNeoPanel (juce::Graphics& g, juce::Rectangle<float> r, float radius = 16.0f) const;
+    // ComboBox overrides to allow icon-only dropdown (chevron) rendering
+    void drawComboBox (juce::Graphics& g, int width, int height, bool isButtonDown,
+                       int buttonX, int buttonY, int buttonW, int buttonH, juce::ComboBox& box) override;
+    void positionComboBoxText (juce::ComboBox& box, juce::Label& label) override;
 
     // Shared painter for cell panels (KnobCell, SwitchCell) to ensure identical look
     void paintCellPanel (juce::Graphics& g, juce::Component& c, bool showBorder, bool hover) const

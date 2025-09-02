@@ -882,6 +882,8 @@ public:
             caption.setJustificationType (juce::Justification::centred);
             caption.setInterceptsMouseClicks (false, false);
             addAndMakeVisible (caption);
+            // If content is a ToggleButton, clear text to prefer icon-only LNF drawing
+            if (auto* tb = dynamic_cast<juce::ToggleButton*>(&content)) tb->setButtonText("");
         }
         void setMetrics (int /*knobPx*/, int /*valuePx*/, int /*gapPx*/) { resized(); }
         void setShowBorder (bool show) { showBorder = show; repaint(); }
@@ -952,8 +954,12 @@ public:
                     juce::Colour accent = lf2 ? lf2->theme.accent : juce::Colour (0xFF2196F3);
                     juce::Colour text   = lf2 ? lf2->theme.text   : juce::Colours::white;
                     juce::Colour iconCol = on ? accent : (over ? text.withAlpha (0.80f) : text.withAlpha (0.65f));
+                    // Shadowed, slightly heavier icon
+                    auto inner = area.reduced (2.0f);
+                    g.setColour (juce::Colours::black.withAlpha (0.18f));
+                    drawFeelIcon (g, inner.translated (0.6f, 0.9f), i, iconCol);
                     g.setColour (iconCol);
-                    drawFeelIcon (g, area, i, iconCol);
+                    drawFeelIcon (g, inner, i, iconCol);
                 };
                 addAndMakeVisible (buttons[i]);
             }
@@ -1078,10 +1084,14 @@ public:
                 if (painter)
                 {
                     bool on = getToggleState();
-                    juce::Colour iconCol = on ? accent : (over ? text.withAlpha (0.80f) : text.withAlpha (0.65f));
-                    painter (g, rr.reduced (4.0f), over, on);
-                    // painter should use colour; for simplicity we set here
+                    juce::Colour iconCol = on ? accent : (over ? text.withAlpha (0.85f) : text.withAlpha (0.75f));
+                    auto inner = rr.reduced (3.0f);
+                    // Shadow pass
+                    g.setColour (juce::Colours::black.withAlpha (0.18f));
+                    painter (g, inner.translated (0.6f, 0.9f), over, on);
+                    // Main pass
                     g.setColour (iconCol);
+                    painter (g, inner, over, on);
                 }
             }
         };
