@@ -1724,6 +1724,18 @@ private:
             g.setColour (lnf.theme.textMuted);
             g.setFont (juce::Font (juce::FontOptions (12.0f).withStyle ("Bold")));
             g.drawText ("CORR", r.reduced (4).withHeight (16), juce::Justification::centredTop);
+
+            // Minimal units: show -1, 0, +1 under the bar
+            g.setColour (lnf.theme.textMuted.withAlpha (0.9f));
+            g.setFont (juce::Font (juce::FontOptions (10.0f).withStyle ("Bold")));
+            const float labelY = barY + barH + 2.0f;
+            juce::Rectangle<float> unitsArea (r.getX() + 6.0f, labelY, r.getWidth() - 12.0f, 12.0f);
+            auto leftR  = juce::Rectangle<float> (unitsArea.getX(), unitsArea.getY(), unitsArea.getWidth() * 0.33f, unitsArea.getHeight());
+            auto midR   = juce::Rectangle<float> (unitsArea.getX() + unitsArea.getWidth() * 0.33f, unitsArea.getY(), unitsArea.getWidth() * 0.34f, unitsArea.getHeight());
+            auto rightR = juce::Rectangle<float> (unitsArea.getX() + unitsArea.getWidth() * 0.67f, unitsArea.getY(), unitsArea.getWidth() * 0.33f, unitsArea.getHeight());
+            g.drawText ("-1", leftR.toNearestInt(), juce::Justification::centredLeft);
+            g.drawText ("0",  midR.toNearestInt(),  juce::Justification::centred);
+            g.drawText ("+1", rightR.toNearestInt(), juce::Justification::centredRight);
         }
         void timerCallback() override { repaint(); }
         void visibilityChanged() override { if (isVisible()) startTimerHz (15); else stopTimer(); }
@@ -1789,6 +1801,16 @@ private:
                 drawTick (-6.0f,  "-6");
                 drawTick (-3.0f,  "-3");
                 drawTick (-1.0f,  "-1");
+
+                // Minimal units label: show "dBFS" once (on top/L bar)
+                if (label == "L")
+                {
+                    g.setColour (lnf.theme.textMuted.withAlpha (0.9f));
+                    g.setFont (juce::Font (juce::FontOptions (10.0f).withStyle ("Bold")));
+                    g.drawText ("dBFS",
+                                juce::Rectangle<int> ((int) (b.getRight() - 36.0f), (int) (b.getY() - 12.0f), 36, 12),
+                                juce::Justification::centredRight);
+                }
             };
 
             drawBar (top, proc.getRmsL(), proc.getPeakL(), "L");
