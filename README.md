@@ -51,7 +51,7 @@ We drew from tools like **Basslane/Basslane Pro** (low-end mono & width treatmen
 ### XY Pad (Hero)
 
 * **X:** Pan (Ableton-accurate)
-* **Y:** Depth/Space intensity
+* **Y:** Depth/Reverb intensity
 * **Split mode:** Independent L/R points with **Link** & **Snap Grid**
 * **Motion overlay:** Shows autopan path when enabled
 
@@ -86,7 +86,7 @@ L  = k*(Mx + Sx)
 R  = k*(Mx − Sx)
 ```
 
-- **Placement in signal flow**: After per‑band width and shuffler; before Tone EQ (Tilt/Scoop/Bass/Air), Space, Delay, Stereoize, Mono Maker, and Saturation. See the Signal Flow section for the full chain.
+- **Placement in signal flow**: After per‑band width and shuffler; before Tone EQ (Tilt/Scoop/Bass/Air), Reverb, Delay, Stereoize, Mono Maker, and Saturation. See the Signal Flow section for the full chain.
 - **Mono behavior**: Mono sum energy remains stable due to the orthonormal transform. Mono Maker runs later in the chain; low frequencies collapsed to mono are post‑rotation.
 - **Automation**: Smooth and click‑free. Safe to automate across the full range.
 - **UI**: In the Image row as “Rotation” and “Asymmetry.” A rotation pad in the XY visuals reflects the current rotation.
@@ -155,7 +155,7 @@ Plain terms
     → Per-Band M/S Width (Lo/Mid/Hi)
     → Shuffler LF/HF (with shuffler_xover_hz)
  → Global M/S: Rotation, Asymmetry
- → Space Send → Reverb (wet-only) → Wet Ducking (look-ahead RMS, sidechain=dry)
+ → Reverb (wet-only) → Wet Ducking (look-ahead RMS, sidechain=dry)
     ├── Dry bus ─────────────────────────────────────────────┐
     └── Wet bus (100% wet, scaled by depth) → Look-Ahead DUCKER →┘
  → Sum (Dry + Wet)
@@ -184,7 +184,8 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
 
 * `gain_db` (-12…+12, 0), `sat_drive_db` (0…36, 0), `sat_mix` (0…1, 1), `bypass` (0/1, 0)
 * `width` (0.5…2.0, 1.0), `pan` (-1…+1, 0), `pan_l` / `pan_r` (split), `split_mode` (0/1, 0)
-* `space_algo` (Inner/Outer/Deep, Inner), `depth` (0…1, 0.0), `ducking` (0…1, 0), `os_mode` (Off/2x/4x)
+* `space_algo` (Room/Plate/Hall, Room), `depth` (0…1, 0.0), `ducking` (0…1, 0), `os_mode` (Off/2x/4x)
+  - Reverb macro: depth drives Mix, Size, Damping, Width with type‑voiced curves
 * Ducking advanced: `duck_threshold_db` (-60..0), `duck_knee_db` (0..18), `duck_ratio` (1..20), `duck_attack_ms` (1..80), `duck_release_ms` (20..800), `duck_lookahead_ms` (0..20), `duck_rms_ms` (2..50), `duck_target` (WetOnly/Global)
 * `hp_hz` (20…1000, 20), `lp_hz` (1000…20000, 20000) — bypassed at extremes
 * `tilt` (-12…+12, 0), `air_db` (0…6, 0), `bass_db` (-12…+12, 0), `scoop` (-12…+12, 0)
@@ -278,7 +279,7 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
 * **Right Strip:** Vertical meter panel with correlation meter (top) and L/R meters (bottom).
 * **Bottom Rows:**
 
-  * **Volume row:** Pan (or L/R), Depth, Space Algo, Ducking (DUCK/ATT/REL/THR/RAT), Gain, Drive, Width, Mix.
+  * **Volume row:** Pan (3x), Width, W LO, W MID, W HI, Gain, Mix, Wet Only. Reverb Depth + Algo and Ducking (DUCK/ATT/REL/THR/RAT) sit on Row 2 with Mono at the front.
     - Ducking controls are size L and fully labeled; DUCK shows 0–100%.
     - DUCK knob renders a secondary arc indicating live gain reduction.
   * **EQ row:** Bass, Air, Tilt (+ mini-freq sliders), HP, LP, Mono.
@@ -286,14 +287,14 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
 * **Right Side Card:** **Delay Module** — 4×7 grid, panel-styled cells with unified spacing:
   - **Row 1 — Switches/Combos:** Enable, Mode, Sync, S/D/T (grid flavor), Ping-Pong, Freeze, Kill Dry
   - **Row 2 — Time & Mod:** Time, Feedback, Mix, Rate, Depth, Spread, Width
-  - **Row 3 — Tone & Space:** Saturation, Diffusion, Size, HP, LP, Tilt, Wow/Flutter
+  - **Row 3 — Tone:** Saturation, Diffusion, Size, HP, LP, Tilt, Wow/Flutter
   - **Row 4 — Ducking:** Duck Source (In Pre/Post/External), Post, Threshold (THR), Depth, Attack (ATT), Release (REL), Lookahead (LA)
 
 ### Look & Feel
 
 * Single **Look\&Feel** (`FieldLNF`) owns colors/gradients/shadows.
 * **Color Modes:** Ocean (default), Green, Pink, Yellow, Grey. Use the palette button in the header to cycle modes; visuals are driven entirely by `FieldLNF::theme`.
-* Vector **icon language** (20+ icons): Lock/Save/Power/Options, Pan/Space/Width/Tilt, HP/LP/Drive/Mix/Air, Link/Stereo/Split/Fullscreen, Help.
+* Vector **icon language** (20+ icons): Lock/Save/Power/Options, Pan/Reverb/Width/Tilt, HP/LP/Drive/Mix/Air, Link/Stereo/Split/Fullscreen, Help.
 * Centered value labels below knobs; responsive scaling (≈50–200%); fullscreen toggle.
 
 ### Layout Tokens (Source/Layout.h)
@@ -505,11 +506,12 @@ Independent ducking system separate from global ducking, with full parameter con
 
 ---
 
-## Ducking (Wet-Only, Look-Ahead RMS)
+## Global Reverb & Ducking (Click-free, Wet-Only, Look-Ahead RMS)
 
-FIELD includes a musical, production-grade ducker that creates space for the dry signal by attenuating the Space return (wet bus). The dry bus acts as the sidechain; look‑ahead delays the wet path slightly to catch transients smoothly.
+FIELD’s reverb is a 1‑knob, production‑ready Room/Plate/Hall system driven by depth, with per‑sample smoothing and equal‑power mixing to avoid clicks. Wet is rendered 100% and summed once; a musical ducker preserves intelligibility by attenuating the Reverb return (wet bus). The dry bus acts as the sidechain; look‑ahead delays the wet path slightly to catch transients smoothly.
 
-- **Routing:** WetOnly by default. Space is rendered 100% wet, then ducked against the post‑tone/imaging dry bus, and finally summed back. Optional Global mode is present for experimentation.
+- **Routing:** WetOnly by default. Reverb is rendered 100% wet (no internal dry), then ducked against the post‑tone/imaging dry bus, and finally summed back with an equal‑power law (no double‑mix). Optional Global mode is present for experimentation.
+- **Crackle safety:** No allocations in process (preallocated buses), denormals disabled, per‑sample smoothing for wet mix and macro parameters (Size/Damp/Width), and high‑order interpolation hooks where modulation applies.
 - **Sidechain:** Internal Dry (after Pre‑EQ, pan/width, rotation/asymmetry; before saturation on the wet path).
 - **Detector:** RMS with configurable window `duck_rms_ms`.
 - **Transfer curve:** Soft‑knee `duck_knee_db`, ratio `duck_ratio`. Ratio is snapped to musical values in the UI (2:1, 4:1, 8:1, 12:1, 20:1).
@@ -526,7 +528,7 @@ FIELD includes a musical, production-grade ducker that creates space for the dry
 - Implemented in `Source/dsp/Ducker.h` with an internal soft‑knee compressor‑style curve and RMS detector.
 - `Ducker::processWet()` applies look‑ahead by writing the wet signal to an internal delay line and reading it back delayed while applying sidechain‑driven gain.
 - Current smoothed GR dB is tracked and exposed via `getCurrentGainReductionDb()` for UI metering.
-- Integrated in the processor’s templated `FieldChain<Sample>` and used in `process()` right after Space wet rendering and (optional) saturation.
+- Integrated in the processor’s templated `FieldChain<Sample>` and used in `process()` right after Reverb wet rendering and (optional) saturation.
 
 ---
 
@@ -588,7 +590,7 @@ Source/
   ui/
     XYPad.*                // split mode, link, grid, motion overlay
     Controls.*             // knobs, sliders, toggles, containers
-    Containers.*           // Space/Pan/Volume/EQ/Image/Delay rows
+    Containers.*           // Reverb/Pan/Volume/EQ/Image/Delay rows
     FieldLookAndFeel.*     // unified theme & drawing
     Presets.*              // searchable UI, A/B, save
   PluginProcessor.*        // APVTS, dsp graph, state
@@ -670,7 +672,7 @@ Source/
   - Complete tempo sync implementation for musical divisions
   - Per-mode character refinement (Analog HF rolloff, Tape head-bump)
   - Advanced modulation (mechanical wow/flutter noise, groove patterns)
-  - Preset categories: "Slap", "Dub", "Tape Space", "Cloudy Vox", "Guitar Analog", "Ping-Pong 1/8D", "Lo-Fi Ping"
+  - Preset categories: "Slap", "Dub", "Tape Echo", "Cloudy Vox", "Guitar Analog", "Ping-Pong 1/8D", "Lo-Fi Ping"
 * **Nice-to-have:** Optional oversampling island for saturation; 64-bit path where host requests; preset cloud sync.
 
 ---

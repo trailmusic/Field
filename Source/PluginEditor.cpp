@@ -1188,7 +1188,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     addChildComponent (widthGroupSlot2); widthGroupSlot2.setInterceptsMouseClicks (false, false); widthGroupSlot2.setVisible (false);
     addChildComponent (widthGroupSlot3); widthGroupSlot3.setInterceptsMouseClicks (false, false); widthGroupSlot3.setVisible (false);
 
-    // Volume row unified group (pan, space, algo switch, duck group, gain/drive/mix)
+    // Volume row unified group (pan, reverb, algo switch, duck group, gain/drive/mix)
     addChildComponent (volGroupContainer);
     volGroupContainer.setTitle("");
     volGroupContainer.setShowBorder(false);
@@ -1270,7 +1270,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     duckRatio.setLookAndFeel (&lnf);
     duckRatio.addListener (this);
 
-    // pan + space + ducking
+    // pan + reverb + ducking
     addAndMakeVisible (panKnob);      style (panKnob, true);     panKnob.setRange (-1.0, 1.0, 0.01); panKnob.setOverlayEnabled (false); panKnob.addListener (this);
     addAndMakeVisible (panKnobLeft);  style (panKnobLeft, true); panKnobLeft.setRange (-1.0, 1.0, 0.01); panKnobLeft.setOverlayEnabled (true);  panKnobLeft.setLabel ("L"); panKnobLeft.addListener (this);
     addAndMakeVisible (panKnobRight); style (panKnobRight, true);panKnobRight.setRange(-1.0, 1.0, 0.01); panKnobRight.setOverlayEnabled (true); panKnobRight.setLabel ("R"); panKnobRight.addListener (this);
@@ -1472,7 +1472,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // All children created; allow layout from now on
     layoutReady = true;
 
-    // space algo switch
+    // reverb algo switch
     addAndMakeVisible (spaceAlgorithmSwitch);
     spaceAlgorithmSwitch.setGreenMode (isGreenMode);
     if (auto* c = dynamic_cast<juce::AudioParameterChoice*>(proc.apvts.getParameter ("space_algo")))
@@ -1482,6 +1482,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         spaceAlgorithmSwitch.setOrientation (SpaceAlgorithmSwitch::Orientation::Vertical);
         spaceAlgorithmSwitch.setSpacing (4.0f);
         spaceAlgorithmSwitch.setAlgorithmFromParameter (idx);
+        // Ensure labels show Room/Plate/Hall regardless of saved state
+        spaceAlgorithmSwitch.setLabels (juce::StringArray { "Room", "Plate", "Hall" });
         currentAlgorithm = idx;
         pad.setSpaceAlgorithm (idx);
     }
@@ -1966,7 +1968,7 @@ void MyPluginAudioProcessorEditor::performLayout()
     auto row3 = r.removeFromTop (rowH3);
     auto row4 = r.removeFromTop (rowH4);
 
-    // ---------------- Row 1: Pan, MONO cell, Width cells, Gain, Drive, Mix -----------
+    // ---------------- Row 1: Pan, Width cells, Gain, Mix, Wet Only -----------
     {
         auto row = row1;
 
@@ -1985,8 +1987,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::Grid::Px (cellW),                    // W MID
             juce::Grid::Px (cellW),                    // W HI
             juce::Grid::Px (cellW),                    // Gain
-            juce::Grid::Px (cellW),                    // Drive
             juce::Grid::Px (cellW),                    // Mix
+            juce::Grid::Px (cellW),                    // Wet Only switch
             juce::Grid::Fr (1)                         // stretchy pad
         };
 
@@ -1994,13 +1996,11 @@ void MyPluginAudioProcessorEditor::performLayout()
             panCell = std::make_unique<KnobCell>(panKnob, panValue, "");
 
         panCell   ->setMetrics (lPx, valuePx, labelGap);
-        monoCell   ->setMetrics (lPx, valuePx, labelGap, Layout::dp (24, s));
         widthCell  ->setMetrics (lPx, valuePx, labelGap);
         widthLoCell->setMetrics (lPx, valuePx, labelGap);
         widthMidCell->setMetrics (lPx, valuePx, labelGap);
         widthHiCell->setMetrics (lPx, valuePx, labelGap);
         gainCell   ->setMetrics (lPx, valuePx, labelGap);
-        satDriveCell->setMetrics (lPx, valuePx, labelGap);
         satMixCell ->setMetrics (lPx, valuePx, labelGap);
 
         addAndMakeVisible (*panCell);
@@ -2009,8 +2009,16 @@ void MyPluginAudioProcessorEditor::performLayout()
         addAndMakeVisible (*widthMidCell);
         addAndMakeVisible (*widthHiCell);
         addAndMakeVisible (*gainCell);
-        addAndMakeVisible (*satDriveCell);
         addAndMakeVisible (*satMixCell);
+        // Wet Only switch cell (styled like delay kill dry)
+        if (!wetOnlyCell)
+        {
+            wetOnlyToggle.getProperties().set ("iconType", (int) IconSystem::Mix);
+            wetOnlyToggle.setButtonText ("");
+            wetOnlyCell = std::make_unique<SwitchCell> (wetOnlyToggle);
+            wetOnlyCell->setCaption ("Wet Only");
+        }
+        addAndMakeVisible (*wetOnlyCell);
 
         g.items = {
             juce::GridItem (*panCell)          .withWidth (cellW * 3 + gapI * 2).withHeight (containerHeight),
@@ -2019,16 +2027,14 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*widthMidCell)     .withWidth (cellW).withHeight (containerHeight),
             juce::GridItem (*widthHiCell)      .withWidth (cellW).withHeight (containerHeight),
             juce::GridItem (*gainCell)         .withWidth (cellW).withHeight (containerHeight),
-            juce::GridItem (*satDriveCell)     .withWidth (cellW).withHeight (containerHeight),
-            juce::GridItem (*satMixCell)       .withWidth (cellW).withHeight (containerHeight)
+            juce::GridItem (*satMixCell)       .withWidth (cellW).withHeight (containerHeight),
+            juce::GridItem (*wetOnlyCell)      .withWidth (cellW).withHeight (containerHeight)
         };
         g.performLayout (row);
 
         // Managed labels for row 1 cells (ensure labels visible in all states)
         panCell   ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
         panCell   ->setValueLabelGap (labelGap);
-        monoCell  ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        monoCell  ->setValueLabelGap (labelGap);
         widthCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
         widthLoCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
         widthMidCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
@@ -2062,7 +2068,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             reverbGrid.templateRows    = { juce::Grid::Px (containerHeight) };
             const int cellW = lPx + Layout::dp (8, s);
             reverbGrid.templateColumns = { 
-                juce::Grid::Px (cellW * 3 + gapI * 2),                   // Mono triple-wide at front
+                juce::Grid::Px (cellW * 2 + gapI),                        // Mono now double-wide at front
+                juce::Grid::Px (cellW),                                   // Drive (moved here)
                 juce::Grid::Px (cellW),                                   // Reverb cell
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW),           // DUCK, ATT, REL, THR, RAT
@@ -2075,6 +2082,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             if (duckRelease.getParentComponent() == this) removeChildComponent (&duckRelease);
             if (duckThreshold.getParentComponent() == this) removeChildComponent (&duckThreshold);
             if (duckRatio.getParentComponent() == this) removeChildComponent (&duckRatio);
+            if (satDrive.getParentComponent() == this) removeChildComponent (&satDrive);
  
             spaceCell  ->setMetrics (lPx, valuePx, gapPx);
             duckCell   ->setMetrics (lPx, valuePx, gapPx);
@@ -2082,6 +2090,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             duckRelCell->setMetrics (lPx, valuePx, gapPx);
             duckThrCell->setMetrics (lPx, valuePx, gapPx);
             duckRatCell->setMetrics (lPx, valuePx, gapPx);
+            satDriveCell->setMetrics (lPx, valuePx, gapPx);
 
             // Mono: triple-wide with slope segmented switch + AUD toggle to the right
             if (!monoCell) return; // safety
@@ -2134,11 +2143,13 @@ void MyPluginAudioProcessorEditor::performLayout()
             addAndMakeVisible (*duckThrCell);
             addAndMakeVisible (*duckRatCell);
             addAndMakeVisible (*monoCell);
+            addAndMakeVisible (*satDriveCell);
  
             reverbGrid.items = {
                 juce::GridItem (*monoCell)
-                    .withWidth (cellW * 3 + gapI * 2)
+                    .withWidth (cellW * 2 + gapI)
                     .withHeight (containerHeight),
+                juce::GridItem (*satDriveCell)     .withHeight (containerHeight),
                 juce::GridItem (*spaceCell)         .withHeight (containerHeight),
                 juce::GridItem (*duckCell)          .withHeight (containerHeight),
                 juce::GridItem (*duckAttCell)       .withHeight (containerHeight),

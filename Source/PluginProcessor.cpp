@@ -19,7 +19,7 @@ namespace IDs {
     static constexpr const char* satDriveDb = "sat_drive_db";
     static constexpr const char* satMix     = "sat_mix";
     static constexpr const char* bypass     = "bypass";
-    static constexpr const char* spaceAlgo  = "space_algo";   // 0=Inner 1=Outer 2=Deep
+    static constexpr const char* spaceAlgo  = "space_algo";   // 0=Room 1=Plate 2=Hall
     static constexpr const char* airDb      = "air_db";
     static constexpr const char* bassDb     = "bass_db";
     static constexpr const char* ducking    = "ducking";
@@ -105,6 +105,75 @@ static inline float getParam (juce::AudioProcessorValueTreeState& apvts, const c
     jassertfalse; return 0.0f;
 }
 
+// ------------------------------------------------
+// New voicing helper for Room/Plate/Hall macro map
+// ------------------------------------------------
+static inline float lerpFloat (float a, float b, float t)
+{
+    t = juce::jlimit (0.0f, 1.0f, t);
+    return a + (b - a) * t;
+}
+
+// Roughly map damping cutoff in Hz to JUCE Reverb damping [0..1]
+// (not perceptual; placeholder until full engine is integrated)
+static inline float mapDampHzToParam01 (float hz)
+{
+    const float lo = 2000.0f, hi = 12000.0f;
+    return juce::jlimit (0.0f, 1.0f, (hz - lo) / (hi - lo));
+}
+
+static inline void computeReverbVoicing (int spaceAlgoIndex, float depth01, juce::dsp::Reverb::Parameters& out)
+{
+    const int t = juce::jlimit (0, 2, spaceAlgoIndex); // 0..2
+    const float d = juce::jlimit (0.0f, 1.0f, depth01);
+
+    // Ensure wet-only mixing occurs at our mix site
+    out.dryLevel   = 0.0f;
+    out.freezeMode = false;
+
+    // Defaults
+    float mix01   = 0.0f;
+    float size01  = out.roomSize;
+    float dampHz  = 6000.0f;
+    float width01 = out.width;
+
+    switch (t)
+    {
+        // Room
+        case 0:
+        {
+            mix01   = lerpFloat (0.00f, 0.14f, d);
+            size01  = lerpFloat (0.28f, 0.45f, d);
+            dampHz  = lerpFloat (4000.f, 6000.f, d);
+            width01 = lerpFloat (0.80f, 0.90f, d);
+        } break;
+
+        // Plate
+        case 1:
+        {
+            mix01   = lerpFloat (0.00f, 0.28f, d);
+            size01  = lerpFloat (0.45f, 0.60f, d);
+            dampHz  = lerpFloat (6000.f, 8000.f, d);
+            width01 = 0.90f;
+        } break;
+
+        // Hall
+        case 2:
+        default:
+        {
+            mix01   = lerpFloat (0.00f, 0.35f, d);
+            size01  = lerpFloat (0.65f, 0.90f, d);
+            dampHz  = lerpFloat (6500.f, 8000.f, d);
+            width01 = 1.00f;
+        } break;
+    }
+
+    out.wetLevel = juce::jlimit (0.0f, 1.0f, mix01);
+    out.roomSize = juce::jlimit (0.0f, 1.0f, size01);
+    out.damping  = juce::jlimit (0.0f, 1.0f, mapDampHzToParam01 (dampHz));
+    out.width    = juce::jlimit (0.0f, 1.0f, width01);
+}
+
 // HostParams is declared in PluginProcessor.h
 
 // ================================================================
@@ -188,6 +257,7 @@ bool MyPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 
 void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    juce::FloatVectorOperations::disableDenormalisedNumberSupport();
     currentSR = sampleRate;
 
     for (auto* s : { &panSmoothed, &panLSmoothed, &panRSmoothed, &depthSmoothed, &widthSmoothed, &gainSmoothed, &tiltSmoothed,
@@ -447,7 +517,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::satDriveDb, 1 }, "Saturation Drive (dB)", juce::NormalisableRange<float> (0.0f, 36.0f, 0.01f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::satMix, 1 }, "Saturation Mix", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 1.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::bypass, 1 }, "Bypass", juce::NormalisableRange<float> (0.0f, 1.0f, 1.0f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::spaceAlgo, 1 }, "Space Algorithm", juce::StringArray { "Inner", "Outer", "Deep" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::spaceAlgo, 1 }, "Reverb Algorithm", juce::StringArray { "Room", "Plate", "Hall" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::airDb, 1 }, "Air", juce::NormalisableRange<float> (0.0f, 6.0f, 0.1f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::bassDb, 1 }, "Bass", juce::NormalisableRange<float> (-6.0f, 6.0f, 0.1f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::ducking, 1 }, "Ducking", juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f), 0.0f));
@@ -609,6 +679,19 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     
     // Prepare delay engine
     delayEngine.prepare (sr, (int) spec.numChannels);
+
+    // Reverb: preallocate buses and init smoothed wet
+    dryBusBuf.setSize ((int) spec.numChannels, (int) spec.maximumBlockSize);
+    wetBusBuf.setSize ((int) spec.numChannels, (int) spec.maximumBlockSize);
+    const double smoothMs = 0.02;
+    wetMixSmoothed.reset (sr, smoothMs);
+    wetMixSmoothed.setCurrentAndTargetValue (rvParams.wetLevel);
+    roomSizeSmoothed.reset (sr, smoothMs);
+    roomSizeSmoothed.setCurrentAndTargetValue (rvParams.roomSize);
+    dampingSmoothed.reset (sr, smoothMs);
+    dampingSmoothed.setCurrentAndTargetValue (rvParams.damping);
+    widthSmoothed.reset (sr, smoothMs);
+    widthSmoothed.setCurrentAndTargetValue (rvParams.width);
 }
 
 template <typename Sample>
@@ -1152,7 +1235,7 @@ void FieldChain<Sample>::applySaturation (Block block, Sample driveLin, Sample m
 }
 
  
-// Space algorithms (simplified, parallel reverb + light tone)
+// Reverb algorithms (Room/Plate/Hall) macro mapping, parallel wet return
 
 template <typename Sample>
 void FieldChain<Sample>::applySpaceAlgorithm (Block block, Sample depth01, int algo)
@@ -1168,58 +1251,12 @@ void FieldChain<Sample>::applySpaceAlgorithm (Block block, Sample depth01, int a
         return;
     }
 
-    float wet = 0.0f, damp = 0.35f, room = 0.45f, width = 1.0f;
-    if (algo == 0) // Inner (EQ sculpt + subtle comp)
-    {
-        const Sample midCutDb   = (Sample) juce::jmap ((double) depth01, 0.0, 1.0, 0.0, -8.0);
-        const Sample highShelf  = (Sample) juce::jmap ((double) depth01, 0.0, 1.0, 0.0,  4.0);
-        const Sample lowShelfDb = (Sample) juce::jmap ((double) depth01, 0.0, 1.0, 0.0,  2.0);
-
-        // Low shelf -> mid cut -> high shelf
-        const double nyq = sr * 0.49;
-        const double fLow  = juce::jlimit (20.0,  nyq, 120.0);
-        const double fMid  = juce::jlimit (60.0,  nyq, 350.0);
-        const double fHigh = juce::jlimit (1000.0, nyq, 6000.0);
-        auto lowC  = juce::dsp::IIR::Coefficients<Sample>::makeLowShelf  (sr, fLow,  (Sample)0.8, (Sample) juce::Decibels::decibelsToGain ((double) lowShelfDb));
-        auto midC  = juce::dsp::IIR::Coefficients<Sample>::makePeakFilter (sr, fMid,  (Sample)0.8, (Sample) juce::Decibels::decibelsToGain ((double) midCutDb));
-        auto highC = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf (sr, fHigh, (Sample)0.7, (Sample) juce::Decibels::decibelsToGain ((double) highShelf));
-        juce::dsp::IIR::Filter<Sample> fL, fM, fH;
-        fL.prepare ({ sr, (juce::uint32) block.getNumSamples(), (juce::uint32) block.getNumChannels() });
-        fM.prepare ({ sr, (juce::uint32) block.getNumSamples(), (juce::uint32) block.getNumChannels() });
-        fH.prepare ({ sr, (juce::uint32) block.getNumSamples(), (juce::uint32) block.getNumChannels() });
-        fL.coefficients = lowC; fM.coefficients = midC; fH.coefficients = highC;
-        CtxRep ctx (block); fL.process (ctx); fM.process (ctx); fH.process (ctx);
-
-        // light soft comp (static)
-        const Sample k = (Sample) juce::jmap ((double) depth01, 0.0, 1.0, 1.0, 0.85);
-        for (int c = 0; c < (int) block.getNumChannels(); ++c)
-        {
-            auto* d = block.getChannelPointer (c);
-            for (int i = 0; i < (int) block.getNumSamples(); ++i)
-                d[i] = softClipT (d[i] * k) / k;
-        }
-        return; // no reverb here
-    }
-    else if (algo == 1) // Outer (natural)
-    {
-        wet  = (float) juce::jmap ((double) depth01, 0.0, 1.0, 0.0, 0.35);
-        damp = (float) juce::jmap ((double) depth01, 0.0, 1.0, 0.15, 0.45);
-        room = (float) juce::jmap ((double) depth01, 0.0, 1.0, 0.25, 0.65);
-        width= 0.8f;
-    }
-    else // Deep (warm + more wet)
-    {
-        wet  = (float) juce::jmap ((double) depth01, 0.0, 1.0, 0.0, 0.50);
-        damp = (float) juce::jmap ((double) depth01, 0.0, 1.0, 0.25, 0.85);
-        room = (float) juce::jmap ((double) depth01, 0.0, 1.0, 0.40, 0.85);
-        width= 1.0f;
-    }
-
-    // Configure params
-    rvParams.damping  = damp;
-    rvParams.roomSize = room;
-    rvParams.wetLevel = wet;
-    rvParams.width    = width;
+    // New macro mapping for all algorithms: 0=Room, 1=Plate, 2=Hall
+    computeReverbVoicing ((int) algo, (float) depth01, rvParams);
+    // Smooth macro params per-sample downstream
+    roomSizeSmoothed.setTargetValue (rvParams.roomSize);
+    dampingSmoothed .setTargetValue (rvParams.damping);
+    widthSmoothed   .setTargetValue (rvParams.width);
 
     if constexpr (std::is_same_v<Sample, double>)
     {
@@ -1231,7 +1268,12 @@ void FieldChain<Sample>::applySpaceAlgorithm (Block block, Sample depth01, int a
     else
     {
         jassert (reverbF);
-        reverbF->setParameters (rvParams);
+        // Update smoothed params then write to JUCE reverb
+        auto cur = rvParams;
+        cur.roomSize = roomSizeSmoothed.getNextValue();
+        cur.damping  = dampingSmoothed.getNextValue();
+        cur.width    = widthSmoothed.getNextValue();
+        reverbF->setParameters (cur);
         // make wet copy
         juce::AudioBuffer<float> wetBuf ((int) block.getNumChannels(), (int) block.getNumSamples());
         for (int c = 0; c < (int) block.getNumChannels(); ++c)
@@ -1239,7 +1281,8 @@ void FieldChain<Sample>::applySpaceAlgorithm (Block block, Sample depth01, int a
         juce::dsp::AudioBlock<float> fblk (wetBuf);
         juce::dsp::ProcessContextReplacing<float> fctx (fblk);
         reverbF->process (fctx);
-        // mix back (manual add to AudioBlock)
+        // Ensure dry is only applied once: JUCE Reverb dryLevel is zeroed in computeReverbVoicing
+        // Mix wet back once using rvParams.wetLevel (dry already in dst)
         for (int c = 0; c < (int) block.getNumChannels(); ++c)
         {
             auto* dst = block.getChannelPointer (c);
@@ -1250,7 +1293,7 @@ void FieldChain<Sample>::applySpaceAlgorithm (Block block, Sample depth01, int a
     }
 }
 
-// Render space into a provided wet buffer (same channels/samples as current block)
+// Render reverb into a provided wet buffer (same channels/samples as current block)
 template <typename Sample>
 void FieldChain<Sample>::renderSpaceWet (juce::AudioBuffer<Sample>& wet)
 {
@@ -1270,13 +1313,17 @@ void FieldChain<Sample>::renderSpaceWet (juce::AudioBuffer<Sample>& wet)
     {
         if (reverbF)
         {
-            reverbF->setParameters (rvParams);
+            auto cur = rvParams;
+            cur.roomSize = roomSizeSmoothed.getNextValue();
+            cur.damping  = dampingSmoothed.getNextValue();
+            cur.width    = widthSmoothed.getNextValue();
+            reverbF->setParameters (cur);
             juce::dsp::AudioBlock<float> fblk (wet);
             juce::dsp::ProcessContextReplacing<float> fctx (fblk);
             // Clear first then render
             for (int c = 0; c < ch; ++c) wet.clear (c, 0, n);
             reverbF->process (fctx);
-            // At this point wet contains 100% wet; scale by wetLevel to match Space depth
+            // At this point wet contains 100% wet; scale by wetLevel to match reverb depth
             for (int c = 0; c < ch; ++c)
             {
                 auto* d = wet.getWritePointer (c);
@@ -1317,30 +1364,33 @@ void FieldChain<Sample>::process (Block block)
     applyBassShelf (block, params.bassDb, params.bassFreq);
     applyAirBand   (block, params.airDb,  params.airFreq);
 
-    // Space: compute rvParams then render wet-only to buffer 'wet'
+    // Reverb: compute rvParams then render wet-only to buffer 'wet'
     applySpaceAlgorithm (block, params.depth, params.spaceAlgo);
 
-    // Build dry (post tone/imaging) and wet buses
+    // Build dry (post tone/imaging) and wet buses (preallocated)
     const int ch = (int) block.getNumChannels();
     const int n  = (int) block.getNumSamples();
-    juce::AudioBuffer<Sample> dryBus (ch, n), wetBus (ch, n);
+    jassert (n <= dryBusBuf.getNumSamples());
+    jassert (n <= wetBusBuf.getNumSamples());
+    dryBusBuf.setSize (juce::jmax (1, ch), dryBusBuf.getNumSamples(), false, false, true);
+    wetBusBuf.setSize (juce::jmax (1, ch), wetBusBuf.getNumSamples(), false, false, true);
     for (int c = 0; c < ch; ++c)
     {
-        auto* dst = dryBus.getWritePointer (c);
+        auto* dst = dryBusBuf.getWritePointer (c);
         auto* src = block.getChannelPointer (c);
         std::memcpy (dst, src, sizeof (Sample) * (size_t) n);
+        wetBusBuf.clear (c, 0, n);
     }
-    // Start wet from silence; render space into it (using current rvParams)
-    wetBus.clear();
-    renderSpaceWet (wetBus);
+    // Render reverb into wet (100% wet)
+    renderSpaceWet (wetBusBuf);
 
     // LF mono
     applyMonoMaker (block, params.monoHz);
 
     // Nonlinear (apply saturation equally to dry and wet prior to sum) to preserve FX tone
     {
-        juce::dsp::AudioBlock<Sample> dryBlock (dryBus);
-        juce::dsp::AudioBlock<Sample> wetBlock (wetBus);
+        juce::dsp::AudioBlock<Sample> dryBlock (dryBusBuf);
+        juce::dsp::AudioBlock<Sample> wetBlock (wetBusBuf);
         applySaturation (dryBlock, params.satDriveLin, params.satMix, params.osMode);
         applySaturation (wetBlock, params.satDriveLin, params.satMix, params.osMode);
     }
@@ -1395,7 +1445,7 @@ void FieldChain<Sample>::process (Block block)
         delayEngine.process(block, scL, scR);
     }
 
-    // Duck wet against dry (WetOnly), only when Space wet is active to save CPU
+    // Duck wet against dry (WetOnly), only when Reverb wet is active to save CPU
     const bool spaceWetActive = (rvParams.wetLevel > 0.0001f);
     if (params.ducking > (Sample) 0.001 && spaceWetActive)
     {
@@ -1411,21 +1461,29 @@ void FieldChain<Sample>::process (Block block)
         p.bypass      = (p.maxDepthDb <= 0.001f);
         ducker.setParams (p);
 
-        ducker.processWet (wetBus.getWritePointer (0), wetBus.getWritePointer (juce::jmin (1, ch-1)),
-                           dryBus.getReadPointer (0), dryBus.getReadPointer (juce::jmin (1, ch-1)), n);
+        ducker.processWet (wetBusBuf.getWritePointer (0), wetBusBuf.getWritePointer (juce::jmin (1, ch-1)),
+                           dryBusBuf.getReadPointer (0), dryBusBuf.getReadPointer (juce::jmin (1, ch-1)), n);
     }
     else
     {
         // Skip ducking entirely when reverb wet is zero; UI will idle the GR meter
     }
 
-    // Sum Dry + Wet back to output block
+    // Equal-power mix: apply smoothed wet to avoid clicks
+    wetMixSmoothed.setTargetValue (rvParams.wetLevel);
+    // Sum Dry + Wet back to output block (equal-power law)
     for (int c = 0; c < ch; ++c)
     {
         auto* out = block.getChannelPointer (c);
-        const Sample* d = dryBus.getReadPointer (c);
-        const Sample* w = wetBus.getReadPointer (c);
-        for (int i = 0; i < n; ++i) out[i] = d[i] + w[i];
+        const Sample* d = dryBusBuf.getReadPointer (c);
+        const Sample* w = wetBusBuf.getReadPointer (c);
+        for (int i = 0; i < n; ++i)
+        {
+            const float mix = wetMixSmoothed.getNextValue();
+            const float a = std::cos (0.5f * juce::MathConstants<float>::pi * (1.0f - mix));
+            const float b = std::sin (0.5f * juce::MathConstants<float>::pi * (mix));
+            out[i] = (Sample) (a * (double) d[i] + b * (double) w[i]);
+        }
     }
 }
 

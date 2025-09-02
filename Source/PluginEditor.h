@@ -166,7 +166,7 @@ private:
     float monoHzValue = 0.0f;
     int   monoSlopeDbPerOct = 12;
     float spaceValue = 0.0f;
-    int   spaceAlgorithm = 0; // 0=Inner, 1=Outer, 2=Deep
+    int   spaceAlgorithm = 0; // 0=Room, 1=Plate, 2=Hall
     bool  isGreenMode = false; // kept for compatibility (XYPad paint may read this)
     
     // EQ frequency positions (for drawing only)
@@ -1224,6 +1224,9 @@ private:
     CopyButton       copyButton;
     LockButton       lockButton;
 
+    // Global Wet Only (Kill Dry) UI toggle (no param binding per instructions)
+    juce::ToggleButton wetOnlyToggle;
+
     // Space controls
     class SpaceKnob : public juce::Slider
     {
@@ -1241,7 +1244,7 @@ private:
     class MonoSlopeSwitch;
     std::unique_ptr<MonoSlopeSwitch> monoSlopeSwitch;
     
-    // 3-way segmented switch (Inner / Outer / Deep) with horizontal or vertical layout.
+    // 3-way segmented switch (Room / Plate / Hall) with horizontal or vertical layout.
     class SpaceAlgorithmSwitch : public juce::Component
     {
     public:
@@ -1249,9 +1252,9 @@ private:
 
         SpaceAlgorithmSwitch()
         {
-            items.add ("Inner");
-            items.add ("Outer");
-            items.add ("Deep");
+            items.add ("Room");
+            items.add ("Plate");
+            items.add ("Hall");
         }
 
         void setGreenMode (bool) {}
@@ -1396,11 +1399,10 @@ private:
             if (lf != nullptr)
             {
                 auto a = lf->theme.accent;
-                // DEV NOTE: Ocean/default – stronger separation
                 switch (idx) {
-                    case 0: return a;                 // Inner
-                    case 1: return a.brighter (0.35f);// Outer
-                    case 2: return a.darker   (0.35f);// Deep
+                    case 0: return a;                 // Room
+                    case 1: return a.brighter (0.35f);// Plate
+                    case 2: return a.darker   (0.35f);// Hall
                 }
             }
             switch (idx) { case 0: return juce::Colour (0xFF5AA9E6); case 1: return juce::Colour (0xFF2EC4B6); case 2: return juce::Colour (0xFF2A1B3D); }
@@ -1430,6 +1432,7 @@ private:
     SpaceAlgorithmSwitch spaceAlgorithmSwitch;
     std::unique_ptr<SpaceAlgorithmSwitch> monoSlopeSegmentSwitch;
     std::unique_ptr<SwitchCell> spaceSwitchCell;
+    std::unique_ptr<SwitchCell> wetOnlyCell;
 
     // Dedicated Mono Slope Switch (6/12/24) with independent drawing but same visual language
     class MonoSlopeSwitch : public juce::Component

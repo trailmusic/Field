@@ -150,6 +150,29 @@ private:
     std::unique_ptr<FloatReverbAdapter>  reverbD;  // only used when Sample == double
     std::unique_ptr<juce::dsp::Reverb>   reverbF;  // used when Sample == float
     juce::dsp::Reverb::Parameters        rvParams;
+    // Preallocated buses to avoid per-block allocations
+    juce::AudioBuffer<Sample>            dryBusBuf;
+    juce::AudioBuffer<Sample>            wetBusBuf;
+    // Smoothed wet mix (per-sample ramp)
+    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> wetMixSmoothed;
+    // Smoothed reverb macro params
+    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> roomSizeSmoothed;
+    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> dampingSmoothed;
+    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> widthSmoothed;
+
+    // High-order interpolation hooks (for future modulated delay lines)
+    template <typename S>
+    static inline S readHermite4 (const S* d, int N, float rp)
+    {
+        int i1 = (int) rp; float t = rp - (float) i1;
+        int i0 = (i1 - 1 + N) % N, i2 = (i1 + 1) % N, i3 = (i1 + 2) % N;
+        S y0 = d[i0], y1 = d[i1], y2 = d[i2], y3 = d[i3];
+        S c0 = y1;
+        S c1 = (S) 0.5 * (y2 - y0);
+        S c2 = y0 - (S) 2.5 * y1 + (S) 2.0 * y2 - (S) 0.5 * y3;
+        S c3 = (S) 0.5 * (y3 - y0) + (S) 1.5 * (y1 - y2);
+        return ((c3 * t + c2) * t + c1) * t + c0;
+    }
 
     // Look-ahead ducker (per-Sample instance)
     fielddsp::Ducker<Sample>             ducker;
