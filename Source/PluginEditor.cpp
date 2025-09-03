@@ -871,9 +871,15 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     const int cellW_delay_min = lPx + Layout::dp (8, s);
     const int delayColsMin = 7;
     const int delayCardWMin = delayColsMin * cellW_delay_min + gapS * (delayColsMin - 1) + Layout::dp (Layout::GAP, s);
+    // Compute minimum motion grid width (second divider + gap + 4 motion cells)
+    const int motionColsMin = 4;
+    const int motionCellWMin = lPx + Layout::dp (8, s);
+    const int motionDividerWMin = Layout::dp (8, s);
+    const int motionAreaWMin = motionDividerWMin + Layout::dp (Layout::GAP, s) + motionColsMin * motionCellWMin;
     const int calculatedMinWidth = xlPx + lPx + swW + 5*lPx + 3*lPx + gaps * gapS
                                    + Layout::dp (Layout::PAD, s) * 2
-                                   + delayCardWMin + Layout::dp (Layout::GAP, s);
+                                   + delayCardWMin + Layout::dp (Layout::GAP, s)
+                                   + motionAreaWMin;
     
     // Calculate minimum height based on layout structure
     const int headerH = Layout::dp (50, s);
@@ -1213,9 +1219,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     {
         s.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
         s.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-        // Align with FieldLNF ticks: -π → +π
-        constexpr float kStart = -juce::MathConstants<float>::pi;            // -180°
-        constexpr float kEnd   =  juce::MathConstants<float>::pi;            // +180°
+        // Align with FieldLNF ticks: π → π + 2π
+        constexpr float kStart = juce::MathConstants<float>::pi;
+        constexpr float kEnd   = juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi;
         s.setRotaryParameters (kStart, kEnd, true);
         s.setLookAndFeel (&lnf);
     };
@@ -1259,8 +1265,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         addAndMakeVisible (*slider);
         slider->setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
         slider->setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-        constexpr float kStart = -juce::MathConstants<float>::pi;
-        constexpr float kEnd   =  juce::MathConstants<float>::pi;
+        constexpr float kStart = juce::MathConstants<float>::pi;
+        constexpr float kEnd   = juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi;
         slider->setRotaryParameters (kStart, kEnd, true);
         slider->setLookAndFeel (&lnf);
         slider->addListener (this);
@@ -1917,10 +1923,20 @@ void MyPluginAudioProcessorEditor::performLayout()
 
     // 2) main XY area + vertical meters on right side
     {
-        auto main = r.removeFromTop (juce::jmax (Layout::dp (300, s), (int) std::round (r.getHeight() * 0.5f)));
-        
-        // Reserve space for meters on the right side
-        const int metersW = Layout::dp (Layout::METERS_W, s);
+        // Pre-compute row heights to reserve exact space for rows below, so XY/meters respond consistently
+        const int lPx_rsv       = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
+        const int labelBand_rsv = Layout::dp (Layout::LABEL_BAND_EXTRA, s);
+        const int containerH_rsv = lPx_rsv + labelBand_rsv + Layout::dp (Layout::LABEL_BAND_EXTRA, s);
+        const int rowsTotalH_rsv = containerH_rsv * 4; // four uniform rows
+
+        // Allocate the top area as remaining height after rows, with a minimum
+        const int mainH = juce::jmax (Layout::dp (300, s), r.getHeight() - rowsTotalH_rsv);
+        auto main = r.removeFromTop (mainH);
+
+        // Reserve space for meters on the right side, aligned to grid column width
+        const int lPx_top   = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
+        const int cellW_top = lPx_top + Layout::dp (8, s);
+        const int metersW   = cellW_top * 2; // align meters to double cell width
         auto metersArea = main.removeFromRight (metersW);
         metersContainer.setBounds (metersArea);
         
@@ -1999,8 +2015,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::Grid::Px (switchW),                  // Delay Grid Flavor
             juce::Grid::Px (switchW),                  // Delay Ping-Pong
             juce::Grid::Px (switchW),                  // Delay Freeze
-            juce::Grid::Px (switchW),                  // Delay Wet Only
-            juce::Grid::Fr (1)                         // stretchy pad
+            juce::Grid::Px (switchW)                   // Delay Wet Only
         };
 
         if (!panCell)
@@ -2107,8 +2122,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                 juce::Grid::Px (dividerW),                                // Divider column (global alignment)
                 // Delay Row 2: Time, Feedback, Wet, Mod Rate, Mod Depth, Spread, Width
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
-                juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
-                juce::Grid::Fr (1)
+                juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW)
             };
             // Ensure components are parented correctly (cells own knob+value)
             if (spaceKnob.getParentComponent() == this) removeChildComponent (&spaceKnob);
@@ -2687,6 +2701,75 @@ void MyPluginAudioProcessorEditor::performLayout()
         delayDivider.setBounds (juce::Rectangle<int> (dividerColX, row1.getY(), dividerW,
                                                       row1.getHeight() + row2.getHeight() + row3.getHeight() + row4.getHeight()));
         delayDivider.toFront (false);
+    }
+
+    // Draw a second vertical divider to the right of the Delay Wet Only row, then place a 4x4 Motion grid
+    {
+        // Find the rightmost of the delay switches on row 1 as our anchor (Wet Only in delay card)
+        int anchorX = 0;
+        if (delayKillDryCell) anchorX = delayKillDryCell->getBounds().getRight();
+        else if (delayFreezeCell) anchorX = delayFreezeCell->getBounds().getRight();
+        else anchorX = delayDivider.getRight();
+
+        const int secondDividerX = anchorX + Layout::dp (4, s);
+        addAndMakeVisible (motionDivider);
+        motionDivider.setBounds (juce::Rectangle<int> (secondDividerX, row1.getY(), dividerW,
+                                                       row1.getHeight() + row2.getHeight() + row3.getHeight() + row4.getHeight()));
+        motionDivider.toFront (false);
+
+        // Build/create 16 motion cells if needed
+        const int motionK = lPx;               // knob diameter same as large knob
+        const int motionV = Layout::dp (14, s);
+        const int motionG = Layout::dp (0,  s);
+        const int cellW   = lPx + Layout::dp (8, s);   // match standard single cell width
+        const int colGap  = 0;
+
+        // Compute a grid area to the right of second divider covering all rows
+        const int motionAreaX = secondDividerX + dividerW + Layout::dp (4, s);
+        const int motionAreaW = getWidth() - motionAreaX - Layout::dp (Layout::PAD, s);
+        const int motionAreaY = row1.getY();
+        const int motionAreaH = row1.getHeight() + row2.getHeight() + row3.getHeight() + row4.getHeight();
+        juce::Rectangle<int> motionArea (motionAreaX, motionAreaY, juce::jmax (0, motionAreaW), motionAreaH);
+
+        // Layout as 4x4 cells spanning the full height (4 rows)
+        const int cellH = containerHeight; // one per row
+        // Create and show cells
+        for (int i = 0; i < 16; ++i)
+        {
+            if (!motionCells[i])
+            {
+                motionValues[i].setText ("", juce::dontSendNotification);
+                motionCells[i] = std::make_unique<KnobCell>(motionDummies[i], motionValues[i], "");
+                motionCells[i]->getProperties().set ("motionGreenBorder", true);
+                motionDummies[i].setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+                motionDummies[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+                // Ensure rotary angles match LNF tick system (π → π + 2π)
+                motionDummies[i].setRotaryParameters (
+                    juce::MathConstants<float>::pi,
+                    juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
+                    true
+                );
+            }
+            addAndMakeVisible (*motionCells[i]);
+            motionCells[i]->setMetrics (motionK, motionV, motionG);
+            motionCells[i]->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            motionCells[i]->setValueLabelGap (Layout::dp (4, s));
+        }
+
+        // Compute per-column width and position cells in 4 columns by 4 rows
+        const int cols = 4, rows = 4;
+        const int perColW = cellW; // force same width as standard cells
+        int idx = 0;
+        for (int c = 0; c < cols; ++c)
+        {
+            juce::Rectangle<int> r (motionAreaX + c * (perColW + colGap), motionAreaY, perColW, motionAreaH);
+            for (int rIdx = 0; rIdx < rows; ++rIdx)
+            {
+                if (idx < 16 && motionCells[idx])
+                    motionCells[idx]->setBounds (r.removeFromTop (cellH));
+                ++idx;
+            }
+        }
     }
 
     // Apply lighter theme to delay knob cells across rows (panel + border)

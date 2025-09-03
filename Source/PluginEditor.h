@@ -852,7 +852,7 @@ public:
         void paint (juce::Graphics& g) override
         {
             auto r = getLocalBounds().toFloat().reduced(2.0f);
-            // Use default FieldLNF rotary rendering (with its default tick/dot system)
+            // Use FieldLNF rotary rendering (single source of truth for quarter ticks)
             ui::paintRotaryWithLNF(g, *this, r);
             if (muted)
             {
@@ -1684,7 +1684,7 @@ private:
     
     // Scaling
     float scaleFactor = 1.0f;
-    const int baseWidth  = 1700;
+    const int baseWidth  = 2000; // increased to accommodate delay + motion grid by default
     const int baseHeight = 1250;
     const int standardKnobSize = 80;
     bool resizingRowGuard = false;
@@ -2009,7 +2009,7 @@ private:
     };
 
     VerticalDivider splitDivider{lnf}, eqDivLpMono{lnf}, eqDivScoopHp{lnf};
-    VerticalDivider volDivPanSpace{lnf}, volDivDuckRight{lnf}, delayDivider{lnf};
+    VerticalDivider volDivPanSpace{lnf}, volDivDuckRight{lnf}, delayDivider{lnf}, motionDivider{lnf};
     // Horizontal dividers between rows
     class HorizontalDivider : public juce::Component {
     public:
@@ -2025,6 +2025,11 @@ private:
     };
 
     HorizontalDivider rowDivVol{lnf}, rowDivEQ{lnf};
+
+    // Motion cells (4x4 blank knobs on far right)
+    std::array<std::unique_ptr<KnobCell>, 16> motionCells;
+    std::array<juce::Slider, 16> motionDummies;
+    std::array<juce::Label,  16> motionValues;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessorEditor)
 }; 
