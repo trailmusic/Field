@@ -2899,8 +2899,8 @@ void MyPluginAudioProcessorEditor::timerCallback()
     duckRelease.setMuted(!duckActive);
     duckThreshold.setMuted(!duckActive);
     duckRatio.setMuted(!duckActive);
-    // Parent ring for the DUCK knob itself tracks reverb (parent) state
-    duckingKnob.setMuted (!reverbActive);
+    // DUCK knob follows overall duckActive (grey when depth=0 or reverb=0)
+    duckingKnob.setMuted (!duckActive);
     spaceAlgorithmSwitch.repaint();
 
     duckingKnob.repaint();
