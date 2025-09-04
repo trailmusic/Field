@@ -13,8 +13,18 @@ set(SRC
     KnobCell.cpp
       IconSystem.h
     IconSystem.cpp
-    PresetSystem.h
-    PresetSystem.cpp
+    
+    dsp/DelayPresetLibrary.h
+    dsp/DelayPresetLibrary.cpp
+    PresetStore.h
+    PresetStore.cpp
+    PresetManager.h
+    PresetManager.cpp
+    
+    PresetRegistry.h
+    PresetRegistry.cpp
+    PresetCommandPalette.h
+    PresetCommandPalette.cpp
 )
 
 juce_add_plugin(Field

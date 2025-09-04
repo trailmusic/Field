@@ -76,6 +76,7 @@ public:
     void updateSearchResults (const juce::String& searchText);
 
     std::function<void (const juce::String&)> onPresetSelected;
+    std::function<void()> onOpenMenu; // optional: open mega menu instead of default popup
 
     // ComboBox::Listener
     void comboBoxChanged (juce::ComboBox* comboBoxThatHasChanged) override;

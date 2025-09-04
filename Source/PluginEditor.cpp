@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "Layout.h"
+#include "dsp/DelayPresetLibrary.h"
 
 //==============================================================
 
@@ -853,8 +854,50 @@ void XYPad::drawBalls (juce::Graphics& g, juce::Rectangle<float> b)
 /* ===================== Editor ===================== */
 
 MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcessor& p)
-: AudioProcessorEditor (&p), proc (p)
+: AudioProcessorEditor (&p), proc (p), presetManager (proc.apvts, nullptr)
 {
+    // Populate factory presets directly from app-data JSON (single source of truth)
+    {
+        const auto presetsFile = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
+                                  .getChildFile ("Field/Presets/delay_presets.json");
+        if (presetsFile.existsAsFile())
+        {
+            const auto text = presetsFile.loadFileAsString();
+            const auto root = juce::JSON::parse (text);
+            auto importOne = [this](const juce::var& v)
+            {
+                if (! v.isObject()) return;
+                if (auto* obj = v.getDynamicObject())
+                {
+                    LibraryPreset pr;
+                    pr.meta.name        = obj->getProperty ("name").toString();
+                    pr.meta.description = obj->getProperty ("desc").toString();
+                    pr.meta.hint        = obj->getProperty ("hint").toString();
+                    pr.meta.author      = "Factory";
+                    pr.meta.category    = "Delay";
+                    if (auto tags = obj->getProperty ("tags"); tags.isArray())
+                        for (auto& t : *tags.getArray()) pr.meta.tags.add (t.toString());
+                    if (auto params = obj->getProperty ("params"); params.isObject())
+                        if (auto* pv = params.getDynamicObject())
+                            for (auto& kv : pv->getProperties())
+                                pr.params.set (kv.name.toString(), kv.value);
+                    if (pr.meta.name.isNotEmpty()) presetStore.addFactoryPreset (pr);
+                }
+            };
+            if (root.isArray())
+            {
+                for (const auto& it : *root.getArray()) importOne (it);
+            }
+            else if (auto* d = root.getDynamicObject())
+            {
+                auto arr = d->getProperty ("presets");
+                if (arr.isArray()) for (const auto& it : *arr.getArray()) importOne (it);
+            }
+        }
+    }
+    presetStore.scan();
+    DBG("[PresetStore] after add+scan: " << presetStore.getAll().size() << " presets");
+
     // Build knob cells once after all sliders/labels are created
     buildCells();
     // Calculate minimum size based on layout requirements
@@ -1082,35 +1125,47 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     };
 
     // Presets UI
-    addAndMakeVisible (presetCombo);
-    addAndMakeVisible (savePresetButton);
+    // Preset field + arrows
+    addAndMakeVisible (presetField);
+    presetField.setButtonText ("Search presets…");
+    presetField.setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
+    presetField.setColour (juce::TextButton::buttonOnColourId, juce::Colours::transparentBlack);
     addAndMakeVisible (prevPresetButton);
     addAndMakeVisible (nextPresetButton);
 
     prevPresetButton.onClick = [this]
     {
-        const int n = presetCombo.getNumItems();
-        if (n <= 0) return;
-        const int cur = presetCombo.getSelectedId() - 1;
-        const int prev = (cur - 1 + n) % n;
-        presetCombo.setSelectedId (prev + 1, juce::dontSendNotification);
-        if (presetCombo.onPresetSelected) presetCombo.onPresetSelected (presetCombo.getText());
+        // no-op: legacy preset combo removed
     };
     nextPresetButton.onClick = [this]
     {
-        const int n = presetCombo.getNumItems();
-        if (n <= 0) return;
-        const int cur = presetCombo.getSelectedId() - 1;
-        const int nxt = (cur + 1) % n;
-        presetCombo.setSelectedId (nxt + 1, juce::dontSendNotification);
-        if (presetCombo.onPresetSelected) presetCombo.onPresetSelected (presetCombo.getText());
+        // no-op: legacy preset combo removed
     };
-    savePresetButton.onSavePreset = [this]
+    // Open command-palette when clicking the preset field; arrows remain for prev/next only
+    presetField.onClick = [this]
     {
-        // (same modal save flow you posted; omitted here to keep file concise)
-        // Keep your existing save dialog implementation.
-        presetCombo.refreshPresets();
+        static PresetRegistry presetRegistry; // lifetime across openings
+        presetRegistry.reloadAll();
+        PresetCommandPalette::show(
+            presetRegistry, presetField,
+            // Apply
+            [this](const PresetEntry& e){
+                // Convert NamedValueSet to APVTS via PresetManager
+                LibraryPreset tmp; tmp.meta.id = e.id; tmp.meta.name = e.name; tmp.params = e.params;
+                presetManager.applyPresetAtomic (tmp);
+                presetNameLabel.setText (e.name, juce::dontSendNotification);
+            },
+            // Load to slot
+            [this](const PresetEntry& e, bool toA){ LibraryPreset tmp; tmp.params = e.params; presetManager.loadToSlot (tmp, toA); },
+            // Star (persist favorite)
+            [reg=&presetRegistry](const PresetEntry& e, bool fav){ reg->setFavorite (e.id, fav); },
+            // Save As
+            [this](juce::String name, juce::StringArray tags, juce::String cat){ auto pr = presetManager.currentAsPreset (name, cat, tags, "User preset", "", "You"); presetStore.saveUserPreset (pr); presetStore.scan(); },
+            presetField.getButtonText()
+        );
     };
+
+    // Removed savePresetButton handler
 
     // A/B + copy
     addAndMakeVisible (abButtonA);
@@ -1845,33 +1900,52 @@ void MyPluginAudioProcessorEditor::performLayout()
     header.justifyItems = juce::Grid::JustifyItems::center;
     header.templateRows = { juce::Grid::TrackInfo (juce::Grid::Fr (1)) };
 
+    // Compute dynamic left header width based on painted logo size
+    juce::Font logoFont (juce::FontOptions (26.0f * s).withStyle ("Bold"));
+    const int logoTextW = (int) logoFont.getStringWidthFloat ("FIELD");
+    const int leftInset = Layout::dp (20, s);
+    const int bypassW   = Layout::dp (56, s);
+    const int leftPaddingAfterLogo = Layout::dp (120, s); // increased gap between logo and bypass
+    const int leftHeaderW = juce::jmax (Layout::dp (240, s), leftInset + logoTextW + leftPaddingAfterLogo + bypassW);
+
     header.templateColumns = {
-        juce::Grid::TrackInfo (juce::Grid::Fr (1)),
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))), // bypass
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (400, s))),// preset
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))), // prev
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))), // next
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))), // save
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))), // A
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))), // B
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))), // copy
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (20, s))), // spacer
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (120, s))),// split
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))), // link
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))), // snap
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s)))  // fullscreen
+        juce::Grid::TrackInfo (juce::Grid::Px (leftHeaderW)),         // left: reserve for painted logo + bypass
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (60, s))),  // spacer between left and center controls
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (360, s))), // center: preset field
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // prev
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // next
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // A
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // B
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // copy
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (16, s))),  // spacer left of divider
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // snap (moved left of split)
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (16, s))),  // spacer left of split
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (120, s))), // split
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // link (center group)
+        juce::Grid::TrackInfo (juce::Grid::Fr (1)),                   // spacer before right utilities
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // color mode (right)
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s)))   // fullscreen (right)
     };
 
     const int h = Layout::dp (24, s);
     auto sizeBtn = [&](juce::Component& c, int w){ c.setSize (w, h); };
 
-    sizeBtn (bypassButton,       Layout::dp (40, s));
-    sizeBtn (savePresetButton,   Layout::dp (40, s));
+    sizeBtn (bypassButton,       Layout::dp (56, s));
+    // Build left header group (bypass only)
+    if (headerLeftGroup.getParentComponent() != this) addAndMakeVisible (headerLeftGroup);
+    if (bypassButton.getParentComponent() != &headerLeftGroup) headerLeftGroup.addAndMakeVisible (bypassButton);
+    headerLeftGroup.setBounds (0, 0, leftHeaderW, h);
+    // Place bypass just after the painted logo text + padding
+    bypassButton.setTopLeftPosition (leftInset + logoTextW + leftPaddingAfterLogo, 0);
+    // savePresetButton removed
     sizeBtn (abButtonA,          Layout::dp (40, s));
     sizeBtn (abButtonB,          Layout::dp (40, s));
     sizeBtn (copyButton,         Layout::dp (40, s));
     sizeBtn (prevPresetButton,   Layout::dp (40, s));
     sizeBtn (nextPresetButton,   Layout::dp (40, s));
+    presetNameLabel.setMinimumHorizontalScale (0.8f);
+    presetNameLabel.setText ("Presets", juce::dontSendNotification);
+    presetNameLabel.setJustificationType (juce::Justification::centredLeft);
     splitToggle.setSize (Layout::dp (120, s), Layout::dp (28, s));
     sizeBtn (linkButton,         Layout::dp (40, s));
     sizeBtn (snapButton,         Layout::dp (40, s));
@@ -1880,19 +1954,20 @@ void MyPluginAudioProcessorEditor::performLayout()
     sizeBtn (optionsButton,      Layout::dp (40, s));
 
     header.items = {
-        juce::GridItem(),
-        juce::GridItem (bypassButton),
-        juce::GridItem (presetCombo),
+        juce::GridItem (headerLeftGroup),
+        juce::GridItem(), // spacer after bypass
+        juce::GridItem (presetField),
         juce::GridItem (prevPresetButton),
         juce::GridItem (nextPresetButton),
-        juce::GridItem (savePresetButton),
         juce::GridItem (abButtonA),
         juce::GridItem (abButtonB),
         juce::GridItem (copyButton),
-        juce::GridItem(),
+        juce::GridItem(), // spacer left of divider
+        juce::GridItem (snapButton),
+        juce::GridItem(), // spacer left of split
         juce::GridItem (splitToggle),
         juce::GridItem (linkButton),
-        juce::GridItem (snapButton),
+        juce::GridItem(), // spacer before right utilities
         juce::GridItem (colorModeButton),
         juce::GridItem (fullScreenButton),
     };
@@ -1911,9 +1986,9 @@ void MyPluginAudioProcessorEditor::performLayout()
         addAndMakeVisible (helpButton);
     }
 
-    // divider left of split toggle
+    // divider left of Snap (Divider | Snap | Split)
     {
-        auto b = splitToggle.getBounds();
+        auto b = snapButton.getBounds();
         const int lineH = Layout::dp (24, s);
         const int gapX  = Layout::dp (8, s);
         auto cy = b.getCentreY();

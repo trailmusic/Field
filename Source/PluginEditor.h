@@ -6,7 +6,10 @@
 #include "KnobCellDual.h"
 #include "KnobCellQuad.h"
 #include "IconSystem.h"
-#include "PresetSystem.h"
+#include "PresetRegistry.h"
+#include "PresetCommandPalette.h"
+#include "PresetManager.h"
+// MegaMenu and old preset system removed
 
 /*==============================================================================
     DEV NOTES – OVERVIEW
@@ -1205,8 +1208,7 @@ private:
     DuckRatioSlider duckRatio;
     juce::ComboBox osSelect;
 
-    PresetComboBox   presetCombo;
-    SavePresetButton savePresetButton;
+    // Old preset combo & save button removed
     BypassButton     bypassButton;
     ToggleSwitch     splitToggle;
     
@@ -1542,12 +1544,16 @@ private:
     
     ABButton abButtonA{true}, abButtonB{false};
     PresetArrowButton prevPresetButton{true}, nextPresetButton{false};
+    juce::TextButton presetField; // clickable field to open palette and display current preset
+    juce::Label presetNameLabel;
+    juce::Component headerLeftGroup; // container for bypass (no logo)
 
     // Split-pan container placeholder for grid cell (no painting, no mouse)
     juce::Component panSplitContainer;
     
-    // Preset manager
-    PresetManager presetManager;
+    // Preset system
+    PresetStore presetStore;
+    NewPresetManager presetManager;
     
     // Containers
     ControlContainer mainControlsContainer, volumeContainer;

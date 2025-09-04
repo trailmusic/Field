@@ -278,6 +278,14 @@ struct DelayEngine
         hpFilter.setType(juce::dsp::StateVariableTPTFilterType::highpass);
         lpFilter.setType(juce::dsp::StateVariableTPTFilterType::lowpass);
         
+        // Initialize mode coloration filters neutral
+        for (int c = 0; c < 2; ++c) {
+            preEmph[c].reset();
+            deEmph[c].reset();
+            headBump[c].reset();
+        }
+        hissLP.reset();
+        
         // Initialize state
         fbStateL = 0.0f;
         fbStateR = 0.0f;
@@ -294,6 +302,23 @@ struct DelayEngine
         // LFO for modulation
         lfoPhase = 0.0;
         lfoInc = 0.0;
+        wowPhase = 0.0;
+        flutterPhase = 0.0;
+        wowInc = 0.0;
+        flutterInc = 0.0;
+
+        // Freeze and feedback smoothing
+        freezeRamp.reset(sampleRate, 0.03);
+        fbSmoothed.reset(sampleRate, 0.02);
+        fbSmoothed.setCurrentAndTargetValue((float)feedbackGain);
+
+        // Look-ahead buffer (initial sizing from default lookMs)
+        lookLen = (int)std::ceil(lookMs * sr * 0.001);
+        lookBuf.setSize(2, juce::jmax(1, lookLen + 1));
+        lookW = 0;
+
+        // Ducking envelope init
+        detEnv = 0.0f; duckGL = 1.0f; duckGR = 1.0f;
     }
 
     void setParameters(const DelayParams& p) 
@@ -335,6 +360,13 @@ struct DelayEngine
         duckPost = p.duckPost;
         crossfeed = p.crossfeedPct * 0.01;
         
+        // Cap and smooth feedback by mode
+        {
+            const float fbCap = (p.mode == 0 ? 0.98f : (p.mode == 1 ? 0.97f : 0.995f));
+            const float fbTarget = juce::jlimit(0.0f, fbCap, (float)feedbackGain);
+            fbSmoothed.setTargetValue(fbTarget);
+        }
+        
         // Update filters
         hpFilter.setCutoffFrequency((Sample)p.hpHz);
         lpFilter.setCutoffFrequency((Sample)p.lpHz);
@@ -347,37 +379,81 @@ struct DelayEngine
             ap.setG(diffuseG);
         }
         
+        // Mode coloration filters setup
+        if (p.mode == 1) {
+            auto pre  = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf(sampleRate, 2000.0, (Sample)0.7, juce::Decibels::decibelsToGain((Sample)+6.0));
+            auto de   = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf(sampleRate, 2000.0, (Sample)0.7, juce::Decibels::decibelsToGain((Sample)-6.0));
+            for (int c = 0; c < 2; ++c) { preEmph[c].coefficients = pre; deEmph[c].coefficients = de; }
+        } else if (p.mode == 2) {
+            auto bump = juce::dsp::IIR::Coefficients<Sample>::makePeakFilter(sampleRate, 80.0, (Sample)0.7, juce::Decibels::decibelsToGain((Sample)+2.5));
+            for (int c = 0; c < 2; ++c) { headBump[c].coefficients = bump; }
+            hissLP.coefficients = juce::dsp::IIR::Coefficients<Sample>::makeLowPass(sampleRate, 6000.0);
+        }
+        
         // Update ducker
         ducker.set((float)p.duckThresholdDb, (float)p.duckRatio, 
                    (float)p.duckAttackMs, (float)p.duckReleaseMs, (float)p.duckDepth);
         
         // Update LFO
         lfoInc = (Sample)(2.0 * juce::MathConstants<double>::pi * p.modRateHz / sampleRate);
+        wowInc = (Sample)(2.0 * juce::MathConstants<double>::pi * juce::jlimit(0.2, 1.0, p.modRateHz * 0.9) / sampleRate);
+        flutterInc = (Sample)(2.0 * juce::MathConstants<double>::pi * 6.0 / sampleRate);
+
+        // Ducking coefficients
+        duckThr   = juce::Decibels::decibelsToGain((float)p.duckThresholdDb);
+        duckRatio = (float)p.duckRatio;
+        duckDepth = juce::jlimit(0.0f, 1.0f, (float)p.duckDepth);
+        duckAtk   = std::exp(-1.0f / (float)(sampleRate * p.duckAttackMs * 0.001));
+        duckRel   = std::exp(-1.0f / (float)(sampleRate * p.duckReleaseMs * 0.001));
+
+        // Look-ahead buffer resize from parameter
+        const int newLook = (int)std::ceil(p.duckLookaheadMs * 0.001 * sampleRate);
+        if (newLook != lookLen) {
+            lookLen = newLook;
+            lookBuf.setSize(2, juce::jmax(1, lookLen + 1), true, false, true);
+            lookW = 0;
+        }
+
+        // Freeze ramp target
+        freezeRamp.setTargetValue(p.freeze ? 1.0f : 0.0f);
     }
 
     void process(juce::dsp::AudioBlock<Sample> block, float scInL, float scInR) 
     {
         (void)scInR; // Suppress unused parameter warning
         if (!params.enabled) return;
-        
+        juce::ScopedNoDenormals noDenormals;
+
         auto num = (int)block.getNumSamples();
         for (int n = 0; n < num; ++n) {
             Sample inL = block.getSample(0, n);
             Sample inR = block.getNumChannels() > 1 ? block.getSample(1, n) : inL;
 
-            // Sidechain (choose input/wet/both outside and pass here)
-            Sample sc = scInL; // TODO: implement proper sidechain mixing
+            // Freeze: gate input gradually and smooth feedback
+            const float fz = freezeRamp.getNextValue();
+            const Sample inGain = (Sample)(1.0f - fz);
+            feedbackGain = (double)fbSmoothed.getNextValue();
 
             // Compute modulated delay samples for L/R
             Sample tBaseSamp = (Sample)currentDelaySamples;
             Sample tL = tBaseSamp * (Sample)(1.0 - spread);
             Sample tR = tBaseSamp * (Sample)(1.0 + spread);
             
-            // Add LFO modulation
-            Sample modOffset = std::sin(lfoPhase) * (Sample)(params.modDepthMs * 0.001 * sampleRate);
+            // Add LFO modulation (mode-aware)
+            Sample depthSamp = (Sample)(params.modDepthMs * 0.001 * sampleRate);
+            Sample modOffset = 0;
+            if (params.mode == 0) {
+                modOffset = std::sin(lfoPhase) * depthSamp;
+                lfoPhase += lfoInc;
+            } else if (params.mode == 1) {
+                lfoPhase += lfoInc + (Sample)(1e-4 * ((double)std::rand() / (double)RAND_MAX - 0.5));
+                modOffset = std::sin(lfoPhase) * depthSamp;
+            } else {
+                wowPhase += wowInc; flutterPhase += flutterInc;
+                modOffset = (Sample)(0.9 * std::sin(wowPhase) + 0.1 * std::sin(flutterPhase)) * depthSamp;
+            }
             tL += modOffset;
             tR += modOffset;
-            lfoPhase += lfoInc;
             
             // Add jitter
             if (params.jitterPct > 0.0) {
@@ -389,9 +465,9 @@ struct DelayEngine
             dl[0].setDelaySamples(tL);
             dl[1].setDelaySamples(tR);
 
-            // Write inputs
-            dl[0].push(inL); 
-            dl[1].push(inR);
+            // Write inputs (freeze reduces new input)
+            dl[0].push(inL * inGain); 
+            dl[1].push(inR * inGain);
 
             Sample dL = dl[0].read();
             Sample dR = dl[1].read();
@@ -414,9 +490,40 @@ struct DelayEngine
             loopR = hpFilter.processSample(1, loopR);
             loopR = lpFilter.processSample(1, loopR);
             
-            // Apply saturation (simple soft clip)
-            loopL = std::tanh(loopL * (Sample)(1.0 + params.sat * 2.0));
-            loopR = std::tanh(loopR * (Sample)(1.0 + params.sat * 2.0));
+            // Mode coloration and saturation
+            switch (params.mode)
+            {
+                case 0: // Digital
+                {
+                    loopL = std::tanh(loopL * (Sample)(1.0 + params.sat * 2.0));
+                    loopR = std::tanh(loopR * (Sample)(1.0 + params.sat * 2.0));
+                } break;
+                case 1: // Analog (BBD-ish)
+                {
+                    loopL = preEmph[0].processSample(loopL);
+                    loopR = preEmph[1].processSample(loopR);
+                    auto comp = [&] (Sample x) {
+                        const Sample k = (Sample)(1.5 + params.sat * 2.0);
+                        return (Sample)std::tanh(k * x) * (Sample)0.85;
+                    };
+                    loopL = comp(loopL); loopR = comp(loopR);
+                    loopL = deEmph[0].processSample(loopL);
+                    loopR = deEmph[1].processSample(loopR);
+                } break;
+                case 2: // Tape
+                {
+                    loopL = headBump[0].processSample(loopL);
+                    loopR = headBump[1].processSample(loopR);
+                    auto softSat = [&] (Sample x) {
+                        const Sample k = (Sample)(1.2 + params.sat * 2.5);
+                        return (Sample)juce::dsp::FastMathApproximations::tanh((float)(k * x)) * (Sample)0.9;
+                    };
+                    loopL = softSat(loopL); loopR = softSat(loopR);
+                    float hn = ((float)std::rand() / (float)RAND_MAX - 0.5f) * 2.0f * 1e-4f; // very low hiss
+                    hn = hissLP.processSample(hn);
+                    loopL += (Sample)hn; loopR += (Sample)(hn * 0.9f);
+                } break;
+            }
             
             // Apply diffusion
             if (params.diffusion > 0.0) {
@@ -431,16 +538,46 @@ struct DelayEngine
             loopL += xf * loopR;
             loopR += xf * tempL;
 
-            // Accumulate feedback
+            // Accumulate feedback (smoothed feedback target already applied)
             fbStateL = dL + (Sample)feedbackGain * loopL;
             fbStateR = dR + (Sample)feedbackGain * loopR;
 
             Sample wetL = dL, wetR = dR;
             
-            // Ducking (post or pre)
-            if (duckPost) { 
-                wetL = ducker.process((float)wetL, (float)sc); 
-                wetR = ducker.process((float)wetR, (float)sc); 
+            // Ducking (look-ahead, select sidechain source: 0=Input, 1=Wet, 2=Both)
+            float sc = 0.0f;
+            if (params.duckSource == 0) {
+                sc = (float)(0.5 * std::abs((double)inL) + 0.5 * std::abs((double)inR));
+            } else if (params.duckSource == 1) {
+                sc = (float)(0.5 * std::abs((double)wetL) + 0.5 * std::abs((double)wetR));
+            } else {
+                float inSc  = (float)(0.5 * std::abs((double)inL) + 0.5 * std::abs((double)inR));
+                float wetSc = (float)(0.5 * std::abs((double)wetL) + 0.5 * std::abs((double)wetR));
+                sc = 0.5f * (inSc + wetSc);
+            }
+            // Envelope with attack/release
+            detEnv = (sc > detEnv) ? (duckAtk * detEnv + (1.0f - duckAtk) * sc)
+                                   : (duckRel * detEnv + (1.0f - duckRel) * sc);
+            float over = juce::jmax(0.0f, detEnv - duckThr);
+            float compG = 1.0f / (1.0f + over * (duckRatio - 1.0f));
+            float targetG = (1.0f - duckDepth) + duckDepth * compG;
+            const float coefL = (targetG < duckGL) ? (1.0f - duckAtk) : (1.0f - duckRel);
+            const float coefR = (targetG < duckGR) ? (1.0f - duckAtk) : (1.0f - duckRel);
+            duckGL += (targetG - duckGL) * coefL;
+            duckGR += (targetG - duckGR) * coefR;
+            
+            // Look-ahead delay of wet before applying gain
+            auto* wL = lookBuf.getWritePointer(0);
+            auto* wR = lookBuf.getWritePointer(1);
+            wL[lookW] = (float)wetL; wR[lookW] = (float)wetR;
+            int r = lookW - lookLen; if (r < 0) r += lookBuf.getNumSamples();
+            auto* rL = lookBuf.getReadPointer(0);
+            auto* rR = lookBuf.getReadPointer(1);
+            float wetLd = rL[r]; float wetRd = rR[r];
+            if (++lookW >= lookBuf.getNumSamples()) lookW = 0;
+            if (duckPost) {
+                wetL = (Sample)(wetLd * duckGL);
+                wetR = (Sample)(wetRd * duckGR);
             }
 
             // Width processing
@@ -469,6 +606,8 @@ private:
     
     // Filters
     juce::dsp::StateVariableTPTFilter<Sample> hpFilter, lpFilter;
+    juce::dsp::IIR::Filter<Sample> preEmph[2], deEmph[2], headBump[2];
+    juce::dsp::IIR::Filter<Sample> hissLP;
     
     // State
     double sampleRate = 48000.0;
@@ -486,11 +625,24 @@ private:
     // Modulation
     Sample lfoPhase = 0.0;
     Sample lfoInc = 0.0;
+    Sample wowPhase = 0.0;
+    Sample flutterPhase = 0.0;
+    Sample wowInc = 0.0;
+    Sample flutterInc = 0.0;
     
     // Diffusion
     double diffuseSizeMs = 18.0;
     Sample diffuseG = (Sample)0.7;
     double lookMs = 5.0;
+    
+    // Freeze/feedback smoothing and look-ahead buffer for ducking
+    juce::LinearSmoothedValue<float> freezeRamp, fbSmoothed;
+    juce::AudioBuffer<float> lookBuf; int lookW = 0; int lookLen = 0;
+    
+    // Ducking envelope/state
+    float detEnv = 0.0f; 
+    float duckAtk = 0.9f, duckRel = 0.9f, duckThr = 0.5f, duckRatio = 2.0f, duckDepth = 0.6f;
+    float duckGL = 1.0f, duckGR = 1.0f;
     
     // Parameters
     DelayParams params;
