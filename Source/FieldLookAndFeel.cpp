@@ -179,13 +179,17 @@ void FieldLNF::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h,
                                  float sliderPosProportional, float rotaryStartAngle,
                                  float rotaryEndAngle, juce::Slider& slider)
 {
-    auto bounds = juce::Rectangle<float> (x, y, w, h).reduced (6.0f);
+    auto rawBounds = juce::Rectangle<float> (x, y, w, h);
+    // Guard against degenerate bounds that can cause stroker issues
+    if (rawBounds.getWidth() <= 2.0f || rawBounds.getHeight() <= 2.0f)
+        return;
+    auto bounds = rawBounds.reduced (6.0f);
 
     // Uniform hover/active raise effect
     if (slider.isMouseOverOrDragging() || slider.isMouseButtonDown())
         bounds = bounds.expanded (2.0f);
 
-    const auto radius = juce::jmin (bounds.getWidth(), bounds.getHeight()) * 0.5f;
+    const auto radius = juce::jmax (1.0f, juce::jmin (bounds.getWidth(), bounds.getHeight()) * 0.5f);
     const auto centre = bounds.getCentre();
 
     juce::Path body; body.addEllipse (centre.x - radius, centre.y - radius, radius * 2.0f, radius * 2.0f);
@@ -197,7 +201,7 @@ void FieldLNF::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h,
     g.setGradientFill (grad);
     g.fillPath (body);
 
-    const float trackThickness = radius * 0.18f;
+    const float trackThickness = juce::jmax (1.0f, radius * 0.18f);
 
     // Background ring
     juce::Path ring;

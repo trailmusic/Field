@@ -372,14 +372,14 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     juce::ignoreUnused (midi);
     isDoublePrecEnabled = false;
 
-    // Pre-DSP feed
-    if (onAudioBlockPre && buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
+    // Pre-DSP visualization feed (lock-free bus)
+    if (buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
     {
         const int chL = buffer.getNumChannels() > 0 ? 0 : 0;
         const int chR = buffer.getNumChannels() > 1 ? 1 : 0;
-        onAudioBlockPre (buffer.getReadPointer (chL),
-                         buffer.getNumChannels() > 1 ? buffer.getReadPointer (chR) : nullptr,
-                         buffer.getNumSamples());
+        visPre.push (buffer.getReadPointer (chL),
+                     buffer.getNumChannels() > 1 ? buffer.getReadPointer (chR) : nullptr,
+                     buffer.getNumSamples());
     }
 
     auto hp = makeHostParams (apvts);
@@ -419,27 +419,17 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         smooth (meterPeakR, peakR);
     }
 
-    // Feed post-DSP block to visualizers (high-fidelity spectrum)
-    if (onAudioBlock && buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
+    // Post-DSP visualization feed (lock-free bus)
+    if (buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
     {
         const int chL = buffer.getNumChannels() > 0 ? 0 : 0;
         const int chR = buffer.getNumChannels() > 1 ? 1 : 0;
-        onAudioBlock (buffer.getReadPointer (chL),
+        visPost.push (buffer.getReadPointer (chL),
                       buffer.getNumChannels() > 1 ? buffer.getReadPointer (chR) : nullptr,
                       buffer.getNumSamples());
     }
 
-    // Feed XYPad waveform/spectral visuals
-    if (onAudioSample && buffer.getNumSamples() > 0)
-    {
-        const int chL = buffer.getNumChannels() > 0 ? 0 : 0;
-        const int chR = buffer.getNumChannels() > 1 ? 1 : 0;
-        auto* L = buffer.getReadPointer (chL);
-        auto* R = buffer.getReadPointer (chR);
-        const int stride = 64; // decimate to reduce UI overhead
-        for (int i = 0; i < buffer.getNumSamples(); i += stride)
-            onAudioSample ((double) L[i], (double) R[i]);
-    }
+    // (XY oscilloscope will also read from visPost on the UI thread)
 }
 
 // Double path

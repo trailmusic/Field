@@ -3,6 +3,63 @@
 #include <JuceHeader.h>
 #include "dsp/Ducker.h"
 #include "dsp/DelayEngine.h"
+// ==================================
+// Visualization Bus (lock-free SPSC)
+// ==================================
+struct VisBus
+{
+    static constexpr int kChannels = 2;
+    static constexpr int kCapacity = 1 << 15; // 32768 samples
+    juce::AbstractFifo fifo { kCapacity };
+    juce::AudioBuffer<float> buf { kChannels, kCapacity };
+
+    inline void push (const float* L, const float* R, int n) noexcept
+    {
+        if (n <= 0) return;
+        int start1, size1, start2, size2;
+        fifo.prepareToWrite (n, start1, size1, start2, size2);
+        if (size1 > 0)
+        {
+            auto* wL = buf.getWritePointer(0);
+            auto* wR = buf.getWritePointer(1);
+            if (L) memcpy (wL + start1, L, sizeof(float)*size1);
+            else   memset (wL + start1, 0, sizeof(float)*size1);
+            if (R) memcpy (wR + start1, R, sizeof(float)*size1);
+            else   memcpy (wR + start1, wL + start1, sizeof(float)*size1);
+        }
+        if (size2 > 0)
+        {
+            auto* wL = buf.getWritePointer(0);
+            auto* wR = buf.getWritePointer(1);
+            if (L) memcpy (wL + start2, L + size1, sizeof(float)*size2);
+            else   memset (wL + start2, 0, sizeof(float)*size2);
+            if (R) memcpy (wR + start2, R + size1, sizeof(float)*size2);
+            else   memcpy (wR + start2, wL + start2, sizeof(float)*size2);
+        }
+        fifo.finishedWrite (size1 + size2);
+    }
+
+    inline int pull (juce::AudioBuffer<float>& out, int maxSamples)
+    {
+        if (maxSamples <= 0) return 0;
+        int start1, size1, start2, size2;
+        fifo.prepareToRead (maxSamples, start1, size1, start2, size2);
+        const int total = size1 + size2;
+        if (total <= 0) return 0;
+        out.setSize (kChannels, total, false, false, true);
+        for (int ch = 0; ch < kChannels; ++ch)
+        {
+            auto* dst = out.getWritePointer (ch);
+            auto* src = buf.getReadPointer (ch);
+            if (size1 > 0) memcpy (dst,        src + start1, sizeof(float)*size1);
+            if (size2 > 0) memcpy (dst+size1,  src + start2, sizeof(float)*size2);
+        }
+        fifo.finishedRead (total);
+        return total;
+    }
+
+    inline void clearAll() { fifo.reset(); }
+};
 
 // Forward decls used by the templated chain / processor snapshot
 struct HostParams;           // Double-domain snapshot built each block in the processor
@@ -381,11 +438,12 @@ public:
     juce::AudioProcessorValueTreeState apvts;
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
-    // Optional: waveform display / metering callback (not required by DSP)
+    // Visualization buses (audio thread → UI thread)
+    VisBus visPre, visPost;
+
+    // Deprecated: UI callback hooks (no longer used)
     std::function<void(double, double)> onAudioSample;
-    // Optional: block-level visualization callback (post-DSP, processed signal)
     std::function<void (const float* L, const float* R, int n)> onAudioBlock;
-    // Optional: pre-DSP block callback (input signal)
     std::function<void (const float* L, const float* R, int n)> onAudioBlockPre;
     // Meters
     float getCorrelation() const { return meterCorrelation.load(); }

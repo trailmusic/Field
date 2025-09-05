@@ -10,6 +10,8 @@ class XYPaneAdapter : public juce::Component
 public:
     XYPaneAdapter (XYPad& padRef) : pad (padRef) { addAndMakeVisible (pad); }
     void resized() override { pad.setBounds (getLocalBounds()); }
+    // Forward realtime-safe oscilloscope samples to the XYPad
+    void pushWaveformSample (double L, double R) { pad.pushWaveformSample (L, R); }
 private:
     XYPad& pad;
 };
@@ -22,13 +24,13 @@ static inline const char* paneKey (PaneID id)
     return "xy";
 }
 
-class PaneManager : public juce::Component
+class PaneManager : public juce::Component, private juce::Timer
 {
 public:
     struct Options { bool keepAllWarm = false; };
 
-    PaneManager (juce::ValueTree& state, juce::LookAndFeel* lnf, XYPad& xyPadRef)
-        : vt(state)
+    PaneManager (MyPluginAudioProcessor& p, juce::ValueTree& state, juce::LookAndFeel* lnf, XYPad& xyPadRef)
+        : proc(p), vt(state)
     {
         xy   = std::make_unique<XYPaneAdapter> (xyPadRef);
         spec = std::make_unique<ProcessedSpectrumPane> (lnf);
@@ -60,6 +62,11 @@ public:
         auto s = vt.getProperty ("ui_activePane").toString();
         PaneID initial = (s=="spec") ? PaneID::Spectrum : (s=="imager") ? PaneID::Imager : PaneID::XY;
         setActive (initial, false);
+        if (spec)
+        {
+            if (initial == PaneID::Spectrum) spec->analyzer().resumeAudio();
+            else                             spec->analyzer().pauseAudio();
+        }
 
         for (auto id : { PaneID::XY, PaneID::Spectrum, PaneID::Imager })
         {
@@ -69,6 +76,34 @@ public:
 
         // restore keep-warm option
         if (vt.hasProperty ("ui_keepWarm")) options.keepAllWarm = (bool) vt.getProperty ("ui_keepWarm");
+        startTimerHz (30);
+    }
+    void timerCallback() override
+    {
+        static juce::AudioBuffer<float> tmpPre, tmpPost, tmpXY;
+        const int maxPull = 2048;
+        const bool wantSpec = (active == PaneID::Spectrum) || options.keepAllWarm;
+        if (wantSpec && spec)
+        {
+            int nPost = proc.visPost.pull (tmpPost, maxPull);
+            if (nPost > 0)
+                spec->analyzer().pushBlock (tmpPost.getReadPointer(0), tmpPost.getNumChannels()>1?tmpPost.getReadPointer(1):nullptr, nPost);
+            int nPre = proc.visPre.pull (tmpPre, maxPull);
+            if (nPre > 0)
+                spec->analyzer().pushBlockPre (tmpPre.getReadPointer(0), tmpPre.getNumChannels()>1?tmpPre.getReadPointer(1):nullptr, nPre);
+        }
+        const bool wantXY = (active == PaneID::XY) || options.keepAllWarm;
+        if (wantXY && xy)
+        {
+            int nXY = proc.visPost.pull (tmpXY, 1024);
+            if (nXY > 0)
+            {
+                auto* L = tmpXY.getReadPointer(0);
+                auto* R = tmpXY.getNumChannels()>1 ? tmpXY.getReadPointer(1) : nullptr;
+                for (int i = 0; i < nXY; i += 64)
+                    xy->pushWaveformSample (L[i], R ? R[i] : L[i]);
+            }
+        }
     }
 
     void setOptions (Options o) { options = o; vt.setProperty ("ui_keepWarm", options.keepAllWarm, nullptr); }
@@ -79,16 +114,25 @@ public:
         if (spec) spec->setSampleRate (fs);
     }
 
-    void onAudioSample (double, double) {}
+    void onAudioSample (double L, double R)
+    {
+        if (xy) xy->pushWaveformSample (L, R);
+    }
     void onAudioBlock (const float* L, const float* R, int n)
     {
-        if (options.keepAllWarm) { if (spec) spec->onAudioBlock (L,R,n); }
-        else                      { if (getActiveID()==PaneID::Spectrum && spec) spec->onAudioBlock (L,R,n); }
+        auto* s = spec.get();
+        if (!s) return;
+        const PaneID current = getActiveID();
+        if (options.keepAllWarm) { s->onAudioBlock (L, R, n); }
+        else if (current == PaneID::Spectrum) { s->onAudioBlock (L, R, n); }
     }
     void onAudioBlockPre (const float* L, const float* R, int n)
     {
-        if (options.keepAllWarm) { if (spec) spec->onAudioBlockPre (L,R,n); }
-        else                      { if (getActiveID()==PaneID::Spectrum && spec) spec->onAudioBlockPre (L,R,n); }
+        auto* s = spec.get();
+        if (!s) return;
+        const PaneID current = getActiveID();
+        if (options.keepAllWarm) { s->onAudioBlockPre (L, R, n); }
+        else if (current == PaneID::Spectrum) { s->onAudioBlockPre (L, R, n); }
     }
 
     float getActiveShade() const
@@ -102,17 +146,38 @@ public:
 
     void setActive (PaneID id, bool persist)
     {
-        if (id == active) return;
+        const bool changed = (id != active);
+        // Always enforce correct visibility, even if selecting the same pane.
         for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get() })
-            c->setVisible (false);
-        active = id;
-        getActive()->setVisible (true);
-        if (persist) vt.setProperty ("ui_activePane", paneKey(id), nullptr);
-        tabs.current = id; tabs.repaint(); resized();
-        if (onActivePaneChanged) onActivePaneChanged (active);
+            if (c) c->setVisible (false);
+
+        if (changed)
+            active = id;
+        // Publish active pane for audio-thread readers
+        activeAtomic.store ((int) id, std::memory_order_release);
+
+        if (auto* a = getActive())
+            a->setVisible (true);
+
+        // Gate spectrum audio feed depending on active tab and keepWarm option
+        if (spec)
+        {
+            if (active == PaneID::Spectrum || options.keepAllWarm) spec->analyzer().resumeAudio();
+            else                                                   spec->analyzer().pauseAudio();
+        }
+
+        if (persist && changed)
+            vt.setProperty ("ui_activePane", paneKey(id), nullptr);
+
+        tabs.current = id;
+        tabs.repaint();
+        resized();
+
+        if (changed && onActivePaneChanged)
+            onActivePaneChanged (active);
     }
 
-    PaneID getActiveID() const { return active; }
+    PaneID getActiveID() const { return (PaneID) activeAtomic.load (std::memory_order_acquire); }
     juce::Component* getActive()
     {
         switch (active) { case PaneID::XY: return xy.get(); case PaneID::Spectrum: return spec.get(); case PaneID::Imager: return imgr.get(); }
@@ -186,9 +251,11 @@ public:
     std::function<void(PaneID)> onActivePaneChanged;
 
 private:
+    MyPluginAudioProcessor& proc;
     juce::ValueTree& vt;
     Options options;
     PaneID active { PaneID::XY };
+    std::atomic<int> activeAtomic { (int) PaneID::XY };
 
     std::unique_ptr<XYPaneAdapter>         xy;
     std::unique_ptr<ProcessedSpectrumPane> spec;

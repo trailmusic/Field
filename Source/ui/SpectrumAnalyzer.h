@@ -52,7 +52,27 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override {}
 
+    // Gate audio thread writes during reconfig/tab switches
+    void pauseAudio()  noexcept { acceptingAudio.store (false, std::memory_order_release); }
+    void resumeAudio() noexcept { acceptingAudio.store (true,  std::memory_order_release); }
+
 private:
+    // Frame/state guards
+    std::atomic<bool> postFrameReady { false };
+    std::atomic<bool> preFrameReady  { false };
+    std::atomic<bool> acceptingAudio { false };
+    juce::SpinLock    dataLock; // guard UI reads vs audio writes
+    juce::CriticalSection cfgLock; // guard (re)configuration of FFT/buffers
+    std::atomic<bool> postConfigured { false };
+
+    // Pixel-column caches to avoid realloc during paint
+    std::vector<float> columnMain, columnPeak, columnEq;
+
+    bool isFrameDrawable (juce::Rectangle<float> r) const;
+    void drawGridOnly (juce::Graphics& g, juce::Rectangle<float> r);
+    void configurePost (int fftOrder);
+    void resetPost();
+
     void timerCallback() override;
     void performFFTIfReadyPost();
     void performFFTIfReadyPre();

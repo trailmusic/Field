@@ -29,6 +29,9 @@ namespace ui
     // DEV NOTE: One-line helper so all rotaries render identically through FieldLNF.
     inline void paintRotaryWithLNF (juce::Graphics& g, juce::Slider& s, juce::Rectangle<float> bounds)
     {
+        // Guard: avoid degenerate drawing when bounds are tiny/invalid
+        if (bounds.getWidth() <= 2.0f || bounds.getHeight() <= 2.0f)
+            return;
         if (auto* lf = dynamic_cast<FieldLNF*>(&s.getLookAndFeel()))
         {
             const double minV = s.getMinimum();

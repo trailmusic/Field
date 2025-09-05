@@ -1204,7 +1204,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     linkButton.setVisible (false);
 
     // Multi-pane dock (XY, Spectrum, Imager) + shade overlay
-    panes = std::make_unique<PaneManager> (proc.apvts.state, &getLookAndFeel(), pad);
+    panes = std::make_unique<PaneManager> (proc, proc.apvts.state, &getLookAndFeel(), pad);
     addAndMakeVisible (*panes);
     panes->setSampleRate (proc.getSampleRate());
     panes->setOptions ({ /*keepAllWarm=*/ false });

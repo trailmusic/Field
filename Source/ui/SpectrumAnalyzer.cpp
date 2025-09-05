@@ -8,6 +8,7 @@ SpectrumAnalyzer::SpectrumAnalyzer()
     setOpaque (false);
     setParams (params);
     setFreqRange (20.0, 20000.0);
+    configurePost (params.fftOrder);
 
     fifoPost.setSize (1, 1 << 11);
     fifoPre .setSize (1, 1 << 11);
@@ -21,7 +22,60 @@ SpectrumAnalyzer::SpectrumAnalyzer()
     smoothedDbPre.resize (fftSize / 2, params.minDb);
     peakDbPre.resize (fftSize / 2, params.minDb);
 
+    // Ensure smoothers exist for first activation before any param changes
+    smoothersPost.assign (fftSize / 2, {});
+    smoothersPre.assign  (fftSize / 2, {});
+
     startTimerHz (params.fps);
+    acceptingAudio.store (true, std::memory_order_release);
+}
+void SpectrumAnalyzer::configurePost (int order)
+{
+    const juce::ScopedLock sl (cfgLock);
+    postConfigured.store (false, std::memory_order_release);
+    postFrameReady.store (false, std::memory_order_release);
+
+    fftOrder = juce::jlimit (8, 15, order);
+    fftSize  = 1 << fftOrder;
+    hopSize  = fftSize / 2;
+
+    fft = juce::dsp::FFT (fftOrder);
+    window = std::make_unique<juce::dsp::WindowingFunction<float>> ((size_t) fftSize, juce::dsp::WindowingFunction<float>::hann, true);
+
+    timeDomain.allocate (fftSize, true);
+    freqDomain.allocate (2 * fftSize, true);
+    magDbPost.assign (fftSize / 2, params.minDb);
+    smoothedDbPost.assign (fftSize / 2, params.minDb);
+    peakDbPost.assign (fftSize / 2, params.minDb);
+    // Keep smoothers and pre lane consistent on any (re)configure
+    smoothersPost.assign (fftSize / 2, {});
+    smoothersPre.assign  (fftSize / 2, {});
+    magDbPre.assign      (fftSize / 2, params.minDb);
+    smoothedDbPre.assign (fftSize / 2, params.minDb);
+    peakDbPre.assign     (fftSize / 2, params.minDb);
+
+    fifoPost.setSize (1, fftSize);
+    fifoPost.clear();
+    fifoWritePost.store (0, std::memory_order_release);
+    samplesAccumPost.store (0, std::memory_order_release);
+
+    // Align pre FIFO as well to avoid mismatches during first paint
+    fifoPre.setSize (1, fftSize);
+    fifoPre.clear();
+    fifoWritePre.store (0, std::memory_order_release);
+    samplesAccumPre.store (0, std::memory_order_release);
+
+    postConfigured.store (true, std::memory_order_release);
+}
+
+void SpectrumAnalyzer::resetPost()
+{
+    const juce::ScopedLock sl (cfgLock);
+    postConfigured.store (false, std::memory_order_release);
+    postFrameReady.store (false,  std::memory_order_release);
+    fifoWritePost.store (0, std::memory_order_release);
+    samplesAccumPost.store (0, std::memory_order_release);
+    if (fifoPost.getNumSamples() > 0) fifoPost.clear();
 }
 
 void SpectrumAnalyzer::setSampleRate (double sr) { sampleRate = (sr > 0 ? sr : 48000.0); }
@@ -38,25 +92,31 @@ void SpectrumAnalyzer::setParams (const Params& p)
         fft = juce::dsp::FFT (fftOrder);
         window = std::make_unique<juce::dsp::WindowingFunction<float>> ((size_t) fftSize, juce::dsp::WindowingFunction<float>::hann, true);
 
-        fifoPost.setSize (1, fftSize);
-        fifoPost.clear();
-        fifoWritePost.store (0);
-        samplesAccumPost.store (0);
-        fifoPre.setSize (1, fftSize);
-        fifoPre.clear();
-        fifoWritePre.store (0);
-        samplesAccumPre.store (0);
+        pauseAudio();
+        postFrameReady.store (false, std::memory_order_release);
+        {
+            const juce::SpinLock::ScopedLockType sl (dataLock);
+            fifoPost.setSize (1, fftSize);
+            fifoPost.clear();
+            fifoWritePost.store (0);
+            samplesAccumPost.store (0);
+            fifoPre.setSize (1, fftSize);
+            fifoPre.clear();
+            fifoWritePre.store (0);
+            samplesAccumPre.store (0);
 
-        timeDomain.allocate (fftSize, true);
-        freqDomain.allocate (2 * fftSize, true);
-        magDbPost.assign (fftSize / 2, params.minDb);
-        smoothedDbPost.assign (fftSize / 2, params.minDb);
-        peakDbPost.assign (fftSize / 2, params.minDb);
-        magDbPre.assign (fftSize / 2, params.minDb);
-        smoothedDbPre.assign (fftSize / 2, params.minDb);
-        peakDbPre.assign (fftSize / 2, params.minDb);
-        smoothersPost.assign (fftSize / 2, {});
-        smoothersPre.assign  (fftSize / 2, {});
+            timeDomain.allocate (fftSize, true);
+            freqDomain.allocate (2 * fftSize, true);
+            magDbPost.assign (fftSize / 2, params.minDb);
+            smoothedDbPost.assign (fftSize / 2, params.minDb);
+            peakDbPost.assign (fftSize / 2, params.minDb);
+            magDbPre.assign (fftSize / 2, params.minDb);
+            smoothedDbPre.assign (fftSize / 2, params.minDb);
+            peakDbPre.assign (fftSize / 2, params.minDb);
+            smoothersPost.assign (fftSize / 2, {});
+            smoothersPre.assign  (fftSize / 2, {});
+        }
+        resumeAudio();
 
         // compute window RMS scaling for dB calibration (single-sided)
         double wSumSq = 0.0;
@@ -101,7 +161,9 @@ void SpectrumAnalyzer::setPreDelaySamples (int n)
 
 void SpectrumAnalyzer::pushBlock (const float* L, const float* R, int n)
 {
-    if (n <= 0) return;
+    if (!acceptingAudio.load (std::memory_order_acquire)) return;
+    if (!postConfigured.load (std::memory_order_acquire)) return;
+    if (n <= 0 || fifoPost.getNumSamples() <= 0 || fftSize <= 0) return;
 
     auto* fifoData = fifoPost.getWritePointer (0);
     int w = fifoWritePost.load (std::memory_order_relaxed);
@@ -131,7 +193,8 @@ void SpectrumAnalyzer::pushBlock (const float* L, const float* R, int n)
 
 void SpectrumAnalyzer::pushBlockPre (const float* L, const float* R, int n)
 {
-    if (n <= 0) return;
+    if (!acceptingAudio.load (std::memory_order_acquire)) return;
+    if (n <= 0 || preDelay.getNumSamples() <= 0 || fifoPre.getNumSamples() <= 0 || fftSize <= 0) return;
 
     // write incoming to preDelay
     auto* d = preDelay.getWritePointer (0);
@@ -169,8 +232,19 @@ void SpectrumAnalyzer::pushBlockPre (const float* L, const float* R, int n)
 
 void SpectrumAnalyzer::performFFTIfReadyPost()
 {
+    // Strong preconditions to avoid any deref on half-configured state
+    if (!postConfigured.load (std::memory_order_acquire)) return;
+    const int N = fftSize;
+    if (N <= 0) return;
+    if (!(std::isfinite (sampleRate) && sampleRate > 1.0)) return;
+    if (timeDomain.get() == nullptr || freqDomain.get() == nullptr) return;
+    if ((int) magDbPost.size() != N/2 || (int) smoothedDbPost.size() != N/2 || (int) peakDbPost.size() != N/2) return;
+    if ((int) smoothersPost.size() != N/2) return;
+    if (fifoPost.getNumSamples() < N) return;
+
     auto* fifoData = fifoPost.getReadPointer (0);
     const int w = fifoWritePost.load (std::memory_order_acquire);
+    if (fifoData == nullptr || w < 0 || w >= N) return;
 
     for (int i = 0; i < fftSize; ++i)
         timeDomain[i] = fifoData[(w + i) & (fftSize - 1)];
@@ -205,27 +279,41 @@ void SpectrumAnalyzer::performFFTIfReadyPost()
         magDbPost[(size_t) k] = dB;
     }
 
-    for (int k = 0; k < fftSize / 2; ++k)
     {
-        const float in  = magDbPost[(size_t) k];
-        auto& sm = smoothersPost[(size_t) k];
-        sm.yFast += alphaFast * (in - sm.yFast);
-        sm.ySlow += (in > sm.ySlow ? alphaFast : alphaSlow) * (in - sm.ySlow);
-        float& out = smoothedDbPost[(size_t) k];
-        out = juce::jmax (sm.yFast, sm.ySlow);
-
-        if (params.drawPeaks)
+        const juce::SpinLock::ScopedLockType sl (dataLock);
+        for (int k = 0; k < fftSize / 2; ++k)
         {
-            float& pk = peakDbPost[(size_t) k];
-            pk = juce::jmax (pk - peakFallPerFrameDb, in);
+            const float in  = magDbPost[(size_t) k];
+            auto& sm = smoothersPost[(size_t) k];
+            sm.yFast += alphaFast * (in - sm.yFast);
+            sm.ySlow += (in > sm.ySlow ? alphaFast : alphaSlow) * (in - sm.ySlow);
+            float& out = smoothedDbPost[(size_t) k];
+            out = juce::jmax (sm.yFast, sm.ySlow);
+
+            if (params.drawPeaks)
+            {
+                float& pk = peakDbPost[(size_t) k];
+                pk = juce::jmax (pk - peakFallPerFrameDb, in);
+            }
         }
+        postFrameReady.store (true, std::memory_order_release);
     }
 }
 
 void SpectrumAnalyzer::performFFTIfReadyPre()
 {
+    // Guards to prevent reading half-configured state
+    const int N = fftSize;
+    if (N <= 0) return;
+    if (!(std::isfinite (sampleRate) && sampleRate > 1.0)) return;
+    if (timeDomain.get() == nullptr || freqDomain.get() == nullptr) return;
+    if (fifoPre.getNumSamples() < N) return;
+    if ((int) magDbPre.size() != N/2 || (int) smoothedDbPre.size() != N/2 || (int) peakDbPre.size() != N/2) return;
+    if ((int) smoothersPre.size() != N/2) return;
+
     auto* fifoData = fifoPre.getReadPointer (0);
     const int w = fifoWritePre.load (std::memory_order_acquire);
+    if (fifoData == nullptr || w < 0 || w >= N) return;
 
     for (int i = 0; i < fftSize; ++i)
         timeDomain[i] = fifoData[(w + i) & (fftSize - 1)];
@@ -260,20 +348,24 @@ void SpectrumAnalyzer::performFFTIfReadyPre()
         magDbPre[(size_t) k] = dB;
     }
 
-    for (int k = 0; k < fftSize / 2; ++k)
     {
-        const float in  = magDbPre[(size_t) k];
-        auto& sm = smoothersPre[(size_t) k];
-        sm.yFast += alphaFast * (in - sm.yFast);
-        sm.ySlow += (in > sm.ySlow ? alphaFast : alphaSlow) * (in - sm.ySlow);
-        float& out = smoothedDbPre[(size_t) k];
-        out = juce::jmax (sm.yFast, sm.ySlow);
-
-        if (params.drawPeaks)
+        const juce::SpinLock::ScopedLockType sl (dataLock);
+        for (int k = 0; k < fftSize / 2; ++k)
         {
-            float& pk = peakDbPre[(size_t) k];
-            pk = juce::jmax (pk - peakFallPerFrameDb, in);
+            const float in  = magDbPre[(size_t) k];
+            auto& sm = smoothersPre[(size_t) k];
+            sm.yFast += alphaFast * (in - sm.yFast);
+            sm.ySlow += (in > sm.ySlow ? alphaFast : alphaSlow) * (in - sm.ySlow);
+            float& out = smoothedDbPre[(size_t) k];
+            out = juce::jmax (sm.yFast, sm.ySlow);
+
+            if (params.drawPeaks)
+            {
+                float& pk = peakDbPre[(size_t) k];
+                pk = juce::jmax (pk - peakFallPerFrameDb, in);
+            }
         }
+        preFrameReady.store (true, std::memory_order_release);
     }
 }
 
@@ -296,12 +388,48 @@ float SpectrumAnalyzer::dbToY (float dB, float top, float bottom) const
     return bottom - t * (bottom - top);
 }
 
+bool SpectrumAnalyzer::isFrameDrawable (juce::Rectangle<float> r) const
+{
+    if (r.getWidth() < 2.0f || r.getHeight() < 2.0f) return false;
+    if (!postFrameReady.load (std::memory_order_acquire)) return false;
+    if (!(std::isfinite (sampleRate) && sampleRate > 1.0)) return false;
+    if (!(std::isfinite (fMin) && std::isfinite (fMax) && fMin > 0.0 && fMax > fMin)) return false;
+    if (fftSize < 32) return false;
+    const int n = (int) smoothedDbPost.size();
+    if (n <= 8 || n != fftSize/2) return false;
+    return true;
+}
+
+void SpectrumAnalyzer::drawGridOnly (juce::Graphics& g, juce::Rectangle<float> r)
+{
+    g.setColour (gridColour);
+    const double decades[] = { 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000 };
+    for (double f : decades)
+    {
+        if (f < fMin || f > fMax) continue;
+        const float x = freqToX (f, r.getX(), r.getRight());
+        g.drawVerticalLine ((int) std::round (x), r.getY(), r.getBottom());
+    }
+    const float majors[] = { -60, -48, -36, -24, -12, 0, +6 };
+    for (float d : majors)
+    {
+        if (d < params.minDb || d > params.maxDb) continue;
+        const float y = dbToY (d, r.getY(), r.getBottom());
+        g.drawHorizontalLine ((int) std::round (y), r.getX(), r.getRight());
+    }
+}
+
 void SpectrumAnalyzer::renderPaths (juce::Graphics& g, juce::Rectangle<float> r)
 {
     areaPathPost.clear(); linePathPost.clear(); peakPathPost.clear(); eqPath.clear();
 
+    // If we have no data yet, avoid building curves on activation.
+    if (!hasPost.load (std::memory_order_acquire))
+        return;
+
     const int N = (int) smoothedDbPost.size();
-    if (N <= 8) return;
+    if (N <= 8 || r.getWidth() <= 1.0f || r.getHeight() <= 1.0f)
+        return;
 
     const int W = juce::jmax (1, (int) r.getWidth());
     std::vector<float> yMain (W), yPeak (W), yEq (W);
@@ -314,7 +442,7 @@ void SpectrumAnalyzer::renderPaths (juce::Graphics& g, juce::Rectangle<float> r)
         const int k0 = juce::jlimit (0, N - 1, (int) std::floor ((f0 * fftSize) / sampleRate));
         const int k1 = juce::jlimit (k0, N - 1, (int) std::ceil  ((f1 * fftSize) / sampleRate));
 
-        float acc = -1.0e9f, accPk = -1.0e9f;
+        float acc = params.minDb, accPk = params.minDb;
         for (int k = k0; k <= k1; ++k)
         {
             acc   = juce::jmax (acc,   smoothedDbPost[(size_t) k]);
@@ -338,12 +466,14 @@ void SpectrumAnalyzer::renderPaths (juce::Graphics& g, juce::Rectangle<float> r)
     areaPathPost.lineTo (r.getRight(), r.getBottom());
     areaPathPost.closeSubPath();
 
+    if (yMain.empty()) return;
     linePathPost.startNewSubPath (r.getX(), yMain[0]);
     for (int x = 1; x < W; ++x)
         linePathPost.lineTo (r.getX() + (float) x + 0.5f, yMain[(size_t) x]);
 
     if (params.drawPeaks)
     {
+        if (yPeak.empty()) return;
         peakPathPost.startNewSubPath (r.getX(), yPeak[0]);
         for (int x = 1; x < W; ++x)
             peakPathPost.lineTo (r.getX() + (float) x + 0.5f, yPeak[(size_t) x]);
@@ -373,7 +503,7 @@ void SpectrumAnalyzer::renderPaths (juce::Graphics& g, juce::Rectangle<float> r)
         g.strokePath (peakPathPost, juce::PathStrokeType (1.0f, juce::PathStrokeType::beveled, juce::PathStrokeType::rounded));
 
         // Draw pre overlay if available
-        if (hasPre.load (std::memory_order_acquire))
+        if (hasPre.load (std::memory_order_acquire) && preFrameReady.load (std::memory_order_acquire))
         {
             const int W = juce::jmax (1, (int) r.getWidth());
             juce::Path preArea, preLine, prePeak;
@@ -421,6 +551,20 @@ void SpectrumAnalyzer::renderPaths (juce::Graphics& g, juce::Rectangle<float> r)
 void SpectrumAnalyzer::paint (juce::Graphics& g)
 {
     auto b = getLocalBounds().toFloat();
+    // Try-lock to avoid blocking audio writer; draw grid if busy or not ready
+    if (b.getWidth() < 2.0f || b.getHeight() < 2.0f)
+        return;
+    if (!postFrameReady.load (std::memory_order_acquire))
+    {
+        drawGridOnly (g, b);
+        return;
+    }
+    const juce::SpinLock::ScopedTryLockType tl (dataLock);
+    if (!tl.isLocked())
+    {
+        drawGridOnly (g, b);
+        return;
+    }
     renderPaths (g, b);
 }
 
