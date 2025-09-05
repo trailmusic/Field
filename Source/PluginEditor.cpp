@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "ui/PaneManager.h"
 #include "Layout.h"
 #include "dsp/DelayPresetLibrary.h"
 
@@ -1202,13 +1203,53 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     splitToggle.setToggleState (false, juce::dontSendNotification);
     linkButton.setVisible (false);
 
-    // XY pad + shade
-    addAndMakeVisible (pad);
+    // Multi-pane dock (XY, Spectrum, Imager) + shade overlay
+    panes = std::make_unique<PaneManager> (proc.apvts.state, &getLookAndFeel(), pad);
+    addAndMakeVisible (*panes);
+    panes->setSampleRate (proc.getSampleRate());
+    panes->setOptions ({ /*keepAllWarm=*/ false });
+    // Default to XY view on startup
+    panes->setActive (PaneID::XY, true);
+
+    // Theme spectrum (optional)
+    if (auto* sp = panes->spectrumPane())
+    {
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
+            auto& a = sp->analyzer();
+            a.fillColour      = lf->theme.accent.withAlpha (0.25f);
+            a.strokeColour    = lf->theme.text.withAlpha   (0.85f);
+            a.peakColour      = lf->theme.accent.withAlpha (0.90f);
+            a.gridColour      = lf->theme.text.withAlpha   (0.12f);
+            a.eqOverlayColour = lf->theme.accent.withAlpha (0.95f);
+        }
+
+        // Defaults for spectrum feel
+        SpectrumAnalyzer::Params p;
+        p.fftOrder         = 11;      // 2048
+        p.avgTimeMs        = 120.0f;
+        p.peakHoldSec      = 1.1f;
+        p.peakFallDbPerSec = 10.0f;
+        p.minDb            = -84.0f;
+        p.maxDb            =  +6.0f;
+        p.slopeDbPerOct    = +3.0f;
+        p.monoSum          = true;
+        p.fps              = 30;
+        sp->analyzer().setParams (p);
+        sp->analyzer().setFreqRange (20.0, 20000.0);
+    }
+
     xyShade = std::make_unique<ShadeOverlay> (lnf);
     addAndMakeVisible (*xyShade);
-    if (auto* v = proc.apvts.state.getPropertyPointer ("ui_xyShadeAmt"))
-        xyShade->setAmount ((float) *v, false);
-    xyShade->onAmountChanged = [this](float a) { proc.apvts.state.setProperty ("ui_xyShadeAmt", a, nullptr); };
+    xyShade->onAmountChanged = [this](float a)
+    {
+        if (panes) panes->setActiveShade (a);
+        proc.apvts.state.setProperty ("ui_shade_active", a, nullptr);
+    };
+    if (panes && xyShade)
+        xyShade->setAmount (panes->getActiveShade(), false);
+    if (panes)
+        panes->onActivePaneChanged = [this](PaneID){ if (xyShade) xyShade->setAmount (panes->getActiveShade(), false); };
 
     // Containers
     addAndMakeVisible (mainControlsContainer); mainControlsContainer.setTitle (""); mainControlsContainer.setShowBorder (false);
@@ -1704,10 +1745,28 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     proc.apvts.addParameterListener ("shuffler_hi_pct", this);
     proc.apvts.addParameterListener ("shuffler_xover_hz", this);
 
-    // audio callback -> XY waveform (safe: no repaint in push)
-    proc.onAudioSample = [this](float L, float R) { pad.pushWaveformSample (L, R); };
-    // Provide sample rate to XYPad visuals for RBJ curves
+    // audio callbacks -> panes
+    proc.onAudioSample   = [this](float L, float R) { if (panes) panes->onAudioSample (L, R); };
+    proc.onAudioBlock    = [this](const float* L, const float* R, int n) { if (panes) panes->onAudioBlock (L, R, n); };
+    proc.onAudioBlockPre = [this](const float* L, const float* R, int n) { if (panes) panes->onAudioBlockPre (L, R, n); };
     pad.setSampleRate (proc.getSampleRate());
+
+    // Keybindings for panes and keep-warm
+    struct LocalKeyListener : public juce::KeyListener {
+        PaneManager* mgr;
+        explicit LocalKeyListener (PaneManager* m) : mgr (m) {}
+        bool keyPressed (const juce::KeyPress& k, juce::Component*) override
+        {
+            if (!mgr) return false;
+            if (k.getTextCharacter()=='1') { mgr->setActive (PaneID::XY, true);       return true; }
+            if (k.getTextCharacter()=='2') { mgr->setActive (PaneID::Spectrum, true); return true; }
+            if (k.getTextCharacter()=='3') { mgr->setActive (PaneID::Imager, true);   return true; }
+            if (k.getTextCharacter()=='K' || k.getTextCharacter()=='k') { mgr->setOptions({ !mgr->getOptions().keepAllWarm }); return true; }
+            return false;
+        }
+    };
+    keyListener.reset (new LocalKeyListener (panes.get()));
+    addKeyListener (keyListener.get());
 
     // divider line component
     addAndMakeVisible (splitDivider);
@@ -2015,9 +2074,10 @@ void MyPluginAudioProcessorEditor::performLayout()
         auto metersArea = main.removeFromRight (metersW);
         metersContainer.setBounds (metersArea);
         
-        // XY pad takes remaining space on the left
-        pad.setBounds (main.reduced (Layout::dp (Layout::GAP, s)));
-        if (xyShade) xyShade->setBounds (pad.getBounds());
+        // Visual dock takes the pad area
+        auto padBounds = main.reduced (Layout::dp (Layout::GAP, s));
+        if (panes) panes->setBounds (padBounds);
+        if (xyShade) xyShade->setBounds (padBounds);
 
         // Layout vertical meters: Corr (top) + LR bars (bottom)
         addAndMakeVisible (corrMeter);

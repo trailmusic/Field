@@ -13,6 +13,10 @@ set(SRC
     KnobCell.cpp
       IconSystem.h
     IconSystem.cpp
+    ui/SpectrumAnalyzer.h
+    ui/SpectrumAnalyzer.cpp
+    ui/ProcessedSpectrumPane.h
+    ui/PaneManager.h
     
     dsp/DelayPresetLibrary.h
     dsp/DelayPresetLibrary.cpp

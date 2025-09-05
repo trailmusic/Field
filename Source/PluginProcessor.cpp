@@ -372,6 +372,16 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     juce::ignoreUnused (midi);
     isDoublePrecEnabled = false;
 
+    // Pre-DSP feed
+    if (onAudioBlockPre && buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
+    {
+        const int chL = buffer.getNumChannels() > 0 ? 0 : 0;
+        const int chR = buffer.getNumChannels() > 1 ? 1 : 0;
+        onAudioBlockPre (buffer.getReadPointer (chL),
+                         buffer.getNumChannels() > 1 ? buffer.getReadPointer (chR) : nullptr,
+                         buffer.getNumSamples());
+    }
+
     auto hp = makeHostParams (apvts);
     // Sync helpers (UI → chain)
     hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
@@ -407,6 +417,16 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         smooth (meterRmsR,  rmsR);
         smooth (meterPeakL, peakL);
         smooth (meterPeakR, peakR);
+    }
+
+    // Feed post-DSP block to visualizers (high-fidelity spectrum)
+    if (onAudioBlock && buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
+    {
+        const int chL = buffer.getNumChannels() > 0 ? 0 : 0;
+        const int chR = buffer.getNumChannels() > 1 ? 1 : 0;
+        onAudioBlock (buffer.getReadPointer (chL),
+                      buffer.getNumChannels() > 1 ? buffer.getReadPointer (chR) : nullptr,
+                      buffer.getNumSamples());
     }
 
     // Feed XYPad waveform/spectral visuals
@@ -461,6 +481,8 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         smooth (meterPeakL, peakL);
         smooth (meterPeakR, peakR);
     }
+
+    // (skip block feed in double path; onAudioBlock expects float*)
 
     // Feed XYPad waveform/spectral visuals
     if (onAudioSample && buffer.getNumSamples() > 0)

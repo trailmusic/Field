@@ -1129,6 +1129,9 @@ private:
     MyPluginAudioProcessor& proc;
     FieldLNF lnf;
     XYPad pad;
+    // Multi-pane visual dock (XY, Spectrum, Imager)
+    std::unique_ptr<class PaneManager> panes;
+    std::unique_ptr<juce::KeyListener> keyListener;
     
     // Resize constraints
     int minWidth = 0;

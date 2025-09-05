@@ -383,6 +383,10 @@ public:
 
     // Optional: waveform display / metering callback (not required by DSP)
     std::function<void(double, double)> onAudioSample;
+    // Optional: block-level visualization callback (post-DSP, processed signal)
+    std::function<void (const float* L, const float* R, int n)> onAudioBlock;
+    // Optional: pre-DSP block callback (input signal)
+    std::function<void (const float* L, const float* R, int n)> onAudioBlockPre;
     // Meters
     float getCorrelation() const { return meterCorrelation.load(); }
     float getRmsL() const { return meterRmsL.load(); }
