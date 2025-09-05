@@ -1443,6 +1443,13 @@ void FieldChain<Sample>::process (Block block)
         if (ch > 0) scL = (float)block.getSample(0, 0);
         if (ch > 1) scR = (float)block.getSample(1, 0);
         delayEngine.process(block, scL, scR);
+        // After delayEngine updated the block in-place, reflect that into the dry bus
+        for (int c = 0; c < ch; ++c)
+        {
+            auto* dst = dryBusBuf.getWritePointer (c);
+            auto* src = block.getChannelPointer (c);
+            std::memcpy (dst, src, sizeof (Sample) * (size_t) n);
+        }
     }
 
     // Duck wet against dry (WetOnly), only when Reverb wet is active to save CPU
@@ -1471,7 +1478,8 @@ void FieldChain<Sample>::process (Block block)
 
     // Equal-power mix: apply smoothed wet to avoid clicks
     wetMixSmoothed.setTargetValue (rvParams.wetLevel);
-    // Sum Dry + Wet back to output block (equal-power law)
+    // Sum Dry + Wet back to output block (equal-power law):
+    // mix=0 -> 100% dry, mix=1 -> 100% wet
     for (int c = 0; c < ch; ++c)
     {
         auto* out = block.getChannelPointer (c);
@@ -1480,8 +1488,9 @@ void FieldChain<Sample>::process (Block block)
         for (int i = 0; i < n; ++i)
         {
             const float mix = wetMixSmoothed.getNextValue();
-            const float a = std::cos (0.5f * juce::MathConstants<float>::pi * (1.0f - mix));
-            const float b = std::sin (0.5f * juce::MathConstants<float>::pi * (mix));
+            const float theta = juce::jlimit (0.0f, 1.0f, mix) * juce::MathConstants<float>::halfPi;
+            const float a = std::cos (theta);
+            const float b = std::sin (theta);
             out[i] = (Sample) (a * (double) d[i] + b * (double) w[i]);
         }
     }
