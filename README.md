@@ -14,6 +14,8 @@ This README is optimized for **humans** and **AI builders**: explicit, actionabl
 * [Signal Flow](#signal-flow)
 * [Parameters (APVTS IDs)](#parameters-apvts-ids)
 * [UI / UX Spec](#ui--ux-spec)
+* [Tabs & Pane System (NEW)](#tabs--pane-system-new)
+* [Visualization Bus & Threading Model (NEW)](#visualization-bus--threading-model-new)
 * [Preset System](#preset-system)
 * [Meters & Visualization](#meters--visualization)
 * [Build & Run](#build--run)
@@ -324,6 +326,56 @@ DP helper: `Layout::dp(px, scale)`; always scale sizes with the editor `scaleFac
 
 ---
 
+## Tabs & Pane System (NEW)
+
+FIELD’s main view is organized into three panes accessible via tabs:
+
+- **XY**: The hero XY Pad with the time‑domain oscilloscope overlay.
+- **Spectrum**: High‑resolution spectrum analyzer with optional pre overlay and EQ curve.
+- **Imager**: Placeholder (future) for advanced image field tools.
+
+### Architecture
+
+- **PaneManager (`Source/ui/PaneManager.h`)** controls tab selection, child visibility, and a lightweight UI‑thread timer used for visualization polling.
+- A “Keep Warm” option allows Spectrum to continue receiving data while inactive for instant visuals when switching in; otherwise Spectrum sleeps while not visible.
+- On tab switches, Spectrum’s analyzer is explicitly gated (`pauseAudio`/`resumeAudio`) to avoid lifetime races.
+
+### First‑Paint Behavior & Safety
+
+- Spectrum shows a **grid‑only fallback** until a full, valid FFT frame is ready. This prevents any draw‑time crashes on first activation or when no audio is present.
+- XY oscilloscope is fed on the UI thread via the pane manager and always renders safely on first load.
+
+### UX Notes
+
+- Switching tabs is glitch‑free and does not affect audio processing. Only visualization feeds are paused/resumed.
+- The Imager tab is currently a placeholder component; its activation is safe and has no audio side‑effects.
+
+---
+
+## Visualization Bus & Threading Model (NEW)
+
+To eliminate audio→UI lifetime risks, FIELD uses a **processor‑owned, lock‑free visualization bus** (SPSC ring) and a **UI pull** model.
+
+### Key Pieces
+
+- **VisBus (processor)**: Lives in `PluginProcessor`. The audio thread writes recent L/R samples into a single‑producer ring buffer with zero locks. Overflow safely drops (no blocking).
+- **PaneManager pull (UI)**: On a lightweight UI timer, small chunks are pulled from `visPre`/`visPost` and forwarded into `SpectrumAnalyzer::pushBlock/Pre`.
+- **Analyzer gating**: `acceptingAudio` atomically pauses/resumes feed during configure and tab switches. Configure operations use a short `cfgLock` and flip `postConfigured` only when ready.
+- **Frame flags**: `postFrameReady`/`preFrameReady` turn true only after a complete smoothed frame. Paint uses a `SpinLock` try‑lock; if busy or not ready, it draws the grid only.
+
+### Invariants
+
+- No audio thread calls into UI objects or captures UI ownership via lambdas.
+- No blocking or dynamic allocations on the audio thread.
+- Spectrum paint path never dereferences half‑configured state (strict preconditions; grid fallback).
+
+### Results
+
+- You can safely click the Spectrum tab with or without audio running.
+- First activation shows the grid; the spectrum draws as soon as the first valid frame arrives.
+
+---
+
 ## Preset System
 
 * **Searchable**: type-to-search by name, description, author, category.
@@ -558,6 +610,22 @@ cmake --build . --config Release
 
 *(Projucer projects also supported if preferred.)*
 
+### One‑shot Build Scripts (macOS)
+
+Developer convenience scripts are provided to build and install all targets:
+
+```bash
+./build_all.sh
+```
+
+Artifacts are installed to:
+
+- AU: `~/Library/Audio/Plug-Ins/Components/Field.component`
+- VST3: `~/Library/Audio/Plug-Ins/VST3/Field.vst3`
+- Standalone: `build/Source/Field_artefacts/Debug/Standalone/Field.app`
+
+Codesigning uses ad‑hoc signatures for debug; some hosts may require a rescan.
+
 ---
 
 ## Stability Fix (Aug 2025)
@@ -567,6 +635,21 @@ cmake --build . --config Release
 - Verification: `./build_all.sh` then `./verify_builds.sh` — Standalone opens cleanly; AU validation `auval -v aufx Fld1 YTtr` passes.
 
 If a host still reports issues, clear plugin caches and rescan, then re-run the verification steps above.
+
+---
+
+## Tabs/Visualization Stability Fixes (Sep 2025)
+
+Hardenings that prevent crashes on tab switches and first paint:
+
+- Replaced audio→UI lambdas with processor‑owned **VisBus** and **UI pull** loop.
+- Analyzer state guards: `postConfigured`, `postFrameReady`/`preFrameReady`, `acceptingAudio` gating.
+- Atomic `configurePost()` re‑inits buffers/FIFOs under a short lock; flips configured only at the end.
+- Allocated and maintained `smoothersPost/Pre`; strict size preconditions in `performFFTIfReadyPost/Pre`.
+- Paint try‑locks and falls back to **grid‑only** until data are ready.
+- PaneManager enforces child visibility on load and gates analyzer feed on tab switches; “Keep Warm” supported.
+
+If Spectrum shows grid‑only, it means no valid frame is ready yet—start playback or enable Keep Warm to pre‑fill.
 
 ---
 
