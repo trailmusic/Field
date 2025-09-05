@@ -3,6 +3,71 @@
 
 static inline float clampf (float v, float lo, float hi) { return v < lo ? lo : (v > hi ? hi : v); }
 
+// Linear interpolate an array at fractional bin index
+static inline float sampleFrac (const std::vector<float>& arr, double kf)
+{
+    const int N = (int) arr.size();
+    if (N == 0) return 0.f;
+    if (kf <= 0.0) return arr[0];
+    if (kf >= (double) (N - 1)) return arr[(size_t) (N - 1)];
+    const int k = (int) kf;
+    const double t = kf - (double) k;
+    return (float) ((1.0 - t) * (double) arr[(size_t) k] + t * (double) arr[(size_t) (k + 1)]);
+}
+
+// Soft triangular averaging whose width scales with how many bins fit in a pixel.
+static inline float sampleFracSmoothBins (const std::vector<float>& arr, double kf, double binsPerPixel, double halfMin, double halfMax, double halfScale)
+{
+    const int N = (int) arr.size();
+    if (N <= 0) return 0.f;
+
+    const double half = juce::jlimit (halfMin, halfMax, halfScale * juce::jmax (1.0, binsPerPixel));
+    const double a = juce::jlimit (0.0, (double) (N - 1), kf - half);
+    const double b = juce::jlimit (0.0, (double) (N - 1), kf + half);
+    const int ka = (int) std::floor (a);
+    const int kb = (int) std::ceil  (b);
+
+    double sumW = 0.0, sumV = 0.0;
+    for (int k = ka; k <= kb; ++k)
+    {
+        const double t = 1.0 - std::abs ((double) k - kf) / half;
+        const double w = half > 0.0 ? juce::jmax (0.0, t) : 1.0;
+        const double v = (double) arr[(size_t) juce::jlimit (0, N - 1, k)];
+        sumW += w; sumV += w * v;
+    }
+    if (sumW <= 0.0) return sampleFrac (arr, kf);
+    return (float) (sumV / sumW);
+}
+// Light triangular averaging whose width shrinks with frequency:
+// more smoothing at small k (low end), gentler up high.
+static inline float sampleFracSmooth (const std::vector<float>& arr, double kf)
+{
+    const int N = (int) arr.size();
+    if (N <= 0) return 0.f;
+
+    // half-width ~0.9 bin near DC → ~0.4 bins near Nyquist
+    const double half = juce::jlimit (0.35, 0.90,
+                        juce::jmap (kf, 0.0, (double) juce::jmax (1, N),
+                                         0.90, 0.40));
+
+    const double a = juce::jlimit (0.0, (double) (N - 1), kf - half);
+    const double b = juce::jlimit (0.0, (double) (N - 1), kf + half);
+    const int ka = (int) std::floor (a);
+    const int kb = (int) std::ceil  (b);
+
+    double sumW = 0.0, sumV = 0.0;
+    for (int k = ka; k <= kb; ++k)
+    {
+        // triangle weight peaked at kf
+        const double t = 1.0 - std::abs ((double) k - kf) / half;
+        const double w = half > 0.0 ? juce::jmax (0.0, t) : 1.0;
+        const double v = (double) arr[(size_t) juce::jlimit (0, N - 1, k)];
+        sumW += w; sumV += w * v;
+    }
+    if (sumW <= 0.0) return sampleFrac (arr, kf);
+    return (float) (sumV / sumW);
+}
+
 SpectrumAnalyzer::SpectrumAnalyzer()
 {
     setOpaque (false);
@@ -28,6 +93,29 @@ SpectrumAnalyzer::SpectrumAnalyzer()
 
     startTimerHz (params.fps);
     acceptingAudio.store (true, std::memory_order_release);
+}
+void SpectrumAnalyzer::setSmoothingPreset (SmoothingPreset p)
+{
+    smoothingPreset = p;
+    if (p == SmoothingPreset::Silky)
+    {
+        // Heavier LF averaging and gentler pixel-domain smoothing
+        smoothHalfMin   = 0.80; smoothHalfMax = 4.00; smoothHalfScale = 0.90;
+        aMainStart = 0.05f; aMainEnd = 0.18f;
+        aPeakStart = 0.08f; aPeakEnd = 0.22f;
+        strokeWidthMain = 1.2f; strokeWidthPeak = 0.9f;
+        fillAlphaMul = 1.10f; strokeAlphaMul = 0.90f; peakAlphaMul = 0.85f;
+    }
+    else // Clean
+    {
+        // Tighter averaging and snappier pixel-domain smoothing
+        smoothHalfMin   = 0.20; smoothHalfMax = 1.20; smoothHalfScale = 0.35;
+        aMainStart = 0.18f; aMainEnd = 0.48f;
+        aPeakStart = 0.24f; aPeakEnd = 0.60f;
+        strokeWidthMain = 1.8f; strokeWidthPeak = 1.2f;
+        fillAlphaMul = 0.90f; strokeAlphaMul = 1.05f; peakAlphaMul = 1.10f;
+    }
+    repaint();
 }
 void SpectrumAnalyzer::configurePost (int order)
 {
@@ -78,7 +166,12 @@ void SpectrumAnalyzer::resetPost()
     if (fifoPost.getNumSamples() > 0) fifoPost.clear();
 }
 
-void SpectrumAnalyzer::setSampleRate (double sr) { sampleRate = (sr > 0 ? sr : 48000.0); }
+void SpectrumAnalyzer::setSampleRate (double sr)
+{
+    sampleRate = (sr > 0 ? sr : 48000.0);
+    const int W = getWidth();
+    if (W > 0) rebuildPixelMap (W);
+}
 
 void SpectrumAnalyzer::setParams (const Params& p)
 {
@@ -142,6 +235,10 @@ void SpectrumAnalyzer::setParams (const Params& p)
     // asymmetric smoothing coefficients (fast attack ~50 ms, slow release ~250 ms)
     alphaFast = 1.0f - std::exp (-dt / 0.050f);
     alphaSlow = 1.0f - std::exp (-dt / 0.250f);
+
+    // Rebuild pixel map if width known (FFT order or fps might have changed)
+    const int W = getWidth();
+    if (W > 0) rebuildPixelMap (W);
 }
 
 void SpectrumAnalyzer::setFreqRange (double lo, double hi)
@@ -149,6 +246,8 @@ void SpectrumAnalyzer::setFreqRange (double lo, double hi)
     fMin = juce::jlimit (10.0, 2000.0, lo);
     fMax = juce::jlimit (4000.0, 48000.0, hi);
     if (fMax <= fMin + 1.0) fMax = fMin + 1.0;
+    const int W = getWidth();
+    if (W > 0) rebuildPixelMap (W);
 }
 
 void SpectrumAnalyzer::setPreDelaySamples (int n)
@@ -194,11 +293,34 @@ void SpectrumAnalyzer::pushBlock (const float* L, const float* R, int n)
 void SpectrumAnalyzer::pushBlockPre (const float* L, const float* R, int n)
 {
     if (!acceptingAudio.load (std::memory_order_acquire)) return;
-    if (n <= 0 || preDelay.getNumSamples() <= 0 || fifoPre.getNumSamples() <= 0 || fftSize <= 0) return;
+    if (n <= 0 || fifoPre.getNumSamples() <= 0 || fftSize <= 0) return;
+
+    const int D = juce::jmax (1, preDelaySamples);
+    if (D == 1)
+    {
+        // Bypass delay entirely: write straight to PRE FIFO
+        auto* fifoData = fifoPre.getWritePointer (0);
+        int w = fifoWritePre.load (std::memory_order_relaxed);
+        for (int i = 0; i < n; ++i)
+        {
+            const float sIn = params.monoSum
+                ? 0.5f * ((L ? L[i] : 0.0f) + (R ? R[i] : 0.0f))
+                : (L ? L[i] : 0.0f);
+            fifoData[w] = sIn;
+            w = (w + 1) & (fftSize - 1);
+        }
+        fifoWritePre.store (w, std::memory_order_release);
+
+        int acc = samplesAccumPre.load (std::memory_order_relaxed);
+        acc += n;
+        while (acc >= hopSize) { acc -= hopSize; performFFTIfReadyPre(); }
+        samplesAccumPre.store (acc, std::memory_order_release);
+        hasPre.store (true, std::memory_order_release);
+        return;
+    }
 
     // write incoming to preDelay
     auto* d = preDelay.getWritePointer (0);
-    const int D = juce::jmax (1, preDelaySamples);
     for (int i = 0; i < n; ++i)
     {
         const float sIn = params.monoSum ? 0.5f * ((L ? L[i] : 0.0f) + (R ? R[i] : 0.0f)) : (L ? L[i] : 0.0f);
@@ -257,7 +379,7 @@ void SpectrumAnalyzer::performFFTIfReadyPost()
 
     fft.performRealOnlyForwardTransform (freqDomain.get());
 
-    const float norm = 1.0f / (float) fftSize;
+    // const float norm = 1.0f / (float) fftSize; // unused
     for (int k = 0; k < fftSize / 2; ++k)
     {
         const float re = freqDomain[2 * k];
@@ -296,6 +418,11 @@ void SpectrumAnalyzer::performFFTIfReadyPost()
                 pk = juce::jmax (pk - peakFallPerFrameDb, in);
             }
         }
+        // Track loudest smoothed bin this frame for auto-headroom
+        float frameMax = params.minDb;
+        for (int k = 0; k < fftSize / 2; ++k)
+            frameMax = juce::jmax (frameMax, smoothedDbPost[(size_t) k]);
+        frameMaxDbPost.store (frameMax, std::memory_order_release);
         postFrameReady.store (true, std::memory_order_release);
     }
 }
@@ -303,13 +430,14 @@ void SpectrumAnalyzer::performFFTIfReadyPost()
 void SpectrumAnalyzer::performFFTIfReadyPre()
 {
     // Guards to prevent reading half-configured state
+    if (!postConfigured.load (std::memory_order_acquire)) return;
     const int N = fftSize;
     if (N <= 0) return;
     if (!(std::isfinite (sampleRate) && sampleRate > 1.0)) return;
     if (timeDomain.get() == nullptr || freqDomain.get() == nullptr) return;
-    if (fifoPre.getNumSamples() < N) return;
     if ((int) magDbPre.size() != N/2 || (int) smoothedDbPre.size() != N/2 || (int) peakDbPre.size() != N/2) return;
     if ((int) smoothersPre.size() != N/2) return;
+    if (fifoPre.getNumSamples() < N) return;
 
     auto* fifoData = fifoPre.getReadPointer (0);
     const int w = fifoWritePre.load (std::memory_order_acquire);
@@ -326,7 +454,7 @@ void SpectrumAnalyzer::performFFTIfReadyPre()
 
     fft.performRealOnlyForwardTransform (freqDomain.get());
 
-    const float norm = 1.0f / (float) fftSize;
+    // const float norm = 1.0f / (float) fftSize; // unused
     for (int k = 0; k < fftSize / 2; ++k)
     {
         const float re = freqDomain[2 * k];
@@ -374,6 +502,12 @@ void SpectrumAnalyzer::timerCallback()
     repaint();
 }
 
+void SpectrumAnalyzer::resized()
+{
+    const int W = getWidth();
+    if (W > 0) rebuildPixelMap (W);
+}
+
 float SpectrumAnalyzer::freqToX (double hz, float left, float right) const
 {
     hz = juce::jlimit (fMin, fMax, hz);
@@ -383,8 +517,19 @@ float SpectrumAnalyzer::freqToX (double hz, float left, float right) const
 
 float SpectrumAnalyzer::dbToY (float dB, float top, float bottom) const
 {
-    dB = clampf (dB, params.minDb, params.maxDb);
-    const float t = (dB - params.minDb) / (params.maxDb - params.minDb);
+    float topDb = params.maxDb + displayHeadroomDb;
+    if (autoHeadroom)
+    {
+        const float dTop = frameMaxDbPost.load (std::memory_order_acquire);
+        const float targetTop = params.minDb + (dTop - params.minDb) / juce::jlimit (0.20f, 0.95f, targetFill);
+        const float minTop = params.maxDb + minHeadroomDb;
+        const float maxTop = params.maxDb + maxHeadroomDb;
+        topDb = juce::jlimit (minTop, maxTop, targetTop);
+    }
+
+    dB = clampf (dB, params.minDb, topDb);
+    const float denom = juce::jmax (0.001f, (topDb - params.minDb));
+    const float t = (dB - params.minDb) / denom;
     return bottom - t * (bottom - top);
 }
 
@@ -432,32 +577,38 @@ void SpectrumAnalyzer::renderPaths (juce::Graphics& g, juce::Rectangle<float> r)
         return;
 
     const int W = juce::jmax (1, (int) r.getWidth());
+    if ((int) pixelKf.size() != W) rebuildPixelMap (W);
     std::vector<float> yMain (W), yPeak (W), yEq (W);
 
-    for (int xPix = 0; xPix < W; ++xPix)
+    const double hzToK = (sampleRate > 0.0 ? (double) fftSize / sampleRate : 0.0);
+    const double logFMin = std::log10 (fMin);
+    const double logFMax = std::log10 (fMax);
+
+    float prevDbMain = 0.0f, prevDbPeak = 0.0f; bool prevInit = false;
+    for (int x = 0; x < W; ++x)
     {
-        const double f0 = std::pow (10.0, std::log10 (fMin) + (std::log10 (fMax) - std::log10 (fMin)) * (double) (xPix     ) / W);
-        const double f1 = std::pow (10.0, std::log10 (fMin) + (std::log10 (fMax) - std::log10 (fMin)) * (double) (xPix + 1) / W);
+        const double f0 = std::pow (10.0, logFMin + (logFMax - logFMin) * (double)  x      / W);
+        const double f1 = std::pow (10.0, logFMin + (logFMax - logFMin) * (double) (x + 1) / W);
+        const double fm = std::sqrt (f0 * f1);
+        const double kf = juce::jlimit (0.0, (double) (N - 1), fm * hzToK);
+        const double binsPerPixel = juce::jmax (1e-6, (f1 - f0) * hzToK);
 
-        const int k0 = juce::jlimit (0, N - 1, (int) std::floor ((f0 * fftSize) / sampleRate));
-        const int k1 = juce::jlimit (k0, N - 1, (int) std::ceil  ((f1 * fftSize) / sampleRate));
+        float dB   = sampleFracSmoothBins (smoothedDbPost, kf, binsPerPixel, smoothHalfMin, smoothHalfMax, smoothHalfScale);
+        float dBPk = sampleFracSmoothBins (peakDbPost,     kf, binsPerPixel, smoothHalfMin, smoothHalfMax, smoothHalfScale);
 
-        float acc = params.minDb, accPk = params.minDb;
-        for (int k = k0; k <= k1; ++k)
-        {
-            acc   = juce::jmax (acc,   smoothedDbPost[(size_t) k]);
-            accPk = juce::jmax (accPk, peakDbPost[(size_t) k]);
-        }
+        const float pos01 = (float) x / (float) juce::jmax (1, W - 1);
+        const float aMain = juce::jmap (pos01, aMainStart, aMainEnd);
+        const float aPeak = juce::jmap (pos01, aPeakStart, aPeakEnd);
 
-        yMain[(size_t) xPix] = dbToY (acc,   r.getY(), r.getBottom());
-        yPeak[(size_t) xPix] = dbToY (accPk, r.getY(), r.getBottom());
+        if (!prevInit) { prevDbMain = dB; prevDbPeak = dBPk; prevInit = true; }
+        else           { prevDbMain += aMain * (dB   - prevDbMain);
+                         prevDbPeak += aPeak * (dBPk - prevDbPeak); }
+
+        yMain[(size_t) x] = dbToY (prevDbMain, r.getY(), r.getBottom());
+        yPeak[(size_t) x] = dbToY (prevDbPeak, r.getY(), r.getBottom());
 
         if (eqOverlayFn)
-        {
-            const double fm = std::sqrt (f0 * f1);
-            float eqdB = eqOverlayFn (fm);
-            yEq[(size_t) xPix] = dbToY (eqdB, r.getY(), r.getBottom());
-        }
+            yEq[(size_t) x] = dbToY (eqOverlayFn (fm), r.getY(), r.getBottom());
     }
 
     areaPathPost.startNewSubPath (r.getX(), r.getBottom());
@@ -494,47 +645,69 @@ void SpectrumAnalyzer::renderPaths (juce::Graphics& g, juce::Rectangle<float> r)
         g.drawHorizontalLine ((int) std::round (y), r.getX(), r.getRight());
     }
 
-    g.setColour (fillColour);   g.fillPath (areaPathPost);
-    g.setColour (strokeColour); g.strokePath (linePathPost, juce::PathStrokeType (1.5f));
+    // Draw PRE overlay first so POST sits visually on top
+    if (hasPre.load (std::memory_order_acquire) && preFrameReady.load (std::memory_order_acquire))
+    {
+        const int Wpre = juce::jmax (1, (int) r.getWidth());
+        juce::Path preArea, preLine, prePeak;
+        preArea.startNewSubPath (r.getX(), r.getBottom());
+        bool first = true;
+        float prevDbMainPre = 0.0f, prevDbPeakPre = 0.0f; bool prevInitPre = false;
+        for (int xPix = 0; xPix < Wpre; ++xPix)
+        {
+            const double f0 = std::pow (10.0, logFMin + (logFMax - logFMin) * (double)  xPix      / Wpre);
+            const double f1 = std::pow (10.0, logFMin + (logFMax - logFMin) * (double) (xPix + 1) / Wpre);
+            const double fm = std::sqrt (f0 * f1);
+            const double kf = juce::jlimit (0.0, (double) ((int) smoothedDbPre.size() - 1), fm * hzToK);
+            const double binsPerPixel = juce::jmax (1e-6, (f1 - f0) * hzToK);
 
+            const float dB   = sampleFracSmoothBins (smoothedDbPre, kf, binsPerPixel, smoothHalfMin, smoothHalfMax, smoothHalfScale);
+            const float dBPk = sampleFracSmoothBins (peakDbPre,     kf, binsPerPixel, smoothHalfMin, smoothHalfMax, smoothHalfScale);
+
+            const float pos01 = (float) xPix / (float) juce::jmax (1, Wpre - 1);
+            const float aMain = juce::jmap (pos01, aMainStart, aMainEnd);
+            const float aPeak = juce::jmap (pos01, aPeakStart, aPeakEnd);
+
+            float dBs = dB, dPs = dBPk;
+            if (!prevInitPre) { prevDbMainPre = dBs; prevDbPeakPre = dPs; prevInitPre = true; }
+            else              { prevDbMainPre += aMain * (dBs - prevDbMainPre);
+                                prevDbPeakPre += aPeak * (dPs - prevDbPeakPre); }
+
+            const float x = r.getX() + (float) xPix + 0.5f;
+            const float yM = dbToY (prevDbMainPre, r.getY(), r.getBottom());
+            const float yP = dbToY (prevDbPeakPre, r.getY(), r.getBottom());
+
+            if (first)
+            {
+                preLine.startNewSubPath (x, yM);
+                prePeak.startNewSubPath (x, yP);
+                first = false;
+            }
+            preArea.lineTo (x, yM);
+            preLine.lineTo (x, yM);
+            prePeak.lineTo (x, yP);
+        }
+        preArea.lineTo (r.getRight(), r.getBottom());
+        preArea.closeSubPath();
+
+        g.setColour (preFillColour);   g.fillPath (preArea);
+        g.setColour (preStrokeColour); g.strokePath (preLine, juce::PathStrokeType (1.2f));
+        if (params.drawPeaks)
+        {
+            g.setColour (prePeakColour);
+            g.strokePath (prePeak, juce::PathStrokeType (0.8f));
+        }
+    }
+
+    // Draw POST on top
+    g.setColour (fillColour.withAlpha (fillColour.getFloatAlpha() * fillAlphaMul));
+    g.fillPath (areaPathPost);
+    g.setColour (strokeColour.withAlpha (strokeColour.getFloatAlpha() * strokeAlphaMul));
+    g.strokePath (linePathPost, juce::PathStrokeType (strokeWidthMain));
     if (params.drawPeaks)
     {
-        g.setColour (peakColour);
-        g.strokePath (peakPathPost, juce::PathStrokeType (1.0f, juce::PathStrokeType::beveled, juce::PathStrokeType::rounded));
-
-        // Draw pre overlay if available
-        if (hasPre.load (std::memory_order_acquire) && preFrameReady.load (std::memory_order_acquire))
-        {
-            const int W = juce::jmax (1, (int) r.getWidth());
-            juce::Path preArea, preLine, prePeak;
-            preArea.startNewSubPath (r.getX(), r.getBottom());
-            preLine.startNewSubPath (r.getX(), yMain[0]);
-            prePeak.startNewSubPath (r.getX(), yPeak[0]);
-            for (int xPix = 0; xPix < W; ++xPix)
-            {
-                const double f0 = std::pow (10.0, std::log10 (fMin) + (std::log10 (fMax) - std::log10 (fMin)) * (double) (xPix     ) / W);
-                const double f1 = std::pow (10.0, std::log10 (fMin) + (std::log10 (fMax) - std::log10 (fMin)) * (double) (xPix + 1) / W);
-                const int k0 = juce::jlimit (0, (int) smoothedDbPre.size() - 1, (int) std::floor ((f0 * fftSize) / sampleRate));
-                const int k1 = juce::jlimit (k0, (int) smoothedDbPre.size() - 1,  (int) std::ceil  ((f1 * fftSize) / sampleRate));
-                float acc = -1.0e9f, accPk = -1.0e9f;
-                for (int k = k0; k <= k1; ++k)
-                {
-                    acc   = juce::jmax (acc,   smoothedDbPre[(size_t) k]);
-                    accPk = juce::jmax (accPk, peakDbPre[(size_t) k]);
-                }
-                const float yM = dbToY (acc,   r.getY(), r.getBottom());
-                const float yP = dbToY (accPk, r.getY(), r.getBottom());
-                preArea.lineTo (r.getX() + (float) xPix + 0.5f, yM);
-                preLine.lineTo (r.getX() + (float) xPix + 0.5f, yM);
-                prePeak.lineTo (r.getX() + (float) xPix + 0.5f, yP);
-            }
-            preArea.lineTo (r.getRight(), r.getBottom());
-            preArea.closeSubPath();
-
-            g.setColour (preFillColour);   g.fillPath (preArea);
-            g.setColour (preStrokeColour); g.strokePath (preLine, juce::PathStrokeType (1.2f));
-            g.setColour (prePeakColour);   g.strokePath (prePeak, juce::PathStrokeType (0.8f));
-        }
+        g.setColour (peakColour.withAlpha (peakColour.getFloatAlpha() * peakAlphaMul));
+        g.strokePath (peakPathPost, juce::PathStrokeType (strokeWidthPeak, juce::PathStrokeType::beveled, juce::PathStrokeType::rounded));
     }
 
     if (eqOverlayFn)
@@ -545,6 +718,22 @@ void SpectrumAnalyzer::renderPaths (juce::Graphics& g, juce::Rectangle<float> r)
 
         g.setColour (eqOverlayColour);
         g.strokePath (eqPath, juce::PathStrokeType (2.0f));
+    }
+}
+
+void SpectrumAnalyzer::rebuildPixelMap (int W)
+{
+    if (W <= 0) { pixelKf.clear(); return; }
+    pixelKf.resize (W);
+    const double hzToK = (sampleRate > 0.0 ? (double) fftSize / sampleRate : 0.0);
+    const double logFMin = std::log10 (juce::jmax (1.0, fMin));
+    const double logFMax = std::log10 (juce::jmax (fMin + 1.0, fMax));
+    for (int x = 0; x < W; ++x)
+    {
+        const double f0 = std::pow (10.0, logFMin + (logFMax - logFMin) * (double) x / (double) W);
+        const double f1 = std::pow (10.0, logFMin + (logFMax - logFMin) * (double) (x + 1) / (double) W);
+        const double fm = std::sqrt (f0 * f1);
+        pixelKf[(size_t) x] = fm * hzToK;
     }
 }
 

@@ -49,6 +49,13 @@ public:
             m.addItem (3, "Imager");
             m.addSeparator();
             m.addItem (4, options.keepAllWarm ? "Keep Warm: On" : "Keep Warm: Off");
+            // Smoothing preset toggle for Spectrum
+            if (spec)
+            {
+                auto preset = spec->analyzer().getSmoothingPreset();
+                const bool silky = (preset == SpectrumAnalyzer::SmoothingPreset::Silky);
+                m.addItem (5, juce::String("Smoothing: ") + (silky ? "Silky" : "Clean"));
+            }
             m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&tabs),
                              [this](int r)
                              {
@@ -56,6 +63,18 @@ public:
                                  else if (r == 2) setActive (PaneID::Spectrum, true);
                                  else if (r == 3) setActive (PaneID::Imager, true);
                                  else if (r == 4) { setOptions({ !options.keepAllWarm }); tabs.repaint(); }
+                                 else if (r == 5)
+                                 {
+                                     if (spec)
+                                     {
+                                         auto cur = spec->analyzer().getSmoothingPreset();
+                                         auto next = (cur == SpectrumAnalyzer::SmoothingPreset::Silky)
+                                                        ? SpectrumAnalyzer::SmoothingPreset::Clean
+                                                        : SpectrumAnalyzer::SmoothingPreset::Silky;
+                                         spec->analyzer().setSmoothingPreset (next);
+                                     }
+                                     tabs.repaint();
+                                 }
                              });
         };
 

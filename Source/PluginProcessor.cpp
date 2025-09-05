@@ -447,6 +447,21 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     chainD->setParameters (hp);
 
     juce::dsp::AudioBlock<double> block (buffer);
+    // PRE visualization (double path): copy input before processing
+    if (buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
+    {
+        static thread_local juce::AudioBuffer<float> tmpPreF;
+        const int n = buffer.getNumSamples();
+        const int chL = buffer.getNumChannels() > 0 ? 0 : 0;
+        const int chR = buffer.getNumChannels() > 1 ? 1 : 0;
+        tmpPreF.setSize (2, n, false, false, true);
+        auto* dL = tmpPreF.getWritePointer (0);
+        auto* dR = tmpPreF.getWritePointer (1);
+        auto* sL = buffer.getReadPointer (chL);
+        auto* sR = buffer.getReadPointer (chR);
+        for (int i = 0; i < n; ++i) { dL[i] = (float) sL[i]; dR[i] = (float) sR[i]; }
+        visPre.push (dL, dR, n);
+    }
     chainD->process (block);
 
     // Correlation + RMS/Peak meters
@@ -472,7 +487,23 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         smooth (meterPeakR, peakR);
     }
 
-    // (skip block feed in double path; onAudioBlock expects float*)
+    // POST visualization (double path): convert to float and push
+    if (buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
+    {
+        // Pre-DSP feed isn't available here; double path uses post only to avoid extra copies.
+        // If needed, maintain a pre-copy before processing.
+        static thread_local juce::AudioBuffer<float> tmpVis;
+        const int n = buffer.getNumSamples();
+        const int chL = buffer.getNumChannels() > 0 ? 0 : 0;
+        const int chR = buffer.getNumChannels() > 1 ? 1 : 0;
+        tmpVis.setSize (2, n, false, false, true);
+        auto* dstL = tmpVis.getWritePointer (0);
+        auto* dstR = tmpVis.getWritePointer (1);
+        auto* srcL = buffer.getReadPointer (chL);
+        auto* srcR = buffer.getReadPointer (chR);
+        for (int i = 0; i < n; ++i) { dstL[i] = (float) srcL[i]; dstR[i] = (float) srcR[i]; }
+        visPost.push (dstL, dstR, n);
+    }
 
     // Feed XYPad waveform/spectral visuals
     if (onAudioSample && buffer.getNumSamples() > 0)

@@ -4,6 +4,7 @@
 class SpectrumAnalyzer : public juce::Component, private juce::Timer
 {
 public:
+    enum class SmoothingPreset { Silky, Clean };
     struct Params
     {
         int    fftOrder         = 11;     // 2^11 = 2048
@@ -32,6 +33,9 @@ public:
     void pushBlockPre (const float* left, const float* right, int numSamples);
 
     void setEqOverlayFn (std::function<float(double /*Hz*/)> fn) { eqOverlayFn = std::move (fn); }
+    void setDisplayHeadroomDb (float d) { displayHeadroomDb = juce::jlimit (0.0f, 48.0f, d); repaint(); }
+    void setAutoHeadroomEnabled (bool on) { autoHeadroom = on; }
+    void setHeadroomTargetFill (float pct) { targetFill = juce::jlimit (0.55f, 0.85f, pct); }
 
     std::pair<float,float> getDbRange() const { return {params.minDb, params.maxDb}; }
 
@@ -48,9 +52,11 @@ public:
 
     void setFreqRange (double fMin, double fMax);
     void setPreDelaySamples (int n);
+    void setSmoothingPreset (SmoothingPreset p);
+    SmoothingPreset getSmoothingPreset() const { return smoothingPreset; }
 
     void paint (juce::Graphics&) override;
-    void resized() override {}
+    void resized() override;
 
     // Gate audio thread writes during reconfig/tab switches
     void pauseAudio()  noexcept { acceptingAudio.store (false, std::memory_order_release); }
@@ -77,6 +83,7 @@ private:
     void performFFTIfReadyPost();
     void performFFTIfReadyPre();
     void renderPaths (juce::Graphics& g, juce::Rectangle<float> bounds);
+    void rebuildPixelMap (int widthPixels);
 
     float freqToX (double hz, float left, float right) const;
     float dbToY   (float dB, float top, float bottom) const;
@@ -84,6 +91,12 @@ private:
     Params params;
     double sampleRate = 48000.0;
     double fMin = 20.0, fMax = 20000.0;
+
+    // Visual headroom (added above maxDb for mapping only)
+    float displayHeadroomDb = 18.0f; // extra space above maxDb for UI headroom
+    bool  autoHeadroom = true;
+    float targetFill   = 0.70f;
+    float minHeadroomDb = 6.0f, maxHeadroomDb = 36.0f;
 
     int fftOrder = 11;
     int fftSize  = 1 << 11;
@@ -121,12 +134,30 @@ private:
     juce::Path areaPathPost, linePathPost, peakPathPost;
     juce::Path areaPathPre,  linePathPre,  peakPathPre, eqPath;
     std::function<float(double)> eqOverlayFn;
+    std::atomic<float> frameMaxDbPost { -120.0f };
 
     // smoothing coefficients
     float alphaAvg = 0.2f;  // legacy
     float peakFallPerFrameDb = 0.4f;
     std::atomic<bool> hasPre { false }, hasPost { false };
     float alphaFast = 0.0f, alphaSlow = 0.0f; // asymmetric smoothing
+
+    // Cached mapping from pixel column to fractional FFT bin (kf)
+    std::vector<double> pixelKf;
+
+    // Smoothing preset state and parameters
+    SmoothingPreset smoothingPreset { SmoothingPreset::Silky };
+    double smoothHalfMin  = 0.45; // triangular half-width clamp (bins)
+    double smoothHalfMax  = 3.00;
+    double smoothHalfScale= 0.55; // multiplier on binsPerPixel
+    float  aMainStart = 0.08f, aMainEnd = 0.28f; // pixel one-pole alpha for main
+    float  aPeakStart = 0.14f, aPeakEnd = 0.40f; // pixel one-pole alpha for peaks
+    // Visual style per preset (applied on POST paths)
+    float strokeWidthMain = 1.5f;
+    float strokeWidthPeak = 1.0f;
+    float fillAlphaMul    = 1.0f;
+    float strokeAlphaMul  = 1.0f;
+    float peakAlphaMul    = 1.0f;
 };
 
 

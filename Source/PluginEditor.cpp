@@ -1232,11 +1232,17 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         p.peakFallDbPerSec = 10.0f;
         p.minDb            = -84.0f;
         p.maxDb            =  +6.0f;
-        p.slopeDbPerOct    = +3.0f;
+        // Leave slope flat by default; set to +3.0f if you want pink flattening
+        p.slopeDbPerOct    = 0.0f;
         p.monoSum          = true;
         p.fps              = 30;
         sp->analyzer().setParams (p);
         sp->analyzer().setFreqRange (20.0, 20000.0);
+
+        // Headroom defaults
+        sp->analyzer().setAutoHeadroomEnabled (true);
+        sp->analyzer().setHeadroomTargetFill (0.70f);
+        sp->analyzer().setDisplayHeadroomDb (30.0f);
     }
 
     xyShade = std::make_unique<ShadeOverlay> (lnf);
