@@ -67,7 +67,7 @@ MachinePane::MachinePane (juce::AudioProcessor& p, juce::ValueTree& state, juce:
 void MachinePane::paint (juce::Graphics& g)
 {
     auto b = getLocalBounds();
-    auto bar = b.removeFromBottom (56);
+    auto bar = b.removeFromTop (56);
     // compute tight width around items
     const int learnW = 160, stopW = 100, qW = 120, tW = 140, strW = 180, frW=90, upW=100;
     int totalW = learnW + 6 + stopW + 10 + qW + 6 + tW + 10 + strW + 6 + frW + 6 + upW;
@@ -79,7 +79,7 @@ void MachinePane::resized()
 {
     auto r = getLocalBounds();
     // Recompute tight bar area (keep layout independent of paint)
-    auto bar = r.removeFromBottom (56);
+    auto bar = r.removeFromTop (56);
     const int learnW = 160, stopW = 100, qW = 120, tW = 140, strW = 180, frW=90, upW=100;
     int totalW = learnW + 6 + stopW + 10 + qW + 6 + tW + 10 + strW + 6 + frW + 6 + upW;
     auto ba = juce::Rectangle<int> (bar.getCentreX() - totalW/2, bar.getY()+4, totalW, bar.getHeight()-8);

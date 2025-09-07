@@ -307,7 +307,7 @@ public:
     void resized() override
     {
         auto r = getLocalBounds().toFloat();
-        auto tabsR = r.removeFromBottom (36.0f).toNearestInt();
+        auto tabsR = r.removeFromTop (36.0f).toNearestInt();
         tabs.setBounds (tabsR);
         auto paneR = r.toNearestInt();
         for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
