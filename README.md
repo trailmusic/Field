@@ -148,6 +148,242 @@ Plain terms
 
 ---
 
+## Imager (Field)
+
+> This section documents the **Imager** system in Field: what it shows, how it processes, how to use each control, and how the visuals relate to the audio. Items marked **[COMING]** are implemented in the design and under active development.
+
+---
+
+### Quick start
+
+* Open the **Imager** tab.
+* Use **Global Width** to gently widen or narrow the stereo image; then refine with **Low/Mid/High Width** and the two **Crossovers**.
+* Use **Shuffler** for additional low/high emphasis (classic “airier top / safer lows”).
+* Keep lows stable with **Mono Maker** (Hz + slope).
+* Use **Rotation** and **Asymmetry** for final placement/balance.
+* Watch the **Heatmap** [COMING]: warm tiles warn of mono risk; cool tiles are safe.
+* Switch to **Width Designer** mode [COMING] for frequency-tilted width, auto-width protection, and a floating control panel.
+
+---
+
+### Signal flow (audio)
+
+The Imager operates purely in the stereo domain; there’s no additional latency beyond your existing chain.
+
+```
+[Input L/R]
+   └─► (optional HP/LP & tone from main chain)
+        ├─► 3-Band Split (Lo/Mid/Hi) ─► Per-Band Width
+        ├─► Shuffler 2-Band (LF/HF) width
+        ├─► Rotation & Asymmetry
+        ├─► Mono Maker (variable slope)
+        └─► (remainder of chain: non-linearities, FX, sum)
+[Output L/R]
+```
+
+**[Designer Mode COMING]** inserts:
+
+* **Side-Tilt Width** (S-only shelving tilt around a pivot) before Rotation/Asym.
+* **Auto-Width Clamp** (dynamic protection) after all MS manipulations.
+
+Internally, mid/side uses the constant-power convention:
+
+* `M = (L + R) / √2`
+* `S = (L − R) / √2`
+
+---
+
+### Visuals (Imager tab)
+
+#### Heatmap (Time × Frequency correlation) [COMING]
+
+* **What**: a scrolling heatmap of **stereo correlation** per log-frequency band.
+
+  * r = +1 (fully correlated, mono-safe) → **cool** colors
+  * r = 0 (decorrelated) → **neutral grey**
+  * r = −1 (inverted / collapse-prone) → **hot** colors
+* **How it’s computed**
+
+  * Short STFT (default **2048** samples, **50%** hop), Hann window.
+  * Bins grouped into log bands (default **1/3-octave**, ~32 bands).
+  * Pearson r per band: zero‑lag normalized cross-spectrum, gated on energy, asym-smoothed; columns written into a circular `juce::Image` (no allocation in `paint()`).
+* **Interactions**
+
+  * **Click a tile** → solo that band (routes to your existing Lo/Mid/Hi preview) [COMING].
+  * **Drag crossovers** on the heatmap; guides match your LO/MID/HI split.
+  * **Freeze**: stop the writer to A/B; **Show PRE**: faint overlay of input [COMING].
+* **Performance**: analysis runs on the **UI timer** when the Imager tab is active (or “Keep Warm” is on). Painting is a blit plus guides.
+
+> Tip: use the heatmap to find **where** widening is risky (hot bands) and address with **Mono Maker**, **per-band Width**, or **Auto-Width** in Designer mode.
+
+---
+
+### Controls & what they do
+
+#### Global & Per-Band Width
+
+* **Width** (0.5…2.0): scales **S** globally.
+* **Width Low / Mid / High** (0…2.0): per-band **S** scaling after a **3-band split**:
+
+  * **XO Lo (Hz)**: Linkwitz-Riley LP cutoff for Low.
+  * **XO Hi (Hz)**: Linkwitz-Riley HP cutoff for High.
+  * **Mid** = Full − Low − High (phase-coherent).
+* **Best practice**: keep **Low ≤ 1.0**, especially for kick/bass. Use **Mid/High > 1.0** to add width without jeopardizing mono.
+
+#### Shuffler (2-band)
+
+Classic psychoacoustic imager:
+
+* **Shuffler Low % / High %** (0…200): extra S emphasis **below/above** **Shuffler XO**.
+* The split is LF via LR LP at XO; HF = full − LF. Each band’s S is scaled independently.
+* **Use**: add airy “sparkle” (**HF**) and/or subtle LF spaciousness (**LF**). Keep LF modest to avoid mono drift.
+
+#### Rotation & Asymmetry
+
+* **Rotation (deg)**: rotates **M/S** (a mid/side “pan”); small values re-balance width vs center energy.
+* **Asymmetry** (−1…+1): tiny cross-feed in M/S; nudges perceived balance without a hard pan.
+
+#### Mono Maker
+
+* **Mono (Hz)**: below this, L/R are summed to mono and blended with the highs.
+* **Slope**: 6/12/24 dB/oct via a Butterworth bank—steeper = firmer mono region.
+* **Mono Audition**: monitor only what will be mono’d (diagnostic).
+
+---
+
+### Width Designer mode [COMING]
+
+A smarter, safer way to widen that respects frequency and program material.
+
+#### Side-Tilt Width
+
+* **Side Tilt (dB/oct)** (−6…+6): applies a complementary **low/high shelf pair to S** around a pivot, approximating a tilt slope across ~3 octaves.
+
+  * Positive = **more width up high**, **less down low** (preferred).
+  * Negative = inverse.
+* **Tilt Pivot (Hz)**: where the tilt “seesaws.” Typical **600–900 Hz**.
+* **Why**: preserves punch and mono stability while opening air and presence.
+
+#### Auto-Width (dynamic clamp)
+
+* **Depth** (0…1): maximum amount of **S reduction** when the signal becomes risky.
+* **Threshold (S/M dB)**: when the **Side-to-Mid ratio** exceeds this, clamping engages.
+* **Attack / Release (ms)**: how fast it protects and how smoothly it recovers.
+* **Max Width** (0.5…2.5): absolute S ceiling (safety net).
+
+How it works:
+
+1. Measure block RMS of `M` and `S`, compute `S/M` in dB.
+2. If above Threshold, reduce S by up to Depth (smoothed with Attack/Release).
+3. Apply **Max Width** cap to prevent overshoots.
+4. Reconstruct L/R from the adjusted M/S.
+
+> **Starting point**: Depth 0.4, Threshold −3 dB, Attack 25 ms, Release 250 ms, Max 2.0.
+
+#### Floating “Width Designer” panel [COMING]
+
+* A draggable, resizable sub-panel with:
+
+  * Mode (Classic / Designer)
+  * Side Tilt (dB/oct), Pivot (Hz)
+  * Auto-Width: Depth, Threshold, Attack, Release
+  * Max Width
+  * Live meter: current auto-width gain, plus S/M bar [COMING]
+* Bounds persist (e.g., `ui_widthpanel_bounds`), always-on-top for quick tweaks.
+
+---
+
+### Visual settings (Imager)
+
+* **Quality** (15/30/60 fps) [COMING]: sets heatmap column cadence and UI timer.
+* **Show PRE** [COMING]: renders a faint pre-processing heatmap under the post image.
+* **Freeze** [COMING]: pauses updates for A/B and screenshots.
+* **Keep Warm** (Tabs menu): keeps analyzers running when Imager is not visible.
+
+---
+
+### Developer notes (algorithms & implementation)
+
+* **3-Band Width**: LR 4th-order Linkwitz-Riley LP@Lo, HP@Hi; Mid derived by subtraction (phase-coherent). Per-band width scales S and resums LR.
+* **Shuffler**: single LR lowpass @ XO to split LF; HF = full − LF; width per band; cheap and effective.
+* **Rotation**: M/S rotation by angle θ (energy-preserving); see Rotation details above.
+* **Asymmetry**: gentle cross-mix in M/S to bias perceived center/edge.
+* **Mono Maker**: 1st/2nd/4th-order Butterworth LP on each channel → mono’d lows; highs passthrough; recombine.
+* **Designer Side-Tilt**: complementary low/high shelves on **S** with S-shape ~0.9, placed around Pivot (~0.6× / 1.6×), gains derived from **dB/oct × span (~3 oct)**.
+* **Auto-Width**: measures `S/M (dB)`, computes target gain, smooths per-sample with separate Attack/Release one-poles, then applies to S; clamps to **Max Width**.
+* **Heatmap**: STFT 2048/50% Hann, 1/3‑oct banding, Pearson r, energy-gate with hysteresis, per-band exp smoothing; column written into a circular `juce::Image`; diverging color ramp (color-blind-safe). Columns can burst up to 2 per tick to reduce lag.
+
+**Threading**
+
+* Audio DSP is all in the audio thread; analyzers/heatmap run on the UI timer; painting is lock-free (blit + guides).
+* Visualization buses `visPre`/`visPost` are SPSC ring buffers.
+
+---
+
+### Practical recipes
+
+* **Widen the top, keep lows glued**
+
+  * Width: **Low 0.9**, Mid 1.1, High 1.2; XO: 150 Hz / 2 kHz.
+  * Shuffler: LF 90–100%, HF 110–120%, XO ~700 Hz.
+  * Mono Maker: 90–120 Hz @ 12 dB/oct.
+  * **Designer**: Side Tilt **+2.5 dB/oct @ 700 Hz**, Auto-Width Depth 0.35, Thr −3 dB.
+
+* **Fix swirly chorus collapse**
+
+  * Watch Heatmap for hot HF bands; reduce **High Width** to ~1.0–1.1 and enable **Auto-Width** (Depth 0.5).
+  * Consider small **Rotation** (+/− 3–5°) to rebalance.
+
+* **Make a narrow verse bloom on the chorus**
+
+  * Automate **Global Width** 0.9 → 1.3; in Designer, increase Side Tilt during the chorus.
+
+---
+
+### Safety & best practices
+
+* **Mono first**: set **Mono Maker** early; confirm with **Mono Audition**.
+* **Lows ≤ 1.0**: resist widening subs/kick; use the shuffler sparingly in LF.
+* **Use Designer Auto-Width** when pushing High/Mid > 1.2; it’s a graceful seatbelt.
+* **Heatmap**: hot, stable bands are where collapse risk hides—address them with tilt or mono cutoff.
+* **Gain staging**: widening increases peak S; the **Max Width** cap can prevent spiky transients.
+
+---
+
+### UI & persistence
+
+* All Imager options persist in the session. Proposed keys:
+
+  * `ui_activePane="imager"`, `ui_shade_imager`, `ui_keepWarm`
+  * `ui_imager_mode` (Heat/… [COMING]), `ui_imager_quality`, `ui_imager_showPre`, `ui_imager_freeze`
+  * `ui_widthpanel_bounds` (floating panel geometry)
+
+---
+
+### Known limitations / roadmap
+
+* Heatmap PRE overlay, Freeze, and Quality switcher **[COMING]**.
+* Floating Width Designer panel & live meters **[COMING]**.
+* Optional correlation-weighted auto-width (use **r** instead of S/M) **[COMING]**.
+* Per-band auto-width (Lo/Mid/Hi independent detectors) **[COMING]**.
+* Side-exciter (HF saturation on S only) **[COMING]**.
+
+---
+
+### Glossary
+
+* **Width**: scale of the **S** (side) channel; >1 widens, <1 narrows.
+* **Shuffler**: band-dependent S emphasis; classic imager trick.
+* **Rotation**: mid/side rotation that shifts energy between M and S.
+* **Asymmetry**: small bias in M/S to shift perceived center vs edges.
+* **Mono Maker**: sums lows to mono below a cutoff with a chosen slope.
+* **Correlation (r)**: similarity of L and R (−1..+1), mono safety proxy.
+* **S/M (dB)**: level ratio of side to mid; a proxy for “how wide”.
+
+---
+
+---
+
 ## Signal Flow
 
 ```

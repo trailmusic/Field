@@ -202,6 +202,8 @@ private:
     // Shuffler split (2-band LP@xover; HP via subtraction)
     juce::dsp::LinkwitzRileyFilter<Sample>    shuffLP_L, shuffLP_R;
     juce::dsp::IIR::Filter<Sample>            lowShelf, highShelf, airFilter, bassFilter, scoopFilter;
+    // Width Designer: side-only tilt filters
+    juce::dsp::IIR::Filter<Sample>            sTiltLow, sTiltHigh;
 
     // Reverb (float adapter for double chain)
     std::unique_ptr<FloatReverbAdapter>  reverbD;  // only used when Sample == double
@@ -264,6 +266,15 @@ private:
         // Imaging additions (Sample domain)
         Sample xoverLoHz{}, xoverHiHz{};
         Sample widthLo{}, widthMid{}, widthHi{};
+        // Width Designer params
+        int    widthMode{};            // 0=Classic, 1=Designer
+        Sample widthSideTiltDbOct{};   // dB/oct on S
+        Sample widthTiltPivotHz{};     // pivot Hz
+        Sample widthAutoDepth{};       // 0..1
+        Sample widthAutoThrDb{};       // threshold in dB (S/M)
+        Sample widthAutoAtkMs{};       // attack ms
+        Sample widthAutoRelMs{};       // release ms
+        Sample widthMax{};             // ceiling
         Sample rotationRad{};
         Sample asymmetry{};
         Sample shufflerLo{}, shufflerHi{};
@@ -308,6 +319,10 @@ private:
         int    delayGridFlavor{};   // 0=S,1=D,2=T
         double tempoBpm{120.0};
     } params;
+
+    // Width Designer runtime state
+    Sample aw_env = (Sample) 1.0; // auto-width smoothed gain
+    Sample aw_alphaAtk = (Sample) 0.0, aw_alphaRel = (Sample) 0.0;
 };
 
 // ===============================
@@ -350,6 +365,15 @@ struct HostParams
     double shufflerXoverHz{}; // 150..2000
     int    monoSlopeDbOct{};  // 6/12/24
     bool   monoAudition{};    // 0/1
+    // Width Designer (Designer mode)
+    int    widthMode{};            // 0=Classic, 1=Designer
+    double widthSideTiltDbOct{};   // dB/oct on S
+    double widthTiltPivotHz{};     // pivot Hz
+    double widthAutoDepth{};       // 0..1
+    double widthAutoThrDb{};       // threshold in dB (S/M)
+    double widthAutoAtkMs{};       // attack ms
+    double widthAutoRelMs{};       // release ms
+    double widthMax{};             // ceiling
         
     // Delay parameters
     bool   delayEnabled{};

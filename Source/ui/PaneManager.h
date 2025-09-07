@@ -1,6 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "ProcessedSpectrumPane.h"
+#include "ImagerPane.h"
 
 class XYPad; // forward (lives in PluginEditor.h/cpp)
 
@@ -34,7 +35,7 @@ public:
     {
         xy   = std::make_unique<XYPaneAdapter> (xyPadRef);
         spec = std::make_unique<ProcessedSpectrumPane> (lnf);
-        imgr = std::make_unique<juce::Component>(); // placeholder
+        imgr = std::make_unique<ImagerPane>();
 
         for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get() })
             addChildComponent (c);
@@ -93,9 +94,56 @@ public:
             if (! vt.hasProperty (key)) vt.setProperty (key, 0.0f, nullptr);
         }
 
+        // Imager UI state defaults
+        if (! vt.hasProperty ("ui_imager_showPre"))   vt.setProperty ("ui_imager_showPre",   true,  nullptr);
+        if (! vt.hasProperty ("ui_imager_autoGain"))  vt.setProperty ("ui_imager_autoGain",  true,  nullptr);
+        if (! vt.hasProperty ("ui_imager_quality"))   vt.setProperty ("ui_imager_quality",   30,    nullptr); // fps: 15/30/60
+        if (! vt.hasProperty ("ui_imager_overlay_bounds")) vt.setProperty ("ui_imager_overlay_bounds", juce::var(), nullptr);
+        applyImagerOptionsFromState();
+
         // restore keep-warm option
         if (vt.hasProperty ("ui_keepWarm")) options.keepAllWarm = (bool) vt.getProperty ("ui_keepWarm");
         startTimerHz (30);
+        if (auto* ip = imgr.get())
+        {
+            ip->onUiChange = [this](const juce::String& key, const juce::var& v)
+            {
+                if (key == "ui_imager_overlay_bounds_query")
+                {
+                    // Respond with stored bounds
+                    juce::ignoreUnused (v);
+                    if (vt.hasProperty ("ui_imager_overlay_bounds"))
+                    {
+                        auto val = vt.getProperty ("ui_imager_overlay_bounds");
+                        if (! val.isVoid())
+                        {
+                            if (auto* ip2 = imgr.get())
+                            {
+                                if (auto* o = val.getDynamicObject())
+                                {
+                                    auto x = (int) o->getProperty ("x"); auto y = (int) o->getProperty ("y");
+                                    auto w = (int) o->getProperty ("w"); auto h = (int) o->getProperty ("h");
+                                    ip2->setBounds (ip2->getBounds()); // no-op to ensure init
+                                    if (auto* im = dynamic_cast<ImagerPane*>(ip2))
+                                    {
+                                        im->overlayBounds = { x,y,w,h }; im->overlayBoundsSet = true; im->resized();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return;
+                }
+                vt.setProperty (key, v, nullptr);
+                if (key == "ui_imager_quality") applyImagerOptionsFromState();
+            };
+            ip->onParamEdit = [this](const juce::String& id, float value)
+            {
+                // Route edits to APVTS by parameter ID with host notification
+                setParamAutomated (id, value);
+            };
+            // Designer controls are initialized by the ImagerPane itself
+        }
     }
     void timerCallback() override
     {
@@ -123,6 +171,28 @@ public:
                     xy->pushWaveformSample (L[i], R ? R[i] : L[i]);
             }
         }
+        const bool wantImgr = (active == PaneID::Imager) || options.keepAllWarm;
+        if (wantImgr && imgr)
+        {
+            if (auto* ip = dynamic_cast<ImagerPane*>(imgr.get()))
+            {
+                int nPost = proc.visPost.pull (tmpPost, maxPull);
+                if (nPost > 0)
+                    ip->pushBlock (tmpPost.getReadPointer(0), tmpPost.getNumChannels()>1?tmpPost.getReadPointer(1):nullptr, nPost, false);
+                int nPre = proc.visPre.pull (tmpPre, maxPull);
+                if (nPre > 0)
+                    ip->pushBlock (tmpPre.getReadPointer(0), tmpPre.getNumChannels()>1?tmpPre.getReadPointer(1):nullptr, nPre, true);
+
+                // Reflect APVTS values into Imager width editor (keeps XO/widths in sync with knobs)
+                if (auto* pLo = proc.apvts.getRawParameterValue ("xover_lo_hz"))
+                if (auto* pHi = proc.apvts.getRawParameterValue ("xover_hi_hz"))
+                    ip->setCrossovers (*pLo, *pHi);
+                if (auto* wLo = proc.apvts.getRawParameterValue ("width_lo"))
+                if (auto* wMi = proc.apvts.getRawParameterValue ("width_mid"))
+                if (auto* wHi = proc.apvts.getRawParameterValue ("width_hi"))
+                    ip->setWidths (*wLo, *wMi, *wHi);
+            }
+        }
     }
 
     void setOptions (Options o) { options = o; vt.setProperty ("ui_keepWarm", options.keepAllWarm, nullptr); }
@@ -131,6 +201,20 @@ public:
     void setSampleRate (double fs)
     {
         if (spec) spec->setSampleRate (fs);
+        if (auto* ip = dynamic_cast<ImagerPane*>(imgr.get())) ip->setSampleRate (fs);
+    }
+
+    // Reflect APVTS knob changes back into Imager width editor
+    void onParameterChangedForImager (const juce::String& id, float value)
+    {
+        if (auto* ip = dynamic_cast<ImagerPane*>(imgr.get()))
+        {
+            if      (id == "xover_lo_hz") ip->setCrossovers (value, (float) vt.getProperty ("xover_hi_hz", 2000.0f));
+            else if (id == "xover_hi_hz") ip->setCrossovers ((float) vt.getProperty ("xover_lo_hz", 150.0f), value);
+            else if (id == "width_lo")    ip->setWidths (value, ip->getWidthMid(), ip->getWidthHi());
+            else if (id == "width_mid")   ip->setWidths (ip->getWidthLo(), value, ip->getWidthHi());
+            else if (id == "width_hi")    ip->setWidths (ip->getWidthLo(), ip->getWidthMid(), value);
+        }
     }
 
     void onAudioSample (double L, double R)
@@ -278,7 +362,32 @@ private:
 
     std::unique_ptr<XYPaneAdapter>         xy;
     std::unique_ptr<ProcessedSpectrumPane> spec;
-    std::unique_ptr<juce::Component>       imgr;
+    std::unique_ptr<ImagerPane>            imgr;
+
+    void applyImagerOptionsFromState()
+    {
+        if (!imgr) return;
+        ImagerPane::Options o;
+        o.showPre = (bool) vt.getProperty ("ui_imager_showPre", true);
+        o.autoGain = (bool) vt.getProperty ("ui_imager_autoGain", true);
+        const int q = (int) vt.getProperty ("ui_imager_quality", 30);
+        o.fps = juce::jlimit (10, 120, q);
+        imgr->setOptions (o);
+    }
+
+    void setParamAutomated (const juce::String& paramID, float value)
+    {
+        if (auto* p = proc.apvts.getParameter (paramID))
+        {
+            if (auto* rp = dynamic_cast<juce::RangedAudioParameter*> (p))
+            {
+                const float norm = rp->convertTo0to1 (value);
+                rp->beginChangeGesture();
+                rp->setValueNotifyingHost (juce::jlimit (0.0f, 1.0f, norm));
+                rp->endChangeGesture();
+            }
+        }
+    }
 };
 
 

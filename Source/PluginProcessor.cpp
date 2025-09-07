@@ -94,6 +94,15 @@ namespace IDs {
     static constexpr const char* delayDuckRatio = "delay_duck_ratio";
     static constexpr const char* delayDuckLookaheadMs = "delay_duck_lookahead_ms";
     static constexpr const char* delayDuckLinkGlobal = "delay_duck_link_global";
+    // Width Designer additions
+    static constexpr const char* widthMode          = "width_mode";            // 0=Classic, 1=Designer
+    static constexpr const char* widthSideTiltDbOct = "width_side_tilt_db_oct";
+    static constexpr const char* widthTiltPivotHz   = "width_tilt_pivot_hz";
+    static constexpr const char* widthAutoDepth     = "width_auto_depth";
+    static constexpr const char* widthAutoThrDb     = "width_auto_thr_db";
+    static constexpr const char* widthAutoAtkMs     = "width_auto_atk_ms";
+    static constexpr const char* widthAutoRelMs     = "width_auto_rel_ms";
+    static constexpr const char* widthMax           = "width_max";
 }
 
 // ================================================================
@@ -321,6 +330,15 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.shufflerXoverHz= getParam(apvts, IDs::shufXHz);
     p.monoSlopeDbOct = (int) juce::roundToInt (getParam(apvts, IDs::monoSlope));
     p.monoAudition   = (getParam(apvts, IDs::monoAud) >= 0.5f);
+    // Width Designer
+    p.widthMode          = (int) apvts.getParameterAsValue (IDs::widthMode).getValue();
+    p.widthSideTiltDbOct = getParam(apvts, IDs::widthSideTiltDbOct);
+    p.widthTiltPivotHz   = getParam(apvts, IDs::widthTiltPivotHz);
+    p.widthAutoDepth     = getParam(apvts, IDs::widthAutoDepth);
+    p.widthAutoThrDb     = getParam(apvts, IDs::widthAutoThrDb);
+    p.widthAutoAtkMs     = getParam(apvts, IDs::widthAutoAtkMs);
+    p.widthAutoRelMs     = getParam(apvts, IDs::widthAutoRelMs);
+    p.widthMax           = getParam(apvts, IDs::widthMax);
     // New EQ/link params
     p.eqShelfShapeS  = getParam(apvts, IDs::eqShelfShape);
     p.eqFilterQ      = getParam(apvts, IDs::eqFilterQ);
@@ -551,7 +569,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::panL, 1 }, "Pan L", juce::NormalisableRange<float> (-1.0f, 1.0f, 0.0001f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::panR, 1 }, "Pan R", juce::NormalisableRange<float> (-1.0f, 1.0f, 0.0001f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::depth, 1 }, "Depth", juce::NormalisableRange<float> (0.0f, 1.0f, 0.0001f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::width, 1 }, "Width", juce::NormalisableRange<float> (0.5f, 2.0f, 0.00001f), 1.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::width, 1 }, "Width", juce::NormalisableRange<float> (0.5f, 4.0f, 0.00001f), 1.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::tilt, 1 }, "Tone (Tilt)", juce::NormalisableRange<float> (-12.0f, 12.0f, 0.01f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::scoop, 1 }, "Scoop", juce::NormalisableRange<float> (-12.0f, 12.0f, 0.01f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::monoHz, 1 }, "Mono Maker (Hz)", juce::NormalisableRange<float> (0.0f, 300.0f, 0.01f, 0.5f), 0.0f));
@@ -592,6 +610,16 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::shufXHz,   1 },   "Shuffler Xover (Hz)",juce::NormalisableRange<float> (150.0f, 2000.0f, 0.01f, 0.5f), 700.0f));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::monoSlope,1 },   "Mono Slope (dB/oct)", juce::StringArray { "6", "12", "24" }, 1));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::monoAud, 1 },      "Mono Audition", false));
+
+    // Width Designer
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::widthMode, 1 }, "Width Mode", juce::StringArray { "Classic", "Designer" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthSideTiltDbOct, 1 }, "Side Tilt (dB/oct)", juce::NormalisableRange<float> (-6.0f, 6.0f, 0.01f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthTiltPivotHz, 1 }, "Tilt Pivot (Hz)", juce::NormalisableRange<float> (150.0f, 2000.0f, 1.0f, 0.5f), 650.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthAutoDepth, 1 }, "Auto-Width Depth", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthAutoThrDb, 1 }, "Auto-Width Threshold (S/M dB)", juce::NormalisableRange<float> (-24.0f, 12.0f, 0.01f), -3.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthAutoAtkMs, 1 }, "Auto-Width Attack (ms)", juce::NormalisableRange<float> (1.0f, 200.0f, 0.1f), 25.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthAutoRelMs, 1 }, "Auto-Width Release (ms)", juce::NormalisableRange<float> (20.0f, 1200.0f, 0.1f), 250.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthMax, 1 }, "Max Width", juce::NormalisableRange<float> (0.5f, 2.5f, 0.001f), 2.0f));
 
     // EQ shape/Q additions
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqShelfShape, 1 }, "Shelf Shape (S)", juce::NormalisableRange<float> (0.25f, 1.50f, 0.001f), 0.90f));
@@ -758,7 +786,7 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.panL      = (Sample) hp.panL;
     params.panR      = (Sample) hp.panR;
     params.depth     = (Sample) juce::jlimit (0.0, 1.0, hp.depth);
-    params.width     = (Sample) juce::jlimit (0.5, 2.0, hp.width);
+    params.width     = (Sample) juce::jlimit (0.5, 4.0, hp.width);
     params.tiltDb    = (Sample) hp.tiltDb;
     params.scoopDb   = (Sample) hp.scoopDb;
     params.monoHz    = (Sample) hp.monoHz;
@@ -806,6 +834,24 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.shufflerXoverHz = (Sample) juce::jlimit (150.0, 2000.0, hp.shufflerXoverHz);
     params.monoSlopeDbOct = hp.monoSlopeDbOct;
     params.monoAudition   = hp.monoAudition;
+    // Width Designer
+    params.widthMode          = hp.widthMode;
+    params.widthSideTiltDbOct = (Sample) hp.widthSideTiltDbOct;
+    params.widthTiltPivotHz   = (Sample) hp.widthTiltPivotHz;
+    params.widthAutoDepth     = (Sample) juce::jlimit (0.0, 1.0, hp.widthAutoDepth);
+    params.widthAutoThrDb     = (Sample) hp.widthAutoThrDb;
+    params.widthAutoAtkMs     = (Sample) hp.widthAutoAtkMs;
+    params.widthAutoRelMs     = (Sample) hp.widthAutoRelMs;
+    params.widthMax           = (Sample) juce::jlimit (0.5, 2.5, hp.widthMax);
+    // Precompute AW alphas
+    auto msToAlpha = [this](Sample ms)
+    {
+        const Sample T = juce::jmax ((Sample)1e-3, ms * (Sample)0.001);
+        const Sample a = (Sample) (1.0 - std::exp (-1.0 / (T * (Sample) sr)));
+        return juce::jlimit ((Sample)1e-5, (Sample)0.9999, a);
+    };
+    aw_alphaAtk = msToAlpha (params.widthAutoAtkMs);
+    aw_alphaRel = msToAlpha (params.widthAutoRelMs);
     
     // Delay parameters
     params.delayEnabled = hp.delayEnabled;
@@ -955,7 +1001,7 @@ template <typename Sample>
 void FieldChain<Sample>::applyWidthMS (Block block, Sample width)
 {
     if (block.getNumChannels() < 2) return;
-    width = juce::jlimit ((Sample)0.5, (Sample)2.0, width);
+    width = juce::jlimit ((Sample)0.5, (Sample)4.0, width);
     auto* L = block.getChannelPointer (0);
     auto* R = block.getChannelPointer (1);
     const int N = (int) block.getNumSamples();
@@ -1398,6 +1444,44 @@ void FieldChain<Sample>::process (Block block)
                          params.widthLo, params.widthMid, params.widthHi);
     // Shuffler (2-band lightweight)
     applyShufflerWidth (block, params.shufflerXoverHz, params.shufflerLo, params.shufflerHi);
+    // Width Designer: frequency-tilted S (before rotation)
+    if (params.widthMode == 1)
+    {
+        // side-only tilt: low/high shelves around a pivot on S
+        const double fs = sr;
+        const double nyq = fs * 0.49;
+        const double fLo = juce::jlimit (50.0,  2000.0, (double) params.widthTiltPivotHz * 0.6);
+        const double fHi = juce::jlimit (800.0, juce::jmin (20000.0, nyq), (double) params.widthTiltPivotHz * 1.6);
+        const double octSpan = 3.0;
+        const double totalDb = (double) params.widthSideTiltDbOct * octSpan;
+        const float gHi = (float) juce::Decibels::decibelsToGain ( juce::jlimit (-12.0, 12.0, totalDb * 0.5));
+        const float gLo = (float) juce::Decibels::decibelsToGain (-juce::jlimit (-12.0, 12.0, totalDb * 0.5));
+        const float Sshape = 0.90f;
+        sTiltLow .coefficients = juce::dsp::IIR::Coefficients<Sample>::makeLowShelf  (fs, fLo, Sshape, gLo);
+        sTiltHigh.coefficients = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf (fs, fHi, Sshape, gHi);
+
+        if (block.getNumChannels() >= 2 && (std::abs ((double) params.widthSideTiltDbOct) > 0.01))
+        {
+            const int N = (int) block.getNumSamples();
+            juce::AudioBuffer<Sample> Sbuf (1, N);
+            auto* L = block.getChannelPointer (0);
+            auto* R = block.getChannelPointer (1);
+            const Sample k = (Sample)0.7071067811865476;
+            auto* S = Sbuf.getWritePointer (0);
+            for (int i = 0; i < N; ++i) { S[i] = k * (L[i] - R[i]); }
+            juce::dsp::AudioBlock<Sample> Sb (Sbuf);
+            juce::dsp::ProcessContextReplacing<Sample> ctx (Sb);
+            sTiltLow.process (ctx); sTiltHigh.process (ctx);
+            for (int i = 0; i < N; ++i)
+            {
+                const Sample l=L[i], r=R[i];
+                const Sample M = k*(l + r);
+                const Sample Sf= S[i];
+                L[i] = k*(M + Sf);
+                R[i] = k*(M - Sf);
+            }
+        }
+    }
     // Rotation + Asymmetry (global)
     applyRotationAsym (block, params.rotationRad, params.asymmetry);
 
@@ -1429,6 +1513,51 @@ void FieldChain<Sample>::process (Block block)
 
     // LF mono
     applyMonoMaker (block, params.monoHz);
+
+    // Width Designer: dynamic clamp (after imaging/mono, before post FX)
+    if (params.widthMode == 1 && params.widthAutoDepth > (Sample)0.0001 && block.getNumChannels() >= 2)
+    {
+        auto* L = block.getChannelPointer (0);
+        auto* R = block.getChannelPointer (1);
+        const int N = (int) block.getNumSamples();
+        const Sample k = (Sample)0.7071067811865476;
+
+        long double sumM2=0.0L, sumS2=0.0L;
+        for (int i=0;i<N;++i)
+        {
+            const Sample l=L[i], r=R[i];
+            const Sample M = k*(l + r);
+            const Sample S = k*(l - r);
+            sumM2 += (long double) (M*M);
+            sumS2 += (long double) (S*S);
+        }
+        const double rmsM = std::sqrt ((double)sumM2 / juce::jmax (1, N));
+        const double rmsS = std::sqrt ((double)sumS2 / juce::jmax (1, N));
+        const double smDb = juce::Decibels::gainToDecibels ((float)(rmsS / (rmsM + 1e-20)));
+
+        double over = smDb - (double) params.widthAutoThrDb;
+        over = juce::jlimit (0.0, 24.0, over);
+        const double red = (double) params.widthAutoDepth * (over / 12.0);
+        const double gTarget = std::pow (10.0, -red / 20.0);
+
+        Sample g = aw_env;
+        const Sample gT = (Sample) gTarget;
+        for (int i = 0; i < N; ++i)
+        {
+            const Sample alpha = (gT < g) ? aw_alphaAtk : aw_alphaRel;
+            g = g + alpha * (gT - g);
+            aw_env = g;
+
+            const Sample l=L[i], r=R[i];
+            Sample M = k*(l + r);
+            Sample S = k*(l - r);
+            const Sample ceiling = params.widthMax;
+            const Sample sClamp  = juce::jmin (g, ceiling);
+            S *= sClamp;
+            L[i] = k*(M + S);
+            R[i] = k*(M - S);
+        }
+    }
 
     // Nonlinear (apply saturation equally to dry and wet prior to sum) to preserve FX tone
     {

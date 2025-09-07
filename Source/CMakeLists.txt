@@ -11,11 +11,15 @@ set(SRC
     KnobCellDual.cpp
       KnobCell.h
     KnobCell.cpp
+    KnobCellMini.h
       IconSystem.h
     IconSystem.cpp
     ui/SpectrumAnalyzer.h
     ui/SpectrumAnalyzer.cpp
     ui/ProcessedSpectrumPane.h
+    ui/ImagerPane.h
+    ui/StereoFieldEngine.h
+    ui/StereoFieldEngine.cpp
     ui/PaneManager.h
     
     dsp/DelayPresetLibrary.h
