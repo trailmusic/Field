@@ -2,6 +2,7 @@
 #include <JuceHeader.h>
 #include "ProcessedSpectrumPane.h"
 #include "ImagerPane.h"
+#include "machine/MachinePane.h"
 
 class XYPad; // forward (lives in PluginEditor.h/cpp)
 
@@ -17,11 +18,11 @@ private:
     XYPad& pad;
 };
 
-enum class PaneID { XY=0, Spectrum=1, Imager=2 };
+enum class PaneID { XY=0, Spectrum=1, Imager=2, Machine=3 };
 
 static inline const char* paneKey (PaneID id)
 {
-    switch (id) { case PaneID::XY: return "xy"; case PaneID::Spectrum: return "spec"; case PaneID::Imager: return "imager"; }
+    switch (id) { case PaneID::XY: return "xy"; case PaneID::Spectrum: return "spec"; case PaneID::Imager: return "imager"; case PaneID::Machine: return "machine"; }
     return "xy";
 }
 
@@ -36,8 +37,9 @@ public:
         xy   = std::make_unique<XYPaneAdapter> (xyPadRef);
         spec = std::make_unique<ProcessedSpectrumPane> (lnf);
         imgr = std::make_unique<ImagerPane>();
+        mach = std::make_unique<MachinePane>(p, state, lnf);
 
-        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get() })
+        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
             addChildComponent (c);
 
         addAndMakeVisible (tabs);
@@ -48,14 +50,15 @@ public:
             m.addItem (1, "XY");
             m.addItem (2, "Spectrum");
             m.addItem (3, "Imager");
+            m.addItem (4, "Machine");
             m.addSeparator();
-            m.addItem (4, options.keepAllWarm ? "Keep Warm: On" : "Keep Warm: Off");
+            m.addItem (5, options.keepAllWarm ? "Keep Warm: On" : "Keep Warm: Off");
             // Smoothing preset toggle for Spectrum
             if (spec)
             {
                 auto preset = spec->analyzer().getSmoothingPreset();
                 const bool silky = (preset == SpectrumAnalyzer::SmoothingPreset::Silky);
-                m.addItem (5, juce::String("Smoothing: ") + (silky ? "Silky" : "Clean"));
+                m.addItem (6, juce::String("Smoothing: ") + (silky ? "Silky" : "Clean"));
             }
             m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&tabs),
                              [this](int r)
@@ -63,8 +66,9 @@ public:
                                  if (r == 1) setActive (PaneID::XY, true);
                                  else if (r == 2) setActive (PaneID::Spectrum, true);
                                  else if (r == 3) setActive (PaneID::Imager, true);
-                                 else if (r == 4) { setOptions({ !options.keepAllWarm }); tabs.repaint(); }
-                                 else if (r == 5)
+                                 else if (r == 4) setActive (PaneID::Machine, true);
+                                 else if (r == 5) { setOptions({ !options.keepAllWarm }); tabs.repaint(); }
+                                 else if (r == 6)
                                  {
                                      if (spec)
                                      {
@@ -80,7 +84,7 @@ public:
         };
 
         auto s = vt.getProperty ("ui_activePane").toString();
-        PaneID initial = (s=="spec") ? PaneID::Spectrum : (s=="imager") ? PaneID::Imager : PaneID::XY;
+        PaneID initial = (s=="spec") ? PaneID::Spectrum : (s=="imager") ? PaneID::Imager : (s=="machine") ? PaneID::Machine : PaneID::XY;
         setActive (initial, false);
         if (spec)
         {
@@ -88,7 +92,7 @@ public:
             else                             spec->analyzer().pauseAudio();
         }
 
-        for (auto id : { PaneID::XY, PaneID::Spectrum, PaneID::Imager })
+        for (auto id : { PaneID::XY, PaneID::Spectrum, PaneID::Imager, PaneID::Machine })
         {
             auto key = juce::String("ui_shade_") + paneKey(id);
             if (! vt.hasProperty (key)) vt.setProperty (key, 0.0f, nullptr);
@@ -193,6 +197,16 @@ public:
                     ip->setWidths (*wLo, *wMi, *wHi);
             }
         }
+        const bool wantMach = (active == PaneID::Machine) || options.keepAllWarm;
+        if (wantMach && mach)
+        {
+            if (auto* mp = mach.get())
+            {
+                int nPost = proc.visPost.pull (tmpPost, maxPull);
+                if (nPost > 0)
+                    mp->pushBlock (tmpPost.getReadPointer(0), tmpPost.getNumChannels()>1?tmpPost.getReadPointer(1):nullptr, nPost);
+            }
+        }
     }
 
     void setOptions (Options o) { options = o; vt.setProperty ("ui_keepWarm", options.keepAllWarm, nullptr); }
@@ -202,6 +216,7 @@ public:
     {
         if (spec) spec->setSampleRate (fs);
         if (auto* ip = dynamic_cast<ImagerPane*>(imgr.get())) ip->setSampleRate (fs);
+        if (auto* mp = mach.get()) mp->setSampleRate (fs);
     }
 
     // Reflect APVTS knob changes back into Imager width editor
@@ -251,7 +266,7 @@ public:
     {
         const bool changed = (id != active);
         // Always enforce correct visibility, even if selecting the same pane.
-        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get() })
+        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
             if (c) c->setVisible (false);
 
         if (changed)
@@ -283,7 +298,7 @@ public:
     PaneID getActiveID() const { return (PaneID) activeAtomic.load (std::memory_order_acquire); }
     juce::Component* getActive()
     {
-        switch (active) { case PaneID::XY: return xy.get(); case PaneID::Spectrum: return spec.get(); case PaneID::Imager: return imgr.get(); }
+        switch (active) { case PaneID::XY: return xy.get(); case PaneID::Spectrum: return spec.get(); case PaneID::Imager: return imgr.get(); case PaneID::Machine: return mach.get(); }
         return xy.get();
     }
 
@@ -292,10 +307,10 @@ public:
     void resized() override
     {
         auto r = getLocalBounds().toFloat();
-        auto tabsR = r.removeFromBottom (28.0f).toNearestInt();
+        auto tabsR = r.removeFromBottom (36.0f).toNearestInt();
         tabs.setBounds (tabsR);
         auto paneR = r.toNearestInt();
-        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get() })
+        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
             if (c) c->setBounds (paneR);
     }
 
@@ -307,7 +322,7 @@ public:
         void paint (juce::Graphics& g) override
         {
             auto b = getLocalBounds().toFloat();
-            const int N = 3; float w = b.getWidth() / (float) N;
+            const int N = 4; float w = b.getWidth() / (float) N;
             auto draw = [&](int i, const juce::String& label, PaneID id)
             {
                 juce::Rectangle<float> r (b.getX() + i*w, b.getY(), w, b.getHeight());
@@ -315,24 +330,24 @@ public:
                 auto rr = r.reduced (2);
                 // base fill
                 g.setColour (juce::Colour (0xFF2C2F35));
-                g.fillRoundedRectangle (rr, 7.0f);
+                g.fillRoundedRectangle (rr, 9.0f);
                 if (on)
                 {
                     // active pill
                     g.setColour (juce::Colour (0xFF3A3E45));
-                    g.fillRoundedRectangle (rr, 7.0f);
+                    g.fillRoundedRectangle (rr, 9.0f);
                     // subtle inner stroke
                     g.setColour (juce::Colours::white.withAlpha (0.08f));
-                    g.drawRoundedRectangle (rr, 7.0f, 1.2f);
+                    g.drawRoundedRectangle (rr, 9.0f, 1.4f);
                     // bottom accent bar
                     g.setColour (juce::Colour (0xFF5AA9E6));
-                    g.fillRect (juce::Rectangle<float> (rr.getX()+6.0f, rr.getBottom()-2.5f, rr.getWidth()-12.0f, 2.5f));
+                    g.fillRect (juce::Rectangle<float> (rr.getX()+6.0f, rr.getBottom()-3.0f, rr.getWidth()-12.0f, 3.0f));
                 }
                 else
                 {
                     // inactive stroke
                     g.setColour (juce::Colours::black.withAlpha (0.35f));
-                    g.drawRoundedRectangle (rr, 7.0f, 1.0f);
+                    g.drawRoundedRectangle (rr, 9.0f, 1.0f);
                 }
                 // label
                 g.setColour (juce::Colours::white.withAlpha (on ? 0.95f : 0.65f));
@@ -341,11 +356,12 @@ public:
             draw (0, "XY",       PaneID::XY);
             draw (1, "Spectrum", PaneID::Spectrum);
             draw (2, "Imager",   PaneID::Imager);
+            draw (3, "Machine",  PaneID::Machine);
         }
         void mouseUp (const juce::MouseEvent& e) override
         {
-            const int N = 3; int idx = juce::jlimit (0, N-1, e.x * N / juce::jmax (1, getWidth()));
-            PaneID id = idx==0 ? PaneID::XY : idx==1 ? PaneID::Spectrum : PaneID::Imager;
+            const int N = 4; int idx = juce::jlimit (0, N-1, e.x * N / juce::jmax (1, getWidth()));
+            PaneID id = idx==0 ? PaneID::XY : idx==1 ? PaneID::Spectrum : idx==2 ? PaneID::Imager : PaneID::Machine;
             current = id; if (onSelect) onSelect (id); repaint();
             if (e.mods.isPopupMenu()) { if (onShowMenu) onShowMenu (e.getPosition()); }
         }
@@ -363,6 +379,7 @@ private:
     std::unique_ptr<XYPaneAdapter>         xy;
     std::unique_ptr<ProcessedSpectrumPane> spec;
     std::unique_ptr<ImagerPane>            imgr;
+    std::unique_ptr<MachinePane>           mach;
 
     void applyImagerOptionsFromState()
     {

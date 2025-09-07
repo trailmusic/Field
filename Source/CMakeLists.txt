@@ -21,6 +21,15 @@ set(SRC
     ui/StereoFieldEngine.h
     ui/StereoFieldEngine.cpp
     ui/PaneManager.h
+    ui/machine/ParamPatch.h
+    ui/machine/ProposalCard.h
+    ui/machine/ProposalCard.cpp
+    ui/machine/WidthDesignerPanel.h
+    ui/machine/WidthDesignerPanel.cpp
+    ui/machine/MachineEngine.h
+    ui/machine/MachineEngine.cpp
+    ui/machine/MachinePane.h
+    ui/machine/MachinePane.cpp
     
     dsp/DelayPresetLibrary.h
     dsp/DelayPresetLibrary.cpp
