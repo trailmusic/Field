@@ -1951,12 +1951,32 @@ private:
         {
             setAmount(juce::jlimit(0.f, 1.f, getAmount() - wd.deltaY * 0.5f));
         }
+        void mouseMove (const juce::MouseEvent& e) override
+        {
+            const bool over = getHandle().contains (e.position.toFloat());
+            if (over != hoverHandle)
+            {
+                hoverHandle = over;
+                repaint();
+            }
+            setMouseCursor (over ? juce::MouseCursor::UpDownResizeCursor : juce::MouseCursor::NormalCursor);
+        }
+        void mouseExit (const juce::MouseEvent&) override
+        {
+            if (hoverHandle)
+            {
+                hoverHandle = false;
+                repaint();
+            }
+            setMouseCursor (juce::MouseCursor::NormalCursor);
+        }
 
     private:
         FieldLNF& lnf;
         juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> amount;
         int   dragStartY = 0;
         float startAmt   = 0.f;
+        bool  hoverHandle = false;
 
         float shadeEdgeY () const { return (float)getHeight() * getAmount(); }
 
@@ -1972,10 +1992,21 @@ private:
 
         void drawHandle (juce::Graphics& g, juce::Rectangle<float> tab) const
         {
-            g.setColour(lnf.theme.base);
-            g.fillRoundedRectangle(tab, 8.0f);
-            g.setColour(lnf.theme.hl.withAlpha(0.6f));
-            g.drawRoundedRectangle(tab, 8.0f, 1.0f);
+            // Panel styling similar to Machine dropdown, with subtle hover glow
+            g.setColour (lnf.theme.base);
+            g.fillRoundedRectangle (tab, 8.0f);
+            g.setColour (lnf.theme.hl.withAlpha (hoverHandle ? 0.85f : 0.6f));
+            g.drawRoundedRectangle (tab, 8.0f, 1.2f);
+            if (hoverHandle)
+            {
+                for (int i = 1; i <= 3; ++i)
+                {
+                    const float t = (float) i / 3.0f;
+                    const float expand = 2.0f + t * 6.0f;
+                    g.setColour (lnf.theme.accent.withAlpha ((1.0f - t) * 0.18f));
+                    g.drawRoundedRectangle (tab.expanded (expand), 8.0f + expand * 0.35f, 1.8f);
+                }
+            }
 
             const int numBars = 4;
             const float barW = 10.0f, barH = 6.0f, gap = 14.0f;
@@ -1983,7 +2014,7 @@ private:
             float startX = tab.getCentreX() - totalW * 0.5f;
             float y = tab.getCentreY() - barH * 0.5f;
 
-            g.setColour(lnf.theme.textMuted);
+            g.setColour (hoverHandle ? lnf.theme.accent : lnf.theme.textMuted);
             for (int i = 0; i < numBars; ++i)
             {
                 juce::Rectangle<float> r (startX + i * (barW + gap), y, barW, barH);

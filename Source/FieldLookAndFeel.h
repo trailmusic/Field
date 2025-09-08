@@ -284,6 +284,10 @@ public:
     // Toggle button (used for qLinkButton) with accent/grey states and optional inverted logic
     void drawToggleButton (juce::Graphics& g, juce::ToggleButton& button,
                            bool isMouseOverButton, bool isButtonDown) override;
+    // TextButton / generic button background (e.g., Learn/Stop)
+    void drawButtonBackground (juce::Graphics& g, juce::Button& button,
+                               const juce::Colour& backgroundColour,
+                               bool isMouseOverButton, bool isButtonDown) override;
 
     // Gain-specific rotary with delta overlay (called by your custom GainSlider)
     void drawGainSlider (juce::Graphics& g, int x, int y, int w, int h,

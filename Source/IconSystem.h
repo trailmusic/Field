@@ -42,7 +42,8 @@ public:
         Triplet3,
         Droplet,
         DropletSlash,
-        SidechainKey
+        SidechainKey,
+        Delta
     };
 
     static juce::Path createIcon (IconType type, float size = 16.0f);

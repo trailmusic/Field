@@ -48,6 +48,11 @@ juce::Path IconSystem::createIcon (IconType type, float size)
         case Droplet:        return createDropletIcon (size);
         case DropletSlash:   return createDropletSlashIcon (size);
         case SidechainKey:   return createSidechainKeyIcon (size);
+        case Delta:          {
+            juce::Path p; const float s = size / 16.0f; // upright triangle
+            p.addTriangle (8 * s, 3 * s, 3 * s, 13 * s, 13 * s, 13 * s);
+            return p;
+        }
         default:             return {};
     }
 }

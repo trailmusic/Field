@@ -306,10 +306,16 @@ public:
 
     void resized() override
     {
-        auto r = getLocalBounds().toFloat();
-        auto tabsR = r.removeFromTop (36.0f).toNearestInt();
+        auto full = getLocalBounds();
+        // Larger tabs for easier target; no overlap with content
+        const int tabHeight = 40; // was 32
+        const int tabTopPad = 0;  // was 10 (overlap source)
+        juce::Rectangle<int> tabsR (full.getX(), full.getY(), full.getWidth(), tabHeight + tabTopPad);
         tabs.setBounds (tabsR);
-        auto paneR = r.toNearestInt();
+
+        // Content starts directly under tabs with a tiny breathing space
+        auto paneTop = tabs.getBottom() + 2;
+        juce::Rectangle<int> paneR (full.getX(), paneTop, full.getWidth(), full.getBottom() - paneTop);
         for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
             if (c) c->setBounds (paneR);
     }
@@ -336,21 +342,32 @@ public:
                     // active pill
                     g.setColour (juce::Colour (0xFF3A3E45));
                     g.fillRoundedRectangle (rr, 9.0f);
-                    // subtle inner stroke
-                    g.setColour (juce::Colours::white.withAlpha (0.08f));
-                    g.drawRoundedRectangle (rr, 9.0f, 1.4f);
-                    // bottom accent bar
-                    g.setColour (juce::Colour (0xFF5AA9E6));
-                    g.fillRect (juce::Rectangle<float> (rr.getX()+6.0f, rr.getBottom()-3.0f, rr.getWidth()-12.0f, 3.0f));
+                    // bright border for active state
+                    auto accent = juce::Colour (0xFF5AA9E6);
+                    g.setColour (accent.withAlpha (0.95f));
+                    g.drawRoundedRectangle (rr, 9.0f, 2.2f);
+                    // brighter tight glow around active pill
+                    for (int i = 1; i <= 5; ++i)
+                    {
+                        float expand = (float) i * 1.2f;
+                        g.setColour (accent.withAlpha (0.18f - i * 0.02f));
+                        auto glowR = rr.expanded (expand);
+                        g.drawRoundedRectangle (glowR, 9.0f + i * 0.40f, 2.0f);
+                    }
                 }
                 else
                 {
-                    // inactive stroke
-                    g.setColour (juce::Colours::black.withAlpha (0.35f));
+                    // Make inactive look like previous active (filled pill with inner stroke)
+                    g.setColour (juce::Colour (0xFF3A3E45));
+                    g.fillRoundedRectangle (rr, 9.0f);
+                    g.setColour (juce::Colours::white.withAlpha (0.08f));
                     g.drawRoundedRectangle (rr, 9.0f, 1.0f);
                 }
                 // label
                 g.setColour (juce::Colours::white.withAlpha (on ? 0.95f : 0.65f));
+                // larger, bolder labels
+                if (on) g.setFont (juce::Font (juce::FontOptions (14.0f).withStyle ("Bold")));
+                else    g.setFont (juce::Font (juce::FontOptions (13.0f).withStyle ("Bold")));
                 g.drawText (label, rr.toNearestInt(), juce::Justification::centred);
             };
             draw (0, "XY",       PaneID::XY);

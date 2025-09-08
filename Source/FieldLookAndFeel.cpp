@@ -468,7 +468,8 @@ void FieldLNF::drawToggleButton (juce::Graphics& g, juce::ToggleButton& button,
     auto sh = theme.sh;
     auto hl = theme.hl;
     auto accent = theme.accent;
-    auto grey = theme.textMuted;
+    // Match inactive fill to machine dropdown panel grey
+    auto grey = theme.panel;
 
     const bool invert = (bool) button.getProperties().getWithDefault ("invertActive", false);
     const bool active = invert ? (! button.getToggleState()) : button.getToggleState();
@@ -498,5 +499,85 @@ void FieldLNF::drawToggleButton (juce::Graphics& g, juce::ToggleButton& button,
         // Main icon
         g.setColour (iconCol);
         IconSystem::drawIcon (g, (IconSystem::IconType) iconInt, inner, iconCol);
+    }
+}
+
+void FieldLNF::drawButtonBackground (juce::Graphics& g, juce::Button& button,
+                                     const juce::Colour& /*backgroundColour*/,
+                                     bool isMouseOver, bool isButtonDown)
+{
+    auto r = button.getLocalBounds().toFloat().reduced (2.0f);
+    auto accent = theme.accent;
+    auto panel  = theme.panel;
+
+    // Identify special buttons by text; fallback to default look otherwise
+    juce::String txt = button.getButtonText().trim();
+
+    bool isLearn = txt.equalsIgnoreCase ("Learn");
+    bool isStop  = txt == juce::String::fromUTF8 ("\u25A0") || txt.equalsIgnoreCase ("Stop");
+
+    juce::Colour fill = panel;
+
+    if (isLearn)
+    {
+        // Learn: inactive by default; when active (property) it subtly blinks and shows countdown on the right
+        const bool learnActive = (bool) button.getProperties().getWithDefault ("learn_active", false);
+        const double secsLeft  = (double) button.getProperties().getWithDefault ("countdown_secs", 0.0);
+        const bool showActive  = learnActive || secsLeft > 0.0;
+
+        if (showActive)
+        {
+            // Subtle blink of the accent fill
+            const double t = juce::Time::getMillisecondCounterHiRes() * 0.001;
+            const float blink = 0.88f + 0.12f * (0.5f * (1.0f + std::sin (float (t * 2.0 * juce::MathConstants<double>::pi * 0.85))));
+            fill = accent.withAlpha (blink);
+        }
+        else
+        {
+            // Inactive by default; slight lift on hover
+            fill = isMouseOver ? panel.brighter (0.06f) : panel;
+            if (isButtonDown) fill = fill.darker (0.12f);
+        }
+    }
+    else if (isStop)
+    {
+        // Stop: hover accent state, otherwise panel
+        fill = isMouseOver ? accent.withAlpha (0.95f) : panel;
+        if (isButtonDown) fill = fill.darker (0.12f);
+    }
+    else
+    {
+        // Default
+        fill = isMouseOver ? panel.brighter (0.06f) : panel;
+        if (isButtonDown) fill = fill.darker (0.12f);
+    }
+
+    const float cr = 6.0f;
+    g.setColour (fill);
+    g.fillRoundedRectangle (r, cr);
+
+    // Border
+    g.setColour (fill.darker (0.35f));
+    g.drawRoundedRectangle (r, cr, 1.5f);
+
+    // Extra: countdown indicator for Learn
+    if (button.getButtonText().trim().equalsIgnoreCase ("Learn"))
+    {
+        const double secsLeft  = (double) button.getProperties().getWithDefault ("countdown_secs", 0.0);
+        if (secsLeft > 0.0)
+        {
+            auto inner = r.reduced (6.0f, 4.0f);
+            // Right-side small badge
+            const float badgeW = 28.0f;
+            juce::Rectangle<float> badge (inner.getRight() - badgeW, inner.getY(), badgeW, inner.getHeight());
+            // Background for readability
+            g.setColour (theme.base.withAlpha (0.55f));
+            g.fillRoundedRectangle (badge, 4.0f);
+            // Text (integer seconds)
+            const int s = juce::jmax (0, (int) std::ceil (secsLeft));
+            g.setColour (theme.text);
+            g.setFont (juce::Font (juce::FontOptions (12.0f).withStyle ("Bold")));
+            g.drawFittedText (juce::String (s) + "s", badge.toNearestInt(), juce::Justification::centred, 1);
+        }
     }
 }
