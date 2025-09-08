@@ -4,6 +4,7 @@
 #include "ProposalCard.h"
 #include "WidthDesignerPanel.h"
 #include "../../FieldLookAndFeel.h"
+#include "../../IconSystem.h"
 
 class MyPluginAudioProcessor; // fwd
 
@@ -79,6 +80,109 @@ private:
     juce::Rectangle<int> barArea;
     std::unique_ptr<WidthDesignerPanel> widthPanel;
 
+    // Header-style bypass button for machine cards (mirrors header BypassButton)
+    class CardBypassButton : public juce::TextButton, public juce::Timer
+    {
+    public:
+        CardBypassButton() : juce::TextButton("")
+        {
+            setLookAndFeel(&customLookAndFeel);
+            setClickingTogglesState(true);
+            startTimerHz(20);
+        }
+        ~CardBypassButton() override
+        {
+            stopTimer();
+            setLookAndFeel(nullptr);
+        }
+        void timerCallback() override
+        {
+            if (isShowing()) repaint();
+        }
+    private:
+        class CustomLookAndFeel : public juce::LookAndFeel_V4
+        {
+        public:
+            void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour&,
+                                      bool shouldDrawButtonAsHighlighted, bool /*shouldDrawButtonAsDown*/) override
+            {
+                auto bounds = button.getLocalBounds().toFloat().reduced(0.5f, 0.5f);
+
+                // Read current theme
+                juce::Colour accent = juce::Colour(0xFF2196F3);
+                juce::Colour textGrey = juce::Colour(0xFFB8BDC7);
+                juce::Colour panel = juce::Colour(0xFF3A3D45);
+                {
+                    const juce::Component* c = &button;
+                    while (c)
+                    {
+                        if (auto* lf = dynamic_cast<FieldLNF*>(&c->getLookAndFeel()))
+                        {
+                            accent = lf->theme.accent;
+                            textGrey = lf->theme.textMuted;
+                            panel = lf->theme.panel;
+                            break;
+                        }
+                        c = c->getParentComponent();
+                    }
+                }
+
+                juce::Colour baseColour;
+                if (button.getToggleState())
+                {
+                    // Bypassed: grey body + subtle blink
+                    baseColour = textGrey;
+                    auto now = juce::Time::getMillisecondCounter();
+                    const bool phase = ((now / 250) % 2) == 0;
+                    baseColour = phase ? baseColour.darker(0.35f) : baseColour.brighter(0.05f);
+                    g.setColour(baseColour.withAlpha(phase ? 0.35f : 0.18f));
+                    g.fillRoundedRectangle(bounds.expanded(4.0f), 6.0f);
+                }
+                else
+                {
+                    baseColour = accent;
+                }
+
+                if (shouldDrawButtonAsHighlighted)
+                    baseColour = baseColour.brighter(0.1f);
+
+                // shadow
+                g.setColour(juce::Colour(0x40000000));
+                g.fillRoundedRectangle(bounds.translated(2.0f, 2.0f), 4.0f);
+
+                // bg + border with animated stroke width when bypassed
+                g.setColour(baseColour);
+                g.fillRoundedRectangle(bounds, 4.0f);
+                auto now2 = juce::Time::getMillisecondCounter();
+                const float pulse = (float) ((now2 / 200) % 2 == 0 ? 2.0f : 1.0f);
+                g.setColour(baseColour.darker(0.45f));
+                g.drawRoundedRectangle(bounds, 4.0f, pulse);
+            }
+
+            void drawButtonText(juce::Graphics& g, juce::TextButton& button,
+                                bool, bool) override
+            {
+                auto bounds = button.getLocalBounds().toFloat();
+                FieldLNF* lf = nullptr;
+                {
+                    const juce::Component* c = &button;
+                    while (c)
+                    {
+                        if (auto* l = dynamic_cast<FieldLNF*>(&c->getLookAndFeel())) { lf = l; break; }
+                        c = c->getParentComponent();
+                    }
+                }
+                juce::Colour textGrey = lf ? lf->theme.textMuted : juce::Colour(0xFFB8BDC7);
+                juce::Colour iconColour = button.getToggleState() ? juce::Colours::black : textGrey;
+
+                auto icon = button.getToggleState() ? IconSystem::X : IconSystem::Power;
+                auto pad = button.getToggleState() ? 6.0f : 4.0f;
+                IconSystem::drawIcon(g, icon, bounds.reduced(pad), iconColour);
+            }
+        };
+        CustomLookAndFeel customLookAndFeel;
+    };
+
     // --- Three Machine cards (Tone, Space, Clarity) ---
     class MachineCard : public juce::Component
     {
@@ -87,7 +191,7 @@ private:
         float confidence { 0.0f };
         bool  bypassed { false };
         juce::TextButton btnApply { "Apply" };
-        juce::ToggleButton tggByp { "Bypass" };
+        CardBypassButton tggByp;
         juce::Array<float> displayA, displayB;
         juce::String hint;
 
@@ -98,8 +202,17 @@ private:
         {
             addAndMakeVisible (btnApply);
             addAndMakeVisible (tggByp);
-            btnApply.onClick = [this]{ if (onApply) onApply(); };
+            btnApply.setClickingTogglesState (true);
+            btnApply.getProperties().set ("apply_active", false);
+            btnApply.onClick = [this]
+            {
+                const bool armed = btnApply.getToggleState();
+                btnApply.getProperties().set ("apply_active", armed);
+                if (armed && onApply) onApply();
+            };
             tggByp.onClick   = [this]{ bypassed = tggByp.getToggleState(); if (onBypass) onBypass (bypassed); };
+            btnApply.setColour (juce::TextButton::textColourOffId, juce::Colours::white);
+            btnApply.setColour (juce::TextButton::textColourOnId,  juce::Colours::white);
         }
         void paint (juce::Graphics& g) override
         {
@@ -109,19 +222,12 @@ private:
             g.setColour (juce::Colours::white.withAlpha (0.08f)); g.drawRoundedRectangle (bg, 10.0f, 1.0f);
 
             auto header = bg.removeFromTop (44.0f);
+            header = header.reduced (10.0f, 0.0f);
             g.setFont (juce::Font (15.0f, juce::Font::bold));
             g.setColour (juce::Colours::white.withAlpha (0.92f));
             g.drawText (title, header.removeFromLeft (header.getWidth() - 120.0f).toNearestInt(), juce::Justification::centredLeft);
 
-            // confidence pill
-            auto confR = header.removeFromRight (80.0f);
-            auto pill = confR.reduced (0, confR.getHeight()*0.35f);
-            auto c = juce::Colour (0xFF5AA9E6).interpolatedWith (juce::Colours::grey, 1.0f - juce::jlimit (0.0f, 1.0f, confidence));
-            g.setColour (c.withAlpha (0.18f)); g.fillRoundedRectangle (pill, 8.0f);
-            g.setColour (c.withAlpha (0.75f)); g.drawRoundedRectangle (pill, 8.0f, 1.0f);
-            g.setFont (juce::Font (12.0f, juce::Font::bold));
-            g.setColour (juce::Colours::white.withAlpha (0.9f));
-            g.drawFittedText (juce::String ((int) juce::roundToInt (confidence * 100.0f)) + "%", pill.toNearestInt(), juce::Justification::centred, 1);
+            // (confidence pill removed to avoid visual conflict near buttons)
 
             // display
             auto disp = bg.removeFromTop (juce::jlimit (100.0f, 160.0f, bg.getHeight() * 0.45f));
@@ -159,9 +265,9 @@ private:
         {
             auto r = getLocalBounds();
             auto header = r.removeFromTop (46);
-            auto right = header.removeFromRight (160);
-            tggByp.setBounds (right.removeFromLeft (80));
-            btnApply.setBounds (right.removeFromLeft (70));
+            auto right = header.removeFromRight (120);
+            tggByp.setBounds (right.removeFromLeft (56));
+            btnApply.setBounds (right.removeFromLeft (56));
         }
     };
 

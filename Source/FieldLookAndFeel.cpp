@@ -515,6 +515,7 @@ void FieldLNF::drawButtonBackground (juce::Graphics& g, juce::Button& button,
 
     bool isLearn = txt.equalsIgnoreCase ("Learn");
     bool isStop  = txt == juce::String::fromUTF8 ("\u25A0") || txt.equalsIgnoreCase ("Stop");
+    bool isApply = txt.equalsIgnoreCase ("Apply");
 
     juce::Colour fill = panel;
 
@@ -544,6 +545,25 @@ void FieldLNF::drawButtonBackground (juce::Graphics& g, juce::Button& button,
         // Stop: hover accent state, otherwise panel
         fill = isMouseOver ? accent.withAlpha (0.95f) : panel;
         if (isButtonDown) fill = fill.darker (0.12f);
+    }
+    else if (isApply)
+    {
+        // Apply button: grey when not chosen/armed; accent when armed
+        const bool armed = button.getToggleState() || (bool) button.getProperties().getWithDefault ("apply_active", false);
+        const bool disabled = ! button.isEnabled();
+        if (disabled || ! armed)
+        {
+            // Inactive/disabled: render like default panel button
+            fill = isMouseOver ? panel.brighter (0.06f) : panel;
+            if (isButtonDown) fill = fill.darker (0.12f);
+        }
+        else
+        {
+            // Armed/active: solid accent with hover/press variation
+            fill = accent;
+            if (isMouseOver) fill = fill.brighter (0.10f);
+            if (isButtonDown) fill = fill.darker (0.20f);
+        }
     }
     else
     {
