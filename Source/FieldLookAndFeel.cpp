@@ -124,48 +124,62 @@ void FieldLNF::drawComboBox (juce::Graphics& g, int width, int height, bool isBu
                              int /*buttonX*/, int /*buttonY*/, int /*buttonW*/, int /*buttonH*/, juce::ComboBox& box)
 {
     auto r = juce::Rectangle<float> (0, 0, (float) width, (float) height).reduced (2.0f);
-    auto bg = theme.panel;
-    auto sh = theme.sh;
-    auto hl = theme.hl;
     auto accent = theme.accent;
 
     // Background: mimic SwitchCell panel (mode cell style)
     drawNeoPanel (g, r, 5.0f);
 
-    // Large chevron-only indicator (centered)
-    const bool over = box.isMouseOver (true);
-    const bool down = isButtonDown;
-    juce::Colour arrow = over ? accent : theme.text;
-    if (down) arrow = arrow.brighter (0.2f);
+    // Determine selected text and optional per-item tint
+    const int selIdx = box.getSelectedItemIndex(); // 0-based
+    juce::String selText = box.getText();
+    juce::Colour selTint = (selIdx >= 0 && selIdx < popupItemTints.size()) ? popupItemTints.getReference (selIdx) : accent;
 
-    auto icon = r.reduced (6.0f);
-    const float cx = icon.getCentreX();
-    const float cy = icon.getCentreY();
-    const float w  = juce::jmin (icon.getWidth(), icon.getHeight()) * 0.50f;
-    juce::Path chevron;
-    chevron.startNewSubPath (cx - w * 0.45f, cy - w * 0.10f);
-    chevron.lineTo       (cx,               cy + w * 0.25f);
-    chevron.lineTo       (cx + w * 0.45f,   cy - w * 0.10f);
-    // Subtle shadow under arrow for weight
-    g.setColour (juce::Colours::black.withAlpha (0.18f));
-    g.strokePath (chevron, juce::PathStrokeType (3.6f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-    // Main arrow
-    g.setColour (arrow.withAlpha (0.98f));
-    g.strokePath (chevron, juce::PathStrokeType (3.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-
-    // Inner glow on hover
-    if (over)
+    // If nothing selected, show chevron-only (iconOnly behavior)
+    if (selText.isEmpty())
     {
-        g.setColour (accent.withAlpha (0.10f));
-        g.fillRoundedRectangle (icon, 5.0f);
+        const bool over = box.isMouseOver (true);
+        const bool down = isButtonDown;
+        juce::Colour arrow = over ? accent : theme.text;
+        if (down) arrow = arrow.brighter (0.2f);
+
+        auto icon = r.reduced (6.0f);
+        const float cx = icon.getCentreX();
+        const float cy = icon.getCentreY();
+        const float w  = juce::jmin (icon.getWidth(), icon.getHeight()) * 0.50f;
+        juce::Path chevron;
+        chevron.startNewSubPath (cx - w * 0.45f, cy - w * 0.10f);
+        chevron.lineTo       (cx,               cy + w * 0.25f);
+        chevron.lineTo       (cx + w * 0.45f,   cy - w * 0.10f);
+        // Subtle shadow under arrow for weight
+        g.setColour (juce::Colours::black.withAlpha (0.18f));
+        g.strokePath (chevron, juce::PathStrokeType (3.6f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+        // Main arrow
+        g.setColour (arrow.withAlpha (0.98f));
+        g.strokePath (chevron, juce::PathStrokeType (3.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+
+        // Inner glow on hover
+        if (over)
+        {
+            g.setColour (accent.withAlpha (0.10f));
+            g.fillRoundedRectangle (icon, 5.0f);
+        }
+        return;
     }
+
+    // When selected, render the label centered with its tint and hide chevron
+    g.setColour (selTint.withAlpha (0.92f));
+    auto inner = r.reduced (6.0f);
+    selText = selText.toUpperCase();
+    g.setFont (getComboBoxFont (box).boldened());
+    g.drawFittedText (selText, inner.toNearestInt(), juce::Justification::centred, 1);
 }
 
 void FieldLNF::positionComboBoxText (juce::ComboBox& box, juce::Label& label)
 {
-    // Hide text for icon-only dropdowns if property is set
-    const bool iconOnly = (bool) box.getProperties().getWithDefault ("iconOnly", false);
-    if (iconOnly)
+    // Hide default label text when using iconOnly or tintedSelected rendering
+    const bool iconOnly      = (bool) box.getProperties().getWithDefault ("iconOnly", false);
+    const bool tintedSelected = (bool) box.getProperties().getWithDefault ("tintedSelected", false);
+    if (iconOnly || tintedSelected)
     {
         label.setText ("", juce::dontSendNotification);
         label.setBounds (0, 0, 0, 0);
@@ -173,6 +187,85 @@ void FieldLNF::positionComboBoxText (juce::ComboBox& box, juce::Label& label)
         return;
     }
     LookAndFeel_V4::positionComboBoxText (box, label);
+}
+
+// PopupMenu styling to match tinted option/phase menus
+void FieldLNF::drawPopupMenuBackground (juce::Graphics& g, int w, int h)
+{
+    // Reset tint index at start of a new menu paint
+    popupPaintIndex = 0;
+    auto r = juce::Rectangle<float> (0, 0, (float) w, (float) h);
+    g.setGradientFill (juce::ColourGradient (juce::Colour (0xFF2C2F35), r.getTopLeft(), juce::Colour (0xFF24272B), r.getBottomRight(), false));
+    g.fillRect (r);
+    g.setColour (juce::Colours::white.withAlpha (0.06f));
+    g.drawRoundedRectangle (r.reduced (1.0f), 5.0f, 1.0f);
+}
+
+void FieldLNF::drawPopupMenuSeparator (juce::Graphics& g, const juce::Rectangle<int>& area)
+{
+    auto r = area.toFloat().reduced (10.0f, 0.0f);
+    g.setColour (juce::Colours::white.withAlpha (0.10f));
+    g.fillRect (juce::Rectangle<float> (r.getX(), r.getCentreY() - 0.5f, r.getWidth(), 1.0f));
+}
+
+void FieldLNF::drawPopupMenuSectionHeader (juce::Graphics& g, const juce::Rectangle<int>& area,
+                                           const juce::String& sectionName)
+{
+    auto r = area.toFloat().reduced (8.0f, 4.0f);
+    g.setColour (juce::Colours::white.withAlpha (0.60f));
+    g.setFont (juce::Font (juce::FontOptions (12.5f)).withExtraKerningFactor (0.02f).boldened());
+    g.drawFittedText (sectionName.toUpperCase(), r.toNearestInt(), juce::Justification::centredLeft, 1);
+}
+
+void FieldLNF::drawPopupMenuItem (juce::Graphics& g, const juce::Rectangle<int>& area,
+                                  bool isSeparator, bool /*isActive*/, bool isHighlighted, bool isTicked,
+                                  bool /*hasSubMenu*/, const juce::String& text, const juce::String& shortcutKeyText,
+                                  const juce::Drawable* /*icon*/, const juce::Colour* textColour)
+{
+    if (isSeparator) { drawPopupMenuSeparator (g, area); return; }
+
+    auto r = area.toFloat().reduced (4.0f, 2.0f);
+
+    // Pick per-item tint if provided; otherwise theme accent
+    juce::Colour tint = theme.accent;
+    if (popupPaintIndex >= 0 && popupPaintIndex < popupItemTints.size())
+        tint = popupItemTints.getReference (popupPaintIndex);
+    if (isHighlighted || isTicked)
+    {
+        g.setColour (tint.withAlpha (isHighlighted ? 0.90f : 0.65f));
+        g.fillRoundedRectangle (r, 4.0f);
+        g.setColour (juce::Colours::white.withAlpha (0.10f));
+        g.drawRoundedRectangle (r, 4.0f, 1.0f);
+    }
+
+    // Advance tint index for next item
+    ++popupPaintIndex;
+
+    auto ta = r.reduced (8.0f, 0.0f);
+    g.setColour (textColour ? *textColour : theme.text.withAlpha (0.95f));
+    {
+        auto up = text.toUpperCase();
+        g.setFont (juce::Font (juce::FontOptions (14.0f)));
+        g.drawFittedText (up, ta.toNearestInt(), juce::Justification::centredLeft, 1);
+    }
+
+    if (shortcutKeyText.isNotEmpty())
+    {
+        g.setColour (juce::Colours::white.withAlpha (0.55f));
+        g.setFont (juce::Font (juce::FontOptions (13.0f)));
+        auto rt = ta.removeFromRight (60).toNearestInt();
+        g.drawFittedText (shortcutKeyText, rt, juce::Justification::centredRight, 1);
+    }
+}
+
+void FieldLNF::getIdealPopupMenuItemSize (const juce::String& text, bool isSeparator, int standardMenuItemHeight,
+                                          int& idealWidth, int& idealHeight)
+{
+    // Enforce consistent compact spacing matching phase/options menus
+    const int h = juce::jmax (standardMenuItemHeight, 22);
+    idealHeight = isSeparator ? 8 : h;
+    auto f = juce::Font (juce::Font (juce::FontOptions (14.0f)));
+    idealWidth = juce::jmax (160, (int) std::ceil (f.getStringWidthFloat (text) + 24.0f));
 }
 
 void FieldLNF::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h,

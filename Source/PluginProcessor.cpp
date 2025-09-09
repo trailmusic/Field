@@ -682,8 +682,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delaySat, 1 }, "Delay Saturation", juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.2f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDiffusion, 1 }, "Delay Diffusion", juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDiffuseSizeMs, 1 }, "Delay Diffuse Size (ms)", juce::NormalisableRange<float>(5.0f, 50.0f, 0.1f), 18.0f));
-    // Duck source: In (Pre), In (Post), External (SC), Both
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayDuckSource, 1 }, "Delay Duck Source", juce::StringArray { "In (Pre)", "In (Post)", "External (SC)", "Both" }, 0));
+    // Duck source: tap location or external sidechain
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayDuckSource, 1 }, "Delay Duck Source", juce::StringArray { "Pre", "Post", "External" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayDuckPost, 1 }, "Delay Duck Post", true));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckDepth, 1 }, "Delay Duck Depth", juce::NormalisableRange<float>(0.0f, 1.0f, 0.001f), 0.6f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckAttackMs, 1 }, "Delay Duck Attack (ms)", juce::NormalisableRange<float>(1.0f, 200.0f, 0.1f), 12.0f));

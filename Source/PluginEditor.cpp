@@ -1673,6 +1673,16 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
             delayMode.addItem (delayModeParam->choices[i], i + 1);
         // Reflect current value without firing callbacks; attachment will keep in sync
         delayMode.setSelectedId (delayModeParam->getIndex() + 1, juce::dontSendNotification);
+        // Per-item tints (Digital, Analog, Tape)
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
+            juce::Array<juce::Colour> tints;
+            tints.add (juce::Colour (0xFF64B5F6)); // Digital
+            tints.add (juce::Colour (0xFFFFB74D)); // Analog
+            tints.add (juce::Colour (0xFFFF8A65)); // Tape
+            lf->setPopupItemTints (tints);
+        }
+        delayMode.getProperties().set ("tintedSelected", true);
     }
 
     // Populate Delay Duck Source items from APVTS choice parameter so popup shows options
@@ -1682,6 +1692,16 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         for (int i = 0; i < duckSrcParam->choices.size(); ++i)
             delayDuckSource.addItem (duckSrcParam->choices[i], i + 1);
         delayDuckSource.setSelectedId (duckSrcParam->getIndex() + 1, juce::dontSendNotification);
+        // Per-item tints (Pre, Post, External)
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
+            juce::Array<juce::Colour> tints;
+            tints.add (juce::Colour (0xFF42A5F5)); // Pre
+            tints.add (juce::Colour (0xFF26C6DA)); // Post
+            tints.add (juce::Colour (0xFFAB47BC)); // External
+            lf->setPopupItemTints (tints);
+        }
+        delayDuckSource.getProperties().set ("tintedSelected", true);
     }
     
     // Delay value labels

@@ -238,7 +238,7 @@ struct DelayParams
     double diffuseSizeMs = 18.0;
     
     // Ducking
-    int duckSource = 0; // 0=Input, 1=Wet, 2=Both
+    int duckSource = 0; // 0=In (Pre), 1=In (Post), 2=External (SC)
     bool duckPost = true;
     double duckDepth = 0.6;
     double duckAttackMs = 12.0;
