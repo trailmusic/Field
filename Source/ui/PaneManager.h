@@ -18,11 +18,18 @@ private:
     XYPad& pad;
 };
 
-enum class PaneID { XY=0, Spectrum=1, Imager=2, Machine=3 };
+enum class PaneID { XY=0, Spectrum=1, Imager=2, Band=3, Motion=4, Machine=5 };
 
 static inline const char* paneKey (PaneID id)
 {
-    switch (id) { case PaneID::XY: return "xy"; case PaneID::Spectrum: return "spec"; case PaneID::Imager: return "imager"; case PaneID::Machine: return "machine"; }
+    switch (id) {
+        case PaneID::XY: return "xy";
+        case PaneID::Spectrum: return "spec";
+        case PaneID::Imager: return "imager";
+        case PaneID::Band: return "band";
+        case PaneID::Motion: return "motion";
+        case PaneID::Machine: return "machine";
+    }
     return "xy";
 }
 
@@ -37,9 +44,11 @@ public:
         xy   = std::make_unique<XYPaneAdapter> (xyPadRef);
         spec = std::make_unique<ProcessedSpectrumPane> (lnf);
         imgr = std::make_unique<ImagerPane>();
+        band = std::make_unique<juce::Component>(); // scaffold placeholder
+        motion = std::make_unique<juce::Component>(); // scaffold placeholder
         mach = std::make_unique<MachinePane>(p, state, lnf);
 
-        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
+        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get() })
             addChildComponent (c);
 
         addAndMakeVisible (tabs);
@@ -51,8 +60,10 @@ public:
             m.addItem (2, "Spectrum");
             m.addItem (3, "Imager");
             m.addItem (4, "Machine");
+            m.addItem (5, "Band");
+            m.addItem (6, "Motion");
             m.addSeparator();
-            m.addItem (5, options.keepAllWarm ? "Keep Warm: On" : "Keep Warm: Off");
+            m.addItem (7, options.keepAllWarm ? "Keep Warm: On" : "Keep Warm: Off");
             // Smoothing preset toggle for Spectrum
             if (spec)
             {
@@ -67,8 +78,10 @@ public:
                                  else if (r == 2) setActive (PaneID::Spectrum, true);
                                  else if (r == 3) setActive (PaneID::Imager, true);
                                  else if (r == 4) setActive (PaneID::Machine, true);
-                                 else if (r == 5) { setOptions({ !options.keepAllWarm }); tabs.repaint(); }
-                                 else if (r == 6)
+                                 else if (r == 5) setActive (PaneID::Band, true);
+                                 else if (r == 6) setActive (PaneID::Motion, true);
+                                 else if (r == 7) { setOptions({ !options.keepAllWarm }); tabs.repaint(); }
+                                 else if (r == 8)
                                  {
                                      if (spec)
                                      {
@@ -84,7 +97,7 @@ public:
         };
 
         auto s = vt.getProperty ("ui_activePane").toString();
-        PaneID initial = (s=="spec") ? PaneID::Spectrum : (s=="imager") ? PaneID::Imager : (s=="machine") ? PaneID::Machine : PaneID::XY;
+        PaneID initial = (s=="spec") ? PaneID::Spectrum : (s=="imager") ? PaneID::Imager : (s=="machine") ? PaneID::Machine : (s=="band") ? PaneID::Band : (s=="motion") ? PaneID::Motion : PaneID::XY;
         setActive (initial, false);
         if (spec)
         {
@@ -92,7 +105,7 @@ public:
             else                             spec->analyzer().pauseAudio();
         }
 
-        for (auto id : { PaneID::XY, PaneID::Spectrum, PaneID::Imager, PaneID::Machine })
+        for (auto id : { PaneID::XY, PaneID::Spectrum, PaneID::Imager, PaneID::Band, PaneID::Motion, PaneID::Machine })
         {
             auto key = juce::String("ui_shade_") + paneKey(id);
             if (! vt.hasProperty (key)) vt.setProperty (key, 0.0f, nullptr);
@@ -266,7 +279,7 @@ public:
     {
         const bool changed = (id != active);
         // Always enforce correct visibility, even if selecting the same pane.
-        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
+        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get() })
             if (c) c->setVisible (false);
 
         if (changed)
@@ -298,7 +311,7 @@ public:
     PaneID getActiveID() const { return (PaneID) activeAtomic.load (std::memory_order_acquire); }
     juce::Component* getActive()
     {
-        switch (active) { case PaneID::XY: return xy.get(); case PaneID::Spectrum: return spec.get(); case PaneID::Imager: return imgr.get(); case PaneID::Machine: return mach.get(); }
+        switch (active) { case PaneID::XY: return xy.get(); case PaneID::Spectrum: return spec.get(); case PaneID::Imager: return imgr.get(); case PaneID::Band: return band.get(); case PaneID::Motion: return motion.get(); case PaneID::Machine: return mach.get(); }
         return xy.get();
     }
 
@@ -316,7 +329,7 @@ public:
         // Content starts directly under tabs with a tiny breathing space
         auto paneTop = tabs.getBottom() + 2;
         juce::Rectangle<int> paneR (full.getX(), paneTop, full.getWidth(), full.getBottom() - paneTop);
-        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
+        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get(), (juce::Component*) band.get(), (juce::Component*) motion.get() })
             if (c) c->setBounds (paneR);
     }
 
@@ -328,12 +341,12 @@ public:
         void paint (juce::Graphics& g) override
         {
             auto b = getLocalBounds().toFloat();
-            const int N = 4; float w = b.getWidth() / (float) N;
+            const int N = 6; float w = b.getWidth() / (float) N;
             auto draw = [&](int i, const juce::String& label, PaneID id)
             {
                 juce::Rectangle<float> r (b.getX() + i*w, b.getY(), w, b.getHeight());
                 const bool on = (current == id);
-                auto rr = r.reduced (2);
+                auto rr = r.reduced (1.0f);
                 // base fill
                 g.setColour (juce::Colour (0xFF2C2F35));
                 g.fillRoundedRectangle (rr, 9.0f);
@@ -344,15 +357,15 @@ public:
                     g.fillRoundedRectangle (rr, 9.0f);
                     // bright border for active state
                     auto accent = juce::Colour (0xFF5AA9E6);
-                    g.setColour (accent.withAlpha (0.95f));
-                    g.drawRoundedRectangle (rr, 9.0f, 2.2f);
-                    // brighter tight glow around active pill
-                    for (int i = 1; i <= 5; ++i)
+                    g.setColour (accent.withAlpha (0.85f));
+                    g.drawRoundedRectangle (rr, 9.0f, 1.6f);
+                    // subtle outer glow around active pill (reduced passes to keep compact)
+                    for (int i = 1; i <= 3; ++i)
                     {
-                        float expand = (float) i * 1.2f;
-                        g.setColour (accent.withAlpha (0.18f - i * 0.02f));
+                        float expand = (float) i * 0.9f;
+                        g.setColour (accent.withAlpha (0.14f - i * 0.03f));
                         auto glowR = rr.expanded (expand);
-                        g.drawRoundedRectangle (glowR, 9.0f + i * 0.40f, 2.0f);
+                        g.drawRoundedRectangle (glowR, 9.0f + i * 0.30f, 1.6f);
                     }
                 }
                 else
@@ -366,19 +379,21 @@ public:
                 // label
                 g.setColour (juce::Colours::white.withAlpha (on ? 0.95f : 0.65f));
                 // larger, bolder labels
-                if (on) g.setFont (juce::Font (juce::FontOptions (14.0f).withStyle ("Bold")));
-                else    g.setFont (juce::Font (juce::FontOptions (13.0f).withStyle ("Bold")));
+                if (on) g.setFont (juce::Font (juce::FontOptions (13.0f).withStyle ("Bold")));
+                else    g.setFont (juce::Font (juce::FontOptions (12.0f).withStyle ("Bold")));
                 g.drawText (label, rr.toNearestInt(), juce::Justification::centred);
             };
             draw (0, "XY",       PaneID::XY);
             draw (1, "Spectrum", PaneID::Spectrum);
             draw (2, "Imager",   PaneID::Imager);
             draw (3, "Machine",  PaneID::Machine);
+            draw (4, "Band",     PaneID::Band);
+            draw (5, "Motion",   PaneID::Motion);
         }
         void mouseUp (const juce::MouseEvent& e) override
         {
-            const int N = 4; int idx = juce::jlimit (0, N-1, e.x * N / juce::jmax (1, getWidth()));
-            PaneID id = idx==0 ? PaneID::XY : idx==1 ? PaneID::Spectrum : idx==2 ? PaneID::Imager : PaneID::Machine;
+            const int N = 6; int idx = juce::jlimit (0, N-1, e.x * N / juce::jmax (1, getWidth()));
+            PaneID id = idx==0 ? PaneID::XY : idx==1 ? PaneID::Spectrum : idx==2 ? PaneID::Imager : idx==3 ? PaneID::Machine : idx==4 ? PaneID::Band : PaneID::Motion;
             current = id; if (onSelect) onSelect (id); repaint();
             if (e.mods.isPopupMenu()) { if (onShowMenu) onShowMenu (e.getPosition()); }
         }
@@ -396,6 +411,8 @@ private:
     std::unique_ptr<XYPaneAdapter>         xy;
     std::unique_ptr<ProcessedSpectrumPane> spec;
     std::unique_ptr<ImagerPane>            imgr;
+    std::unique_ptr<juce::Component>       band;
+    std::unique_ptr<juce::Component>       motion;
     std::unique_ptr<MachinePane>           mach;
 
     void applyImagerOptionsFromState()

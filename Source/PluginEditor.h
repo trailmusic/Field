@@ -1742,6 +1742,14 @@ private:
     // Full screen
     juce::Rectangle<int> savedBounds;
 
+    // Bottom area toggle and alternate overlay panel
+    juce::TextButton bottomAreaToggle; // bottom-center toggle to reveal alternate bottom controls
+    juce::Component bottomAltPanel;    // sliding overlay panel that covers bottom control rows
+    juce::Label     bottomAltTitle;    // placeholder title inside alternate panel
+    bool bottomAltTargetOn { false };  // target state for slide animation
+    float bottomAltSlide01 { 0.0f };   // 0..1 slide progress (0=hidden)
+    bool bottomAltAnimating { false }; // animate slide in timer
+
     // Correlation meter mini component
     class CorrelationMeter : public juce::Component, public juce::Timer
     {

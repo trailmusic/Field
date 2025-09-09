@@ -2252,7 +2252,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                              .withTrimmedTop (Layout::dp (2, s));
     header.performLayout (headerArea);
 
-    // options + phase mode at bottom-left; help to bottom-right
+    // options + phase mode at bottom-left; help to bottom-right; bottom-center panel toggle
     {
         auto bounds = getLocalBounds();
         const int padding = Layout::dp (8, s);
@@ -2355,6 +2355,23 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int helpY = leftY;
         helpButton.setBounds (helpX, helpY, btnW, btnH);
         addAndMakeVisible (helpButton);
+
+        // Bottom-center toggle button to switch bottom control area
+        {
+            const int toggleW = Layout::dp (120, s);
+            const int toggleH = btnH;
+            const int cx = bounds.getCentreX();
+            const int ty = leftY;
+            bottomAreaToggle.setButtonText ("Bottom Panel");
+            bottomAreaToggle.setClickingTogglesState (true);
+            addAndMakeVisible (bottomAreaToggle);
+            bottomAreaToggle.setBounds (cx - toggleW/2, ty, toggleW, toggleH);
+            bottomAreaToggle.onClick = [this]
+            {
+                bottomAltTargetOn = bottomAreaToggle.getToggleState();
+                // kick simple slide animation by repainting/relayout in timer
+            };
+        }
     }
 
     // divider left of Snap (Divider | Snap | Split)
@@ -2433,6 +2450,42 @@ void MyPluginAudioProcessorEditor::performLayout()
     auto row2 = r.removeFromTop (rowH2);
     auto row3 = r.removeFromTop (rowH3);
     auto row4 = r.removeFromTop (rowH4);
+
+    // Alternate bottom panel (slides over bottom rows when enabled)
+    {
+        // Progress towards target
+        const float step = 0.12f;
+        if (bottomAltTargetOn) bottomAltSlide01 = juce::jmin (1.0f, bottomAltSlide01 + step);
+        else                   bottomAltSlide01 = juce::jmax (0.0f, bottomAltSlide01 - step);
+
+        // Reserve a rectangle covering the original bottom rows (2..4) and slide the overlay up from bottom
+        juce::Rectangle<int> bottomStackArea (row2.getX(), row2.getY(), r.getWidth(), rowH2 + rowH3 + rowH4 + Layout::dp (Layout::GAP_S, s) * 2);
+        const int overlayH = bottomStackArea.getHeight();
+        const int overlayW = bottomStackArea.getWidth();
+        const int hiddenY  = bottomStackArea.getBottom();
+        const int shownY   = bottomStackArea.getY();
+        const int curY     = juce::roundToInt (juce::jmap (bottomAltSlide01, 0.0f, 1.0f, (float) hiddenY, (float) shownY));
+
+        bottomAltPanel.setBounds (bottomStackArea.withY (curY).withHeight (overlayH).withWidth (overlayW));
+        bottomAltPanel.setInterceptsMouseClicks (bottomAltSlide01 > 0.01f, bottomAltSlide01 > 0.01f);
+        addAndMakeVisible (bottomAltPanel);
+        bottomAltPanel.toFront (false);
+
+        // Placeholder content in alternate panel (generic Group 2)
+        if (bottomAltTitle.getParentComponent() != &bottomAltPanel)
+        {
+            bottomAltPanel.addAndMakeVisible (bottomAltTitle);
+            bottomAltTitle.setJustificationType (juce::Justification::centred);
+            bottomAltTitle.setText ("Alternate Controls (Group 2)", juce::dontSendNotification);
+        }
+        auto b = bottomAltPanel.getLocalBounds().reduced (Layout::dp (16, s));
+        const int titleH = Layout::dp (28, s);
+        bottomAltTitle.setBounds (b.removeFromTop (titleH));
+        // Simple stub region for future controls
+        static juce::Component group2Stub;
+        if (group2Stub.getParentComponent() != &bottomAltPanel) bottomAltPanel.addAndMakeVisible (group2Stub);
+        group2Stub.setBounds (b.reduced (Layout::dp (8, s)));
+    }
 
     // ---------------- Row 1: Pan, Width cells, Gain, Mix, Wet Only -----------
     {
@@ -3359,6 +3412,10 @@ void MyPluginAudioProcessorEditor::timerCallback()
     duckThreshold.repaint();
     duckRatio.repaint();
     pad.repaint();
+
+    // Drive bottom panel slide animation
+    if (bottomAltTargetOn && bottomAltSlide01 < 1.0f) { bottomAltSlide01 = juce::jmin (1.0f, bottomAltSlide01 + 0.06f); performLayout(); }
+    else if (!bottomAltTargetOn && bottomAltSlide01 > 0.0f) { bottomAltSlide01 = juce::jmax (0.0f, bottomAltSlide01 - 0.06f); performLayout(); }
 }
 
  
