@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "dsp/Ducker.h"
 #include "dsp/DelayEngine.h"
+#include "dsp/PhaseModes.h"
 // ==================================
 // Visualization Bus (lock-free SPSC)
 // ==================================
@@ -155,6 +156,7 @@ struct FieldChain
     void setParameters (const HostParams& hp);   // per-block ingress (double -> Sample)
     void process (Block);                        // main process
     float getCurrentDuckGrDb() const;            // meter: current GR dB
+    int   getLinearPhaseLatencySamples() const { return (linConvolver ? linConvolver->getLatencySamples() : 0); }
 
 private:
     // ----- helpers -----
@@ -168,11 +170,13 @@ private:
 
     // Filters / tone
     void applyHP_LP     (Block, Sample hpHz, Sample lpHz);
+    void ensureLinearPhaseKernel (double sr, Sample hpHz, Sample lpHz, int maxBlock, int numChannels);
     void updateTiltEQ   (Sample tiltDb, Sample pivotHz);
     void applyTiltEQ    (Block, Sample tiltDb, Sample pivotHz);
     void applyScoopEQ   (Block, Sample scoopDb, Sample scoopFreq);
     void applyBassShelf (Block, Sample bassDb, Sample bassFreq);
     void applyAirBand   (Block, Sample airDb, Sample airFreq);
+    void applyFullLinearFIR (Block block); // composite linear-phase tone (Phase Mode = Full Linear)
 
     // Imaging / placement
     void applyWidthMS (Block, Sample width);
@@ -218,6 +222,16 @@ private:
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> roomSizeSmoothed;
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> dampingSmoothed;
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> widthSmoothed;
+
+    // Linear HP/LP (Hybrid Linear mode)
+    std::unique_ptr<OverlapSaveConvolver<Sample>> linConvolver;
+    int   linKernelLen { 4097 };
+    float lastHpHzLP   { -1.0f };
+    float lastLpHzLP   { -1.0f };
+    // Full Linear cache
+    std::unique_ptr<OverlapSaveConvolver<Sample>> fullLinearConvolver;
+    int   fullKernelLen { 4097 };
+    struct ToneKey { double tiltDb, bassDb, airDb, scoopDb, hpHz, lpHz, tiltFreq, scoopFreq, bassFreq, airFreq; int mode; } lastToneKey{};
 
     // High-order interpolation hooks (for future modulated delay lines)
     template <typename S>
@@ -318,6 +332,7 @@ private:
         // Sync helpers
         int    delayGridFlavor{};   // 0=S,1=D,2=T
         double tempoBpm{120.0};
+        int    phaseMode{};
     } params;
 
     // Width Designer runtime state
@@ -411,6 +426,7 @@ struct HostParams
     // Sync helpers
     int    delayGridFlavor{};   // 0=S,1=D,2=T
     double tempoBpm{120.0};
+    int    phaseMode{}; // 0 Zero, 1 Natural, 2 Hybrid Linear
 };
 
 // ===============================
@@ -457,6 +473,7 @@ public:
     // State
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+    void updateLatencyForPhaseMode();
 
     // Parameters
     juce::AudioProcessorValueTreeState apvts;

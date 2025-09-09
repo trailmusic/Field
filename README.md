@@ -111,6 +111,22 @@ Plain terms
 
 * **Mono Maker:** Sums under a cutoff with selectable **slope (6/12/24 dB/oct)**
 * **Audition:** Listen to “what’s being mono’d” for confidence checks
+ 
+### Phase Modes (NEW)
+
+FIELD now supports phase behaviors for the core high‑pass / low‑pass and tone path:
+
+- **Zero**: Current minimum‑phase IIR path. Zero added latency. Default.
+- **Natural**: Minimum‑phase IIR with gentle HF guards (wider stability near Nyquist). Zero latency. Musical transient feel.
+- **Hybrid Linear**: Linear‑phase HP/LP via FIR (overlap‑save), while shelves/tilt/peaks remain IIR. Host latency is reported automatically.
+- **Full Linear**: One composite linear‑phase FIR replaces HP/LP + Tilt/Bass/Air/Scoop in a single convolver. Magnitude matches the macro tone; phase is strictly linear. Host latency is reported automatically.
+
+Notes:
+- Hybrid Linear primarily de‑warps the most audible phase rotations of the macro slopes. It preserves the tone of your shelves/peaks for a balanced hybrid response.
+- Full Linear synthesizes one FIR from the desired magnitude response (HP/LP + Tilt/Bass/Air/Scoop sampled on a dense grid), IFFTs to time, windows, and truncates to odd length N. Transients stay pristine; latency is fixed.
+- Reported latency ≈ (N−1)/2 samples. Default `4097` taps → ~42.7 ms @ 48 kHz (8193 → ~85.4 ms).
+- HP/LP cutoffs remain clamped: HP ≤ 1 kHz, LP ≥ 1 kHz, and HP < LP.
+- Natural mode adds subtle HF safety when designing shelves/peaks near Nyquist.
 
 ### Stereoize (P1)
 
@@ -168,7 +184,7 @@ Plain terms
 
 ### Signal flow (audio)
 
-The Imager operates purely in the stereo domain; there’s no additional latency beyond your existing chain.
+The Imager operates purely in the stereo domain. In **Hybrid Linear** phase mode, the FIR HP/LP introduces a fixed group delay that is reported to the host; other modes incur no extra latency.
 
 ```
 [Input L/R]
@@ -419,6 +435,9 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
 > **IDs are snake\_case.** Values normalized in UI; APVTS stores normalized. Only the **relevant & current** set is listed.
 
 **Core / Existing (shipping)**
+**Phase / Quality**
+
+- `phase_mode`: Choice { Zero, Natural, Hybrid Linear, Full Linear } — controls the tone path. Hybrid: FIR HP/LP only. Full Linear: composite FIR for HP/LP+tone. Both report latency ((N−1)/2 samples).
 
 * `gain_db` (-12…+12, 0), `sat_drive_db` (0…36, 0), `sat_mix` (0…1, 1), `bypass` (0/1, 0)
 * `width` (0.5…2.0, 1.0), `pan` (-1…+1, 0), `pan_l` / `pan_r` (split), `split_mode` (0/1, 0)
@@ -1076,4 +1095,58 @@ We pick defaults that are **neutral, robust across content**, and match industry
 * Keep **HP/LP Q = 0.707** as the neutral “do no harm” default.
 * Keep **Shelf Shape S = 0.9** for a smooth, musical knee (and smooth Tilt behavior).
 * Visuals mirror those choices so users trust what they see.
+
+## Machine (Context-Aware Assistant)
+
+Machine analyzes 60s of program audio and proposes safe, context-driven parameter updates across the full Field parameter set. It is designed to be transparent (metrics-first), reversible (Preview/Apply/Revert), and conservative by default.
+
+### Concepts
+- Context = Genre + Venue, set in the Machine header. Defaults: Pop + Streaming.
+- One learn pass (60s) gathers banded energy, correlation, tonal slope, spectral flux, crest (peak/RMS), width summaries, and dryness.
+- Proposals are grouped as cards: Imaging, Tone, Space (+Duck), Width Designer (and optional Delay).
+
+### Analysis Pipeline (high-level)
+- STFT: 2048-point Hann, 50% hop. Linear magnitudes and power computed per frame.
+- 1/3-oct band grid (≈20–30 bands, 20 Hz–20 kHz).
+- Per-band L/R powers and cross-term accumulate correlation; Lo/Mid/Hi summaries use host crossovers.
+- Tonal slope (dB/oct) via weighted regression around 1 kHz.
+- Spectral flux (positive change of magnitudes) and crest (peak/RMS) map to a Dryness index [0..1].
+
+### Metrics (exposed to UI)
+- Correlation: `full_corr`, `corr_low`, `corr_mid`, `corr_hi`.
+- Width ratios: `Wlo`, `Wmid`, `Whi` (Es/(Em+Es) per region).
+- Tone: `slope_db_per_oct`.
+- Movement/Energy: `avg_flux`, `crest`, `dryness_index`.
+- Extras for tone gating: `lf_rumble`, `hf_fizz`, `sibilance` (normalized 0..1).
+
+### Context Targets (examples)
+- EDM/House + Club: wider mids/highs, slope ≈ −2.5 dB/oct, moderate depth, faster duck.
+- Hip-Hop/Trap + Streaming: stronger low focus, widthMax lower, moderate duck.
+- Pop + Streaming: balanced defaults.
+- Rock/Indie: conservative mids, widthMax lower.
+- Acoustic/Jazz + Theater: conservative low width, deeper space (Hall preference).
+- Voice/Podcast + Mobile: very high correlation, near-mono width, shallow space, stronger duck.
+
+### Decision Logic (examples)
+- Imaging: adjust `mono_hz`, `width_lo/mid/hi`, `rotation_deg` with guards (low corr → safer lows; high full corr → open mids/highs a touch).
+- Tone: tilt toward target slope, optional `hp_hz` to reduce rumble, `lp_hz` to tame fizz. New gating uses `lf_rumble`, `hf_fizz`, and `sibilance` thresholds from context.
+- Space & Duck: depth from Dryness; algorithm from brightness; duck strength/time constants from genre/venue.
+- Width Designer: recommend side tilt (dB/oct) and dynamic clamp parameters when band balances suggest.
+
+### Safety Rails
+- Enforce `width_hi <= widthMax` (context).
+- Enforce `hp_hz <= mono_hz + 20`.
+- Clamp tonal net changes; proposals are blended by the card Strength (0–100%).
+
+### UI Mini-meters
+- Imaging: corr (Lo/Mid/Hi), width ratios, mono marker.
+- Tone: slope gauge, rumble/fizz/sibilance bars, HP/LP pins.
+- Space: dryness ring, duck GR preview.
+- Width Designer: side tilt slope, auto-depth bar.
+
+### Usage
+1) Choose Genre and Venue.
+2) Click Learn and play program audio for ~60 s.
+3) Review cards: read mini-meters and reasons.
+4) Use Strength to scale impact; Preview/Apply; Revert if needed.
 

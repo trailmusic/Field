@@ -127,7 +127,7 @@ This verifies that all builds are recent and properly installed.
 ## 🎵 Features
 
 ### Current Implementation
-- **Enhanced Space Knob**: Dual functionality (depth control + algorithm selection)
+- **Enhanced Reverb Knob**: Dual functionality (depth control + algorithm selection)
 - **Professional Algorithms**: Inner, Outer, Deep with unique characteristics
 - **Split Mode**: Independent L/R pan control with linking
 - **Real-time Visualization**: Dynamic spectral EQ and waveform display

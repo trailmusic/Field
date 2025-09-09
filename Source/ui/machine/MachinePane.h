@@ -67,11 +67,11 @@ private:
 
     // UI widgets
     juce::TextButton analyzeBtn { "Learn" }, stopBtn { "" };
-    juce::ComboBox   targetBox;
+    juce::ComboBox   genreBox, venueBox, trackTypeBox;
     // Quality/time controls removed per spec
     juce::Slider     strength; // 0..1
     juce::ToggleButton showPreBtn { "" }; // Pre toggle
-    juce::TextButton previewBtn { "Preview 10s" }, applyBtn { "Apply" };
+    juce::TextButton previewBtn { "Preview 10s" };
     juce::TextButton ABtn { "A" }, BBtn { "B" }, CBtn { "C" }, undoBtn { "Undo" };
     juce::Component  proposalsContent; // holds ProposalCard children (no scrolling)
     std::unique_ptr<SmallSwitchCell> learnCell, stopCell;
@@ -183,37 +183,28 @@ private:
         CustomLookAndFeel customLookAndFeel;
     };
 
-    // --- Three Machine cards (Tone, Space, Clarity) ---
+    // --- Three Machine cards (Tone, Reverb/Delay/Motion, Clarity) ---
     class MachineCard : public juce::Component
     {
     public:
         juce::String title;
         float confidence { 0.0f };
         bool  bypassed { false };
-        juce::TextButton btnApply { "Apply" };
         CardBypassButton tggByp;
         juce::Array<float> displayA, displayB;
         juce::String hint;
+        juce::NamedValueSet metrics;
+        std::vector<ParamDelta> deltas;
 
-        std::function<void()> onApply;
         std::function<void(bool)> onBypass;
 
         MachineCard()
         {
-            addAndMakeVisible (btnApply);
             addAndMakeVisible (tggByp);
-            btnApply.setClickingTogglesState (true);
-            btnApply.getProperties().set ("apply_active", false);
-            btnApply.onClick = [this]
-            {
-                const bool armed = btnApply.getToggleState();
-                btnApply.getProperties().set ("apply_active", armed);
-                if (armed && onApply) onApply();
-            };
             tggByp.onClick   = [this]{ bypassed = tggByp.getToggleState(); if (onBypass) onBypass (bypassed); };
-            btnApply.setColour (juce::TextButton::textColourOffId, juce::Colours::white);
-            btnApply.setColour (juce::TextButton::textColourOnId,  juce::Colours::white);
         }
+        void setMetrics (const juce::NamedValueSet& m) { metrics = m; repaint(); }
+        void setParams (const std::vector<ParamDelta>& p) { deltas = p; repaint(); }
         void paint (juce::Graphics& g) override
         {
             auto b = getLocalBounds().toFloat();
@@ -229,45 +220,169 @@ private:
 
             // (confidence pill removed to avoid visual conflict near buttons)
 
-            // display
-            auto disp = bg.removeFromTop (juce::jlimit (100.0f, 160.0f, bg.getHeight() * 0.45f));
-            g.setColour (juce::Colours::white.withAlpha (0.10f)); g.fillRoundedRectangle (disp, 6.0f);
-            if (displayA.size() > 1)
+            // display removed (was generic graph); keep spacing minimal and draw section headings/dividers instead
+            auto disp = bg.removeFromTop (juce::jlimit (22.0f, 26.0f, bg.getHeight() * 0.10f));
+            // Section heading: Analysis
+            g.setColour (juce::Colours::white.withAlpha (0.70f));
+            g.setFont (12.0f);
+            g.drawFittedText ("Analysis", disp.toNearestInt(), juce::Justification::centredLeft, 1);
+            // divider under heading
             {
-                juce::Path p; int W = (int) disp.getWidth(); float H = disp.getHeight();
-                for (int x = 0; x < W; ++x)
-                {
-                    float t = (float) x / juce::jmax (1, W-1);
-                    int i = juce::jlimit (0, displayA.size()-1, (int) std::floor (t * (displayA.size()-1)));
-                    float y = disp.getBottom()-1.0f - juce::jlimit (0.0f, 1.0f, displayA[i]) * (H-2.0f);
-                    if (x==0) p.startNewSubPath (disp.getX()+x, y); else p.lineTo (disp.getX()+x, y);
-                }
-                g.setColour (juce::Colours::white.withAlpha (0.80f)); g.strokePath (p, juce::PathStrokeType (1.3f));
-            }
-            // targets as ticks
-            if (! displayB.isEmpty())
-            {
-                g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.85f));
-                for (auto v : displayB)
-                {
-                    float y = disp.getBottom()-1.0f - juce::jlimit (0.0f,1.0f,v) * (disp.getHeight()-2.0f);
-                    g.drawHorizontalLine ((int) juce::roundToInt (y), disp.getX()+2.0f, disp.getRight()-2.0f);
-                }
+                auto dv = disp.withY (disp.getBottom()).withHeight (1.0f);
+                g.setColour (juce::Colours::white.withAlpha (0.10f));
+                g.fillRect (dv);
             }
 
-            // hint
-            auto foot = bg.removeFromBottom (22.0f);
+            // metrics: small bar group under display
+            auto met = bg.removeFromTop (juce::jmin (90.0f, bg.getHeight() * 0.35f));
+            if (metrics.size() > 0)
+            {
+                g.saveState();
+                g.reduceClipRegion (met.toNearestInt());
+                const int rows = 3;
+                auto rowH = (int) std::floor (met.getHeight() / (float) rows);
+                int row = 0;
+                auto drawMetric = [&](const juce::String& name, float value01)
+                {
+                    if (row >= rows) return;
+                    auto rr = met.removeFromTop ((float) rowH); ++row;
+                    rr = rr.reduced (10.0f, 2.0f);
+                    auto label = rr.removeFromLeft (90.0f);
+                    g.setColour (juce::Colours::white.withAlpha (0.60f));
+                    g.setFont (12.0f);
+                    g.drawFittedText (name, label.toNearestInt(), juce::Justification::centredLeft, 1);
+                    auto bar = rr;
+                    g.setColour (juce::Colours::white.withAlpha (0.10f)); g.fillRoundedRectangle (bar, 3.0f);
+                    float w = bar.getWidth() * juce::jlimit (0.0f, 1.0f, value01);
+                    g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.95f));
+                    g.fillRoundedRectangle ({ bar.getX(), bar.getY(), w, bar.getHeight() }, 3.0f);
+                };
+                auto get01 = [&](const juce::String& key, std::function<float(float)> map) -> bool
+                {
+                    if (auto* v = metrics.getVarPointer (key))
+                    {
+                        float raw = (float) v->operator float();
+                        // Friendly labels
+                        juce::String label = key;
+                        if (key == "full_corr") label = "Full Corr";
+                        else if (key == "corr_low") label = "Low Corr";
+                        else if (key == "corr_mid") label = "Mid Corr";
+                        else if (key == "corr_hi")  label = "High Corr";
+                        else if (key == "slope_db_per_oct") label = "Slope (dB/oct)";
+                        else if (key == "dryness_index") label = "Dryness";
+                        else if (key == "avg_flux") label = "Flux";
+                        else if (key == "Wlo") label = "Width Low";
+                        else if (key == "Wmid") label = "Width Mid";
+                        else if (key == "Whi") label = "Width High";
+                        else if (key == "lf_rumble") label = "Rumble";
+                        else if (key == "hf_fizz")   label = "Fizz";
+                        else if (key == "sibilance") label = "Sibilance";
+                        else if (key == "crest") label = "Crest";
+                        drawMetric (label, map (raw));
+                        return true;
+                    }
+                    return false;
+                };
+                // Show up to 3 common metrics if present
+                get01 ("full_corr", [](float x){ return juce::jlimit (0.0f, 1.0f, (x + 1.0f) * 0.5f); });
+                get01 ("corr_low",  [](float x){ return juce::jlimit (0.0f, 1.0f, (x + 1.0f) * 0.5f); });
+                if (row < rows) get01 ("avg_flux",  [](float x){ return juce::jlimit (0.0f, 1.0f, x); });
+                if (row < rows) get01 ("Wmid",      [](float x){ return juce::jlimit (0.0f, 1.0f, x); });
+                if (row < rows) get01 ("sibilance", [](float x){ return juce::jlimit (0.0f, 1.0f, x); });
+                g.restoreState();
+            }
+
+            // divider between metrics and params
+            {
+                auto dv = met.withY (met.getBottom() + 4.0f).withHeight (1.0f);
+                g.setColour (juce::Colours::white.withAlpha (0.08f));
+                g.fillRect (dv);
+            }
+
+            // Section heading: Recommendations
+            {
+                auto hd = bg.removeFromTop (20.0f);
+                g.setColour (juce::Colours::white.withAlpha (0.70f));
+                g.setFont (12.0f);
+                g.drawFittedText ("Recommendations", hd.toNearestInt(), juce::Justification::centredLeft, 1);
+            }
+            // params: simple rows with current->target and mini knob arc
+            auto paramsArea = bg.removeFromTop (juce::jmin (84.0f, bg.getHeight() * 0.40f));
+            if (! deltas.empty())
+            {
+                g.saveState();
+                g.reduceClipRegion (paramsArea.toNearestInt());
+                auto rr = paramsArea.reduced (10.0f, 2.0f);
+                const int per = 2; // show up to 2 rows
+                for (int i = 0; i < juce::jmin (per, (int) deltas.size()); ++i)
+                {
+                    auto rowR = rr.removeFromTop (24.0f);
+                    const auto& d = deltas[(size_t) i];
+                    g.setColour (juce::Colours::white.withAlpha (0.75f));
+                    g.setFont (12.0f);
+                    // Friendly param name
+                    juce::String pname = d.id;
+                    if (pname == "mono_hz") pname = "Mono (Hz)";
+                    else if (pname == "width_lo") pname = "Width Low";
+                    else if (pname == "width_mid") pname = "Width Mid";
+                    else if (pname == "width_hi") pname = "Width High";
+                    else if (pname == "rotation_deg") pname = "Rotation";
+                    else if (pname == "tilt") pname = "Tilt (dB)";
+                    else if (pname == "hp_hz") pname = "HP (Hz)";
+                    else if (pname == "lp_hz") pname = "LP (Hz)";
+                    else if (pname == "depth") pname = "Reverb Depth";
+                    else if (pname == "space_algo") pname = "Reverb Type";
+                    else if (pname == "ducking") pname = "Ducking";
+                    else if (pname == "duck_attack_ms") pname = "Duck Attack";
+                    else if (pname == "duck_release_ms") pname = "Duck Release";
+                    else if (pname == "duck_threshold_db") pname = "Duck Threshold";
+                    else if (pname == "duck_ratio") pname = "Duck Ratio";
+                    g.drawText (pname, rowR.removeFromLeft (120).toNearestInt(), juce::Justification::centredLeft);
+                    float cur = d.current; float tgt = d.target;
+                    float norm = (d.hi - d.lo) > 1e-9f ? (cur - d.lo) / (d.hi - d.lo) : 0.0f;
+                    float normT = (d.hi - d.lo) > 1e-9f ? (tgt - d.lo) / (d.hi - d.lo) : 0.0f;
+                    auto knob = rowR.removeFromLeft (80).reduced (8.0f, 2.0f).toFloat();
+                    juce::Path arc;
+                    auto r = knob.reduced (6.0f);
+                    float a0 = juce::MathConstants<float>::pi * 1.2f;
+                    float a1 = juce::MathConstants<float>::pi * (1.2f + 1.6f * norm);
+                    float aT = juce::MathConstants<float>::pi * (1.2f + 1.6f * normT);
+                    arc.addCentredArc (r.getCentreX(), r.getCentreY(), r.getWidth()*0.5f, r.getHeight()*0.5f, 0.0f, a0, a1, true);
+                    // Elevated arc + target tick
+                    g.setColour (juce::Colours::white.withAlpha (0.25f));
+                    g.strokePath (arc, juce::PathStrokeType (3.0f));
+                    g.setColour (juce::Colours::white.withAlpha (0.85f));
+                    g.strokePath (arc, juce::PathStrokeType (1.6f));
+                    g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.98f));
+                    juce::Path tick; tick.addCentredArc (r.getCentreX(), r.getCentreY(), r.getWidth()*0.5f, r.getHeight()*0.5f, 0.0f, aT-0.02f, aT+0.02f, true);
+                    g.strokePath (tick, juce::PathStrokeType (3.2f));
+                    juce::String txt = juce::String (cur, 2) + " → " + juce::String (tgt, 2);
+                    g.setColour (juce::Colours::white.withAlpha (0.65f));
+                    g.drawFittedText (txt, rowR.toNearestInt(), juce::Justification::centredLeft, 1);
+                }
+                g.restoreState();
+            }
+
+            // hint (max two lines)
+            // divider directly above hint area
+            {
+                auto dv = bg.withHeight (1.0f);
+                g.setColour (juce::Colours::white.withAlpha (0.08f));
+                g.fillRect (dv);
+            }
+            const int hintLines = 2;
+            const float lineH = 14.0f;
+            auto hintArea = bg.removeFromBottom (lineH * hintLines + 6.0f);
             g.setColour (juce::Colours::white.withAlpha (0.50f));
             g.setFont (12.0f);
-            g.drawText (hint, foot.toNearestInt(), juce::Justification::centredLeft);
+            g.drawFittedText (hint, hintArea.toNearestInt(), juce::Justification::centredLeft, hintLines);
         }
         void resized() override
         {
             auto r = getLocalBounds();
             auto header = r.removeFromTop (46);
-            auto right = header.removeFromRight (120);
+            auto right = header.removeFromRight (64);
             tggByp.setBounds (right.removeFromLeft (56));
-            btnApply.setBounds (right.removeFromLeft (56));
         }
     };
 
@@ -299,11 +414,11 @@ private:
 
     // Dim cards during learning (simulated blur with heavy dim in overlay paint)
 
-    MachineEngine engine;
     MyPluginAudioProcessor& proc;
     juce::ValueTree& vt;
+    MachineEngine engine;
     juce::CriticalSection uiLock;
-    std::vector<ParamPatch> pendingProposals;
+    std::vector<Proposal> pendingProposals;
 
     // Learn/preview state
     bool learning { false };

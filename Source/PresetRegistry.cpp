@@ -168,9 +168,9 @@ static void addFactoryPresets(juce::Array<PresetEntry>& out)
         }
     ));
 
-    // 9) Vintage Space Echo (Long)
+    // 9) Vintage Tape Echo (Long)
     out.add (makePreset(
-        "Vintage Space Echo (Long)", "FX", "Factory",
+        "Vintage Tape Echo (Long)", "FX", "Factory",
         "Long tape echo with wobble + gentle diffusion for classic dub tails.",
         "Ride FEEDBACK live.",
         { "tape","long","dub","wobble","fx" },

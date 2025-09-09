@@ -103,6 +103,8 @@ namespace IDs {
     static constexpr const char* widthAutoAtkMs     = "width_auto_atk_ms";
     static constexpr const char* widthAutoRelMs     = "width_auto_rel_ms";
     static constexpr const char* widthMax           = "width_max";
+    // Phase Modes
+    static constexpr const char* phaseMode  = "phase_mode"; // 0 Zero, 1 Natural, 2 Hybrid Linear
 }
 
 // ================================================================
@@ -279,6 +281,7 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 
     chainF->prepare (spec);
     chainD->prepare (spec);
+    updateLatencyForPhaseMode();
 }
 
 // Utility: build a HostParams snapshot each block
@@ -380,6 +383,7 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.delayDuckRatio = getParam(apvts, IDs::delayDuckRatio);
     p.delayDuckLookaheadMs = getParam(apvts, IDs::delayDuckLookaheadMs);
     p.delayDuckLinkGlobal = (getParam(apvts, IDs::delayDuckLinkGlobal) >= 0.5f);
+    p.phaseMode = (int) apvts.getParameterAsValue (IDs::phaseMode).getValue();
     
     return p;
 }
@@ -410,6 +414,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     chainF->setParameters (hp);     // cast/copy inside chain
 
     juce::dsp::AudioBlock<float> block (buffer);
+    chainF->setParameters (hp);
     chainF->process (block);
 
     // Correlation + RMS/Peak meters (simple block estimate)
@@ -480,6 +485,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         for (int i = 0; i < n; ++i) { dL[i] = (float) sL[i]; dR[i] = (float) sR[i]; }
         visPre.push (dL, dR, n);
     }
+    chainD->setParameters (hp);
     chainD->process (block);
 
     // Correlation + RMS/Peak meters
@@ -552,9 +558,25 @@ void MyPluginAudioProcessor::setStateInformation (const void* data, int sizeInBy
     if (auto xml = getXmlFromBinary (data, sizeInBytes)) apvts.replaceState (juce::ValueTree::fromXml (*xml));
 }
 
+void MyPluginAudioProcessor::updateLatencyForPhaseMode()
+{
+    int mode = (int) apvts.getParameterAsValue (IDs::phaseMode).getValue();
+    int latency = 0;
+    if (mode == 2 || mode == 3) // Hybrid Linear or Full Linear
+    {
+        if (isDoublePrecEnabled && chainD)
+            latency = chainD->getLinearPhaseLatencySamples();
+        else if (chainF)
+            latency = chainF->getLinearPhaseLatencySamples();
+    }
+    setLatencySamples (latency);
+}
+
 void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, float newValue)
 {
-    juce::ignoreUnused (parameterID, newValue);
+    juce::ignoreUnused (newValue);
+    if (parameterID == IDs::phaseMode || parameterID == IDs::hpHz || parameterID == IDs::lpHz)
+        updateLatencyForPhaseMode();
 }
 
 // =========================
@@ -590,7 +612,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckLAms, 1 },   "Duck Lookahead (ms)", juce::NormalisableRange<float> (0.0f, 20.0f, 0.01f), 5.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckRmsMs, 1 },  "Duck RMS (ms)",       juce::NormalisableRange<float> (2.0f, 50.0f, 0.01f), 15.0f));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::duckTarget, 1 }, "Duck Target", juce::StringArray { "WetOnly", "Global" }, 0));
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osMode, 1 }, "Oversampling", juce::StringArray { "Off", "2x", "4x" }, 1));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osMode, 1 }, "Oversampling", juce::StringArray { "Off", "2x", "4x", "8x", "16x" }, 1));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::splitMode, 1 }, "Split Mode", false));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::tiltFreq, 1 },  "Tilt Frequency", juce::NormalisableRange<float> (100.0f, 1000.0f, 1.0f, 0.5f), 500.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::scoopFreq, 1 }, "Scoop Frequency", juce::NormalisableRange<float> (200.0f, 2000.0f, 1.0f, 0.5f), 800.0f));
@@ -620,6 +642,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthAutoAtkMs, 1 }, "Auto-Width Attack (ms)", juce::NormalisableRange<float> (1.0f, 200.0f, 0.1f), 25.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthAutoRelMs, 1 }, "Auto-Width Release (ms)", juce::NormalisableRange<float> (20.0f, 1200.0f, 0.1f), 250.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthMax, 1 }, "Max Width", juce::NormalisableRange<float> (0.5f, 2.5f, 0.001f), 2.0f));
+
+    // Phase Mode
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phaseMode, 1 }, "Phase Mode",
+        juce::StringArray{ "Zero", "Natural", "Hybrid Linear", "Full Linear" }, 0));
 
     // EQ shape/Q additions
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqShelfShape, 1 }, "Shelf Shape (S)", juce::NormalisableRange<float> (0.25f, 1.50f, 0.001f), 0.90f));
@@ -763,6 +790,11 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     dampingSmoothed.setCurrentAndTargetValue (rvParams.damping);
     widthSmoothed.reset (sr, smoothMs);
     widthSmoothed.setCurrentAndTargetValue (rvParams.width);
+
+    // Prepare linear-phase convolver (allocated lazily on first use)
+    if (! linConvolver)
+        linConvolver = std::make_unique<OverlapSaveConvolver<Sample>>();
+    linConvolver->prepare (spec.sampleRate, (int) spec.maximumBlockSize, linKernelLen, (int) spec.numChannels);
 }
 
 template <typename Sample>
@@ -995,6 +1027,60 @@ void FieldChain<Sample>::applyAirBand (Block block, Sample airDb, Sample airFreq
     const Sample S = params.shelfShapeS * (Sample)0.3333333; // keep air gentle; scale S
     auto coef = juce::dsp::IIR::Coefficients<Sample>::makeHighShelf (sr, airFreq, juce::jlimit ((Sample)0.2, (Sample)1.50, S), (Sample) juce::Decibels::decibelsToGain ((double) airDb));
     airFilter.coefficients = coef; CtxRep ctx (block); airFilter.process (ctx);
+}
+
+// Build composite linear-phase FIR for full macro tone and apply
+template <typename Sample>
+void FieldChain<Sample>::applyFullLinearFIR (Block block)
+{
+    if (! fullLinearConvolver)
+        fullLinearConvolver = std::make_unique<OverlapSaveConvolver<Sample>>();
+    fullLinearConvolver->prepare (sr, (int) block.getNumSamples(), fullKernelLen, (int) block.getNumChannels());
+
+    // Build a simple target magnitude by sampling our current macro tone params
+    // Grid size for design (power of two)
+    const int K = 16384;
+    std::vector<double> mags ((size_t) (K/2 + 1), 1.0);
+    const double nyq = sr * 0.5;
+
+    // Simple shelves/peaks approximations (magnitude only)
+    auto dbToLin = [](double db){ return std::pow (10.0, db / 20.0); };
+    const double tiltGainLow  = dbToLin ((double) params.tiltDb * 0.5);
+    const double tiltGainHigh = dbToLin (-(double) params.tiltDb * 0.5);
+    const double bassGain     = dbToLin ((double) params.bassDb);
+    const double airGain      = dbToLin ((double) params.airDb);
+    const double scoopGainDb  = (double) params.scoopDb;
+
+    for (int k = 0; k <= K/2; ++k)
+    {
+        const double f = (double) k / (double) (K/2) * nyq;
+        double m = 1.0;
+        // HP/LP as smooth tapers (sigmoid) to avoid sharp corners in design magnitude
+        const double hp = 1.0 / (1.0 + std::exp (-(f - (double) params.hpHz) / juce::jmax (1.0, (double) params.hpHz * 0.1)));
+        const double lp = 1.0 / (1.0 + std::exp ( (f - (double) params.lpHz) / juce::jmax (1.0, (double) params.lpHz * 0.1)));
+        m *= hp * lp;
+        // Tilt: pivot at tiltFreq
+        const double oct = std::log2 (juce::jlimit (20.0, nyq, f) / juce::jmax (1.0, (double) params.tiltFreq));
+        const double tiltCurve = oct >= 0.0 ? tiltGainHigh : tiltGainLow;
+        // Bass shelf: below bassFreq
+        const double bassCurve = 1.0 + (bassGain - 1.0) * (1.0 / (1.0 + std::exp ((f - (double) params.bassFreq) / juce::jmax (1.0, (double) params.bassFreq * 0.25))));
+        // Air shelf: above airFreq
+        const double airCurve  = 1.0 + (airGain - 1.0)  * (1.0 / (1.0 + std::exp (-(f - (double) params.airFreq) / juce::jmax (1.0, (double) params.airFreq * 0.25))));
+        // Scoop: gentle peaking dip around scoopFreq
+        const double q = 0.8; const double bw = juce::jmax (10.0, (double) params.scoopFreq * 0.6);
+        const double gS = dbToLin (scoopGainDb);
+        const double gauss = std::exp (-(f - (double) params.scoopFreq) * (f - (double) params.scoopFreq) / (2.0 * bw * bw));
+        const double scoopCurve = 1.0 + (gS - 1.0) * gauss;
+
+        m *= tiltCurve * bassCurve * airCurve * scoopCurve;
+        mags[(size_t) k] = juce::jlimit (1e-6, 1000.0, m);
+    }
+
+    // Design kernel from magnitude
+    std::vector<float> kernel;
+    designLinearPhaseFromMagnitude (kernel, mags, K, fullKernelLen, 8.6, 1000.0, sr);
+    fullLinearConvolver->setKernel (kernel);
+    fullLinearConvolver->process (block);
 }
 
 template <typename Sample>
@@ -1432,8 +1518,21 @@ void FieldChain<Sample>::process (Block block)
     // Input gain
     block.multiplyBy (params.gainLin);
 
-    // Clean filters
-    applyHP_LP (block, params.hpHz, params.lpHz);
+    // Phase Mode: 2 = Hybrid Linear → FIR HP/LP; 3 = Full Linear → composite FIR tone+HP/LP
+    if (params.phaseMode == 3)
+    {
+        applyFullLinearFIR (block);
+    }
+    else if (params.phaseMode == 2)
+    {
+        ensureLinearPhaseKernel (sr, params.hpHz, params.lpHz, (int) block.getNumSamples(), (int) block.getNumChannels());
+        linConvolver->process (block);
+    }
+    else
+    {
+        // Clean filters
+        applyHP_LP (block, params.hpHz, params.lpHz);
+    }
 
     // Imaging & placement
     if (params.splitMode) applySplitPan (block, params.panL, params.panR);
@@ -1665,6 +1764,23 @@ void FieldChain<Sample>::process (Block block)
             const float b = std::sin (theta);
             out[i] = (Sample) (a * (double) d[i] + b * (double) w[i]);
         }
+    }
+}
+
+template <typename Sample>
+void FieldChain<Sample>::ensureLinearPhaseKernel (double sampleRate, Sample hpHz, Sample lpHz, int maxBlock, int numChannels)
+{
+    if (! linConvolver)
+        linConvolver = std::make_unique<OverlapSaveConvolver<Sample>>();
+    linConvolver->prepare (sampleRate, maxBlock, linKernelLen, juce::jmax (1, numChannels));
+
+    const double hp = juce::jlimit (20.0, 1000.0, (double) hpHz);
+    const double lp = juce::jlimit (1000.0, 20000.0, (double) lpHz);
+    if (! linConvolver->isReady() || (float) hp != lastHpHzLP || (float) lp != lastLpHzLP)
+    {
+        std::vector<float> kernel; designLinearPhaseBandpassKernel (kernel, sampleRate, hp, lp, linKernelLen, 8.6);
+        linConvolver->setKernel (kernel);
+        lastHpHzLP = (float) hp; lastLpHzLP = (float) lp;
     }
 }
 

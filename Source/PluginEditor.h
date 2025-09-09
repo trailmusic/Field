@@ -427,6 +427,12 @@ protected:
         auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
         auto panel = lf ? lf->theme.panel : juce::Colour(0xFF3A3D45);
         auto accent = lf ? lf->theme.accent : juce::Colour(0xFF2196F3);
+        // Optional per-button accent override (stored as ARGB int)
+        if (getProperties().contains("accentOverrideARGB"))
+        {
+            auto v = (uint32) (int) getProperties()["accentOverrideARGB"];
+            accent = juce::Colour (v);
+        }
         auto sh = lf ? lf->theme.sh : juce::Colour(0xFF2A2A2A);
         auto hl = lf ? lf->theme.hl : juce::Colour(0xFF4A4A4A);
 
@@ -467,8 +473,28 @@ protected:
         auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
         auto textMuted = lf ? lf->theme.textMuted : juce::Colour(0xFF888888);
         auto onCol = juce::Colours::white;
+        // Optional per-button icon colour override (stored as ARGB int)
+        if (getProperties().contains("iconOverrideARGB"))
+        {
+            auto v = (uint32) (int) getProperties()["iconOverrideARGB"];
+            textMuted = juce::Colour (v);
+            onCol = juce::Colour (v);
+        }
         const bool invert = (bool) getProperties().getWithDefault ("invertActive", false);
         const bool on = invert ? (! getToggleState()) : getToggleState();
+
+        // Custom label rendering if provided
+        if (getProperties().contains ("labelText"))
+        {
+            juce::String label = getProperties()["labelText"].toString();
+            auto col = on ? onCol : textMuted;
+            g.setColour (col);
+            // Fit text nicely inside button
+            auto bounds = r; bounds.reduce (2.0f, 2.0f);
+            g.setFont (juce::Font (juce::FontOptions (14.0f)).boldened());
+            g.drawFittedText (label, bounds.toNearestInt(), juce::Justification::centred, 1);
+            return;
+        }
 
         IconSystem::drawIcon(g, options.icon, r, on ? onCol : textMuted);
     }
@@ -478,7 +504,7 @@ protected:
 // Concrete icon buttons (tiny classes = tiny maintenance)
 //------------------------------------------------------------------------------
 class OptionsButton    : public ThemedIconButton { public: OptionsButton()
-: ThemedIconButton(Options{ IconSystem::CogWheel, false, ThemedIconButton::Style::GradientPanel, 3.0f, 4.0f, false }) {} };
+: ThemedIconButton(Options{ IconSystem::CogWheel, false, ThemedIconButton::Style::SolidAccentWhenOn, 3.0f, 4.0f, false }) {} };
 
 class LinkButton       : public ThemedIconButton { public: LinkButton()
 : ThemedIconButton(Options{ IconSystem::Link, true, ThemedIconButton::Style::SolidAccentWhenOn, 4.0f, 4.0f, true }) {} };
@@ -1250,7 +1276,7 @@ private:
     // Global Wet Only (Kill Dry) UI toggle (no param binding per instructions)
     juce::ToggleButton wetOnlyToggle;
 
-    // Space controls
+    // Reverb controls
     class SpaceKnob : public juce::Slider
     {
     public:
@@ -2073,6 +2099,16 @@ private:
     std::array<std::unique_ptr<KnobCell>, 16> motionCells;
     std::array<juce::Slider, 16> motionDummies;
     std::array<juce::Label,  16> motionValues;
+
+    // Phase Mode center group
+    class PhaseModeButton : public ThemedIconButton {
+    public:
+        PhaseModeButton() : ThemedIconButton(Options{ IconSystem::ColorPalette, true, ThemedIconButton::Style::SolidAccentWhenOn, 4.0f, 4.0f, true }) {}
+    };
+    ControlContainer phaseCenterContainer;
+    PhaseModeButton  phaseModeButton;
+    std::unique_ptr<juce::ParameterAttachment> phaseModeParamAttach;
+    std::unique_ptr<juce::ParameterAttachment> osModeParamAttach;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessorEditor)
 }; 

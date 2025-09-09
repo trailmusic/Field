@@ -6,6 +6,107 @@
 
 //==============================================================
 
+// Reusable tinted PopupMenu LookAndFeel + helper
+struct TintMenuLNFEx : public juce::LookAndFeel_V4
+{
+    juce::Colour defaultTint { juce::Colours::skyblue };
+    juce::Array<juce::Colour> itemTints;
+    bool hideChecks = true;
+    mutable int paintIndex = 0; // reset on background draw
+
+    void drawPopupMenuBackground (juce::Graphics& g, int w, int h) override
+    {
+        paintIndex = 0;
+        auto r = juce::Rectangle<float> (0, 0, (float) w, (float) h);
+        g.setGradientFill (juce::ColourGradient (juce::Colour (0xFF2C2F35), r.getTopLeft(), juce::Colour (0xFF24272B), r.getBottomRight(), false));
+        g.fillRect (r);
+        g.setColour (juce::Colours::white.withAlpha (0.06f));
+        g.drawRoundedRectangle (r.reduced (1.0f), 5.0f, 1.0f);
+    }
+
+    void drawPopupMenuSeparator (juce::Graphics& g, const juce::Rectangle<int>& area)
+    {
+        auto r = area.toFloat().reduced (10.0f, 0.0f);
+        g.setColour (juce::Colours::white.withAlpha (0.10f));
+        g.fillRect (juce::Rectangle<float> (r.getX(), r.getCentreY() - 0.5f, r.getWidth(), 1.0f));
+    }
+
+    void drawPopupMenuSectionHeader (juce::Graphics& g, const juce::String& title,
+                                     const juce::Rectangle<int>& area)
+    {
+        auto r = area.toFloat().reduced (8.0f, 4.0f);
+        g.setColour (juce::Colours::white.withAlpha (0.60f));
+        g.setFont (juce::Font (juce::FontOptions (12.5f)).withExtraKerningFactor (0.02f).boldened());
+        g.drawFittedText (title.toUpperCase(), r.toNearestInt(), juce::Justification::centredLeft, 1);
+    }
+
+    void drawPopupMenuItem (juce::Graphics& g, const juce::Rectangle<int>& area,
+                            bool isSeparator, bool /*isActive*/, bool isHighlighted, bool isTicked,
+                            bool /*hasSubMenu*/, const juce::String& text, const juce::String& shortcutKeyText,
+                            const juce::Drawable* /*icon*/, const juce::Colour* textColour) override
+    {
+        if (isSeparator) { drawPopupMenuSeparator (g, area); return; }
+
+        auto r = area.toFloat().reduced (4.0f, 2.0f);
+        const juce::Colour tint = (paintIndex >= 0 && paintIndex < itemTints.size())
+                                  ? itemTints.getReference (paintIndex++)
+                                  : defaultTint;
+
+        if (isHighlighted || isTicked)
+        {
+            g.setColour (tint.withAlpha (isHighlighted ? 0.90f : 0.65f));
+            g.fillRoundedRectangle (r, 4.0f);
+            g.setColour (juce::Colours::white.withAlpha (0.10f));
+            g.drawRoundedRectangle (r, 4.0f, 1.0f);
+        }
+
+        auto ta = r.reduced (hideChecks ? 8.0f : 22.0f, 0.0f);
+        g.setColour (textColour ? *textColour : juce::Colours::white.withAlpha (0.95f));
+        g.setFont (juce::Font (juce::FontOptions (14.0f)));
+        g.drawFittedText (text, ta.toNearestInt(), juce::Justification::centredLeft, 1);
+
+        if (shortcutKeyText.isNotEmpty())
+        {
+            g.setColour (juce::Colours::white.withAlpha (0.55f));
+            g.setFont (juce::Font (juce::FontOptions (13.0f)));
+            auto rt = ta.removeFromRight (60).toNearestInt();
+            g.drawFittedText (shortcutKeyText, rt, juce::Justification::centredRight, 1);
+        }
+    }
+};
+
+template <typename BuildFn, typename ResultFn>
+static void showTintedMenu (juce::Component& anchor, const TintMenuLNFEx& configuredLnf,
+                            BuildFn&& build, ResultFn&& onResult)
+{
+    auto lnfHold = std::make_shared<TintMenuLNFEx>();
+    // Copy relevant configuration
+    lnfHold->defaultTint = configuredLnf.defaultTint;
+    lnfHold->hideChecks  = configuredLnf.hideChecks;
+    lnfHold->itemTints   = configuredLnf.itemTints;
+    // Copy colours that might have been set on configuredLnf
+    lnfHold->setColour (juce::PopupMenu::textColourId,
+                        configuredLnf.findColour (juce::PopupMenu::textColourId));
+    lnfHold->setColour (juce::PopupMenu::highlightedBackgroundColourId,
+                        configuredLnf.findColour (juce::PopupMenu::highlightedBackgroundColourId));
+    lnfHold->setColour (juce::PopupMenu::highlightedTextColourId,
+                        configuredLnf.findColour (juce::PopupMenu::highlightedTextColourId));
+
+    juce::PopupMenu m; m.setLookAndFeel (lnfHold.get());
+
+    build (m, *lnfHold);
+
+    auto* parent = anchor.getTopLevelComponent();
+    juce::PopupMenu::Options opt;
+    opt = opt.withTargetComponent (&anchor)
+             .withParentComponent (parent)
+             .withMinimumWidth (juce::jmax (160, anchor.getWidth()));
+
+    m.showMenuAsync (opt, [lnfHold, onResult] (int r) { onResult (r); });
+}
+
+//==============================================================
+
 //==============================================================
 // ToggleSwitch (compact, slow animation, keeps original visual)
 ToggleSwitch::ToggleSwitch()
@@ -966,27 +1067,97 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     lnf.setupColours();
     setLookAndFeel (&lnf);
 
-    // Options menu (oversampling, close)
+    // Options menu (oversampling) with per-mode tint
     addAndMakeVisible (optionsButton);
     optionsButton.onClick = [this]
     {
-        juce::PopupMenu m;
-        m.addSectionHeader ("Field - Spatial Audio Processor");
-        m.addSeparator();
-        m.addSectionHeader ("🎛️ Oversampling");
-        m.addItem (1, "1x (Standard)", true, osSelect.getSelectedId() == 0);
-        m.addItem (2, "2x (High Quality)", true, osSelect.getSelectedId() == 1);
-        m.addItem (3, "4x (Ultra Quality)", true, osSelect.getSelectedId() == 2);
-        m.addItem (4, "8x (Maximum Quality)", true, osSelect.getSelectedId() == 3);
-        m.addItem (5, "16x (Extreme Quality)", true, osSelect.getSelectedId() == 4);
-        m.addSeparator();
-        m.addItem (99, "❌ Close", true, false);
+        const bool wasOn = optionsButton.getToggleState();
+        optionsButton.setToggleState (true, juce::dontSendNotification);
+        optionsButton.repaint();
 
-        m.showMenuAsync (juce::PopupMenu::Options(), [this](int r)
-        {
-            if (r >= 1 && r <= 5) osSelect.setSelectedId (r - 1);
-        });
+        TintMenuLNFEx menuLnf; menuLnf.defaultTint = lnf.theme.accent; menuLnf.hideChecks = true;
+        menuLnf.setColour (juce::PopupMenu::textColourId, lnf.theme.text);
+
+        int curIdx = 0, numChoices = 1;
+        if (auto* rp = proc.apvts.getParameter ("os_mode"))
+            if (auto* cp = dynamic_cast<juce::AudioParameterChoice*> (rp)) { curIdx = cp->getIndex(); numChoices = cp->choices.size(); }
+
+        showTintedMenu (optionsButton, menuLnf,
+            // BUILD
+            [this, curIdx, numChoices] (juce::PopupMenu& m, TintMenuLNFEx& lnfEx)
+            {
+                m.addSectionHeader ("Oversampling");
+                struct Row { int id; const char* text; juce::Colour tint; bool enabled; };
+                juce::Array<Row> rows;
+                rows.add ({ 1, "1x (Off)",          lnf.theme.textMuted, true });
+                rows.add ({ 2, "2x (High Quality)", juce::Colour (0xFF8BC34A), numChoices > 1 });
+                rows.add ({ 3, "4x (Ultra)",        juce::Colour (0xFFFFC107), numChoices > 2 });
+                rows.add ({ 4, "8x (Max)",          juce::Colour (0xFFFF7043), numChoices > 3 });
+                rows.add ({ 5, "16x (Extreme)",     juce::Colour (0xFFE91E63), numChoices > 4 });
+
+                lnfEx.itemTints.clear();
+                for (int i = 0; i < rows.size(); ++i)
+                {
+                    m.addItem (rows[i].id, rows[i].text, rows[i].enabled, i == curIdx);
+                    lnfEx.itemTints.add (rows[i].tint);
+                }
+            },
+            // RESULT
+            [this, wasOn, numChoices] (int r)
+            {
+                // restore button active state to real OS>1×
+                if (auto* rp = proc.apvts.getParameter ("os_mode"))
+                    if (auto* cp = dynamic_cast<juce::AudioParameterChoice*> (rp))
+                        optionsButton.setToggleState (cp->getIndex() > 0, juce::dontSendNotification);
+                    else optionsButton.setToggleState (wasOn, juce::dontSendNotification);
+                optionsButton.repaint();
+
+                if (r == 0) return;
+                if (r < 1 || r > numChoices) return;
+                if (auto* p = proc.apvts.getParameter ("os_mode"))
+                {
+                    const float norm = numChoices > 1 ? (float) (r - 1) / (float) (numChoices - 1) : 0.0f;
+                    p->beginChangeGesture(); p->setValueNotifyingHost (norm); p->endChangeGesture();
+                }
+            });
     };
+
+    // Tint Options button based on oversampling choice
+    auto applyOptionsTint = [this]
+    {
+        int sel = 0;
+        if (auto* rp = proc.apvts.getParameter ("os_mode"))
+            if (auto* cp = dynamic_cast<juce::AudioParameterChoice*> (rp)) sel = cp->getIndex();
+        // Map index to label and tint
+        juce::Colour tint = lnf.theme.textMuted;
+        juce::String label = "1x";
+        switch (sel)
+        {
+            case 0: tint = lnf.theme.textMuted; label = "1x"; break;
+            case 1: tint = juce::Colour (0xFF8BC34A); label = "2x"; break;
+            case 2: tint = juce::Colour (0xFFFFC107); label = "4x"; break;
+            case 3: tint = juce::Colour (0xFFFF7043); label = "8x"; break;
+            case 4: tint = juce::Colour (0xFFE91E63); label = "16x"; break;
+        }
+        optionsButton.getProperties().set ("accentOverrideARGB", (int) tint.getARGB());
+        optionsButton.getProperties().set ("iconOverrideARGB", (int) tint.getARGB());
+        optionsButton.getProperties().set ("labelText", label);
+        optionsButton.setToggleState (true, juce::dontSendNotification);
+        optionsButton.repaint();
+    };
+    applyOptionsTint();
+    osSelect.onChange = [this, applyOptionsTint]
+    {
+        applyOptionsTint();
+    };
+    // Also listen to APVTS os_mode directly to avoid drift
+    if (!osModeParamAttach)
+    {
+        if (auto* p = proc.apvts.getParameter ("os_mode"))
+        {
+            osModeParamAttach = std::make_unique<juce::ParameterAttachment>(*p, [applyOptionsTint](float){ applyOptionsTint(); }, nullptr);
+        }
+    }
 
     // Help button → FAQ dialog
     addAndMakeVisible (helpButton);
@@ -2042,12 +2213,108 @@ void MyPluginAudioProcessorEditor::performLayout()
                              .withTrimmedTop (Layout::dp (2, s));
     header.performLayout (headerArea);
 
-    // options + help at bottom-left
+    // options + phase mode at bottom-left; help to bottom-right
     {
         auto bounds = getLocalBounds();
         const int padding = Layout::dp (8, s);
-        optionsButton.setTopLeftPosition (bounds.getX() + padding, bounds.getBottom() - h - padding);
-        helpButton.setBounds (optionsButton.getRight() + Layout::dp (6, s), optionsButton.getY(), optionsButton.getWidth(), optionsButton.getHeight());
+        const int btnW = Layout::dp (40, s);
+        const int btnH = h;
+        const int leftY = bounds.getBottom() - btnH - padding;
+        optionsButton.setBounds (bounds.getX() + padding, leftY, btnW, btnH);
+
+        // Place Phase button as last in the left group
+        if (!phaseModeParamAttach)
+        {
+            if (auto* p = proc.apvts.getParameter ("phase_mode"))
+            {
+                phaseModeParamAttach = std::make_unique<juce::ParameterAttachment>(*p, [this](float v)
+                {
+                    const int idx = (int) juce::roundToInt (v * 3.0f);
+                    phaseModeButton.setToggleState (idx != 0, juce::dontSendNotification);
+                    phaseModeButton.repaint();
+                }, nullptr);
+            }
+        }
+        phaseModeButton.setBounds (optionsButton.getRight() + Layout::dp (8, s), leftY, btnW, btnH);
+        addAndMakeVisible (phaseModeButton);
+        // Shade per mode (Zero keeps inactive visual; menu shows selection)
+        auto applyPhaseTint = [this]
+        {
+            int cur = 0;
+            if (auto* p = proc.apvts.getParameter ("phase_mode"))
+                if (auto* cp = dynamic_cast<juce::AudioParameterChoice*>(p)) cur = cp->getIndex();
+             // Mode → colour tint (including Zero grey)
+             juce::Colour tint = lnf.theme.textMuted; // Zero default
+             juce::String label = "Z";
+             switch (cur)
+             {
+                 case 0: tint = lnf.theme.textMuted; label = "Z"; break;      // Zero
+                 case 1: tint = juce::Colour (0xFF8BC34A); label = "N"; break; // Natural
+                 case 2: tint = juce::Colour (0xFFFFC107); label = "H"; break; // Hybrid
+                 case 3: tint = juce::Colour (0xFF03A9F4); label = "F"; break; // Full Linear
+             }
+             phaseModeButton.getProperties().set ("accentOverrideARGB", (int) tint.getARGB());
+             phaseModeButton.getProperties().set ("iconOverrideARGB",   (int) tint.getARGB());
+             phaseModeButton.getProperties().set ("labelText", label);
+             // Always show solid style, including Zero (grey)
+             phaseModeButton.setToggleState (true, juce::dontSendNotification);
+             phaseModeButton.repaint();
+        };
+        applyPhaseTint();
+        if (!phaseModeParamAttach)
+        {
+            if (auto* p = proc.apvts.getParameter ("phase_mode"))
+            {
+                phaseModeParamAttach = std::make_unique<juce::ParameterAttachment>(*p, [applyPhaseTint](float){ applyPhaseTint(); }, nullptr);
+            }
+        }
+        phaseModeButton.onClick = [this, applyPhaseTint]
+        {
+            int cur = 0;
+            if (auto* p = proc.apvts.getParameter ("phase_mode"))
+                if (auto* cp = dynamic_cast<juce::AudioParameterChoice*>(p)) cur = cp->getIndex();
+
+            TintMenuLNFEx menuLnf; menuLnf.defaultTint = lnf.theme.accent; menuLnf.hideChecks = true;
+            menuLnf.setColour (juce::PopupMenu::textColourId, lnf.theme.text);
+
+            showTintedMenu (phaseModeButton, menuLnf,
+                // BUILD
+                [this, cur] (juce::PopupMenu& m, TintMenuLNFEx& lnfEx)
+                {
+                    m.addSectionHeader ("Phase");
+                    struct Row { int id; const char* text; juce::Colour tint; bool ticked; };
+                    juce::Array<Row> rows;
+                    rows.add ({ 1, "Zero-latency",    lnf.theme.textMuted,          cur == 0 });
+                    rows.add ({ 2, "Natural-phase",   juce::Colour (0xFF8BC34A),    cur == 1 });
+                    rows.add ({ 3, "Hybrid Linear",   juce::Colour (0xFFFFC107),    cur == 2 });
+                    rows.add ({ 4, "Full Linear",     juce::Colour (0xFF03A9F4),    cur == 3 });
+
+                    lnfEx.itemTints.clear();
+                    for (int i = 0; i < rows.size(); ++i)
+                    {
+                        m.addItem (rows[i].id, rows[i].text, true, rows[i].ticked);
+                        lnfEx.itemTints.add (rows[i].tint);
+                    }
+                },
+                // RESULT
+                [this, applyPhaseTint] (int r)
+                {
+                    if (r < 1 || r > 4) return;
+                    if (auto* p = proc.apvts.getParameter ("phase_mode"))
+                    {
+                        p->beginChangeGesture();
+                        p->setValueNotifyingHost ((float) (r - 1) / 3.0f);
+                        p->endChangeGesture();
+                    }
+                    // Update immediately without waiting for attachment dispatch
+                    applyPhaseTint();
+                });
+        };
+
+        // Help to bottom-right (left of resize grip)
+        const int helpX = bounds.getRight() - Layout::dp (24, s) - btnW;
+        const int helpY = leftY;
+        helpButton.setBounds (helpX, helpY, btnW, btnH);
         addAndMakeVisible (helpButton);
     }
 
@@ -2084,6 +2351,9 @@ void MyPluginAudioProcessorEditor::performLayout()
         auto padBounds = main.reduced (Layout::dp (Layout::GAP, s));
         if (panes) panes->setBounds (padBounds);
         if (xyShade) xyShade->setBounds (padBounds);
+
+        // Hide center container if present
+        phaseCenterContainer.setVisible (false);
 
         // Layout vertical meters: Corr (top) + LR bars (bottom)
         addAndMakeVisible (corrMeter);
@@ -2800,7 +3070,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*delaySpreadCell).withArea (2,6),
             juce::GridItem (*delayWidthCell).withArea (2,7),
 
-            // Row 3 — Tone & Space
+            // Row 3 — Tone & Reverb
             juce::GridItem (*delaySatCell).withArea (3,1),
             juce::GridItem (*delayDiffusionCell).withArea (3,2),
             juce::GridItem (*delayDiffuseSizeCell).withArea (3,3),
@@ -3031,7 +3301,7 @@ void MyPluginAudioProcessorEditor::timerCallback()
         grDb = 0.0f;
     duckingKnob.setCurrentGrDb (grDb);
 
-    // Grey-out ATT/REL/THR/RAT when DUCK=0% or REVERB=0; also grey the Space algo switch
+    // Grey-out ATT/REL/THR/RAT when DUCK=0% or REVERB=0; also grey the Reverb algo switch
     const bool reverbActive = spaceKnob.getValue() > 0.0001;
     const bool duckActive = (duckingKnob.getValue() > 0.0001) && reverbActive;
     spaceAlgorithmSwitch.setAlpha (reverbActive ? 1.0f : 0.35f);
