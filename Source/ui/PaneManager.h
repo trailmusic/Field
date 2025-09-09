@@ -3,6 +3,7 @@
 #include "ProcessedSpectrumPane.h"
 #include "ImagerPane.h"
 #include "machine/MachinePane.h"
+#include "../IconSystem.h"
 
 class XYPad; // forward (lives in PluginEditor.h/cpp)
 
@@ -57,11 +58,11 @@ public:
         {
             juce::PopupMenu m;
             m.addItem (1, "XY");
-            m.addItem (2, "Spectrum");
+            m.addItem (2, "Dynamic EQ");
             m.addItem (3, "Imager");
-            m.addItem (4, "Machine");
-            m.addItem (5, "Band");
-            m.addItem (6, "Motion");
+            m.addItem (4, "Band");
+            m.addItem (5, "Motion");
+            m.addItem (6, "Machine");
             m.addSeparator();
             m.addItem (7, options.keepAllWarm ? "Keep Warm: On" : "Keep Warm: Off");
             // Smoothing preset toggle for Spectrum
@@ -69,7 +70,7 @@ public:
             {
                 auto preset = spec->analyzer().getSmoothingPreset();
                 const bool silky = (preset == SpectrumAnalyzer::SmoothingPreset::Silky);
-                m.addItem (6, juce::String("Smoothing: ") + (silky ? "Silky" : "Clean"));
+                m.addItem (8, juce::String("Smoothing: ") + (silky ? "Silky" : "Clean"));
             }
             m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&tabs),
                              [this](int r)
@@ -77,9 +78,9 @@ public:
                                  if (r == 1) setActive (PaneID::XY, true);
                                  else if (r == 2) setActive (PaneID::Spectrum, true);
                                  else if (r == 3) setActive (PaneID::Imager, true);
-                                 else if (r == 4) setActive (PaneID::Machine, true);
-                                 else if (r == 5) setActive (PaneID::Band, true);
-                                 else if (r == 6) setActive (PaneID::Motion, true);
+                                 else if (r == 4) setActive (PaneID::Band, true);
+                                 else if (r == 5) setActive (PaneID::Motion, true);
+                                 else if (r == 6) setActive (PaneID::Machine, true);
                                  else if (r == 7) { setOptions({ !options.keepAllWarm }); tabs.repaint(); }
                                  else if (r == 8)
                                  {
@@ -342,6 +343,19 @@ public:
         {
             auto b = getLocalBounds().toFloat();
             const int N = 6; float w = b.getWidth() / (float) N;
+            auto iconFor = [] (PaneID id) -> IconSystem::IconType
+            {
+                switch (id)
+                {
+                    case PaneID::XY:       return IconSystem::Stereo;
+                    case PaneID::Spectrum: return IconSystem::Tilt;      // Dynamic EQ
+                    case PaneID::Imager:   return IconSystem::Width;
+                    case PaneID::Band:     return IconSystem::Mono;
+                    case PaneID::Motion:   return IconSystem::Pan;
+                    case PaneID::Machine:  return IconSystem::CogWheel;
+                }
+                return IconSystem::Stereo;
+            };
             auto draw = [&](int i, const juce::String& label, PaneID id)
             {
                 juce::Rectangle<float> r (b.getX() + i*w, b.getY(), w, b.getHeight());
@@ -376,24 +390,41 @@ public:
                     g.setColour (juce::Colours::white.withAlpha (0.08f));
                     g.drawRoundedRectangle (rr, 9.0f, 1.0f);
                 }
-                // label
-                g.setColour (juce::Colours::white.withAlpha (on ? 0.95f : 0.65f));
-                // larger, bolder labels
-                if (on) g.setFont (juce::Font (juce::FontOptions (13.0f).withStyle ("Bold")));
-                else    g.setFont (juce::Font (juce::FontOptions (12.0f).withStyle ("Bold")));
-                g.drawText (label, rr.toNearestInt(), juce::Justification::centred);
+                // label + icon
+                auto txtCol = juce::Colours::white.withAlpha (on ? 0.95f : 0.65f);
+                if (id == PaneID::Machine)
+                {
+                    g.setColour (txtCol);
+                    g.setFont (juce::Font (juce::FontOptions (on ? 14.0f : 13.0f).withStyle ("Bold")));
+                }
+                else
+                {
+                    g.setColour (txtCol);
+                    g.setFont (juce::Font (juce::FontOptions (on ? 13.0f : 12.0f).withStyle ("Bold")));
+                }
+                const float pad = 6.0f;
+                const float iconSz = juce::jmin (rr.getHeight() - 8.0f, 16.0f);
+                juce::Rectangle<float> content = rr.reduced (8.0f, 2.0f);
+                float textW = g.getCurrentFont().getStringWidthFloat (label);
+                float blockW = iconSz + pad + textW;
+                float x0 = content.getCentreX() - blockW * 0.5f;
+                juce::Rectangle<float> iconR (x0, content.getCentreY() - iconSz * 0.5f, iconSz, iconSz);
+                IconSystem::drawIcon (g, iconFor (id), iconR, txtCol);
+                juce::Rectangle<int> textR (juce::roundToInt (x0 + iconSz + pad), (int) content.getY(), (int) (content.getRight() - (x0 + iconSz + pad)), (int) content.getHeight());
+                juce::String drawLabel = (id == PaneID::Spectrum ? juce::String ("Dynamic EQ") : label);
+                g.drawFittedText (drawLabel, textR, juce::Justification::centredLeft, 1);
             };
-            draw (0, "XY",       PaneID::XY);
-            draw (1, "Spectrum", PaneID::Spectrum);
-            draw (2, "Imager",   PaneID::Imager);
-            draw (3, "Machine",  PaneID::Machine);
-            draw (4, "Band",     PaneID::Band);
-            draw (5, "Motion",   PaneID::Motion);
+            draw (0, "XY",         PaneID::XY);
+            draw (1, "Dynamic EQ", PaneID::Spectrum);
+            draw (2, "Imager",     PaneID::Imager);
+            draw (3, "Band",       PaneID::Band);
+            draw (4, "Motion",     PaneID::Motion);
+            draw (5, "Machine",    PaneID::Machine);
         }
         void mouseUp (const juce::MouseEvent& e) override
         {
             const int N = 6; int idx = juce::jlimit (0, N-1, e.x * N / juce::jmax (1, getWidth()));
-            PaneID id = idx==0 ? PaneID::XY : idx==1 ? PaneID::Spectrum : idx==2 ? PaneID::Imager : idx==3 ? PaneID::Machine : idx==4 ? PaneID::Band : PaneID::Motion;
+            PaneID id = idx==0 ? PaneID::XY : idx==1 ? PaneID::Spectrum : idx==2 ? PaneID::Imager : idx==3 ? PaneID::Band : idx==4 ? PaneID::Motion : PaneID::Machine;
             current = id; if (onSelect) onSelect (id); repaint();
             if (e.mods.isPopupMenu()) { if (onShowMenu) onShowMenu (e.getPosition()); }
         }
