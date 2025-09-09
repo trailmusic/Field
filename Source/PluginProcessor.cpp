@@ -933,7 +933,15 @@ void FieldChain<Sample>::ensureOversampling (int osModeIndex)
 
     if (osModeIndex <= 0) { oversampling.reset(); return; }
 
-    const int factor = (osModeIndex == 1 ? 2 : 4);
+    int factor = 1;
+    switch (osModeIndex)
+    {
+        case 1: factor = 2;  break; // 2x
+        case 2: factor = 4;  break; // 4x
+        case 3: factor = 8;  break; // 8x
+        case 4: factor = 16; break; // 16x
+        default: factor = 1; break; // Off (should have returned earlier)
+    }
     const int stages = juce::roundToInt (std::log2 (factor));
 
     oversampling = std::make_unique<juce::dsp::Oversampling<Sample>> (

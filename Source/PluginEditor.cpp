@@ -1664,6 +1664,25 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     delayFreeze.setButtonText ("");  delayFreeze.setToggleState (delayFreeze.getToggleState(), juce::dontSendNotification);
     delayKillDry.setButtonText (""); delayKillDry.setToggleState (delayKillDry.getToggleState(), juce::dontSendNotification);
     delayMode.setTextWhenNothingSelected ("Mode");
+
+    // Populate Delay Mode items from APVTS choice parameter so popup shows options
+    if (auto* delayModeParam = dynamic_cast<juce::AudioParameterChoice*>(proc.apvts.getParameter("delay_mode")))
+    {
+        delayMode.clear();
+        for (int i = 0; i < delayModeParam->choices.size(); ++i)
+            delayMode.addItem (delayModeParam->choices[i], i + 1);
+        // Reflect current value without firing callbacks; attachment will keep in sync
+        delayMode.setSelectedId (delayModeParam->getIndex() + 1, juce::dontSendNotification);
+    }
+
+    // Populate Delay Duck Source items from APVTS choice parameter so popup shows options
+    if (auto* duckSrcParam = dynamic_cast<juce::AudioParameterChoice*>(proc.apvts.getParameter("delay_duck_source")))
+    {
+        delayDuckSource.clear();
+        for (int i = 0; i < duckSrcParam->choices.size(); ++i)
+            delayDuckSource.addItem (duckSrcParam->choices[i], i + 1);
+        delayDuckSource.setSelectedId (duckSrcParam->getIndex() + 1, juce::dontSendNotification);
+    }
     
     // Delay value labels
     for (juce::Label* l : { &delayTimeValue, &delayFeedbackValue, &delayWetValue, &delaySpreadValue, &delayWidthValue, &delayModRateValue, &delayModDepthValue, &delayWowflutterValue, &delayJitterValue,
