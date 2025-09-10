@@ -374,6 +374,101 @@ void FieldLNF::drawKnobLabel (juce::Graphics& g, juce::Rectangle<float> bounds, 
     g.drawText (text, bounds.toNearestInt(), juce::Justification::centred);
 }
 
+void FieldLNF::drawTabPill (juce::Graphics& g, juce::Rectangle<float> r, bool active) const
+{
+    auto rr = r.reduced (1.0f);
+    const float rad = 9.0f;
+
+    // Base similar to combo/pane pull-down: neo panel with gradient and glow when active
+    if (active)
+    {
+        // Active pill uses a slightly lifted fill and accent border/glow
+        juce::Colour top = theme.panel.brighter (0.10f);
+        juce::Colour bot = theme.panel.darker   (0.08f);
+        juce::ColourGradient fill (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
+        g.setGradientFill (fill);
+        g.fillRoundedRectangle (rr, rad);
+
+        // Animated accent border: smooth glow window marching clockwise (segment-based)
+        auto accent = theme.accent.withAlpha (0.95f);
+        juce::Path border; border.addRoundedRectangle (rr, rad);
+        const float perimeter = 2.0f * (rr.getWidth() + rr.getHeight());
+        const float glowLen   = juce::jmax (perimeter * 0.18f, 36.0f);
+        const float startPx   = tabGlowPhase * perimeter;
+
+        // Base border
+        g.setColour (accent.darker (0.45f));
+        g.strokePath (border, juce::PathStrokeType (1.4f));
+
+        // Smooth marching glow overlay
+        const int segments = 128; // higher for smoother motion
+        const float L = rr.getWidth(), H = rr.getHeight();
+        auto alphaAt = [glowLen, startPx, perimeter](float posPx)
+        {
+            // Wrapped distance from start window
+            float d = std::fmod (posPx - startPx + perimeter, perimeter);
+            if (d > glowLen) return 0.0f;
+            // Ease (cosine) for soft head/tail
+            float t = d / glowLen;
+            return 0.5f * (1.0f + std::cos ((t * 2.0f - 1.0f) * juce::MathConstants<float>::pi));
+        };
+
+        for (int i = 0; i < segments; ++i)
+        {
+            const float t0 = (float) i / segments;
+            const float t1 = (float) (i + 1) / segments;
+            const float pMid = perimeter * (0.5f * (t0 + t1));
+            const float a = alphaAt (pMid);
+            if (a <= 0.001f) continue;
+
+            g.setColour (accent.withAlpha (0.25f + 0.65f * a));
+
+            // Determine which edge this segment lies on and clip a thin strip over that edge
+            float u = std::fmod (perimeter * t0, perimeter);
+            if (u < L)
+            {
+                // top
+                g.saveState();
+                g.reduceClipRegion (juce::Rectangle<int> ((int) rr.getX(), (int) rr.getY() - 2, (int) L, 6));
+                g.strokePath (border, juce::PathStrokeType (2.2f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+                g.restoreState();
+            }
+            else if (u < L + H)
+            {
+                // right
+                g.saveState();
+                g.reduceClipRegion (juce::Rectangle<int> ((int) rr.getRight() - 4, (int) rr.getY(), 8, (int) H));
+                g.strokePath (border, juce::PathStrokeType (2.2f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+                g.restoreState();
+            }
+            else if (u < L + H + L)
+            {
+                // bottom
+                g.saveState();
+                g.reduceClipRegion (juce::Rectangle<int> ((int) rr.getX(), (int) rr.getBottom() - 4, (int) L, 8));
+                g.strokePath (border, juce::PathStrokeType (2.2f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+                g.restoreState();
+            }
+            else
+            {
+                // left
+                g.saveState();
+                g.reduceClipRegion (juce::Rectangle<int> ((int) rr.getX() - 4, (int) rr.getY(), 8, (int) H));
+                g.strokePath (border, juce::PathStrokeType (2.2f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+                g.restoreState();
+            }
+        }
+    }
+    else
+    {
+        // Inactive: solid panel and faint border
+        g.setColour (theme.panel);
+        g.fillRoundedRectangle (rr, rad);
+        g.setColour (juce::Colours::white.withAlpha (0.08f));
+        g.drawRoundedRectangle (rr, rad, 1.0f);
+    }
+}
+
 void FieldLNF::drawGainSlider (juce::Graphics& g, int x, int y, int w, int h,
                                float sliderPosProportional, float rotaryStartAngle,
                                float rotaryEndAngle, float gainDb)

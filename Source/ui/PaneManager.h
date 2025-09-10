@@ -334,85 +334,153 @@ public:
             if (c) c->setBounds (paneR);
     }
 
-    struct Tabs : public juce::Component
+    struct Tabs : public juce::Component, private juce::Timer
     {
         std::function<void(PaneID)> onSelect;
         std::function<void(juce::Point<int>)> onShowMenu;
         PaneID current { PaneID::XY };
+        float glowPhase { 0.0f };
+        void timerCallback() override
+        {
+            glowPhase += 0.005f; if (glowPhase > 1.0f) glowPhase -= 1.0f;
+            if (auto* lf = dynamic_cast<FieldLNF*> (&getLookAndFeel())) lf->setTabGlowPhase (glowPhase);
+            repaint();
+        }
+        void parentHierarchyChanged() override
+        {
+            startTimerHz (60);
+        }
         void paint (juce::Graphics& g) override
         {
             auto b = getLocalBounds().toFloat();
             const int N = 6; float w = b.getWidth() / (float) N;
-            auto iconFor = [] (PaneID id) -> IconSystem::IconType
+            auto drawInlineIcon = [&] (juce::Graphics& gg, PaneID id, juce::Rectangle<float> iconR, juce::Colour col, bool on)
             {
+                const float s  = iconR.getWidth() / 24.0f;
+                const float st = juce::jlimit (1.2f, 3.6f, iconR.getWidth() * 0.11f + (on ? 0.3f : 0.0f));
+                auto T = juce::AffineTransform::translation (iconR.getX(), iconR.getY());
+                gg.setColour (col);
+                juce::Path p;
                 switch (id)
                 {
-                    case PaneID::XY:       return IconSystem::Stereo;
-                    case PaneID::Spectrum: return IconSystem::Tilt;      // Dynamic EQ
-                    case PaneID::Imager:   return IconSystem::Width;
-                    case PaneID::Band:     return IconSystem::Mono;
-                    case PaneID::Motion:   return IconSystem::Pan;
-                    case PaneID::Machine:  return IconSystem::CogWheel;
+                    case PaneID::XY: {
+                        p.addRoundedRectangle (3.5f*s, 3.5f*s, 17.0f*s, 17.0f*s, 3.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st, juce::PathStrokeType::curved, juce::PathStrokeType::rounded), T);
+                        p.clear();
+                        p.startNewSubPath (12.0f*s, 6.0f*s); p.lineTo (12.0f*s, 18.0f*s);
+                        p.startNewSubPath (6.0f*s, 12.0f*s); p.lineTo (18.0f*s, 12.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st, juce::PathStrokeType::curved, juce::PathStrokeType::rounded), T);
+                        p.clear(); p.addEllipse (15.5f*s - 1.25f*s, 8.5f*s - 1.25f*s, 2.5f*s, 2.5f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
+                    case PaneID::Spectrum: { // Dynamic EQ
+                        p.startNewSubPath (3.0f*s, 17.0f*s);
+                        p.cubicTo (6.5f*s, 7.0f*s, 9.5f*s, 21.0f*s, 12.0f*s, 17.0f*s);
+                        p.cubicTo (14.5f*s, 13.0f*s, 17.0f*s, 11.0f*s, 21.0f*s, 13.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear(); p.addEllipse (9.0f*s - 1.25f*s, 15.0f*s - 1.25f*s, 2.5f*s, 2.5f*s);
+                        p.addEllipse (15.0f*s - 1.25f*s, 11.0f*s - 1.25f*s, 2.5f*s, 2.5f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
+                    case PaneID::Imager: {
+                        p.startNewSubPath (12.0f*s, 5.0f*s); p.lineTo (12.0f*s, 19.0f*s);
+                        p.startNewSubPath (5.0f*s, 12.0f*s); p.lineTo (19.0f*s, 12.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear();
+                        // outward chevrons
+                        p.startNewSubPath (7.0f*s, 9.0f*s); p.lineTo (4.5f*s, 12.0f*s); p.lineTo (7.0f*s, 15.0f*s);
+                        p.startNewSubPath (17.0f*s, 9.0f*s); p.lineTo (19.5f*s, 12.0f*s); p.lineTo (17.0f*s, 15.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
+                    case PaneID::Band: {
+                        p.startNewSubPath (7.0f*s, 5.0f*s); p.lineTo (7.0f*s, 19.0f*s);
+                        p.startNewSubPath (17.0f*s, 5.0f*s); p.lineTo (17.0f*s, 19.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear(); p.addRoundedRectangle (8.5f*s, 7.0f*s, 7.0f*s, 10.0f*s, 2.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
+                    case PaneID::Motion: {
+                        p.addEllipse (5.0f*s, 5.0f*s, 14.0f*s, 14.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear();
+                        p.startNewSubPath (12.0f*s, 5.0f*s);
+                        p.cubicTo (16.0f*s, 5.0f*s, 19.0f*s, 8.0f*s, 19.0f*s, 12.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear(); // small arrow head on the arc end
+                        p.startNewSubPath (18.5f*s, 10.8f*s); p.lineTo (20.25f*s, 12.0f*s); p.lineTo (18.5f*s, 13.2f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
+                    case PaneID::Machine: {
+                        p.addRoundedRectangle (6.0f*s, 7.0f*s, 12.0f*s, 10.0f*s, 2.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear(); // sparkle
+                        p.startNewSubPath (12.0f*s, 10.2f*s);
+                        p.lineTo (12.6f*s, 11.4f*s);
+                        p.lineTo (14.0f*s, 11.7f*s);
+                        p.lineTo (13.0f*s, 12.6f*s);
+                        p.lineTo (13.2f*s, 14.0f*s);
+                        p.lineTo (12.0f*s, 13.3f*s);
+                        p.lineTo (10.8f*s, 14.0f*s);
+                        p.lineTo (11.0f*s, 12.6f*s);
+                        p.lineTo (10.0f*s, 11.7f*s);
+                        p.lineTo (11.4f*s, 11.4f*s);
+                        p.closeSubPath();
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
                 }
-                return IconSystem::Stereo;
             };
             auto draw = [&](int i, const juce::String& label, PaneID id)
             {
                 juce::Rectangle<float> r (b.getX() + i*w, b.getY(), w, b.getHeight());
                 const bool on = (current == id);
                 auto rr = r.reduced (1.0f);
-                // base fill
-                g.setColour (juce::Colour (0xFF2C2F35));
-                g.fillRoundedRectangle (rr, 9.0f);
-                if (on)
-                {
-                    // active pill
-                    g.setColour (juce::Colour (0xFF3A3E45));
-                    g.fillRoundedRectangle (rr, 9.0f);
-                    // bright border for active state
-                    auto accent = juce::Colour (0xFF5AA9E6);
-                    g.setColour (accent.withAlpha (0.85f));
-                    g.drawRoundedRectangle (rr, 9.0f, 1.6f);
-                    // subtle outer glow around active pill (reduced passes to keep compact)
-                    for (int i = 1; i <= 3; ++i)
-                    {
-                        float expand = (float) i * 0.9f;
-                        g.setColour (accent.withAlpha (0.14f - i * 0.03f));
-                        auto glowR = rr.expanded (expand);
-                        g.drawRoundedRectangle (glowR, 9.0f + i * 0.30f, 1.6f);
-                    }
-                }
+                if (auto* lf = dynamic_cast<FieldLNF*> (&getLookAndFeel())) lf->drawTabPill (g, rr, on);
                 else
                 {
-                    // Make inactive look like previous active (filled pill with inner stroke)
                     g.setColour (juce::Colour (0xFF3A3E45));
                     g.fillRoundedRectangle (rr, 9.0f);
-                    g.setColour (juce::Colours::white.withAlpha (0.08f));
-                    g.drawRoundedRectangle (rr, 9.0f, 1.0f);
+                    if (on) { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.85f)); g.drawRoundedRectangle (rr, 9.0f, 1.6f); }
+                    else     { g.setColour (juce::Colours::white.withAlpha (0.08f));      g.drawRoundedRectangle (rr, 9.0f, 1.0f); }
                 }
                 // label + icon
                 auto txtCol = juce::Colours::white.withAlpha (on ? 0.95f : 0.65f);
                 if (id == PaneID::Machine)
                 {
                     g.setColour (txtCol);
-                    g.setFont (juce::Font (juce::FontOptions (on ? 14.0f : 13.0f).withStyle ("Bold")));
+                    // Very bold, larger display for Machine tab
+                    juce::Font f (juce::FontOptions (on ? 36.0f : 33.0f).withStyle ("Bold"));
+                    f.setTypefaceName ("Impact");
+                    f.setTypefaceStyle ("Bold");
+                    f.setExtraKerningFactor (0.20f);
+                    g.setFont (f);
                 }
                 else
                 {
                     g.setColour (txtCol);
-                    g.setFont (juce::Font (juce::FontOptions (on ? 13.0f : 12.0f).withStyle ("Bold")));
+                    juce::Font f (juce::FontOptions (on ? 14.5f : 13.5f).withStyle ("Bold"));
+                    f.setExtraKerningFactor (0.0f);
+                    g.setFont (f);
                 }
                 const float pad = 6.0f;
-                const float iconSz = juce::jmin (rr.getHeight() - 8.0f, 16.0f);
+                const float iconSz = (id == PaneID::Machine)
+                                      ? juce::jmin (rr.getHeight() - 6.0f, rr.getHeight() - 6.0f)
+                                      : juce::jmin (rr.getHeight() - 8.0f, 18.0f);
                 juce::Rectangle<float> content = rr.reduced (8.0f, 2.0f);
-                float textW = g.getCurrentFont().getStringWidthFloat (label);
-                float blockW = iconSz + pad + textW;
-                float x0 = content.getCentreX() - blockW * 0.5f;
-                juce::Rectangle<float> iconR (x0, content.getCentreY() - iconSz * 0.5f, iconSz, iconSz);
-                IconSystem::drawIcon (g, iconFor (id), iconR, txtCol);
-                juce::Rectangle<int> textR (juce::roundToInt (x0 + iconSz + pad), (int) content.getY(), (int) (content.getRight() - (x0 + iconSz + pad)), (int) content.getHeight());
                 juce::String drawLabel = (id == PaneID::Spectrum ? juce::String ("Dynamic EQ") : label);
+                drawLabel = drawLabel.toUpperCase();
+                float textW = g.getCurrentFont().getStringWidthFloat (drawLabel);
+                float blockW = textW + pad + iconSz;
+                float x0 = content.getCentreX() - blockW * 0.5f;
+                juce::Rectangle<int> textR (juce::roundToInt (x0), (int) content.getY(), (int) (textW + 2.0f), (int) content.getHeight());
                 g.drawFittedText (drawLabel, textR, juce::Justification::centredLeft, 1);
+                juce::Rectangle<float> iconR (x0 + textW + pad, content.getCentreY() - iconSz * 0.5f, iconSz, iconSz);
+                drawInlineIcon (g, id, iconR, txtCol, on);
             };
             draw (0, "XY",         PaneID::XY);
             draw (1, "Dynamic EQ", PaneID::Spectrum);
