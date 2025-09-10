@@ -2453,10 +2453,11 @@ void MyPluginAudioProcessorEditor::performLayout()
 
     // Alternate bottom panel (slides over bottom rows when enabled)
     {
-        // Progress towards target
-        const float step = 0.12f;
-        if (bottomAltTargetOn) bottomAltSlide01 = juce::jmin (1.0f, bottomAltSlide01 + step);
-        else                   bottomAltSlide01 = juce::jmax (0.0f, bottomAltSlide01 - step);
+        // Progress towards target with symmetric easing (smooth but brisk)
+        const float target    = bottomAltTargetOn ? 1.0f : 0.0f;
+        const float rate      = 0.28f; // higher = faster response; tuned for brisk smoothness
+        bottomAltSlide01     += (target - bottomAltSlide01) * rate;
+        bottomAltSlide01      = juce::jlimit (0.0f, 1.0f, bottomAltSlide01);
 
         // Reserve a rectangle covering bottom rows (1..4), just below the XY pad
         // Stop position (active): panel bottom sits above the bottom bar by a small gap
@@ -2475,17 +2476,17 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int hiddenBaseline  = bottomBarBottom + hiddenGapPx;
         const int overlayH        = juce::jmax (0, activeBaseline - stackTop);
         const int overlayW        = row1.getWidth();
-        // Delay appearance so the top never breaks the baseline when nearly inactive
-        const float appearThresh = 0.10f; // wait until 10% of slide to show any of the panel
-        const float effSlide     = bottomAltTargetOn
-                                   ? juce::jlimit (0.0f, 1.0f, (bottomAltSlide01 - appearThresh) / juce::jmax (0.0001f, 1.0f - appearThresh))
-                                   : 0.0f;
+        // Delay appearance so the top never breaks the baseline when nearly inactive (symmetric)
+        const float appearThresh = 0.10f; // wait until ~10% of slide to show
+        const float t0           = juce::jlimit (0.0f, 1.0f, (bottomAltSlide01 - appearThresh) / juce::jmax (0.0001f, 1.0f - appearThresh));
+        // Cosine ease-in-out for matching up/down feel
+        const float effSlide     = 0.5f - 0.5f * std::cos (juce::MathConstants<float>::pi * t0);
         // Animate bottom edge between hidden and active baselines; top rises from bottom towards stackTop
         const int bottomY  = juce::roundToInt (juce::jmap (effSlide, 0.0f, 1.0f, (float) hiddenBaseline, (float) activeBaseline));
         const int curTop   = bottomY - juce::roundToInt ((float) overlayH * effSlide);
 
         bottomAltPanel.setBounds (juce::Rectangle<int> (row1.getX(), curTop, overlayW, overlayH));
-        const bool showPanel = bottomAltTargetOn && effSlide > 0.001f;
+        const bool showPanel = effSlide > 0.001f;
         bottomAltPanel.setInterceptsMouseClicks (showPanel, false);
         bottomAltPanel.setVisible (showPanel);
         addAndMakeVisible (bottomAltPanel);
