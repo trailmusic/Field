@@ -479,6 +479,9 @@ public:
     juce::AudioProcessorValueTreeState apvts;
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
+    // Undo manager access (for UI History)
+    juce::UndoManager& getUndoManager() { return undo; }
+
     // Visualization buses (audio thread → UI thread)
     VisBus visPre, visPost;
 
@@ -537,5 +540,8 @@ private:
     // Host transport (updated in processBlock)
     std::atomic<double> transportTimeSeconds { 0.0 };
     std::atomic<bool>   transportIsPlaying   { false };
+
+    // Undo stack for APVTS + UI history
+    juce::UndoManager undo;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)
 };

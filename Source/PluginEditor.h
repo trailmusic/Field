@@ -9,6 +9,7 @@
 #include "PresetRegistry.h"
 #include "PresetCommandPalette.h"
 #include "PresetManager.h"
+#include "History.h"
 // MegaMenu and old preset system removed
 
 /*==============================================================================
@@ -1155,6 +1156,8 @@ public:
     void performLayout();
 
 private:
+    // Forward declaration for nested divider type used earlier in members
+    class VerticalDivider;
     MyPluginAudioProcessor& proc;
     FieldLNF lnf;
     XYPad pad;
@@ -1267,6 +1270,21 @@ private:
     SnapButton       snapButton;
     FullScreenButton fullScreenButton;
     ColorModeButton  colorModeButton;
+    // History button + panel drop-down
+    class HistoryButton : public ThemedIconButton { public: HistoryButton()
+    : ThemedIconButton(Options{ IconSystem::Options, true, ThemedIconButton::Style::SolidAccentWhenOn, 4.0f, 4.0f, true }) { getProperties().set ("labelText", juce::var ("H")); } };
+    HistoryButton historyButton;
+    std::unique_ptr<field::history::HistoryManager> historyManager;
+    std::unique_ptr<field::history::HistoryPanel>   historyPanel;
+    bool historyOpen { false };
+    // Header undo/redo and dividers around the history group
+    class UndoButton : public ThemedIconButton { public: UndoButton()
+    : ThemedIconButton(Options{ IconSystem::LeftArrow, false, ThemedIconButton::Style::SolidAccentWhenOn, 3.0f, 4.0f, true }) {} };
+    class RedoButton : public ThemedIconButton { public: RedoButton()
+    : ThemedIconButton(Options{ IconSystem::RightArrow, false, ThemedIconButton::Style::SolidAccentWhenOn, 3.0f, 4.0f, true }) {} };
+    UndoButton undoHeaderButton; RedoButton redoHeaderButton;
+    std::unique_ptr<VerticalDivider> headerDivHistoryLeft;
+    std::unique_ptr<VerticalDivider> headerDivHistoryRight;
     class HelpButton : public ThemedIconButton { public: HelpButton()
     : ThemedIconButton(Options{ IconSystem::Help, false, ThemedIconButton::Style::GradientPanel, 3.0f, 4.0f, false }) {} };
     HelpButton       helpButton;

@@ -1067,6 +1067,19 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     lnf.setupColours();
     setLookAndFeel (&lnf);
 
+    // Bind a few common controls to History gesture coalescing
+    if (historyManager)
+    {
+        historyManager->bindToSlider (width,  "Width");
+        historyManager->bindToSlider (gain,   "Gain");
+        historyManager->bindToSlider (tilt,   "Tilt");
+        historyManager->bindToSlider (monoHz, "Mono Hz");
+    }
+
+    // Instantiate header history group dividers
+    headerDivHistoryLeft  = std::make_unique<VerticalDivider>(lnf);
+    headerDivHistoryRight = std::make_unique<VerticalDivider>(lnf);
+
     // Options menu (oversampling) with per-mode tint
     addAndMakeVisible (optionsButton);
     optionsButton.onClick = [this]
@@ -1221,6 +1234,57 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         if (auto* p = proc.apvts.getParameter ("bypass"))
             p->setValueNotifyingHost (bypassButton.getToggleState() ? 1.0f : 0.0f);
     };
+
+    // History (button + panel model)
+    addAndMakeVisible (historyButton);
+    historyButton.setTooltip ("History");
+    historyManager = std::make_unique<field::history::HistoryManager>(proc.apvts, proc.getUndoManager(), 50, false);
+    historyPanel = std::make_unique<field::history::HistoryPanel>();
+    historyPanel->setVisible (false);
+    historyPanel->setAlwaysOnTop (true);
+    addChildComponent (*historyPanel);
+    historyPanel->setModel (*historyManager);
+    historyPanel->onClose = [this]
+    {
+        historyOpen = false;
+        historyButton.setToggleState (false, juce::dontSendNotification);
+        historyPanel->setVisible (false);
+        resized();
+    };
+    historyButton.onClick = [this]
+    {
+        historyOpen = ! historyOpen;
+        historyButton.setToggleState (historyOpen, juce::dontSendNotification);
+        historyPanel->setVisible (historyOpen);
+        if (historyOpen) historyPanel->toFront (true);
+        else if (historyPanel) historyPanel->toBack();
+        resized();
+    };
+
+    // Header Undo/Redo buttons
+    addAndMakeVisible (undoHeaderButton);
+    addAndMakeVisible (redoHeaderButton);
+    undoHeaderButton.setTooltip ("Undo");
+    redoHeaderButton.setTooltip ("Redo");
+    undoHeaderButton.onClick = [this]
+    {
+        if (historyManager) { historyManager->undoStep(); if (historyOpen) historyPanel->refresh(); }
+        undoHeaderButton.setEnabled (historyManager && historyManager->canUndo());
+        redoHeaderButton.setEnabled (historyManager && historyManager->canRedo());
+    };
+    redoHeaderButton.onClick = [this]
+    {
+        if (historyManager) { historyManager->redoStep(); if (historyOpen) historyPanel->refresh(); }
+        undoHeaderButton.setEnabled (historyManager && historyManager->canUndo());
+        redoHeaderButton.setEnabled (historyManager && historyManager->canRedo());
+    };
+    // Also keep header undo/redo enabled state in sync periodically
+    startTimerHz (30);
+    // Initial enable state
+    undoHeaderButton.setEnabled (false);
+    redoHeaderButton.setEnabled (false);
+    if (headerDivHistoryLeft) addAndMakeVisible (headerDivHistoryLeft.get());
+    if (headerDivHistoryRight) addAndMakeVisible (headerDivHistoryRight.get());
 
     // Color mode cycle (Ocean → Green → Pink → Yellow → Grey)
     addAndMakeVisible (colorModeButton);
@@ -2199,6 +2263,11 @@ void MyPluginAudioProcessorEditor::performLayout()
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // link (center group)
         juce::Grid::TrackInfo (juce::Grid::Fr (1)),                   // spacer before right utilities
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (176, s))), // transport clock (right group)
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (8, s))),   // divider left of history group
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // undo
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // redo
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // history button
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (8, s))),   // divider right of history group
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // color mode (right)
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s)))   // fullscreen (right)
     };
@@ -2240,6 +2309,13 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int clockW = Layout::dp (176, s);
         transportClockLabel.setSize (clockW, h);
     }
+    if (headerDivHistoryLeft && headerDivHistoryLeft->getParentComponent() != this) addAndMakeVisible (headerDivHistoryLeft.get());
+    if (headerDivHistoryRight && headerDivHistoryRight->getParentComponent() != this) addAndMakeVisible (headerDivHistoryRight.get());
+    sizeBtn (*headerDivHistoryLeft,  Layout::dp (8, s));
+    sizeBtn (undoHeaderButton,      Layout::dp (40, s));
+    sizeBtn (redoHeaderButton,      Layout::dp (40, s));
+    sizeBtn (historyButton,         Layout::dp (40, s));
+    sizeBtn (*headerDivHistoryRight, Layout::dp (8, s));
     sizeBtn (colorModeButton,    Layout::dp (40, s));
     sizeBtn (fullScreenButton,   Layout::dp (40, s));
     sizeBtn (optionsButton,      Layout::dp (40, s));
@@ -2260,6 +2336,11 @@ void MyPluginAudioProcessorEditor::performLayout()
         juce::GridItem (linkButton),
         juce::GridItem(), // spacer before right utilities
         juce::GridItem (transportClockLabel),
+        juce::GridItem (*headerDivHistoryLeft),
+        juce::GridItem (undoHeaderButton),
+        juce::GridItem (redoHeaderButton),
+        juce::GridItem (historyButton),
+        juce::GridItem (*headerDivHistoryRight),
         juce::GridItem (colorModeButton),
         juce::GridItem (fullScreenButton),
     };
@@ -2268,6 +2349,19 @@ void MyPluginAudioProcessorEditor::performLayout()
                              .withTrimmedBottom (Layout::dp (8, s))
                              .withTrimmedTop (Layout::dp (2, s));
     header.performLayout (headerArea);
+
+    // Position history panel centered above all content (keep hidden if closed)
+    if (historyPanel)
+    {
+        const int panelW = Layout::dp (720, s);
+        const int panelH = Layout::dp (460, s);
+        auto r = getLocalBounds();
+        auto x = r.getCentreX() - panelW / 2;
+        auto y = r.getCentreY() - panelH / 2;
+        historyPanel->setBounds ({ x, y, panelW, panelH });
+        historyPanel->setVisible (historyOpen);
+        if (historyOpen) historyPanel->refresh();
+    }
 
     // options + phase mode at bottom-left; help to bottom-right; bottom-center panel toggle
     {
@@ -3421,6 +3515,12 @@ void MyPluginAudioProcessorEditor::resized()
 void MyPluginAudioProcessorEditor::timerCallback()
 {
     if (! isShowing()) return;
+    // Sync header undo/redo enable state
+    if (historyManager)
+    {
+        undoHeaderButton.setEnabled (historyManager->canUndo());
+        redoHeaderButton.setEnabled (historyManager->canRedo());
+    }
     // Update ducking meter overlay on knob; idle when reverb wet is zero
     float grDb = proc.getCurrentDuckGrDb();
     if (spaceKnob.getValue() <= 0.0001)

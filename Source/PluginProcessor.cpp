@@ -242,7 +242,7 @@ struct FloatReverbAdapter
 MyPluginAudioProcessor::MyPluginAudioProcessor()
 : AudioProcessor (BusesProperties().withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
                                   .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
-, apvts (*this, nullptr, "PARAMS", createParameterLayout())
+, apvts (*this, &undo, "PARAMS", createParameterLayout())
 {
     // Templated chain instances
     chainF = std::make_unique<FieldChain<float>>();
@@ -571,7 +571,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
 // =========================
 // State
 // =========================
-juce::AudioProcessorEditor* MyPluginAudioProcessor::createEditor() { return new MyPluginAudioProcessorEditor (*this); }
+juce::AudioProcessorEditor* MyPluginAudioProcessor::createEditor() { return (juce::AudioProcessorEditor*) new MyPluginAudioProcessorEditor (*this); }
 
 void MyPluginAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
