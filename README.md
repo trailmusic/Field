@@ -1000,9 +1000,47 @@ Source/
 
 ---
 
+## History System (NEW - In Development)
+
+FIELD now includes a comprehensive **Undo/Redo History** system with two layers:
+
+### Features Implemented ✅
+- **Header Integration**: History button (H) between clock and color mode with active accent state
+- **History Panel**: Centered dropdown with gradient background, border, and z-index priority
+- **Dual Button System**: Header Undo/Redo buttons + HistoryPanel Undo/Redo buttons
+- **Step History**: Ephemeral undo/redo for fine-grained parameter changes
+- **Checkpoint System**: Named persistent snapshots with Save/Import/Export functionality
+- **Slider Binding**: Automatic history tracking for Width, Gain, Tilt, and Mono Hz parameters
+- **Visual Design**: Custom IconTextButton components with proper icon placement
+- **Scrollable Lists**: History and checkpoints with accent-colored scrollbars
+- **Close Button**: Red X button with proper hit area and panel closure
+
+### Current Issues 🔧
+- **Button Conflicts**: Header and panel Undo/Redo buttons occasionally conflict with each other
+- **Slider Logging**: Parameter changes from slider movements not consistently appearing in history log
+- **Callback Chaining**: APVTS attachments may be overriding custom slider callbacks
+- **State Synchronization**: UI refresh timing issues between different button sets
+
+### Technical Implementation
+- **HistoryManager**: Wraps `juce::UndoManager` with custom transaction naming and gesture coalescing
+- **HistoryPanel**: Custom UI component with ListBox models for history and checkpoints
+- **Slider Binding**: Uses `onDragStart`/`onDragEnd` and `onValueChange` callbacks with debouncing
+- **APVTS Integration**: Properly wired to `AudioProcessorValueTreeState` for parameter tracking
+- **Debug Logging**: Comprehensive DBG output for troubleshooting button and slider interactions
+
+### Next Steps
+1. **Fix Button Conflicts**: Ensure header and panel buttons work independently
+2. **Resolve Slider Logging**: Debug why parameter changes aren't appearing in history
+3. **Callback Chaining**: Properly chain existing slider callbacks to prevent overrides
+4. **State Persistence**: Add checkpoint serialization to plugin state
+5. **Performance Optimization**: Implement gesture coalescing to reduce mid-drag spam
+
+---
+
 ## Roadmap
 
 * **✅ COMPLETED:** Professional Delay System with 3 modes, comprehensive modulation, stereo processing, and per-delay ducking
+* **🔄 IN PROGRESS:** History System (Undo/Redo + Checkpoints) - UI complete, debugging slider logging
 * **P0 (Ship):** Multiband imaging (width/shuffler/rotation/asym), Mono Maker slope+audition, meters, searchable presets, polished LNF.
 * **P1:** Stereoize Haas + mono safety, Motion (sine/tri), more presets, delay preset bank.
 * **P2:** Stereoize All-Pass & MicroPitch, advanced Motion (square/random, circle/∞), per-band meters & solos.

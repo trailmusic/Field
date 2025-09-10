@@ -22,43 +22,90 @@ public:
                     int maxSteps = 100, bool includeAutomationInHistory = false)
         : apvts (s), undo (u), maxHistory (maxSteps), includeAutomation (includeAutomationInHistory)
     {
+        DBG("HistoryManager: Constructor called");
         apvts.state.addListener (this);
         checkpointsRoot = apvts.state.getOrCreateChildWithName (IDs::checkpoints, nullptr);
         refreshCheckpoints();
+        DBG("HistoryManager: Constructor complete");
+        // Test: Add a manual entry to see if display works
+        addEntry("Test Entry - History System Working");
+        addEntry("Another Test Entry");
+        addEntry("Third Test Entry");
     }
 
     ~HistoryManager() override { apvts.state.removeListener (this); }
 
-    void begin (juce::String label) { undo.beginNewTransaction (label); pendingLabel = std::move(label); started = true; }
-    void rename (juce::String label) { undo.setCurrentTransactionName (label); pendingLabel = std::move(label); }
-    void end() { if (! started) return; addEntry (pendingLabel.isNotEmpty() ? pendingLabel : juce::String ("Edit")); pendingLabel.clear(); started = false; }
+    void begin (juce::String label) { 
+        DBG("HistoryManager: begin(" << label << ")");
+        undo.beginNewTransaction (label); 
+        pendingLabel = std::move(label); 
+        started = true; 
+    }
+    void rename (juce::String label) { 
+        DBG("HistoryManager: rename(" << label << ")");
+        undo.setCurrentTransactionName (label); 
+        pendingLabel = std::move(label); 
+    }
+    void end() { 
+        if (! started) return; 
+        DBG("HistoryManager: end() - adding entry: " << pendingLabel);
+        addEntry (pendingLabel.isNotEmpty() ? pendingLabel : juce::String ("Edit")); 
+        pendingLabel.clear(); 
+        started = false; 
+    }
 
     void bindCustomGestureStart (const juce::String& label) { begin (label); }
     void bindCustomGestureEnd   (const juce::String& label) { rename (label); end(); }
 
     void bindToSlider (juce::Slider& slider, juce::String label)
     {
-        // Chain existing handlers if set
-        auto prevStart = slider.onDragStart;
-        auto prevEnd   = slider.onDragEnd;
+        DBG("HistoryManager: bindToSlider called for " << label);
         auto name = std::make_shared<juce::String> (std::move (label));
         auto oldTxt = std::make_shared<juce::String>();
+        auto lastChangeTime = std::make_shared<juce::uint32>(0);
+        auto isDragging = std::make_shared<bool>(false);
 
-        // Only notify listeners/attachments on release to avoid mid-drag spam
-        slider.setChangeNotificationOnlyOnRelease (true);
-
-        slider.onDragStart = [this, &slider, prevStart, name, oldTxt]
+        // Capture drag start/end to get proper old/new values
+        slider.onDragStart = [this, &slider, name, oldTxt, isDragging]()
         {
-            if (prevStart) prevStart();
+            *isDragging = true;
             *oldTxt = juce::String (slider.getValue(), 2);
-            begin (*name);
+            DBG("HistoryManager: Drag start for " << *name << " = " << *oldTxt);
         };
 
-        slider.onDragEnd = [this, &slider, prevEnd, name, oldTxt]
+        slider.onDragEnd = [this, &slider, name, oldTxt, isDragging]()
         {
-            if (prevEnd) prevEnd();
-            rename (*name + juce::String (" ") + *oldTxt + juce::String (" → ") + juce::String (slider.getValue(), 2));
-            end();
+            if (*isDragging)
+            {
+                auto newVal = juce::String (slider.getValue(), 2);
+                if (*oldTxt != newVal)
+                {
+                    auto label = *name + juce::String (" ") + *oldTxt + juce::String (" → ") + newVal;
+                    DBG("HistoryManager: Drag end for " << *name << " " << *oldTxt << " → " << newVal);
+                    addEntry(label);
+                }
+                *isDragging = false;
+            }
+        };
+
+        // Also listen to value changes for non-drag changes (keyboard, programmatic)
+        slider.onValueChange = [this, &slider, name, oldTxt, lastChangeTime, isDragging]()
+        {
+            if (*isDragging) return; // Skip during drag, we handle in onDragEnd
+            
+            juce::uint32 now = juce::Time::getMillisecondCounter();
+            if (now - *lastChangeTime < 500) return; // Debounce non-drag changes
+            *lastChangeTime = now;
+            
+            auto newVal = juce::String (slider.getValue(), 2);
+            if (*oldTxt != newVal)
+            {
+                if (oldTxt->isEmpty()) *oldTxt = newVal; // First change
+                auto label = *name + juce::String (" ") + *oldTxt + juce::String (" → ") + newVal;
+                DBG("HistoryManager: Value change for " << *name << " " << *oldTxt << " → " << newVal);
+                addEntry(label);
+                *oldTxt = newVal;
+            }
         };
     }
 
@@ -209,7 +256,10 @@ private:
     {
         HistoryEntry e { std::move(label), nowHHMMSS(), entries.size() };
         if (cursor < entries.size() - 1) entries.removeRange (cursor + 1, entries.size() - (cursor + 1));
-        entries.add (e); cursor = entries.size() - 1; trimToCapacity(); if (onChanged) onChanged();
+        entries.add (e); cursor = entries.size() - 1; trimToCapacity(); 
+        if (onChanged) onChanged();
+        // Debug: print to console
+        DBG("HistoryManager: Added entry: " << label << " (total: " << entries.size() << ")");
     }
     void trimToCapacity()
     {
@@ -242,11 +292,33 @@ private:
 class HistoryPanel : public juce::Component, private juce::Button::Listener, private juce::ListBoxModel
 {
 public:
-    HistoryPanel() { addButtons(); list.setModel (this); addAndMakeVisible (list); addAndMakeVisible (pins); pins.setModel (&pinsModel); setOpaque(false); addAndMakeVisible (topBar); closeBtn.onClick = [this]{ if (onClose) onClose(); }; }
+    HistoryPanel() { addButtons(); list.setModel (this); addAndMakeVisible (list); addAndMakeVisible (pins); pins.setModel (&pinsModel); setOpaque(false); addAndMakeVisible (topBar); closeBtn.onClick = [this]{ if (onClose) onClose(); };
+        // Visual styling so rows are visible over panel
+        list.setColour (juce::ListBox::backgroundColourId, juce::Colours::transparentBlack);
+        list.setColour (juce::ListBox::outlineColourId, juce::Colours::transparentBlack);
+        list.setColour (juce::ScrollBar::thumbColourId, juce::Colour (0xFF5AA9E6));
+        list.setColour (juce::ScrollBar::trackColourId, juce::Colour (0xFF2F3136));
+        list.setRowHeight (24);
+        pins.setColour (juce::ListBox::backgroundColourId, juce::Colours::transparentBlack);
+        pins.setColour (juce::ListBox::outlineColourId, juce::Colours::transparentBlack);
+        pins.setColour (juce::ScrollBar::thumbColourId, juce::Colour (0xFF5AA9E6));
+        pins.setColour (juce::ScrollBar::trackColourId, juce::Colour (0xFF2F3136));
+        pins.setRowHeight (24);
+    }
     void setModel (HistoryManager& m) { model = &m; if (model) model->onChanged = [this]{ refresh(); }; refresh(); }
     void refresh()
     {
-        if (! model) return; list.updateContent(); list.repaint(); pinsModel.sync (*model); pins.updateContent(); pins.repaint(); undoBtn.setEnabled (model->canUndo()); redoBtn.setEnabled (model->canRedo());
+        if (! model) return;
+        list.updateContent();
+        list.repaint();
+        pinsModel.sync (*model);
+        pins.updateContent();
+        pins.repaint();
+        undoBtn.setEnabled (model->canUndo());
+        redoBtn.setEnabled (model->canRedo());
+        // Ensure the newest rows are visible at the top
+        if (getNumRows() > 0)
+            list.scrollToEnsureRowIsOnscreen (0);
     }
     void resized() override
     {
@@ -266,15 +338,26 @@ public:
         }
         auto closeArea = headerArea.removeFromRight (40).reduced (4);
         closeBtn.setBounds (closeArea);
+        // Title label in center of top bar
+        titleLabel.setBounds (headerArea);
         auto top = inner.removeFromTop (40);
         undoBtn.setBounds (top.removeFromLeft (120));
         redoBtn.setBounds (top.removeFromLeft (120));
         savePin.setBounds (top.removeFromLeft (200));
         importPins.setBounds (top.removeFromRight (120));
         exportPins.setBounds (top.removeFromRight (120));
-        auto cols = inner; auto left = cols.removeFromLeft (cols.getWidth() / 2).reduced (8);
-        histLabel.setBounds (left.removeFromTop (20)); list.setBounds (left);
-        auto right = cols.reduced (8); pinsLabel.setBounds (right.removeFromTop (20)); pins.setBounds (right);
+        auto cols = inner;
+        auto leftArea = cols.removeFromLeft (cols.getWidth() / 2).reduced (8);
+        historyAreaBounds = leftArea.toFloat();
+        auto left = leftArea;
+        histLabel.setBounds (left.removeFromTop (20));
+        list.setBounds (left);
+
+        auto rightArea = cols.reduced (8);
+        pinsAreaBounds = rightArea.toFloat();
+        auto right = rightArea;
+        pinsLabel.setBounds (right.removeFromTop (20));
+        pins.setBounds (right);
     }
     void paint (juce::Graphics& g) override
     {
@@ -304,6 +387,20 @@ public:
             g.setColour (hl.withAlpha (0.55f));
             g.drawRoundedRectangle (hb, 6.0f, 1.0f);
         }
+
+        // Draw inner containers for History and Checkpoints
+        auto drawPane = [&] (juce::Rectangle<float> b)
+        {
+            if (b.isEmpty()) return;
+            auto t = panel.brighter (0.12f);
+            auto btm = panel.darker (0.02f);
+            g.setGradientFill (juce::ColourGradient (t, b.getX(), b.getY(), btm, b.getX(), b.getBottom(), false));
+            g.fillRoundedRectangle (b, 6.0f);
+            g.setColour (hl.withAlpha (0.45f));
+            g.drawRoundedRectangle (b, 6.0f, 1.0f);
+        };
+        drawPane (historyAreaBounds);
+        drawPane (pinsAreaBounds);
     }
 private:
     // Button with IconSystem icon + text label, matching our panel style
@@ -347,6 +444,7 @@ private:
     };
     HistoryManager* model = nullptr;
     juce::Component topBar;
+    juce::Rectangle<float> historyAreaBounds, pinsAreaBounds;
     IconTextButton undoBtn { IconSystem::LeftArrow, "Undo", false }, redoBtn { IconSystem::RightArrow, "Redo", true };
     // Close button (red X) in top-right
     class CloseXButton : public juce::Button
@@ -366,19 +464,32 @@ private:
 public:
     std::function<void()> onClose;
     juce::TextButton savePin { "Save Checkpoint" }, exportPins { "Export" }, importPins { "Import" };
-    juce::Label histLabel { {}, "History" }, pinsLabel { {}, "Checkpoints" };
+    juce::Label histLabel { {}, "History" }, pinsLabel { {}, "Checkpoints" }, titleLabel { {}, "History Manager" };
     juce::ListBox list { "history", this }, pins { "checkpoints", &pinsModel };
 
     int getNumRows() override { return model ? model->getEntries().size() : 0; }
     void paintListBoxItem (int row, juce::Graphics& g, int w, int h, bool selected) override
     {
-        if (! model) return; g.fillAll (selected ? juce::Colours::white.withAlpha (0.07f) : juce::Colours::transparentBlack);
+        if (! model) return;
+        g.fillAll (selected ? juce::Colours::white.withAlpha (0.10f) : juce::Colours::transparentBlack);
         const int total = model->getEntries().size();
         if (total <= 0) return;
         if (! juce::isPositiveAndBelow (row, total)) return;
         const int idx = total - 1 - row; // newest at top
         const auto& e = model->getEntries().getReference (idx);
-        g.setColour (juce::Colours::white.withAlpha (0.85f)); g.drawText (e.time + "  •  " + e.label, 8, 0, w - 16, h, juce::Justification::centredLeft);
+        // time badge
+        auto r = juce::Rectangle<int> (0, 0, w, h).reduced (8, 0);
+        auto timeArea = r.removeFromLeft (76);
+        auto dotArea  = r.removeFromLeft (16);
+        auto textArea = r;
+        g.setColour (juce::Colours::white.withAlpha (0.75f));
+        g.drawFittedText (e.time, timeArea, juce::Justification::centredLeft, 1);
+        // separator dot
+        g.setColour (juce::Colours::white.withAlpha (0.35f));
+        g.fillEllipse (dotArea.withSizeKeepingCentre (6, 6).toFloat());
+        // label
+        g.setColour (juce::Colours::white.withAlpha (0.92f));
+        g.drawFittedText (e.label, textArea, juce::Justification::centredLeft, 1);
     }
     void listBoxItemClicked (int row, const juce::MouseEvent&) override
     {
@@ -416,12 +527,36 @@ public:
         addAndMakeVisible (importPins); importPins.addListener (this); importPins.setWantsKeyboardFocus (false); importPins.setButtonText ("Import");
         addAndMakeVisible (histLabel); histLabel.setJustificationType (juce::Justification::centredLeft);
         addAndMakeVisible (pinsLabel); pinsLabel.setJustificationType (juce::Justification::centredLeft);
+        addAndMakeVisible (titleLabel); 
+        titleLabel.setJustificationType (juce::Justification::centred);
+        titleLabel.setColour (juce::Label::textColourId, juce::Colours::white.withAlpha (0.95f));
+        titleLabel.setFont (juce::Font (juce::FontOptions (16.0f).withStyle ("Bold")));
     }
     void buttonClicked (juce::Button* b) override
     {
         if (! model) return;
-        if (b == &undoBtn)      model->undoStep();
-        else if (b == &redoBtn) model->redoStep();
+        if (b == &undoBtn)      
+        {
+            DBG("HistoryPanel: Undo button clicked - canUndo: " << (model->canUndo() ? "true" : "false"));
+            if (model->canUndo()) {
+                model->undoStep();
+                refresh();
+                // Force UI update
+                undoBtn.setEnabled(model->canUndo());
+                redoBtn.setEnabled(model->canRedo());
+            }
+        }
+        else if (b == &redoBtn) 
+        {
+            DBG("HistoryPanel: Redo button clicked - canRedo: " << (model->canRedo() ? "true" : "false"));
+            if (model->canRedo()) {
+                model->redoStep();
+                refresh();
+                // Force UI update
+                undoBtn.setEnabled(model->canUndo());
+                redoBtn.setEnabled(model->canRedo());
+            }
+        }
         else if (b == &savePin)
         {
             auto aw = std::make_unique<juce::AlertWindow> ("Save Checkpoint", "Name:", juce::AlertWindow::NoIcon);
