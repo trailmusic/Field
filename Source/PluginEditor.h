@@ -1744,8 +1744,21 @@ private:
 
     // Bottom area toggle and alternate overlay panel
     juce::TextButton bottomAreaToggle; // bottom-center toggle to reveal alternate bottom controls
-    juce::Component bottomAltPanel;    // sliding overlay panel that covers bottom control rows
-    juce::Label     bottomAltTitle;    // placeholder title inside alternate panel
+    struct BottomAltPanel : public juce::Component {
+        void paint (juce::Graphics& g) override
+        {
+            auto r = getLocalBounds();
+            // Match main site background gradient exactly (Editor::paint)
+            juce::Colour top    = juce::Colour (0xFF2A2C30);
+            juce::Colour mid    = juce::Colour (0xFF4A4D55);
+            juce::Colour bottom = juce::Colour (0xFF2A2C30);
+            juce::ColourGradient bg (top, (float) r.getCentreX(), (float) r.getY(),
+                                     bottom, (float) r.getCentreX(), (float) r.getBottom(), false);
+            bg.addColour (0.85, mid);
+            g.setGradientFill (bg);
+            g.fillAll();
+        }
+    } bottomAltPanel;          // sliding overlay panel that covers bottom control rows, with gradient BG
     bool bottomAltTargetOn { false };  // target state for slide animation
     float bottomAltSlide01 { 0.0f };   // 0..1 slide progress (0=hidden)
     bool bottomAltAnimating { false }; // animate slide in timer

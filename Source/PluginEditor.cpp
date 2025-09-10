@@ -2362,7 +2362,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             const int toggleH = btnH;
             const int cx = bounds.getCentreX();
             const int ty = leftY;
-            bottomAreaToggle.setButtonText ("Bottom Panel");
+            bottomAreaToggle.setButtonText ("");
             bottomAreaToggle.setClickingTogglesState (true);
             addAndMakeVisible (bottomAreaToggle);
             bottomAreaToggle.setBounds (cx - toggleW/2, ty, toggleW, toggleH);
@@ -2458,30 +2458,46 @@ void MyPluginAudioProcessorEditor::performLayout()
         if (bottomAltTargetOn) bottomAltSlide01 = juce::jmin (1.0f, bottomAltSlide01 + step);
         else                   bottomAltSlide01 = juce::jmax (0.0f, bottomAltSlide01 - step);
 
-        // Reserve a rectangle covering the original bottom rows (2..4) and slide the overlay up from bottom
-        juce::Rectangle<int> bottomStackArea (row2.getX(), row2.getY(), r.getWidth(), rowH2 + rowH3 + rowH4 + Layout::dp (Layout::GAP_S, s) * 2);
-        const int overlayH = bottomStackArea.getHeight();
-        const int overlayW = bottomStackArea.getWidth();
-        const int hiddenY  = bottomStackArea.getBottom();
-        const int shownY   = bottomStackArea.getY();
-        const int curY     = juce::roundToInt (juce::jmap (bottomAltSlide01, 0.0f, 1.0f, (float) hiddenY, (float) shownY));
+        // Reserve a rectangle covering bottom rows (1..4), just below the XY pad
+        // Stop position (active): panel bottom sits above the bottom bar by a small gap
+        // Hidden position: panel bottom sits well below the bottom bar so it never clips it visually
+        // Derive bottom bar boundary from actual control rectangles (no hardcoding)
+        juce::Rectangle<int> bottomBarRect = optionsButton.getBounds();
+        bottomBarRect = bottomBarRect.getUnion (phaseModeButton.getBounds());
+        bottomBarRect = bottomBarRect.getUnion (helpButton.getBounds());
+        bottomBarRect = bottomBarRect.getUnion (bottomAreaToggle.getBounds());
+        const int bottomBarTop    = bottomBarRect.getY();
+        const int bottomBarBottom = bottomBarRect.getBottom();
+        const int stackTop        = row1.getY();
+        const int activeGapPx     = Layout::dp (20,  s);  // keep a tight visual gap when active
+        const int hiddenGapPx     = Layout::dp (100, s);  // move panel further DOWN when hidden
+        const int activeBaseline  = juce::jmax (stackTop, bottomBarTop - activeGapPx);
+        const int hiddenBaseline  = bottomBarBottom + hiddenGapPx;
+        const int overlayH        = juce::jmax (0, activeBaseline - stackTop);
+        const int overlayW        = row1.getWidth();
+        // Delay appearance so the top never breaks the baseline when nearly inactive
+        const float appearThresh = 0.10f; // wait until 10% of slide to show any of the panel
+        const float effSlide     = bottomAltTargetOn
+                                   ? juce::jlimit (0.0f, 1.0f, (bottomAltSlide01 - appearThresh) / juce::jmax (0.0001f, 1.0f - appearThresh))
+                                   : 0.0f;
+        // Animate bottom edge between hidden and active baselines; top rises from bottom towards stackTop
+        const int bottomY  = juce::roundToInt (juce::jmap (effSlide, 0.0f, 1.0f, (float) hiddenBaseline, (float) activeBaseline));
+        const int curTop   = bottomY - juce::roundToInt ((float) overlayH * effSlide);
 
-        bottomAltPanel.setBounds (bottomStackArea.withY (curY).withHeight (overlayH).withWidth (overlayW));
-        bottomAltPanel.setInterceptsMouseClicks (bottomAltSlide01 > 0.01f, bottomAltSlide01 > 0.01f);
+        bottomAltPanel.setBounds (juce::Rectangle<int> (row1.getX(), curTop, overlayW, overlayH));
+        const bool showPanel = bottomAltTargetOn && effSlide > 0.001f;
+        bottomAltPanel.setInterceptsMouseClicks (showPanel, false);
+        bottomAltPanel.setVisible (showPanel);
         addAndMakeVisible (bottomAltPanel);
-        bottomAltPanel.toFront (false);
+        bottomAltPanel.toFront (true);
+        // Ensure the toggle button always remains visible above the sliding panel
+        bottomAreaToggle.toFront (true);
+        // Ensure the toggle button always remains visible above the sliding panel
+        bottomAreaToggle.toFront (true);
 
-        // Placeholder content in alternate panel (generic Group 2)
-        if (bottomAltTitle.getParentComponent() != &bottomAltPanel)
-        {
-            bottomAltPanel.addAndMakeVisible (bottomAltTitle);
-            bottomAltTitle.setJustificationType (juce::Justification::centred);
-            bottomAltTitle.setText ("Alternate Controls (Group 2)", juce::dontSendNotification);
-        }
-        auto b = bottomAltPanel.getLocalBounds().reduced (Layout::dp (16, s));
-        const int titleH = Layout::dp (28, s);
-        bottomAltTitle.setBounds (b.removeFromTop (titleH));
         // Simple stub region for future controls
+        auto b = bottomAltPanel.getLocalBounds().reduced (Layout::dp (16, s));
+        // Future controls container
         static juce::Component group2Stub;
         if (group2Stub.getParentComponent() != &bottomAltPanel) bottomAltPanel.addAndMakeVisible (group2Stub);
         group2Stub.setBounds (b.reduced (Layout::dp (8, s)));
