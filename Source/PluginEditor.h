@@ -1578,6 +1578,7 @@ private:
     PresetArrowButton prevPresetButton{true}, nextPresetButton{false};
     juce::TextButton presetField; // clickable field to open palette and display current preset
     juce::Label presetNameLabel;
+    juce::Label transportClockLabel;
     juce::Component headerLeftGroup; // container for bypass (no logo)
 
     // Split-pan container placeholder for grid cell (no painting, no mouse)

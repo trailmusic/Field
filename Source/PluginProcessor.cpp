@@ -408,7 +408,20 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // Sync helpers (UI → chain)
     hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
     {
-        double bpm = 120.0; if (auto* ph = getPlayHead()) { juce::AudioPlayHead::CurrentPositionInfo pos{}; if (ph->getCurrentPosition (pos) && pos.bpm > 0.0) bpm = pos.bpm; }
+        double bpm = 120.0;
+        if (auto* ph = getPlayHead())
+        {
+            if (auto pos = ph->getPosition())
+            {
+                if (auto bpmOpt = pos->getBpm())
+                    bpm = *bpmOpt > 0.0 ? *bpmOpt : bpm;
+
+                const bool isPlaying = pos->getIsPlaying();
+                if (auto tOpt = pos->getTimeInSeconds())
+                    transportTimeSeconds.store (*tOpt);
+                transportIsPlaying.store (isPlaying);
+            }
+        }
         hp.tempoBpm = bpm;
     }
     chainF->setParameters (hp);     // cast/copy inside chain
@@ -464,7 +477,20 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     auto hp = makeHostParams (apvts);
     hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
     {
-        double bpm = 120.0; if (auto* ph = getPlayHead()) { juce::AudioPlayHead::CurrentPositionInfo pos{}; if (ph->getCurrentPosition (pos) && pos.bpm > 0.0) bpm = pos.bpm; }
+        double bpm = 120.0;
+        if (auto* ph = getPlayHead())
+        {
+            if (auto pos = ph->getPosition())
+            {
+                if (auto bpmOpt = pos->getBpm())
+                    bpm = *bpmOpt > 0.0 ? *bpmOpt : bpm;
+
+                const bool isPlaying = pos->getIsPlaying();
+                if (auto tOpt = pos->getTimeInSeconds())
+                    transportTimeSeconds.store (*tOpt);
+                transportIsPlaying.store (isPlaying);
+            }
+        }
         hp.tempoBpm = bpm;
     }
     chainD->setParameters (hp);

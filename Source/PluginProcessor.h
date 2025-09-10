@@ -500,6 +500,10 @@ public:
         return 0.0f;
     }
 
+    // Transport info (UI polling)
+    double getTransportTimeSeconds() const { return transportTimeSeconds.load(); }
+    bool   isTransportPlaying() const      { return transportIsPlaying.load(); }
+
 private:
     // APVTS listener
     void parameterChanged (const juce::String& parameterID, float newValue) override;
@@ -529,5 +533,9 @@ private:
     std::atomic<float> meterCorrelation { 0.0f };
     std::atomic<float> meterRmsL { 0.0f }, meterRmsR { 0.0f };
     std::atomic<float> meterPeakL { 0.0f }, meterPeakR { 0.0f };
+
+    // Host transport (updated in processBlock)
+    std::atomic<double> transportTimeSeconds { 0.0 };
+    std::atomic<bool>   transportIsPlaying   { false };
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)
 };

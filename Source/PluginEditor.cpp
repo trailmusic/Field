@@ -2198,6 +2198,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (120, s))), // split
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // link (center group)
         juce::Grid::TrackInfo (juce::Grid::Fr (1)),                   // spacer before right utilities
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (176, s))), // transport clock (right group)
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // color mode (right)
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s)))   // fullscreen (right)
     };
@@ -2224,6 +2225,21 @@ void MyPluginAudioProcessorEditor::performLayout()
     splitToggle.setSize (Layout::dp (120, s), Layout::dp (28, s));
     sizeBtn (linkButton,         Layout::dp (40, s));
     sizeBtn (snapButton,         Layout::dp (40, s));
+    // Transport clock label styling and sizing (larger, right-aligned)
+    {
+        if (transportClockLabel.getParentComponent() != this) addAndMakeVisible (transportClockLabel);
+        transportClockLabel.setJustificationType (juce::Justification::centredRight);
+        transportClockLabel.setInterceptsMouseClicks (false, false);
+        transportClockLabel.setText ("00:00.000", juce::dontSendNotification);
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
+            transportClockLabel.setColour (juce::Label::textColourId, lf->theme.text);
+        }
+        // Larger font
+        transportClockLabel.setFont (juce::Font (juce::FontOptions (18.0f * s).withStyle ("Bold")));
+        const int clockW = Layout::dp (176, s);
+        transportClockLabel.setSize (clockW, h);
+    }
     sizeBtn (colorModeButton,    Layout::dp (40, s));
     sizeBtn (fullScreenButton,   Layout::dp (40, s));
     sizeBtn (optionsButton,      Layout::dp (40, s));
@@ -2243,6 +2259,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         juce::GridItem (splitToggle),
         juce::GridItem (linkButton),
         juce::GridItem(), // spacer before right utilities
+        juce::GridItem (transportClockLabel),
         juce::GridItem (colorModeButton),
         juce::GridItem (fullScreenButton),
     };
@@ -3429,6 +3446,31 @@ void MyPluginAudioProcessorEditor::timerCallback()
     duckThreshold.repaint();
     duckRatio.repaint();
     pad.repaint();
+
+    // Update transport clock label (host/standalone song time)
+    {
+        const double tSec = proc.getTransportTimeSeconds();
+        const bool isPlaying = proc.isTransportPlaying();
+        // Format as mm:SS.mmm similar to Ableton's transport
+        auto formatTime = [] (double seconds)
+        {
+            if (seconds < 0.0) seconds = 0.0;
+            const int totalMs = (int) std::llround (seconds * 1000.0);
+            const int ms = totalMs % 1000;
+            const int totalSec = totalMs / 1000;
+            const int sec = totalSec % 60;
+            const int min = (totalSec / 60);
+            return juce::String::formatted ("%02d:%02d.%03d", min, sec, ms);
+        };
+        // Only update text when host transport supplies a position; otherwise hold last
+        transportClockLabel.setText (formatTime (tSec), juce::dontSendNotification);
+        // Dim when stopped
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
+            auto col = isPlaying ? lf->theme.text : lf->theme.textMuted;
+            transportClockLabel.setColour (juce::Label::textColourId, col);
+        }
+    }
 
     // Drive bottom panel slide animation
     if (bottomAltTargetOn && bottomAltSlide01 < 1.0f) { bottomAltSlide01 = juce::jmin (1.0f, bottomAltSlide01 + 0.06f); performLayout(); }
