@@ -2607,12 +2607,70 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Ensure the toggle button always remains visible above the sliding panel
         bottomAreaToggle.toFront (true);
 
-        // Simple stub region for future controls
-        auto b = bottomAltPanel.getLocalBounds().reduced (Layout::dp (16, s));
-        // Future controls container
+        // Group 2 panel layout - Motion group on left side (no padding, full panel)
+        auto b = bottomAltPanel.getLocalBounds();
+        
+        // Motion group container (4x4 grid on left side)
+        static juce::Component motionGroup2Container;
+        if (motionGroup2Container.getParentComponent() != &bottomAltPanel) bottomAltPanel.addAndMakeVisible (motionGroup2Container);
+        
+        // Calculate Motion group area (left side of Group 2 panel - no internal padding)
+        const int motionGroup2W = 4 * (lPx + Layout::dp (8, s)); // 4 columns
+        const int motionGroup2H = b.getHeight();
+        const int motionGroup2X = b.getX();
+        const int motionGroup2Y = b.getY();
+        motionGroup2Container.setBounds (juce::Rectangle<int> (motionGroup2X, motionGroup2Y, motionGroup2W, motionGroup2H));
+        
+        // Layout Motion cells in 4x4 grid within Group 2 panel
+        const int motionK = lPx;
+        const int motionV = Layout::dp (14, s);
+        const int motionG = Layout::dp (0, s);
+        const int cellW = lPx + Layout::dp (8, s);
+        const int cellH = motionGroup2H / 4; // 4 rows
+        
+        // Create and layout Group 2 motion cells
+        for (int i = 0; i < 16; ++i)
+        {
+            if (!motionCellsGroup2[i])
+            {
+                motionValuesGroup2[i].setText ("", juce::dontSendNotification);
+                motionCellsGroup2[i] = std::make_unique<KnobCell>(motionDummiesGroup2[i], motionValuesGroup2[i], "");
+                motionCellsGroup2[i]->getProperties().set ("motionGreenBorder", true);
+                motionDummiesGroup2[i].setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+                motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+                // Ensure rotary angles match LNF tick system (π → π + 2π)
+                motionDummiesGroup2[i].setRotaryParameters (
+                    juce::MathConstants<float>::pi,
+                    juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
+                    true
+                );
+            }
+            
+            // Add to Group 2 container
+            if (motionCellsGroup2[i]->getParentComponent() != &motionGroup2Container)
+            {
+                motionGroup2Container.addAndMakeVisible (*motionCellsGroup2[i]);
+            }
+            
+            // Calculate position in 4x4 grid
+            const int col = i % 4;
+            const int row = i / 4;
+            const int x = motionGroup2X + col * cellW;
+            const int y = motionGroup2Y + row * cellH;
+            
+            motionCellsGroup2[i]->setBounds (juce::Rectangle<int> (x, y, cellW, cellH));
+            motionCellsGroup2[i]->setMetrics (motionK, motionV, motionG);
+            motionCellsGroup2[i]->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            motionCellsGroup2[i]->setValueLabelGap (Layout::dp (4, s));
+        }
+        
+        // Future controls container (right side of Group 2 panel)
         static juce::Component group2Stub;
         if (group2Stub.getParentComponent() != &bottomAltPanel) bottomAltPanel.addAndMakeVisible (group2Stub);
-        group2Stub.setBounds (b.reduced (Layout::dp (8, s)));
+        const int stubX = motionGroup2X + motionGroup2W + Layout::dp (Layout::GAP, s);
+        const int stubW = b.getWidth() - motionGroup2W - Layout::dp (Layout::GAP, s);
+        const int stubH = b.getHeight();
+        group2Stub.setBounds (juce::Rectangle<int> (stubX, motionGroup2Y, stubW, stubH));
     }
 
     // ---------------- Row 1: Pan, Width cells, Gain, Mix, Wet Only -----------
@@ -3364,43 +3422,7 @@ void MyPluginAudioProcessorEditor::performLayout()
 
         // Layout as 4x4 cells spanning the full height (4 rows)
         const int cellH = containerHeight; // one per row
-        // Create and show cells
-        for (int i = 0; i < 16; ++i)
-        {
-            if (!motionCells[i])
-            {
-                motionValues[i].setText ("", juce::dontSendNotification);
-                motionCells[i] = std::make_unique<KnobCell>(motionDummies[i], motionValues[i], "");
-                motionCells[i]->getProperties().set ("motionGreenBorder", true);
-                motionDummies[i].setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-                motionDummies[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-                // Ensure rotary angles match LNF tick system (π → π + 2π)
-                motionDummies[i].setRotaryParameters (
-                    juce::MathConstants<float>::pi,
-                    juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
-                    true
-                );
-            }
-            addAndMakeVisible (*motionCells[i]);
-            motionCells[i]->setMetrics (motionK, motionV, motionG);
-            motionCells[i]->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            motionCells[i]->setValueLabelGap (Layout::dp (4, s));
-        }
-
-        // Compute per-column width and position cells in 4 columns by 4 rows
-        const int cols = 4, rows = 4;
-        const int perColW = cellW; // force same width as standard cells
-        int idx = 0;
-        for (int c = 0; c < cols; ++c)
-        {
-            juce::Rectangle<int> r (motionAreaX + c * (perColW + colGap), motionAreaY, perColW, motionAreaH);
-            for (int rIdx = 0; rIdx < rows; ++rIdx)
-            {
-                if (idx < 16 && motionCells[idx])
-                    motionCells[idx]->setBounds (r.removeFromTop (cellH));
-                ++idx;
-            }
-        }
+        // No motion cells in Group 1 - motion only exists in Group 2
     }
 
     // Apply lighter theme to delay knob cells across rows (panel + border)

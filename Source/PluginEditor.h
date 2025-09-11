@@ -1766,16 +1766,17 @@ private:
     struct BottomAltPanel : public juce::Component {
         void paint (juce::Graphics& g) override
         {
-            auto r = getLocalBounds();
+            auto r = getLocalBounds().toFloat();
             // Match main site background gradient exactly (Editor::paint)
             juce::Colour top    = juce::Colour (0xFF2A2C30);
             juce::Colour mid    = juce::Colour (0xFF4A4D55);
             juce::Colour bottom = juce::Colour (0xFF2A2C30);
-            juce::ColourGradient bg (top, (float) r.getCentreX(), (float) r.getY(),
-                                     bottom, (float) r.getCentreX(), (float) r.getBottom(), false);
+            juce::ColourGradient bg (top, r.getCentreX(), r.getY(),
+                                     bottom, r.getCentreX(), r.getBottom(), false);
             bg.addColour (0.85, mid);
             g.setGradientFill (bg);
-            g.fillAll();
+            // Fill with rounded corners instead of fillAll()
+            g.fillRoundedRectangle (r, 6.0f);
         }
     } bottomAltPanel;          // sliding overlay panel that covers bottom control rows, with gradient BG
     bool bottomAltTargetOn { false };  // target state for slide animation
@@ -2135,10 +2136,10 @@ private:
 
     HorizontalDivider rowDivVol{lnf}, rowDivEQ{lnf};
 
-    // Motion cells (4x4 blank knobs on far right)
-    std::array<std::unique_ptr<KnobCell>, 16> motionCells;
-    std::array<juce::Slider, 16> motionDummies;
-    std::array<juce::Label,  16> motionValues;
+    // Motion cells - only in Group 2
+    std::array<std::unique_ptr<KnobCell>, 16> motionCellsGroup2;
+    std::array<juce::Slider, 16> motionDummiesGroup2;
+    std::array<juce::Label,  16> motionValuesGroup2;
 
     // Phase Mode center group
     class PhaseModeButton : public ThemedIconButton {
