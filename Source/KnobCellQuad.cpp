@@ -76,7 +76,7 @@ void QuadKnobCell::resized()
     layoutKnob (leftB, q, qVal);
     // Center the cluster contents with a small inset so badges are visible
     cluster.setBounds (rightB.reduced (2, 2));
-    cluster.toFront (false);
+    // cluster.toFront (false); // Stay behind bottomAltPanel to allow proper coverage
 }
 
 void QuadKnobCell::ensureChildren()

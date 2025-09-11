@@ -21,7 +21,7 @@ void DoubleKnobCell::layoutOne (juce::Rectangle<int> area, juce::Slider& knob, j
     const int lh = (int) std::ceil (label.getFont().getHeight());
     juce::Rectangle<int> lb (knobBox.getX(), knobBox.getBottom() + G, knobBox.getWidth(), juce::jmax (V, lh));
     label.setBounds (lb);
-    label.toFront (false);
+    // label.toFront (false); // Stay behind bottomAltPanel to allow proper coverage
 }
 
 void DoubleKnobCell::drawRecessedBadge (juce::Graphics& g, juce::Label& label)

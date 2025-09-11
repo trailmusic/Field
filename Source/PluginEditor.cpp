@@ -2857,14 +2857,14 @@ void MyPluginAudioProcessorEditor::performLayout()
             reverbGrid.performLayout (rg);
             monoCell->resized();
  
-            // Ensure components are brought to front within the container
-            spaceCell->toFront (false);
-            spaceAlgorithmSwitch.toFront (false);
-            duckCell->toFront (false);
-            duckAttCell->toFront (false);
-            duckRelCell->toFront (false);
-            duckThrCell->toFront (false);
-            duckRatCell->toFront (false);
+            // Components stay behind bottomAltPanel to allow proper coverage
+            // spaceCell->toFront (false);
+            // spaceAlgorithmSwitch.toFront (false);
+            // duckCell->toFront (false);
+            // duckAttCell->toFront (false);
+            // duckRelCell->toFront (false);
+            // duckThrCell->toFront (false);
+            // duckRatCell->toFront (false);
         }
     }
 
@@ -2987,12 +2987,12 @@ void MyPluginAudioProcessorEditor::performLayout()
         };
         g.performLayout (row);
 
-        // Ensure components are brought to front
-        bassCell->toFront (false);
-        airCell ->toFront (false);
-        tiltCell->toFront (false);
-        scoopCell->toFront (false);
-        hpLpCell->toFront (false);
+        // Components stay behind bottomAltPanel to allow proper coverage
+        // bassCell->toFront (false);
+        // airCell ->toFront (false);
+        // tiltCell->toFront (false);
+        // scoopCell->toFront (false);
+        // hpLpCell->toFront (false);
     }
 
     // ---------------- Row 4: Remaining Imaging items (+ S/Q + Q cluster) ---------------------------
@@ -3206,7 +3206,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         }
         hpLpQClusterCell->setBounds (strip);
         hpLpQClusterCell->resized(); // force initial child layout
-        hpLpQClusterCell->toFront (false);
+        // hpLpQClusterCell->toFront (false); // Stay behind bottomAltPanel to allow proper coverage
     }
 
     // ---------------- Delay controls integrated inline with the 4-row system ----------------------
