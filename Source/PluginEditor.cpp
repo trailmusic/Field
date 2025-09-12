@@ -1696,7 +1696,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     shufXName.setText  ("", juce::dontSendNotification);
     
     // Delay controls initialization
-    for (juce::Slider* slider : { &delayTime, &delayFeedback, &delayWet, &delaySpread, &delayWidth, &delayModRate, &delayModDepth, &delayWowflutter, &delayJitter,
+    for (juce::Slider* slider : { &delayTime, &delayFeedback, &delayWet, &delaySpread, &delayWidth, &delayModRate, &delayModDepth, &delayWowflutter, &delayJitter, &delayPreDelay,
                                   &delayHp, &delayLp, &delayTilt, &delaySat, &delayDiffusion, &delayDiffuseSize,
                                   &delayDuckDepth, &delayDuckAttack, &delayDuckRelease, &delayDuckThreshold, &delayDuckRatio, &delayDuckLookahead })
     {
@@ -1706,7 +1706,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     }
     
     // Delay combo boxes
-    for (juce::ComboBox* combo : { &delayMode, &delayTimeDiv, &delayDuckSource, &delayGridFlavor })
+    for (juce::ComboBox* combo : { &delayMode, &delayTimeDiv, &delayDuckSource, &delayGridFlavor, &delayFilterType })
     {
         addAndMakeVisible (*combo);
         combo->setLookAndFeel (&lnf);
@@ -1769,7 +1769,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     }
     
     // Delay value labels
-    for (juce::Label* l : { &delayTimeValue, &delayFeedbackValue, &delayWetValue, &delaySpreadValue, &delayWidthValue, &delayModRateValue, &delayModDepthValue, &delayWowflutterValue, &delayJitterValue,
+    for (juce::Label* l : { &delayTimeValue, &delayFeedbackValue, &delayWetValue, &delaySpreadValue, &delayWidthValue, &delayModRateValue, &delayModDepthValue, &delayWowflutterValue, &delayJitterValue, &delayPreDelayValue,
                             &delayHpValue, &delayLpValue, &delayTiltValue, &delaySatValue, &delayDiffusionValue, &delayDiffuseSizeValue,
                             &delayDuckDepthValue, &delayDuckAttackValue, &delayDuckReleaseValue, &delayDuckThresholdValue, &delayDuckRatioValue, &delayDuckLookaheadValue })
     {
@@ -1782,7 +1782,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     }
     
     // Delay name labels
-    for (auto* l : { &delayTimeName, &delayFeedbackName, &delayWetName, &delaySpreadName, &delayWidthName, &delayModRateName, &delayModDepthName, &delayWowflutterName, &delayJitterName,
+    for (auto* l : { &delayTimeName, &delayFeedbackName, &delayWetName, &delaySpreadName, &delayWidthName, &delayModRateName, &delayModDepthName, &delayWowflutterName, &delayJitterName, &delayPreDelayName,
                      &delayHpName, &delayLpName, &delayTiltName, &delaySatName, &delayDiffusionName, &delayDiffuseSizeName,
                      &delayDuckDepthName, &delayDuckAttackName, &delayDuckReleaseName, &delayDuckThresholdName, &delayDuckRatioName, &delayDuckLookaheadName })
     {
@@ -1799,6 +1799,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     delayDiffusion.setName ("DIFF"); delayDiffuseSize.setName ("SIZE");
     delayDuckDepth.setName ("DEPTH"); delayDuckAttack.setName ("ATT"); delayDuckRelease.setName ("REL");
     delayDuckThreshold.setName ("THR"); delayDuckRatio.setName ("DUCK RAT"); delayDuckLookahead.setName ("LA");
+    delayPreDelay.setName ("PRE");
 
     // seed value labels with current values
     sliderValueChanged (&width);
@@ -2001,6 +2002,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_threshold_db", delayDuckThreshold));
     attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_ratio", delayDuckRatio));
     attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_lookahead_ms", delayDuckLookahead));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_pre_delay_ms", delayPreDelay));
+    comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_filter_type", delayFilterType));
     buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_duck_link_global", delayDuckLinkGlobal));
 
     // parameter listeners (host→UI)
@@ -2694,6 +2697,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         if (!delayPingpongCell)   { delayPingpong.getProperties().set ("iconType", (int) IconSystem::Stereo); delayPingpongCell = std::make_unique<SwitchCell> (delayPingpong); delayPingpongCell->setCaption ("Ping-Pong"); delayPingpongCell->setDelayTheme (true); }
         if (!delayFreezeCell)     { delayFreeze.getProperties().set ("iconType", (int) IconSystem::Snowflake); delayFreezeCell  = std::make_unique<SwitchCell> (delayFreeze);   delayFreezeCell->setCaption ("Freeze"); delayFreezeCell->setDelayTheme (true); }
         if (!delayKillDryCell)    { delayKillDry.getProperties().set ("iconType", (int) IconSystem::Mix); delayKillDryCell = std::make_unique<SwitchCell> (delayKillDry);  delayKillDryCell->setCaption ("Wet Only"); delayKillDry.setTooltip ("Wet Only: Removes the dry signal from the output (effects only)"); delayKillDryCell->setDelayTheme (true); }
+        if (!delayFilterTypeCell) { delayFilterTypeCell = std::make_unique<SwitchCell> (delayFilterType); delayFilterTypeCell->setCaption ("Filter"); delayFilterTypeCell->setDelayTheme (true); }
         if (!delayDuckSourceCell) { delayDuckSourceCell = std::make_unique<SwitchCell> (delayDuckSource); delayDuckSourceCell->setCaption ("Duck Source"); delayDuckSourceCell->setDelayTheme (true); }
         if (!delayDuckPostCell)   { delayDuckPost.getProperties().set ("iconType", (int) IconSystem::RightArrow); delayDuckPostCell = std::make_unique<SwitchCell> (delayDuckPost); delayDuckPostCell->setCaption ("Post"); delayDuckPostCell->setDelayTheme (true); }
         
@@ -2719,9 +2723,10 @@ void MyPluginAudioProcessorEditor::performLayout()
         if (!delayDuckThresholdCell) delayDuckThresholdCell = std::make_unique<KnobCell>(delayDuckThreshold, delayDuckThresholdValue, "THR");
         if (!delayDuckLookaheadCell) delayDuckLookaheadCell = std::make_unique<KnobCell>(delayDuckLookahead, delayDuckLookaheadValue, "LA");
         if (!delayDuckRatioCell) delayDuckRatioCell = std::make_unique<KnobCell>(delayDuckRatio, delayDuckRatioValue, "RAT");
+        if (!delayPreDelayCell) delayPreDelayCell = std::make_unique<KnobCell>(delayPreDelay, delayPreDelayValue, "PRE");
         
         // Apply metrics to all delay cells
-        for (auto* c : { delayTimeCell.get(), delayFeedbackCell.get(), delayWetCell.get(), delaySpreadCell.get(), delayWidthCell.get(), delayModRateCell.get(), delayModDepthCell.get(), delayWowflutterCell.get(), delayJitterCell.get(), delayHpCell.get(), delayLpCell.get(), delayTiltCell.get(), delaySatCell.get(), delayDiffusionCell.get(), delayDiffuseSizeCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckThresholdCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
+        for (auto* c : { delayTimeCell.get(), delayFeedbackCell.get(), delayWetCell.get(), delaySpreadCell.get(), delayWidthCell.get(), delayModRateCell.get(), delayModDepthCell.get(), delayWowflutterCell.get(), delayJitterCell.get(), delayPreDelayCell.get(), delayHpCell.get(), delayLpCell.get(), delayTiltCell.get(), delaySatCell.get(), delayDiffusionCell.get(), delayDiffuseSizeCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckThresholdCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
         {
             if (c) {
                 c->setMetrics (lPx, valuePx, labelGap);
@@ -2731,10 +2736,10 @@ void MyPluginAudioProcessorEditor::performLayout()
         }
         
         // Add all delay cells to the delay group container
-        for (auto* c : { delayEnabledCell.get(), delayModeCell.get(), delaySyncCell.get(), delayGridFlavorCell.get(), delayPingpongCell.get(), delayFreezeCell.get(), delayKillDryCell.get(), delayDuckSourceCell.get(), delayDuckPostCell.get() })
+        for (auto* c : { delayEnabledCell.get(), delayModeCell.get(), delaySyncCell.get(), delayGridFlavorCell.get(), delayPingpongCell.get(), delayFreezeCell.get(), delayKillDryCell.get(), delayFilterTypeCell.get(), delayDuckSourceCell.get(), delayDuckPostCell.get() })
             if (c) { delayGroupContainer->addAndMakeVisible (*c); c->setShowBorder (true); }
             
-        for (auto* c : { delayTimeCell.get(), delayFeedbackCell.get(), delayWetCell.get(), delaySpreadCell.get(), delayWidthCell.get(), delayModRateCell.get(), delayModDepthCell.get(), delayWowflutterCell.get(), delayJitterCell.get(), delayHpCell.get(), delayLpCell.get(), delayTiltCell.get(), delaySatCell.get(), delayDiffusionCell.get(), delayDiffuseSizeCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckThresholdCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
+        for (auto* c : { delayTimeCell.get(), delayFeedbackCell.get(), delayWetCell.get(), delaySpreadCell.get(), delayWidthCell.get(), delayModRateCell.get(), delayModDepthCell.get(), delayWowflutterCell.get(), delayJitterCell.get(), delayPreDelayCell.get(), delayHpCell.get(), delayLpCell.get(), delayTiltCell.get(), delaySatCell.get(), delayDiffusionCell.get(), delayDiffuseSizeCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckThresholdCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
             if (c) { delayGroupContainer->addAndMakeVisible (*c); c->setShowBorder (true); }
         
         // Layout delay items in exact 4x7 grid order
@@ -2748,16 +2753,17 @@ void MyPluginAudioProcessorEditor::performLayout()
         };
         
         delayGrid.items = {
-            // Row 1 — Switches/Combos (7 items + 1 empty)
+            // Row 1 — Switches/Combos (8 items)
             juce::GridItem (*delayEnabledCell).withArea (1,1),
             juce::GridItem (*delayModeCell).withArea (1,2),
             juce::GridItem (*delaySyncCell).withArea (1,3),
             juce::GridItem (*delayGridFlavorCell).withArea (1,4),
             juce::GridItem (*delayPingpongCell).withArea (1,5),
             juce::GridItem (*delayFreezeCell).withArea (1,6),
-            juce::GridItem (*delayKillDryCell).withArea (1,7),
+            juce::GridItem (*delayFilterTypeCell).withArea (1,7),
+            juce::GridItem (*delayKillDryCell).withArea (1,8),
             
-            // Row 2 — Time & Mod Essentials (7 items + 1 empty)
+            // Row 2 — Time & Mod Essentials (8 items)
             juce::GridItem (*delayTimeCell).withArea (2,1),
             juce::GridItem (*delayFeedbackCell).withArea (2,2),
             juce::GridItem (*delayWetCell).withArea (2,3),
@@ -2765,8 +2771,9 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*delayModDepthCell).withArea (2,5),
             juce::GridItem (*delaySpreadCell).withArea (2,6),
             juce::GridItem (*delayWidthCell).withArea (2,7),
+            juce::GridItem (*delayPreDelayCell).withArea (2,8),
             
-            // Row 3 — Tone & Reverb (7 items + 1 empty)
+            // Row 3 — Tone & Reverb (8 items)
             juce::GridItem (*delaySatCell).withArea (3,1),
             juce::GridItem (*delayDiffusionCell).withArea (3,2),
             juce::GridItem (*delayDiffuseSizeCell).withArea (3,3),
@@ -2774,15 +2781,17 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*delayLpCell).withArea (3,5),
             juce::GridItem (*delayTiltCell).withArea (3,6),
             juce::GridItem (*delayWowflutterCell).withArea (3,7),
+            juce::GridItem (*delayJitterCell).withArea (3,8),
             
-            // Row 4 — Ducking Cluster (7 items + 1 empty)
+            // Row 4 — Ducking Cluster (8 items)
             juce::GridItem (*delayDuckSourceCell).withArea (4,1),
             juce::GridItem (*delayDuckPostCell).withArea (4,2),
             juce::GridItem (*delayDuckThresholdCell).withArea (4,3),
             juce::GridItem (*delayDuckDepthCell).withArea (4,4),
             juce::GridItem (*delayDuckAttackCell).withArea (4,5),
             juce::GridItem (*delayDuckReleaseCell).withArea (4,6),
-            juce::GridItem (*delayDuckLookaheadCell).withArea (4,7)
+            juce::GridItem (*delayDuckLookaheadCell).withArea (4,7),
+            juce::GridItem (*delayDuckRatioCell).withArea (4,8)
         };
         
         // Perform layout within delay group container
@@ -2799,7 +2808,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         };
         for (auto* kc : { delayTimeCell.get(), delayFeedbackCell.get(), delayWetCell.get(), delayModRateCell.get(), delayModDepthCell.get(), delaySpreadCell.get(), delayWidthCell.get(),
                            delaySatCell.get(), delayDiffusionCell.get(), delayDiffuseSizeCell.get(), delayHpCell.get(), delayLpCell.get(), delayTiltCell.get(), delayWowflutterCell.get(),
-                           delayDuckThresholdCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
+                           delayJitterCell.get(), delayPreDelayCell.get(), delayDuckThresholdCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
             lightenDelayCell (kc);
     }
 
@@ -3627,6 +3636,7 @@ void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
     else if (s == &delayDuckThreshold) set (delayDuckThresholdValue, juce::String ((int) delayDuckThreshold.getValue()) + " dB");
     else if (s == &delayDuckRatio) set (delayDuckRatioValue, juce::String (delayDuckRatio.getValue(), 1) + ":1");
     else if (s == &delayDuckLookahead) set (delayDuckLookaheadValue, juce::String ((int) delayDuckLookahead.getValue()) + " ms");
+    else if (s == &delayPreDelay) set (delayPreDelayValue, juce::String ((int) delayPreDelay.getValue()) + " ms");
 
     // Refresh muted visuals when any control changes
     updateMutedKnobVisuals();
