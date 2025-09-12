@@ -2697,7 +2697,6 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::Grid::Px (cellW),                    // Gain
             juce::Grid::Px (cellW),                    // Mix
             juce::Grid::Px (cellW),                    // Wet Only switch
-            juce::Grid::Px (dividerW),                 // Divider column (visual divider component overlays here)
             juce::Grid::Px (switchW),                  // Delay Enable
             juce::Grid::Px (switchW),                  // Delay Mode
             juce::Grid::Px (switchW),                  // Delay Sync
@@ -2755,7 +2754,6 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*gainCell)         .withWidth (cellW).withHeight (containerHeight),
             juce::GridItem (*satMixCell)       .withWidth (cellW).withHeight (containerHeight),
             juce::GridItem (*wetOnlyCell)      .withWidth (cellW).withHeight (containerHeight),
-            juce::GridItem ().withWidth (dividerW).withHeight (containerHeight), // divider spacer in grid
             juce::GridItem (*delayEnabledCell) .withWidth (switchW).withHeight (containerHeight),
             juce::GridItem (*delayModeCell)    .withWidth (switchW).withHeight (containerHeight),
             juce::GridItem (*delaySyncCell)    .withWidth (switchW).withHeight (containerHeight),
@@ -2808,7 +2806,6 @@ void MyPluginAudioProcessorEditor::performLayout()
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW),           // DUCK, ATT, REL, THR, RAT
                 juce::Grid::Px (cellW),                                   // Algo Switch (moved left of divider to align)
-                juce::Grid::Px (dividerW),                                // Divider column (global alignment)
                 // Delay Row 2: Time, Feedback, Wet, Mod Rate, Mod Depth, Spread, Width
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW)
@@ -2899,9 +2896,6 @@ void MyPluginAudioProcessorEditor::performLayout()
                 juce::GridItem (*spaceSwitchCell)
                     .withAlignSelf (juce::GridItem::AlignSelf::center)
                     .withJustifySelf (juce::GridItem::JustifySelf::center)
-                    .withHeight (containerHeight),
-                juce::GridItem() // divider spacer column
-                    .withWidth (dividerW)
                     .withHeight (containerHeight),
                 // Delay Row 2 items
                 juce::GridItem (*delayTimeCell)       .withHeight (containerHeight),
@@ -3012,7 +3006,6 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::Grid::Px (doubleW), // Air
             juce::Grid::Px (doubleW), // Tilt
             juce::Grid::Px (doubleW), // Scoop
-            juce::Grid::Px (dividerW),// Divider column (align with other rows)
             // Delay Row 3: Sat, Diffusion, Diffuse Size, HP, LP, Tilt, Wow/Flutter
             juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
             juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW)
@@ -3033,7 +3026,6 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*airCell)  .withHeight (containerHeight),
             juce::GridItem (*tiltCell) .withHeight (containerHeight),
             juce::GridItem (*scoopCell).withHeight (containerHeight),
-            juce::GridItem().withWidth (dividerW).withHeight (containerHeight),
             // Delay Row 3 items
             juce::GridItem (*delaySatCell)         .withHeight (containerHeight),
             juce::GridItem (*delayDiffusionCell)   .withHeight (containerHeight),
@@ -3117,7 +3109,6 @@ void MyPluginAudioProcessorEditor::performLayout()
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
                 juce::Grid::Px (cellW),
-                juce::Grid::Px (dividerW), // Divider column (align with other rows)
                 // Delay Row 4: Duck Source, Post, THR, Depth, ATT, REL, Lookahead
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW)
@@ -3184,7 +3175,6 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*shufXCell)   .withHeight (containerHeight),
             // 8: S only (Q and Q-cluster moved to combined strip)
             juce::GridItem (*shelfShapeCell).withHeight (containerHeight),
-            juce::GridItem().withWidth (dividerW).withHeight (containerHeight),
             // Delay Row 4 items (swap LA and Post positions)
             juce::GridItem (*delayDuckSourceCell) .withHeight (containerHeight),
             juce::GridItem (*delayDuckLookaheadCell).withHeight (containerHeight),
@@ -3379,32 +3369,16 @@ void MyPluginAudioProcessorEditor::performLayout()
     }
 
     // Draw the global vertical divider line aligned to the divider column across all rows
-    {
-        int dividerColX = row1.getRight() - dividerW; // fallback
-        if (wetOnlyCell)
-        {
-            // Place divider immediately after the Wet Only cell so it aligns with the divider grid column
-            dividerColX = wetOnlyCell->getBounds().getRight() + 1;
-        }
-        addAndMakeVisible (delayDivider);
-        delayDivider.setBounds (juce::Rectangle<int> (dividerColX, row1.getY(), dividerW,
-                                                      row1.getHeight() + row2.getHeight() + row3.getHeight() + row4.getHeight()));
-        delayDivider.toFront (false);
-    }
+    // REMOVED: delayDivider positioning
 
     // Draw a second vertical divider to the right of the Delay Wet Only row, then place a 4x4 Motion grid
+    // REMOVED: motionDivider positioning
     {
         // Find the rightmost of the delay switches on row 1 as our anchor (Wet Only in delay card)
         int anchorX = 0;
         if (delayKillDryCell) anchorX = delayKillDryCell->getBounds().getRight();
         else if (delayFreezeCell) anchorX = delayFreezeCell->getBounds().getRight();
-        else anchorX = delayDivider.getRight();
-
-        const int secondDividerX = anchorX + Layout::dp (4, s);
-        addAndMakeVisible (motionDivider);
-        motionDivider.setBounds (juce::Rectangle<int> (secondDividerX, row1.getY(), dividerW,
-                                                       row1.getHeight() + row2.getHeight() + row3.getHeight() + row4.getHeight()));
-        motionDivider.toFront (false);
+        else anchorX = row1.getRight() - dividerW; // fallback without delayDivider
 
         // Build/create 16 motion cells if needed
         const int motionK = lPx;               // knob diameter same as large knob
@@ -3414,7 +3388,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int colGap  = 0;
 
         // Compute a grid area to the right of second divider covering all rows
-        const int motionAreaX = secondDividerX + dividerW + Layout::dp (4, s);
+        const int motionAreaX = anchorX + Layout::dp (4, s);
         const int motionAreaW = getWidth() - motionAreaX - Layout::dp (Layout::PAD, s);
         const int motionAreaY = row1.getY();
         const int motionAreaH = row1.getHeight() + row2.getHeight() + row3.getHeight() + row4.getHeight();
