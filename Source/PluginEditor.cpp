@@ -2591,7 +2591,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int activeBaseline  = juce::jmax (stackTop, bottomBarTop - activeGapPx);
         const int hiddenBaseline  = bottomBarBottom + hiddenGapPx;
         const int overlayH        = juce::jmax (0, activeBaseline - stackTop);
-        const int overlayW        = row1.getWidth();
+        const int overlayW        = getWidth();
         // Delay appearance so the top never breaks the baseline when nearly inactive (symmetric)
         const float appearThresh = 0.10f; // wait until ~10% of slide to show
         const float t0           = juce::jlimit (0.0f, 1.0f, (bottomAltSlide01 - appearThresh) / juce::jmax (0.0001f, 1.0f - appearThresh));
@@ -2601,7 +2601,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int bottomY  = juce::roundToInt (juce::jmap (effSlide, 0.0f, 1.0f, (float) hiddenBaseline, (float) activeBaseline));
         const int curTop   = bottomY - juce::roundToInt ((float) overlayH * effSlide);
 
-        bottomAltPanel.setBounds (juce::Rectangle<int> (row1.getX(), curTop, overlayW, overlayH));
+        bottomAltPanel.setBounds (juce::Rectangle<int> (0, curTop, overlayW, overlayH));
         const bool showPanel = effSlide > 0.001f;
         bottomAltPanel.setInterceptsMouseClicks (showPanel, false);
         bottomAltPanel.setVisible (showPanel);
@@ -2615,23 +2615,18 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Group 2 panel layout - Motion group on left side (no padding, full panel)
         auto b = bottomAltPanel.getLocalBounds();
         
-        // Motion group container (4x4 grid on left side)
-        static juce::Component motionGroup2Container;
-        if (motionGroup2Container.getParentComponent() != &bottomAltPanel) bottomAltPanel.addAndMakeVisible (motionGroup2Container);
-        
-        // Calculate Motion group area (left side of Group 2 panel - no internal padding)
+        // Motion group positioned directly in Group 2 panel (no container)
         const int motionGroup2W = 4 * (lPx + Layout::dp (8, s)); // 4 columns
         const int motionGroup2H = b.getHeight();
         const int motionGroup2X = b.getX();
         const int motionGroup2Y = b.getY();
-        motionGroup2Container.setBounds (juce::Rectangle<int> (motionGroup2X, motionGroup2Y, motionGroup2W, motionGroup2H));
         
         // Layout Motion cells in 4x4 grid within Group 2 panel
         const int motionK = lPx;
         const int motionV = Layout::dp (14, s);
-        const int motionG = Layout::dp (0, s);
-        const int cellW = lPx + Layout::dp (8, s);
-        const int cellH = motionGroup2H / 4; // 4 rows
+        const int motionG = Layout::dp (4, s); // Match Delay group labelGap
+        const int motionCellW = lPx + Layout::dp (8, s); // Match Delay group delayCellW
+        const int motionCellH = containerHeight; // Match Delay group containerHeight
         
         // Create and layout Group 2 motion cells
         for (int i = 0; i < 16; ++i)
@@ -2651,37 +2646,55 @@ void MyPluginAudioProcessorEditor::performLayout()
                 );
             }
             
-            // Add to Group 2 container
-            if (motionCellsGroup2[i]->getParentComponent() != &motionGroup2Container)
+            // Add directly to Group 2 panel
+            if (motionCellsGroup2[i]->getParentComponent() != &bottomAltPanel)
             {
-                motionGroup2Container.addAndMakeVisible (*motionCellsGroup2[i]);
+                bottomAltPanel.addAndMakeVisible (*motionCellsGroup2[i]);
             }
-            
-            // Calculate position in 4x4 grid
-            const int col = i % 4;
-            const int row = i / 4;
-            const int x = motionGroup2X + col * cellW;
-            const int y = motionGroup2Y + row * cellH;
-            
-            motionCellsGroup2[i]->setBounds (juce::Rectangle<int> (x, y, cellW, cellH));
             motionCellsGroup2[i]->setMetrics (motionK, motionV, motionG);
             motionCellsGroup2[i]->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            motionCellsGroup2[i]->setValueLabelGap (Layout::dp (4, s));
+            motionCellsGroup2[i]->setValueLabelGap (motionG);
         }
         
-        // Delay group container (right side of Group 2 panel)
-        if (!delayGroupContainer) {
-            delayGroupContainer = std::make_unique<ControlContainer>();
-            delayGroupContainer->setTitle("Delay");
-            delayGroupContainer->setShowBorder(true);
-        }
-        if (delayGroupContainer->getParentComponent() != &bottomAltPanel) bottomAltPanel.addAndMakeVisible (*delayGroupContainer);
+        // Layout Motion items in 4x4 grid using juce::Grid (fixed pixel units like Delay group)
+        juce::Grid motionGrid;
+        motionGrid.rowGap = juce::Grid::Px (0);
+        motionGrid.columnGap = juce::Grid::Px (0);
+        motionGrid.templateRows = { juce::Grid::Px (motionCellH), juce::Grid::Px (motionCellH), juce::Grid::Px (motionCellH), juce::Grid::Px (motionCellH) };
+        motionGrid.templateColumns = { juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW) };
         
-        const int delayGroupX = motionGroup2X + motionGroup2W + Layout::dp (Layout::GAP, s);
+        motionGrid.items = {
+            // Row 1
+            juce::GridItem (*motionCellsGroup2[0]).withArea (1,1),
+            juce::GridItem (*motionCellsGroup2[1]).withArea (1,2),
+            juce::GridItem (*motionCellsGroup2[2]).withArea (1,3),
+            juce::GridItem (*motionCellsGroup2[3]).withArea (1,4),
+            // Row 2
+            juce::GridItem (*motionCellsGroup2[4]).withArea (2,1),
+            juce::GridItem (*motionCellsGroup2[5]).withArea (2,2),
+            juce::GridItem (*motionCellsGroup2[6]).withArea (2,3),
+            juce::GridItem (*motionCellsGroup2[7]).withArea (2,4),
+            // Row 3
+            juce::GridItem (*motionCellsGroup2[8]).withArea (3,1),
+            juce::GridItem (*motionCellsGroup2[9]).withArea (3,2),
+            juce::GridItem (*motionCellsGroup2[10]).withArea (3,3),
+            juce::GridItem (*motionCellsGroup2[11]).withArea (3,4),
+            // Row 4
+            juce::GridItem (*motionCellsGroup2[12]).withArea (4,1),
+            juce::GridItem (*motionCellsGroup2[13]).withArea (4,2),
+            juce::GridItem (*motionCellsGroup2[14]).withArea (4,3),
+            juce::GridItem (*motionCellsGroup2[15]).withArea (4,4)
+        };
+        
+        // Perform layout within motion group area with gap reduction
+        auto motionBounds = juce::Rectangle<int>(motionGroup2X, motionGroup2Y, motionGroup2W, motionGroup2H).reduced(Layout::dp(Layout::GAP, s));
+        motionGrid.performLayout(motionBounds);
+        
+        // Delay group positioned directly in Group 2 panel (no container)
+        const int delayGroupX = motionGroup2X + motionGroup2W;
         const int delayGroupW = 8 * (lPx + Layout::dp (8, s)); // 8 columns for delay items
         const int delayGroupH = b.getHeight();
         const int delayGroupY = b.getY();
-        delayGroupContainer->setBounds (juce::Rectangle<int> (delayGroupX, delayGroupY, delayGroupW, delayGroupH));
         
         // Create and layout delay items in exact 4x7 order
         const int valuePx = Layout::dp (14, s);
@@ -2735,12 +2748,12 @@ void MyPluginAudioProcessorEditor::performLayout()
             }
         }
         
-        // Add all delay cells to the delay group container
+        // Add all delay cells directly to the Group 2 panel
         for (auto* c : { delayEnabledCell.get(), delayModeCell.get(), delaySyncCell.get(), delayGridFlavorCell.get(), delayPingpongCell.get(), delayFreezeCell.get(), delayKillDryCell.get(), delayFilterTypeCell.get(), delayDuckSourceCell.get(), delayDuckPostCell.get() })
-            if (c) { delayGroupContainer->addAndMakeVisible (*c); c->setShowBorder (true); }
+            if (c) { bottomAltPanel.addAndMakeVisible (*c); c->setShowBorder (true); }
             
         for (auto* c : { delayTimeCell.get(), delayFeedbackCell.get(), delayWetCell.get(), delaySpreadCell.get(), delayWidthCell.get(), delayModRateCell.get(), delayModDepthCell.get(), delayWowflutterCell.get(), delayJitterCell.get(), delayPreDelayCell.get(), delayHpCell.get(), delayLpCell.get(), delayTiltCell.get(), delaySatCell.get(), delayDiffusionCell.get(), delayDiffuseSizeCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckThresholdCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
-            if (c) { delayGroupContainer->addAndMakeVisible (*c); c->setShowBorder (true); }
+            if (c) { bottomAltPanel.addAndMakeVisible (*c); c->setShowBorder (true); }
         
         // Layout delay items in exact 4x7 grid order
         juce::Grid delayGrid;
@@ -2794,8 +2807,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*delayDuckRatioCell).withArea (4,8)
         };
         
-        // Perform layout within delay group container
-        auto delayBounds = delayGroupContainer->getLocalBounds().reduced(Layout::dp(Layout::GAP, s));
+        // Perform layout within delay group area
+        auto delayBounds = juce::Rectangle<int>(delayGroupX, delayGroupY, delayGroupW, delayGroupH).reduced(Layout::dp(Layout::GAP, s));
         delayGrid.performLayout(delayBounds);
         
         // Apply delay theme to all cells

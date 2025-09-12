@@ -1731,8 +1731,7 @@ private:
     std::unique_ptr<SwitchCell> delayDuckSourceCell;
     std::unique_ptr<SwitchCell> delayDuckPostCell;
 
-    // Delay group container for Group 2
-    std::unique_ptr<ControlContainer> delayGroupContainer;
+    // Delay group positioned directly in Group 2 panel (no container)
 
     std::unique_ptr<Segmented3Control> delayGridFlavorSegments;
 
