@@ -1781,6 +1781,17 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         l->setColour (juce::Label::outlineColourId, juce::Colours::transparentBlack);
     }
     
+    // Motion value labels
+    for (int i = 0; i < 20; ++i)
+    {
+        addAndMakeVisible (motionValuesGroup2[i]);
+        motionValuesGroup2[i].setJustificationType (juce::Justification::centred);
+        motionValuesGroup2[i].setFont (juce::Font (juce::FontOptions (13.0f * scaleFactor).withStyle ("Bold")));
+        motionValuesGroup2[i].setColour (juce::Label::textColourId, lnf.theme.text);
+        motionValuesGroup2[i].setColour (juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+        motionValuesGroup2[i].setColour (juce::Label::outlineColourId, juce::Colours::transparentBlack);
+    }
+    
     // Delay name labels
     for (auto* l : { &delayTimeName, &delayFeedbackName, &delayWetName, &delaySpreadName, &delayWidthName, &delayModRateName, &delayModDepthName, &delayWowflutterName, &delayJitterName, &delayPreDelayName,
                      &delayHpName, &delayLpName, &delayTiltName, &delaySatName, &delayDiffusionName, &delayDiffuseSizeName,
@@ -1800,6 +1811,13 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     delayDuckDepth.setName ("DEPTH"); delayDuckAttack.setName ("ATT"); delayDuckRelease.setName ("REL");
     delayDuckThreshold.setName ("THR"); delayDuckRatio.setName ("DUCK RAT"); delayDuckLookahead.setName ("LA");
     delayPreDelay.setName ("PRE");
+    
+    // Set Motion control names
+    motionDummiesGroup2[2].setName ("RATE"); motionDummiesGroup2[3].setName ("DEPTH"); motionDummiesGroup2[4].setName ("PHASE");
+    motionDummiesGroup2[5].setName ("SPREAD"); motionDummiesGroup2[6].setName ("ELEV"); motionDummiesGroup2[7].setName ("BOUNCE");
+    motionDummiesGroup2[8].setName ("JITTER"); motionDummiesGroup2[12].setName ("HOLD"); motionDummiesGroup2[13].setName ("SENS");
+    motionDummiesGroup2[14].setName ("OFFSET"); motionDummiesGroup2[15].setName ("FRONT"); motionDummiesGroup2[16].setName ("DOPPLER");
+    motionDummiesGroup2[17].setName ("SEND"); motionDummiesGroup2[19].setName ("BASS");
 
     // seed value labels with current values
     sliderValueChanged (&width);
@@ -2817,6 +2835,27 @@ void MyPluginAudioProcessorEditor::performLayout()
             motionCellsGroup2[i]->setValueLabelGap (motionG);
         }
         
+        // Initialize Motion value labels with current parameter values
+        auto set = [](juce::Label& l, const juce::String& t){ l.setText (t, juce::dontSendNotification); };
+        auto Hz  = [](double v){ return juce::String (v, 2) + " Hz"; };
+        auto pct = [](double v){ return juce::String (v, 2) + "%"; };
+        
+        // Initialize Motion knob value labels with current parameter values
+        set (motionValuesGroup2[2],  Hz (motionDummiesGroup2[2].getValue()));     // Rate
+        set (motionValuesGroup2[3],  pct (motionDummiesGroup2[3].getValue()));    // Depth
+        set (motionValuesGroup2[4],  juce::String (motionDummiesGroup2[4].getValue(), 2) + "°"); // Phase
+        set (motionValuesGroup2[5],  pct (motionDummiesGroup2[5].getValue()));    // Spread
+        set (motionValuesGroup2[6],  juce::String (motionDummiesGroup2[6].getValue(), 2));  // Elev Bias
+        set (motionValuesGroup2[7],  pct (motionDummiesGroup2[7].getValue()));    // Bounce
+        set (motionValuesGroup2[8],  pct (motionDummiesGroup2[8].getValue()));    // Jitter
+        set (motionValuesGroup2[12], juce::String (motionDummiesGroup2[12].getValue(), 2) + " ms"); // Hold
+        set (motionValuesGroup2[13], pct (motionDummiesGroup2[13].getValue()));   // Sens
+        set (motionValuesGroup2[14], juce::String (motionDummiesGroup2[14].getValue(), 2) + "°"); // Offset
+        set (motionValuesGroup2[15], juce::String (motionDummiesGroup2[15].getValue(), 2)); // Front Bias
+        set (motionValuesGroup2[16], pct (motionDummiesGroup2[16].getValue()));   // Doppler
+        set (motionValuesGroup2[17], pct (motionDummiesGroup2[17].getValue()));   // Motion Send
+        set (motionValuesGroup2[19], Hz (motionDummiesGroup2[19].getValue()));    // Bass Floor
+        
         // Layout Motion items in 4x5 grid using juce::Grid (fixed pixel units like Delay group)
         juce::Grid motionGrid;
         motionGrid.rowGap = juce::Grid::Px (0);
@@ -3815,6 +3854,22 @@ void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
     else if (s == &delayDuckRatio) set (delayDuckRatioValue, juce::String (delayDuckRatio.getValue(), 1) + ":1");
     else if (s == &delayDuckLookahead) set (delayDuckLookaheadValue, juce::String ((int) delayDuckLookahead.getValue()) + " ms");
     else if (s == &delayPreDelay) set (delayPreDelayValue, juce::String ((int) delayPreDelay.getValue()) + " ms");
+
+    // Motion controls value label updates
+    else if (s == &motionDummiesGroup2[2])  set (motionValuesGroup2[2],  Hz (motionDummiesGroup2[2].getValue()));     // Rate
+    else if (s == &motionDummiesGroup2[3])  set (motionValuesGroup2[3],  pct (motionDummiesGroup2[3].getValue()));    // Depth
+    else if (s == &motionDummiesGroup2[4])  set (motionValuesGroup2[4],  juce::String (motionDummiesGroup2[4].getValue(), 2) + "°"); // Phase
+    else if (s == &motionDummiesGroup2[5])  set (motionValuesGroup2[5],  pct (motionDummiesGroup2[5].getValue()));    // Spread
+    else if (s == &motionDummiesGroup2[6])  set (motionValuesGroup2[6],  juce::String (motionDummiesGroup2[6].getValue(), 2));  // Elev Bias
+    else if (s == &motionDummiesGroup2[7])  set (motionValuesGroup2[7],  pct (motionDummiesGroup2[7].getValue()));    // Bounce
+    else if (s == &motionDummiesGroup2[8])  set (motionValuesGroup2[8],  pct (motionDummiesGroup2[8].getValue()));    // Jitter
+    else if (s == &motionDummiesGroup2[12]) set (motionValuesGroup2[12], juce::String (motionDummiesGroup2[12].getValue(), 2) + " ms"); // Hold
+    else if (s == &motionDummiesGroup2[13]) set (motionValuesGroup2[13], pct (motionDummiesGroup2[13].getValue()));   // Sens
+    else if (s == &motionDummiesGroup2[14]) set (motionValuesGroup2[14], juce::String (motionDummiesGroup2[14].getValue(), 2) + "°"); // Offset
+    else if (s == &motionDummiesGroup2[15]) set (motionValuesGroup2[15], juce::String (motionDummiesGroup2[15].getValue(), 2)); // Front Bias
+    else if (s == &motionDummiesGroup2[16]) set (motionValuesGroup2[16], pct (motionDummiesGroup2[16].getValue()));   // Doppler
+    else if (s == &motionDummiesGroup2[17]) set (motionValuesGroup2[17], pct (motionDummiesGroup2[17].getValue()));   // Motion Send
+    else if (s == &motionDummiesGroup2[19]) set (motionValuesGroup2[19], Hz (motionDummiesGroup2[19].getValue()));    // Bass Floor
 
     // Refresh muted visuals when any control changes
     updateMutedKnobVisuals();

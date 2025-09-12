@@ -1,4 +1,3 @@
-
 #pragma once
 #include <juce_gui_extra/juce_gui_extra.h>
 #include <juce_audio_processors/juce_audio_processors.h>
@@ -14,15 +13,7 @@ private:
     void timerCallback() override { repaint(orbBounds); }
     juce::Rectangle<int> orbBounds; float demoTheta = 0.0f;
     juce::AudioProcessorValueTreeState& state;
-    std::unique_ptr<juce::ComboBox> pannerSelect, path, mode, quant;
-    std::unique_ptr<juce::Slider> rate, depth, phase, spread, elevBias, bounce, jitter, holdMs, sens, offsetDeg, frontBias, doppler, motionSend, bassFloor;
-    std::unique_ptr<juce::ToggleButton> retrig, anchor, headphoneSafe;
-    using Att = juce::AudioProcessorValueTreeState::SliderAttachment;
-    using Btn = juce::AudioProcessorValueTreeState::ButtonAttachment;
-    using Box = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
-    std::unique_ptr<Att> aRate, aDepth, aPhase, aSpread, aElevBias, aBounce, aJitter, aHold, aSens, aOffset, aFront, aDoppler, aMotionSend, aBassFloor;
-    std::unique_ptr<Btn> aRetrig, aAnchor, aHeadSafe;
-    std::unique_ptr<Box> aPanner, aPath, aMode, aQuant;
+    // No controls - they are handled by the 5x4 grid in Group 2 panel
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MotionPanel)
 };
 }
