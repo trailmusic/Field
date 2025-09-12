@@ -2016,6 +2016,80 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
             motionComboBoxes[2].addItemList(choiceListQuant(), 1);
             motionComboBoxes[3].addItemList(choiceListMode(), 1);
             
+            // Configure Motion ComboBoxes like Delay ComboBoxes
+            for (juce::ComboBox* combo : { &motionComboBoxes[0], &motionComboBoxes[1], &motionComboBoxes[2], &motionComboBoxes[3] })
+            {
+                addAndMakeVisible (*combo);
+                combo->setLookAndFeel (&lnf);
+                combo->addListener (this);
+                combo->getProperties().set ("tintedSelected", true);
+            }
+            
+            // Configure Motion sliders like Delay sliders
+            for (int i = 0; i < 20; ++i)
+            {
+                addAndMakeVisible (motionDummiesGroup2[i]);
+                style (motionDummiesGroup2[i]);
+                motionDummiesGroup2[i].addListener (this);
+            }
+            
+            // Configure Motion buttons like Delay buttons
+            for (juce::ToggleButton* button : { &motionButtons[0], &motionButtons[1], &motionButtons[2] })
+            {
+                addAndMakeVisible (*button);
+                button->setLookAndFeel (&lnf);
+                button->addListener (this);
+            }
+            
+            // Set up per-item tints for Motion ComboBoxes (following Delay ComboBox pattern)
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            {
+                // Panner ComboBox tints (P1, P2, Link) - Blue family
+                juce::Array<juce::Colour> pannerTints;
+                pannerTints.add (juce::Colour (0xFF64B5F6)); // P1 - Light Blue
+                pannerTints.add (juce::Colour (0xFF42A5F5)); // P2 - Medium Blue  
+                pannerTints.add (juce::Colour (0xFF2196F3)); // Link - Dark Blue
+                lf->setPopupItemTints (pannerTints);
+                motionComboBoxes[0].getProperties().set ("tintedSelected", true);
+                
+                // Path ComboBox tints (Circle, Figure-8, Bounce, Arc, Spiral, Polygon, Random Walk, User Shape) - Rainbow
+                juce::Array<juce::Colour> pathTints;
+                pathTints.add (juce::Colour (0xFFE57373)); // Circle - Red
+                pathTints.add (juce::Colour (0xFFFFB74D)); // Figure-8 - Orange
+                pathTints.add (juce::Colour (0xFFFFCA28)); // Bounce - Yellow
+                pathTints.add (juce::Colour (0xFF66BB6A)); // Arc - Green
+                pathTints.add (juce::Colour (0xFF26C6DA)); // Spiral - Cyan
+                pathTints.add (juce::Colour (0xFF42A5F5)); // Polygon - Blue
+                pathTints.add (juce::Colour (0xFFAB47BC)); // Random Walk - Purple
+                pathTints.add (juce::Colour (0xFF8D6E63)); // User Shape - Brown
+                lf->setPopupItemTints (pathTints);
+                motionComboBoxes[1].getProperties().set ("tintedSelected", true);
+                
+                // Quantize ComboBox tints (Off, 1/1, 1/2, 1/4, 1/8, 1/16, 1/32, Triplet, Dotted) - Purple family
+                juce::Array<juce::Colour> quantTints;
+                quantTints.add (juce::Colour (0xFF90A4AE)); // Off - Grey
+                quantTints.add (juce::Colour (0xFFE1BEE7)); // 1/1 - Light Purple
+                quantTints.add (juce::Colour (0xFFCE93D8)); // 1/2 - Medium Purple
+                quantTints.add (juce::Colour (0xFFBA68C8)); // 1/4 - Purple
+                quantTints.add (juce::Colour (0xFFAB47BC)); // 1/8 - Dark Purple
+                quantTints.add (juce::Colour (0xFF9C27B0)); // 1/16 - Deeper Purple
+                quantTints.add (juce::Colour (0xFF8E24AA)); // 1/32 - Deepest Purple
+                quantTints.add (juce::Colour (0xFF7B1FA2)); // Triplet - Very Deep Purple
+                quantTints.add (juce::Colour (0xFF6A1B9A)); // Dotted - Darkest Purple
+                lf->setPopupItemTints (quantTints);
+                motionComboBoxes[2].getProperties().set ("tintedSelected", true);
+                
+                // Mode ComboBox tints (Free, Sync, Input Env, Sidechain, One-Shot) - Green family
+                juce::Array<juce::Colour> modeTints;
+                modeTints.add (juce::Colour (0xFFA5D6A7)); // Free - Light Green
+                modeTints.add (juce::Colour (0xFF81C784)); // Sync - Medium Green
+                modeTints.add (juce::Colour (0xFF66BB6A)); // Input Env - Green
+                modeTints.add (juce::Colour (0xFF4CAF50)); // Sidechain - Dark Green
+                modeTints.add (juce::Colour (0xFF388E3C)); // One-Shot - Darkest Green
+                lf->setPopupItemTints (modeTints);
+                motionComboBoxes[3].getProperties().set ("tintedSelected", true);
+            }
+            
             // Create Motion SwitchCell wrappers (following Delay group pattern)
             const juce::StringArray comboLabels = {"Panner", "Path", "Quant", "Mode"};
             for (int i = 0; i < 4; ++i) {
