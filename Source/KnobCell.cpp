@@ -357,12 +357,12 @@ void KnobCell::paint (juce::Graphics& g)
             }
         }
         // Use theme text colour for delay-themed cells' borders if requested via property,
-        // or a light green border for motion cells
+        // or a deep blue/purple border for motion cells
         auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
         const bool delayTheme = (bool) getProperties().getWithDefault ("delayThemeBorderTextGrey", false);
         const bool motionGreen = (bool) getProperties().getWithDefault ("motionGreenBorder", false);
         if (motionGreen)
-            g.setColour (juce::Colour (0xFF7ED957));
+            g.setColour (juce::Colour (0xFF4A4A8E)); // Deep blue/purple matching accent hue family
         else if (delayTheme && lf != nullptr)
             g.setColour (lf->theme.text.withAlpha (0.85f));
         else

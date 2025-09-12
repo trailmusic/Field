@@ -282,6 +282,36 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     chainF->prepare (spec);
     chainD->prepare (spec);
     updateLatencyForPhaseMode();
+
+    // Initialize Motion Engine
+    motionEngine.prepare(sampleRate, samplesPerBlock);
+    
+    // Set up Motion parameter pointers
+    #include "motion/MotionIDs.h"
+    using namespace motion;
+    motionParams.pannerSelect = apvts.getRawParameterValue(id::panner_select);
+    motionParams.path = apvts.getRawParameterValue(id::path);
+    motionParams.rateHz = apvts.getRawParameterValue(id::rate_hz);
+    motionParams.depth = apvts.getRawParameterValue(id::depth_pct);
+    motionParams.phaseDeg = apvts.getRawParameterValue(id::phase_deg);
+    motionParams.spread = apvts.getRawParameterValue(id::spread_pct);
+    motionParams.elevBias = apvts.getRawParameterValue(id::elev_bias);
+    motionParams.bounce = apvts.getRawParameterValue(id::shape_bounce);
+    motionParams.jitter = apvts.getRawParameterValue(id::jitter_amt);
+    motionParams.quantizeDiv = apvts.getRawParameterValue(id::quantize_div);
+    motionParams.mode = apvts.getRawParameterValue(id::mode);
+    motionParams.retrig = apvts.getRawParameterValue(id::retrig);
+    motionParams.holdMs = apvts.getRawParameterValue(id::hold_ms);
+    motionParams.sens = apvts.getRawParameterValue(id::sens);
+    motionParams.offsetDeg = apvts.getRawParameterValue(id::offset_deg);
+    motionParams.frontBias = apvts.getRawParameterValue(id::front_bias);
+    motionParams.doppler = apvts.getRawParameterValue(id::doppler_amt);
+    motionParams.motionSend = apvts.getRawParameterValue(id::motion_send);
+    motionParams.anchor = apvts.getRawParameterValue(id::anchor_enable);
+    motionParams.bassFloorHz = apvts.getRawParameterValue(id::bass_floor_hz);
+    motionParams.headphoneSafe = apvts.getRawParameterValue(id::headphone_safe);
+    
+    motionEngine.setParams(&motionParams);
 }
 
 // Utility: build a HostParams snapshot each block
@@ -429,6 +459,12 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     juce::dsp::AudioBlock<float> block (buffer);
     chainF->setParameters (hp);
     chainF->process (block);
+
+    // Motion processing
+    if (buffer.getNumChannels() >= 2)
+    {
+        motionEngine.processBlock(buffer.getWritePointer(0), buffer.getWritePointer(1), buffer.getNumSamples());
+    }
 
     // Correlation + RMS/Peak meters (simple block estimate)
     if (buffer.getNumChannels() >= 2)
@@ -718,6 +754,31 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckRatio, 1 }, "Delay Duck Ratio", juce::NormalisableRange<float>(1.0f, 8.0f, 0.01f), 2.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckLookaheadMs, 1 }, "Delay Duck Lookahead (ms)", juce::NormalisableRange<float>(0.0f, 15.0f, 0.01f), 5.0f));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayDuckLinkGlobal, 1 }, "Delay Duck Link Global", true));
+
+    // Motion parameters
+    #include "motion/MotionIDs.h"
+    using namespace motion;
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::panner_select, 1 }, "Motion Panner", choiceListPanner(), (int)PannerSelect::P1));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::path, 1 }, "Motion Path", choiceListPath(), (int)PathType::Circle));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::rate_hz, 1 }, "Motion Rate (Hz)", juce::NormalisableRange<float>(0.05f, 16.0f, 0.0f, 0.33f), 0.5f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::depth_pct, 1 }, "Motion Depth", juce::NormalisableRange<float>(0.0f, 1.0f), 0.35f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::phase_deg, 1 }, "Motion Phase", juce::NormalisableRange<float>(0.0f, 360.0f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::spread_pct, 1 }, "Motion Spread", juce::NormalisableRange<float>(0.0f, 2.0f), 1.2f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::elev_bias, 1 }, "Elevation Bias", juce::NormalisableRange<float>(-1.0f, 1.0f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::shape_bounce, 1 }, "Bounce/Tension", juce::NormalisableRange<float>(0.0f, 1.0f), 0.3f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::jitter_amt, 1 }, "Jitter", juce::NormalisableRange<float>(0.0f, 1.0f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::quantize_div, 1 }, "Quantize", choiceListQuant(), (int)QuantizeDiv::Off));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::mode, 1 }, "Motion Mode", choiceListMode(), (int)MotionMode::Sync));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::retrig, 1 }, "Retrigger", false));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::hold_ms, 1 }, "Hold (ms)", juce::NormalisableRange<float>(0.0f, 500.0f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::sens, 1 }, "Sensitivity", juce::NormalisableRange<float>(0.0f, 1.0f), 0.5f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::offset_deg, 1 }, "Offset (deg)", juce::NormalisableRange<float>(0.0f, 360.0f), 90.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::front_bias, 1 }, "Front Bias", juce::NormalisableRange<float>(-1.0f, 1.0f), 0.2f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::doppler_amt, 1 }, "Doppler", juce::NormalisableRange<float>(0.0f, 1.0f), 0.1f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::motion_send, 1 }, "Motion Send", juce::NormalisableRange<float>(0.0f, 1.0f), 0.2f));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::anchor_enable, 1 }, "Anchor Center", true));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::bass_floor_hz, 1 }, "Bass Floor (Hz)", juce::NormalisableRange<float>(20.0f, 250.0f, 0.0f, 0.35f), 120.0f));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::headphone_safe, 1 }, "Headphone Safe", true));
 
     return { params.begin(), params.end() };
 }

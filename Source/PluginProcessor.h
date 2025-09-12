@@ -4,6 +4,7 @@
 #include "dsp/Ducker.h"
 #include "dsp/DelayEngine.h"
 #include "dsp/PhaseModes.h"
+#include "motion/MotionEngine.h"
 // ==================================
 // Visualization Bus (lock-free SPSC)
 // ==================================
@@ -449,6 +450,9 @@ public:
     double getTailLengthSeconds() const override               { return 0.0; } // change to 2.0 if you want auto-tail renders
     bool supportsDoublePrecisionProcessing() const override    { return true; }
 
+    // Undo stack for APVTS + UI history
+    juce::UndoManager undo;
+
     // Programs (single program)
     int getNumPrograms() override                              { return 1; }
     int getCurrentProgram() override                           { return 0; }
@@ -520,6 +524,10 @@ private:
     std::unique_ptr<FieldChain<double>> chainD;
     bool isDoublePrecEnabled { false };
 
+    // Motion Engine
+    motion::MotionEngine motionEngine;
+    motion::Params motionParams;
+
     // Smoothers (double-domain for precision)
     juce::SmoothedValue<double> panSmoothed, panLSmoothed, panRSmoothed,
                                 depthSmoothed, widthSmoothed, gainSmoothed, tiltSmoothed,
@@ -541,7 +549,5 @@ private:
     std::atomic<double> transportTimeSeconds { 0.0 };
     std::atomic<bool>   transportIsPlaying   { false };
 
-    // Undo stack for APVTS + UI history
-    juce::UndoManager undo;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)
 };

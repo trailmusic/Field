@@ -2006,6 +2006,70 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_filter_type", delayFilterType));
     buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_duck_link_global", delayDuckLinkGlobal));
 
+            // Create Motion ComboBoxes and Buttons
+            #include "motion/MotionIDs.h"
+            using namespace motion;
+            
+            // ComboBoxes: Panner (0), Path (1), Quantize (9), Mode (10)
+            motionComboBoxes[0].addItemList(choiceListPanner(), 1);
+            motionComboBoxes[1].addItemList(choiceListPath(), 1);
+            motionComboBoxes[2].addItemList(choiceListQuant(), 1);
+            motionComboBoxes[3].addItemList(choiceListMode(), 1);
+            
+            // Create Motion SwitchCell wrappers (following Delay group pattern)
+            const juce::StringArray comboLabels = {"Panner", "Path", "Quant", "Mode"};
+            for (int i = 0; i < 4; ++i) {
+                if (!motionComboCells[i]) {
+                    motionComboCells[i] = std::make_unique<SwitchCell>(motionComboBoxes[i]);
+                    motionComboCells[i]->setCaption(comboLabels[i]);
+                    // Apply same green border treatment as other Motion items
+                    motionComboCells[i]->getProperties().set ("motionGreenBorder", true);
+                    motionComboCells[i]->setShowBorder(true);
+                }
+                // Add to bottomAltPanel like Delay group does
+                if (motionComboCells[i]->getParentComponent() != &bottomAltPanel) {
+                    bottomAltPanel.addAndMakeVisible(*motionComboCells[i]);
+                }
+            }
+            
+            const juce::StringArray buttonLabels = {"Retrig", "Anchor", "HeadSafe"};
+            for (int i = 0; i < 3; ++i) {
+                if (!motionButtonCells[i]) {
+                    motionButtonCells[i] = std::make_unique<SwitchCell>(motionButtons[i]);
+                    motionButtonCells[i]->setCaption(buttonLabels[i]);
+                    // Apply same green border treatment as other Motion items
+                    motionButtonCells[i]->getProperties().set ("motionGreenBorder", true);
+                    motionButtonCells[i]->setShowBorder(true);
+                }
+                // Add to bottomAltPanel like Delay group does
+                if (motionButtonCells[i]->getParentComponent() != &bottomAltPanel) {
+                    bottomAltPanel.addAndMakeVisible(*motionButtonCells[i]);
+                }
+            }
+            
+            // Motion parameter attachments
+            comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, id::panner_select, motionComboBoxes[0]));
+            comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, id::path, motionComboBoxes[1]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::rate_hz, motionDummiesGroup2[2]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::depth_pct, motionDummiesGroup2[3]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::phase_deg, motionDummiesGroup2[4]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::spread_pct, motionDummiesGroup2[5]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::elev_bias, motionDummiesGroup2[6]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::shape_bounce, motionDummiesGroup2[7]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::jitter_amt, motionDummiesGroup2[8]));
+            comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, id::quantize_div, motionComboBoxes[2]));
+            comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, id::mode, motionComboBoxes[3]));
+            buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, id::retrig, motionButtons[0]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::hold_ms, motionDummiesGroup2[12]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::sens, motionDummiesGroup2[13]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::offset_deg, motionDummiesGroup2[14]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::front_bias, motionDummiesGroup2[15]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::doppler_amt, motionDummiesGroup2[16]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::motion_send, motionDummiesGroup2[17]));
+            buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, id::anchor_enable, motionButtons[1]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, id::bass_floor_hz, motionDummiesGroup2[19]));
+            buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, id::headphone_safe, motionButtons[2]));
+
     // parameter listeners (host→UI)
     proc.apvts.addParameterListener ("space_algo", this);
     proc.apvts.addParameterListener ("split_mode", this);
@@ -2616,34 +2680,57 @@ void MyPluginAudioProcessorEditor::performLayout()
         auto b = bottomAltPanel.getLocalBounds();
         
         // Motion group positioned directly in Group 2 panel (no container)
-        const int motionGroup2W = 4 * (lPx + Layout::dp (8, s)); // 4 columns
+        const int motionGroup2W = 5 * (lPx + Layout::dp (8, s)); // 5 columns for 20 controls
         const int motionGroup2H = b.getHeight();
         const int motionGroup2X = b.getX();
         const int motionGroup2Y = b.getY();
         
-        // Layout Motion cells in 4x4 grid within Group 2 panel
+        // Layout Motion cells in 4x5 grid within Group 2 panel
         const int motionK = lPx;
         const int motionV = Layout::dp (14, s);
         const int motionG = Layout::dp (4, s); // Match Delay group labelGap
         const int motionCellW = lPx + Layout::dp (8, s); // Match Delay group delayCellW
         const int motionCellH = containerHeight; // Match Delay group containerHeight
         
+        // Motion control labels
+        const juce::StringArray motionLabels = {
+            "Panner", "Path", "Rate", "Depth", "Phase",
+            "Spread", "Elev", "Bounce", "Jitter", "Quant",
+            "Mode", "Retrig", "Hold", "Sens", "Offset",
+            "Front", "Doppler", "Send", "Anchor", "Bass"
+        };
+        
         // Create and layout Group 2 motion cells
-        for (int i = 0; i < 16; ++i)
+        for (int i = 0; i < 20; ++i)
         {
             if (!motionCellsGroup2[i])
             {
                 motionValuesGroup2[i].setText ("", juce::dontSendNotification);
-                motionCellsGroup2[i] = std::make_unique<KnobCell>(motionDummiesGroup2[i], motionValuesGroup2[i], "");
+                motionCellsGroup2[i] = std::make_unique<KnobCell>(motionDummiesGroup2[i], motionValuesGroup2[i], motionLabels[i]);
                 motionCellsGroup2[i]->getProperties().set ("motionGreenBorder", true);
-                motionDummiesGroup2[i].setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-                motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-                // Ensure rotary angles match LNF tick system (π → π + 2π)
-                motionDummiesGroup2[i].setRotaryParameters (
-                    juce::MathConstants<float>::pi,
-                    juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
-                    true
-                );
+                
+                // Set up slider based on control type
+                if (i == 0 || i == 1 || i == 9 || i == 10) // ComboBox controls
+                {
+                    motionDummiesGroup2[i].setSliderStyle (juce::Slider::LinearHorizontal);
+                    motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::TextBoxLeft, false, 60, 18);
+                }
+                else if (i == 11 || i == 18) // Button controls
+                {
+                    motionDummiesGroup2[i].setSliderStyle (juce::Slider::LinearHorizontal);
+                    motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+                }
+                else // Knob controls
+                {
+                    motionDummiesGroup2[i].setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+                    motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+                    // Ensure rotary angles match LNF tick system (π → π + 2π)
+                    motionDummiesGroup2[i].setRotaryParameters (
+                        juce::MathConstants<float>::pi,
+                        juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
+                        true
+                    );
+                }
             }
             
             // Add directly to Group 2 panel
@@ -2656,34 +2743,38 @@ void MyPluginAudioProcessorEditor::performLayout()
             motionCellsGroup2[i]->setValueLabelGap (motionG);
         }
         
-        // Layout Motion items in 4x4 grid using juce::Grid (fixed pixel units like Delay group)
+        // Layout Motion items in 4x5 grid using juce::Grid (fixed pixel units like Delay group)
         juce::Grid motionGrid;
         motionGrid.rowGap = juce::Grid::Px (0);
         motionGrid.columnGap = juce::Grid::Px (0);
         motionGrid.templateRows = { juce::Grid::Px (motionCellH), juce::Grid::Px (motionCellH), juce::Grid::Px (motionCellH), juce::Grid::Px (motionCellH) };
-        motionGrid.templateColumns = { juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW) };
+        motionGrid.templateColumns = { juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW) };
         
         motionGrid.items = {
-            // Row 1
-            juce::GridItem (*motionCellsGroup2[0]).withArea (1,1),
-            juce::GridItem (*motionCellsGroup2[1]).withArea (1,2),
-            juce::GridItem (*motionCellsGroup2[2]).withArea (1,3),
-            juce::GridItem (*motionCellsGroup2[3]).withArea (1,4),
-            // Row 2
-            juce::GridItem (*motionCellsGroup2[4]).withArea (2,1),
-            juce::GridItem (*motionCellsGroup2[5]).withArea (2,2),
-            juce::GridItem (*motionCellsGroup2[6]).withArea (2,3),
-            juce::GridItem (*motionCellsGroup2[7]).withArea (2,4),
-            // Row 3
-            juce::GridItem (*motionCellsGroup2[8]).withArea (3,1),
-            juce::GridItem (*motionCellsGroup2[9]).withArea (3,2),
-            juce::GridItem (*motionCellsGroup2[10]).withArea (3,3),
-            juce::GridItem (*motionCellsGroup2[11]).withArea (3,4),
-            // Row 4
-            juce::GridItem (*motionCellsGroup2[12]).withArea (4,1),
-            juce::GridItem (*motionCellsGroup2[13]).withArea (4,2),
-            juce::GridItem (*motionCellsGroup2[14]).withArea (4,3),
-            juce::GridItem (*motionCellsGroup2[15]).withArea (4,4)
+            // Row 1 - Panner & Path (5 controls)
+            juce::GridItem (*motionComboCells[0]).withArea (1,1),  // Panner (ComboBox)
+            juce::GridItem (*motionComboCells[1]).withArea (1,2),  // Path (ComboBox)
+            juce::GridItem (*motionCellsGroup2[2]).withArea (1,3),  // Rate
+            juce::GridItem (*motionCellsGroup2[3]).withArea (1,4),  // Depth
+            juce::GridItem (*motionCellsGroup2[4]).withArea (1,5),  // Phase
+            // Row 2 - Shape & Feel (5 controls)
+            juce::GridItem (*motionCellsGroup2[5]).withArea (2,1),  // Spread
+            juce::GridItem (*motionCellsGroup2[6]).withArea (2,2),  // Elevation Bias
+            juce::GridItem (*motionCellsGroup2[7]).withArea (2,3),  // Bounce
+            juce::GridItem (*motionCellsGroup2[8]).withArea (2,4),  // Jitter
+            juce::GridItem (*motionComboCells[2]).withArea (2,5),  // Quantize (ComboBox)
+            // Row 3 - Rhythm & Triggers (5 controls)
+            juce::GridItem (*motionComboCells[3]).withArea (3,1), // Mode (ComboBox)
+            juce::GridItem (*motionButtonCells[0]).withArea (3,2), // Retrig (Button)
+            juce::GridItem (*motionCellsGroup2[12]).withArea (3,3), // Hold
+            juce::GridItem (*motionCellsGroup2[13]).withArea (3,4), // Sens
+            juce::GridItem (*motionCellsGroup2[14]).withArea (3,5), // Offset
+            // Row 4 - Depth & Safety (5 controls)
+            juce::GridItem (*motionCellsGroup2[15]).withArea (4,1), // Front Bias
+            juce::GridItem (*motionCellsGroup2[16]).withArea (4,2), // Doppler
+            juce::GridItem (*motionCellsGroup2[17]).withArea (4,3), // Motion Send
+            juce::GridItem (*motionButtonCells[1]).withArea (4,4), // Anchor (Button)
+            juce::GridItem (*motionCellsGroup2[19]).withArea (4,5)  // Bass Floor (Knob)
         };
         
         // Perform layout within motion group area with gap reduction

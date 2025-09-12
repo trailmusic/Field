@@ -32,6 +32,13 @@ set(SRC
     ui/machine/MachinePane.h
     ui/machine/MachinePane.cpp
     
+    motion/MotionEngine.h
+    motion/MotionPanel.h
+    motion/MotionPanel.cpp
+    motion/MotionParams.h
+    motion/MotionPath.h
+    motion/MotionIDs.h
+    
     dsp/DelayPresetLibrary.h
     dsp/DelayPresetLibrary.cpp
     PresetStore.h

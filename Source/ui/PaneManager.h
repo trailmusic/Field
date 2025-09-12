@@ -4,6 +4,7 @@
 #include "ImagerPane.h"
 #include "machine/MachinePane.h"
 #include "../IconSystem.h"
+#include "../motion/MotionPanel.h"
 
 class XYPad; // forward (lives in PluginEditor.h/cpp)
 
@@ -46,7 +47,7 @@ public:
         spec = std::make_unique<ProcessedSpectrumPane> (lnf);
         imgr = std::make_unique<ImagerPane>();
         band = std::make_unique<juce::Component>(); // scaffold placeholder
-        motion = std::make_unique<juce::Component>(); // scaffold placeholder
+        motion = std::make_unique<motion::MotionPanel>(p.apvts, &p.undo);
         mach = std::make_unique<MachinePane>(p, state, lnf);
 
         for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get() })

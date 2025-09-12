@@ -946,6 +946,8 @@ public:
         {
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
             {
+                const bool motionGreen = (bool) getProperties().getWithDefault ("motionGreenBorder", false);
+                
                 if (isDelayTheme)
                 {
                     auto r = getLocalBounds().toFloat().reduced (3.0f);
@@ -953,6 +955,41 @@ public:
                     auto border = lf->theme.text; // use default font grey for border
                     g.setColour (panel);  g.fillRoundedRectangle (r, 8.0f);
                     if (showBorder) { g.setColour (border); g.drawRoundedRectangle (r, 8.0f, 1.5f); }
+                }
+                else if (motionGreen)
+                {
+                    // Custom paint for Motion cells with deep blue/purple border
+                    auto r = getLocalBounds().toFloat();
+                    const float rad = 8.0f;
+                    
+                    g.setColour (lf->theme.panel);
+                    g.fillRoundedRectangle (r.reduced (3.0f), rad);
+                    
+                    juce::DropShadow ds1 (lf->theme.shadowDark.withAlpha (0.35f), 12, { -1, -1 });
+                    juce::DropShadow ds2 (lf->theme.shadowLight.withAlpha (0.25f),  6, { -1, -1 });
+                    ds1.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
+                    ds2.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
+                    
+                    g.setColour (lf->theme.sh.withAlpha (0.18f));
+                    g.drawRoundedRectangle (r.reduced (4.0f), rad - 1.0f, 0.8f);
+                    
+                    if (showBorder)
+                    {
+                        auto border = r.reduced (2.0f);
+                        g.setColour (juce::Colour (0xFF4A4A8E)); // Deep blue/purple matching accent hue family
+                        if (isMouseOverOrDragging() || hoverActive)
+                        {
+                            for (int i = 1; i <= 6; ++i)
+                            {
+                                const float t = (float) i / 6.0f;
+                                const float expand = 2.0f + t * 8.0f;
+                                g.setColour (juce::Colour (0xFF4A4A8E).withAlpha ((1.0f - t) * 0.22f));
+                                g.drawRoundedRectangle (border.expanded (expand), rad + expand * 0.35f, 2.0f);
+                            }
+                        }
+                        g.setColour (juce::Colour (0xFF4A4A8E));
+                        g.drawRoundedRectangle (border, rad, 1.5f);
+                    }
                 }
                 else
                 {
@@ -2142,9 +2179,17 @@ private:
     HorizontalDivider rowDivVol{lnf}, rowDivEQ{lnf};
 
     // Motion cells - only in Group 2
-    std::array<std::unique_ptr<KnobCell>, 16> motionCellsGroup2;
-    std::array<juce::Slider, 16> motionDummiesGroup2;
-    std::array<juce::Label,  16> motionValuesGroup2;
+    std::array<std::unique_ptr<KnobCell>, 20> motionCellsGroup2;
+    std::array<juce::Slider, 20> motionDummiesGroup2;
+    std::array<juce::Label,  20> motionValuesGroup2;
+    
+    // Motion ComboBoxes and Buttons
+    std::array<juce::ComboBox, 4> motionComboBoxes;
+    std::array<juce::ToggleButton, 3> motionButtons;
+    
+    // Motion SwitchCell wrappers (like Delay group)
+    std::array<std::unique_ptr<SwitchCell>, 4> motionComboCells;
+    std::array<std::unique_ptr<SwitchCell>, 3> motionButtonCells;
 
     // Phase Mode center group
     class PhaseModeButton : public ThemedIconButton {

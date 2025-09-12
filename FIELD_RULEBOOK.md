@@ -219,4 +219,43 @@ if (auto* p = apvts.getParameter("width")) {
 
 ---
 
+## 12) Group 2 panel system
+
+- **Panel Architecture**
+  - Group 2 panel (`bottomAltPanel`) is a sliding overlay that covers bottom control rows when activated
+  - Panel uses rounded corners (6px radius) for modern appearance via `g.fillRoundedRectangle()`
+  - No external or internal padding - uses full available space for maximum control density
+  - Panel slides in/out with smooth animation using `bottomAltSlide01` progress value
+
+- **Group Separation**
+  - **Group 1**: Main layout controls (Pan, Width, Gain, Mix, etc.) - always visible
+  - **Group 2**: Specialized controls in sliding panel (Motion group, future controls)
+  - Each group has separate control arrays - no sharing or hide/show logic
+  - Motion controls exist **only** in Group 2, never in Group 1
+
+- **Motion Group Implementation**
+  - 4x4 grid of motion controls on left side of Group 2 panel
+  - Uses `motionCellsGroup2`, `motionDummiesGroup2`, `motionValuesGroup2` arrays
+  - Each motion cell is a `KnobCell` with green border styling (`motionGreenBorder` property)
+  - Rotary parameters: π to π + 2π for consistent angle mapping
+
+- **Layout Rules**
+  - Group 2 panel bounds: `bottomAltPanel.getLocalBounds()` (no padding)
+  - Motion group container: positioned at panel origin with full height
+  - Future controls area: right side of panel, separated by `Layout::GAP`
+  - All positioning uses `Layout::dp()` for scale awareness
+
+- **Z-Order Management**
+  - Panel uses `toFront(true)` to appear above main layout
+  - Individual controls must NOT use `toFront()` calls that would appear above panel
+  - Panel intercepts mouse clicks when active: `setInterceptsMouseClicks(showPanel, false)`
+
+- **Animation & State**
+  - Panel visibility controlled by `bottomAltTargetOn` boolean
+  - Smooth slide animation with cosine easing: `0.5f - 0.5f * cos(π * t0)`
+  - Animation rate: 0.28f for brisk but smooth response
+  - Panel appears only when `effSlide > 0.001f` to prevent flicker
+
+---
+
 If you want, we can turn this into a short lint checklist comment to paste at the top of each new file.
