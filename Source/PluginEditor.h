@@ -1716,6 +1716,7 @@ private:
     std::unique_ptr<KnobCell> delayDuckReleaseCell;
     std::unique_ptr<KnobCell> delayDuckThresholdCell;
     std::unique_ptr<KnobCell> delayDuckLookaheadCell;
+    std::unique_ptr<KnobCell> delayDuckRatioCell;
 
     // Delay control cells (buttons/combos, styled like KnobCell panels)
     std::unique_ptr<SwitchCell> delayEnabledCell;
@@ -1727,6 +1728,9 @@ private:
     std::unique_ptr<SwitchCell> delayPingpongCell;
     std::unique_ptr<SwitchCell> delayDuckSourceCell;
     std::unique_ptr<SwitchCell> delayDuckPostCell;
+
+    // Delay group container for Group 2
+    std::unique_ptr<ControlContainer> delayGroupContainer;
 
     std::unique_ptr<Segmented3Control> delayGridFlavorSegments;
 
