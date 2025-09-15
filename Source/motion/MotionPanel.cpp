@@ -53,7 +53,10 @@ void MotionPanel::paint(juce::Graphics& g)
         // Draw title
         g.setColour(juce::Colours::white.withAlpha(0.6f));
         g.setFont(14.0f);
-        g.drawFittedText("Field • Motion", orbBounds.removeFromTop(24), juce::Justification::centredTop, 1);
+        {
+            auto titleArea = orbBounds; // don't mutate orbBounds in paint
+            g.drawFittedText("Field • Motion", titleArea.removeFromTop(24), juce::Justification::centredTop, 1);
+        }
         return;
     }
     
@@ -88,7 +91,10 @@ void MotionPanel::paint(juce::Graphics& g)
     // Draw title
     g.setColour(juce::Colours::white.withAlpha(0.6f));
     g.setFont(14.0f);
-    g.drawFittedText("Field • Motion", orbBounds.removeFromTop(24), juce::Justification::centredTop, 1);
+    {
+        auto titleArea = orbBounds; // don't mutate orbBounds in paint
+        g.drawFittedText("Field • Motion", titleArea.removeFromTop(24), juce::Justification::centredTop, 1);
+    }
     
     // Draw diagnostics (small monospace in corner)
     g.setColour(juce::Colours::yellow.withAlpha(0.7f));
@@ -96,7 +102,10 @@ void MotionPanel::paint(juce::Graphics& g)
     juce::String diag = "seq:" + juce::String(visualState.seq) + 
                        " active:" + juce::String((int)visualState.active) +
                        (visualState.link ? " LINK" : "");
-    g.drawFittedText(diag, orbBounds.removeFromTop(12), juce::Justification::centredTop, 1);
+    {
+        auto diagArea = orbBounds; // don't mutate orbBounds in paint
+        g.drawFittedText(diag, diagArea.removeFromTop(12), juce::Justification::centredTop, 1);
+    }
 }
 
 void MotionPanel::mouseDown (const juce::MouseEvent& e)
@@ -299,7 +308,7 @@ void MotionPanel::drawAnchorCircle(juce::Graphics& g, const juce::Rectangle<floa
 
 void MotionPanel::drawStatusIndicators(juce::Graphics& g, const juce::Rectangle<float>&)
 {
-    auto statusArea = orbBounds.removeFromBottom(60);
+    auto statusArea = orbBounds.withTrimmedTop(0).removeFromBottom(60); // don't mutate orbBounds
     
     // Headphone Safe indicator
     if (visualState.headphoneSafe) {

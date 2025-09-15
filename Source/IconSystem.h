@@ -10,6 +10,8 @@ public:
         Unlock,
         CogWheel,
         Power,
+        Anchor,
+        Retrig,
         Speaker,
         Pan,
         Space,
@@ -56,6 +58,8 @@ private:
     static juce::Path createUnlockIcon       (float size);
     static juce::Path createCogWheelIcon     (float size);
     static juce::Path createPowerIcon        (float size);
+    static juce::Path createAnchorIcon       (float size);
+    static juce::Path createRetrigIcon       (float size);
     static juce::Path createSpeakerIcon      (float size);
     static juce::Path createPanIcon          (float size);
     static juce::Path createSpaceIcon        (float size);

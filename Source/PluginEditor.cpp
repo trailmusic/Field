@@ -2139,6 +2139,14 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                         // Add Enable icon to Motion Enable, same as Delay Enable
                         motionButtons[0].getProperties().set ("iconType", (int) IconSystem::Power);
                         motionButtons[0].setComponentID ("motionEnabled");
+                    } else if (i == 1) {
+                        // Retrig icon styling to match system icons
+                        motionButtons[1].getProperties().set ("iconType", (int) IconSystem::Retrig);
+                        motionButtons[1].setComponentID ("motionRetrig");
+                    } else if (i == 2) {
+                        // Anchor icon styling to match system icons
+                        motionButtons[2].getProperties().set ("iconType", (int) IconSystem::Anchor);
+                        motionButtons[2].setComponentID ("motionAnchor");
                     }
                     motionButtonCells[i] = std::make_unique<SwitchCell>(motionButtons[i]);
                     motionButtonCells[i]->setCaption(buttonLabels[i]);
