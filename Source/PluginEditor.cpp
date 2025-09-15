@@ -2135,6 +2135,11 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
             const juce::StringArray buttonLabels = {"Enable", "Retrig", "Anchor", "HeadSafe"};
             for (int i = 0; i < 4; ++i) {
                 if (!motionButtonCells[i]) {
+                    if (i == 0) {
+                        // Add Enable icon to Motion Enable, same as Delay Enable
+                        motionButtons[0].getProperties().set ("iconType", (int) IconSystem::Power);
+                        motionButtons[0].setComponentID ("motionEnabled");
+                    }
                     motionButtonCells[i] = std::make_unique<SwitchCell>(motionButtons[i]);
                     motionButtonCells[i]->setCaption(buttonLabels[i]);
                     // Apply same green border treatment as other Motion items
