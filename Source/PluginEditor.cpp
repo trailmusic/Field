@@ -2034,6 +2034,11 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
             motionComboBoxes[2].addItemList(choiceListQuant(), 1);
             motionComboBoxes[3].addItemList(choiceListMode(), 1);
             
+            // Explicitly set Panner ComboBox defaults (no chevron state)
+            motionComboBoxes[0].getProperties().set ("forceSelectedText", true);
+            motionComboBoxes[0].getProperties().set ("defaultTextWhenEmpty", "P1");
+            motionComboBoxes[0].setSelectedId(1, juce::dontSendNotification); // P1 = index 0, but ComboBox uses 1-based IDs
+            
             // Configure Motion ComboBoxes like Delay ComboBoxes
             for (juce::ComboBox* combo : { &motionComboBoxes[0], &motionComboBoxes[1], &motionComboBoxes[2], &motionComboBoxes[3] })
             {
@@ -2042,6 +2047,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                 combo->addListener (this);
                 combo->getProperties().set ("tintedSelected", true);
             }
+            
+            // Special configuration for Panner ComboBox to remove chevron
+            motionComboBoxes[0].setTextWhenNothingSelected("");
             
             // Configure Motion sliders like Delay sliders
             for (int i = 0; i < 20; ++i)
@@ -2124,8 +2132,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                 }
             }
             
-            const juce::StringArray buttonLabels = {"Retrig", "Anchor", "HeadSafe"};
-            for (int i = 0; i < 3; ++i) {
+            const juce::StringArray buttonLabels = {"Enable", "Retrig", "Anchor", "HeadSafe"};
+            for (int i = 0; i < 4; ++i) {
                 if (!motionButtonCells[i]) {
                     motionButtonCells[i] = std::make_unique<SwitchCell>(motionButtons[i]);
                     motionButtonCells[i]->setCaption(buttonLabels[i]);
@@ -2139,28 +2147,22 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                 }
             }
             
-            // Motion parameter attachments
-            comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, id::panner_select, motionComboBoxes[0]));
-            comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, id::path, motionComboBoxes[1]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::rate_hz, motionDummiesGroup2[2]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::depth_pct, motionDummiesGroup2[3]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::phase_deg, motionDummiesGroup2[4]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::spread_pct, motionDummiesGroup2[5]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::elev_bias, motionDummiesGroup2[6]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::shape_bounce, motionDummiesGroup2[7]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::jitter_amt, motionDummiesGroup2[8]));
-            comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, id::quantize_div, motionComboBoxes[2]));
-            comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, id::mode, motionComboBoxes[3]));
-            buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, id::retrig, motionButtons[0]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::hold_ms, motionDummiesGroup2[12]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::sens, motionDummiesGroup2[13]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::offset_deg, motionDummiesGroup2[14]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::front_bias, motionDummiesGroup2[15]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::doppler_amt, motionDummiesGroup2[16]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::motion_send, motionDummiesGroup2[17]));
-            buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, id::anchor_enable, motionButtons[1]));
-            attachments.push_back (std::make_unique<SA> (proc.apvts, id::bass_floor_hz, motionDummiesGroup2[19]));
-            buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, id::headphone_safe, motionButtons[2]));
+            // Motion parameter attachments (6x4 grid: 24 total) - Global parameters first
+            buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, motion::id::enable, motionButtons[0]));
+            
+            // Ensure panner parameter is set to P1 before creating attachment
+            if (auto* pannerParam = proc.apvts.getParameter(motion::id::panner_select)) {
+                pannerParam->setValueNotifyingHost(0.0f); // P1 = 0.0f for choice parameter
+            }
+            
+            comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, motion::id::panner_select, motionComboBoxes[0]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, motion::id::bass_floor_hz, motionDummiesGroup2[22]));
+            attachments.push_back (std::make_unique<SA> (proc.apvts, motion::id::occlusion, motionDummiesGroup2[23]));
+            buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, motion::id::headphone_safe, motionButtons[3]));
+            
+            // Initialize motion parameter attachments based on current panner selection
+            int initialPannerSelect = 0; // Default to P1 (we already set the parameter above)
+            updateMotionParameterAttachments(initialPannerSelect);
 
     // parameter listeners (host→UI)
     proc.apvts.addParameterListener ("space_algo", this);
@@ -2173,6 +2175,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     proc.apvts.addParameterListener ("eq_q_link",      this);
     proc.apvts.addParameterListener ("eq_filter_q",    this);
     proc.apvts.addParameterListener ("hp_q",           this);
+    // Motion panner selection for dynamic parameter switching
+    proc.apvts.addParameterListener (motion::id::panner_select, this);
     proc.apvts.addParameterListener ("lp_q",           this);
     proc.apvts.addParameterListener ("tilt_link_s",    this);
     // Imaging overlays
@@ -2784,16 +2788,16 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int motionCellW = lPx + Layout::dp (8, s); // Match Delay group delayCellW
         const int motionCellH = containerHeight; // Match Delay group containerHeight
         
-        // Motion control labels
+        // Motion control labels (6x4 grid: 24 total)
         const juce::StringArray motionLabels = {
-            "Panner", "Path", "Rate", "Depth", "Phase",
-            "Spread", "Elev", "Bounce", "Jitter", "Quant",
-            "Mode", "Retrig", "Hold", "Sens", "Offset",
-            "Front", "Doppler", "Send", "Anchor", "Bass"
+            "Enable", "Panner", "Path", "Rate", "Depth", "Phase",
+            "Spread", "Elev", "Bounce", "Jitter", "Quant", "Swing",
+            "Mode", "Retrig", "Hold", "Sens", "Offset", "Inertia",
+            "Front", "Doppler", "Send", "Anchor", "Bass", "Occlusion"
         };
         
-        // Create and layout Group 2 motion cells
-        for (int i = 0; i < 20; ++i)
+        // Create and layout Group 2 motion cells (6x4 grid: 24 total)
+        for (int i = 0; i < 24; ++i)
         {
             if (!motionCellsGroup2[i])
             {
@@ -2802,12 +2806,17 @@ void MyPluginAudioProcessorEditor::performLayout()
                 motionCellsGroup2[i]->getProperties().set ("motionGreenBorder", true);
                 
                 // Set up slider based on control type
-                if (i == 0 || i == 1 || i == 9 || i == 10) // ComboBox controls
+                if (i == 0) // Enable switch (Button)
+                {
+                    motionDummiesGroup2[i].setSliderStyle (juce::Slider::LinearHorizontal);
+                    motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+                }
+                else if (i == 1 || i == 2 || i == 10 || i == 12) // ComboBox controls (Panner, Path, Quantize, Mode)
                 {
                     motionDummiesGroup2[i].setSliderStyle (juce::Slider::LinearHorizontal);
                     motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::TextBoxLeft, false, 60, 18);
                 }
-                else if (i == 11 || i == 18) // Button controls
+                else if (i == 13 || i == 21) // Button controls (Retrig, Anchor)
                 {
                     motionDummiesGroup2[i].setSliderStyle (juce::Slider::LinearHorizontal);
                     motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
@@ -2840,54 +2849,61 @@ void MyPluginAudioProcessorEditor::performLayout()
         auto Hz  = [](double v){ return juce::String (v, 2) + " Hz"; };
         auto pct = [](double v){ return juce::String (v, 2) + "%"; };
         
-        // Initialize Motion knob value labels with current parameter values
-        set (motionValuesGroup2[2],  Hz (motionDummiesGroup2[2].getValue()));     // Rate
-        set (motionValuesGroup2[3],  pct (motionDummiesGroup2[3].getValue()));    // Depth
-        set (motionValuesGroup2[4],  juce::String (motionDummiesGroup2[4].getValue(), 2) + "°"); // Phase
-        set (motionValuesGroup2[5],  pct (motionDummiesGroup2[5].getValue()));    // Spread
-        set (motionValuesGroup2[6],  juce::String (motionDummiesGroup2[6].getValue(), 2));  // Elev Bias
-        set (motionValuesGroup2[7],  pct (motionDummiesGroup2[7].getValue()));    // Bounce
-        set (motionValuesGroup2[8],  pct (motionDummiesGroup2[8].getValue()));    // Jitter
-        set (motionValuesGroup2[12], juce::String (motionDummiesGroup2[12].getValue(), 2) + " ms"); // Hold
-        set (motionValuesGroup2[13], pct (motionDummiesGroup2[13].getValue()));   // Sens
-        set (motionValuesGroup2[14], juce::String (motionDummiesGroup2[14].getValue(), 2) + "°"); // Offset
-        set (motionValuesGroup2[15], juce::String (motionDummiesGroup2[15].getValue(), 2)); // Front Bias
-        set (motionValuesGroup2[16], pct (motionDummiesGroup2[16].getValue()));   // Doppler
-        set (motionValuesGroup2[17], pct (motionDummiesGroup2[17].getValue()));   // Motion Send
-        set (motionValuesGroup2[19], Hz (motionDummiesGroup2[19].getValue()));    // Bass Floor
+        // Initialize Motion knob value labels with current parameter values (6x4 grid: 24 total)
+        set (motionValuesGroup2[3],  Hz (motionDummiesGroup2[3].getValue()));     // Rate
+        set (motionValuesGroup2[4],  pct (motionDummiesGroup2[4].getValue()));    // Depth
+        set (motionValuesGroup2[5],  juce::String (motionDummiesGroup2[5].getValue(), 2) + "°"); // Phase
+        set (motionValuesGroup2[6],  pct (motionDummiesGroup2[6].getValue()));    // Spread
+        set (motionValuesGroup2[7],  juce::String (motionDummiesGroup2[7].getValue(), 2));  // Elev Bias
+        set (motionValuesGroup2[8],  pct (motionDummiesGroup2[8].getValue()));    // Bounce
+        set (motionValuesGroup2[9],  pct (motionDummiesGroup2[9].getValue()));    // Jitter
+        set (motionValuesGroup2[11], pct (motionDummiesGroup2[11].getValue()));   // Swing
+        set (motionValuesGroup2[14], juce::String (motionDummiesGroup2[14].getValue(), 2) + " ms"); // Hold
+        set (motionValuesGroup2[15], pct (motionDummiesGroup2[15].getValue()));   // Sens
+        set (motionValuesGroup2[16], juce::String (motionDummiesGroup2[16].getValue(), 2) + "°"); // Offset
+        set (motionValuesGroup2[17], juce::String (motionDummiesGroup2[17].getValue(), 2) + " ms"); // Inertia
+        set (motionValuesGroup2[18], juce::String (motionDummiesGroup2[18].getValue(), 2)); // Front Bias
+        set (motionValuesGroup2[19], pct (motionDummiesGroup2[19].getValue()));   // Doppler
+        set (motionValuesGroup2[20], pct (motionDummiesGroup2[20].getValue()));   // Motion Send
+        set (motionValuesGroup2[22], Hz (motionDummiesGroup2[22].getValue()));    // Bass Floor
+        set (motionValuesGroup2[23], pct (motionDummiesGroup2[23].getValue()));   // Occlusion
         
-        // Layout Motion items in 4x5 grid using juce::Grid (fixed pixel units like Delay group)
+        // Layout Motion items in 6x4 grid using juce::Grid (fixed pixel units like Delay group)
         juce::Grid motionGrid;
         motionGrid.rowGap = juce::Grid::Px (0);
         motionGrid.columnGap = juce::Grid::Px (0);
         motionGrid.templateRows = { juce::Grid::Px (motionCellH), juce::Grid::Px (motionCellH), juce::Grid::Px (motionCellH), juce::Grid::Px (motionCellH) };
-        motionGrid.templateColumns = { juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW) };
+        motionGrid.templateColumns = { juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW) };
         
         motionGrid.items = {
-            // Row 1 - Panner & Path (5 controls)
-            juce::GridItem (*motionComboCells[0]).withArea (1,1),  // Panner (ComboBox)
-            juce::GridItem (*motionComboCells[1]).withArea (1,2),  // Path (ComboBox)
-            juce::GridItem (*motionCellsGroup2[2]).withArea (1,3),  // Rate
-            juce::GridItem (*motionCellsGroup2[3]).withArea (1,4),  // Depth
-            juce::GridItem (*motionCellsGroup2[4]).withArea (1,5),  // Phase
-            // Row 2 - Shape & Feel (5 controls)
-            juce::GridItem (*motionCellsGroup2[5]).withArea (2,1),  // Spread
-            juce::GridItem (*motionCellsGroup2[6]).withArea (2,2),  // Elevation Bias
-            juce::GridItem (*motionCellsGroup2[7]).withArea (2,3),  // Bounce
-            juce::GridItem (*motionCellsGroup2[8]).withArea (2,4),  // Jitter
+            // Row 1 - Enable + Core Motion (6 controls)
+            juce::GridItem (*motionButtonCells[0]).withArea (1,1),  // Enable (Button)
+            juce::GridItem (*motionComboCells[0]).withArea (1,2),  // Panner (ComboBox)
+            juce::GridItem (*motionComboCells[1]).withArea (1,3),  // Path (ComboBox)
+            juce::GridItem (*motionCellsGroup2[3]).withArea (1,4),  // Rate
+            juce::GridItem (*motionCellsGroup2[4]).withArea (1,5),  // Depth
+            juce::GridItem (*motionCellsGroup2[5]).withArea (1,6),  // Phase
+            // Row 2 - Shape & Feel (6 controls)
+            juce::GridItem (*motionCellsGroup2[6]).withArea (2,1),  // Spread
+            juce::GridItem (*motionCellsGroup2[7]).withArea (2,2),  // Elevation Bias
+            juce::GridItem (*motionCellsGroup2[8]).withArea (2,3),  // Bounce
+            juce::GridItem (*motionCellsGroup2[9]).withArea (2,4),  // Jitter
             juce::GridItem (*motionComboCells[2]).withArea (2,5),  // Quantize (ComboBox)
-            // Row 3 - Rhythm & Triggers (5 controls)
+            juce::GridItem (*motionCellsGroup2[11]).withArea (2,6), // Swing
+            // Row 3 - Rhythm & Triggers (6 controls)
             juce::GridItem (*motionComboCells[3]).withArea (3,1), // Mode (ComboBox)
-            juce::GridItem (*motionButtonCells[0]).withArea (3,2), // Retrig (Button)
-            juce::GridItem (*motionCellsGroup2[12]).withArea (3,3), // Hold
-            juce::GridItem (*motionCellsGroup2[13]).withArea (3,4), // Sens
-            juce::GridItem (*motionCellsGroup2[14]).withArea (3,5), // Offset
-            // Row 4 - Depth & Safety (5 controls)
-            juce::GridItem (*motionCellsGroup2[15]).withArea (4,1), // Front Bias
-            juce::GridItem (*motionCellsGroup2[16]).withArea (4,2), // Doppler
-            juce::GridItem (*motionCellsGroup2[17]).withArea (4,3), // Motion Send
-            juce::GridItem (*motionButtonCells[1]).withArea (4,4), // Anchor (Button)
-            juce::GridItem (*motionCellsGroup2[19]).withArea (4,5)  // Bass Floor (Knob)
+            juce::GridItem (*motionButtonCells[1]).withArea (3,2), // Retrig (Button)
+            juce::GridItem (*motionCellsGroup2[14]).withArea (3,3), // Hold
+            juce::GridItem (*motionCellsGroup2[15]).withArea (3,4), // Sens
+            juce::GridItem (*motionCellsGroup2[16]).withArea (3,5), // Offset
+            juce::GridItem (*motionCellsGroup2[17]).withArea (3,6), // Inertia
+            // Row 4 - Depth & Safety (6 controls)
+            juce::GridItem (*motionCellsGroup2[18]).withArea (4,1), // Front Bias
+            juce::GridItem (*motionCellsGroup2[19]).withArea (4,2), // Doppler
+            juce::GridItem (*motionCellsGroup2[20]).withArea (4,3), // Motion Send
+            juce::GridItem (*motionButtonCells[2]).withArea (4,4), // Anchor (Button)
+            juce::GridItem (*motionCellsGroup2[22]).withArea (4,5), // Bass Floor (Knob)
+            juce::GridItem (*motionCellsGroup2[23]).withArea (4,6)  // Occlusion
         };
         
         // Perform layout within motion group area with gap reduction
@@ -3700,6 +3716,31 @@ void MyPluginAudioProcessorEditor::timerCallback()
     const bool duckActive = (duckingKnob.getValue() > 0.0001) && reverbActive;
     spaceAlgorithmSwitch.setAlpha (reverbActive ? 1.0f : 0.35f);
     spaceAlgorithmSwitch.setMuted (!reverbActive);
+    
+    // Update motion panel visual state with sequence tracking and idle fallback
+    if (panes) {
+        motion::VisualState visualState;
+        auto seq = proc.getMotionEngine().tryGetVisualState(visualState) ? visualState.seq : 0;
+        
+        // Only update if we have a new sequence number (prevents unnecessary repaints)
+        static uint32_t lastSeq = 0;
+        static int staleMs = 0;
+        
+        if (seq == lastSeq) {
+            staleMs += 16; // ~60Hz timer
+            if (staleMs > 200) { // 200ms timeout
+                // Synthesize a static pose from APVTS (no DSP needed)
+                visualState = synthesizeVisualFromParams();
+            }
+        } else {
+            staleMs = 0;
+        }
+        
+        if (visualState.seq != lastSeq || staleMs > 200) {
+            lastSeq = visualState.seq;
+            panes->setMotionVisualState(visualState);
+        }
+    }
     duckAttack.setMuted (!duckActive);
     duckRelease.setMuted(!duckActive);
     duckThreshold.setMuted(!duckActive);
@@ -3855,21 +3896,24 @@ void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
     else if (s == &delayDuckLookahead) set (delayDuckLookaheadValue, juce::String ((int) delayDuckLookahead.getValue()) + " ms");
     else if (s == &delayPreDelay) set (delayPreDelayValue, juce::String ((int) delayPreDelay.getValue()) + " ms");
 
-    // Motion controls value label updates
-    else if (s == &motionDummiesGroup2[2])  set (motionValuesGroup2[2],  Hz (motionDummiesGroup2[2].getValue()));     // Rate
-    else if (s == &motionDummiesGroup2[3])  set (motionValuesGroup2[3],  pct (motionDummiesGroup2[3].getValue()));    // Depth
-    else if (s == &motionDummiesGroup2[4])  set (motionValuesGroup2[4],  juce::String (motionDummiesGroup2[4].getValue(), 2) + "°"); // Phase
-    else if (s == &motionDummiesGroup2[5])  set (motionValuesGroup2[5],  pct (motionDummiesGroup2[5].getValue()));    // Spread
-    else if (s == &motionDummiesGroup2[6])  set (motionValuesGroup2[6],  juce::String (motionDummiesGroup2[6].getValue(), 2));  // Elev Bias
-    else if (s == &motionDummiesGroup2[7])  set (motionValuesGroup2[7],  pct (motionDummiesGroup2[7].getValue()));    // Bounce
-    else if (s == &motionDummiesGroup2[8])  set (motionValuesGroup2[8],  pct (motionDummiesGroup2[8].getValue()));    // Jitter
-    else if (s == &motionDummiesGroup2[12]) set (motionValuesGroup2[12], juce::String (motionDummiesGroup2[12].getValue(), 2) + " ms"); // Hold
-    else if (s == &motionDummiesGroup2[13]) set (motionValuesGroup2[13], pct (motionDummiesGroup2[13].getValue()));   // Sens
-    else if (s == &motionDummiesGroup2[14]) set (motionValuesGroup2[14], juce::String (motionDummiesGroup2[14].getValue(), 2) + "°"); // Offset
-    else if (s == &motionDummiesGroup2[15]) set (motionValuesGroup2[15], juce::String (motionDummiesGroup2[15].getValue(), 2)); // Front Bias
-    else if (s == &motionDummiesGroup2[16]) set (motionValuesGroup2[16], pct (motionDummiesGroup2[16].getValue()));   // Doppler
-    else if (s == &motionDummiesGroup2[17]) set (motionValuesGroup2[17], pct (motionDummiesGroup2[17].getValue()));   // Motion Send
-    else if (s == &motionDummiesGroup2[19]) set (motionValuesGroup2[19], Hz (motionDummiesGroup2[19].getValue()));    // Bass Floor
+    // Motion controls value label updates (indices aligned with attachments/refresh)
+    else if (s == &motionDummiesGroup2[3])  set (motionValuesGroup2[3],  Hz (motionDummiesGroup2[3].getValue()));      // Rate
+    else if (s == &motionDummiesGroup2[4])  set (motionValuesGroup2[4],  pct (motionDummiesGroup2[4].getValue()));     // Depth
+    else if (s == &motionDummiesGroup2[5])  set (motionValuesGroup2[5],  juce::String (motionDummiesGroup2[5].getValue(), 2) + "°"); // Phase
+    else if (s == &motionDummiesGroup2[6])  set (motionValuesGroup2[6],  pct (motionDummiesGroup2[6].getValue()));     // Spread
+    else if (s == &motionDummiesGroup2[7])  set (motionValuesGroup2[7],  juce::String (motionDummiesGroup2[7].getValue(), 2));   // Elev Bias
+    else if (s == &motionDummiesGroup2[8])  set (motionValuesGroup2[8],  pct (motionDummiesGroup2[8].getValue()));     // Bounce
+    else if (s == &motionDummiesGroup2[9])  set (motionValuesGroup2[9],  pct (motionDummiesGroup2[9].getValue()));     // Jitter
+    else if (s == &motionDummiesGroup2[11]) set (motionValuesGroup2[11], pct (motionDummiesGroup2[11].getValue()));    // Swing
+    else if (s == &motionDummiesGroup2[14]) set (motionValuesGroup2[14], juce::String (motionDummiesGroup2[14].getValue(), 2) + " ms"); // Hold
+    else if (s == &motionDummiesGroup2[15]) set (motionValuesGroup2[15], pct (motionDummiesGroup2[15].getValue()));    // Sens
+    else if (s == &motionDummiesGroup2[16]) set (motionValuesGroup2[16], juce::String (motionDummiesGroup2[16].getValue(), 2) + "°"); // Offset
+    else if (s == &motionDummiesGroup2[17]) set (motionValuesGroup2[17], juce::String (motionDummiesGroup2[17].getValue(), 2) + " ms"); // Inertia
+    else if (s == &motionDummiesGroup2[18]) set (motionValuesGroup2[18], juce::String (motionDummiesGroup2[18].getValue(), 2));  // Front Bias
+    else if (s == &motionDummiesGroup2[19]) set (motionValuesGroup2[19], pct (motionDummiesGroup2[19].getValue()));    // Doppler
+    else if (s == &motionDummiesGroup2[20]) set (motionValuesGroup2[20], pct (motionDummiesGroup2[20].getValue()));    // Motion Send
+    else if (s == &motionDummiesGroup2[22]) set (motionValuesGroup2[22], Hz (motionDummiesGroup2[22].getValue()));     // Bass Floor
+    else if (s == &motionDummiesGroup2[23]) set (motionValuesGroup2[23], pct (motionDummiesGroup2[23].getValue()));    // Occlusion
 
     // Refresh muted visuals when any control changes
     updateMutedKnobVisuals();
@@ -3877,7 +3921,13 @@ void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
 
 void MyPluginAudioProcessorEditor::comboBoxChanged(juce::ComboBox* comboBox)
 {
-    // Handle combo box changes if needed
+    // Handle motion panner ComboBox changes
+    if (comboBox == &motionComboBoxes[0]) { // Panner ComboBox
+        // Redundant safety: force rebind and visual refresh so the UI flips immediately
+        motionBinding.trigger();
+        refreshMotionControlValues();
+        repaint();
+    }
 }
 
 void MyPluginAudioProcessorEditor::buttonClicked(juce::Button* button)
@@ -3969,6 +4019,11 @@ void MyPluginAudioProcessorEditor::parameterChanged (const juce::String& id, flo
         {
             syncXYPadWithParameters();
         });
+    }
+    else if (id == motion::id::panner_select)
+    {
+        // Trigger async rebinding on message thread (no races, no dangles)
+        motionBinding.trigger();
     }
 }
 
@@ -4091,6 +4146,285 @@ void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
     pad.setAsymmetry   ((float) asymmetry.getValue());
     pad.setShuffler    ((float) shufLoPct.getValue(), (float) shufHiPct.getValue(), (float) shufXHz.getValue());
     updateMutedKnobVisuals();
+}
+
+void MyPluginAudioProcessorEditor::updateMotionParameterAttachments(int pannerSelect)
+{
+    using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
+    
+    // Store the current attachment counts to know which ones to clear later
+    size_t initialAttachmentCount = attachments.size();
+    size_t initialComboCount = comboAttachments.size();
+    size_t initialButtonCount = buttonAttachments.size();
+    
+    // Rebuild motion-only attachment buckets deterministically
+    motionSliderAttachments.clear();
+    motionComboAttachments.clear();
+    motionButtonAttachments.clear();
+
+    // Create new attachments based on selected panner
+    if (pannerSelect == 1) { // P2 mode
+        motionComboAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(proc.apvts, motion::id::p2_path, motionComboBoxes[1]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_rate_hz,    motionDummiesGroup2[3]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_depth_pct,  motionDummiesGroup2[4]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_phase_deg,  motionDummiesGroup2[5]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_spread_pct, motionDummiesGroup2[6]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_elev_bias,  motionDummiesGroup2[7]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_shape_bounce, motionDummiesGroup2[8]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_jitter_amt, motionDummiesGroup2[9]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_swing_pct,  motionDummiesGroup2[11]));
+        motionComboAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(proc.apvts, motion::id::p2_quantize_div, motionComboBoxes[2]));
+        motionComboAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(proc.apvts, motion::id::p2_mode,        motionComboBoxes[3]));
+        motionButtonAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(proc.apvts, motion::id::p2_retrig,       motionButtons[1]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_hold_ms,    motionDummiesGroup2[14]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_sens,       motionDummiesGroup2[15]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_phase_deg,  motionDummiesGroup2[16]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_inertia_ms, motionDummiesGroup2[17]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_front_bias, motionDummiesGroup2[18]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_doppler_amt,motionDummiesGroup2[19]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_motion_send,motionDummiesGroup2[20]));
+        motionButtonAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(proc.apvts, motion::id::p2_anchor_enable, motionButtons[2]));
+    } else { // P1 mode or Link mode
+        motionComboAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(proc.apvts, motion::id::p1_path, motionComboBoxes[1]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_rate_hz,    motionDummiesGroup2[3]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_depth_pct,  motionDummiesGroup2[4]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_phase_deg,  motionDummiesGroup2[5]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_spread_pct, motionDummiesGroup2[6]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_elev_bias,  motionDummiesGroup2[7]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_shape_bounce, motionDummiesGroup2[8]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_jitter_amt, motionDummiesGroup2[9]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_swing_pct,  motionDummiesGroup2[11]));
+        motionComboAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(proc.apvts, motion::id::p1_quantize_div, motionComboBoxes[2]));
+        motionComboAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(proc.apvts, motion::id::p1_mode,        motionComboBoxes[3]));
+        motionButtonAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(proc.apvts, motion::id::p1_retrig,       motionButtons[1]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_hold_ms,    motionDummiesGroup2[14]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_sens,       motionDummiesGroup2[15]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_phase_deg,  motionDummiesGroup2[16]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_inertia_ms, motionDummiesGroup2[17]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_front_bias, motionDummiesGroup2[18]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_doppler_amt,motionDummiesGroup2[19]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_motion_send,motionDummiesGroup2[20]));
+        motionButtonAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(proc.apvts, motion::id::p1_anchor_enable, motionButtons[2]));
+    }
+}
+
+void MyPluginAudioProcessorEditor::updateMotionParameterAttachmentsOnMessageThread()
+{
+    using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
+
+    // 1) Clear and rebuild motion-only attachments
+    motionSliderAttachments.clear();
+    motionComboAttachments.clear();
+    motionButtonAttachments.clear();
+
+    // 2) Get current panner selection
+    const int pannerSelect = (int)std::round(proc.apvts.getRawParameterValue(motion::id::panner_select)->load());
+
+    // 3) Bind controls to P1 or P2 parameters based on selection
+    if (pannerSelect == 1) { // P2 mode
+        motionComboAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(proc.apvts, motion::id::p2_path, motionComboBoxes[1]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_rate_hz,    motionDummiesGroup2[3]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_depth_pct,  motionDummiesGroup2[4]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_phase_deg,  motionDummiesGroup2[5]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_spread_pct, motionDummiesGroup2[6]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_elev_bias,  motionDummiesGroup2[7]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_shape_bounce, motionDummiesGroup2[8]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_jitter_amt, motionDummiesGroup2[9]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_swing_pct,  motionDummiesGroup2[11]));
+        motionComboAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(proc.apvts, motion::id::p2_quantize_div, motionComboBoxes[2]));
+        motionComboAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(proc.apvts, motion::id::p2_mode,        motionComboBoxes[3]));
+        motionButtonAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(proc.apvts, motion::id::p2_retrig,       motionButtons[1]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_hold_ms,    motionDummiesGroup2[14]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_sens,       motionDummiesGroup2[15]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_phase_deg,  motionDummiesGroup2[16]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_inertia_ms, motionDummiesGroup2[17]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_front_bias, motionDummiesGroup2[18]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_doppler_amt,motionDummiesGroup2[19]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p2_motion_send,motionDummiesGroup2[20]));
+        motionButtonAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(proc.apvts, motion::id::p2_anchor_enable, motionButtons[2]));
+    } else { // P1 or Link (bind to P1)
+        motionComboAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(proc.apvts, motion::id::p1_path, motionComboBoxes[1]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_rate_hz,    motionDummiesGroup2[3]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_depth_pct,  motionDummiesGroup2[4]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_phase_deg,  motionDummiesGroup2[5]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_spread_pct, motionDummiesGroup2[6]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_elev_bias,  motionDummiesGroup2[7]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_shape_bounce, motionDummiesGroup2[8]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_jitter_amt, motionDummiesGroup2[9]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_swing_pct,  motionDummiesGroup2[11]));
+        motionComboAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(proc.apvts, motion::id::p1_quantize_div, motionComboBoxes[2]));
+        motionComboAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(proc.apvts, motion::id::p1_mode,        motionComboBoxes[3]));
+        motionButtonAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(proc.apvts, motion::id::p1_retrig,       motionButtons[1]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_hold_ms,    motionDummiesGroup2[14]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_sens,       motionDummiesGroup2[15]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_phase_deg,  motionDummiesGroup2[16]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_inertia_ms, motionDummiesGroup2[17]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_front_bias, motionDummiesGroup2[18]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_doppler_amt,motionDummiesGroup2[19]));
+        motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_motion_send,motionDummiesGroup2[20]));
+        motionButtonAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(proc.apvts, motion::id::p1_anchor_enable, motionButtons[2]));
+    }
+
+    // 4) Refresh all motion control values to reflect the new parameter bindings
+    refreshMotionControlValues();
+    
+    // 5) Pull fresh visual state and repaint immediately (don't wait for timer tick)
+    motion::VisualState visualState;
+    if (proc.getMotionEngine().tryGetVisualState(visualState)) {
+        if (panes) {
+            panes->setMotionVisualState(visualState);
+        }
+    }
+}
+
+motion::VisualState MyPluginAudioProcessorEditor::synthesizeVisualFromParams()
+{
+    motion::VisualState vs{};
+    
+    // Get current panner selection
+    const int pannerSelect = (int)std::round(proc.apvts.getRawParameterValue(motion::id::panner_select)->load());
+    vs.active = (pannerSelect == 0) ? motion::ActiveSel::P1 : 
+               (pannerSelect == 1) ? motion::ActiveSel::P2 : motion::ActiveSel::Link;
+    vs.link = (vs.active == motion::ActiveSel::Link);
+    
+    // Get global parameters
+    vs.enable = proc.apvts.getRawParameterValue(motion::id::enable)->load() > 0.5f;
+    vs.occlusion = proc.apvts.getRawParameterValue(motion::id::occlusion)->load();
+    vs.headphoneSafe = proc.apvts.getRawParameterValue(motion::id::headphone_safe)->load() > 0.5f;
+    vs.bassFloorHz = proc.apvts.getRawParameterValue(motion::id::bass_floor_hz)->load();
+    
+    // Helper to get parameter value safely
+    auto getParam = [&](const char* id) -> float {
+        if (auto* param = proc.apvts.getRawParameterValue(id)) {
+            return param->load();
+        }
+        return 0.0f;
+    };
+    
+    // Synthesize P1 pose from parameters
+    vs.p1.rateHz = getParam(motion::id::p1_rate_hz);
+    vs.p1.depth = getParam(motion::id::p1_depth_pct);
+    vs.p1.spread = getParam(motion::id::p1_spread_pct);
+    vs.p1.pathType = (int)getParam(motion::id::p1_path);
+    vs.p1.phaseDeg = getParam(motion::id::p1_phase_deg);
+    vs.p1.elevBias = getParam(motion::id::p1_elev_bias);
+    vs.p1.bounce = getParam(motion::id::p1_shape_bounce);
+    vs.p1.jitter = getParam(motion::id::p1_jitter_amt);
+    vs.p1.swing = getParam(motion::id::p1_swing_pct);
+    vs.p1.quantizeDiv = (int)getParam(motion::id::p1_quantize_div);
+    vs.p1.mode = (int)getParam(motion::id::p1_mode);
+    vs.p1.retrig = getParam(motion::id::p1_retrig) > 0.5f;
+    vs.p1.holdMs = getParam(motion::id::p1_hold_ms);
+    vs.p1.sens = getParam(motion::id::p1_sens);
+    vs.p1.inertia = getParam(motion::id::p1_inertia_ms);
+    vs.p1.frontBias = getParam(motion::id::p1_front_bias);
+    vs.p1.doppler = getParam(motion::id::p1_doppler_amt);
+    vs.p1.motionSend = getParam(motion::id::p1_motion_send);
+    vs.p1.anchor = getParam(motion::id::p1_anchor_enable) > 0.5f;
+    
+    // Simple static pose calculation (depth -> radius, phase -> azimuth)
+    vs.p1.radius = vs.p1.depth;
+    vs.p1.azimuth = vs.p1.phaseDeg / 180.0f; // -1..+1
+    vs.p1.elevation = vs.p1.elevBias;
+    vs.p1.x = vs.p1.radius * std::cos(juce::MathConstants<float>::halfPi * vs.p1.azimuth);
+    vs.p1.y = vs.p1.radius * std::sin(juce::MathConstants<float>::halfPi * vs.p1.azimuth);
+    
+    // Synthesize P2 pose from parameters
+    vs.p2.rateHz = getParam(motion::id::p2_rate_hz);
+    vs.p2.depth = getParam(motion::id::p2_depth_pct);
+    vs.p2.spread = getParam(motion::id::p2_spread_pct);
+    vs.p2.pathType = (int)getParam(motion::id::p2_path);
+    vs.p2.phaseDeg = getParam(motion::id::p2_phase_deg);
+    vs.p2.elevBias = getParam(motion::id::p2_elev_bias);
+    vs.p2.bounce = getParam(motion::id::p2_shape_bounce);
+    vs.p2.jitter = getParam(motion::id::p2_jitter_amt);
+    vs.p2.swing = getParam(motion::id::p2_swing_pct);
+    vs.p2.quantizeDiv = (int)getParam(motion::id::p2_quantize_div);
+    vs.p2.mode = (int)getParam(motion::id::p2_mode);
+    vs.p2.retrig = getParam(motion::id::p2_retrig) > 0.5f;
+    vs.p2.holdMs = getParam(motion::id::p2_hold_ms);
+    vs.p2.sens = getParam(motion::id::p2_sens);
+    vs.p2.inertia = getParam(motion::id::p2_inertia_ms);
+    vs.p2.frontBias = getParam(motion::id::p2_front_bias);
+    vs.p2.doppler = getParam(motion::id::p2_doppler_amt);
+    vs.p2.motionSend = getParam(motion::id::p2_motion_send);
+    vs.p2.anchor = getParam(motion::id::p2_anchor_enable) > 0.5f;
+    
+    // Simple static pose calculation (depth -> radius, phase -> azimuth)
+    vs.p2.radius = vs.p2.depth;
+    vs.p2.azimuth = vs.p2.phaseDeg / 180.0f; // -1..+1
+    vs.p2.elevation = vs.p2.elevBias;
+    vs.p2.x = vs.p2.radius * std::cos(juce::MathConstants<float>::halfPi * vs.p2.azimuth);
+    vs.p2.y = vs.p2.radius * std::sin(juce::MathConstants<float>::halfPi * vs.p2.azimuth);
+    
+    // Set sequence to 0 to indicate synthesized state
+    vs.seq = 0;
+    
+    return vs;
+}
+
+void MyPluginAudioProcessorEditor::refreshMotionControlValues()
+{
+    // Helper functions for formatting values
+    auto Hz = [](double v) { return juce::String(v, 1) + " Hz"; };
+    auto pct = [](double v) { return juce::String(v, 1) + "%"; };
+    auto set = [](juce::Label& l, const juce::String& s) { l.setText(s, juce::dontSendNotification); };
+    
+    // Get current panner selection to determine which parameters to read
+    const int pannerSelect = (int)std::round(proc.apvts.getRawParameterValue(motion::id::panner_select)->load());
+    
+    // Helper to get parameter value safely
+    auto getParam = [&](const char* id) -> float {
+        if (auto* param = proc.apvts.getRawParameterValue(id)) {
+            return param->load();
+        }
+        return 0.0f;
+    };
+    
+    // Refresh all motion control values based on current panner selection
+    if (pannerSelect == 1) { // P2 mode
+        set(motionValuesGroup2[3],  Hz(getParam(motion::id::p2_rate_hz)));     // Rate
+        set(motionValuesGroup2[4],  pct(getParam(motion::id::p2_depth_pct)));    // Depth
+        set(motionValuesGroup2[5],  juce::String(getParam(motion::id::p2_phase_deg), 1) + "°"); // Phase
+        set(motionValuesGroup2[6],  pct(getParam(motion::id::p2_spread_pct)));    // Spread
+        set(motionValuesGroup2[7],  juce::String(getParam(motion::id::p2_elev_bias), 1));  // Elev Bias
+        set(motionValuesGroup2[8],  pct(getParam(motion::id::p2_shape_bounce)));    // Bounce
+        set(motionValuesGroup2[9],  pct(getParam(motion::id::p2_jitter_amt)));    // Jitter
+        set(motionValuesGroup2[11], pct(getParam(motion::id::p2_swing_pct)));   // Swing
+        set(motionValuesGroup2[14], juce::String(getParam(motion::id::p2_hold_ms), 1) + " ms"); // Hold
+        set(motionValuesGroup2[15], pct(getParam(motion::id::p2_sens)));   // Sens
+        set(motionValuesGroup2[16], juce::String(getParam(motion::id::p2_phase_deg), 1) + "°"); // Offset (using phase)
+        set(motionValuesGroup2[17], juce::String(getParam(motion::id::p2_inertia_ms), 1) + " ms"); // Inertia
+        set(motionValuesGroup2[18], juce::String(getParam(motion::id::p2_front_bias), 1)); // Front Bias
+        set(motionValuesGroup2[19], pct(getParam(motion::id::p2_doppler_amt)));   // Doppler
+        set(motionValuesGroup2[20], pct(getParam(motion::id::p2_motion_send)));   // Motion Send
+    } else { // P1 mode or Link mode
+        set(motionValuesGroup2[3],  Hz(getParam(motion::id::p1_rate_hz)));     // Rate
+        set(motionValuesGroup2[4],  pct(getParam(motion::id::p1_depth_pct)));    // Depth
+        set(motionValuesGroup2[5],  juce::String(getParam(motion::id::p1_phase_deg), 1) + "°"); // Phase
+        set(motionValuesGroup2[6],  pct(getParam(motion::id::p1_spread_pct)));    // Spread
+        set(motionValuesGroup2[7],  juce::String(getParam(motion::id::p1_elev_bias), 1));  // Elev Bias
+        set(motionValuesGroup2[8],  pct(getParam(motion::id::p1_shape_bounce)));    // Bounce
+        set(motionValuesGroup2[9],  pct(getParam(motion::id::p1_jitter_amt)));    // Jitter
+        set(motionValuesGroup2[11], pct(getParam(motion::id::p1_swing_pct)));   // Swing
+        set(motionValuesGroup2[14], juce::String(getParam(motion::id::p1_hold_ms), 1) + " ms"); // Hold
+        set(motionValuesGroup2[15], pct(getParam(motion::id::p1_sens)));   // Sens
+        set(motionValuesGroup2[16], juce::String(getParam(motion::id::p1_phase_deg), 1) + "°"); // Offset (using phase)
+        set(motionValuesGroup2[17], juce::String(getParam(motion::id::p1_inertia_ms), 1) + " ms"); // Inertia
+        set(motionValuesGroup2[18], juce::String(getParam(motion::id::p1_front_bias), 1)); // Front Bias
+        set(motionValuesGroup2[19], pct(getParam(motion::id::p1_doppler_amt)));   // Doppler
+        set(motionValuesGroup2[20], pct(getParam(motion::id::p1_motion_send)));   // Motion Send
+    }
+    
+    // Global parameters (same for both panners)
+    set(motionValuesGroup2[22], Hz(getParam(motion::id::bass_floor_hz)));    // Bass Floor
+    set(motionValuesGroup2[23], pct(getParam(motion::id::occlusion)));   // Occlusion
+    
+    // Force repaint of all motion controls to show updated values
+    for (int i = 0; i < 24; ++i) {
+        motionDummiesGroup2[i].repaint();
+        motionValuesGroup2[i].repaint();
+    }
 }
 
 // end

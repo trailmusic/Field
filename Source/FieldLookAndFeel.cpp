@@ -132,6 +132,19 @@ void FieldLNF::drawComboBox (juce::Graphics& g, int width, int height, bool isBu
     // Determine selected text and optional per-item tint
     const int selIdx = box.getSelectedItemIndex(); // 0-based
     juce::String selText = box.getText();
+    // If requested (for specific boxes), or if label text is empty while we do have a selection,
+    // pull the text directly from the selected item to avoid showing the chevron placeholder.
+    const bool forceSelectedText = (bool) box.getProperties().getWithDefault ("forceSelectedText", false);
+    if ((forceSelectedText || selText.isEmpty()) && selIdx >= 0)
+        selText = box.getItemText (selIdx);
+
+    // Optional default text when there is no selection at all
+    if (selText.isEmpty() && selIdx < 0)
+    {
+        const juce::String defText = box.getProperties().getWithDefault ("defaultTextWhenEmpty", juce::var()).toString();
+        if (defText.isNotEmpty())
+            selText = defText;
+    }
     juce::Colour selTint = (selIdx >= 0 && selIdx < popupItemTints.size()) ? popupItemTints.getReference (selIdx) : accent;
 
     // If nothing selected, show chevron-only (iconOnly behavior)

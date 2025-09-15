@@ -5,6 +5,7 @@
 #include "machine/MachinePane.h"
 #include "../IconSystem.h"
 #include "../motion/MotionPanel.h"
+#include "../motion/MotionVisual.h"
 
 class XYPad; // forward (lives in PluginEditor.h/cpp)
 
@@ -232,6 +233,15 @@ public:
         if (spec) spec->setSampleRate (fs);
         if (auto* ip = dynamic_cast<ImagerPane*>(imgr.get())) ip->setSampleRate (fs);
         if (auto* mp = mach.get()) mp->setSampleRate (fs);
+    }
+    
+    void setMotionVisualState(const motion::VisualState& visualState)
+    {
+        if (motion) {
+            if (auto* motionPanel = dynamic_cast<motion::MotionPanel*>(motion.get())) {
+                motionPanel->setVisualState(visualState);
+            }
+        }
     }
 
     // Reflect APVTS knob changes back into Imager width editor

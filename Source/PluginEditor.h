@@ -640,6 +640,10 @@ class MyPluginAudioProcessorEditor : public juce::AudioProcessorEditor,
 public:
     explicit MyPluginAudioProcessorEditor (MyPluginAudioProcessor&);
     ~MyPluginAudioProcessorEditor() override;
+    
+    // Motion parameter management (public for state recall)
+    void updateMotionParameterAttachmentsOnMessageThread();
+    void refreshMotionControlValues();
 
     void paint (juce::Graphics&) override;
     void paintOverChildren(juce::Graphics&) override;
@@ -1776,10 +1780,15 @@ private:
     std::unique_ptr<class QuadKnobCell> hpLpQClusterCell;
     void buildCells();
 
-    // Attachments
+    // Attachments (global)
     std::vector<std::unique_ptr<SliderAttachment>>  attachments;
     std::vector<std::unique_ptr<ButtonAttachment>>  buttonAttachments;
     std::vector<std::unique_ptr<ComboAttachment>>   comboAttachments;
+
+    // Motion-only attachments (cleared/rebuilt on panner switch)
+    std::vector<std::unique_ptr<SliderAttachment>>  motionSliderAttachments;
+    std::vector<std::unique_ptr<ButtonAttachment>>  motionButtonAttachments;
+    std::vector<std::unique_ptr<ComboAttachment>>   motionComboAttachments;
     
     // Scaling
     float scaleFactor = 1.0f;
@@ -2178,18 +2187,18 @@ private:
 
     HorizontalDivider rowDivVol{lnf}, rowDivEQ{lnf};
 
-    // Motion cells - only in Group 2
-    std::array<std::unique_ptr<KnobCell>, 20> motionCellsGroup2;
-    std::array<juce::Slider, 20> motionDummiesGroup2;
-    std::array<juce::Label,  20> motionValuesGroup2;
+    // Motion cells - only in Group 2 (6x4 grid: 24 total)
+    std::array<std::unique_ptr<KnobCell>, 24> motionCellsGroup2;
+    std::array<juce::Slider, 24> motionDummiesGroup2;
+    std::array<juce::Label,  24> motionValuesGroup2;
     
     // Motion ComboBoxes and Buttons
     std::array<juce::ComboBox, 4> motionComboBoxes;
-    std::array<juce::ToggleButton, 3> motionButtons;
+    std::array<juce::ToggleButton, 4> motionButtons;
     
     // Motion SwitchCell wrappers (like Delay group)
     std::array<std::unique_ptr<SwitchCell>, 4> motionComboCells;
-    std::array<std::unique_ptr<SwitchCell>, 3> motionButtonCells;
+    std::array<std::unique_ptr<SwitchCell>, 4> motionButtonCells;
 
     // Phase Mode center group
     class PhaseModeButton : public ThemedIconButton {
@@ -2200,6 +2209,18 @@ private:
     PhaseModeButton  phaseModeButton;
     std::unique_ptr<juce::ParameterAttachment> phaseModeParamAttach;
     std::unique_ptr<juce::ParameterAttachment> osModeParamAttach;
+
+    // Motion parameter management
+    void updateMotionParameterAttachments(int pannerSelect);
+    motion::VisualState synthesizeVisualFromParams();
+    
+    // AsyncUpdater for safe parameter attachment rebinding
+    struct MotionBinding : juce::AsyncUpdater {
+        MyPluginAudioProcessorEditor& editor;
+        MotionBinding(MyPluginAudioProcessorEditor& e) : editor(e) {}
+        void trigger() { triggerAsyncUpdate(); }
+        void handleAsyncUpdate() override { editor.updateMotionParameterAttachmentsOnMessageThread(); }
+    } motionBinding{*this};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessorEditor)
 }; 

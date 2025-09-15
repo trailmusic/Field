@@ -91,7 +91,7 @@ R  = k*(Mx − Sx)
 - **Placement in signal flow**: After per‑band width and shuffler; before Tone EQ (Tilt/Scoop/Bass/Air), Reverb, Delay, Stereoize, Mono Maker, and Saturation. See the Signal Flow section for the full chain.
 - **Mono behavior**: Mono sum energy remains stable due to the orthonormal transform. Mono Maker runs later in the chain; low frequencies collapsed to mono are post‑rotation.
 - **Automation**: Smooth and click‑free. Safe to automate across the full range.
-- **UI**: In the Image row as “Rotation” and “Asymmetry.” A rotation pad in the XY visuals reflects the current rotation.
+- **UI**: In the Image row as "Rotation" and "Asymmetry." A rotation pad in the XY visuals reflects the current rotation.
 
 #### Rotation Pad Visualization
 
@@ -99,18 +99,18 @@ R  = k*(Mx − Sx)
 - **Rotated basis (M/S → M′/S′)**: We draw the current rotated axes computed from the angle θ, with the axes labelled outside the ring as **M** (along M′) and **S** (along S′). A subtle dual tick on the rim marks θ.
 - **S‑curve (Mid↔Side exchange)**: A cubic Bézier runs from −M′ rim to +M′ rim with end tangents aligned to ±S′. This visually encodes how Mid and Side exchange under rotation (reads as true M/S rotation, not pan).
 - **Asymmetry shading**: A soft linear gradient is applied within the circle along the S′ axis. The tint intensity scales with |asymmetry|, and its direction flips with the sign of asymmetry (heavier tint toward +S′ for positive values, toward −S′ for negative).
-- **Design notes**: No background panel—only the ring, axes, gradient, and S‑curve—keeps focus and avoids “right‑leaning pan” cues while conveying both orthonormal rotation and directional bias.
+- **Design notes**: No background panel—only the ring, axes, gradient, and S‑curve—keeps focus and avoids "right‑leaning pan" cues while conveying both orthonormal rotation and directional bias.
 
 Plain terms
 
 - Clockwise rotation (θ > 0): The stereo image feels wider and slightly less centered. The S‑curve bows toward the +S side and the rim tick sits at a positive angle. With Asymmetry, the gradient tint is stronger toward +S.
 - Counterclockwise rotation (θ < 0): The image tightens/narrows with more center focus. The S‑curve bows toward the −S side and the rim tick sits at a negative angle. With Asymmetry, the gradient tint is stronger toward −S.
-- Constant energy: The ring stays the same size because rotation is energy‑preserving; you’re rebalancing Mid/Side, not changing overall loudness.
+- Constant energy: The ring stays the same size because rotation is energy‑preserving; you're rebalancing Mid/Side, not changing overall loudness.
 
 ### Mono Management
 
 * **Mono Maker:** Sums under a cutoff with selectable **slope (6/12/24 dB/oct)**
-* **Audition:** Listen to “what’s being mono’d” for confidence checks
+* **Audition:** Listen to "what's being mono'd" for confidence checks
  
 ### Phase Modes (NEW)
 
@@ -133,11 +133,144 @@ Notes:
 * **Algorithms:** Haas, All-Pass, MicroPitch
 * **Mono safety:** Delay/time clamped vs. mono cutoff to prevent combing on fold-down
 
-### Motion (Brauer-Style)
+### Motion System (Professional Spatial Audio Processor)
 
-* **Shapes:** Sine, Triangle, Square, Random
-* **Sync/Free:** DAW-sync divisions & free Hz rates
-* **Depth/Width/Phase/Center Bias** + optional **band-limited** motion
+FIELD's Motion System is a world-class spatial audio processor that transforms static stereo into dynamic, musical movement. Built on advanced DSP algorithms, it provides sophisticated control over spatial positioning, timing, and psychoacoustic effects.
+
+#### Core Features
+
+* **Dual Panner Support:** Independent P1/P2 or linked operation with real-time visualization
+* **Advanced Path Generation:** 8 motion shapes including Circle, Figure-8, Bounce, Arc, Spiral, Polygon, Random Walk, and User Shape
+* **Musical Timing:** Tempo-sync with musical divisions (1/1 to 1/32, including dotted and triplet)
+* **Mode System:** Free, Sync, Input Envelope, Sidechain, and One-Shot operation
+* **Professional DSP Pipeline:** Elevation cues, spread processing, bass floor management, and headphone safety
+
+#### New Motion Features (v2.0)
+
+**Enable Control**
+- Master enable/disable for the entire motion system
+- Click-free crossfade when toggling
+- Visual feedback: panel desaturation when disabled, power indicator when enabled
+
+**Inertia (0-500ms, default 120ms)**
+- Smooths azimuth, elevation, and radius trajectories using cascaded one-pole filters
+- Creates musical "mass/glide" feel for natural motion
+- Visual feedback: fading trail behind motion dots, ghost target showing unsmoothed position
+
+**Swing (0-75%, default 20%)**
+- Groove timing for Sync mode that delays off-beats
+- Creates classic musical swing feel with motion dwelling on downbeats
+- Visual feedback: beat grid ticks with shifted off-beat markers
+
+**Occlusion (0-100%, default 40%)**
+- Rear-hemisphere realism with high-frequency rolloff and early reflections
+- Adds believable back-space without phase artifacts
+- Visual feedback: darker back hemisphere, LPF cutoff arc, wavelet pulse
+
+#### Motion Grid Layout (6×4)
+
+**Row 1 – Core Motion**
+1. **Enable** (Switch) - Master motion enable/disable
+2. **Panner** (ComboBox) - P1/P2/Link selection
+3. **Path** (ComboBox) - Motion shape selection
+4. **Rate** (Knob) - Motion speed (0.05-8 Hz)
+5. **Depth** (Knob) - Motion intensity (0-1)
+6. **Phase** (Knob) - Motion phase offset (0-360°)
+
+**Row 2 – Shape & Feel**
+7. **Spread** (Knob) - Stereo width processing (0-2)
+8. **Elevation Bias** (Knob) - Up/down positioning (-1 to +1)
+9. **Bounce** (Knob) - Path boundary behavior (0-1)
+10. **Jitter** (Knob) - Random motion variation (0-1)
+11. **Quantize** (ComboBox) - Tempo sync divisions
+12. **Swing** (Knob) - Groove timing for sync mode (0-75%)
+
+**Row 3 – Rhythm & Triggers**
+13. **Mode** (ComboBox) - Free/Sync/Input Env/Sidechain/One-Shot
+14. **Retrig** (Button) - Phase reset trigger
+15. **Hold** (Button) - Motion freeze
+16. **Sens** (Knob) - Envelope sensitivity (0-1)
+17. **Offset** (Knob) - Phase offset (0-360°)
+18. **Inertia** (Knob) - Motion smoothing (0-500ms)
+
+**Row 4 – Depth & Safety**
+19. **Front Bias** (Knob) - Front/back positioning (-1 to +1)
+20. **Doppler** (Knob) - Pitch shift effect (0-1)
+21. **Motion Send** (Knob) - External effects send (0-1)
+22. **Anchor** (Button) - Center lock
+23. **Bass Floor** (Knob) - Low-frequency mono cutoff (20-250 Hz)
+24. **Occlusion** (Knob) - Rear-hemisphere realism (0-100%)
+
+#### DSP Processing Pipeline
+
+1. **Enable** crossfade envelope
+2. **Mode/Rate** computation (Sync or Free) → **Swing** phase warp (Sync only)
+3. **Path** generation → **Inertia** smoothing (azimuth/elevation/radius)
+4. **Anchor** shaping (center lock)
+5. **Panning** gains (constant-power)
+6. **Spread** processing (M/S) above **Bass Floor** cutoff
+7. **Elevation** & **Front Bias** cues (shelves + early reflections)
+8. **Occlusion** processing (LPF blend + ER when behind)
+9. **Bass Floor** (elliptical HPF on Side channel)
+10. **Headphone Safe** clamps (ILD/ITD/Spread/Doppler limits)
+11. **Doppler** effect (fractional delay)
+12. **Motion Send** tap
+13. **Enable** crossfade blend to output
+
+#### Visual Feedback System
+
+**Motion Panel Features:**
+- **Orb Visualization:** Real-time dual panner dots with path preview
+- **Path Drawing:** Shows selected motion shape with current rate/depth/phase
+- **Quantize Grid:** Beat/bar ticks with swing offset visualization
+- **Status Indicators:** Mode, sync, retrig, hold, and safety states
+- **Inertia Trail:** Fading motion trail with ghost target
+- **Swing Grid:** Beat markers with shifted off-beat ticks
+- **Occlusion Effect:** Back hemisphere shading with LPF cutoff arc
+- **Enable Indicator:** Power status and panel desaturation
+
+#### Musical Applications
+
+**Rhythmic Motion:**
+- Use **Sync** mode with **Quantize** for tempo-locked movement
+- Apply **Swing** for groove-based motion that follows the song's feel
+- **Retrig/Hold** for rhythmic stabs and motion freezing
+
+**Spatial Design:**
+- **Inertia** for smooth, musical movement that feels natural
+- **Occlusion** for realistic rear-hemisphere positioning
+- **Front Bias** for front/back spatial placement
+
+**Creative Effects:**
+- **Doppler** for pitch-shifting motion effects
+- **Motion Send** for external reverb/delay processing
+- **Anchor** for stable center positioning with outer motion
+
+#### Safety Features
+
+**Headphone Safe Mode:**
+- Clamps ILD (Interaural Level Difference) to ±3 dB
+- Limits ITD (Interaural Time Difference) to ≤0.15 ms
+- Reduces Spread to ≤1.3 and Doppler to 50%
+- Prevents dizziness and fatigue during long sessions
+
+**Mono Compatibility:**
+- **Bass Floor** ensures low frequencies remain mono-safe
+- **Spread** processing respects mono fold-down
+- **Doppler** effects are mono-compatible
+
+#### Parameter Ranges & Defaults
+
+- **Rate (Free):** 0.05-8 Hz, default 0.5 Hz (skewed toward <2 Hz)
+- **Depth:** 0-1, default 0.35 (ease-in curve for fine control)
+- **Spread:** 0-2, default 1.2 (0.8-1.2 sweet spot)
+- **Elevation Bias:** -1 to +1, default 0 (±4 dB shelf range)
+- **Quantize:** Off, 1/1-1/32, dotted & triplets; default 1/4
+- **Mode:** default **Sync**
+- **Swing:** 0-75%, default 20%
+- **Inertia:** 0-500ms, default 120ms
+- **Occlusion:** 0-100%, default 40%
+- **Headphone Safe:** on by default
 
 ### Delay System (NEW - Professional Grade)
 
@@ -174,7 +307,7 @@ Notes:
 
 * Open the **Imager** tab.
 * Use **Global Width** to gently widen or narrow the stereo image; then refine with **Low/Mid/High Width** and the two **Crossovers**.
-* Use **Shuffler** for additional low/high emphasis (classic “airier top / safer lows”).
+* Use **Shuffler** for additional low/high emphasis (classic "airier top / safer lows").
 * Keep lows stable with **Mono Maker** (Hz + slope).
 * Use **Rotation** and **Asymmetry** for final placement/balance.
 * Watch the **Heatmap** [COMING]: warm tiles warn of mono risk; cool tiles are safe.
@@ -218,7 +351,7 @@ Internally, mid/side uses the constant-power convention:
   * r = +1 (fully correlated, mono-safe) → **cool** colors
   * r = 0 (decorrelated) → **neutral grey**
   * r = −1 (inverted / collapse-prone) → **hot** colors
-* **How it’s computed**
+* **How it's computed**
 
   * Short STFT (default **2048** samples, **50%** hop), Hann window.
   * Bins grouped into log bands (default **1/3-octave**, ~32 bands).
@@ -228,7 +361,7 @@ Internally, mid/side uses the constant-power convention:
   * **Click a tile** → solo that band (routes to your existing Lo/Mid/Hi preview) [COMING].
   * **Drag crossovers** on the heatmap; guides match your LO/MID/HI split.
   * **Freeze**: stop the writer to A/B; **Show PRE**: faint overlay of input [COMING].
-* **Performance**: analysis runs on the **UI timer** when the Imager tab is active (or “Keep Warm” is on). Painting is a blit plus guides.
+* **Performance**: analysis runs on the **UI timer** when the Imager tab is active (or "Keep Warm" is on). Painting is a blit plus guides.
 
 > Tip: use the heatmap to find **where** widening is risky (hot bands) and address with **Mono Maker**, **per-band Width**, or **Auto-Width** in Designer mode.
 
@@ -251,19 +384,19 @@ Internally, mid/side uses the constant-power convention:
 Classic psychoacoustic imager:
 
 * **Shuffler Low % / High %** (0…200): extra S emphasis **below/above** **Shuffler XO**.
-* The split is LF via LR LP at XO; HF = full − LF. Each band’s S is scaled independently.
-* **Use**: add airy “sparkle” (**HF**) and/or subtle LF spaciousness (**LF**). Keep LF modest to avoid mono drift.
+* The split is LF via LR LP at XO; HF = full − LF. Each band's S is scaled independently.
+* **Use**: add airy "sparkle" (**HF**) and/or subtle LF spaciousness (**LF**). Keep LF modest to avoid mono drift.
 
 #### Rotation & Asymmetry
 
-* **Rotation (deg)**: rotates **M/S** (a mid/side “pan”); small values re-balance width vs center energy.
+* **Rotation (deg)**: rotates **M/S** (a mid/side "pan"); small values re-balance width vs center energy.
 * **Asymmetry** (−1…+1): tiny cross-feed in M/S; nudges perceived balance without a hard pan.
 
 #### Mono Maker
 
 * **Mono (Hz)**: below this, L/R are summed to mono and blended with the highs.
 * **Slope**: 6/12/24 dB/oct via a Butterworth bank—steeper = firmer mono region.
-* **Mono Audition**: monitor only what will be mono’d (diagnostic).
+* **Mono Audition**: monitor only what will be mono'd (diagnostic).
 
 ---
 
@@ -277,7 +410,7 @@ A smarter, safer way to widen that respects frequency and program material.
 
   * Positive = **more width up high**, **less down low** (preferred).
   * Negative = inverse.
-* **Tilt Pivot (Hz)**: where the tilt “seesaws.” Typical **600–900 Hz**.
+* **Tilt Pivot (Hz)**: where the tilt "seesaws." Typical **600–900 Hz**.
 * **Why**: preserves punch and mono stability while opening air and presence.
 
 #### Auto-Width (dynamic clamp)
@@ -296,7 +429,7 @@ How it works:
 
 > **Starting point**: Depth 0.4, Threshold −3 dB, Attack 25 ms, Release 250 ms, Max 2.0.
 
-#### Floating “Width Designer” panel [COMING]
+#### Floating "Width Designer" panel [COMING]
 
 * A draggable, resizable sub-panel with:
 
@@ -324,7 +457,7 @@ How it works:
 * **Shuffler**: single LR lowpass @ XO to split LF; HF = full − LF; width per band; cheap and effective.
 * **Rotation**: M/S rotation by angle θ (energy-preserving); see Rotation details above.
 * **Asymmetry**: gentle cross-mix in M/S to bias perceived center/edge.
-* **Mono Maker**: 1st/2nd/4th-order Butterworth LP on each channel → mono’d lows; highs passthrough; recombine.
+* **Mono Maker**: 1st/2nd/4th-order Butterworth LP on each channel → mono'd lows; highs passthrough; recombine.
 * **Designer Side-Tilt**: complementary low/high shelves on **S** with S-shape ~0.9, placed around Pivot (~0.6× / 1.6×), gains derived from **dB/oct × span (~3 oct)**.
 * **Auto-Width**: measures `S/M (dB)`, computes target gain, smooths per-sample with separate Attack/Release one-poles, then applies to S; clamps to **Max Width**.
 * **Heatmap**: STFT 2048/50% Hann, 1/3‑oct banding, Pearson r, energy-gate with hysteresis, per-band exp smoothing; column written into a circular `juce::Image`; diverging color ramp (color-blind-safe). Columns can burst up to 2 per tick to reduce lag.
@@ -360,7 +493,7 @@ How it works:
 
 * **Mono first**: set **Mono Maker** early; confirm with **Mono Audition**.
 * **Lows ≤ 1.0**: resist widening subs/kick; use the shuffler sparingly in LF.
-* **Use Designer Auto-Width** when pushing High/Mid > 1.2; it’s a graceful seatbelt.
+* **Use Designer Auto-Width** when pushing High/Mid > 1.2; it's a graceful seatbelt.
 * **Heatmap**: hot, stable bands are where collapse risk hides—address them with tilt or mono cutoff.
 * **Gain staging**: widening increases peak S; the **Max Width** cap can prevent spiky transients.
 
@@ -394,7 +527,7 @@ How it works:
 * **Asymmetry**: small bias in M/S to shift perceived center vs edges.
 * **Mono Maker**: sums lows to mono below a cutoff with a chosen slope.
 * **Correlation (r)**: similarity of L and R (−1..+1), mono safety proxy.
-* **S/M (dB)**: level ratio of side to mid; a proxy for “how wide”.
+* **S/M (dB)**: level ratio of side to mid; a proxy for "how wide".
 
 ---
 
@@ -420,6 +553,19 @@ How it works:
     ├── Feedback Loop: HP → LP → Tilt → Saturation → Diffusion → Crossfeed
     ├── Stereo Processing (Ping-Pong, Spread, Width)
     └── Per-Delay Ducking (optional, independent of global duck)
+ → MOTION PROCESSING (Enhanced v2.0):
+    ├── Enable crossfade envelope
+    ├── Mode/Rate computation (Sync/Free) → Swing phase warp (Sync only)
+    ├── Path generation → Inertia smoothing (azimuth/elevation/radius)
+    ├── Anchor shaping (center lock)
+    ├── Panning gains (constant-power)
+    ├── Spread processing (M/S) above Bass Floor cutoff
+    ├── Elevation & Front Bias cues (shelves + early reflections)
+    ├── Occlusion processing (LPF blend + ER when behind)
+    ├── Bass Floor (elliptical HPF on Side channel)
+    ├── Headphone Safe clamps (ILD/ITD/Spread/Doppler limits)
+    ├── Doppler effect (fractional delay)
+    └── Motion Send tap
  → Stereoize (Haas/AP/MicroPitch) + mono safety
  → Mono Maker (below mono_hz, slope, audition tap)
  → Saturation (Drive/Mix)
@@ -505,16 +651,33 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
 * `mono_slope_db_oct` (6/12/24, **12**)
 * `mono_audition` (0/1, **0**)
 
-**Motion**
+**Motion System (Enhanced v2.0)**
 
-* `autopan_enabled` (0/1, **0**)
-* `autopan_shape` (Sine/Tri/Square/Random, **Sine**)
-* `autopan_sync` (Sync/Free, **Sync**)
-* `autopan_rate_hz` (0.01…20, **0.5**)
-* `autopan_rate_div` (1/4, 1/2, 1/1, 2/1, 4/1, **1/2**)
-* `autopan_depth` (0…1, **0.6**), `autopan_width` (0…1, **1.0**)
-* `autopan_phase_deg` (0…180, **0**), `autopan_center_bias` (-1…+1, **0**)
-* `autopan_filter_hp` (20…500, **20**), `autopan_filter_lp` (2k…20k, **20000**)
+* `motion.enable` (0/1, **1**) — Master motion enable/disable
+* `motion.panner_select` (P1/P2/Link, **P1**) — Panner selection
+* `motion.path` (Circle/Figure-8/Bounce/Arc/Spiral/Polygon/Random/User, **Circle**) — Motion shape
+* `motion.rate_hz` (0.05…8, **0.5**) — Motion speed (Free mode)
+* `motion.depth` (0…1, **0.35**) — Motion intensity
+* `motion.phase_deg` (0…360, **0**) — Phase offset
+* `motion.spread` (0…2, **1.2**) — Stereo width processing
+* `motion.elevation_bias` (-1…+1, **0**) — Up/down positioning
+* `motion.bounce` (0…1, **0**) — Path boundary behavior
+* `motion.jitter` (0…1, **0**) — Random motion variation
+* `motion.quantize_div` (Off/1/1…1/32/Dotted/Triplet, **1/4**) — Tempo sync divisions
+* `motion.swing_pct` (0…75, **20**) — Groove timing for sync mode
+* `motion.mode` (Free/Sync/Input Env/Sidechain/One-Shot, **Sync**) — Motion mode
+* `motion.retrig` (0/1, **0**) — Phase reset trigger
+* `motion.hold` (0/1, **0**) — Motion freeze
+* `motion.sensitivity` (0…1, **0.5**) — Envelope sensitivity
+* `motion.offset_deg` (0…360, **90**) — Phase offset
+* `motion.inertia_ms` (0…500, **120**) — Motion smoothing
+* `motion.front_bias` (-1…+1, **0.2**) — Front/back positioning
+* `motion.doppler` (0…1, **0.1**) — Pitch shift effect
+* `motion.motion_send` (0…1, **0.2**) — External effects send
+* `motion.anchor` (0/1, **0**) — Center lock
+* `motion.bass_floor_hz` (20…250, **120**) — Low-frequency mono cutoff
+* `motion.occlusion` (0…100, **40**) — Rear-hemisphere realism
+* `motion.headphone_safe` (0/1, **1**) — Headphone safety clamps
 
 **Meters (read-only)**
 
@@ -541,6 +704,11 @@ Meters tap at safe points (LR+MS peaks, correlation, scope feed).
     - DUCK knob renders a secondary arc indicating live gain reduction.
   * **EQ row:** Bass, Air, Tilt (+ mini-freq sliders), HP, LP, Mono.
   * **Image row:** Width Lo/Mid/Hi, Rotation, Asymmetry, Shuffler, Stereoize card.
+* **Motion Panel:** **6×4 Motion Grid** — Professional spatial audio processor with 24 controls:
+  - **Row 1 — Core Motion:** Enable, Panner, Path, Rate, Depth, Phase
+  - **Row 2 — Shape & Feel:** Spread, Elevation Bias, Bounce, Jitter, Quantize, Swing
+  - **Row 3 — Rhythm & Triggers:** Mode, Retrig, Hold, Sens, Offset, Inertia
+  - **Row 4 — Depth & Safety:** Front Bias, Doppler, Motion Send, Anchor, Bass Floor, Occlusion
 * **Right Side Card:** **Delay Module** — 4×7 grid, panel-styled cells with unified spacing:
   - **Row 1 — Switches/Combos:** Enable, Mode, Sync, S/D/T (grid flavor), Ping-Pong, Freeze, Kill Dry
   - **Row 2 — Time & Mod:** Time, Feedback, Mix, Rate, Depth, Spread, Width
@@ -573,17 +741,17 @@ DP helper: `Layout::dp(px, scale)`; always scale sizes with the editor `scaleFac
 
 ### Fullscreen Behavior
 
-- The header fullscreen button toggles the top-level window via JUCE’s `ResizableWindow::setFullScreen(true/false)`.
+- The header fullscreen button toggles the top-level window via JUCE's `ResizableWindow::setFullScreen(true/false)`.
 - On enter: the current window bounds are saved; the window expands to fill the display.
 - On exit: fullscreen is turned off and the original bounds are restored exactly.
 - Safety: if the host/DAW does not allow fullscreen, the toggle is cancelled to avoid bad states.
-- Scope: intended primarily for the Standalone build. In plugin hosts, behavior depends on the host’s windowing rules.
+- Scope: intended primarily for the Standalone build. In plugin hosts, behavior depends on the host's windowing rules.
 
 ---
 
 ## Tabs & Pane System (NEW)
 
-FIELD’s main view is organized into three panes accessible via tabs:
+FIELD's main view is organized into three panes accessible via tabs:
 
 - **XY**: The hero XY Pad with the time‑domain oscilloscope overlay.
 - **Spectrum**: High‑resolution spectrum analyzer with optional pre overlay and EQ curve.
@@ -592,8 +760,8 @@ FIELD’s main view is organized into three panes accessible via tabs:
 ### Architecture
 
 - **PaneManager (`Source/ui/PaneManager.h`)** controls tab selection, child visibility, and a lightweight UI‑thread timer used for visualization polling.
-- A “Keep Warm” option allows Spectrum to continue receiving data while inactive for instant visuals when switching in; otherwise Spectrum sleeps while not visible.
-- On tab switches, Spectrum’s analyzer is explicitly gated (`pauseAudio`/`resumeAudio`) to avoid lifetime races.
+- A "Keep Warm" option allows Spectrum to continue receiving data while inactive for instant visuals when switching in; otherwise Spectrum sleeps while not visible.
+- On tab switches, Spectrum's analyzer is explicitly gated (`pauseAudio`/`resumeAudio`) to avoid lifetime races.
 
 ### First‑Paint Behavior & Safety
 
@@ -815,7 +983,7 @@ Independent ducking system separate from global ducking, with full parameter con
 
 ## Global Reverb & Ducking (Click-free, Wet-Only, Look-Ahead RMS)
 
-FIELD’s reverb is a 1‑knob, production‑ready Room/Plate/Hall system driven by depth, with per‑sample smoothing and equal‑power mixing to avoid clicks. Wet is rendered 100% and summed once; a musical ducker preserves intelligibility by attenuating the Reverb return (wet bus). The dry bus acts as the sidechain; look‑ahead delays the wet path slightly to catch transients smoothly.
+FIELD's reverb is a 1‑knob, production‑ready Room/Plate/Hall system driven by depth, with per‑sample smoothing and equal‑power mixing to avoid clicks. Wet is rendered 100% and summed once; a musical ducker preserves intelligibility by attenuating the Reverb return (wet bus). The dry bus acts as the sidechain; look‑ahead delays the wet path slightly to catch transients smoothly.
 
 - **Routing:** WetOnly by default. Reverb is rendered 100% wet (no internal dry), then ducked against the post‑tone/imaging dry bus, and finally summed back with an equal‑power law (no double‑mix). Optional Global mode is present for experimentation.
 - **Crackle safety:** No allocations in process (preallocated buses), denormals disabled, per‑sample smoothing for wet mix and macro parameters (Size/Damp/Width), and high‑order interpolation hooks where modulation applies.
@@ -835,7 +1003,7 @@ FIELD’s reverb is a 1‑knob, production‑ready Room/Plate/Hall system driven
 - Implemented in `Source/dsp/Ducker.h` with an internal soft‑knee compressor‑style curve and RMS detector.
 - `Ducker::processWet()` applies look‑ahead by writing the wet signal to an internal delay line and reading it back delayed while applying sidechain‑driven gain.
 - Current smoothed GR dB is tracked and exposed via `getCurrentGainReductionDb()` for UI metering.
-- Integrated in the processor’s templated `FieldChain<Sample>` and used in `process()` right after Reverb wet rendering and (optional) saturation.
+- Integrated in the processor's templated `FieldChain<Sample>` and used in `process()` right after Reverb wet rendering and (optional) saturation.
 
 ---
 
@@ -902,7 +1070,7 @@ Hardenings that prevent crashes on tab switches and first paint:
 - Atomic `configurePost()` re‑inits buffers/FIFOs under a short lock; flips configured only at the end.
 - Allocated and maintained `smoothersPost/Pre`; strict size preconditions in `performFFTIfReadyPost/Pre`.
 - Paint try‑locks and falls back to **grid‑only** until data are ready.
-- PaneManager enforces child visibility on load and gates analyzer feed on tab switches; “Keep Warm” supported.
+- PaneManager enforces child visibility on load and gates analyzer feed on tab switches; "Keep Warm" supported.
 
 If Spectrum shows grid‑only, it means no valid frame is ready yet—start playback or enable Keep Warm to pre‑fill.
 
@@ -922,7 +1090,11 @@ Source/
     BandSplitter.*         // LR24 crossovers
     Imaging.*              // width (banded), rotation, asymmetry, shuffler
     Stereoize.*            // Haas/AP/MicroPitch + mono safety
-    Motion.*               // autopan core + tempo sync
+    motion/
+      MotionEngine.h       // Enhanced spatial audio processor with Enable, Inertia, Swing, Occlusion
+      MotionPanel.h/.cpp   // 6×4 grid UI with advanced visual feedback
+      MotionParams.h       // Parameter management and snapshots
+      MotionIDs.h          // Parameter ID definitions
     Meters.*               // atomics/lock-free scope feeds
     Ducker.h               // Global ducking system
   ui/
@@ -1003,9 +1175,10 @@ Source/
 ## Roadmap
 
 * **✅ COMPLETED:** Professional Delay System with 3 modes, comprehensive modulation, stereo processing, and per-delay ducking
+* **✅ COMPLETED:** Enhanced Motion System v2.0 with Enable, Inertia, Swing, Occlusion, 6×4 grid layout, and professional DSP pipeline
 * **P0 (Ship):** Multiband imaging (width/shuffler/rotation/asym), Mono Maker slope+audition, meters, searchable presets, polished LNF.
-* **P1:** Stereoize Haas + mono safety, Motion (sine/tri), more presets, delay preset bank.
-* **P2:** Stereoize All-Pass & MicroPitch, advanced Motion (square/random, circle/∞), per-band meters & solos.
+* **P1:** Stereoize Haas + mono safety, Motion preset bank, more presets, delay preset bank.
+* **P2:** Stereoize All-Pass & MicroPitch, advanced Motion features (User Shape, advanced modulation), per-band meters & solos.
 * **Delay Enhancements:** 
   - Complete tempo sync implementation for musical divisions
   - Per-mode character refinement (Analog HF rolloff, Tape head-bump)
@@ -1044,7 +1217,7 @@ The plugin now features intelligent resize constraints to ensure optimal usabili
 
 # Why these defaults?
 
-We pick defaults that are **neutral, robust across content**, and match industry-standard practice—so you can twist aggressively without the plugin ever “biting back.”
+We pick defaults that are **neutral, robust across content**, and match industry-standard practice—so you can twist aggressively without the plugin ever "biting back."
 
 ## HP/LP Q = **0.707** (Butterworth)
 
@@ -1055,14 +1228,14 @@ We pick defaults that are **neutral, robust across content**, and match industry
 
 > If you expose per-filter Q later, keep HP-Q/LP-Q default at **0.707**. (For peaking bells, a separate default of **Q=1.0** is a musical starting point.)
 
-## Shelf “Shape” S = **0.9** (not 1.0 on purpose)
+## Shelf "Shape" S = **0.9** (not 1.0 on purpose)
 
 * **S controls the knee sharpness** (RBJ shelf formulation). S↓ → broader, gentler knee; S↑ → tighter/kinked knee.
-* Starting slightly below 1.0 gives a **smoother hand-off** that avoids subtle gain ripple and “edge” around the transition at strong boosts/cuts.
-* **Stable across sample rates / oversampling**: small changes in `w0` don’t flip the subjective feel.
+* Starting slightly below 1.0 gives a **smoother hand-off** that avoids subtle gain ripple and "edge" around the transition at strong boosts/cuts.
+* **Stable across sample rates / oversampling**: small changes in `w0` don't flip the subjective feel.
 * **Plays well with Tilt**: when Tilt is built from complementary shelves, S=0.9 helps the low/high pair sum more smoothly around the pivot.
 
-> We cap the top end of S to avoid unintended emphasis or phase “bite.” Broad range below 1.0 is musically useful; pushing far above ~**1.2–1.25** can get edgy with no practical upside for most sources.
+> We cap the top end of S to avoid unintended emphasis or phase "bite." Broad range below 1.0 is musically useful; pushing far above ~**1.2–1.25** can get edgy with no practical upside for most sources.
 
 ## Mono Maker slope: 6/12/24 dB/oct
 
@@ -1074,13 +1247,13 @@ We pick defaults that are **neutral, robust across content**, and match industry
 ## Visuals are truthful (and readable)
 
 * The XY/EQ overlay uses the same math family as the DSP (RBJ biquads) and reflects **current Q, Shape, gains, and cutoffs** live.
-* We apply a mild visual “softening” (to avoid jaggy hard knees) **only in the drawing**, not in the audio.
-* Default curves look **boringly flat—by design**. That’s your safe baseline.
+* We apply a mild visual "softening" (to avoid jaggy hard knees) **only in the drawing**, not in the audio.
+* Default curves look **boringly flat—by design**. That's your safe baseline.
 
 ## Practical guardrails (so you never hurt the signal)
 
 * **HP/LP Q range**: keep roughly **0.5–1.2**. Below ~0.5 gets too blunted; above ~1.2 risks audible peaking.
-* **Shelf Shape S range**: keep roughly **0.6–1.25**. Wider below 1.0 is musical; much above 1.25 can accent the knee and “etch” transients.
+* **Shelf Shape S range**: keep roughly **0.6–1.25**. Wider below 1.0 is musical; much above 1.25 can accent the knee and "etch" transients.
 * **Tilt shelves** inherit the global Shape by default, ensuring the pair stays smooth around the pivot.
 
 ## QA checklist we used (you can repeat)
@@ -1092,7 +1265,7 @@ We pick defaults that are **neutral, robust across content**, and match industry
 
 **TL;DR**
 
-* Keep **HP/LP Q = 0.707** as the neutral “do no harm” default.
+* Keep **HP/LP Q = 0.707** as the neutral "do no harm" default.
 * Keep **Shelf Shape S = 0.9** for a smooth, musical knee (and smooth Tilt behavior).
 * Visuals mirror those choices so users trust what they see.
 

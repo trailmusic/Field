@@ -510,6 +510,17 @@ public:
     // Transport info (UI polling)
     double getTransportTimeSeconds() const { return transportTimeSeconds.load(); }
     bool   isTransportPlaying() const      { return transportIsPlaying.load(); }
+    
+    // Motion Engine access
+    motion::MotionEngine& getMotionEngine() { return motionEngine; }
+    
+    // Link policy helpers
+    bool isLinkOn() const {
+        if (auto* param = apvts.getRawParameterValue(motion::id::panner_select)) {
+            return (int)std::round(param->load()) == 2; // Link mode
+        }
+        return false;
+    }
 
 private:
     // APVTS listener
@@ -527,6 +538,9 @@ private:
     // Motion Engine
     motion::MotionEngine motionEngine;
     motion::Params motionParams;
+    
+    // Link policy mirroring guard
+    std::atomic<bool> mirrorGuard{false};
 
     // Smoothers (double-domain for precision)
     juce::SmoothedValue<double> panSmoothed, panLSmoothed, panRSmoothed,

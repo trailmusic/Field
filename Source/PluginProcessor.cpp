@@ -286,30 +286,80 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     // Initialize Motion Engine
     motionEngine.prepare(sampleRate, samplesPerBlock);
     
-    // Set up Motion parameter pointers
+    // Set up Motion parameter pointers - Dual Panner System
     #include "motion/MotionIDs.h"
     using namespace motion;
+    
+    // Global parameters
+    motionParams.enable = apvts.getRawParameterValue(id::enable);
     motionParams.pannerSelect = apvts.getRawParameterValue(id::panner_select);
-    motionParams.path = apvts.getRawParameterValue(id::path);
-    motionParams.rateHz = apvts.getRawParameterValue(id::rate_hz);
-    motionParams.depth = apvts.getRawParameterValue(id::depth_pct);
-    motionParams.phaseDeg = apvts.getRawParameterValue(id::phase_deg);
-    motionParams.spread = apvts.getRawParameterValue(id::spread_pct);
-    motionParams.elevBias = apvts.getRawParameterValue(id::elev_bias);
-    motionParams.bounce = apvts.getRawParameterValue(id::shape_bounce);
-    motionParams.jitter = apvts.getRawParameterValue(id::jitter_amt);
-    motionParams.quantizeDiv = apvts.getRawParameterValue(id::quantize_div);
-    motionParams.mode = apvts.getRawParameterValue(id::mode);
-    motionParams.retrig = apvts.getRawParameterValue(id::retrig);
-    motionParams.holdMs = apvts.getRawParameterValue(id::hold_ms);
-    motionParams.sens = apvts.getRawParameterValue(id::sens);
-    motionParams.offsetDeg = apvts.getRawParameterValue(id::offset_deg);
-    motionParams.frontBias = apvts.getRawParameterValue(id::front_bias);
-    motionParams.doppler = apvts.getRawParameterValue(id::doppler_amt);
-    motionParams.motionSend = apvts.getRawParameterValue(id::motion_send);
-    motionParams.anchor = apvts.getRawParameterValue(id::anchor_enable);
-    motionParams.bassFloorHz = apvts.getRawParameterValue(id::bass_floor_hz);
     motionParams.headphoneSafe = apvts.getRawParameterValue(id::headphone_safe);
+    motionParams.bassFloorHz = apvts.getRawParameterValue(id::bass_floor_hz);
+    motionParams.occlusion = apvts.getRawParameterValue(id::occlusion);
+    
+    // P1 parameters
+    motionParams.p1.path = apvts.getRawParameterValue(id::p1_path);
+    motionParams.p1.rateHz = apvts.getRawParameterValue(id::p1_rate_hz);
+    motionParams.p1.depth = apvts.getRawParameterValue(id::p1_depth_pct);
+    motionParams.p1.phaseDeg = apvts.getRawParameterValue(id::p1_phase_deg);
+    motionParams.p1.spread = apvts.getRawParameterValue(id::p1_spread_pct);
+    motionParams.p1.elevBias = apvts.getRawParameterValue(id::p1_elev_bias);
+    motionParams.p1.bounce = apvts.getRawParameterValue(id::p1_shape_bounce);
+    motionParams.p1.jitter = apvts.getRawParameterValue(id::p1_jitter_amt);
+    motionParams.p1.quantizeDiv = apvts.getRawParameterValue(id::p1_quantize_div);
+    motionParams.p1.swing = apvts.getRawParameterValue(id::p1_swing_pct);
+    motionParams.p1.mode = apvts.getRawParameterValue(id::p1_mode);
+    motionParams.p1.retrig = apvts.getRawParameterValue(id::p1_retrig);
+    motionParams.p1.holdMs = apvts.getRawParameterValue(id::p1_hold_ms);
+    motionParams.p1.sens = apvts.getRawParameterValue(id::p1_sens);
+    motionParams.p1.inertia = apvts.getRawParameterValue(id::p1_inertia_ms);
+    motionParams.p1.frontBias = apvts.getRawParameterValue(id::p1_front_bias);
+    motionParams.p1.doppler = apvts.getRawParameterValue(id::p1_doppler_amt);
+    motionParams.p1.motionSend = apvts.getRawParameterValue(id::p1_motion_send);
+    motionParams.p1.anchor = apvts.getRawParameterValue(id::p1_anchor_enable);
+    
+    // P2 parameters
+    motionParams.p2.path = apvts.getRawParameterValue(id::p2_path);
+    motionParams.p2.rateHz = apvts.getRawParameterValue(id::p2_rate_hz);
+    motionParams.p2.depth = apvts.getRawParameterValue(id::p2_depth_pct);
+    motionParams.p2.phaseDeg = apvts.getRawParameterValue(id::p2_phase_deg);
+    motionParams.p2.spread = apvts.getRawParameterValue(id::p2_spread_pct);
+    motionParams.p2.elevBias = apvts.getRawParameterValue(id::p2_elev_bias);
+    motionParams.p2.bounce = apvts.getRawParameterValue(id::p2_shape_bounce);
+    motionParams.p2.jitter = apvts.getRawParameterValue(id::p2_jitter_amt);
+    motionParams.p2.quantizeDiv = apvts.getRawParameterValue(id::p2_quantize_div);
+    motionParams.p2.swing = apvts.getRawParameterValue(id::p2_swing_pct);
+    motionParams.p2.mode = apvts.getRawParameterValue(id::p2_mode);
+    motionParams.p2.retrig = apvts.getRawParameterValue(id::p2_retrig);
+    motionParams.p2.holdMs = apvts.getRawParameterValue(id::p2_hold_ms);
+    motionParams.p2.sens = apvts.getRawParameterValue(id::p2_sens);
+    motionParams.p2.inertia = apvts.getRawParameterValue(id::p2_inertia_ms);
+    motionParams.p2.frontBias = apvts.getRawParameterValue(id::p2_front_bias);
+    motionParams.p2.doppler = apvts.getRawParameterValue(id::p2_doppler_amt);
+    motionParams.p2.motionSend = apvts.getRawParameterValue(id::p2_motion_send);
+    motionParams.p2.anchor = apvts.getRawParameterValue(id::p2_anchor_enable);
+    
+    // Legacy parameter pointers (point to P1 for backward compatibility)
+    motionParams.path = motionParams.p1.path;
+    motionParams.rateHz = motionParams.p1.rateHz;
+    motionParams.depth = motionParams.p1.depth;
+    motionParams.phaseDeg = motionParams.p1.phaseDeg;
+    motionParams.spread = motionParams.p1.spread;
+    motionParams.elevBias = motionParams.p1.elevBias;
+    motionParams.bounce = motionParams.p1.bounce;
+    motionParams.jitter = motionParams.p1.jitter;
+    motionParams.quantizeDiv = motionParams.p1.quantizeDiv;
+    motionParams.swing = motionParams.p1.swing;
+    motionParams.mode = motionParams.p1.mode;
+    motionParams.retrig = motionParams.p1.retrig;
+    motionParams.holdMs = motionParams.p1.holdMs;
+    motionParams.sens = motionParams.p1.sens;
+    motionParams.offsetDeg = motionParams.p1.phaseDeg; // Legacy mapping
+    motionParams.inertia = motionParams.p1.inertia;
+    motionParams.frontBias = motionParams.p1.frontBias;
+    motionParams.doppler = motionParams.p1.doppler;
+    motionParams.motionSend = motionParams.p1.motionSend;
+    motionParams.anchor = motionParams.p1.anchor;
     
     motionEngine.setParams(&motionParams);
 }
@@ -617,7 +667,16 @@ void MyPluginAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 
 void MyPluginAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    if (auto xml = getXmlFromBinary (data, sizeInBytes)) apvts.replaceState (juce::ValueTree::fromXml (*xml));
+    if (auto xml = getXmlFromBinary (data, sizeInBytes)) {
+        apvts.replaceState (juce::ValueTree::fromXml (*xml));
+        
+        // Notify editor (if open) to rebind on message thread
+        if (auto* ed = dynamic_cast<MyPluginAudioProcessorEditor*>(getActiveEditor())) {
+            juce::MessageManager::callAsync([ed] {
+                ed->updateMotionParameterAttachmentsOnMessageThread();
+            });
+        }
+    }
 }
 
 void MyPluginAudioProcessor::updateLatencyForPhaseMode()
@@ -639,6 +698,49 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
     juce::ignoreUnused (newValue);
     if (parameterID == IDs::phaseMode || parameterID == IDs::hpHz || parameterID == IDs::lpHz)
         updateLatencyForPhaseMode();
+    
+    // No auto-seeding of P2 from P1 – both panners share identical factory defaults by layout
+
+    // Link policy A: write-through mirroring for motion parameters
+    if (isLinkOn() && !mirrorGuard.load()) {
+        // Map P1->P2 parameter twins
+        static const std::pair<juce::String, juce::String> twins[] = {
+            { motion::id::p1_path, motion::id::p2_path },
+            { motion::id::p1_rate_hz, motion::id::p2_rate_hz },
+            { motion::id::p1_depth_pct, motion::id::p2_depth_pct },
+            { motion::id::p1_phase_deg, motion::id::p2_phase_deg },
+            { motion::id::p1_spread_pct, motion::id::p2_spread_pct },
+            { motion::id::p1_elev_bias, motion::id::p2_elev_bias },
+            { motion::id::p1_shape_bounce, motion::id::p2_shape_bounce },
+            { motion::id::p1_jitter_amt, motion::id::p2_jitter_amt },
+            { motion::id::p1_swing_pct, motion::id::p2_swing_pct },
+            { motion::id::p1_quantize_div, motion::id::p2_quantize_div },
+            { motion::id::p1_mode, motion::id::p2_mode },
+            { motion::id::p1_retrig, motion::id::p2_retrig },
+            { motion::id::p1_hold_ms, motion::id::p2_hold_ms },
+            { motion::id::p1_sens, motion::id::p2_sens },
+            { motion::id::p1_inertia_ms, motion::id::p2_inertia_ms },
+            { motion::id::p1_front_bias, motion::id::p2_front_bias },
+            { motion::id::p1_doppler_amt, motion::id::p2_doppler_amt },
+            { motion::id::p1_motion_send, motion::id::p2_motion_send },
+            { motion::id::p1_anchor_enable, motion::id::p2_anchor_enable }
+        };
+        
+        for (const auto& twin : twins) {
+            if (parameterID == twin.first) {
+                mirrorGuard.store(true);
+                if (auto* p1 = apvts.getParameter(twin.first)) {
+                    if (auto* p2 = apvts.getParameter(twin.second)) {
+                        juce::MessageManager::callAsync([p2, v = p1->getValue()] {
+                            p2->setValueNotifyingHost(v);
+                        });
+                    }
+                }
+                mirrorGuard.store(false);
+                break;
+            }
+        }
+    }
 }
 
 // =========================
@@ -755,30 +857,58 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckLookaheadMs, 1 }, "Delay Duck Lookahead (ms)", juce::NormalisableRange<float>(0.0f, 15.0f, 0.01f), 5.0f));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayDuckLinkGlobal, 1 }, "Delay Duck Link Global", true));
 
-    // Motion parameters
+    // Motion parameters - Dual Panner System
     #include "motion/MotionIDs.h"
     using namespace motion;
+    
+    // Global parameters (shared)
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::enable, 1 }, "Motion Enable", true));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::panner_select, 1 }, "Motion Panner", choiceListPanner(), (int)PannerSelect::P1));
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::path, 1 }, "Motion Path", choiceListPath(), (int)PathType::Circle));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::rate_hz, 1 }, "Motion Rate (Hz)", juce::NormalisableRange<float>(0.05f, 16.0f, 0.0f, 0.33f), 0.5f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::depth_pct, 1 }, "Motion Depth", juce::NormalisableRange<float>(0.0f, 1.0f), 0.35f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::phase_deg, 1 }, "Motion Phase", juce::NormalisableRange<float>(0.0f, 360.0f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::spread_pct, 1 }, "Motion Spread", juce::NormalisableRange<float>(0.0f, 2.0f), 1.2f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::elev_bias, 1 }, "Elevation Bias", juce::NormalisableRange<float>(-1.0f, 1.0f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::shape_bounce, 1 }, "Bounce/Tension", juce::NormalisableRange<float>(0.0f, 1.0f), 0.3f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::jitter_amt, 1 }, "Jitter", juce::NormalisableRange<float>(0.0f, 1.0f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::quantize_div, 1 }, "Quantize", choiceListQuant(), (int)QuantizeDiv::Off));
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::mode, 1 }, "Motion Mode", choiceListMode(), (int)MotionMode::Sync));
-    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::retrig, 1 }, "Retrigger", false));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::hold_ms, 1 }, "Hold (ms)", juce::NormalisableRange<float>(0.0f, 500.0f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::sens, 1 }, "Sensitivity", juce::NormalisableRange<float>(0.0f, 1.0f), 0.5f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::offset_deg, 1 }, "Offset (deg)", juce::NormalisableRange<float>(0.0f, 360.0f), 90.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::front_bias, 1 }, "Front Bias", juce::NormalisableRange<float>(-1.0f, 1.0f), 0.2f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::doppler_amt, 1 }, "Doppler", juce::NormalisableRange<float>(0.0f, 1.0f), 0.1f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::motion_send, 1 }, "Motion Send", juce::NormalisableRange<float>(0.0f, 1.0f), 0.2f));
-    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::anchor_enable, 1 }, "Anchor Center", true));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::bass_floor_hz, 1 }, "Bass Floor (Hz)", juce::NormalisableRange<float>(20.0f, 250.0f, 0.0f, 0.35f), 120.0f));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::headphone_safe, 1 }, "Headphone Safe", true));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::bass_floor_hz, 1 }, "Bass Floor (Hz)", juce::NormalisableRange<float>(20.0f, 250.0f, 0.0f, 0.35f), 120.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::occlusion, 1 }, "Occlusion", juce::NormalisableRange<float>(0.0f, 1.0f), 0.4f));
+    
+    // P1-specific parameters
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::p1_path, 1 }, "P1 Path", choiceListPath(), (int)PathType::Circle));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_rate_hz, 1 }, "P1 Rate (Hz)", juce::NormalisableRange<float>(0.05f, 16.0f, 0.0f, 0.33f), 0.5f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_depth_pct, 1 }, "P1 Depth", juce::NormalisableRange<float>(0.0f, 1.0f), 0.35f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_phase_deg, 1 }, "P1 Phase", juce::NormalisableRange<float>(0.0f, 360.0f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_spread_pct, 1 }, "P1 Spread", juce::NormalisableRange<float>(0.0f, 2.0f), 1.2f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_elev_bias, 1 }, "P1 Elevation Bias", juce::NormalisableRange<float>(-1.0f, 1.0f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_shape_bounce, 1 }, "P1 Bounce/Tension", juce::NormalisableRange<float>(0.0f, 1.0f), 0.3f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_jitter_amt, 1 }, "P1 Jitter", juce::NormalisableRange<float>(0.0f, 1.0f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::p1_quantize_div, 1 }, "P1 Quantize", choiceListQuant(), (int)QuantizeDiv::Off));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_swing_pct, 1 }, "P1 Swing", juce::NormalisableRange<float>(0.0f, 0.75f), 0.2f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::p1_mode, 1 }, "P1 Motion Mode", choiceListMode(), (int)MotionMode::Sync));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::p1_retrig, 1 }, "P1 Retrigger", false));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_hold_ms, 1 }, "P1 Hold (ms)", juce::NormalisableRange<float>(0.0f, 500.0f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_sens, 1 }, "P1 Sensitivity", juce::NormalisableRange<float>(0.0f, 1.0f), 0.5f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_inertia_ms, 1 }, "P1 Inertia (ms)", juce::NormalisableRange<float>(0.0f, 500.0f, 0.0f, 0.4f), 120.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_front_bias, 1 }, "P1 Front Bias", juce::NormalisableRange<float>(-1.0f, 1.0f), 0.2f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_doppler_amt, 1 }, "P1 Doppler", juce::NormalisableRange<float>(0.0f, 1.0f), 0.1f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p1_motion_send, 1 }, "P1 Motion Send", juce::NormalisableRange<float>(0.0f, 1.0f), 0.2f));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::p1_anchor_enable, 1 }, "P1 Anchor Center", true));
+    
+    // P2-specific parameters
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::p2_path, 1 }, "P2 Path", choiceListPath(), (int)PathType::Circle));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_rate_hz, 1 }, "P2 Rate (Hz)", juce::NormalisableRange<float>(0.05f, 16.0f, 0.0f, 0.33f), 0.5f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_depth_pct, 1 }, "P2 Depth", juce::NormalisableRange<float>(0.0f, 1.0f), 0.35f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_phase_deg, 1 }, "P2 Phase", juce::NormalisableRange<float>(0.0f, 360.0f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_spread_pct, 1 }, "P2 Spread", juce::NormalisableRange<float>(0.0f, 2.0f), 1.2f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_elev_bias, 1 }, "P2 Elevation Bias", juce::NormalisableRange<float>(-1.0f, 1.0f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_shape_bounce, 1 }, "P2 Bounce/Tension", juce::NormalisableRange<float>(0.0f, 1.0f), 0.3f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_jitter_amt, 1 }, "P2 Jitter", juce::NormalisableRange<float>(0.0f, 1.0f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::p2_quantize_div, 1 }, "P2 Quantize", choiceListQuant(), (int)QuantizeDiv::Off));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_swing_pct, 1 }, "P2 Swing", juce::NormalisableRange<float>(0.0f, 0.75f), 0.2f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::p2_mode, 1 }, "P2 Motion Mode", choiceListMode(), (int)MotionMode::Sync));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::p2_retrig, 1 }, "P2 Retrigger", false));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_hold_ms, 1 }, "P2 Hold (ms)", juce::NormalisableRange<float>(0.0f, 500.0f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_sens, 1 }, "P2 Sensitivity", juce::NormalisableRange<float>(0.0f, 1.0f), 0.5f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_inertia_ms, 1 }, "P2 Inertia (ms)", juce::NormalisableRange<float>(0.0f, 500.0f, 0.0f, 0.4f), 120.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_front_bias, 1 }, "P2 Front Bias", juce::NormalisableRange<float>(-1.0f, 1.0f), 0.2f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_doppler_amt, 1 }, "P2 Doppler", juce::NormalisableRange<float>(0.0f, 1.0f), 0.1f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_motion_send, 1 }, "P2 Motion Send", juce::NormalisableRange<float>(0.0f, 1.0f), 0.2f));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::p2_anchor_enable, 1 }, "P2 Anchor Center", true));
 
     return { params.begin(), params.end() };
 }

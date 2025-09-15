@@ -259,3 +259,32 @@ if (auto* p = apvts.getParameter("width")) {
 ---
 
 If you want, we can turn this into a short lint checklist comment to paste at the top of each new file.
+
+---
+
+## 13) Motion Dual‑Panner rules (P1/P2/Link)
+
+- **Default & visuals**
+  - Panner Combo defaults to **P1**. Use LNF properties `forceSelectedText` and `defaultTextWhenEmpty` so the control renders "P1" without a chevron.
+  - Motion Panel dots (P1/P2/Link) must switch `motion.panner_select` via `setValueNotifyingHost` with proper gesture wrapping when user‑initiated.
+
+- **Independence & defaults**
+  - P1 and P2 are truly independent parameter sets (no hidden copy/seed). Both initialize from the same factory defaults.
+  - Link mode writes to P1 and mirrors to P2 (policy A). UI binds to P1 while linked.
+
+- **Attachments (critical)**
+  - Maintain separate motion‑only attachment buckets: `motionSliderAttachments`, `motionButtonAttachments`, `motionComboAttachments`.
+  - On panner change, **clear and rebuild** only these buckets. Do not erase from global vectors by count.
+  - Rebind on the message thread using an `AsyncUpdater` (`motionBinding`) to avoid races.
+
+- **UI freshness**
+  - After rebind, call `refreshMotionControlValues()` to push current parameter values into labels/knobs immediately.
+  - Pull fresh `motion::VisualState` and update the pane visuals in the same step; repaint.
+
+- **Events**
+  - `parameterChanged(motion.panner_select)` triggers the async rebind; ComboBox `onChange` redundantly triggers to handle host timing quirks.
+  - Motion Panel `mouseDown` hit‑tests P1/P2/Link dots and sets the selection parameter.
+
+- **Do not**
+  - Do not keep stale attachments around; do not rely on “erase last N attachments.”
+  - Do not let the Panner ComboBox show the default chevron; enforce the default text behavior via LNF.
