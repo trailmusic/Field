@@ -1051,6 +1051,32 @@ Codesigning uses ad‑hoc signatures for debug; some hosts may require a rescan.
 
 ---
 
+## JUCE Version & Integration
+
+- **Framework**: JUCE 8.0.0 (see `build/_deps/juce-src/CMakeLists.txt`)
+- **Integration**: CMake with dependency fetch; JUCE sources live under `build/_deps/juce-src/`, helpers in `build/_deps/juce-build/`
+- **Modules**: standard JUCE modules from `juce_*` under `modules/` (audio, plugin client, dsp, gui)
+- **Toolchain**: C++17, CMake ≥ 3.22
+- **Artifacts**: VST3/AU/Standalone are produced by JUCE’s plugin client and installed by `build_all.sh` to the OS user plug‑in locations
+
+Notes
+- JUCE helper targets like `juce_vst3_helper` are part of the build and appear in `build/Source/Field_artefacts/...`
+- Our CMake uses JUCE’s CMake API; no Projucer project files are required.
+
+---
+
+## UI Rendering & Theming (Native JUCE)
+
+- **Model**: Retained‑mode `Component` tree; all drawing is immediate‑mode via `juce::Graphics` inside `paint()`/`paintOverChildren()`.
+- **Theming**: Central `FieldLookAndFeel` owns palette and draw overrides; component properties (e.g., `forceSelectedText`) control per‑widget nuances.
+- **Layout**: `juce::Grid` with shared tokens in `Source/Layout.h`; all sizing in `resized()`; scale via `Layout::dp()`.
+- **Icons**: `Source/IconSystem.*` renders vector icons from `juce::Path` (crisp, tintable, no bitmaps).
+- **Motion visuals**: UI pulls a `motion::VisualState` from the engine; if stale, it synthesizes visuals from parameters so the panel never draws empty.
+- **Attachments**: APVTS attachments bind controls; Motion uses dedicated attachment buckets and an `AsyncUpdater` to rebind safely on P1/P2/Link.
+
+CSS/WebView?
+- JUCE is not CSS‑styled. Styling is code‑driven (LookAndFeel + `paint()`). JUCE 8 can embed a WebView (HTML/CSS/JS) if desired, but we keep core UI native for performance and simplicity.
+
 ## Stability Fix (Aug 2025)
 
 - DSP: Added Nyquist-safe clamping and sanity checks across filters to prevent JUCE IIR/SVTPT assertions at extreme sample rates and settings. Specifically, cutoffs are now clamped below Nyquist and relationships are enforced (e.g. HP < LP). Affected helpers: `applyHP_LP`, `updateTiltEQ`, `applyScoopEQ`, `applyBassShelf`, `applyAirBand`, `applyThreeBandWidth`, `applyShufflerWidth`, `applyMonoMaker`, and safe frequencies inside `applySpaceAlgorithm`. Also set a safe default for the depth lowpass in `prepare()`.

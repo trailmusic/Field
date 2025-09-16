@@ -161,110 +161,64 @@ juce::Path IconSystem::createPowerIcon (float size)
 juce::Path IconSystem::createAnchorIcon (float size)
 {
     juce::Path p; 
-    p.setUsingNonZeroWinding (false); // even-odd for ring “hole”
+    p.setUsingNonZeroWinding (false); // even-odd for ring hole if filled
 
     const float s = size / 16.0f;
-    auto R = [&] (float x){ return std::round(x) + 0.5f; }; // snap to pixel centers for crispness
+    auto R = [&] (float x){ return std::round(x) + 0.5f; };
 
-    // --- Ring (donut) ---
-    // Outer 6x6 circle centered near top; inner creates the hole.
-    juce::Path ring;
-    ring.addEllipse (R(5*s), R(1*s), R(6*s), R(6*s));                 // outer
-    juce::Path inner; inner.addEllipse (R(6.75f*s), R(2.75f*s), R(2.5f*s), R(2.5f*s)); // inner
-    ring.addPath (inner); // even-odd makes a hole
+    // Ring (outer + inner to read at small sizes)
+    juce::Path ring; ring.addEllipse (R(5*s), R(1.5f*s), R(6*s), R(6*s));
+    juce::Path hole; hole.addEllipse (R(6.5f*s), R(3.0f*s), R(3.0f*s), R(3.0f*s));
+    ring.addPath (hole);
 
-    // --- Shank (rounded) ---
-    juce::Path shank;
-    const float shankW = R(2*s), shankH = R(7.5f*s);
-    shank.addRoundedRectangle (R(7*s), R(5.5f*s), shankW, shankH, R(1*s));
+    // Shank (slightly wider for clarity)
+    juce::Path shank; shank.addRoundedRectangle (R(7*s), R(6.0f*s), R(2.0f*s), R(7.2f*s), R(1.0f*s));
 
-    // --- Stock (crossbar) ---
-    juce::Path stock;
-    stock.addRoundedRectangle (R(4.5f*s), R(9.5f*s), R(7*s), R(1.5f*s), R(0.75f*s));
+    // Stock (crossbar) — slightly above the flukes
+    juce::Path stock; stock.addRoundedRectangle (R(4.2f*s), R(10.0f*s), R(7.6f*s), R(1.6f*s), R(0.8f*s));
 
-    // --- Crown + Flukes (curved) ---
+    // Flukes — simpler, symmetric, pixel-snapped
     juce::Path flukes;
-    // Left fluke
-    flukes.startNewSubPath (R(8*s),   R(12*s));
-    flukes.cubicTo( R(6.5f*s), R(12*s),
-                    R(5.25f*s),R(12.5f*s),
-                    R(5*s),    R(14*s));     // inner curve down
-    flukes.lineTo(  R(3.2f*s), R(13.25f*s)); // outer tip
-    flukes.quadraticTo(R(4.75f*s), R(11.5f*s), R(6.5f*s), R(11*s)); // outer curve up
-    flukes.closeSubPath();
+    // left
+    flukes.startNewSubPath (R(8*s), R(12.0f*s));
+    flukes.quadraticTo (R(6.2f*s), R(12.0f*s), R(5.2f*s), R(14.0f*s));
+    flukes.quadraticTo (R(6.0f*s), R(12.2f*s), R(7.0f*s), R(11.2f*s));
+    // right
+    flukes.startNewSubPath (R(8*s), R(12.0f*s));
+    flukes.quadraticTo (R(9.8f*s), R(12.0f*s), R(10.8f*s), R(14.0f*s));
+    flukes.quadraticTo (R(10.0f*s), R(12.2f*s), R(9.0f*s), R(11.2f*s));
 
-    // Right fluke (mirror)
-    flukes.startNewSubPath (R(8*s),   R(12*s));
-    flukes.cubicTo( R(9.5f*s), R(12*s),
-                    R(10.75f*s),R(12.5f*s),
-                    R(11*s),   R(14*s));
-    flukes.lineTo(  R(12.8f*s),R(13.25f*s));
-    flukes.quadraticTo(R(11.25f*s), R(11.5f*s), R(9.5f*s), R(11*s));
-    flukes.closeSubPath();
+    // Crown cap to join shank/flukes
+    juce::Path crown; crown.addRoundedRectangle (R(6.4f*s), R(11.2f*s), R(3.2f*s), R(1.0f*s), R(0.5f*s));
 
-    // Small crown cap to visually join shank and flukes
-    juce::Path crown;
-    crown.addRoundedRectangle (R(6.5f*s), R(11*s), R(3*s), R(1*s), R(0.5f*s));
-
-    // Combine
     p.addPath (ring);
     p.addPath (shank);
     p.addPath (stock);
     p.addPath (flukes);
     p.addPath (crown);
-
     return p;
 }
 
 juce::Path IconSystem::createRetrigIcon (float size)
 {
     juce::Path p; 
-    p.setUsingNonZeroWinding (false); // even-odd for ring gap if needed
+    p.setUsingNonZeroWinding (false);
 
     const float s = size / 16.0f;
     auto R = [&] (float x){ return std::round(x) + 0.5f; };
 
-    // --- Ring segment (pie) ---
-    // Outer 12x12 circle with inner radius for a clean ring; arc spans ~290° leaving a reset gap near top.
-    const float cx = R(8*s), cy = R(8*s);
-    const float outer = R(12*s);
-    const float start = juce::MathConstants<float>::pi * 0.18f;  // ~32°
-    const float end   = juce::MathConstants<float>::twoPi * 0.97f; // ~350°
-    juce::Path ring;
-    ring.addPieSegment (R(2*s), R(2*s), outer, outer, start, end, 0.58f /* inner radius as fraction */);
+    // Outer circle (clean, no chords or tangents)
+    juce::Path outer; outer.addEllipse (R(2*s), R(2*s), R(12*s), R(12*s));
 
-    // --- Arrowhead at arc end ---
-    const float theta = end;
-    const float rMid  = R(8*s);
-    const float ax = cx + rMid * std::cos(theta);
-    const float ay = cy + rMid * std::sin(theta);
-    juce::Path arrow;
-    const float ah = R(2.6f*s); // arrowhead length
-    const float aw = R(1.8f*s); // width
-    // Build a small triangle pointing tangentially
-    const float tx = -std::sin(theta);
-    const float ty =  std::cos(theta);
-    juce::Point<float> tip (ax + ah * std::cos(theta), ay + ah * std::sin(theta));
-    juce::Point<float> baseL (ax - 0.6f*ah * std::cos(theta) + 0.5f*aw * tx,
-                              ay - 0.6f*ah * std::sin(theta) + 0.5f*aw * ty);
-    juce::Point<float> baseR (ax - 0.6f*ah * std::cos(theta) - 0.5f*aw * tx,
-                              ay - 0.6f*ah * std::sin(theta) - 0.5f*aw * ty);
-    arrow.startNewSubPath (tip); arrow.lineTo (baseL); arrow.lineTo (baseR); arrow.closeSubPath();
+    // Tick at 12 o'clock
+    juce::Path tick; tick.addRectangle (R(7.5f*s), R(0.8f*s), R(1.0f*s), R(3.0f*s));
 
-    // --- Beat tick at 12 o’clock (reset marker) ---
-    juce::Path tick;
-    tick.addRectangle (R(7.4f*s), R(0.8f*s), R(1.2f*s), R(3.0f*s));
+    // Inner dot
+    juce::Path dot; dot.addEllipse (R(7.0f*s), R(7.0f*s), R(2.0f*s), R(2.0f*s));
 
-    // --- Inner “hit dot” (nice to pulse on retrig) ---
-    juce::Path dot;
-    dot.addEllipse (R(7.2f*s), R(7.2f*s), R(1.6f*s), R(1.6f*s));
-
-    // Combine
-    p.addPath (ring);
-    p.addPath (arrow);
+    p.addPath (outer);
     p.addPath (tick);
     p.addPath (dot);
-
     return p;
 }
 
