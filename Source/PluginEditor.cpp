@@ -1039,13 +1039,15 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     const int calculatedMinHeight = headerH + xyMinH + metersH + totalRowsH + gapsH + Layout::dp (Layout::PAD, s) * 2 + 50; // +50 for bottom margin
     
     // Store resize constraints
-    this->minWidth = calculatedMinWidth;
+    // Allow narrower widths than full content width; keep full height for control scale
+    const int minWidthAllowed = juce::jmax (800, (int) std::round ((float) baseWidth * 0.5f));
+    this->minWidth = juce::jmin (calculatedMinWidth, minWidthAllowed);
     this->minHeight = calculatedMinHeight;
     this->maxWidth = 3000;
     this->maxHeight = 2000;
     
     // Set minimum size constraints
-    setResizeLimits (calculatedMinWidth, calculatedMinHeight, maxWidth, maxHeight);
+    setResizeLimits (minWidth, minHeight, maxWidth, maxHeight);
     
     // Set initial size (respecting minimums)
     const int initialWidth = juce::jmax (baseWidth, calculatedMinWidth);
@@ -3645,8 +3647,8 @@ void MyPluginAudioProcessorEditor::mouseDrag (const juce::MouseEvent& e)
     newWidth = juce::jmin (newWidth, maxWidth);
     newHeight = juce::jmin (newHeight, maxHeight);
     
-    // Always maintain aspect ratio by default, disable with Shift
-    const bool maintainAspectRatio = !e.mods.isShiftDown();
+    // Do not maintain aspect ratio by default; hold Shift to lock aspect
+    const bool maintainAspectRatio = e.mods.isShiftDown();
     
     if (maintainAspectRatio)
     {
@@ -3695,10 +3697,9 @@ void MyPluginAudioProcessorEditor::mouseUp (const juce::MouseEvent&) { isResizin
 
 void MyPluginAudioProcessorEditor::resized()
 {
-    // Calculate scale factor based on current size vs base size
-    const float widthScale = (float)getWidth() / (float)baseWidth;
+    // Calculate scale factor based on height only to keep controls consistent when width shrinks
     const float heightScale = (float)getHeight() / (float)baseHeight;
-    scaleFactor = juce::jmin (widthScale, heightScale);
+    scaleFactor = heightScale;
     
     // Ensure scale factor stays within reasonable bounds
     scaleFactor = juce::jlimit (0.6f, 2.0f, scaleFactor);
