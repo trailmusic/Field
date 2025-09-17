@@ -21,6 +21,7 @@ public:
                           const char* id, juce::Slider& slider, juce::Label& value, const juce::String& caption)
         {
             styleKnob (slider);
+            slider.setName (caption); // FieldLNF draws knob name from Slider::getName()
             auto cell = std::make_unique<KnobCell> (slider, value, caption);
             cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             cells.add (cell.get());
