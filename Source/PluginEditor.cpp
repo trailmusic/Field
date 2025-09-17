@@ -1,8 +1,11 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "ui/PaneManager.h"
+#include "reverb/ReverbParamIDs.h"
 #include "Layout.h"
 #include "dsp/DelayPresetLibrary.h"
+#include "reverb/ui/ReverbControlsPanel.h"
+#include "reverb/ui/ReverbPanel.h"
 
 //==============================================================
 
@@ -3058,6 +3061,122 @@ void MyPluginAudioProcessorEditor::performLayout()
                            delaySatCell.get(), delayDiffusionCell.get(), delayDiffuseSizeCell.get(), delayHpCell.get(), delayLpCell.get(), delayTiltCell.get(), delayWowflutterCell.get(),
                            delayJitterCell.get(), delayPreDelayCell.get(), delayDuckThresholdCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
             lightenDelayCell (kc);
+
+        // Reverb controls group to the right of Delay group in Group 2
+        {
+            const int reverbGroupX = delayGroupX + delayGroupW;
+            const int reverbGroupY = delayGroupY;
+            const int availableW  = b.getRight() - reverbGroupX;
+            const int reverbCellW = lPx + Layout::dp (8, s);
+            const int targetReverbW = reverbCellW * 6; // 6 columns × standard cell width
+            const int reverbGroupW = juce::jmin (availableW, targetReverbW);
+            const int reverbGroupH = delayGroupH;
+
+            static std::unique_ptr<class ReverbControlsPanel> rvPanel;
+            if (!rvPanel)
+                rvPanel = std::make_unique<ReverbControlsPanel> (proc.apvts);
+
+            // Mirror Delay metrics for Reverb grid so KnobCells match exactly
+            const int valuePx2 = Layout::dp (14, s);
+            const int labelGap2 = Layout::dp (4, s);
+            const int delayCellW = lPx + Layout::dp (8, s);
+            rvPanel->setCellMetrics (lPx, valuePx2, labelGap2, delayCellW);
+            rvPanel->setRowHeightPx (containerHeight);
+
+            // Add cells directly to Group 2 (no container) and lay them out with a 4x5 grid
+            juce::Array<KnobCell*> rvCells;
+            rvPanel->collectCells (rvCells);
+            for (auto* c : rvCells) {
+                if (c != nullptr) {
+                    bottomAltPanel.addAndMakeVisible (*c);
+                    c->setShowBorder (true);
+                    c->getProperties().set ("reverbMaroonBorder", true);
+                }
+            }
+
+            // Create Enable (switch), Algorithm (switch-like), Wet Only (switch) styled like Delay/Motion
+            static juce::ToggleButton reverbEnable;
+            static std::unique_ptr<SwitchCell> reverbEnableCell;
+            if (!reverbEnableCell) {
+                reverbEnable.setComponentID ("reverb_enable");
+                reverbEnable.getProperties().set ("iconType", (int) IconSystem::Power);
+                reverbEnableCell = std::make_unique<SwitchCell> (reverbEnable);
+                reverbEnableCell->setCaption ("Enable");
+                reverbEnableCell->setDelayTheme (false);
+                buttonAttachments.push_back (std::make_unique<ButtonAttachment> (proc.apvts, ReverbIDs::enabled, reverbEnable));
+            }
+
+            static juce::ComboBox reverbAlgo;
+            static std::unique_ptr<SwitchCell> reverbAlgoCell;
+            if (!reverbAlgoCell) {
+                if (auto* ch = dynamic_cast<juce::AudioParameterChoice*>(proc.apvts.getParameter (ReverbIDs::algo))) {
+                    reverbAlgo.clear(); for (int i = 0; i < ch->choices.size(); ++i) reverbAlgo.addItem (ch->choices[i], i + 1);
+                    reverbAlgo.setSelectedId (ch->getIndex() + 1, juce::dontSendNotification);
+                    comboAttachments.push_back (std::make_unique<ComboAttachment> (proc.apvts, ReverbIDs::algo, reverbAlgo));
+                }
+                reverbAlgo.getProperties().set ("iconOnly", true);
+                reverbAlgoCell = std::make_unique<SwitchCell> (reverbAlgo);
+                reverbAlgoCell->setCaption ("Algo");
+                reverbAlgoCell->setDelayTheme (false);
+            }
+
+            static juce::ToggleButton reverbWetOnly;
+            static std::unique_ptr<SwitchCell> reverbWetOnlyCell;
+            if (!reverbWetOnlyCell) {
+                reverbWetOnly.setComponentID ("reverb_wet_only");
+                reverbWetOnly.getProperties().set ("iconType", (int) IconSystem::Mix);
+                reverbWetOnlyCell = std::make_unique<SwitchCell> (reverbWetOnly);
+                reverbWetOnlyCell->setCaption ("Wet Only");
+                reverbWetOnlyCell->setDelayTheme (false);
+                buttonAttachments.push_back (std::make_unique<ButtonAttachment> (proc.apvts, ReverbIDs::killDry, reverbWetOnly));
+            }
+
+            bottomAltPanel.addAndMakeVisible (*reverbEnableCell);
+            bottomAltPanel.addAndMakeVisible (*reverbAlgoCell);
+            bottomAltPanel.addAndMakeVisible (*reverbWetOnlyCell);
+            reverbEnableCell->getProperties().set ("reverbMaroonBorder", true);
+            reverbAlgoCell  ->getProperties().set ("reverbMaroonBorder", true);
+            reverbWetOnlyCell->getProperties().set ("reverbMaroonBorder", true);
+
+            juce::Grid reverbGrid;
+            reverbGrid.rowGap = juce::Grid::Px (0);
+            reverbGrid.columnGap = juce::Grid::Px (0);
+            reverbGrid.templateRows = { juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight) };
+            reverbGrid.templateColumns = {
+                juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW)
+            };
+            // Row-major placement into 4x6 grid (pad with empties if fewer than 24)
+            juce::Array<juce::GridItem> items;
+            items.ensureStorageAllocated (24);
+            // Add Enable at row1 col1, then first three knob cells start at col2
+            items.add (juce::GridItem (*reverbEnableCell).withArea (1, 1));
+            items.add (juce::GridItem (*reverbAlgoCell)  .withArea (1, 4)); // interesting slot in the middle of row 1
+            items.add (juce::GridItem (*reverbWetOnlyCell).withArea (1, 6));
+
+            int startIndex = 0;
+            for (int i = 0; i < juce::jmin (rvCells.size(), 24); ++i)
+            {
+                const int row = (i / 6) + 1;
+                const int colBase = (i % 6) + 1;
+                int col = colBase;
+                if (row == 1) {
+                    // Shift to skip reserved slots: col1 Enable, col4 Algo, col6 WetOnly
+                    if (col >= 6)      col += 0; // col6 reserved; fill remaining earlier ones
+                    else if (col >= 4) col += 1;
+                    else if (col >= 1) col += 1;
+                }
+                if (col > 6) continue;
+                if (auto* c = rvCells[i]) items.add (juce::GridItem (*c).withArea (row, col));
+            }
+            reverbGrid.items = std::move (items);
+
+            // Center a fixed-width 5-column block inside the available group width
+            auto rb = juce::Rectangle<int>(reverbGroupX, reverbGroupY, reverbGroupW, reverbGroupH).reduced(Layout::dp(Layout::GAP, s));
+            const int fixedW = delayCellW * 6;
+            auto rbCentered = rb.withWidth (juce::jmin (rb.getWidth(), fixedW));
+            rbCentered.setX (rb.getX() + (rb.getWidth() - rbCentered.getWidth())); // right-align to match group placement
+            reverbGrid.performLayout (rbCentered);
+        }
     }
 
     // ---------------- Row 1: Pan, Width cells, Gain, Mix, Wet Only -----------

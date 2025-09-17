@@ -15,6 +15,18 @@ set(SRC
     KnobCellMini.h
       IconSystem.h
     IconSystem.cpp
+    reverb/ReverbParamIDs.h
+    reverb/ReverbParameters.h
+    reverb/ReverbEngine.h
+    reverb/ReverbEngine.cpp
+    reverb/ui/DecayCurveComponent.h
+    reverb/ui/DecayCurveComponent.cpp
+    reverb/ui/ReverbEQComponent.h
+    reverb/ui/ReverbEQComponent.cpp
+    reverb/ui/ReverbScopeComponent.h
+    reverb/ui/ReverbScopeComponent.cpp
+    reverb/ui/ReverbPanel.h
+    reverb/ui/ReverbPanel.cpp
     ui/SpectrumAnalyzer.h
     ui/SpectrumAnalyzer.cpp
     ui/ProcessedSpectrumPane.h

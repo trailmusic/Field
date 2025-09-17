@@ -6,6 +6,7 @@
 #include "../IconSystem.h"
 #include "../motion/MotionPanel.h"
 #include "../motion/MotionVisual.h"
+#include "../reverb/ui/ReverbPanel.h"
 
 class XYPad; // forward (lives in PluginEditor.h/cpp)
 
@@ -21,7 +22,7 @@ private:
     XYPad& pad;
 };
 
-enum class PaneID { XY=0, Spectrum=1, Imager=2, Band=3, Motion=4, Machine=5 };
+enum class PaneID { XY=0, Spectrum=1, Imager=2, Band=3, Motion=4, Machine=5, Reverb=6, Delay=7 };
 
 static inline const char* paneKey (PaneID id)
 {
@@ -32,6 +33,8 @@ static inline const char* paneKey (PaneID id)
         case PaneID::Band: return "band";
         case PaneID::Motion: return "motion";
         case PaneID::Machine: return "machine";
+        case PaneID::Reverb:  return "reverb";
+        case PaneID::Delay:   return "delay";
     }
     return "xy";
 }
@@ -50,8 +53,15 @@ public:
         band = std::make_unique<juce::Component>(); // scaffold placeholder
         motion = std::make_unique<motion::MotionPanel>(p.apvts, &p.undo);
         mach = std::make_unique<MachinePane>(p, state, lnf);
+        // Visuals-only Reverb pane (no grid controls duplicated here)
+        reverb = std::make_unique<ReverbPanel>(p.apvts,
+                                               [&p]{ return p.getReverbErRms(); },
+                                               [&p]{ return p.getReverbTailRms(); },
+                                               [&p]{ return p.getReverbDuckGrDb(); },
+                                               [&p]{ return p.getReverbWidthNow(); });
+        delay = std::make_unique<juce::Component>();
 
-        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get() })
+        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
             addChildComponent (c);
 
         addAndMakeVisible (tabs);
@@ -65,8 +75,10 @@ public:
             m.addItem (4, "Band");
             m.addItem (5, "Motion");
             m.addItem (6, "Machine");
+            m.addItem (7, "Reverb");
+            m.addItem (8, "Delay");
             m.addSeparator();
-            m.addItem (7, options.keepAllWarm ? "Keep Warm: On" : "Keep Warm: Off");
+            m.addItem (9, options.keepAllWarm ? "Keep Warm: On" : "Keep Warm: Off");
             // Smoothing preset toggle for Spectrum
             if (spec)
             {
@@ -83,8 +95,10 @@ public:
                                  else if (r == 4) setActive (PaneID::Band, true);
                                  else if (r == 5) setActive (PaneID::Motion, true);
                                  else if (r == 6) setActive (PaneID::Machine, true);
-                                 else if (r == 7) { setOptions({ !options.keepAllWarm }); tabs.repaint(); }
-                                 else if (r == 8)
+                                 else if (r == 7) setActive (PaneID::Reverb, true);
+                                 else if (r == 8) setActive (PaneID::Delay,  true);
+                                 else if (r == 9) { setOptions({ !options.keepAllWarm }); tabs.repaint(); }
+                                 else if (r == 10)
                                  {
                                      if (spec)
                                      {
@@ -100,7 +114,7 @@ public:
         };
 
         auto s = vt.getProperty ("ui_activePane").toString();
-        PaneID initial = (s=="spec") ? PaneID::Spectrum : (s=="imager") ? PaneID::Imager : (s=="machine") ? PaneID::Machine : (s=="band") ? PaneID::Band : (s=="motion") ? PaneID::Motion : PaneID::XY;
+        PaneID initial = (s=="spec") ? PaneID::Spectrum : (s=="imager") ? PaneID::Imager : (s=="machine") ? PaneID::Machine : (s=="band") ? PaneID::Band : (s=="motion") ? PaneID::Motion : (s=="reverb") ? PaneID::Reverb : (s=="delay") ? PaneID::Delay : PaneID::XY;
         setActive (initial, false);
         if (spec)
         {
@@ -108,7 +122,7 @@ public:
             else                             spec->analyzer().pauseAudio();
         }
 
-        for (auto id : { PaneID::XY, PaneID::Spectrum, PaneID::Imager, PaneID::Band, PaneID::Motion, PaneID::Machine })
+        for (auto id : { PaneID::XY, PaneID::Spectrum, PaneID::Imager, PaneID::Band, PaneID::Motion, PaneID::Machine, PaneID::Reverb, PaneID::Delay })
         {
             auto key = juce::String("ui_shade_") + paneKey(id);
             if (! vt.hasProperty (key)) vt.setProperty (key, 0.0f, nullptr);
@@ -291,7 +305,7 @@ public:
     {
         const bool changed = (id != active);
         // Always enforce correct visibility, even if selecting the same pane.
-        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get() })
+        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
             if (c) c->setVisible (false);
 
         if (changed)
@@ -323,7 +337,7 @@ public:
     PaneID getActiveID() const { return (PaneID) activeAtomic.load (std::memory_order_acquire); }
     juce::Component* getActive()
     {
-        switch (active) { case PaneID::XY: return xy.get(); case PaneID::Spectrum: return spec.get(); case PaneID::Imager: return imgr.get(); case PaneID::Band: return band.get(); case PaneID::Motion: return motion.get(); case PaneID::Machine: return mach.get(); }
+        switch (active) { case PaneID::XY: return xy.get(); case PaneID::Spectrum: return spec.get(); case PaneID::Imager: return imgr.get(); case PaneID::Band: return band.get(); case PaneID::Motion: return motion.get(); case PaneID::Machine: return mach.get(); case PaneID::Reverb: return reverb.get(); case PaneID::Delay: return delay.get(); }
         return xy.get();
     }
 
@@ -341,7 +355,7 @@ public:
         // Content starts directly under tabs with a tiny breathing space
         auto paneTop = tabs.getBottom() + 2;
         juce::Rectangle<int> paneR (full.getX(), paneTop, full.getWidth(), full.getBottom() - paneTop);
-        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get(), (juce::Component*) band.get(), (juce::Component*) motion.get() })
+        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
             if (c) c->setBounds (paneR);
     }
 
@@ -364,7 +378,7 @@ public:
         void paint (juce::Graphics& g) override
         {
             auto b = getLocalBounds().toFloat();
-            const int N = 6; float w = b.getWidth() / (float) N;
+            const int N = 8; float w = b.getWidth() / (float) N;
             auto drawInlineIcon = [&] (juce::Graphics& gg, PaneID id, juce::Rectangle<float> iconR, juce::Colour col, bool on)
             {
                 const float s  = iconR.getWidth() / 24.0f;
@@ -499,11 +513,13 @@ public:
             draw (3, "Band",       PaneID::Band);
             draw (4, "Motion",     PaneID::Motion);
             draw (5, "Machine",    PaneID::Machine);
+            draw (6, "Reverb",     PaneID::Reverb);
+            draw (7, "Delay",      PaneID::Delay);
         }
         void mouseUp (const juce::MouseEvent& e) override
         {
-            const int N = 6; int idx = juce::jlimit (0, N-1, e.x * N / juce::jmax (1, getWidth()));
-            PaneID id = idx==0 ? PaneID::XY : idx==1 ? PaneID::Spectrum : idx==2 ? PaneID::Imager : idx==3 ? PaneID::Band : idx==4 ? PaneID::Motion : PaneID::Machine;
+            const int N = 8; int idx = juce::jlimit (0, N-1, e.x * N / juce::jmax (1, getWidth()));
+            PaneID id = idx==0 ? PaneID::XY : idx==1 ? PaneID::Spectrum : idx==2 ? PaneID::Imager : idx==3 ? PaneID::Band : idx==4 ? PaneID::Motion : idx==5 ? PaneID::Machine : idx==6 ? PaneID::Reverb : PaneID::Delay;
             current = id; if (onSelect) onSelect (id); repaint();
             if (e.mods.isPopupMenu()) { if (onShowMenu) onShowMenu (e.getPosition()); }
         }
@@ -524,6 +540,8 @@ private:
     std::unique_ptr<juce::Component>       band;
     std::unique_ptr<juce::Component>       motion;
     std::unique_ptr<MachinePane>           mach;
+    std::unique_ptr<ReverbPanel>            reverb;
+    std::unique_ptr<juce::Component>       delay;
 
     void applyImagerOptionsFromState()
     {

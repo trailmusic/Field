@@ -951,6 +951,7 @@ public:
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
             {
                 const bool motionGreen = (bool) getProperties().getWithDefault ("motionGreenBorder", false);
+                const bool reverbMaroon = (bool) getProperties().getWithDefault ("reverbMaroonBorder", false);
                 
                 if (isDelayTheme)
                 {
@@ -992,6 +993,41 @@ public:
                             }
                         }
                         g.setColour (juce::Colour (0xFF4A4A8E));
+                        g.drawRoundedRectangle (border, rad, 1.5f);
+                    }
+                }
+                else if (reverbMaroon)
+                {
+                    // Custom paint for Reverb cells with vintage orange/red maroon border
+                    auto r = getLocalBounds().toFloat();
+                    const float rad = 8.0f;
+
+                    g.setColour (lf->theme.panel);
+                    g.fillRoundedRectangle (r.reduced (3.0f), rad);
+
+                    juce::DropShadow ds1 (lf->theme.shadowDark.withAlpha (0.35f), 12, { -1, -1 });
+                    juce::DropShadow ds2 (lf->theme.shadowLight.withAlpha (0.25f),  6, { -1, -1 });
+                    ds1.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
+                    ds2.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
+
+                    g.setColour (lf->theme.sh.withAlpha (0.18f));
+                    g.drawRoundedRectangle (r.reduced (4.0f), rad - 1.0f, 0.8f);
+
+                    if (showBorder)
+                    {
+                        auto border = r.reduced (2.0f);
+                        const juce::Colour maroon = juce::Colour (0xFF8E3A2F);
+                        if (isMouseOverOrDragging() || hoverActive)
+                        {
+                            for (int i = 1; i <= 6; ++i)
+                            {
+                                const float t = (float) i / 6.0f;
+                                const float expand = 2.0f + t * 8.0f;
+                                g.setColour (maroon.withAlpha ((1.0f - t) * 0.22f));
+                                g.drawRoundedRectangle (border.expanded (expand), rad + expand * 0.35f, 2.0f);
+                            }
+                        }
+                        g.setColour (maroon);
                         g.drawRoundedRectangle (border, rad, 1.5f);
                     }
                 }
@@ -1833,6 +1869,8 @@ private:
     bool bottomAltTargetOn { false };  // target state for slide animation
     float bottomAltSlide01 { 0.0f };   // 0..1 slide progress (0=hidden)
     bool bottomAltAnimating { false }; // animate slide in timer
+    // New Reverb panel mounted in Group 2
+    std::unique_ptr<class ReverbPanel> reverbPanel;
 
     // Correlation meter mini component
     class CorrelationMeter : public juce::Component, public juce::Timer

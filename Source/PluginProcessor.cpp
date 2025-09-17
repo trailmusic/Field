@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "reverb/ReverbParameters.h"
 
 // =========================
 // Parameter IDs
@@ -362,6 +363,9 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     motionParams.anchor = motionParams.p1.anchor;
     
     motionEngine.setParams(&motionParams);
+
+    // Prepare new Reverb engine
+    reverbEngine.prepare (sampleRate, samplesPerBlock, getTotalNumOutputChannels());
 }
 
 // Utility: build a HostParams snapshot each block
@@ -464,6 +468,30 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.delayDuckLookaheadMs = getParam(apvts, IDs::delayDuckLookaheadMs);
     p.delayDuckLinkGlobal = (getParam(apvts, IDs::delayDuckLinkGlobal) >= 0.5f);
     p.phaseMode = (int) apvts.getParameterAsValue (IDs::phaseMode).getValue();
+    // Reverb params ingress (APVTS -> HostParams)
+    p.rvEnabled       = apvts.getRawParameterValue (ReverbIDs::enabled)->load() > 0.5f;
+    p.rvKillDry       = apvts.getRawParameterValue (ReverbIDs::killDry)->load() > 0.5f;
+    p.rvAlgo          = (int) apvts.getParameterAsValue (ReverbIDs::algo).getValue();
+    p.rvPreDelayMs    = apvts.getRawParameterValue (ReverbIDs::preDelayMs)->load();
+    p.rvDecaySec      = apvts.getRawParameterValue (ReverbIDs::decaySec)->load();
+    p.rvDensityPct    = apvts.getRawParameterValue (ReverbIDs::densityPct)->load();
+    p.rvDiffusionPct  = apvts.getRawParameterValue (ReverbIDs::diffusionPct)->load();
+    p.rvModDepthCents = apvts.getRawParameterValue (ReverbIDs::modDepthCents)->load();
+    p.rvModRateHz     = apvts.getRawParameterValue (ReverbIDs::modRateHz)->load();
+    p.rvErLevelDb     = apvts.getRawParameterValue (ReverbIDs::erLevelDb)->load();
+    p.rvErTimeMs      = apvts.getRawParameterValue (ReverbIDs::erTimeMs)->load();
+    p.rvErDensityPct  = apvts.getRawParameterValue (ReverbIDs::erDensityPct)->load();
+    p.rvErWidthPct    = apvts.getRawParameterValue (ReverbIDs::erWidthPct)->load();
+    p.rvErToTailPct   = apvts.getRawParameterValue (ReverbIDs::erToTailPct)->load();
+    p.rvHpfHz         = apvts.getRawParameterValue (ReverbIDs::hpfHz)->load();
+    p.rvLpfHz         = apvts.getRawParameterValue (ReverbIDs::lpfHz)->load();
+    p.rvTiltDb        = apvts.getRawParameterValue (ReverbIDs::tiltDb)->load();
+    p.rvDreqLowX      = apvts.getRawParameterValue (ReverbIDs::dreqLowX)->load();
+    p.rvDreqMidX      = apvts.getRawParameterValue (ReverbIDs::dreqMidX)->load();
+    p.rvDreqHighX     = apvts.getRawParameterValue (ReverbIDs::dreqHighX)->load();
+    p.rvWidthPct      = apvts.getRawParameterValue (ReverbIDs::widthPct)->load();
+    p.rvWet01         = apvts.getRawParameterValue (ReverbIDs::wetMix01)->load();
+    p.rvOutTrimDb     = apvts.getRawParameterValue (ReverbIDs::outTrimDb)->load();
     
     return p;
 }
@@ -910,6 +938,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_motion_send, 1 }, "P2 Motion Send", juce::NormalisableRange<float>(0.0f, 1.0f), 0.2f));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::p2_anchor_enable, 1 }, "P2 Anchor Center", true));
 
+    // Append new Reverb parameters
+    addReverbParameters (params);
+
     return { params.begin(), params.end() };
 }
 
@@ -1021,7 +1052,7 @@ void FieldChain<Sample>::reset()
     lowShelf.reset(); highShelf.reset(); airFilter.reset(); bassFilter.reset(); scoopFilter.reset();
     if (oversampling) oversampling->reset();
     if constexpr (std::is_same_v<Sample, double>) { if (reverbD) reverbD->reverbF.reset(); }
-    else                                           { if (reverbF) reverbF->reset(); }
+    else                                           { /* removed JUCE Reverb reset */ }
 }
 
 // --------- parameter ingress ---------
@@ -1138,6 +1169,30 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     // Sync helpers
     params.delayGridFlavor = hp.delayGridFlavor;
     params.tempoBpm        = hp.tempoBpm;
+    // Reverb (cast to Sample)
+    params.rvEnabled       = hp.rvEnabled;
+    params.rvKillDry       = hp.rvKillDry;
+    params.rvAlgo          = hp.rvAlgo;
+    params.rvPreDelayMs    = (Sample) hp.rvPreDelayMs;
+    params.rvDecaySec      = (Sample) hp.rvDecaySec;
+    params.rvDensityPct    = (Sample) hp.rvDensityPct;
+    params.rvDiffusionPct  = (Sample) hp.rvDiffusionPct;
+    params.rvModDepthCents = (Sample) hp.rvModDepthCents;
+    params.rvModRateHz     = (Sample) hp.rvModRateHz;
+    params.rvErLevelDb     = (Sample) hp.rvErLevelDb;
+    params.rvErTimeMs      = (Sample) hp.rvErTimeMs;
+    params.rvErDensityPct  = (Sample) hp.rvErDensityPct;
+    params.rvErWidthPct    = (Sample) hp.rvErWidthPct;
+    params.rvErToTailPct   = (Sample) hp.rvErToTailPct;
+    params.rvHpfHz         = (Sample) hp.rvHpfHz;
+    params.rvLpfHz         = (Sample) hp.rvLpfHz;
+    params.rvTiltDb        = (Sample) hp.rvTiltDb;
+    params.rvDreqLowX      = (Sample) hp.rvDreqLowX;
+    params.rvDreqMidX      = (Sample) hp.rvDreqMidX;
+    params.rvDreqHighX     = (Sample) hp.rvDreqHighX;
+    params.rvWidthPct      = (Sample) hp.rvWidthPct;
+    params.rvWet01         = (Sample) hp.rvWet01;
+    params.rvOutTrimDb     = (Sample) hp.rvOutTrimDb;
 }
 
 // --------- processing utilities ---------
@@ -1638,59 +1693,21 @@ void FieldChain<Sample>::applySaturation (Block block, Sample driveLin, Sample m
 // Reverb algorithms (Room/Plate/Hall) macro mapping, parallel wet return
 
 template <typename Sample>
-void FieldChain<Sample>::applySpaceAlgorithm (Block block, Sample depth01, int algo)
+void FieldChain<Sample>::applySpaceAlgorithm (Block /*block*/, Sample depth01, int algo)
 {
     depth01 = juce::jlimit ((Sample)0, (Sample)1, depth01);
 
-    // When depth is effectively zero, ensure no algorithm alters the dry path
-    // and force wetLevel to zero. This prevents audible changes from the switch
-    // while Reverb is off and saves CPU.
+    // Compute macro voicing only; actual rendering happens in renderSpaceWet()
     if (depth01 <= (Sample) 0.0001)
     {
         rvParams.wetLevel = 0.0f;
         return;
     }
 
-    // New macro mapping for all algorithms: 0=Room, 1=Plate, 2=Hall
     computeReverbVoicing ((int) algo, (float) depth01, rvParams);
-    // Smooth macro params per-sample downstream
     roomSizeSmoothed.setTargetValue (rvParams.roomSize);
     dampingSmoothed .setTargetValue (rvParams.damping);
     widthSmoothed   .setTargetValue (rvParams.width);
-
-    if constexpr (std::is_same_v<Sample, double>)
-    {
-        jassert (reverbD);
-        reverbD->setParameters (rvParams);
-        juce::dsp::AudioBlock<double> dblk (block);
-        reverbD->processParallelMix (dblk, rvParams.wetLevel);
-    }
-    else
-    {
-        jassert (reverbF);
-        // Update smoothed params then write to JUCE reverb
-        auto cur = rvParams;
-        cur.roomSize = roomSizeSmoothed.getNextValue();
-        cur.damping  = dampingSmoothed.getNextValue();
-        cur.width    = widthSmoothed.getNextValue();
-        reverbF->setParameters (cur);
-        // make wet copy
-        juce::AudioBuffer<float> wetBuf ((int) block.getNumChannels(), (int) block.getNumSamples());
-        for (int c = 0; c < (int) block.getNumChannels(); ++c)
-            wetBuf.copyFrom (c, 0, block.getChannelPointer (c), (int) block.getNumSamples());
-        juce::dsp::AudioBlock<float> fblk (wetBuf);
-        juce::dsp::ProcessContextReplacing<float> fctx (fblk);
-        reverbF->process (fctx);
-        // Ensure dry is only applied once: JUCE Reverb dryLevel is zeroed in computeReverbVoicing
-        // Mix wet back once using rvParams.wetLevel (dry already in dst)
-        for (int c = 0; c < (int) block.getNumChannels(); ++c)
-        {
-            auto* dst = block.getChannelPointer (c);
-            auto* src = wetBuf.getReadPointer (c);
-            for (int i = 0; i < (int) block.getNumSamples(); ++i)
-                dst[i] += src[i] * (Sample) rvParams.wetLevel;
-        }
-    }
 }
 
 // Render reverb into a provided wet buffer (same channels/samples as current block)
@@ -1699,38 +1716,134 @@ void FieldChain<Sample>::renderSpaceWet (juce::AudioBuffer<Sample>& wet)
 {
     const int ch = wet.getNumChannels();
     const int n  = wet.getNumSamples();
-    if constexpr (std::is_same_v<Sample, double>)
+    for (int c = 0; c < ch; ++c) wet.clear (c, 0, n);
+
+    if (!params.rvEnabled || params.rvWet01 <= (Sample) 0.0001)
     {
-        juce::dsp::AudioBlock<double> b (wet);
-        if (reverbD)
-        {
-            auto cur = rvParams; cur.dryLevel = 0.0f; cur.wetLevel = rvParams.wetLevel;
-            reverbD->setParameters (cur);
-            reverbD->processParallelMix (b, cur.wetLevel); // adds wet into buffer
-        }
+        rv_tailRms = 0.0f; rv_erRms = 0.0f; return;
     }
-    else
+
+    // Early reflections: simple multi-tap per channel with width control
+    const int   erTaps    = 8;
+    const float erMs      = juce::jlimit (5.0f, 120.0f, (float) params.rvErTimeMs);
+    const float erDensity = juce::jlimit (0.0f, 1.0f, (float) params.rvErDensityPct * 0.01f);
+    const float erLevel   = juce::Decibels::decibelsToGain ((float) params.rvErLevelDb);
+    const int   baseEr    = juce::jmax (1, (int) std::round (erMs * 0.001 * sr));
+    const float width01   = juce::jlimit (0.0f, 1.2f, (float) (params.rvWidthPct * 0.01));
+
+    // Tail: lightweight 8-line FDN with Householder feedback (dense, CPU-light)
+    static constexpr int K = 8;
+    static thread_local std::array<std::vector<Sample>, K> dl;
+    static thread_local std::array<int, K> idx{};
+    static thread_local std::array<int, K> len{};
+    // Line lengths: prime-ish around ~40..120 ms * decay factor
+    const float decaySec = juce::jlimit (0.2f, 20.0f, (float) params.rvDecaySec);
+    const float baseMs   = juce::jlimit (30.0f, 180.0f, decaySec * 90.0f);
+    for (int k = 0; k < K; ++k)
     {
-        if (reverbF)
+        const float jitter = 0.85f + 0.3f * ((k * 13) % 17) / 17.0f;
+        const int Lsamp = juce::jmax (1, (int) std::round ((baseMs * jitter) * 0.001 * sr));
+        len[(size_t) k] = Lsamp;
+        if ((int) dl[(size_t) k].size() != Lsamp) { dl[(size_t) k].assign ((size_t) Lsamp, (Sample) 0); idx[(size_t) k] = 0; }
+    }
+    // Frequency-independent loss scaled by DR-EQ sums (placeholder)
+    const float dreq = juce::jlimit (0.3f, 2.0f, (float) params.rvDreqLowX * 0.33f
+                                                   + (float) params.rvDreqMidX * 0.34f
+                                                   + (float) params.rvDreqHighX * 0.33f);
+    const float loopAtt = std::exp (-1.0f / juce::jmax (1.0f, (float) (decaySec * sr / 3.0f))) * (1.0f / dreq);
+    const float fbGain  = juce::jlimit (0.0f, 0.995f, loopAtt);
+
+    // Process block
+    for (int i = 0; i < n; ++i)
+    {
+        // Householder feedback: y = (1/K) * sum(lines)
+        Sample sumY = 0;
+        for (int k = 0; k < K; ++k) sumY += dl[(size_t) k][(size_t) idx[(size_t) k]];
+        const Sample yAvg = sumY / (Sample) K;
+
+        // Write back with loss and tiny decorrelated jitter
+        for (int k = 0; k < K; ++k)
         {
-            auto cur = rvParams;
-            cur.roomSize = roomSizeSmoothed.getNextValue();
-            cur.damping  = dampingSmoothed.getNextValue();
-            cur.width    = widthSmoothed.getNextValue();
-            reverbF->setParameters (cur);
-            juce::dsp::AudioBlock<float> fblk (wet);
-            juce::dsp::ProcessContextReplacing<float> fctx (fblk);
-            // Clear first then render
-            for (int c = 0; c < ch; ++c) wet.clear (c, 0, n);
-            reverbF->process (fctx);
-            // At this point wet contains 100% wet; scale by wetLevel to match reverb depth
-            for (int c = 0; c < ch; ++c)
+            auto& buf = dl[(size_t) k];
+            int  & rp  = idx[(size_t) k];
+            const int Ls = len[(size_t) k];
+            const Sample xIn = yAvg; // feedback matrix is implicit
+            buf[(size_t) rp] = (Sample) (xIn * fbGain);
+            if (++rp >= Ls) rp = 0;
+        }
+
+        // ER contribution (stereo spread)
+        const float erMix = erLevel * erDensity;
+        float erL = 0.0f, erR = 0.0f;
+        // Pattern select: 0=Modern FDN (cluster), 1=Chamber (irregular), 2=Platey (even), 3=Vintage (sparser)
+        for (int t = 0; t < erTaps; ++t)
+        {
+            float mult = 1.0f;
+            switch (params.rvAlgo)
             {
-                auto* d = wet.getWritePointer (c);
-                for (int i = 0; i < n; ++i) d[i] *= (Sample) rvParams.wetLevel;
+                case 1: mult = 0.7f + 0.5f * ((t * 11) % 17) / 17.0f; break; // chamber
+                case 2: mult = 0.8f + 0.2f * (t / (float) juce::jmax (1, erTaps-1)); break; // platey
+                case 3: mult = 0.6f + 0.8f * ((t * 7) % 13) / 13.0f; break; // vintage scatter
+                default: mult = 0.6f + 0.6f * (t / (float) juce::jmax (1, erTaps-1)); break; // modern
             }
+            const int off = juce::jmax (1, (int) std::round (baseEr * mult));
+            const int Lread = (idx[0] - (off % len[0]) + len[0]) % len[0];
+            const float v = (float) dl[0][(size_t) Lread] * erMix;
+            const float pan = juce::jlimit (0.0f, 1.0f, (t / (float) (erTaps-1)));
+            const float l = std::cos (juce::MathConstants<float>::halfPi * pan * width01);
+            const float r = std::sin (juce::MathConstants<float>::halfPi * pan * width01);
+            erL += v * l; erR += v * r;
+        }
+
+        if (ch > 0) wet.getWritePointer (0)[i] += (Sample) erL + yAvg;
+        if (ch > 1) wet.getWritePointer (1)[i] += (Sample) erR + yAvg;
+    }
+
+    // Wet tone: simple HPF/LPF (one-pole) and tilt (broad shelves) on wet
+    auto onePoleHP = [&](Sample& st, Sample x, float fc){ const float a = juce::jlimit (0.0f, 1.0f, (float)(2.0f * juce::MathConstants<double>::pi * fc / sr)); st += a * (x - st); return (Sample) (x - st); };
+    auto onePoleLP = [&](Sample& st, Sample x, float fc){ const float a = juce::jlimit (0.0f, 1.0f, (float)(2.0f * juce::MathConstants<double>::pi * fc / sr)); st += a * (x - st); return st; };
+    const float hp = juce::jlimit (20.0f, 500.0f, (float) params.rvHpfHz);
+    const float lp = juce::jlimit (1000.0f, 20000.0f, (float) params.rvLpfHz);
+    const float tiltDb = juce::jlimit (-6.0f, 6.0f, (float) params.rvTiltDb);
+    const float tiltGHi = std::pow (10.0f, ( tiltDb * 0.5f) / 20.0f);
+    const float tiltGLo = std::pow (10.0f, (-tiltDb * 0.5f) / 20.0f);
+    for (int i = 0; i < n; ++i)
+    {
+        if (ch > 0)
+        {
+            auto* L = wet.getWritePointer (0);
+            Sample x = L[i]; x = onePoleHP (rv_hpStateL, x, hp); x = onePoleLP (rv_lpStateL, x, lp);
+            // crude tilt: split at ~1 kHz with a single state
+            const float split = 1000.0f;
+            auto lo = onePoleLP (rv_tiltLP_L, x, split);
+            auto hi = (Sample) (x - lo);
+            L[i] = (Sample) (lo * tiltGLo + hi * tiltGHi);
+        }
+        if (ch > 1)
+        {
+            auto* R = wet.getWritePointer (1);
+            Sample x = R[i]; x = onePoleHP (rv_hpStateR, x, hp); x = onePoleLP (rv_lpStateR, x, lp);
+            const float split = 1000.0f;
+            auto lo = onePoleLP (rv_tiltLP_R, x, split);
+            auto hi = (Sample) (x - lo);
+            R[i] = (Sample) (lo * tiltGLo + hi * tiltGHi);
         }
     }
+
+    // Simple wet scaling by mix and output trim
+    const float wetGain = juce::jlimit (0.0f, 2.0f, (float) params.rvWet01 * std::pow (10.0f, (float) params.rvOutTrimDb / 20.0f));
+    for (int c = 0; c < ch; ++c)
+    {
+        auto* d = wet.getWritePointer (c);
+        for (int i = 0; i < n; ++i) d[i] *= (Sample) wetGain;
+    }
+
+    // Meters
+    long double sumL = 0.0L, sumR = 0.0L;
+    if (ch > 0){ auto* L = wet.getReadPointer (0); for (int i=0;i<n;++i) sumL += (long double) L[i]*L[i]; }
+    if (ch > 1){ auto* R = wet.getReadPointer (1); for (int i=0;i<n;++i) sumR += (long double) R[i]*R[i]; }
+    const float rms = (float) std::sqrt ((double) ((sumL + sumR) / juce::jmax (1, ch * n)));
+    rv_tailRms = rms; rv_erRms = rms * 0.5f;
 }
 
 // --------- main process (Sample) ---------
@@ -2015,6 +2128,12 @@ float FieldChain<Sample>::getCurrentDuckGrDb() const
     // Return current gain reduction in dB (>=0). Safe cast to float for metering.
     return (float) ducker.getCurrentGainReductionDb();
 }
+
+template <typename Sample>
+float FieldChain<Sample>::getReverbErRms() const { return rv_erRms; }
+
+template <typename Sample>
+float FieldChain<Sample>::getReverbTailRms() const { return rv_tailRms; }
 
 // Explicit instantiation
 template struct FieldChain<float>;

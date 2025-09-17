@@ -5,6 +5,8 @@
 #include "dsp/DelayEngine.h"
 #include "dsp/PhaseModes.h"
 #include "motion/MotionEngine.h"
+#include "reverb/ReverbParamIDs.h"
+#include "reverb/ReverbEngine.h"
 // ==================================
 // Visualization Bus (lock-free SPSC)
 // ==================================
@@ -157,6 +159,8 @@ struct FieldChain
     void setParameters (const HostParams& hp);   // per-block ingress (double -> Sample)
     void process (Block);                        // main process
     float getCurrentDuckGrDb() const;            // meter: current GR dB
+    float getReverbErRms() const;                // meter: ER RMS (approx)
+    float getReverbTailRms() const;              // meter: Tail RMS
     int   getLinearPhaseLatencySamples() const { return (linConvolver ? linConvolver->getLatencySamples() : 0); }
 
 private:
@@ -224,6 +228,11 @@ private:
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> dampingSmoothed;
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> widthSmoothed;
 
+    // New lightweight reverb state (no JUCE Reverb): simple dual delay feedback per channel
+    std::vector<Sample> rvDelayL, rvDelayR;
+    int rvIdxL { 0 }, rvIdxR { 0 };
+    int rvLenL { 0 }, rvLenR { 0 };
+
     // Linear HP/LP (Hybrid Linear mode)
     std::unique_ptr<OverlapSaveConvolver<Sample>> linConvolver;
     int   linKernelLen { 4097 };
@@ -253,6 +262,11 @@ private:
     
     // Delay engine (per-Sample instance)
     DelayEngine<Sample>                  delayEngine;
+
+    // Wet tone (HPF/LPF/Tilt) simple one-pole states for reverb bus
+    Sample rv_hpStateL{}; Sample rv_hpStateR{};
+    Sample rv_lpStateL{}; Sample rv_lpStateR{};
+    Sample rv_tiltLP_L{}; Sample rv_tiltLP_R{};
 
     // Per-block params converted to Sample domain
     struct FieldParams
@@ -334,11 +348,40 @@ private:
         int    delayGridFlavor{};   // 0=S,1=D,2=T
         double tempoBpm{120.0};
         int    phaseMode{};
+
+        // Reverb (Sample domain)
+        bool   rvEnabled{};
+        bool   rvKillDry{};
+        int    rvAlgo{};
+        Sample rvPreDelayMs{};
+        Sample rvDecaySec{};
+        Sample rvDensityPct{};
+        Sample rvDiffusionPct{};
+        Sample rvModDepthCents{};
+        Sample rvModRateHz{};
+        Sample rvErLevelDb{};
+        Sample rvErTimeMs{};
+        Sample rvErDensityPct{};
+        Sample rvErWidthPct{};
+        Sample rvErToTailPct{};
+        Sample rvHpfHz{};
+        Sample rvLpfHz{};
+        Sample rvTiltDb{};
+        Sample rvDreqLowX{};
+        Sample rvDreqMidX{};
+        Sample rvDreqHighX{};
+        Sample rvWidthPct{};
+        Sample rvWet01{};
+        Sample rvOutTrimDb{};
     } params;
 
     // Width Designer runtime state
     Sample aw_env = (Sample) 1.0; // auto-width smoothed gain
     Sample aw_alphaAtk = (Sample) 0.0, aw_alphaRel = (Sample) 0.0;
+
+    // Reverb meters per-chain
+    float rv_erRms { 0.0f };
+    float rv_tailRms { 0.0f };
 };
 
 // ===============================
@@ -390,6 +433,30 @@ struct HostParams
     double widthAutoAtkMs{};       // attack ms
     double widthAutoRelMs{};       // release ms
     double widthMax{};             // ceiling
+    // Reverb (new)
+    bool   rvEnabled{};            // enabled
+    bool   rvKillDry{};            // wet only
+    int    rvAlgo{};               // algorithm index
+    double rvPreDelayMs{};
+    double rvDecaySec{};
+    double rvDensityPct{};
+    double rvDiffusionPct{};
+    double rvModDepthCents{};
+    double rvModRateHz{};
+    double rvErLevelDb{};
+    double rvErTimeMs{};
+    double rvErDensityPct{};
+    double rvErWidthPct{};
+    double rvErToTailPct{};
+    double rvHpfHz{};
+    double rvLpfHz{};
+    double rvTiltDb{};
+    double rvDreqLowX{};
+    double rvDreqMidX{};
+    double rvDreqHighX{};
+    double rvWidthPct{};
+    double rvWet01{};
+    double rvOutTrimDb{};
         
     // Delay parameters
     bool   delayEnabled{};
@@ -447,7 +514,11 @@ public:
     bool acceptsMidi() const override                          { return false; }
     bool producesMidi() const override                         { return false; }
     bool isMidiEffect() const override                         { return false; }
-    double getTailLengthSeconds() const override               { return 0.0; } // change to 2.0 if you want auto-tail renders
+    double getTailLengthSeconds() const override               {
+        if (auto* p = apvts.getRawParameterValue (ReverbIDs::decaySec))
+            return juce::jlimit (0.0, 20.0, (double) p->load() * 2.0);
+        return 0.0;
+    }
     bool supportsDoublePrecisionProcessing() const override    { return true; }
 
     // Undo stack for APVTS + UI history
@@ -506,7 +577,24 @@ public:
         if (chainF) return chainF->getCurrentDuckGrDb();
         return 0.0f;
     }
-
+    // Reverb meters (UI polling)
+    float getReverbDuckGrDb() const {
+        if (isDoublePrecEnabled && chainD) return chainD->getCurrentDuckGrDb();
+        if (chainF) return chainF->getCurrentDuckGrDb();
+        return 0.0f;
+    }
+    float getReverbErRms() const {
+        if (isDoublePrecEnabled && chainD) return chainD->getReverbErRms();
+        if (chainF) return chainF->getReverbErRms();
+        return 0.0f;
+    }
+    float getReverbTailRms() const {
+        if (isDoublePrecEnabled && chainD) return chainD->getReverbTailRms();
+        if (chainF) return chainF->getReverbTailRms();
+        return 0.0f;
+    }
+    float getReverbWidthNow() const { return 100.0f; }
+    
     // Transport info (UI polling)
     double getTransportTimeSeconds() const { return transportTimeSeconds.load(); }
     bool   isTransportPlaying() const      { return transportIsPlaying.load(); }
@@ -534,7 +622,8 @@ private:
     std::unique_ptr<FieldChain<float>>  chainF;
     std::unique_ptr<FieldChain<double>> chainD;
     bool isDoublePrecEnabled { false };
-
+    // Reverb engine (new)
+    ReverbEngine reverbEngine;
     // Motion Engine
     motion::MotionEngine motionEngine;
     motion::Params motionParams;
