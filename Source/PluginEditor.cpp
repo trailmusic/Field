@@ -1,5 +1,9 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+// Implement XYPaneAdapter methods now that XYPad is fully defined here
+XYPaneAdapter::XYPaneAdapter (XYPad& padRef) : pad (padRef) { addAndMakeVisible ((juce::Component&) pad); }
+void XYPaneAdapter::resized() { pad.setBounds (getLocalBounds()); }
+void XYPaneAdapter::pushWaveformSample (double L, double R) { pad.pushWaveformSample (L, R); }
 #include "ui/PaneManager.h"
 #include "reverb/ReverbParamIDs.h"
 #include "Layout.h"
@@ -2318,14 +2322,56 @@ void MyPluginAudioProcessorEditor::buildCells()
 
 MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
 {
-    panKnobLeft.removeListener (this);
-    panKnobRight.removeListener (this);
+    // Detach APVTS attachments BEFORE any controls are destroyed
+    attachments.clear();
+    buttonAttachments.clear();
+    comboAttachments.clear();
+    motionSliderAttachments.clear();
+    motionButtonAttachments.clear();
+    motionComboAttachments.clear();
 
+    // Stop editor timer early
+    stopTimer();
+
+    // Remove key listener safely
+    if (keyListener)
+    {
+        removeKeyListener (keyListener.get());
+        keyListener.reset();
+    }
+
+    // Clear audio->UI callbacks to prevent use-after-free from audio thread
+    proc.onAudioSample   = nullptr;
+    proc.onAudioBlock    = nullptr;
+    proc.onAudioBlockPre = nullptr;
+
+    // Remove all parameter listeners that were added in the ctor
     proc.apvts.removeParameterListener ("space_algo", this);
     proc.apvts.removeParameterListener ("split_mode", this);
     proc.apvts.removeParameterListener ("pan",        this);
     proc.apvts.removeParameterListener ("depth",      this);
     proc.apvts.removeParameterListener ("mono_slope_db_oct", this);
+    proc.apvts.removeParameterListener ("eq_shelf_shape", this);
+    proc.apvts.removeParameterListener ("eq_q_link",      this);
+    proc.apvts.removeParameterListener ("eq_filter_q",    this);
+    proc.apvts.removeParameterListener ("hp_q",           this);
+    proc.apvts.removeParameterListener (motion::id::panner_select, this);
+    proc.apvts.removeParameterListener ("lp_q",           this);
+    proc.apvts.removeParameterListener ("tilt_link_s",    this);
+    proc.apvts.removeParameterListener ("xover_lo_hz",    this);
+    proc.apvts.removeParameterListener ("xover_hi_hz",    this);
+    proc.apvts.removeParameterListener ("rotation_deg",   this);
+    proc.apvts.removeParameterListener ("asymmetry",      this);
+    proc.apvts.removeParameterListener ("shuffler_lo_pct", this);
+    proc.apvts.removeParameterListener ("shuffler_hi_pct", this);
+    proc.apvts.removeParameterListener ("shuffler_xover_hz", this);
+
+    // Detach UI listeners from knobs
+    panKnobLeft.removeListener (this);
+    panKnobRight.removeListener (this);
+
+    // Ensure PaneManager timers and children are torn down before editor memory goes away
+    panes.reset();
 
     // ensure A holds final state if user ended on B
     if (!isStateA) { saveCurrentState(); stateA = stateB; }
@@ -3048,6 +3094,8 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Perform layout within delay group area
         auto delayBounds = juce::Rectangle<int>(delayGroupX, delayGroupY, delayGroupW, delayGroupH).reduced(Layout::dp(Layout::GAP, s));
         delayGrid.performLayout(delayBounds);
+
+        // Delay visuals are rendered in the top Delay tab via PaneManager, not in Group 2
         
         // Apply delay theme to all cells
         auto lightenDelayCell = [] (KnobCell* kc) {

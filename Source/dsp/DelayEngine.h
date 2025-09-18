@@ -311,11 +311,18 @@ struct DelayEngine
         freezeRamp.reset(sampleRate, 0.03);
         fbSmoothed.reset(sampleRate, 0.02);
         fbSmoothed.setCurrentAndTargetValue((float)feedbackGain);
+        
+        // Wet/KillDry smoothing
+        wetSmoothed.reset(sampleRate, 0.02);
+        wetSmoothed.setCurrentAndTargetValue((float)wet);
+        killDrySmoothed.reset(sampleRate, 0.02);
+        killDrySmoothed.setCurrentAndTargetValue(killDry ? 1.0f : 0.0f);
 
         // Look-ahead buffer (initial sizing from default lookMs)
         lookLen = (int)std::ceil(lookMs * sr * 0.001);
         lookBuf.setSize(2, juce::jmax(1, lookLen + 1));
         lookW = 0;
+        laFill = 0;
 
         // Ducking envelope init
         detEnv = 0.0f; duckGL = 1.0f; duckGR = 1.0f;
@@ -412,10 +419,15 @@ struct DelayEngine
             lookLen = newLook;
             lookBuf.setSize(2, juce::jmax(1, lookLen + 1), true, false, true);
             lookW = 0;
+            laFill = 0; // reset fill so we don't read uninitialized lookahead
         }
 
         // Freeze ramp target
         freezeRamp.setTargetValue(p.freeze ? 1.0f : 0.0f);
+
+        // Wet/KillDry ramps
+        wetSmoothed.setTargetValue((float)wet);
+        killDrySmoothed.setTargetValue(killDry ? 1.0f : 0.0f);
     }
 
     void process(juce::dsp::AudioBlock<Sample> block, float scInL, float scInR) 
@@ -433,6 +445,8 @@ struct DelayEngine
             const float fz = freezeRamp.getNextValue();
             const Sample inGain = (Sample)(1.0f - fz);
             feedbackGain = (double)fbSmoothed.getNextValue();
+            const float wetNow = wetSmoothed.getNextValue();
+            const float kdNow  = killDrySmoothed.getNextValue();
 
             // Compute modulated delay samples for L/R
             Sample tBaseSamp = (Sample)currentDelaySamples;
@@ -464,6 +478,9 @@ struct DelayEngine
             
             dl[0].setDelaySamples(tL);
             dl[1].setDelaySamples(tR);
+            // Telemetry: remember last effective delay times (samples)
+            lastDelaySamplesL = (double) tL;
+            lastDelaySamplesR = (double) tR;
 
             // Write inputs (freeze reduces new input)
             dl[0].push(inL * inGain); 
@@ -575,10 +592,17 @@ struct DelayEngine
             auto* rR = lookBuf.getReadPointer(1);
             float wetLd = rL[r]; float wetRd = rR[r];
             if (++lookW >= lookBuf.getNumSamples()) lookW = 0;
+            // Guard lookahead: until buffer has filled to lookLen, apply gain to current wet to avoid drop
             if (duckPost) {
-                wetL = (Sample)(wetLd * duckGL);
-                wetR = (Sample)(wetRd * duckGR);
+                if (laFill >= lookLen) {
+                    wetL = (Sample)(wetLd * duckGL);
+                    wetR = (Sample)(wetRd * duckGR);
+                } else {
+                    wetL = (Sample)(wetL * duckGL);
+                    wetR = (Sample)(wetR * duckGR);
+                }
             }
+            if (laFill < lookLen) ++laFill;
 
             // Width processing
             Sample M = (Sample)0.5 * (wetL + wetR);
@@ -587,11 +611,11 @@ struct DelayEngine
             wetL = M + S; 
             wetR = M - S;
 
-            // Output mix
-            Sample outL = killDry ? (Sample)0.0 : inL;
-            Sample outR = killDry ? (Sample)0.0 : inR;
-            outL += (Sample)wet * wetL; 
-            outR += (Sample)wet * wetR;
+            // Output mix with smoothed wet and killDry
+            Sample outL = kdNow > 0.5f ? (Sample)0.0 : inL;
+            Sample outR = kdNow > 0.5f ? (Sample)0.0 : inR;
+            outL += (Sample)wetNow * wetL; 
+            outR += (Sample)wetNow * wetR;
 
             block.setSample(0, n, outL);
             if (block.getNumChannels() > 1) 
@@ -637,7 +661,7 @@ private:
     
     // Freeze/feedback smoothing and look-ahead buffer for ducking
     juce::LinearSmoothedValue<float> freezeRamp, fbSmoothed;
-    juce::AudioBuffer<float> lookBuf; int lookW = 0; int lookLen = 0;
+    juce::AudioBuffer<float> lookBuf; int lookW = 0; int lookLen = 0; int laFill = 0;
     
     // Ducking envelope/state
     float detEnv = 0.0f; 
@@ -646,4 +670,17 @@ private:
     
     // Parameters
     DelayParams params;
+
+    // Wet/KillDry smoothing
+    juce::LinearSmoothedValue<float> wetSmoothed, killDrySmoothed;
+
+public:
+    // Telemetry getters (safe to call on audio thread after process, or copy out to UI bridge via owner)
+    double getBaseDelaySamples() const noexcept { return currentDelaySamples; }
+    double getLastDelaySamplesL() const noexcept { return lastDelaySamplesL; }
+    double getLastDelaySamplesR() const noexcept { return lastDelaySamplesR; }
+
+private:
+    double lastDelaySamplesL = 0.0;
+    double lastDelaySamplesR = 0.0;
 };

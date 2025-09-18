@@ -10,6 +10,10 @@
 #include "PresetCommandPalette.h"
 #include "PresetManager.h"
 #include "History.h"
+#include "ui/StereoFieldEngine.h"
+#include "ui/ImagerPane.h"
+#include "ui/PaneManager.h"
+#include "ui/delay/DelayVisuals.h"
 // MegaMenu and old preset system removed
 
 /*==============================================================================
@@ -1816,15 +1820,7 @@ private:
     std::unique_ptr<class QuadKnobCell> hpLpQClusterCell;
     void buildCells();
 
-    // Attachments (global)
-    std::vector<std::unique_ptr<SliderAttachment>>  attachments;
-    std::vector<std::unique_ptr<ButtonAttachment>>  buttonAttachments;
-    std::vector<std::unique_ptr<ComboAttachment>>   comboAttachments;
-
-    // Motion-only attachments (cleared/rebuilt on panner switch)
-    std::vector<std::unique_ptr<SliderAttachment>>  motionSliderAttachments;
-    std::vector<std::unique_ptr<ButtonAttachment>>  motionButtonAttachments;
-    std::vector<std::unique_ptr<ComboAttachment>>   motionComboAttachments;
+    // [moved] Attachment containers declared after all bound controls (see below)
     
     // Scaling
     float scaleFactor = 1.0f;
@@ -2228,6 +2224,15 @@ private:
     // Motion cells - only in Group 2 (6x4 grid: 24 total)
     std::array<std::unique_ptr<KnobCell>, 24> motionCellsGroup2;
     std::array<juce::Slider, 24> motionDummiesGroup2;
+    // Attachment containers (declared AFTER all sliders/buttons/combos they bind to)
+    // Ensures attachments are destroyed BEFORE controls during teardown
+    std::vector<std::unique_ptr<SliderAttachment>>  attachments;
+    std::vector<std::unique_ptr<ButtonAttachment>>  buttonAttachments;
+    std::vector<std::unique_ptr<ComboAttachment>>   comboAttachments;
+    // Motion-only attachments (cleared/rebuilt on panner switch)
+    std::vector<std::unique_ptr<SliderAttachment>>  motionSliderAttachments;
+    std::vector<std::unique_ptr<ButtonAttachment>>  motionButtonAttachments;
+    std::vector<std::unique_ptr<ComboAttachment>>   motionComboAttachments;
     std::array<juce::Label,  24> motionValuesGroup2;
     
     // Motion ComboBoxes and Buttons
@@ -2259,6 +2264,8 @@ private:
         void trigger() { triggerAsyncUpdate(); }
         void handleAsyncUpdate() override { editor.updateMotionParameterAttachmentsOnMessageThread(); }
     } motionBinding{*this};
+
+    // Delay visuals are managed by PaneManager's Delay tab
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessorEditor)
 }; 

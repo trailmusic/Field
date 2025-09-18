@@ -242,7 +242,21 @@ private:
 class HistoryPanel : public juce::Component, private juce::Button::Listener, private juce::ListBoxModel
 {
 public:
-    HistoryPanel() { addButtons(); list.setModel (this); addAndMakeVisible (list); addAndMakeVisible (pins); pins.setModel (&pinsModel); setOpaque(false); addAndMakeVisible (topBar); closeBtn.onClick = [this]{ if (onClose) onClose(); }; }
+    HistoryPanel()
+    {
+        addButtons();
+        // Defer model assignment until after members are constructed to avoid any
+        // potential re-entrancy or undefined behaviour during construction.
+        list.setName ("history");
+        pins.setName ("checkpoints");
+        list.setModel (this);
+        pins.setModel (&pinsModel);
+        addAndMakeVisible (list);
+        addAndMakeVisible (pins);
+        setOpaque (false);
+        addAndMakeVisible (topBar);
+        closeBtn.onClick = [this]{ if (onClose) onClose(); };
+    }
     void setModel (HistoryManager& m) { model = &m; if (model) model->onChanged = [this]{ refresh(); }; refresh(); }
     void refresh()
     {
@@ -367,7 +381,8 @@ public:
     std::function<void()> onClose;
     juce::TextButton savePin { "Save Checkpoint" }, exportPins { "Export" }, importPins { "Import" };
     juce::Label histLabel { {}, "History" }, pinsLabel { {}, "Checkpoints" };
-    juce::ListBox list { "history", this }, pins { "checkpoints", &pinsModel };
+    juce::ListBox list; 
+    juce::ListBox pins;
 
     int getNumRows() override { return model ? model->getEntries().size() : 0; }
     void paintListBoxItem (int row, juce::Graphics& g, int w, int h, bool selected) override
@@ -426,30 +441,36 @@ public:
         {
             auto aw = std::make_unique<juce::AlertWindow> ("Save Checkpoint", "Name:", juce::AlertWindow::NoIcon);
             aw->addTextEditor ("n", "Checkpoint"); aw->addButton ("Save", 1, juce::KeyPress (juce::KeyPress::returnKey)); aw->addButton ("Cancel", 0);
-            aw->enterModalState (true, juce::ModalCallbackFunction::create ([this, awPtr = aw.get()](int r)
+            juce::Component::SafePointer<HistoryPanel> self (this);
+            aw->enterModalState (true, juce::ModalCallbackFunction::create ([self, awPtr = aw.get()](int r)
             {
-                if (r == 1) { model->saveCheckpoint (awPtr->getTextEditorContents ("n")); refresh(); }
+                if (self == nullptr) return;
+                if (r == 1 && self->model) { self->model->saveCheckpoint (awPtr->getTextEditorContents ("n")); self->refresh(); }
             }), true);
             ownedAlerts.add (std::move (aw));
         }
         else if (b == &exportPins)
         {
-            auto chooser = std::make_unique<juce::FileChooser> ("Export Checkpoints", juce::File::getSpecialLocation (juce::File::userDocumentsDirectory), "*.xml");
-            chooser->launchAsync (juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
-                                  [this, ch = chooser.get()] (const juce::FileChooser& fc)
+            activeChooser = std::make_unique<juce::FileChooser> ("Export Checkpoints", juce::File::getSpecialLocation (juce::File::userDocumentsDirectory), "*.xml");
+            juce::Component::SafePointer<HistoryPanel> self (this);
+            activeChooser->launchAsync (juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
+                                  [self] (const juce::FileChooser& fc)
                                   {
-                                      juce::ignoreUnused (ch);
-                                      auto f = fc.getResult(); if (f.getFullPathName().isNotEmpty()) { model->exportCheckpoints (f); refresh(); }
+                                      if (self == nullptr) return;
+                                      auto f = fc.getResult(); if (f.getFullPathName().isNotEmpty() && self->model) { self->model->exportCheckpoints (f); self->refresh(); }
+                                      self->activeChooser.reset();
                                   });
         }
         else if (b == &importPins)
         {
-            auto chooser = std::make_unique<juce::FileChooser> ("Import Checkpoints", juce::File::getSpecialLocation (juce::File::userDocumentsDirectory), "*.xml");
-            chooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
-                                  [this, ch = chooser.get()] (const juce::FileChooser& fc)
+            activeChooser = std::make_unique<juce::FileChooser> ("Import Checkpoints", juce::File::getSpecialLocation (juce::File::userDocumentsDirectory), "*.xml");
+            juce::Component::SafePointer<HistoryPanel> self (this);
+            activeChooser->launchAsync (juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                                  [self] (const juce::FileChooser& fc)
                                   {
-                                      juce::ignoreUnused (ch);
-                                      auto f = fc.getResult(); if (f.existsAsFile()) { model->importCheckpoints (f, true); refresh(); }
+                                      if (self == nullptr) return;
+                                      auto f = fc.getResult(); if (f.existsAsFile() && self->model) { self->model->importCheckpoints (f, true); self->refresh(); }
+                                      self->activeChooser.reset();
                                   });
         }
         else if (b == &closeBtn)
@@ -460,6 +481,7 @@ public:
     }
     juce::Rectangle<float> backgroundBounds;
     juce::OwnedArray<juce::AlertWindow> ownedAlerts;
+    std::unique_ptr<juce::FileChooser> activeChooser;
 };
 
 } // namespace field::history

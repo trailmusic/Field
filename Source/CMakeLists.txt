@@ -29,6 +29,8 @@ set(SRC
     reverb/ui/ReverbPanel.cpp
     ui/SpectrumAnalyzer.h
     ui/SpectrumAnalyzer.cpp
+    ui/delay/DelayUiBridge.h
+    ui/delay/DelayVisuals.h
     ui/ProcessedSpectrumPane.h
     ui/ImagerPane.h
     ui/StereoFieldEngine.h

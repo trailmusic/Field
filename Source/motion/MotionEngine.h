@@ -176,18 +176,19 @@ public:
         frontShelf.setHighShelf(sr, 7000.0f, 0.0f, 0.7f);
         sideHPF[0].setHPF(sr, 120.0f, 0.707f);
         sideHPF[1].setHPF(sr, 120.0f, 0.707f);
-        occlusionLPF.setLPF(sr, 8000.0f, 0.707f);
+        occlusionLPF[0].setLPF(sr, 8000.0f, 0.707f);
+        occlusionLPF[1].setLPF(sr, 8000.0f, 0.707f);
         
         // Initialize envelope followers
         mainEnv.set(5.0f, 50.0f, sr);
         scEnv.set(5.0f, 50.0f, sr);
         
-        // Initialize smoothed parameters
-        spreadSm.setSmoothingCoeff(0.05f);
-        depthSm.setSmoothingCoeff(0.05f);
-        rateSm.setSmoothingCoeff(0.05f);
-        shelfSm.setSmoothingCoeff(0.05f);
-        lvlAtten.setSmoothingCoeff(0.05f);
+        // Initialize smoothed parameters (slower smoothing to reduce crackle)
+        spreadSm.setSmoothingCoeff(0.02f);
+        depthSm.setSmoothingCoeff(0.02f);
+        rateSm.setSmoothingCoeff(0.02f);
+        shelfSm.setSmoothingCoeff(0.02f);
+        lvlAtten.setSmoothingCoeff(0.02f);
         
         // Initialize motion send buffer
         motionSendBuffer.setSize(2, samplesPerBlock);
@@ -204,7 +205,8 @@ public:
         p1.phase = p2.phase = 0.0f; fd.reset();
         elvShelf.reset(); frontShelf.reset();
         sideHPF[0].reset(); sideHPF[1].reset();
-        occlusionLPF.reset();
+        occlusionLPF[0].reset();
+        occlusionLPF[1].reset();
         mainEnv.reset(); scEnv.reset();
         holdCounter = 0; running = true; triggered = false;
         motionSendBuffer.clear();
@@ -314,6 +316,8 @@ public:
             // Freeze current pose during hold
         }
         
+        // Ensure elevation buffer capacity for this block
+        if (elevationBuffer.size() < n) elevationBuffer.resize(n);
         const int k = 32;
         for (int i=0; i<n; i += k) {
             int m = juce::jmin(k, n - i);
@@ -373,8 +377,11 @@ public:
                 float center = (1.0f - rad);
                 float l = center + rad * gL;
                 float r = center + rad * gR;
+                // Energy normalization to avoid loudness drop with radius
+                float avgPow = 0.5f * (l*l + r*r) + 1e-8f;
+                float norm = juce::jlimit(0.5f, 2.0f, 1.0f / std::sqrt(avgPow));
                 
-                L[i+j] *= l; R[i+j] *= r;
+                L[i+j] *= (l * norm); R[i+j] *= (r * norm);
                 
                 // Store elevation for later processing
                 if (i+j < elevationBuffer.size()) {
@@ -433,7 +440,7 @@ private:
     // DSP components
     BiquadFilter elvShelf, frontShelf;
     BiquadFilter sideHPF[2];
-    BiquadFilter occlusionLPF; // For occlusion processing
+    BiquadFilter occlusionLPF[2]; // For occlusion processing (per-channel)
     EnvelopeFollower mainEnv, scEnv;
     SmoothedValue<float> spreadSm, depthSm, rateSm, shelfSm, lvlAtten;
     
@@ -497,7 +504,7 @@ private:
         float jitter = p.jitter;
         float elev = p.elevBias;
         ps.path.set(static_cast<PathType>(p.path), rate, depth, phase, bounce, jitter, elev);
-        float dt = 1.0f / 250.0f;
+        float dt = (float)(1.0 / sr);
         for (int i=0;i<m;++i) out.add(ps.path.tick(dt));
         return out;
     }
@@ -545,18 +552,39 @@ private:
     }
     
     void processElevation(float* L, float* R, int n, const PannerSnapshot& p, bool headphoneSafe) {
+        // Smooth shelf gain to avoid zipper/crackle
+        static float elvCurrentDb = 0.0f;
+        static float elvTargetDb  = 0.0f;
+        static float elvCoeff     = 0.0f;
+        static double elvLastSr   = 0.0;
+        
+        if (sr != elvLastSr) {
+            // 25 ms smoothing window (slower to reduce audible zippering)
+            const float T = 0.025f;
+            elvCoeff = 1.0f - std::exp (-1.0f / (float)(sr * T));
+            elvLastSr = sr;
+        }
+        
         float elv = p.elevBias;
         float shelfDb = 4.0f * elv;
-        if (headphoneSafe) shelfDb *= 0.5f; // Reduce in headphone safe mode
+        if (headphoneSafe) shelfDb *= 0.5f;
+        elvTargetDb = shelfDb;
         
-        elvShelf.setHighShelf(sr, 7000.0f, shelfDb, 0.7f);
-        
-        for (int i = 0; i < n; ++i) {
-            float mid = 0.5f * (L[i] + R[i]);
-            float side = 0.5f * (L[i] - R[i]);
-            mid = elvShelf.processSample(mid);
-            L[i] = mid + side;
-            R[i] = mid - side;
+        // Update filter when target moves far or every sub-chunk to reduce coefficient churn
+        const int step = juce::jlimit (64, 256, n);
+        for (int i0 = 0; i0 < n; i0 += step)
+        {
+            int len = juce::jmin (step, n - i0);
+            // one-pole towards target dB
+            elvCurrentDb += elvCoeff * (elvTargetDb - elvCurrentDb);
+            elvShelf.setHighShelf (sr, 7000.0f, elvCurrentDb, 0.7f);
+            for (int i = 0; i < len; ++i) {
+                float mid = 0.5f * (L[i0+i] + R[i0+i]);
+                float side = 0.5f * (L[i0+i] - R[i0+i]);
+                mid = elvShelf.processSample(mid);
+                L[i0+i] = mid + side;
+                R[i0+i] = mid - side;
+            }
         }
     }
     
@@ -568,8 +596,10 @@ private:
             float mid = 0.5f * (L[i] + R[i]);
             float side = 0.5f * (L[i] - R[i]);
             side *= spread;
-            L[i] = mid + side;
-            R[i] = mid - side;
+            // Loudness compensation to reduce perceived drop when spread widens
+            float comp = 1.0f / std::sqrt(1.0f + 0.5f * (spread - 1.0f) * (spread - 1.0f));
+            L[i] = (mid + side) * comp;
+            R[i] = (mid - side) * comp;
         }
     }
     
@@ -634,7 +664,7 @@ private:
     float applyInertia(float x, int axis) {
         if (axis < 0 || axis >= 3) return x;
         
-        const float Ts = 1.0f / 250.0f; // Control rate
+        const float Ts = (float)(1.0 / sr); // Use audio sample period
         const float tau = 0.120f; // Default 120ms
         const float a = 1.0f - std::exp(-Ts / tau);
         
@@ -671,14 +701,15 @@ private:
         
         // Gentle LPF cutoff moves with backness
         float fc = juce::jmap(std::pow(backness, 1.2f) * k, 0.0f, 1.0f, 12000.0f, 2500.0f);
-        occlusionLPF.setLPF(sr, fc, 0.707f);
+        occlusionLPF[0].setLPF(sr, fc, 0.707f);
+        occlusionLPF[1].setLPF(sr, fc, 0.707f);
         
         float w = 0.2f * backness * k; // 0..0.2 crossfade
         if (s.headphoneSafe) w = juce::jmin(w, 0.12f); // Clamp in headphone safe mode
         
         for (int i = 0; i < n; ++i) {
-            float lpfL = occlusionLPF.processSample(L[i]);
-            float lpfR = occlusionLPF.processSample(R[i]);
+            float lpfL = occlusionLPF[0].processSample(L[i]);
+            float lpfR = occlusionLPF[1].processSample(R[i]);
             L[i] = (1.0f - w) * L[i] + w * lpfL;
             R[i] = (1.0f - w) * R[i] + w * lpfR;
         }

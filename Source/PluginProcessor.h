@@ -7,6 +7,8 @@
 #include "motion/MotionEngine.h"
 #include "reverb/ReverbParamIDs.h"
 #include "reverb/ReverbEngine.h"
+// Delay UI bridge
+#include "ui/delay/DelayUiBridge.h"
 // ==================================
 // Visualization Bus (lock-free SPSC)
 // ==================================
@@ -161,6 +163,10 @@ struct FieldChain
     float getCurrentDuckGrDb() const;            // meter: current GR dB
     float getReverbErRms() const;                // meter: ER RMS (approx)
     float getReverbTailRms() const;              // meter: Tail RMS
+    float getDelayWetRmsL() const;                // meter: Delay wet RMS L
+    float getDelayWetRmsR() const;                // meter: Delay wet RMS R
+    double getDelayLastSamplesL() const;          // telemetry: last effective delay samples L
+    double getDelayLastSamplesR() const;          // telemetry: last effective delay samples R
     int   getLinearPhaseLatencySamples() const { return (linConvolver ? linConvolver->getLatencySamples() : 0); }
 
 private:
@@ -221,6 +227,7 @@ private:
     // Preallocated buses to avoid per-block allocations
     juce::AudioBuffer<Sample>            dryBusBuf;
     juce::AudioBuffer<Sample>            wetBusBuf;
+    juce::AudioBuffer<Sample>            delayWetBuf; // delay wet-only bus
     // Smoothed wet mix (per-sample ramp)
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> wetMixSmoothed;
     // Smoothed reverb macro params
@@ -242,6 +249,19 @@ private:
     std::unique_ptr<OverlapSaveConvolver<Sample>> fullLinearConvolver;
     int   fullKernelLen { 4097 };
     struct ToneKey { double tiltDb, bassDb, airDb, scoopDb, hpHz, lpHz, tiltFreq, scoopFreq, bassFreq, airFreq; int mode; } lastToneKey{};
+    bool  fullLinearKernelDirty { true };     // redesign FIR only when tone changes
+    // Auto-linear during edits: when macro tone is changing, temporarily use Full Linear FIR
+    int    autoLinearSamplesLeft { 0 };     // countdown in samples
+    double autoLinearHoldSec     { 0.15 };  // time to remain in linear mode after last change
+    bool   paramsPrimed { false };          // avoid triggering auto-linear on first ingress
+    std::shared_ptr<std::vector<float>> activeFullKernel; // RT-hot
+    std::shared_ptr<std::vector<float>> pendingFullKernel; // bg-built
+
+    // Smoothed macro tone parameters (to reduce zipper/crackle)
+    juce::SmoothedValue<Sample> tiltDbSm, tiltFreqSm;
+    juce::SmoothedValue<Sample> bassDbSm, bassFreqSm;
+    juce::SmoothedValue<Sample> airDbSm,  airFreqSm;
+    juce::SmoothedValue<Sample> scoopDbSm, scoopFreqSm;
 
     // High-order interpolation hooks (for future modulated delay lines)
     template <typename S>
@@ -382,6 +402,8 @@ private:
     // Reverb meters per-chain
     float rv_erRms { 0.0f };
     float rv_tailRms { 0.0f };
+    float delay_wetRmsL { 0.0f };
+    float delay_wetRmsR { 0.0f };
 };
 
 // ===============================
@@ -533,7 +555,15 @@ public:
 
     // Lifecycle
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
-    void releaseResources() override                           {}
+    void releaseResources() override                           {
+        // Clear UI visualization buses to avoid any pending reads on UI timers
+        visPre.clearAll();
+        visPost.clearAll();
+        // Clear any legacy UI callbacks (editor should also null these in its dtor)
+        onAudioSample = nullptr;
+        onAudioBlock = nullptr;
+        onAudioBlockPre = nullptr;
+    }
 
     // Layout
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
@@ -549,6 +579,7 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
     void updateLatencyForPhaseMode();
+    bool latencyLocked { false }; // prevent runtime latency changes
 
     // Parameters
     juce::AudioProcessorValueTreeState apvts;
@@ -559,6 +590,8 @@ public:
 
     // Visualization buses (audio thread → UI thread)
     VisBus visPre, visPost;
+    // Delay visuals bridge
+    DelayUiBridge& getDelayUiBridge() { return delayUiBridge; }
 
     // Deprecated: UI callback hooks (no longer used)
     std::function<void(double, double)> onAudioSample;
@@ -627,6 +660,8 @@ private:
     // Motion Engine
     motion::MotionEngine motionEngine;
     motion::Params motionParams;
+    // Delay visuals bridge (owned by processor)
+    DelayUiBridge delayUiBridge;
     
     // Link policy mirroring guard
     std::atomic<bool> mirrorGuard{false};

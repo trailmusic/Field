@@ -7,6 +7,7 @@
 #include "../motion/MotionPanel.h"
 #include "../motion/MotionVisual.h"
 #include "../reverb/ui/ReverbPanel.h"
+#include "delay/DelayVisuals.h"
 
 class XYPad; // forward (lives in PluginEditor.h/cpp)
 
@@ -14,10 +15,10 @@ class XYPad; // forward (lives in PluginEditor.h/cpp)
 class XYPaneAdapter : public juce::Component
 {
 public:
-    XYPaneAdapter (XYPad& padRef) : pad (padRef) { addAndMakeVisible (pad); }
-    void resized() override { pad.setBounds (getLocalBounds()); }
+    XYPaneAdapter (XYPad& padRef);
+    void resized() override;
     // Forward realtime-safe oscilloscope samples to the XYPad
-    void pushWaveformSample (double L, double R) { pad.pushWaveformSample (L, R); }
+    void pushWaveformSample (double L, double R);
 private:
     XYPad& pad;
 };
@@ -59,7 +60,16 @@ public:
                                                [&p]{ return p.getReverbTailRms(); },
                                                [&p]{ return p.getReverbDuckGrDb(); },
                                                [&p]{ return p.getReverbWidthNow(); });
-        delay = std::make_unique<juce::Component>();
+        // Delay pane: direct DelayVisuals instance wired to processor buses/bridge
+        {
+            auto* dv = new DelayVisuals (p.getDelayUiBridge(), &p);
+            dv->setScopes (
+                [&p] (juce::AudioBuffer<float>& out, int maxSamples) { return p.visPre.pull (out, maxSamples); },
+                [&p] (juce::AudioBuffer<float>& out, int maxSamples) { return p.visPost.pull (out, maxSamples); }
+            );
+            dv->setParamSetter ([&p](const juce::String& id, float value){ if (auto* par = p.apvts.getParameter(id)) par->setValueNotifyingHost (value); });
+            delay.reset (dv);
+        }
 
         for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
             addChildComponent (c);

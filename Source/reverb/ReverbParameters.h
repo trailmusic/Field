@@ -90,7 +90,7 @@ inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioPa
     p.push_back (F (ReverbIDs::eqHighQ,      "EQ High Q",        {0.3f, 2.0f, 0.001f}, 0.71f));
 
     // Mix / Out
-    p.push_back (F (ReverbIDs::wetMix01,  "Reverb Wet 0..1", {0.f, 1.f, 0.001f}, 0.f));
+    p.push_back (F (ReverbIDs::wetMix01,  "Reverb Wet 0..1", {0.f, 1.f, 0.001f}, 0.25f));
     p.push_back (F (ReverbIDs::outTrimDb, "Reverb Out (dB)", { -24.f, 12.f, 0.01f}, 0.f));
 }
 

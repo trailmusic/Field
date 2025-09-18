@@ -366,6 +366,13 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 
     // Prepare new Reverb engine
     reverbEngine.prepare (sampleRate, samplesPerBlock, getTotalNumOutputChannels());
+
+    // Prepare delay UI bridge
+    delayUiBridge.prepare (sampleRate, samplesPerBlock, getTotalNumOutputChannels());
+
+    // Lock latency after initial compute
+    updateLatencyForPhaseMode();
+    latencyLocked = true;
 }
 
 // Utility: build a HostParams snapshot each block
@@ -502,6 +509,8 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     juce::ignoreUnused (midi);
     isDoublePrecEnabled = false;
 
+    if (buffer.getNumSamples() <= 0) return;
+
     // Pre-DSP visualization feed (lock-free bus)
     if (buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
     {
@@ -533,6 +542,11 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         hp.tempoBpm = bpm;
     }
     chainF->setParameters (hp);     // cast/copy inside chain
+    // Update Motion host sync so Sync mode rates are correct
+    motion::HostInfo hinfo; hinfo.bpm = hp.tempoBpm; hinfo.playing = transportIsPlaying.load();
+    if (auto* ph = getPlayHead()) { if (auto pos = ph->getPosition()) { if (auto ppq = pos->getPpqPosition()) hinfo.ppqPosition = *ppq; if (auto bar = pos->getPpqPositionOfLastBarStart()) hinfo.ppqBarStart = *bar; }}
+    hinfo.samplesPerBeat = (currentSR > 0.0 ? currentSR * 60.0 / juce::jmax (1e-6, hp.tempoBpm) : 0.0);
+    motionEngine.setHostSync(hinfo);
 
     juce::dsp::AudioBlock<float> block (buffer);
     chainF->setParameters (hp);
@@ -579,6 +593,38 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
                       buffer.getNumSamples());
     }
 
+    // Feed Delay UI metrics (float path)
+    {
+        DelayMetricsFrame f;
+        // Map HostParams to metrics
+        f.tempoBpm = hp.tempoBpm; f.sync = hp.delaySync; f.timeDiv = hp.delayTimeDiv; f.gridFlavor = hp.delayGridFlavor; f.timeMs = hp.delayTimeMs;
+        f.stereoSpreadPct = hp.delayStereoSpreadPct; f.pingpong = hp.delayPingpong; f.crossfeedPct = hp.delayCrossfeedPct; f.width = hp.delayWidth;
+        f.feedbackPct = hp.delayFeedbackPct; f.wet01 = hp.delayWet; f.killDry = hp.delayKillDry; f.freeze = hp.delayFreeze;
+        f.mode = hp.delayMode; f.modRateHz = hp.delayModRateHz; f.modDepthMs = hp.delayModDepthMs; f.jitterPct = hp.delayJitterPct;
+        f.hpHz = hp.delayHpHz; f.lpHz = hp.delayLpHz; f.tiltDb = hp.delayTiltDb; f.sat = hp.delaySat; f.diffusion = hp.delayDiffusion; f.diffuseSizeMs = hp.delayDiffuseSizeMs;
+        f.duckSource = hp.delayDuckSource; f.duckPost = hp.delayDuckPost; f.duckThrDb = hp.delayDuckThresholdDb; f.duckRatio = hp.delayDuckRatio; f.duckDepth = hp.delayDuckDepth; f.duckAtkMs = hp.delayDuckAttackMs; f.duckRelMs = hp.delayDuckReleaseMs; f.duckLookMs = hp.delayDuckLookaheadMs;
+        f.duckGrDb = getCurrentDuckGrDb();
+        // Simple block RMS estimates
+        auto rmsOf = [] (const float* d, int n) -> float { long double s=0.0; for (int i=0;i<n;++i){ float v=d[i]; s+= (long double) v*v; } return std::sqrt ((double)(s / juce::jmax (1, n))); };
+        if (buffer.getNumChannels() >= 2)
+        {
+            f.postRmsL = rmsOf (buffer.getReadPointer(0), buffer.getNumSamples());
+            f.postRmsR = rmsOf (buffer.getReadPointer(1), buffer.getNumSamples());
+            // Pre-RMS fallback to post
+            f.preRmsL = f.postRmsL;
+            f.preRmsR = f.postRmsR;
+        }
+        // If available, include delay wet RMS and last effective delay samples
+        if (chainF)
+        {
+            f.wetRmsL = chainF->getDelayWetRmsL();
+            f.wetRmsR = chainF->getDelayWetRmsR();
+            f.timeSamplesL = chainF->getDelayLastSamplesL();
+            f.timeSamplesR = chainF->getDelayLastSamplesR();
+        }
+        delayUiBridge.pushMetrics (f);
+    }
+
     // (XY oscilloscope will also read from visPost on the UI thread)
 }
 
@@ -587,6 +633,8 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
 {
     juce::ignoreUnused (midi);
     isDoublePrecEnabled = true;
+
+    if (buffer.getNumSamples() <= 0) return;
 
     auto hp = makeHostParams (apvts);
     hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
@@ -608,6 +656,11 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         hp.tempoBpm = bpm;
     }
     chainD->setParameters (hp);
+    // Update Motion host sync for double path as well
+    motion::HostInfo hinfoD; hinfoD.bpm = hp.tempoBpm; hinfoD.playing = transportIsPlaying.load();
+    if (auto* ph2 = getPlayHead()) { if (auto pos = ph2->getPosition()) { if (auto ppq = pos->getPpqPosition()) hinfoD.ppqPosition = *ppq; if (auto bar = pos->getPpqPositionOfLastBarStart()) hinfoD.ppqBarStart = *bar; }}
+    hinfoD.samplesPerBeat = (currentSR > 0.0 ? currentSR * 60.0 / juce::jmax (1e-6, hp.tempoBpm) : 0.0);
+    motionEngine.setHostSync(hinfoD);
 
     juce::dsp::AudioBlock<double> block (buffer);
     // PRE visualization (double path): copy input before processing
@@ -669,6 +722,34 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         visPost.push (dstL, dstR, n);
     }
 
+    // Feed Delay UI metrics (double path)
+    {
+        DelayMetricsFrame f;
+        f.tempoBpm = hp.tempoBpm; f.sync = hp.delaySync; f.timeDiv = hp.delayTimeDiv; f.gridFlavor = hp.delayGridFlavor; f.timeMs = hp.delayTimeMs;
+        f.stereoSpreadPct = hp.delayStereoSpreadPct; f.pingpong = hp.delayPingpong; f.crossfeedPct = hp.delayCrossfeedPct; f.width = hp.delayWidth;
+        f.feedbackPct = hp.delayFeedbackPct; f.wet01 = hp.delayWet; f.killDry = hp.delayKillDry; f.freeze = hp.delayFreeze;
+        f.mode = hp.delayMode; f.modRateHz = hp.delayModRateHz; f.modDepthMs = hp.delayModDepthMs; f.jitterPct = hp.delayJitterPct;
+        f.hpHz = hp.delayHpHz; f.lpHz = hp.delayLpHz; f.tiltDb = hp.delayTiltDb; f.sat = hp.delaySat; f.diffusion = hp.delayDiffusion; f.diffuseSizeMs = hp.delayDiffuseSizeMs;
+        f.duckSource = hp.delayDuckSource; f.duckPost = hp.delayDuckPost; f.duckThrDb = hp.delayDuckThresholdDb; f.duckRatio = hp.delayDuckRatio; f.duckDepth = hp.delayDuckDepth; f.duckAtkMs = hp.delayDuckAttackMs; f.duckRelMs = hp.delayDuckReleaseMs; f.duckLookMs = hp.delayDuckLookaheadMs;
+        f.duckGrDb = getCurrentDuckGrDb();
+        auto rmsOfD = [] (const double* d, int n) -> float { long double s=0.0; for (int i=0;i<n;++i){ double v=d[i]; s+= v*v; } return (float) std::sqrt ((double)(s / juce::jmax (1, n))); };
+        if (buffer.getNumChannels() >= 2)
+        {
+            f.postRmsL = rmsOfD (buffer.getReadPointer(0), buffer.getNumSamples());
+            f.postRmsR = rmsOfD (buffer.getReadPointer(1), buffer.getNumSamples());
+            f.preRmsL = f.postRmsL; // fallback
+            f.preRmsR = f.postRmsR; // fallback
+        }
+        if (chainD)
+        {
+            f.wetRmsL = chainD->getDelayWetRmsL();
+            f.wetRmsR = chainD->getDelayWetRmsR();
+            f.timeSamplesL = chainD->getDelayLastSamplesL();
+            f.timeSamplesR = chainD->getDelayLastSamplesR();
+        }
+        delayUiBridge.pushMetrics (f);
+    }
+
     // Feed XYPad waveform/spectral visuals
     if (onAudioSample && buffer.getNumSamples() > 0)
     {
@@ -718,7 +799,8 @@ void MyPluginAudioProcessor::updateLatencyForPhaseMode()
         else if (chainF)
             latency = chainF->getLinearPhaseLatencySamples();
     }
-    setLatencySamples (latency);
+    if (!latencyLocked)
+        setLatencySamples (latency);
 }
 
 void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, float newValue)
@@ -782,7 +864,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::pan, 1 }, "Pan", juce::NormalisableRange<float> (-1.0f, 1.0f, 0.0001f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::panL, 1 }, "Pan L", juce::NormalisableRange<float> (-1.0f, 1.0f, 0.0001f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::panR, 1 }, "Pan R", juce::NormalisableRange<float> (-1.0f, 1.0f, 0.0001f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::depth, 1 }, "Depth", juce::NormalisableRange<float> (0.0f, 1.0f, 0.0001f), 0.0f));
+    // Set a non-zero default so Reverb is audible when enabled
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::depth, 1 }, "Depth", juce::NormalisableRange<float> (0.0f, 1.0f, 0.0001f), 0.35f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::width, 1 }, "Width", juce::NormalisableRange<float> (0.5f, 4.0f, 0.00001f), 1.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::tilt, 1 }, "Tone (Tilt)", juce::NormalisableRange<float> (-12.0f, 12.0f, 0.01f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::scoop, 1 }, "Scoop", juce::NormalisableRange<float> (-12.0f, 12.0f, 0.01f), 0.0f));
@@ -890,9 +973,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     using namespace motion;
     
     // Global parameters (shared)
-    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::enable, 1 }, "Motion Enable", true));
+    // Default Motion to OFF
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::enable, 1 }, "Motion Enable", false));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ id::panner_select, 1 }, "Motion Panner", choiceListPanner(), (int)PannerSelect::P1));
-    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::headphone_safe, 1 }, "Headphone Safe", true));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::headphone_safe, 1 }, "Headphone Safe", false));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::bass_floor_hz, 1 }, "Bass Floor (Hz)", juce::NormalisableRange<float>(20.0f, 250.0f, 0.0f, 0.35f), 120.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::occlusion, 1 }, "Occlusion", juce::NormalisableRange<float>(0.0f, 1.0f), 0.4f));
     
@@ -1043,6 +1127,19 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     if (! linConvolver)
         linConvolver = std::make_unique<OverlapSaveConvolver<Sample>>();
     linConvolver->prepare (spec.sampleRate, (int) spec.maximumBlockSize, linKernelLen, (int) spec.numChannels);
+
+    // Init tone smoothers (fast but audible smoothing ~5 ms)
+    const double toneSmoothMs = 0.005;
+    for (auto* s : { &tiltDbSm, &tiltFreqSm, &bassDbSm, &bassFreqSm, &airDbSm, &airFreqSm, &scoopDbSm, &scoopFreqSm })
+        s->reset (spec.sampleRate, toneSmoothMs);
+    tiltDbSm.setCurrentAndTargetValue ((Sample) 0);
+    tiltFreqSm.setCurrentAndTargetValue ((Sample) 500);
+    bassDbSm.setCurrentAndTargetValue ((Sample) 0);
+    bassFreqSm.setCurrentAndTargetValue ((Sample) 120);
+    airDbSm.setCurrentAndTargetValue ((Sample) 0);
+    airFreqSm.setCurrentAndTargetValue ((Sample) 8000);
+    scoopDbSm.setCurrentAndTargetValue ((Sample) 0);
+    scoopFreqSm.setCurrentAndTargetValue ((Sample) 1000);
 }
 
 template <typename Sample>
@@ -1067,6 +1164,19 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.panR      = (Sample) hp.panR;
     params.depth     = (Sample) juce::jlimit (0.0, 1.0, hp.depth);
     params.width     = (Sample) juce::jlimit (0.5, 4.0, hp.width);
+    // Detect macro tone edits to trigger temporary Full Linear mode
+    const bool toneChanged = (
+        params.tiltDb   != (Sample) hp.tiltDb   ||
+        params.scoopDb  != (Sample) hp.scoopDb  ||
+        params.hpHz     != (Sample) hp.hpHz     ||
+        params.lpHz     != (Sample) hp.lpHz     ||
+        params.airDb    != (Sample) hp.airDb    ||
+        params.bassDb   != (Sample) hp.bassDb   ||
+        params.tiltFreq != (Sample) hp.tiltFreq ||
+        params.scoopFreq!= (Sample) hp.scoopFreq||
+        params.bassFreq != (Sample) hp.bassFreq ||
+        params.airFreq  != (Sample) hp.airFreq);
+
     params.tiltDb    = (Sample) hp.tiltDb;
     params.scoopDb   = (Sample) hp.scoopDb;
     params.monoHz    = (Sample) hp.monoHz;
@@ -1092,6 +1202,24 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.scoopFreq = (Sample) hp.scoopFreq;
     params.bassFreq  = (Sample) hp.bassFreq;
     params.airFreq   = (Sample) hp.airFreq;
+    // Push smoothed targets
+    tiltDbSm.setTargetValue   (params.tiltDb);
+    tiltFreqSm.setTargetValue (juce::jlimit ((Sample) 50,  (Sample) 5000, params.tiltFreq));
+    bassDbSm.setTargetValue   (params.bassDb);
+    bassFreqSm.setTargetValue (juce::jlimit ((Sample) 20,  (Sample) 2000, params.bassFreq));
+    airDbSm.setTargetValue    (params.airDb);
+    airFreqSm.setTargetValue  (juce::jlimit ((Sample) 2000, (Sample) 20000, params.airFreq));
+    scoopDbSm.setTargetValue  (params.scoopDb);
+    scoopFreqSm.setTargetValue(juce::jlimit ((Sample) 100, (Sample) 12000, params.scoopFreq));
+
+    // If tone changed, hold auto-linear for a short window (converted to samples)
+    if (paramsPrimed && toneChanged)
+    {
+        const int add = (int) std::ceil (autoLinearHoldSec * sr);
+        autoLinearSamplesLeft = juce::jmax (autoLinearSamplesLeft, add);
+        fullLinearKernelDirty = true; // trigger FIR redesign once
+    }
+    paramsPrimed = true;
     // Ducking advanced
     params.duckThresholdDb = (Sample) hp.duckThresholdDb;
     params.duckKneeDb      = (Sample) hp.duckKneeDb;
@@ -1317,49 +1445,22 @@ void FieldChain<Sample>::applyFullLinearFIR (Block block)
         fullLinearConvolver = std::make_unique<OverlapSaveConvolver<Sample>>();
     fullLinearConvolver->prepare (sr, (int) block.getNumSamples(), fullKernelLen, (int) block.getNumChannels());
 
-    // Build a simple target magnitude by sampling our current macro tone params
-    // Grid size for design (power of two)
-    const int K = 16384;
-    std::vector<double> mags ((size_t) (K/2 + 1), 1.0);
-    const double nyq = sr * 0.5;
-
-    // Simple shelves/peaks approximations (magnitude only)
-    auto dbToLin = [](double db){ return std::pow (10.0, db / 20.0); };
-    const double tiltGainLow  = dbToLin ((double) params.tiltDb * 0.5);
-    const double tiltGainHigh = dbToLin (-(double) params.tiltDb * 0.5);
-    const double bassGain     = dbToLin ((double) params.bassDb);
-    const double airGain      = dbToLin ((double) params.airDb);
-    const double scoopGainDb  = (double) params.scoopDb;
-
-    for (int k = 0; k <= K/2; ++k)
+    // Atomically adopt a pending kernel if available (built on background thread)
+    if (pendingFullKernel)
     {
-        const double f = (double) k / (double) (K/2) * nyq;
-        double m = 1.0;
-        // HP/LP as smooth tapers (sigmoid) to avoid sharp corners in design magnitude
-        const double hp = 1.0 / (1.0 + std::exp (-(f - (double) params.hpHz) / juce::jmax (1.0, (double) params.hpHz * 0.1)));
-        const double lp = 1.0 / (1.0 + std::exp ( (f - (double) params.lpHz) / juce::jmax (1.0, (double) params.lpHz * 0.1)));
-        m *= hp * lp;
-        // Tilt: pivot at tiltFreq
-        const double oct = std::log2 (juce::jlimit (20.0, nyq, f) / juce::jmax (1.0, (double) params.tiltFreq));
-        const double tiltCurve = oct >= 0.0 ? tiltGainHigh : tiltGainLow;
-        // Bass shelf: below bassFreq
-        const double bassCurve = 1.0 + (bassGain - 1.0) * (1.0 / (1.0 + std::exp ((f - (double) params.bassFreq) / juce::jmax (1.0, (double) params.bassFreq * 0.25))));
-        // Air shelf: above airFreq
-        const double airCurve  = 1.0 + (airGain - 1.0)  * (1.0 / (1.0 + std::exp (-(f - (double) params.airFreq) / juce::jmax (1.0, (double) params.airFreq * 0.25))));
-        // Scoop: gentle peaking dip around scoopFreq
-        const double q = 0.8; const double bw = juce::jmax (10.0, (double) params.scoopFreq * 0.6);
-        const double gS = dbToLin (scoopGainDb);
-        const double gauss = std::exp (-(f - (double) params.scoopFreq) * (f - (double) params.scoopFreq) / (2.0 * bw * bw));
-        const double scoopCurve = 1.0 + (gS - 1.0) * gauss;
-
-        m *= tiltCurve * bassCurve * airCurve * scoopCurve;
-        mags[(size_t) k] = juce::jlimit (1e-6, 1000.0, m);
+        fullLinearConvolver->setKernel (*pendingFullKernel);
+        activeFullKernel = pendingFullKernel;
+        pendingFullKernel.reset();
     }
 
-    // Design kernel from magnitude
-    std::vector<float> kernel;
-    designLinearPhaseFromMagnitude (kernel, mags, K, fullKernelLen, 8.6, 1000.0, sr);
-    fullLinearConvolver->setKernel (kernel);
+    // If no active kernel yet (very first run), fall back to clean HP/LP to avoid stall
+    if (!activeFullKernel)
+    {
+        ensureLinearPhaseKernel (sr, params.hpHz, params.lpHz, (int) block.getNumSamples(), (int) block.getNumChannels());
+        linConvolver->process (block);
+        return;
+    }
+
     fullLinearConvolver->process (block);
 }
 
@@ -1718,7 +1819,7 @@ void FieldChain<Sample>::renderSpaceWet (juce::AudioBuffer<Sample>& wet)
     const int n  = wet.getNumSamples();
     for (int c = 0; c < ch; ++c) wet.clear (c, 0, n);
 
-    if (!params.rvEnabled || params.rvWet01 <= (Sample) 0.0001)
+    if (!params.rvEnabled)
     {
         rv_tailRms = 0.0f; rv_erRms = 0.0f; return;
     }
@@ -1857,7 +1958,13 @@ void FieldChain<Sample>::process (Block block)
     block.multiplyBy (params.gainLin);
 
     // Phase Mode: 2 = Hybrid Linear → FIR HP/LP; 3 = Full Linear → composite FIR tone+HP/LP
-    if (params.phaseMode == 3)
+    // Optional auto-linear during edits: force Full Linear while autoLinearSamplesLeft > 0
+    const bool forceFullLinear = (autoLinearSamplesLeft > 0);
+    if (forceFullLinear)
+    {
+        applyFullLinearFIR (block);
+    }
+    else if (params.phaseMode == 3)
     {
         applyFullLinearFIR (block);
     }
@@ -1922,11 +2029,33 @@ void FieldChain<Sample>::process (Block block)
     // Rotation + Asymmetry (global)
     applyRotationAsym (block, params.rotationRad, params.asymmetry);
 
-    // Core tone
-    applyTiltEQ  (block, params.tiltDb,  params.tiltFreq);
-    applyScoopEQ (block, params.scoopDb, params.scoopFreq);
-    applyBassShelf (block, params.bassDb, params.bassFreq);
-    applyAirBand   (block, params.airDb,  params.airFreq);
+    // Core tone: skip IIR tone when forcing Full Linear this block
+    if (! forceFullLinear)
+    {
+        // Process in small chunks and use smoothed values to avoid zipper noise
+        const int total = (int) block.getNumSamples();
+        const int channels = (int) block.getNumChannels();
+        const int step = juce::jlimit (32, 256, total); // sub-block size
+        for (int start = 0; start < total; start += step)
+        {
+            const int len = juce::jmin (step, total - start);
+            juce::dsp::AudioBlock<Sample> sub = block.getSubBlock ((size_t) start, (size_t) len);
+
+            const Sample tDb = tiltDbSm.getNextValue();
+            const Sample tHz = tiltFreqSm.getNextValue();
+            const Sample scDb = scoopDbSm.getNextValue();
+            const Sample scHz = scoopFreqSm.getNextValue();
+            const Sample bDb = bassDbSm.getNextValue();
+            const Sample bHz = bassFreqSm.getNextValue();
+            const Sample aDb = airDbSm.getNextValue();
+            const Sample aHz = airFreqSm.getNextValue();
+
+            applyTiltEQ   (sub, tDb, tHz);
+            applyScoopEQ  (sub, scDb, scHz);
+            applyBassShelf(sub, bDb, bHz);
+            applyAirBand  (sub, aDb, aHz);
+        }
+    }
 
     // Reverb: compute rvParams then render wet-only to buffer 'wet'
     applySpaceAlgorithm (block, params.depth, params.spaceAlgo);
@@ -1938,6 +2067,7 @@ void FieldChain<Sample>::process (Block block)
     jassert (n <= wetBusBuf.getNumSamples());
     dryBusBuf.setSize (juce::jmax (1, ch), dryBusBuf.getNumSamples(), false, false, true);
     wetBusBuf.setSize (juce::jmax (1, ch), wetBusBuf.getNumSamples(), false, false, true);
+    delayWetBuf.setSize (juce::jmax (1, ch), wetBusBuf.getNumSamples(), false, false, true);
     for (int c = 0; c < ch; ++c)
     {
         auto* dst = dryBusBuf.getWritePointer (c);
@@ -1948,8 +2078,7 @@ void FieldChain<Sample>::process (Block block)
     // Render reverb into wet (100% wet)
     renderSpaceWet (wetBusBuf);
 
-    // LF mono
-    applyMonoMaker (block, params.monoHz);
+    // (moved) LF mono is applied after final dry/wet mix
 
     // Width Designer: dynamic clamp (after imaging/mono, before post FX)
     if (params.widthMode == 1 && params.widthAutoDepth > (Sample)0.0001 && block.getNumChannels() >= 2)
@@ -2004,7 +2133,7 @@ void FieldChain<Sample>::process (Block block)
         applySaturation (wetBlock, params.satDriveLin, params.satMix, params.osMode);
     }
     
-    // Delay processing
+    // Delay processing (render to dedicated delayWetBuf; mixed later independently of reverb wet)
     if (params.delayEnabled)
     {
         // Convert parameters to DelayParams structure
@@ -2019,7 +2148,8 @@ void FieldChain<Sample>::process (Block block)
         delayParams.tempoBpm   = params.tempoBpm;
         delayParams.feedbackPct = params.delayFeedbackPct;
         delayParams.wet = params.delayWet;
-        delayParams.killDry = params.delayKillDry;
+        // Render as wet-only for bus mixing regardless of UI Kill Dry
+        delayParams.killDry = true;
         delayParams.freeze = params.delayFreeze;
         delayParams.pingpong = params.delayPingpong;
         delayParams.crossfeedPct = params.delayCrossfeedPct;
@@ -2044,20 +2174,33 @@ void FieldChain<Sample>::process (Block block)
         delayParams.duckRatio = params.delayDuckRatio;
         delayParams.duckLookaheadMs = params.delayDuckLookaheadMs;
         delayParams.duckLinkGlobal = params.delayDuckLinkGlobal;
-        
+
         delayEngine.setParameters(delayParams);
-        
-        // Process delay on the main block
-        float scL = 0.0f, scR = 0.0f;
-        if (ch > 0) scL = (float)block.getSample(0, 0);
-        if (ch > 1) scR = (float)block.getSample(1, 0);
-        delayEngine.process(block, scL, scR);
-        // After delayEngine updated the block in-place, reflect that into the dry bus
+
+        // Render delay wet-only by processing a copy of the dry bus
         for (int c = 0; c < ch; ++c)
+            std::memcpy (delayWetBuf.getWritePointer (c), dryBusBuf.getReadPointer (c), sizeof (Sample) * (size_t) n);
+        juce::dsp::AudioBlock<Sample> dblk (delayWetBuf);
+        float scL = 0.0f, scR = 0.0f; // neutral SC here
+        delayEngine.process (dblk, scL, scR);
+
+        // Compute delay wet RMS for UI telemetry
+        if (delayWetBuf.getNumChannels() >= 2)
         {
-            auto* dst = dryBusBuf.getWritePointer (c);
-            auto* src = block.getChannelPointer (c);
-            std::memcpy (dst, src, sizeof (Sample) * (size_t) n);
+            const int n = (int) dblk.getNumSamples();
+            auto rmsOf = [] (const float* d, int nSamples) -> float { long double s=0.0; for (int i=0;i<nSamples;++i){ float v=d[i]; s+= (long double) v*v; } return std::sqrt ((double)(s / juce::jmax (1, nSamples))); };
+            if constexpr (std::is_same_v<Sample, float>)
+            {
+                delay_wetRmsL = rmsOf (delayWetBuf.getReadPointer(0), n);
+                delay_wetRmsR = rmsOf (delayWetBuf.getReadPointer(1), n);
+            }
+            else
+            {
+                // For double chain, compute in double then cast
+                auto rmsOfD = [] (const double* d, int nSamples) -> float { long double s=0.0; for (int i=0;i<nSamples;++i){ double v=d[i]; s+= v*v; } return (float) std::sqrt ((double)(s / juce::jmax (1, nSamples))); };
+                delay_wetRmsL = rmsOfD (delayWetBuf.getReadPointer(0), n);
+                delay_wetRmsR = rmsOfD (delayWetBuf.getReadPointer(1), n);
+            }
         }
     }
 
@@ -2085,8 +2228,9 @@ void FieldChain<Sample>::process (Block block)
         // Skip ducking entirely when reverb wet is zero; UI will idle the GR meter
     }
 
-    // Equal-power mix: apply smoothed wet to avoid clicks
-    wetMixSmoothed.setTargetValue (rvParams.wetLevel);
+    // Equal-power mix: Depth × Wet slider
+    const float rvMix = juce::jlimit (0.0f, 1.0f, rvParams.wetLevel * (float) params.rvWet01);
+    wetMixSmoothed.setTargetValue (rvMix);
     // Sum Dry + Wet back to output block (equal-power law):
     // mix=0 -> 100% dry, mix=1 -> 100% wet
     for (int c = 0; c < ch; ++c)
@@ -2102,6 +2246,25 @@ void FieldChain<Sample>::process (Block block)
             const float b = std::sin (theta);
             out[i] = (Sample) (a * (double) d[i] + b * (double) w[i]);
         }
+    }
+    // Mix in Delay wet after reverb mix using its own wet control (ungated by reverb)
+    if (params.delayEnabled)
+    {
+        // DelayEngine already applied its internal Wet; since we forced KillDry, mix unscaled
+        for (int c = 0; c < ch; ++c)
+        {
+            auto* out = block.getChannelPointer (c);
+            const Sample* dw = delayWetBuf.getReadPointer (c);
+            for (int i = 0; i < n; ++i)
+                out[i] += dw[i];
+        }
+    }
+    // LF mono (apply after dry/wet sum so lows stay centered across full output)
+    applyMonoMaker (block, params.monoHz);
+    // Decrement auto-linear countdown by processed samples
+    if (autoLinearSamplesLeft > 0)
+    {
+        autoLinearSamplesLeft = juce::jmax (0, autoLinearSamplesLeft - (int) block.getNumSamples());
     }
 }
 
@@ -2134,6 +2297,18 @@ float FieldChain<Sample>::getReverbErRms() const { return rv_erRms; }
 
 template <typename Sample>
 float FieldChain<Sample>::getReverbTailRms() const { return rv_tailRms; }
+
+template <typename Sample>
+float FieldChain<Sample>::getDelayWetRmsL() const { return delay_wetRmsL; }
+
+template <typename Sample>
+float FieldChain<Sample>::getDelayWetRmsR() const { return delay_wetRmsR; }
+
+template <typename Sample>
+double FieldChain<Sample>::getDelayLastSamplesL() const { return (double) delayEngine.getLastDelaySamplesL(); }
+
+template <typename Sample>
+double FieldChain<Sample>::getDelayLastSamplesR() const { return (double) delayEngine.getLastDelaySamplesR(); }
 
 // Explicit instantiation
 template struct FieldChain<float>;
