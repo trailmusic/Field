@@ -262,6 +262,8 @@ private:
     juce::SmoothedValue<Sample> bassDbSm, bassFreqSm;
     juce::SmoothedValue<Sample> airDbSm,  airFreqSm;
     juce::SmoothedValue<Sample> scoopDbSm, scoopFreqSm;
+    // HP/LP cutoff smoothing (IIR mode) to avoid zipper during knob moves
+    juce::SmoothedValue<Sample> hpHzSm, lpHzSm;
 
     // High-order interpolation hooks (for future modulated delay lines)
     template <typename S>
@@ -603,6 +605,8 @@ public:
     float getRmsR() const { return meterRmsR.load(); }
     float getPeakL() const { return meterPeakL.load(); }
     float getPeakR() const { return meterPeakR.load(); }
+    float getInRms() const { return meterInRms.load(); }
+    float getOutRms() const { return meterOutRms.load(); }
     // Current ducking gain reduction in dB (>=0), from active precision chain
     float getCurrentDuckGrDb() const
     {
@@ -682,6 +686,7 @@ private:
     std::atomic<float> meterCorrelation { 0.0f };
     std::atomic<float> meterRmsL { 0.0f }, meterRmsR { 0.0f };
     std::atomic<float> meterPeakL { 0.0f }, meterPeakR { 0.0f };
+    std::atomic<float> meterInRms { 0.0f }, meterOutRms { 0.0f };
 
     // Host transport (updated in processBlock)
     std::atomic<double> transportTimeSeconds { 0.0 };

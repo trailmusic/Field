@@ -1928,75 +1928,81 @@ private:
 
     CorrelationMeter corrMeter { proc, lnf };
 
-    // Horizontal L/R meters (RMS + Peak overlays)
-    class HorizontalLRMeters : public juce::Component, public juce::Timer
+    // Vertical L/R meters (RMS + Peak overlays)
+    class VerticalLRMeters : public juce::Component, public juce::Timer
     {
     public:
-        HorizontalLRMeters (MyPluginAudioProcessor& p, FieldLNF& l) : proc(p), lnf(l) { startTimerHz (20); }
+        VerticalLRMeters (MyPluginAudioProcessor& p, FieldLNF& l) : proc(p), lnf(l) { startTimerHz (20); }
         void paint (juce::Graphics& g) override
         {
             auto r = getLocalBounds().toFloat();
-            auto top = r.removeFromTop (r.getHeight() * 0.5f).reduced (2.0f);
-            auto bot = r.reduced (2.0f);
+            auto left = r.removeFromLeft (r.getWidth() * 0.5f).reduced (2.0f);
+            auto right= r.reduced (2.0f);
 
             auto drawBar = [&] (juce::Rectangle<float> b, float rms, float peak, const juce::String& label)
             {
                 g.setColour (lnf.theme.panel);
                 g.fillRoundedRectangle (b, 4.0f);
                 // Track
-                g.setColour (lnf.theme.hl.withAlpha (0.35f));
-                g.fillRoundedRectangle (b.reduced (1.0f), 3.5f);
+                {
+                    juce::Colour base = lnf.theme.hl.withAlpha (0.30f);
+                    juce::Colour base2= base.overlaidWith (juce::Colours::black.withAlpha (0.15f));
+                    juce::ColourGradient grad (base, b.getX(), b.getY(), base2, b.getX(), b.getBottom(), false);
+                    juce::FillType ft (grad);
+                    g.setFillType (ft);
+                    g.fillRoundedRectangle (b.reduced (1.0f), 3.5f);
+                    g.setFillType (juce::FillType());
+                }
                 // Border
                 g.setColour (lnf.theme.sh);
                 g.drawRoundedRectangle (b, 4.0f, 1.0f);
 
-                // scale 0..1 across width
-                auto wRms  = juce::jlimit (0.0f, 1.0f, rms ) * b.getWidth();
-                auto wPeak = juce::jlimit (0.0f, 1.0f, peak) * b.getWidth();
+                // scale 0..1 across height
+                auto hRms  = juce::jlimit (0.0f, 1.0f, rms ) * b.getHeight();
+                auto hPeak = juce::jlimit (0.0f, 1.0f, peak) * b.getHeight();
                 // RMS fill with color shift near clipping
                 const bool nearClip = peak >= 0.98f || rms >= 0.90f;
-                auto rmsCol = nearClip ? juce::Colour (0xFFE57373) /*red-ish*/ : lnf.theme.accent;
-                g.setColour (rmsCol.withAlpha (0.35f));
-                g.fillRoundedRectangle (juce::Rectangle<float> (b.getX(), b.getY(), wRms, b.getHeight()), 3.0f);
+                {
+                    auto rmsCol1 = (nearClip ? juce::Colour (0xFFFF8A80) : lnf.theme.accent.withMultipliedAlpha (0.85f));
+                    auto rmsCol2 = (nearClip ? juce::Colour (0xFFE53935) : lnf.theme.accent);
+                    juce::ColourGradient grad (rmsCol1.withAlpha (0.55f), b.getCentreX(), b.getBottom() - hRms,
+                                               rmsCol2.withAlpha (0.85f), b.getCentreX(), b.getBottom(), false);
+                    g.setFillType (juce::FillType (grad));
+                    g.fillRoundedRectangle (juce::Rectangle<float> (b.getX(), b.getBottom() - hRms, b.getWidth(), hRms), 3.0f);
+                    g.setFillType (juce::FillType());
+                }
                 // Peak line
                 g.setColour (nearClip ? juce::Colour (0xFFE53935) : lnf.theme.accent);
-                g.fillRect (juce::Rectangle<float> (b.getX() + wPeak - 1.0f, b.getY(), 2.0f, b.getHeight()));
+                g.fillRect (juce::Rectangle<float> (b.getX(), b.getBottom() - hPeak, b.getWidth(), 2.0f));
+                // Gloss
+                g.setColour (juce::Colours::white.withAlpha (0.06f));
+                g.fillRoundedRectangle (juce::Rectangle<float> (b.getX()+1.5f, b.getY()+1.5f, b.getWidth()-3.0f, b.getHeight()*0.25f), 3.0f);
 
                 // Label
                 g.setColour (lnf.theme.textMuted);
                 g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
-                g.drawText (label, b.reduced (4.0f), juce::Justification::centredLeft);
+                g.drawText (label, b.reduced (4.0f), juce::Justification::centredBottom);
 
                 // dB tick marks (approx) across the bar: -24, -12, -6, -3, -1 dBFS
                 auto drawTick = [&] (float db, const char* text)
                 {
                     // map dB to linear magnitude (0..1). For UI, assume 0 = -inf, 1 = 0 dBFS
                     const float lin = juce::Decibels::decibelsToGain (db, -60.0f);
-                    const float x   = b.getX() + juce::jlimit (0.0f, 1.0f, lin) * b.getWidth();
+                    const float y   = b.getBottom() - juce::jlimit (0.0f, 1.0f, lin) * b.getHeight();
                     g.setColour (lnf.theme.hl.withAlpha (0.6f));
-                    g.fillRect (juce::Rectangle<float> (x, b.getY(), 1.0f, b.getHeight()));
+                    g.fillRect (juce::Rectangle<float> (b.getX(), y, b.getWidth(), 1.0f));
                     g.setColour (lnf.theme.textMuted.withAlpha (0.8f));
-                    g.drawText (text, juce::Rectangle<int> ((int) x - 16, (int) (b.getBottom() + 1), 32, 12), juce::Justification::centredTop);
+                    g.drawText (text, juce::Rectangle<int> (b.getX(), (int) y - 8, (int) b.getWidth(), 12), juce::Justification::centredRight);
                 };
                 drawTick (-24.0f, "-24");
                 drawTick (-12.0f, "-12");
                 drawTick (-6.0f,  "-6");
                 drawTick (-3.0f,  "-3");
                 drawTick (-1.0f,  "-1");
-
-                // Minimal units label: show "dBFS" once (on top/L bar)
-                if (label == "L")
-                {
-                    g.setColour (lnf.theme.textMuted.withAlpha (0.9f));
-                    g.setFont (juce::Font (juce::FontOptions (10.0f).withStyle ("Bold")));
-                    g.drawText ("dBFS",
-                                juce::Rectangle<int> ((int) (b.getRight() - 36.0f), (int) (b.getY() - 12.0f), 36, 12),
-                                juce::Justification::centredRight);
-                }
             };
 
-            drawBar (top, proc.getRmsL(), proc.getPeakL(), "L");
-            drawBar (bot, proc.getRmsR(), proc.getPeakR(), "R");
+            drawBar (left,  proc.getRmsL(), proc.getPeakL(), "L");
+            drawBar (right, proc.getRmsR(), proc.getPeakR(), "R");
         }
         void timerCallback() override { if (isShowing()) repaint(); }
         void visibilityChanged() override { if (isVisible()) startTimerHz (20); else stopTimer(); }
@@ -2005,7 +2011,42 @@ private:
         FieldLNF& lnf;
     };
 
-    HorizontalLRMeters lrMeters { proc, lnf };
+    VerticalLRMeters lrMeters { proc, lnf };
+
+    // IO Gain Meters (Input/Output RMS)
+    class IOGainMeters : public juce::Component, public juce::Timer
+    {
+    public:
+        IOGainMeters (MyPluginAudioProcessor& p, FieldLNF& l) : proc(p), lnf(l) { startTimerHz (20); }
+        void paint (juce::Graphics& g) override
+        {
+            auto r = getLocalBounds().toFloat();
+            auto inB  = r.removeFromLeft (r.getWidth() * 0.5f).reduced (2.0f);
+            auto outB = r.reduced (2.0f);
+            auto drawOne = [&] (juce::Rectangle<float> b, float rms, const juce::String& label)
+            {
+                g.setColour (lnf.theme.panel); g.fillRoundedRectangle (b, 4.0f);
+                g.setColour (lnf.theme.sh);    g.drawRoundedRectangle (b, 4.0f, 1.0f);
+                const float h = juce::jlimit (0.0f, 1.0f, rms) * b.getHeight();
+                juce::ColourGradient grad (lnf.theme.accent.withAlpha (0.55f), b.getCentreX(), b.getBottom() - h,
+                                           lnf.theme.accent.withAlpha (0.85f), b.getCentreX(), b.getBottom(), false);
+                g.setFillType (juce::FillType (grad));
+                g.fillRoundedRectangle (juce::Rectangle<float> (b.getX(), b.getBottom() - h, b.getWidth(), h), 3.0f);
+                g.setFillType (juce::FillType());
+                g.setColour (lnf.theme.textMuted);
+                g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
+                g.drawText (label, b.reduced (4.0f), juce::Justification::centredBottom);
+            };
+            drawOne (inB,  proc.getInRms(),  "In");
+            drawOne (outB, proc.getOutRms(), "Out");
+        }
+        void timerCallback() override { if (isShowing()) repaint(); }
+        void visibilityChanged() override { if (isVisible()) startTimerHz (20); else stopTimer(); }
+    private:
+        MyPluginAudioProcessor& proc; FieldLNF& lnf;
+    };
+
+    IOGainMeters ioMeters { proc, lnf };
 
     // A/B state
     std::map<juce::String, float> stateA, stateB;

@@ -959,7 +959,6 @@ void XYPad::drawBalls (juce::Graphics& g, juce::Rectangle<float> b)
     g.drawEllipse (rx - r, y - r, r * 2.0f, r * 2.0f, 1.2f);
 }
 // ------------------------------------------------
-
 /* ===================== Editor ===================== */
 
 MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcessor& p)
@@ -1454,7 +1453,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     panes->setOptions ({ /*keepAllWarm=*/ false });
     // Default to XY view on startup
     panes->setActive (PaneID::XY, true);
-
     // Theme spectrum (optional)
     if (auto* sp = panes->spectrumPane())
     {
@@ -1579,6 +1577,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     {
         addAndMakeVisible (*slider);
         style (*slider);
+        slider->setVelocityBasedMode (true);
+        slider->setVelocityModeParameters (0.85, 1, 0.0, true);
+        slider->setMouseDragSensitivity (140);
         slider->addListener (this);
     }
     addAndMakeVisible (gain); style (gain); gain.addListener (this);
@@ -1589,9 +1590,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         addAndMakeVisible (*slider);
         slider->setSliderStyle (juce::Slider::LinearHorizontal);
         slider->setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-        slider->setMouseDragSensitivity (100);
+        slider->setMouseDragSensitivity (140);
         slider->setVelocityBasedMode (false);
-        slider->setSliderSnapsToMousePosition (true);
+        slider->setSliderSnapsToMousePosition (false);
         slider->setDoubleClickReturnValue (true, 0.0);
         slider->setLookAndFeel (&lnf);
         slider->addListener (this);
@@ -1954,7 +1955,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // listeners for split overlay % etc.
     panKnobLeft.addListener (this);
     panKnobRight.addListener (this);
-
     // attachments (deduped; removed accidental duplicates you had for bass/scoop/depth)
     using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
     attachments.push_back (std::make_unique<SA> (proc.apvts, "gain_db",       gain));
@@ -2430,7 +2430,6 @@ void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
                     resizeArea.getRight() - 4 - off, resizeArea.getBottom() - 8 - off, 1.0f);
     }
 }
-
 void MyPluginAudioProcessorEditor::performLayout()
 {
     if (!layoutReady) return;
@@ -2732,16 +2731,18 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int containerH_rsv = lPx_rsv + labelBand_rsv + Layout::dp (Layout::LABEL_BAND_EXTRA, s);
         const int rowsTotalH_rsv = containerH_rsv * 4; // four uniform rows
 
-        // Allocate the top area as remaining height after rows, with a minimum
+        // Meters take the full right side strip (carve from full remaining area first)
+        // Use grid-derived width so meters do not get too wide on large windows
+        const int lPx_rs   = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
+        const int cellW_rs = lPx_rs + Layout::dp (8, s);
+        const int metersStripW = juce::jlimit (Layout::dp (120, s), Layout::dp (320, s), cellW_rs * 2 + Layout::dp (8, s));
+        auto metersArea = r.removeFromRight (metersStripW);
+        metersArea = metersArea.reduced (Layout::dp (Layout::GAP, s));
+        metersContainer.setBounds (metersArea);
+
+        // Allocate the top area as remaining height after rows, with a minimum (left content only)
         const int mainH = juce::jmax (Layout::dp (300, s), r.getHeight() - rowsTotalH_rsv);
         auto main = r.removeFromTop (mainH);
-
-        // Reserve space for meters on the right side, aligned to grid column width
-        const int lPx_top   = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
-        const int cellW_top = lPx_top + Layout::dp (8, s);
-        const int metersW   = cellW_top * 2; // align meters to double cell width
-        auto metersArea = main.removeFromRight (metersW);
-        metersContainer.setBounds (metersArea);
         
         // Visual dock takes the pad area
         auto padBounds = main.reduced (Layout::dp (Layout::GAP, s));
@@ -2751,14 +2752,23 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Hide center container if present
         phaseCenterContainer.setVisible (false);
 
-        // Layout vertical meters: Corr (top) + LR bars (bottom)
+        // Layout meters stack: [Corr] [IO (vertical In/Out)] [LR (vertical)] side-by-side inside their panels
         addAndMakeVisible (corrMeter);
         addAndMakeVisible (lrMeters);
+        addAndMakeVisible (ioMeters);
         auto mB = metersContainer.getBounds().reduced (Layout::dp (Layout::GAP, s));
-        const int corrH = juce::roundToInt (Layout::dp (Layout::CORR_METER_H, s) * 0.75f);
+        const int corrH = juce::roundToInt (Layout::dp (Layout::CORR_METER_H, s));
         auto corrB = mB.removeFromTop (corrH);
         corrMeter.setBounds (corrB);
-        lrMeters.setBounds (mB);
+        // split remaining area into two equal columns (left=IO, right=LR)
+        auto rightHalf = mB.removeFromRight (mB.getWidth() / 2).reduced (Layout::dp (Layout::GAP_S, s));
+        auto leftHalf  = mB.reduced (Layout::dp (Layout::GAP_S, s));
+        // Make columns slimmer by targeting ~1 cell width each
+        const int colW = juce::jlimit (Layout::dp (56, s), Layout::dp (140, s), cellW_rs);
+        auto lrCol = rightHalf.withSizeKeepingCentre (colW, rightHalf.getHeight());
+        auto ioCol = leftHalf .withSizeKeepingCentre (colW, leftHalf .getHeight());
+        ioMeters.setBounds (ioCol);
+        lrMeters.setBounds (lrCol);
     }
 
     // Remove vertical gaps between rows
@@ -2786,11 +2796,12 @@ void MyPluginAudioProcessorEditor::performLayout()
     juce::Rectangle<int> delayArea; // to be computed after rows are defined
 
 
+    // Capture the full rows area (left column) for overlay sizing
+    auto rowsArea = r;
     auto row1 = r.removeFromTop (rowH1);
     auto row2 = r.removeFromTop (rowH2);
     auto row3 = r.removeFromTop (rowH3);
     auto row4 = r.removeFromTop (rowH4);
-
     // Alternate bottom panel (slides over bottom rows when enabled)
     {
         // Progress towards target with symmetric easing (smooth but brisk)
@@ -2815,7 +2826,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int activeBaseline  = juce::jmax (stackTop, bottomBarTop - activeGapPx);
         const int hiddenBaseline  = bottomBarBottom + hiddenGapPx;
         const int overlayH        = juce::jmax (0, activeBaseline - stackTop);
-        const int overlayW        = getWidth();
+        const int overlayW        = rowsArea.getWidth();
         // Delay appearance so the top never breaks the baseline when nearly inactive (symmetric)
         const float appearThresh = 0.10f; // wait until ~10% of slide to show
         const float t0           = juce::jlimit (0.0f, 1.0f, (bottomAltSlide01 - appearThresh) / juce::jmax (0.0001f, 1.0f - appearThresh));
@@ -2825,7 +2836,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int bottomY  = juce::roundToInt (juce::jmap (effSlide, 0.0f, 1.0f, (float) hiddenBaseline, (float) activeBaseline));
         const int curTop   = bottomY - juce::roundToInt ((float) overlayH * effSlide);
 
-        bottomAltPanel.setBounds (juce::Rectangle<int> (0, curTop, overlayW, overlayH));
+        bottomAltPanel.setBounds (juce::Rectangle<int> (rowsArea.getX(), curTop, overlayW, overlayH));
         const bool showPanel = effSlide > 0.001f;
         bottomAltPanel.setInterceptsMouseClicks (showPanel, false);
         bottomAltPanel.setVisible (showPanel);
@@ -3226,7 +3237,6 @@ void MyPluginAudioProcessorEditor::performLayout()
             reverbGrid.performLayout (rbCentered);
         }
     }
-
     // ---------------- Row 1: Pan, Width cells, Gain, Mix, Wet Only -----------
     {
         auto row = row1;
@@ -3689,7 +3699,6 @@ void MyPluginAudioProcessorEditor::performLayout()
 
         // Note: filterQCell and qClusterCell are laid out in the combined right strip below
     }
-
     // ----- Combined HP/LP + Q + Q-Link as one 2x2 composite cell -----
     {
         const int doubleW = lPx * 2;
@@ -4162,7 +4171,6 @@ void MyPluginAudioProcessorEditor::updateMutedKnobVisuals()
         filterQ.repaint();
     }
 }
-
 void MyPluginAudioProcessorEditor::parameterChanged (const juce::String& id, float nv)
 {
     // Bounce to message thread for UI updates during automation/offline render

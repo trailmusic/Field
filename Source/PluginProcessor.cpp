@@ -548,6 +548,18 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     hinfo.samplesPerBeat = (currentSR > 0.0 ? currentSR * 60.0 / juce::jmax (1e-6, hp.tempoBpm) : 0.0);
     motionEngine.setHostSync(hinfo);
 
+    // Capture input RMS before processing
+    {
+        const int n = buffer.getNumSamples();
+        if (n > 0 && buffer.getNumChannels() > 0)
+        {
+            long double s=0.0L; int cN = buffer.getNumChannels();
+            for (int c=0;c<cN;++c){ auto* d = buffer.getReadPointer(c); for (int i=0;i<n;++i) { long double v=d[i]; s += v*v; } }
+            const float rmsIn = (float) std::sqrt ((double) (s / juce::jmax (1, cN * n)));
+            float o = meterInRms.load(); meterInRms.store (o + 0.2f * (rmsIn - o));
+        }
+    }
+
     juce::dsp::AudioBlock<float> block (buffer);
     chainF->setParameters (hp);
     chainF->process (block);
@@ -623,6 +635,18 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
             f.timeSamplesR = chainF->getDelayLastSamplesR();
         }
         delayUiBridge.pushMetrics (f);
+    }
+
+    // Output RMS after processing
+    {
+        const int n = buffer.getNumSamples();
+        if (n > 0 && buffer.getNumChannels() > 0)
+        {
+            long double s=0.0L; int cN = buffer.getNumChannels();
+            for (int c=0;c<cN;++c){ auto* d = buffer.getReadPointer(c); for (int i=0;i<n;++i) { long double v=d[i]; s += v*v; } }
+            const float rmsOut = (float) std::sqrt ((double) (s / juce::jmax (1, cN * n)));
+            float o = meterOutRms.load(); meterOutRms.store (o + 0.2f * (rmsOut - o));
+        }
     }
 
     // (XY oscilloscope will also read from visPost on the UI thread)
@@ -876,8 +900,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::satMix, 1 }, "Saturation Mix", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 1.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::bypass, 1 }, "Bypass", juce::NormalisableRange<float> (0.0f, 1.0f, 1.0f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::spaceAlgo, 1 }, "Reverb Algorithm", juce::StringArray { "Room", "Plate", "Hall" }, 0));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::airDb, 1 }, "Air", juce::NormalisableRange<float> (0.0f, 6.0f, 0.1f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::bassDb, 1 }, "Bass", juce::NormalisableRange<float> (-6.0f, 6.0f, 0.1f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::airDb, 1 }, "Air", juce::NormalisableRange<float> (0.0f, 6.0f, 0.01f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::bassDb, 1 }, "Bass", juce::NormalisableRange<float> (-6.0f, 6.0f, 0.01f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::ducking, 1 }, "Ducking", juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckThrDb, 1 },  "Duck Threshold (dB)", juce::NormalisableRange<float> (-60.0f, 0.0f, 0.01f), -18.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckKneeDb, 1 }, "Duck Knee (dB)",      juce::NormalisableRange<float> (0.0f, 18.0f, 0.01f), 6.0f));
@@ -1128,10 +1152,13 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
         linConvolver = std::make_unique<OverlapSaveConvolver<Sample>>();
     linConvolver->prepare (spec.sampleRate, (int) spec.maximumBlockSize, linKernelLen, (int) spec.numChannels);
 
-    // Init tone smoothers (fast but audible smoothing ~5 ms)
-    const double toneSmoothMs = 0.005;
+    // Init tone smoothers (slightly slower for silkier feel)
+    const double toneSmoothMs = 0.008;   // tilt/bass/air/scoop and their freq pivots
+    const double hpLpSmoothMs = 0.012;   // HP/LP cutoffs a touch slower to avoid zippering
     for (auto* s : { &tiltDbSm, &tiltFreqSm, &bassDbSm, &bassFreqSm, &airDbSm, &airFreqSm, &scoopDbSm, &scoopFreqSm })
         s->reset (spec.sampleRate, toneSmoothMs);
+    for (auto* s : { &hpHzSm, &lpHzSm })
+        s->reset (spec.sampleRate, hpLpSmoothMs);
     tiltDbSm.setCurrentAndTargetValue ((Sample) 0);
     tiltFreqSm.setCurrentAndTargetValue ((Sample) 500);
     bassDbSm.setCurrentAndTargetValue ((Sample) 0);
@@ -1140,6 +1167,8 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     airFreqSm.setCurrentAndTargetValue ((Sample) 8000);
     scoopDbSm.setCurrentAndTargetValue ((Sample) 0);
     scoopFreqSm.setCurrentAndTargetValue ((Sample) 1000);
+    hpHzSm.setCurrentAndTargetValue ((Sample) 20);
+    lpHzSm.setCurrentAndTargetValue ((Sample) 20000);
 }
 
 template <typename Sample>
@@ -1211,6 +1240,9 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     airFreqSm.setTargetValue  (juce::jlimit ((Sample) 2000, (Sample) 20000, params.airFreq));
     scoopDbSm.setTargetValue  (params.scoopDb);
     scoopFreqSm.setTargetValue(juce::jlimit ((Sample) 100, (Sample) 12000, params.scoopFreq));
+    // Push HP/LP smoothed targets
+    hpHzSm.setTargetValue (juce::jlimit ((Sample) 20, (Sample) 1000,  params.hpHz));
+    lpHzSm.setTargetValue (juce::jlimit ((Sample) 1000, (Sample) 20000, params.lpHz));
 
     // If tone changed, hold auto-linear for a short window (converted to samples)
     if (paramsPrimed && toneChanged)
@@ -1975,8 +2007,7 @@ void FieldChain<Sample>::process (Block block)
     }
     else
     {
-        // Clean filters
-        applyHP_LP (block, params.hpHz, params.lpHz);
+        // Clean filters are already applied inside the sub-block loop using smoothed HP/LP
     }
 
     // Imaging & placement
@@ -2035,25 +2066,33 @@ void FieldChain<Sample>::process (Block block)
         // Process in small chunks and use smoothed values to avoid zipper noise
         const int total = (int) block.getNumSamples();
         const int channels = (int) block.getNumChannels();
-        const int step = juce::jlimit (32, 256, total); // sub-block size
+        const int step = juce::jlimit (64, 128, total); // sub-block size: steadier param updates
         for (int start = 0; start < total; start += step)
         {
             const int len = juce::jmin (step, total - start);
             juce::dsp::AudioBlock<Sample> sub = block.getSubBlock ((size_t) start, (size_t) len);
 
-            const Sample tDb = tiltDbSm.getNextValue();
-            const Sample tHz = tiltFreqSm.getNextValue();
-            const Sample scDb = scoopDbSm.getNextValue();
-            const Sample scHz = scoopFreqSm.getNextValue();
-            const Sample bDb = bassDbSm.getNextValue();
-            const Sample bHz = bassFreqSm.getNextValue();
-            const Sample aDb = airDbSm.getNextValue();
-            const Sample aHz = airFreqSm.getNextValue();
+            // Advance smoothed ramps by sub-block length for stable per-block params
+            tiltDbSm   .skip (len); const Sample tDb = tiltDbSm.getCurrentValue();
+            tiltFreqSm .skip (len); const Sample tHz = tiltFreqSm.getCurrentValue();
+            scoopDbSm  .skip (len); const Sample scDb= scoopDbSm.getCurrentValue();
+            scoopFreqSm.skip (len); const Sample scHz= scoopFreqSm.getCurrentValue();
+            bassDbSm   .skip (len); const Sample bDb = bassDbSm.getCurrentValue();
+            bassFreqSm .skip (len); const Sample bHz = bassFreqSm.getCurrentValue();
+            airDbSm    .skip (len); const Sample aDb = airDbSm.getCurrentValue();
+            airFreqSm  .skip (len); const Sample aHz = airFreqSm.getCurrentValue();
 
-            applyTiltEQ   (sub, tDb, tHz);
-            applyScoopEQ  (sub, scDb, scHz);
-            applyBassShelf(sub, bDb, bHz);
-            applyAirBand  (sub, aDb, aHz);
+            // Smooth HP/LP cutoffs similarly in IIR mode
+            hpHzSm.skip (len); lpHzSm.skip (len);
+            const Sample hpNow = hpHzSm.getCurrentValue();
+            const Sample lpNow = lpHzSm.getCurrentValue();
+
+            // Apply smoothed tone
+            applyTiltEQ    (sub, tDb, tHz);
+            applyScoopEQ   (sub, scDb, scHz);
+            applyBassShelf (sub, bDb, bHz);
+            applyAirBand   (sub, aDb, aHz);
+            applyHP_LP     (sub, hpNow, lpNow);
         }
     }
 
