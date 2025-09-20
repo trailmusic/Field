@@ -21,6 +21,7 @@ This README is optimized for **humans** and **AI builders**: explicit, actionabl
 * [Build & Run](#build--run)
 * [Project Structure](#project-structure)
 * [Code & GUI Rules (Must-Follow)](#code--gui-rules-mustfollow)
+* [Optimization & Performance](#optimization--performance)
 * [Testing & QA Checklist](#testing--qa-checklist)
 * [Roadmap](#roadmap)
 * [Credits & License](#credits--license)
@@ -1057,11 +1058,11 @@ Codesigning uses ad‑hoc signatures for debug; some hosts may require a rescan.
 - **Integration**: CMake with dependency fetch; JUCE sources live under `build/_deps/juce-src/`, helpers in `build/_deps/juce-build/`
 - **Modules**: standard JUCE modules from `juce_*` under `modules/` (audio, plugin client, dsp, gui)
 - **Toolchain**: C++17, CMake ≥ 3.22
-- **Artifacts**: VST3/AU/Standalone are produced by JUCE’s plugin client and installed by `build_all.sh` to the OS user plug‑in locations
+- **Artifacts**: VST3/AU/Standalone are produced by JUCE's plugin client and installed by `build_all.sh` to the OS user plug‑in locations
 
 Notes
 - JUCE helper targets like `juce_vst3_helper` are part of the build and appear in `build/Source/Field_artefacts/...`
-- Our CMake uses JUCE’s CMake API; no Projucer project files are required.
+- Our CMake uses JUCE's CMake API; no Projucer project files are required.
 
 ---
 
@@ -1146,23 +1147,63 @@ Source/
 5. **DP scaling**: all sizes via dp helpers; honor display scale.
 
 **State & Params**
-6\. **APVTS is the single source of truth**. Use attachments or listeners; no ad-hoc wiring.
-7\. **Parameter IDs** exactly as listed; keep preset serialization stable.
-8\. **Begin/End change gesture** for host automation; smooth user-visible jumps.
+6. **APVTS is the single source of truth**. Use attachments or listeners; no ad-hoc wiring.
+7. **Parameter IDs** exactly as listed; keep preset serialization stable.
+8. **Begin/End change gesture** for host automation; smooth user-visible jumps.
 
 **DSP & Threads**
-9\. **No allocations/locks** in audio thread. SIMD where sensible.
-10\. **Meters** via atomics/lock-free queues; UI polls safely.
-11\. **Stereoize mono-safety**: clamp delay/time vs. `mono_hz`; taper mix to prevent combing.
-12\. **Band-split coherence**: LR24 filters matched; verify nulls on recombine.
+9. **No allocations/locks** in audio thread. SIMD where sensible.
+10. **Meters** via atomics/lock-free queues; UI polls safely.
+11. **Stereoize mono-safety**: clamp delay/time vs. `mono_hz`; taper mix to prevent combing.
+12. **Band-split coherence**: LR24 filters matched; verify nulls on recombine.
 
-**Look\&Feel**
-13\. **All visuals via `FieldLNF`** (colors, strokes, shadows).
-14\. No inline styling in components except transient highlights.
+**Look&Feel**
+13. **All visuals via `FieldLNF`** (colors, strokes, shadows).
+14. No inline styling in components except transient highlights.
 
 **Accessibility & UX**
-15\. Minimum hit target ≥ **24 dp**; hand cursor for interactive; keyboard focus where useful.
-16\. Consistent iconography & centered labels for discoverability.
+15. Minimum hit target ≥ **24 dp**; hand cursor for interactive; keyboard focus where useful.
+16. Consistent iconography & centered labels for discoverability.
+
+---
+
+## Optimization & Performance
+
+This project targets low CPU, low latency, and click‑free interaction at typical real‑time buffers (64–256 samples). The following policies are enforced across DSP and UI to maintain a smooth experience.
+
+### Audio Thread Best Practices
+- Guard denormals per block with `juce::ScopedNoDenormals`.
+- No allocations, locks, or dynamic dispatch in the audio thread; preallocate in `prepareToPlay()`.
+- Recompute filter/FIR coefficients only on meaningful changes (epsilon-gated). Never in tight loops.
+- Nonlinear alias safety: when oversampling is Off, apply light pre/post IIR (HP ~30–50 Hz, LP ~16–18 kHz) around the saturator.
+- Crossfade quality/oversampling transitions (a few ms) to avoid clicks.
+- Prefer `juce::dsp` processors and `FloatVectorOperations` over hand loops.
+
+### Parameter Updates & Smoothing
+- Smooth all audible parameters (HP/LP, Tilt/Scoop/Bass/Air, gains) and advance smoothers in sub‑blocks.
+- Gate coefficient rebuilds behind small thresholds to avoid re‑design on every minor change.
+
+### Convolution / Linear‑Phase
+- Debounce kernel redesigns and atomically swap; avoid rebuilds on tiny cutoff jitter.
+- Lock latency after initial compute for stable PDC.
+
+### Oversampling & Nonlinear Blocks
+- Provide Off / 2× / 4× tiers. With Off, enable alias guards; on changes, short wet‑mix ramp (3–5 ms) to avoid clicks.
+- Oversample only nonlinear sections; don't oversample linear EQ/filters.
+
+### UI & Visualization
+- Cap meters/visuals at ~30 Hz; repaint dirty regions only.
+- Stop timers when the editor is closed.
+- Cache static text/paths as images.
+
+### Offline Renders
+- If `isNonRealtime()`, promote quality (higher OS, longer FIRs) since CPU isn't real‑time bound.
+
+### Verification Checklist
+- Silence tails do not spike CPU.
+- Knob sweeps are zipper/crackle‑free.
+- Switching Quality / Oversampling / Phase does not click.
+- Editor‑open CPU ≈ editor‑closed CPU.
 
 ---
 

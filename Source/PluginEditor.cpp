@@ -328,7 +328,6 @@ void XYPad::drag (const juce::MouseEvent& e)
 
     repaint();
 }
-
 void XYPad::paint (juce::Graphics& g)
 {
     auto r = getLocalBounds().toFloat();
@@ -678,7 +677,6 @@ inline double softPix(double dB, double knee=6.0, double dBmax=18.0){
     return dB>=0.0 ? s : -s;
 }
 } // namespace VizEQ
-
 void XYPad::drawEQCurves (juce::Graphics& g, juce::Rectangle<float> b)
 {
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
@@ -960,7 +958,6 @@ void XYPad::drawBalls (juce::Graphics& g, juce::Rectangle<float> b)
 }
 // ------------------------------------------------
 /* ===================== Editor ===================== */
-
 MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcessor& p)
 : AudioProcessorEditor (&p), proc (p), presetManager (proc.apvts, nullptr)
 {
@@ -1013,7 +1010,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     const int lPx  = Layout::dp ((float) Layout::knobPx (Layout::Knob::L),  s);
     const int xlPx = Layout::dp ((float) Layout::knobPx (Layout::Knob::XL), s);
     const int swW  = Layout::dp ((int) (Layout::ALGO_SWITCH_W * Layout::ALGO_SWITCH_W_RATIO), s);
-    
     // Calculate minimum width needed for all controls
     const int numItems = 1 + 1 + 1 + 5 + 3; // pan, space, switch, duck(5), gain/drive/mix(3)
     const int gaps = numItems - 1;
@@ -1075,18 +1071,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     lnf.setupColours();
     setLookAndFeel (&lnf);
 
-    // Bind a few common controls to History gesture coalescing
-    if (historyManager)
-    {
-        historyManager->bindToSlider (width,  "Width");
-        historyManager->bindToSlider (gain,   "Gain");
-        historyManager->bindToSlider (tilt,   "Tilt");
-        historyManager->bindToSlider (monoHz, "Mono Hz");
-    }
+    // History removed
 
-    // Instantiate header history group dividers
-    headerDivHistoryLeft  = std::make_unique<VerticalDivider>(lnf);
-    headerDivHistoryRight = std::make_unique<VerticalDivider>(lnf);
+    // History group dividers removed
 
     // Options menu (oversampling) with per-mode tint
     addAndMakeVisible (optionsButton);
@@ -1243,56 +1230,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
             p->setValueNotifyingHost (bypassButton.getToggleState() ? 1.0f : 0.0f);
     };
 
-    // History (button + panel model)
-    addAndMakeVisible (historyButton);
-    historyButton.setTooltip ("History");
-    historyManager = std::make_unique<field::history::HistoryManager>(proc.apvts, proc.getUndoManager(), 50, false);
-    historyPanel = std::make_unique<field::history::HistoryPanel>();
-    historyPanel->setVisible (false);
-    historyPanel->setAlwaysOnTop (true);
-    addChildComponent (*historyPanel);
-    historyPanel->setModel (*historyManager);
-    historyPanel->onClose = [this]
-    {
-        historyOpen = false;
-        historyButton.setToggleState (false, juce::dontSendNotification);
-        historyPanel->setVisible (false);
-        resized();
-    };
-    historyButton.onClick = [this]
-    {
-        historyOpen = ! historyOpen;
-        historyButton.setToggleState (historyOpen, juce::dontSendNotification);
-        historyPanel->setVisible (historyOpen);
-        if (historyOpen) historyPanel->toFront (true);
-        else if (historyPanel) historyPanel->toBack();
-        resized();
-    };
+    // History panel removed
 
-    // Header Undo/Redo buttons
-    addAndMakeVisible (undoHeaderButton);
-    addAndMakeVisible (redoHeaderButton);
-    undoHeaderButton.setTooltip ("Undo");
-    redoHeaderButton.setTooltip ("Redo");
-    undoHeaderButton.onClick = [this]
-    {
-        if (historyManager) { historyManager->undoStep(); if (historyOpen) historyPanel->refresh(); }
-        undoHeaderButton.setEnabled (historyManager && historyManager->canUndo());
-        redoHeaderButton.setEnabled (historyManager && historyManager->canRedo());
-    };
-    redoHeaderButton.onClick = [this]
-    {
-        if (historyManager) { historyManager->redoStep(); if (historyOpen) historyPanel->refresh(); }
-        undoHeaderButton.setEnabled (historyManager && historyManager->canUndo());
-        redoHeaderButton.setEnabled (historyManager && historyManager->canRedo());
-    };
-    // Also keep header undo/redo enabled state in sync periodically
-    startTimerHz (30);
-    // Initial enable state
-    undoHeaderButton.setEnabled (false);
-    redoHeaderButton.setEnabled (false);
-    if (headerDivHistoryLeft) addAndMakeVisible (headerDivHistoryLeft.get());
-    if (headerDivHistoryRight) addAndMakeVisible (headerDivHistoryRight.get());
+    // Header Undo/Redo removed
 
     // Color mode cycle (Ocean → Green → Pink → Yellow → Grey)
     addAndMakeVisible (colorModeButton);
@@ -1445,12 +1385,11 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     };
     splitToggle.setToggleState (false, juce::dontSendNotification);
     linkButton.setVisible (false);
-
     // Multi-pane dock (XY, Spectrum, Imager) + shade overlay
     panes = std::make_unique<PaneManager> (proc, proc.apvts.state, &getLookAndFeel(), pad);
     addAndMakeVisible (*panes);
     panes->setSampleRate (proc.getSampleRate());
-    panes->setOptions ({ /*keepAllWarm=*/ false });
+    // keep-warm removed; no pane warm-up needed
     // Default to XY view on startup
     panes->setActive (PaneID::XY, true);
     // Theme spectrum (optional)
@@ -1672,7 +1611,11 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         };
     };
     for (juce::Slider* slider : { &tilt,&hpHz,&lpHz,&air,&bass,&scoop,&tiltFreqSlider,&scoopFreqSlider,&bassFreqSlider,&airFreqSlider,&monoHz,&shelfShapeS,&filterQ,&hpQSlider,&lpQSlider })
+    {
         addLiveRepaint (*slider);
+        slider->onDragStart = [this]{ proc.setIsEditing (true); };
+        slider->onDragEnd   = [this]{ proc.setIsEditing (false); };
+    }
 
     // slider names (for LNF knob labels)
     gain.setName ("GAIN"); width.setName ("WIDTH"); tilt.setName ("TILT"); monoHz.setName ("MONO");
@@ -1704,7 +1647,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     shufLoName.setText ("", juce::dontSendNotification);
     shufHiName.setText ("", juce::dontSendNotification);
     shufXName.setText  ("", juce::dontSendNotification);
-    
     // Delay controls initialization
     for (juce::Slider* slider : { &delayTime, &delayFeedback, &delayWet, &delaySpread, &delayWidth, &delayModRate, &delayModDepth, &delayWowflutter, &delayJitter, &delayPreDelay,
                                   &delayHp, &delayLp, &delayTilt, &delaySat, &delayDiffusion, &delayDiffuseSize,
@@ -1942,7 +1884,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         if (auto* dep   = proc.apvts.getParameter ("depth"))      { dep  ->beginChangeGesture(); dep  ->setValueNotifyingHost (y01);  dep  ->endChangeGesture(); }
         refreshXYOverlays();
     };
-
     pad.onSplitChange = [this, refreshXYOverlays](float l01, float r01, float y01)
     {
         if (auto* split = proc.apvts.getParameter ("split_mode")) { split->beginChangeGesture(); split->setValueNotifyingHost (1.0f); split->endChangeGesture(); }
@@ -1951,7 +1892,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         if (auto* dep= proc.apvts.getParameter ("depth")) { dep->beginChangeGesture(); dep->setValueNotifyingHost (y01); dep->endChangeGesture(); }
         refreshXYOverlays();
     };
-
     // listeners for split overlay % etc.
     panKnobLeft.addListener (this);
     panKnobRight.addListener (this);
@@ -2226,7 +2166,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
             if (k.getTextCharacter()=='1') { mgr->setActive (PaneID::XY, true);       return true; }
             if (k.getTextCharacter()=='2') { mgr->setActive (PaneID::Spectrum, true); return true; }
             if (k.getTextCharacter()=='3') { mgr->setActive (PaneID::Imager, true);   return true; }
-            if (k.getTextCharacter()=='K' || k.getTextCharacter()=='k') { mgr->setOptions({ !mgr->getOptions().keepAllWarm }); return true; }
+            // keep-warm toggle removed (K/k)
             return false;
         }
     };
@@ -2242,7 +2182,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // pointer cursors on interactive children
     applyGlobalCursorPolicy();
 
-    startTimerHz (30);
+    startTimerHz (20);
 
     // Image row group
     addChildComponent (imgGroupContainer);
@@ -2378,7 +2318,6 @@ MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
 
     setLookAndFeel (nullptr);
 }
-
 void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
 {
     // background gradient (original vibe)
@@ -2484,18 +2423,14 @@ void MyPluginAudioProcessorEditor::performLayout()
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // A
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // B
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // copy
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (16, s))),  // spacer left of divider
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (16, s))),  // spacer
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // snap (moved left of split)
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (16, s))),  // spacer left of split
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (120, s))), // split
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // link (center group)
         juce::Grid::TrackInfo (juce::Grid::Fr (1)),                   // spacer before right utilities
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (176, s))), // transport clock (right group)
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (8, s))),   // divider left of history group
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // undo
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // redo
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // history button
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (8, s))),   // divider right of history group
+        // history group removed (divider, undo, redo, history button)
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // color mode (right)
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s)))   // fullscreen (right)
     };
@@ -2537,13 +2472,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int clockW = Layout::dp (176, s);
         transportClockLabel.setSize (clockW, h);
     }
-    if (headerDivHistoryLeft && headerDivHistoryLeft->getParentComponent() != this) addAndMakeVisible (headerDivHistoryLeft.get());
-    if (headerDivHistoryRight && headerDivHistoryRight->getParentComponent() != this) addAndMakeVisible (headerDivHistoryRight.get());
-    sizeBtn (*headerDivHistoryLeft,  Layout::dp (8, s));
-    sizeBtn (undoHeaderButton,      Layout::dp (40, s));
-    sizeBtn (redoHeaderButton,      Layout::dp (40, s));
-    sizeBtn (historyButton,         Layout::dp (40, s));
-    sizeBtn (*headerDivHistoryRight, Layout::dp (8, s));
+    // history controls removed
     sizeBtn (colorModeButton,    Layout::dp (40, s));
     sizeBtn (fullScreenButton,   Layout::dp (40, s));
     sizeBtn (optionsButton,      Layout::dp (40, s));
@@ -2564,11 +2493,6 @@ void MyPluginAudioProcessorEditor::performLayout()
         juce::GridItem (linkButton),
         juce::GridItem(), // spacer before right utilities
         juce::GridItem (transportClockLabel),
-        juce::GridItem (*headerDivHistoryLeft),
-        juce::GridItem (undoHeaderButton),
-        juce::GridItem (redoHeaderButton),
-        juce::GridItem (historyButton),
-        juce::GridItem (*headerDivHistoryRight),
         juce::GridItem (colorModeButton),
         juce::GridItem (fullScreenButton),
     };
@@ -2578,18 +2502,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                              .withTrimmedTop (Layout::dp (2, s));
     header.performLayout (headerArea);
 
-    // Position history panel centered above all content (keep hidden if closed)
-    if (historyPanel)
-    {
-        const int panelW = Layout::dp (720, s);
-        const int panelH = Layout::dp (460, s);
-        auto r = getLocalBounds();
-        auto x = r.getCentreX() - panelW / 2;
-        auto y = r.getCentreY() - panelH / 2;
-        historyPanel->setBounds ({ x, y, panelW, panelH });
-        historyPanel->setVisible (historyOpen);
-        if (historyOpen) historyPanel->refresh();
-    }
+    // history panel removed
 
     // options + phase mode at bottom-left; help to bottom-right; bottom-center panel toggle
     {
@@ -2626,10 +2539,9 @@ void MyPluginAudioProcessorEditor::performLayout()
              juce::String label = "Z";
              switch (cur)
              {
-                 case 0: tint = lnf.theme.textMuted; label = "Z"; break;      // Zero
-                 case 1: tint = juce::Colour (0xFF8BC34A); label = "N"; break; // Natural
-                 case 2: tint = juce::Colour (0xFFFFC107); label = "H"; break; // Hybrid
-                 case 3: tint = juce::Colour (0xFF03A9F4); label = "F"; break; // Full Linear
+                 case 1: tint = juce::Colour (0xFF00BCD4); label = "N"; break; // Natural (Cyan)
+                 case 2: tint = juce::Colour (0xFF2196F3); label = "H"; break; // Hybrid (Blue)
+                 case 3: tint = juce::Colour (0xFF3F51B5); label = "F"; break; // Full Linear (Indigo)
              }
              phaseModeButton.getProperties().set ("accentOverrideARGB", (int) tint.getARGB());
              phaseModeButton.getProperties().set ("iconOverrideARGB",   (int) tint.getARGB());
@@ -2663,16 +2575,12 @@ void MyPluginAudioProcessorEditor::performLayout()
                     struct Row { int id; const char* text; juce::Colour tint; bool ticked; };
                     juce::Array<Row> rows;
                     rows.add ({ 1, "Zero-latency",    lnf.theme.textMuted,          cur == 0 });
-                    rows.add ({ 2, "Natural-phase",   juce::Colour (0xFF8BC34A),    cur == 1 });
-                    rows.add ({ 3, "Hybrid Linear",   juce::Colour (0xFFFFC107),    cur == 2 });
-                    rows.add ({ 4, "Full Linear",     juce::Colour (0xFF03A9F4),    cur == 3 });
+                    rows.add ({ 2, "Natural-phase",   juce::Colour (0xFF00BCD4),    cur == 1 });  // Cyan
+                    rows.add ({ 3, "Hybrid Linear",   juce::Colour (0xFF2196F3),    cur == 2 });  // Blue
+                    rows.add ({ 4, "Full Linear",     juce::Colour (0xFF3F51B5),    cur == 3 });  // Indigo
 
                     lnfEx.itemTints.clear();
-                    for (int i = 0; i < rows.size(); ++i)
-                    {
-                        m.addItem (rows[i].id, rows[i].text, true, rows[i].ticked);
-                        lnfEx.itemTints.add (rows[i].tint);
-                    }
+                    for (auto& r : rows) { m.addItem (r.id, r.text, true, r.ticked); lnfEx.itemTints[r.id] = r.tint; }
                 },
                 // RESULT
                 [this, applyPhaseTint] (int r)
@@ -2684,10 +2592,106 @@ void MyPluginAudioProcessorEditor::performLayout()
                         p->setValueNotifyingHost ((float) (r - 1) / 3.0f);
                         p->endChangeGesture();
                     }
-                    // Update immediately without waiting for attachment dispatch
                     applyPhaseTint();
                 });
         };
+
+        // Quality button next to Phase
+        if (!qualityParamAttach)
+        {
+            if (auto* p = proc.apvts.getParameter ("quality"))
+            {
+                qualityParamAttach = std::make_unique<juce::ParameterAttachment>(*p, [this](float)
+                {
+                    // tint is updated on demand below
+                    qualityButton.repaint();
+                }, nullptr);
+            }
+        }
+        qualityButton.setBounds (phaseModeButton.getRight() + Layout::dp (8, s), leftY, btnW, btnH);
+        addAndMakeVisible (qualityButton);
+        auto applyQualityTint = [this]
+        {
+            int cur = 1; // default Standard
+            if (auto* p = proc.apvts.getParameter ("quality"))
+                if (auto* cp = dynamic_cast<juce::AudioParameterChoice*>(p)) cur = cp->getIndex();
+            // Distinct palette from Oversampling and Phase
+            juce::Colour tint = lnf.theme.textMuted; // Eco default (Grey)
+            juce::String label = "E";
+            switch (cur)
+            {
+                case 0: tint = juce::Colour (0xFF9E9E9E); label = "E"; break; // Eco: Grey 500
+                case 1: tint = juce::Colour (0xFF4CAF50); label = "S"; break; // Standard: Green 500
+                case 2: tint = juce::Colour (0xFF9C27B0); label = "H"; break; // High: Purple 500
+            }
+            qualityButton.getProperties().set ("accentOverrideARGB", (int) tint.getARGB());
+            qualityButton.getProperties().set ("iconOverrideARGB",   (int) tint.getARGB());
+            qualityButton.getProperties().set ("labelText", label);
+            qualityButton.setToggleState (true, juce::dontSendNotification);
+            qualityButton.repaint();
+        };
+        applyQualityTint();
+        if (!qualityParamAttach)
+        {
+            if (auto* p = proc.apvts.getParameter ("quality"))
+            {
+                qualityParamAttach = std::make_unique<juce::ParameterAttachment>(*p, [applyQualityTint](float){ applyQualityTint(); }, nullptr);
+            }
+        }
+        qualityButton.onClick = [this, applyQualityTint]
+        {
+            int cur = 1;
+            if (auto* p = proc.apvts.getParameter ("quality"))
+                if (auto* cp = dynamic_cast<juce::AudioParameterChoice*>(p)) cur = cp->getIndex();
+
+            TintMenuLNFEx menuLnf; menuLnf.defaultTint = lnf.theme.accent; menuLnf.hideChecks = true;
+            menuLnf.setColour (juce::PopupMenu::textColourId, lnf.theme.text);
+
+            showTintedMenu (qualityButton, menuLnf,
+                // BUILD
+                [this, cur] (juce::PopupMenu& m, TintMenuLNFEx& lnfEx)
+                {
+                    m.addSectionHeader ("Quality");
+                    struct Row { int id; const char* text; juce::Colour tint; bool ticked; };
+                    juce::Array<Row> rows;
+                    rows.add ({ 1, "Eco",      juce::Colour (0xFF9E9E9E),  cur == 0 }); // Grey
+                    rows.add ({ 2, "Standard", juce::Colour (0xFF4CAF50),  cur == 1 }); // Green
+                    rows.add ({ 3, "High",     juce::Colour (0xFF9C27B0),  cur == 2 }); // Purple
+                    lnfEx.itemTints.clear();
+                    for (auto& r : rows) { m.addItem (r.id, r.text, true, r.ticked); lnfEx.itemTints[r.id] = r.tint; }
+                },
+                // RESULT
+                [this, applyQualityTint] (int r)
+                {
+                    if (r < 1 || r > 3) return;
+                    if (auto* p = proc.apvts.getParameter ("quality"))
+                    {
+                        p->beginChangeGesture();
+                        // map 1..3 -> 0..2
+                        const int idx = r - 1;
+                        if (auto* cp = dynamic_cast<juce::AudioParameterChoice*>(p))
+                        {
+                            const int n = cp->choices.size();
+                            const float norm = n > 1 ? (float) idx / (float) (n - 1) : 0.0f;
+                            p->setValueNotifyingHost (juce::jlimit (0.0f, 1.0f, norm));
+                        }
+                        else
+                        {
+                            p->setValueNotifyingHost ((float) idx / 2.0f);
+                        }
+                        p->endChangeGesture();
+                    }
+                    applyQualityTint();
+                });
+        };
+
+        // Hidden position: panel bottom sits well below the bottom bar so it never clips it visually
+        // Derive bottom bar boundary from actual control rectangles (no hardcoding)
+        juce::Rectangle<int> bottomBarRect = optionsButton.getBounds();
+        bottomBarRect = bottomBarRect.getUnion (phaseModeButton.getBounds());
+        bottomBarRect = bottomBarRect.getUnion (helpButton.getBounds());
+        bottomBarRect = bottomBarRect.getUnion (bottomAreaToggle.getBounds());
+        const int bottomBarTop    = bottomBarRect.getY();
 
         // Help to bottom-right (left of resize grip)
         const int helpX = bounds.getRight() - Layout::dp (24, s) - btnW;
@@ -2722,7 +2726,6 @@ void MyPluginAudioProcessorEditor::performLayout()
         splitDivider.setBounds (b.getX() - gapX - 1, cy - lineH/2, 4, lineH);
         splitDivider.toFront (false);
     }
-
     // 2) main XY area + vertical meters on right side
     {
         // Pre-compute row heights to reserve exact space for rows below, so XY/meters respond consistently
@@ -2787,15 +2790,12 @@ void MyPluginAudioProcessorEditor::performLayout()
     const int rowH2 = containerHeight;                // Row 2
     const int rowH3 = containerHeight;                // Row 3
     const int rowH4 = containerHeight;                // Row 4
-
     // Compute desired delay column width, but do not carve a separate right-hand container.
     // We'll integrate delay into the same 4-row system and just reserve a right strip later.
     const int delayCols = 7;
     const int cellW_right = lPx + Layout::dp (8, s);
     const int delayCardW = delayCols * cellW_right + Layout::dp (Layout::PAD, s);
     juce::Rectangle<int> delayArea; // to be computed after rows are defined
-
-
     // Capture the full rows area (left column) for overlay sizing
     auto rowsArea = r;
     auto row1 = r.removeFromTop (rowH1);
@@ -3059,7 +3059,6 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW),
             juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW)
         };
-        
         delayGrid.items = {
             // Row 1 — Switches/Combos (8 items)
             juce::GridItem (*delayEnabledCell).withArea (1,1),
@@ -3168,7 +3167,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             static juce::ComboBox reverbAlgo;
             static std::unique_ptr<SwitchCell> reverbAlgoCell;
             if (!reverbAlgoCell) {
-                if (auto* ch = dynamic_cast<juce::AudioParameterChoice*>(proc.apvts.getParameter (ReverbIDs::algo))) {
+                if (auto* ch = dynamic_cast<juce::AudioParameterChoice*>(proc.apvts.getParameter(ReverbIDs::algo))) {
                     reverbAlgo.clear(); for (int i = 0; i < ch->choices.size(); ++i) reverbAlgo.addItem (ch->choices[i], i + 1);
                     reverbAlgo.setSelectedId (ch->getIndex() + 1, juce::dontSendNotification);
                     comboAttachments.push_back (std::make_unique<ComboAttachment> (proc.apvts, ReverbIDs::algo, reverbAlgo));
@@ -3758,7 +3757,6 @@ void MyPluginAudioProcessorEditor::performLayout()
         hpLpQClusterCell->resized(); // force initial child layout
         // hpLpQClusterCell->toFront (false); // Stay behind bottomAltPanel to allow proper coverage
     }
-
     // ---------------- Delay controls moved to Group 2 ----------------------
 
     // Draw the global vertical divider line aligned to the divider column across all rows
@@ -3889,12 +3887,15 @@ void MyPluginAudioProcessorEditor::resized()
 void MyPluginAudioProcessorEditor::timerCallback()
 {
     if (! isShowing()) return;
-    // Sync header undo/redo enable state
-    if (historyManager)
+    // Throttle heavy UI work to reduce message-thread contention (combobox/popup lag)
+    static int uiTick = 0; ++uiTick;
+    const bool doHeavyUi = (uiTick % 3) == 0; // ~6-7 Hz when timer is 20 Hz
+    // If a modal component (PopupMenu/ComboBox list) is open, skip most UI work to keep interaction snappy
+    if (juce::ModalComponentManager::getInstance()->getNumModalComponents() > 0)
     {
-        undoHeaderButton.setEnabled (historyManager->canUndo());
-        redoHeaderButton.setEnabled (historyManager->canRedo());
+        if ((uiTick % 6) != 0) return; // ~3 Hz minimal maintenance
     }
+    // history removed
     // Update ducking meter overlay on knob; idle when reverb wet is zero
     float grDb = proc.getCurrentDuckGrDb();
     if (spaceKnob.getValue() <= 0.0001)
@@ -3937,14 +3938,16 @@ void MyPluginAudioProcessorEditor::timerCallback()
     duckRatio.setMuted(!duckActive);
     // DUCK knob follows overall duckActive (grey when depth=0 or reverb=0)
     duckingKnob.setMuted (!duckActive);
-    spaceAlgorithmSwitch.repaint();
-
-    duckingKnob.repaint();
-    duckAttack.repaint();
-    duckRelease.repaint();
-    duckThreshold.repaint();
-    duckRatio.repaint();
-    pad.repaint();
+    if (doHeavyUi)
+    {
+        spaceAlgorithmSwitch.repaint();
+        duckingKnob.repaint();
+        duckAttack.repaint();
+        duckRelease.repaint();
+        duckThreshold.repaint();
+        duckRatio.repaint();
+        pad.repaint();
+    }
 
     // Update transport clock label (host/standalone song time)
     {
@@ -3962,6 +3965,7 @@ void MyPluginAudioProcessorEditor::timerCallback()
             return juce::String::formatted ("%02d:%02d.%03d", min, sec, ms);
         };
         // Only update text when host transport supplies a position; otherwise hold last
+    if (doHeavyUi)
         transportClockLabel.setText (formatTime (tSec), juce::dontSendNotification);
         // Dim when stopped
         if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
@@ -3972,8 +3976,11 @@ void MyPluginAudioProcessorEditor::timerCallback()
     }
 
     // Drive bottom panel slide animation
-    if (bottomAltTargetOn && bottomAltSlide01 < 1.0f) { bottomAltSlide01 = juce::jmin (1.0f, bottomAltSlide01 + 0.06f); performLayout(); }
-    else if (!bottomAltTargetOn && bottomAltSlide01 > 0.0f) { bottomAltSlide01 = juce::jmax (0.0f, bottomAltSlide01 - 0.06f); performLayout(); }
+    if (doHeavyUi)
+    {
+        if (bottomAltTargetOn && bottomAltSlide01 < 1.0f) { bottomAltSlide01 = juce::jmin (1.0f, bottomAltSlide01 + 0.06f); performLayout(); }
+        else if (!bottomAltTargetOn && bottomAltSlide01 > 0.0f) { bottomAltSlide01 = juce::jmax (0.0f, bottomAltSlide01 - 0.06f); performLayout(); }
+    }
 }
 
  
@@ -4108,7 +4115,6 @@ void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
     // Refresh muted visuals when any control changes
     updateMutedKnobVisuals();
 }
-
 void MyPluginAudioProcessorEditor::comboBoxChanged(juce::ComboBox* comboBox)
 {
     // Handle motion panner ComboBox changes
@@ -4453,7 +4459,6 @@ void MyPluginAudioProcessorEditor::updateMotionParameterAttachmentsOnMessageThre
         motionSliderAttachments.push_back(std::make_unique<SA>(proc.apvts, motion::id::p1_motion_send,motionDummiesGroup2[20]));
         motionButtonAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(proc.apvts, motion::id::p1_anchor_enable, motionButtons[2]));
     }
-
     // 4) Refresh all motion control values to reflect the new parameter bindings
     refreshMotionControlValues();
     

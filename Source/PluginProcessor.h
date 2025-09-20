@@ -15,33 +15,32 @@
 struct VisBus
 {
     static constexpr int kChannels = 2;
-    static constexpr int kCapacity = 1 << 15; // 32768 samples
+    static constexpr int kCapacity = 1 << 15; // storage capacity (frames after decimation)
+    static constexpr int kDecim    = 8;       // keep 1 of every 8 samples
     juce::AbstractFifo fifo { kCapacity };
     juce::AudioBuffer<float> buf { kChannels, kCapacity };
 
+    // Decimating push: reduces copy volume and UI work
     inline void push (const float* L, const float* R, int n) noexcept
     {
         if (n <= 0) return;
+        const int frames = (n + kDecim - 1) / kDecim; // decimated frames
         int start1, size1, start2, size2;
-        fifo.prepareToWrite (n, start1, size1, start2, size2);
-        if (size1 > 0)
+        fifo.prepareToWrite (frames, start1, size1, start2, size2);
+        auto* wL = buf.getWritePointer(0);
+        auto* wR = buf.getWritePointer(1);
+        auto write = [&](int start, int count, int offset)
         {
-            auto* wL = buf.getWritePointer(0);
-            auto* wR = buf.getWritePointer(1);
-            if (L) memcpy (wL + start1, L, sizeof(float)*size1);
-            else   memset (wL + start1, 0, sizeof(float)*size1);
-            if (R) memcpy (wR + start1, R, sizeof(float)*size1);
-            else   memcpy (wR + start1, wL + start1, sizeof(float)*size1);
-        }
-        if (size2 > 0)
-        {
-            auto* wL = buf.getWritePointer(0);
-            auto* wR = buf.getWritePointer(1);
-            if (L) memcpy (wL + start2, L + size1, sizeof(float)*size2);
-            else   memset (wL + start2, 0, sizeof(float)*size2);
-            if (R) memcpy (wR + start2, R + size1, sizeof(float)*size2);
-            else   memcpy (wR + start2, wL + start2, sizeof(float)*size2);
-        }
+            for (int i = 0; i < count; ++i)
+            {
+                const int src = (offset + i) * kDecim;
+                const float l = (L != nullptr && src < n) ? L[src] : 0.0f;
+                wL[start + i] = l;
+                wR[start + i] = (R != nullptr && src < n) ? R[src] : l;
+            }
+        };
+        if (size1 > 0) write (start1, size1, 0);
+        if (size2 > 0) write (start2, size2, size1);
         fifo.finishedWrite (size1 + size2);
     }
 
@@ -95,13 +94,18 @@ struct MonoLowpassBank
 
     void setCutoff (Sample hz)
     {
-        cutoff = juce::jlimit<Sample> ((Sample)20, (Sample)300, hz);
+        hz = juce::jlimit<Sample> ((Sample)20, (Sample)300, hz);
+        // Epsilon gate to avoid thrashing coeff rebuilds
+        if (std::abs (hz - cutoff) < (Sample) 0.5) return;
+        cutoff = hz;
         updateCoeffs();
     }
 
     void setSlopeDbPerOct (int slope)
     {
-        slopeDbPerOct = juce::jlimit (6, 24, slope);
+        const int newSlope = juce::jlimit (6, 24, slope);
+        if (newSlope == slopeDbPerOct) return;
+        slopeDbPerOct = newSlope;
         if (slopeDbPerOct == 18) slopeDbPerOct = 12;
         updateCoeffs();
     }
@@ -168,6 +172,7 @@ struct FieldChain
     double getDelayLastSamplesL() const;          // telemetry: last effective delay samples L
     double getDelayLastSamplesR() const;          // telemetry: last effective delay samples R
     int   getLinearPhaseLatencySamples() const { return (linConvolver ? linConvolver->getLatencySamples() : 0); }
+    int   getFullLinearLatencySamples() const { return (fullLinearConvolver ? fullLinearConvolver->getLatencySamples() : 0); }
 
 private:
     // ----- helpers -----
@@ -182,6 +187,7 @@ private:
     // Filters / tone
     void applyHP_LP     (Block, Sample hpHz, Sample lpHz);
     void ensureLinearPhaseKernel (double sr, Sample hpHz, Sample lpHz, int maxBlock, int numChannels);
+    void requestLinearPhaseRedesign (double sr, Sample hpHz, Sample lpHz, int maxBlock, int numChannels);
     void updateTiltEQ   (Sample tiltDb, Sample pivotHz);
     void applyTiltEQ    (Block, Sample tiltDb, Sample pivotHz);
     void applyScoopEQ   (Block, Sample scoopDb, Sample scoopFreq);
@@ -217,6 +223,17 @@ private:
     // Shuffler split (2-band LP@xover; HP via subtraction)
     juce::dsp::LinkwitzRileyFilter<Sample>    shuffLP_L, shuffLP_R;
     juce::dsp::IIR::Filter<Sample>            lowShelf, highShelf, airFilter, bassFilter, scoopFilter;
+    juce::dsp::StateVariableTPTFilter<Sample> dcBlocker;
+    // Last applied tone targets to gate coefficient rebuilds
+    Sample lastTiltDb { (Sample) 1e9 }, lastTiltHz { (Sample) 1e9 };
+    Sample lastScoopDb{ (Sample) 1e9 }, lastScoopHz{ (Sample) 1e9 };
+    Sample lastBassDb { (Sample) 1e9 }, lastBassHz { (Sample) 1e9 };
+    Sample lastAirDb  { (Sample) 1e9 }, lastAirHz  { (Sample) 1e9 };
+    int toneCoeffCooldownSamples { 0 };
+    // Tone crossfade to mask IIR coefficient swaps
+    int toneXfadeSamplesLeft { 0 };
+    int toneXfadeTotal       { 0 };
+    juce::AudioBuffer<Sample> toneDryBuf; // per-block dry snapshot for tone wet crossfade
     // Width Designer: side-only tilt filters
     juce::dsp::IIR::Filter<Sample>            sTiltLow, sTiltHigh;
 
@@ -245,6 +262,13 @@ private:
     int   linKernelLen { 4097 };
     float lastHpHzLP   { -1.0f };
     float lastLpHzLP   { -1.0f };
+    // Debounce / hysteresis for FIR redesigns
+    int   linKernelCooldownSamples { 0 };
+    float lastDesignedHpHzLP { -1.0f };
+    float lastDesignedLpHzLP { -1.0f };
+    // Cache last prepared sizes for linConvolver to avoid per-block prepare
+    int   linPreparedBlockLen { 0 };
+    int   linPreparedChannels { 0 };
     // Full Linear cache
     std::unique_ptr<OverlapSaveConvolver<Sample>> fullLinearConvolver;
     int   fullKernelLen { 4097 };
@@ -252,10 +276,13 @@ private:
     bool  fullLinearKernelDirty { true };     // redesign FIR only when tone changes
     // Auto-linear during edits: when macro tone is changing, temporarily use Full Linear FIR
     int    autoLinearSamplesLeft { 0 };     // countdown in samples
-    double autoLinearHoldSec     { 0.15 };  // time to remain in linear mode after last change
+    double autoLinearHoldSec     { 0.0 };   // disabled to prevent FIR/IIR swaps during edits
     bool   paramsPrimed { false };          // avoid triggering auto-linear on first ingress
     std::shared_ptr<std::vector<float>> activeFullKernel; // RT-hot
     std::shared_ptr<std::vector<float>> pendingFullKernel; // bg-built
+    // Cache last prepared sizes for fullLinearConvolver to avoid per-block prepare
+    int   fullPreparedBlockLen { 0 };
+    int   fullPreparedChannels { 0 };
 
     // Smoothed macro tone parameters (to reduce zipper/crackle)
     juce::SmoothedValue<Sample> tiltDbSm, tiltFreqSm;
@@ -264,6 +291,10 @@ private:
     juce::SmoothedValue<Sample> scoopDbSm, scoopFreqSm;
     // HP/LP cutoff smoothing (IIR mode) to avoid zipper during knob moves
     juce::SmoothedValue<Sample> hpHzSm, lpHzSm;
+    // Cache last applied IIR HP/LP to avoid coefficient churn
+    Sample lastAppliedHpHz { (Sample) -1 };
+    Sample lastAppliedLpHz { (Sample) -1 };
+    int    iirCoeffCooldownSamples { 0 };
 
     // High-order interpolation hooks (for future modulated delay lines)
     template <typename S>
@@ -284,6 +315,25 @@ private:
     
     // Delay engine (per-Sample instance)
     DelayEngine<Sample>                  delayEngine;
+
+    // Anti-alias/anti-imaging guards for OS Off around saturation
+    juce::dsp::IIR::Filter<Sample> aliasGuardHP;
+    juce::dsp::IIR::Filter<Sample> aliasGuardLP;
+    bool aliasGuardsPrepared { false };
+public:
+    void prepareAliasGuards(double sampleRate)
+    {
+        const double fs = sampleRate;
+        const double hp = juce::jlimit (5.0, 80.0, 40.0);
+        const double lp = juce::jlimit (3000.0, juce::jmin (20000.0, fs * 0.49), 18000.0);
+        aliasGuardHP.coefficients = juce::dsp::IIR::Coefficients<Sample>::makeHighPass (fs, hp);
+        aliasGuardLP.coefficients = juce::dsp::IIR::Coefficients<Sample>::makeLowPass  (fs, lp);
+        aliasGuardsPrepared = true;
+    }
+private:
+    // Short crossfade when OS factor changes
+    int osXfadeSamplesLeft { 0 };
+    int osXfadeTotal       { 0 };
 
     // Wet tone (HPF/LPF/Tilt) simple one-pole states for reverb bus
     Sample rv_hpStateL{}; Sample rv_hpStateR{};
@@ -406,6 +456,9 @@ private:
     float rv_tailRms { 0.0f };
     float delay_wetRmsL { 0.0f };
     float delay_wetRmsR { 0.0f };
+
+public:
+    // removed eco flag
 };
 
 // ===============================
@@ -545,8 +598,7 @@ public:
     }
     bool supportsDoublePrecisionProcessing() const override    { return true; }
 
-    // Undo stack for APVTS + UI history
-    juce::UndoManager undo;
+    // Undo system removed
 
     // Programs (single program)
     int getNumPrograms() override                              { return 1; }
@@ -576,6 +628,9 @@ public:
 
     // Editor
     juce::AudioProcessorEditor* createEditor() override;
+    // Gesture gating for editor
+    void setIsEditing (bool b) { isEditing.store (b, std::memory_order_release); }
+    bool getIsEditing() const { return isEditing.load (std::memory_order_acquire); }
 
     // State
     void getStateInformation (juce::MemoryBlock& destData) override;
@@ -587,8 +642,14 @@ public:
     juce::AudioProcessorValueTreeState apvts;
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
-    // Undo manager access (for UI History)
-    juce::UndoManager& getUndoManager() { return undo; }
+    // removed eco mode
+
+    // Safety passthrough: when true, processBlock returns input unmodified (hard bypass)
+    std::atomic<bool> safePassthrough { false }; // OFF so audio processes; toggle if needed
+    void setSafePassthrough (bool on) { safePassthrough.store (on, std::memory_order_release); }
+    bool getSafePassthrough() const { return safePassthrough.load (std::memory_order_acquire); }
+
+    // Undo manager removed
 
     // Visualization buses (audio thread → UI thread)
     VisBus visPre, visPost;
@@ -651,14 +712,34 @@ private:
     // APVTS listener
     void parameterChanged (const juce::String& parameterID, float newValue) override;
 
+    // Quality/precision application
+    void applyQualityFromParams();
+
     // Optional host sync hooks (stubs in .cpp)
     void syncWithHostParameters();
     void updateHostParameters();
+
+    // Background worker for heavy redesign (FIR, etc.)
+    juce::ThreadPool backgroundPool { 1 };
 
     // Chains (float & double)
     std::unique_ptr<FieldChain<float>>  chainF;
     std::unique_ptr<FieldChain<double>> chainD;
     bool isDoublePrecEnabled { false };
+    // Precision/quality state
+    std::atomic<int> precisionMode { 0 }; // 0=Auto(Host), 1=Force32, 2=Force64
+    std::atomic<int> qualityMode   { 1 }; // 0=Eco, 1=Standard, 2=High (reserved for future use)
+    std::vector<double> scratch64;        // temporary double buffer for 64f-internal on 32f hosts
+    // Edit gesture gating
+public:
+    std::atomic<bool> isEditing { false };
+private:
+    // Follow/override guards to protect existing UI logic
+    std::atomic<bool> qualityApplyingGuard { false };
+    std::atomic<bool> userOsOverride       { false };
+    std::atomic<bool> userPhaseOverride    { false };
+    std::atomic<bool> osFollowQuality      { true };
+    std::atomic<bool> phaseFollowQuality   { true };
     // Reverb engine (new)
     ReverbEngine reverbEngine;
     // Motion Engine

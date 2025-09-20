@@ -19,7 +19,6 @@ MachinePane::MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, juc
     addAndMakeVisible (ABtn);
     addAndMakeVisible (BBtn);
     addAndMakeVisible (CBtn);
-    addAndMakeVisible (undoBtn);
     addAndMakeVisible (proposalsContent);
     // Three cards (initially simple placeholders; wired later)
     toneCard.title = "Tone & Balance"; spaceCard.title = "Reverb, Delay, Motion"; clarityCard.title = "Clarity & Movement";

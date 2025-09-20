@@ -72,7 +72,7 @@ private:
     juce::Slider     strength; // 0..1
     juce::ToggleButton showPreBtn { "" }; // Pre toggle
     juce::TextButton previewBtn { "Preview 10s" };
-    juce::TextButton ABtn { "A" }, BBtn { "B" }, CBtn { "C" }, undoBtn { "Undo" };
+    juce::TextButton ABtn { "A" }, BBtn { "B" }, CBtn { "C" };
     juce::Component  proposalsContent; // holds ProposalCard children (no scrolling)
     std::unique_ptr<SmallSwitchCell> learnCell, stopCell;
     std::unique_ptr<SmallSwitchCell> preCell;

@@ -5,7 +5,6 @@ set(SRC
   PluginEditor.cpp
   FieldLookAndFeel.h
   FieldLookAndFeel.cpp
-  History.h
       KnobCellQuad.h
     KnobCellQuad.cpp
       KnobCellDual.h

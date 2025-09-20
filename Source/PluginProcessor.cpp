@@ -34,6 +34,9 @@ namespace IDs {
     static constexpr const char* duckTarget = "duck_target"; // 0 WetOnly, 1 Global
     static constexpr const char* osMode     = "os_mode";      // 0 Off, 1=2x, 2=4x
     static constexpr const char* splitMode  = "split_mode";   // 0 normal, 1 split
+    // Quality / Precision controls
+    static constexpr const char* quality    = "quality";      // 0 Eco, 1 Standard, 2 High
+    static constexpr const char* precision  = "precision";    // 0 Auto(Host), 1 Force32, 2 Force64
     // EQ start freqs
     static constexpr const char* tiltFreq   = "tilt_freq";
     static constexpr const char* scoopFreq  = "scoop_freq";
@@ -243,11 +246,12 @@ struct FloatReverbAdapter
 MyPluginAudioProcessor::MyPluginAudioProcessor()
 : AudioProcessor (BusesProperties().withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
                                   .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
-, apvts (*this, &undo, "PARAMS", createParameterLayout())
+, apvts (*this, nullptr, "PARAMS", createParameterLayout())
 {
     // Templated chain instances
     chainF = std::make_unique<FieldChain<float>>();
     chainD = std::make_unique<FieldChain<double>>();
+    // eco flag removed
 
     // Keep existing smoothers if declared in the header (no harm if unused here)
     for (auto* s : { &panSmoothed, &panLSmoothed, &panRSmoothed, &depthSmoothed, &widthSmoothed, &gainSmoothed, &tiltSmoothed,
@@ -257,6 +261,9 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
 
     apvts.addParameterListener (IDs::pan,  this);
     apvts.addParameterListener (IDs::gain, this);
+    // Listen for quality/precision changes
+    apvts.addParameterListener (IDs::quality,   this);
+    apvts.addParameterListener (IDs::precision, this);
 }
 
 bool MyPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -282,6 +289,14 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 
     chainF->prepare (spec);
     chainD->prepare (spec);
+    // Prepare alias guards for OS-off nonlinear protection
+    chainF->prepareAliasGuards (sampleRate);
+    chainD->prepareAliasGuards (sampleRate);
+    // Resize scratch for potential 32f->64f internal hop
+    const int chans = juce::jmax (getTotalNumInputChannels(), getTotalNumOutputChannels());
+    scratch64.resize ((size_t) chans * (size_t) samplesPerBlock);
+    // Apply initial quality/precision profile
+    applyQualityFromParams();
     updateLatencyForPhaseMode();
 
     // Initialize Motion Engine
@@ -407,6 +422,9 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.duckTarget      = (int) apvts.getParameterAsValue (IDs::duckTarget).getValue();
     p.osMode   = (int) apvts.getParameterAsValue (IDs::osMode).getValue();
     p.splitMode= (bool) apvts.getParameterAsValue (IDs::splitMode).getValue();
+    // Read quality/precision (if UI wants to branch inside chain later)
+    // int quality = (int) apvts.getParameterAsValue (IDs::quality).getValue();
+    // int precision = (int) apvts.getParameterAsValue (IDs::precision).getValue();
     p.tiltFreq = getParam(apvts, IDs::tiltFreq);
     p.scoopFreq= getParam(apvts, IDs::scoopFreq);
     p.bassFreq = getParam(apvts, IDs::bassFreq);
@@ -507,14 +525,51 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
 void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ignoreUnused (midi);
+    juce::ScopedNoDenormals _;
     isDoublePrecEnabled = false;
 
     if (buffer.getNumSamples() <= 0) return;
 
+    // Emergency safety: hard passthrough to confirm architecture vs. processing
+    if (getSafePassthrough()) return;
+
+    // Optional internal 64f hop on 32f hosts based on Precision parameter
+    const int pMode = precisionMode.load(); // 0 Auto, 1 Force32, 2 Force64
+    const bool want64Internal = (pMode == 2);
+    if (want64Internal)
+    {
+        const int C = buffer.getNumChannels();
+        const int N = buffer.getNumSamples();
+        if ((int) scratch64.size() >= C * N)
+        {
+            double* d = scratch64.data();
+            for (int ch = 0; ch < C; ++ch)
+            {
+                const float* src = buffer.getReadPointer (ch);
+                double* dst = d + (size_t) ch * (size_t) N;
+                for (int i = 0; i < N; ++i) dst[i] = (double) src[i];
+            }
+
+            std::vector<double*> chPtrs ((size_t) C);
+            for (int ch = 0; ch < C; ++ch)
+                chPtrs[(size_t) ch] = d + (size_t) ch * (size_t) N;
+            juce::AudioBuffer<double> tmp (chPtrs.data(), C, N);
+            processBlock (tmp, midi);
+
+            for (int ch = 0; ch < C; ++ch)
+            {
+                float* dst = buffer.getWritePointer (ch);
+                const double* src = d + (size_t) ch * (size_t) N;
+                for (int i = 0; i < N; ++i) dst[i] = (float) src[i];
+            }
+            return;
+        }
+    }
+
     // Pre-DSP visualization feed (lock-free bus)
     if (buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
     {
-        const int chL = buffer.getNumChannels() > 0 ? 0 : 0;
+        const int chL = 0;
         const int chR = buffer.getNumChannels() > 1 ? 1 : 0;
         visPre.push (buffer.getReadPointer (chL),
                      buffer.getNumChannels() > 1 ? buffer.getReadPointer (chR) : nullptr,
@@ -598,7 +653,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // Post-DSP visualization feed (lock-free bus)
     if (buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
     {
-        const int chL = buffer.getNumChannels() > 0 ? 0 : 0;
+        const int chL = 0;
         const int chR = buffer.getNumChannels() > 1 ? 1 : 0;
         visPost.push (buffer.getReadPointer (chL),
                       buffer.getNumChannels() > 1 ? buffer.getReadPointer (chR) : nullptr,
@@ -656,9 +711,13 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
 void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, juce::MidiBuffer& midi)
 {
     juce::ignoreUnused (midi);
+    juce::ScopedNoDenormals _;
     isDoublePrecEnabled = true;
 
     if (buffer.getNumSamples() <= 0) return;
+
+    // Emergency safety: hard passthrough to confirm architecture vs. processing
+    if (getSafePassthrough()) return;
 
     auto hp = makeHostParams (apvts);
     hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
@@ -818,10 +877,22 @@ void MyPluginAudioProcessor::updateLatencyForPhaseMode()
     int latency = 0;
     if (mode == 2 || mode == 3) // Hybrid Linear or Full Linear
     {
-        if (isDoublePrecEnabled && chainD)
-            latency = chainD->getLinearPhaseLatencySamples();
-        else if (chainF)
-            latency = chainF->getLinearPhaseLatencySamples();
+        if (mode == 3)
+        {
+            // Full Linear: use fullLinearConvolver latency
+            if (isDoublePrecEnabled && chainD)
+                latency = chainD->getFullLinearLatencySamples();
+            else if (chainF)
+                latency = chainF->getFullLinearLatencySamples();
+        }
+        else
+        {
+            // Hybrid Linear: use linConvolver latency
+            if (isDoublePrecEnabled && chainD)
+                latency = chainD->getLinearPhaseLatencySamples();
+            else if (chainF)
+                latency = chainF->getLinearPhaseLatencySamples();
+        }
     }
     if (!latencyLocked)
         setLatencySamples (latency);
@@ -832,6 +903,19 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
     juce::ignoreUnused (newValue);
     if (parameterID == IDs::phaseMode || parameterID == IDs::hpHz || parameterID == IDs::lpHz)
         updateLatencyForPhaseMode();
+    if (parameterID == IDs::quality || parameterID == IDs::precision)
+        applyQualityFromParams();
+    // Detect explicit user overrides on os_mode and phase_mode so quality stops forcing them
+    if (parameterID == IDs::osMode && !qualityApplyingGuard.load())
+    {
+        userOsOverride.store (true);
+        osFollowQuality.store (false);
+    }
+    if (parameterID == IDs::phaseMode && !qualityApplyingGuard.load())
+    {
+        userPhaseOverride.store (true);
+        phaseFollowQuality.store (false);
+    }
     
     // No auto-seeding of P2 from P1 – both panners share identical factory defaults by layout
 
@@ -877,6 +961,53 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
     }
 }
 
+// Map APVTS quality/precision to internal state and any derived settings
+void MyPluginAudioProcessor::applyQualityFromParams()
+{
+    int q = 1, p = 0;
+    if (auto* qp = apvts.getParameter (IDs::quality))
+        if (auto* c = dynamic_cast<juce::AudioParameterChoice*> (qp)) q = c->getIndex();
+    if (auto* pp = apvts.getParameter (IDs::precision))
+        if (auto* c = dynamic_cast<juce::AudioParameterChoice*> (pp)) p = c->getIndex();
+
+    qualityMode.store (q);
+    precisionMode.store (p);
+    // Apply recommended os_mode and phase_mode only if following is enabled
+    const auto setChoiceIndex = [this] (const juce::String& pid, int idx)
+    {
+        if (auto* p = apvts.getParameter (pid))
+        {
+            if (auto* c = dynamic_cast<juce::AudioParameterChoice*> (p))
+            {
+                const int cur = c->getIndex();
+                if (cur != idx)
+                {
+                    qualityApplyingGuard.store (true);
+                    p->beginChangeGesture();
+                    const int n = c->choices.size();
+                    const float norm = n > 1 ? (float) idx / (float) (n - 1) : 0.0f;
+                    p->setValueNotifyingHost (juce::jlimit (0.0f, 1.0f, norm));
+                    p->endChangeGesture();
+                    qualityApplyingGuard.store (false);
+                }
+            }
+        }
+    };
+
+    // Recommend values per quality
+    int recOs = 0; // Off by default
+    int recPhase = 0; // Zero-latency by default
+    switch (q)
+    {
+        case 0: /* Eco    */ recOs = 0; recPhase = 0; break;
+        case 2: /* High   */ recOs = 2; recPhase = 2; break; // 4x OS, Hybrid Linear
+        default:/* Standard*/ recOs = 1; recPhase = 1; break; // 2x OS, Natural-phase
+    }
+
+    if (osFollowQuality.load())    setChoiceIndex (IDs::osMode,    recOs);
+    if (phaseFollowQuality.load()) setChoiceIndex (IDs::phaseMode,  recPhase);
+}
+
 // =========================
 // Parameter Layout
 // =========================
@@ -911,7 +1042,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckLAms, 1 },   "Duck Lookahead (ms)", juce::NormalisableRange<float> (0.0f, 20.0f, 0.01f), 5.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckRmsMs, 1 },  "Duck RMS (ms)",       juce::NormalisableRange<float> (2.0f, 50.0f, 0.01f), 15.0f));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::duckTarget, 1 }, "Duck Target", juce::StringArray { "WetOnly", "Global" }, 0));
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osMode, 1 }, "Oversampling", juce::StringArray { "Off", "2x", "4x", "8x", "16x" }, 1));
+    // Quality / Precision user controls
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::quality, 1 },   "Quality",   juce::StringArray { "Eco", "Standard", "High" }, 1));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::precision, 1 }, "Precision", juce::StringArray { "Auto (Host)", "Force 32-bit", "Force 64-bit" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osMode, 1 }, "Oversampling", juce::StringArray { "Off", "2x", "4x", "8x", "16x" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::splitMode, 1 }, "Split Mode", false));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::tiltFreq, 1 },  "Tilt Frequency", juce::NormalisableRange<float> (100.0f, 1000.0f, 1.0f, 0.5f), 500.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::scoopFreq, 1 }, "Scoop Frequency", juce::NormalisableRange<float> (200.0f, 2000.0f, 1.0f, 0.5f), 800.0f));
@@ -1082,6 +1216,11 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     shuffLP_L.prepare (spec);
     shuffLP_R.prepare (spec);
     depthLPF.prepare (spec);
+    // DC blocker
+    dcBlocker.prepare (spec);
+    dcBlocker.setType (juce::dsp::StateVariableTPTFilterType::highpass);
+    dcBlocker.setCutoffFrequency ((Sample) 8.0);
+    dcBlocker.setResonance ((Sample) 0.707);
     lowShelf.prepare (spec);
     highShelf.prepare (spec);
     airFilter.prepare (spec);
@@ -1103,6 +1242,11 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
         depthLPF.setCutoffFrequency (juce::jlimit ((Sample) 20, nyq, (Sample) 20000));
     }
     depthLPF.setResonance ((Sample) 0.707);
+    // Initialize HP/LP with safe fully-open defaults to avoid first-block artifacts
+    hpFilter.setCutoffFrequency ((Sample) 20);
+    lpFilter.setCutoffFrequency ((Sample) juce::jmin<Sample> ((Sample)20000, (Sample)(sr*0.49)));
+    hpFilter.setResonance ((Sample) 0.707);
+    lpFilter.setResonance ((Sample) 0.707);
 
     if constexpr (std::is_same_v<Sample, double>)
     {
@@ -1153,8 +1297,8 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     linConvolver->prepare (spec.sampleRate, (int) spec.maximumBlockSize, linKernelLen, (int) spec.numChannels);
 
     // Init tone smoothers (slightly slower for silkier feel)
-    const double toneSmoothMs = 0.008;   // tilt/bass/air/scoop and their freq pivots
-    const double hpLpSmoothMs = 0.012;   // HP/LP cutoffs a touch slower to avoid zippering
+    const double toneSmoothMs = 0.015;   // slightly slower smoothing to reduce zipper/crackle
+    const double hpLpSmoothMs = 0.020;   // slower HP/LP smoothing to tame step responses
     for (auto* s : { &tiltDbSm, &tiltFreqSm, &bassDbSm, &bassFreqSm, &airDbSm, &airFreqSm, &scoopDbSm, &scoopFreqSm })
         s->reset (spec.sampleRate, toneSmoothMs);
     for (auto* s : { &hpHzSm, &lpHzSm })
@@ -1176,6 +1320,7 @@ void FieldChain<Sample>::reset()
 {
     hpFilter.reset(); lpFilter.reset(); monoLP.reset(); depthLPF.reset();
     lowShelf.reset(); highShelf.reset(); airFilter.reset(); bassFilter.reset(); scoopFilter.reset();
+    dcBlocker.reset();
     if (oversampling) oversampling->reset();
     if constexpr (std::is_same_v<Sample, double>) { if (reverbD) reverbD->reverbF.reset(); }
     else                                           { /* removed JUCE Reverb reset */ }
@@ -1386,13 +1531,22 @@ void FieldChain<Sample>::ensureOversampling (int osModeIndex)
 template <typename Sample>
 void FieldChain<Sample>::applyHP_LP (Block block, Sample hpHz, Sample lpHz)
 {
-    // If both are at defaults (fully open), skip entirely to avoid any sonic change
-    if (hpHz <= (Sample)20 && lpHz >= (Sample)20000)
-        return;
-
     const Sample nyq = (Sample) (sr * 0.49);
     hpHz = juce::jlimit ((Sample) 20,  juce::jmin ((Sample) 1000, nyq),  hpHz);
     lpHz = juce::jlimit ((Sample) 1000, juce::jmin ((Sample) 20000, nyq), lpHz);
+    // Safety: avoid razor-thin band-pass which sounds like a telephone
+    if (hpHz >= lpHz - (Sample) 50)
+    {
+        if (hpHz > (Sample) 20)
+        {
+            hpFilter.setCutoffFrequency (hpHz);
+            const Sample Qhp = params.eqQLink ? params.filterQ : params.hpQ;
+            hpFilter.setResonance (juce::jlimit ((Sample)0.5, (Sample)1.2, Qhp));
+            CtxRep ctx (block);
+            hpFilter.process (ctx);
+        }
+        return; // skip LP
+    }
     // Set cutoffs
     hpFilter.setCutoffFrequency (hpHz);
     lpFilter.setCutoffFrequency (lpHz);
@@ -1427,6 +1581,7 @@ void FieldChain<Sample>::updateTiltEQ (Sample tiltDb, Sample pivotHz)
 template <typename Sample>
 void FieldChain<Sample>::applyTiltEQ (Block block, Sample tiltDb, Sample pivotHz)
 {
+    // Use existing coeffs if small changes and cooldown active; updateTiltEQ handles gating
     updateTiltEQ (tiltDb, pivotHz);
     CtxRep ctx (block);
     lowShelf.process (ctx);
@@ -1475,7 +1630,15 @@ void FieldChain<Sample>::applyFullLinearFIR (Block block)
 {
     if (! fullLinearConvolver)
         fullLinearConvolver = std::make_unique<OverlapSaveConvolver<Sample>>();
-    fullLinearConvolver->prepare (sr, (int) block.getNumSamples(), fullKernelLen, (int) block.getNumChannels());
+    // Only re-prepare when block size or channel count changes
+    const int blk = (int) block.getNumSamples();
+    const int ch  = (int) block.getNumChannels();
+    if (blk != fullPreparedBlockLen || ch != fullPreparedChannels)
+    {
+        fullLinearConvolver->prepare (sr, blk, fullKernelLen, ch);
+        fullPreparedBlockLen = blk;
+        fullPreparedChannels = ch;
+    }
 
     // Atomically adopt a pending kernel if available (built on background thread)
     if (pendingFullKernel)
@@ -1500,6 +1663,8 @@ template <typename Sample>
 void FieldChain<Sample>::applyWidthMS (Block block, Sample width)
 {
     if (block.getNumChannels() < 2) return;
+    // Unity guard: no-op at width = 1
+    if (std::abs ((double) (width - (Sample) 1)) < 1e-6) return;
     width = juce::jlimit ((Sample)0.5, (Sample)4.0, width);
     auto* L = block.getChannelPointer (0);
     auto* R = block.getChannelPointer (1);
@@ -1525,6 +1690,11 @@ void FieldChain<Sample>::applyThreeBandWidth (Block block,
                                               Sample wLo, Sample wMid, Sample wHi)
 {
     if (block.getNumChannels() < 2) return;
+    // Unity guard: no-op when all bands are ~1.0
+    if (std::abs((double)(wLo - (Sample)1))  < 1e-6 &&
+        std::abs((double)(wMid - (Sample)1)) < 1e-6 &&
+        std::abs((double)(wHi - (Sample)1))  < 1e-6)
+        return;
     const Sample nyq = (Sample) (sr * 0.49);
     loHz = juce::jlimit ((Sample)40,  (Sample)400,  loHz);
     hiHz = juce::jlimit ((Sample)800, juce::jmin ((Sample)6000, nyq), hiHz);
@@ -1603,6 +1773,10 @@ template <typename Sample>
 void FieldChain<Sample>::applyShufflerWidth (Block block, Sample xoverHz, Sample wLow, Sample wHigh)
 {
     if (block.getNumChannels() < 2) return;
+    // Unity guard: no-op when both bands ~1.0
+    if (std::abs((double)(wLow - (Sample)1)) < 1e-6 &&
+        std::abs((double)(wHigh - (Sample)1)) < 1e-6)
+        return;
     const Sample nyq = (Sample) (sr * 0.49);
     xoverHz = juce::jlimit ((Sample)150, juce::jmin ((Sample)2000, nyq), xoverHz);
     shuffLP_L.setCutoffFrequency (xoverHz);
@@ -1656,6 +1830,8 @@ template <typename Sample>
 void FieldChain<Sample>::applyRotationAsym (Block block, Sample rotationRad, Sample asym)
 {
     if (block.getNumChannels() < 2) return;
+    // Unity guard: no-op at zero rotation and asymmetry
+    if (std::abs ((double) rotationRad) < 1e-9 && std::abs ((double) asym) < 1e-9) return;
     const Sample k = (Sample)0.7071067811865476;
     const Sample c = std::cos (rotationRad);
     const Sample s = std::sin (rotationRad);
@@ -1794,7 +1970,12 @@ template <typename Sample>
 void FieldChain<Sample>::applySaturation (Block block, Sample driveLin, Sample mix01, int osModeIndex)
 {
     if (mix01 <= (Sample)0.0001 || driveLin <= (Sample)1.0001) return;
+    const int prevOs = lastOsMode;
     ensureOversampling (osModeIndex);
+    if (lastOsMode != prevOs)
+    {
+        osXfadeTotal = osXfadeSamplesLeft = juce::jlimit (32, 256, (int) block.getNumSamples());
+    }
 
     juce::AudioBuffer<Sample> dry ((int) block.getNumChannels(), (int) block.getNumSamples());
     for (int c = 0; c < (int) block.getNumChannels(); ++c)
@@ -1808,17 +1989,36 @@ void FieldChain<Sample>::applySaturation (Block block, Sample driveLin, Sample m
     }
     else
     {
+        if (!aliasGuardsPrepared) prepareAliasGuards (sr);
+        {
+            juce::dsp::ProcessContextReplacing<Sample> ctx (block);
+            aliasGuardHP.process (ctx);
+        }
         applySaturationOnBlock (block, driveLin);
+        {
+            juce::dsp::ProcessContextReplacing<Sample> ctx (block);
+            aliasGuardLP.process (ctx);
+        }
     }
 
-    // Mix dry back in: manual loop over AudioBlock
+    // Mix dry back in with optional crossfade when OS factor changed
     const Sample dryGain = (Sample)1 - mix01;
+    const int N = (int) block.getNumSamples();
     for (int c = 0; c < (int) block.getNumChannels(); ++c)
     {
-        auto* dst = block.getChannelPointer (c);
-        auto* src = dry.getReadPointer (c);
-        for (int i = 0; i < (int) block.getNumSamples(); ++i)
-            dst[i] += src[i] * dryGain;
+        auto* y = block.getChannelPointer (c);
+        auto* d = dry.getReadPointer (c);
+        for (int i = 0; i < N; ++i)
+        {
+            Sample wet = y[i];
+            if (osXfadeSamplesLeft > 0)
+            {
+                const float a = (float) (osXfadeTotal - osXfadeSamplesLeft) / (float) juce::jmax (1, osXfadeTotal);
+                --osXfadeSamplesLeft;
+                wet = (Sample) ((1.0f - a) * (double) d[i] + a * (double) wet);
+            }
+            y[i] = dryGain * d[i] + mix01 * wet;
+        }
     }
 }
 
@@ -1986,15 +2186,21 @@ void FieldChain<Sample>::process (Block block)
 {
     if (params.bypass) return;
 
+    // Flush denormals to avoid CPU spikes/crackle on quiet passages
+    juce::ScopedNoDenormals noDenormals;
+
     // Input gain
     block.multiplyBy (params.gainLin);
+
+    // eco path removed
 
     // Phase Mode: 2 = Hybrid Linear → FIR HP/LP; 3 = Full Linear → composite FIR tone+HP/LP
     // Optional auto-linear during edits: force Full Linear while autoLinearSamplesLeft > 0
     const bool forceFullLinear = (autoLinearSamplesLeft > 0);
     if (forceFullLinear)
     {
-        applyFullLinearFIR (block);
+        // Disabled auto-linear transitions during edits to prevent swaps
+        // applyFullLinearFIR (block);
     }
     else if (params.phaseMode == 3)
     {
@@ -2014,12 +2220,19 @@ void FieldChain<Sample>::process (Block block)
     if (params.splitMode) applySplitPan (block, params.panL, params.panR);
     else                  applyPan     (block, params.pan);
 
-    // Three-band width first
-    applyThreeBandWidth (block, params.xoverLoHz, params.xoverHiHz,
-                         params.widthLo, params.widthMid, params.widthHi);
-    // Shuffler (2-band lightweight)
-    applyShufflerWidth (block, params.shufflerXoverHz, params.shufflerLo, params.shufflerHi);
-    // Width Designer: frequency-tilted S (before rotation)
+    // Imaging & mono (Classic width only when widthMode == 0)
+    if (params.widthMode == 0) {
+        applyWidthMS (block, params.width);
+    }
+    // Mono maker before tone
+    applyMonoMaker (block, params.monoHz);
+    // HP/LP is applied in the smoothed sub-block pipeline below (to avoid double-filtering)
+
+    // Core tone using smoothed, gated sub-block path (below)
+    // (no early return; continue into sub-block pipeline)
+
+    // (skipped while diagnosing)
+    // Width Designer: frequency-tilted S (before rotation) when Designer mode only
     if (params.widthMode == 1)
     {
         // side-only tilt: low/high shelves around a pivot on S
@@ -2067,6 +2280,32 @@ void FieldChain<Sample>::process (Block block)
         const int total = (int) block.getNumSamples();
         const int channels = (int) block.getNumChannels();
         const int step = juce::jlimit (64, 128, total); // sub-block size: steadier param updates
+        // Prepare tone crossfade buffers once per block if a rebuild will occur
+        bool willRebuildTone = false;
+        {
+            const Sample tDb = tiltDbSm.getTargetValue();
+            const Sample tHz = tiltFreqSm.getTargetValue();
+            const Sample scDb= scoopDbSm.getTargetValue();
+            const Sample scHz= scoopFreqSm.getTargetValue();
+            const Sample bDb = bassDbSm.getTargetValue();
+            const Sample bHz = bassFreqSm.getTargetValue();
+            const Sample aDb = airDbSm.getTargetValue();
+            const Sample aHz = airFreqSm.getTargetValue();
+            auto epsChanged = [&](Sample a, Sample b, Sample eps){ return a < (Sample) 0 || std::abs ((double) (a - b)) > (double) eps; };
+            const bool tiltNeeds  = epsChanged (lastTiltDb,  tDb,  (Sample)0.05) || epsChanged (lastTiltHz,  tHz,  (Sample)1.0);
+            const bool scoopNeeds = epsChanged (lastScoopDb, scDb, (Sample)0.05) || epsChanged (lastScoopHz, scHz, (Sample)1.0);
+            const bool bassNeeds  = epsChanged (lastBassDb,  bDb,  (Sample)0.05) || epsChanged (lastBassHz,  bHz,  (Sample)1.0);
+            const bool airNeeds   = epsChanged (lastAirDb,   aDb,  (Sample)0.05) || epsChanged (lastAirHz,   aHz,  (Sample)1.0);
+            willRebuildTone = (tiltNeeds || scoopNeeds || bassNeeds || airNeeds);
+        }
+        if (willRebuildTone && toneXfadeSamplesLeft <= 0)
+        {
+            toneDryBuf.setSize ((int) block.getNumChannels(), (int) block.getNumSamples());
+            for (int c = 0; c < (int) block.getNumChannels(); ++c)
+                std::memcpy (toneDryBuf.getWritePointer (c), block.getChannelPointer (c), sizeof (Sample) * (size_t) block.getNumSamples());
+            toneXfadeTotal = toneXfadeSamplesLeft = juce::jlimit (64, 256, (int) block.getNumSamples());
+        }
+
         for (int start = 0; start < total; start += step)
         {
             const int len = juce::jmin (step, total - start);
@@ -2082,18 +2321,137 @@ void FieldChain<Sample>::process (Block block)
             airDbSm    .skip (len); const Sample aDb = airDbSm.getCurrentValue();
             airFreqSm  .skip (len); const Sample aHz = airFreqSm.getCurrentValue();
 
-            // Smooth HP/LP cutoffs similarly in IIR mode
+            // Smooth HP/LP cutoffs similarly in IIR mode and gate coefficient churn
             hpHzSm.skip (len); lpHzSm.skip (len);
             const Sample hpNow = hpHzSm.getCurrentValue();
             const Sample lpNow = lpHzSm.getCurrentValue();
 
             // Apply smoothed tone
-            applyTiltEQ    (sub, tDb, tHz);
-            applyScoopEQ   (sub, scDb, scHz);
-            applyBassShelf (sub, bDb, bHz);
-            applyAirBand   (sub, aDb, aHz);
-            applyHP_LP     (sub, hpNow, lpNow);
+            // Gate tone coefficient rebuilds with epsilon + cooldown to avoid glitches under rapid moves.
+            // IMPORTANT: Never process an IIR filter without initialized coeffs.
+            const Sample tDbEps = (Sample) 0.05, fHzEps = (Sample) 1.0;
+            if (--toneCoeffCooldownSamples < 0) toneCoeffCooldownSamples = 0;
+            auto epsChanged = [&](Sample a, Sample b, Sample eps){ return a < (Sample) 0 || std::abs ((double) (a - b)) > (double) eps; };
+            const bool tiltNeeds  = epsChanged (lastTiltDb,  tDb,  tDbEps)  || epsChanged (lastTiltHz,  tHz,  fHzEps);
+            const bool scoopNeeds = epsChanged (lastScoopDb, scDb, tDbEps)  || epsChanged (lastScoopHz, scHz, fHzEps);
+            const bool bassNeeds  = epsChanged (lastBassDb,  bDb,  tDbEps)  || epsChanged (lastBassHz,  bHz,  fHzEps);
+            const bool airNeeds   = epsChanged (lastAirDb,   aDb,  tDbEps)  || epsChanged (lastAirHz,   aHz,  fHzEps);
+
+            const bool uninitTilt  = (lastTiltDb  > (Sample) 1.0e8) || (lastTiltHz  > (Sample) 1.0e8);
+            const bool uninitScoop = (lastScoopDb > (Sample) 1.0e8) || (lastScoopHz > (Sample) 1.0e8);
+            const bool uninitBass  = (lastBassDb  > (Sample) 1.0e8) || (lastBassHz  > (Sample) 1.0e8);
+            const bool uninitAir   = (lastAirDb   > (Sample) 1.0e8) || (lastAirHz   > (Sample) 1.0e8);
+
+            const bool allowToneRebuild = (toneCoeffCooldownSamples == 0);
+            bool rebuiltAny = false;
+
+            // Tilt
+            if ((allowToneRebuild || uninitTilt) && tiltNeeds)
+            {
+                applyTiltEQ (sub, tDb, tHz); lastTiltDb = tDb; lastTiltHz = tHz; rebuiltAny = true;
+            }
+            else if (!uninitTilt)
+            {
+                CtxRep ctxTilt (sub);
+                lowShelf.process (ctxTilt);
+                highShelf.process (ctxTilt);
+            }
+            // Scoop
+            if ((allowToneRebuild || uninitScoop) && scoopNeeds)
+            {
+                applyScoopEQ (sub, scDb, scHz); lastScoopDb = scDb; lastScoopHz = scHz; rebuiltAny = true;
+            }
+            else if (!uninitScoop)
+            {
+                CtxRep ctxSc (sub);
+                scoopFilter.process (ctxSc);
+            }
+            // Bass
+            if ((allowToneRebuild || uninitBass) && bassNeeds)
+            {
+                applyBassShelf (sub, bDb, bHz); lastBassDb = bDb; lastBassHz = bHz; rebuiltAny = true;
+            }
+            else if (!uninitBass)
+            {
+                CtxRep ctxB (sub);
+                bassFilter.process (ctxB);
+            }
+            // Air
+            if ((allowToneRebuild || uninitAir) && airNeeds)
+            {
+                applyAirBand (sub, aDb, aHz); lastAirDb = aDb; lastAirHz = aHz; rebuiltAny = true;
+            }
+            else if (!uninitAir)
+            {
+                CtxRep ctxA (sub);
+                airFilter.process (ctxA);
+            }
+
+            if (rebuiltAny)
+                toneCoeffCooldownSamples = 64;
+            // Reuse IIR coeffs unless a small epsilon is exceeded and a short cooldown has passed
+            const Sample epsHz = (Sample) 0.5;
+            if (--iirCoeffCooldownSamples < 0) iirCoeffCooldownSamples = 0;
+            const bool needHp = lastAppliedHpHz < (Sample) 0 || std::abs ((double)(hpNow - lastAppliedHpHz)) > (double) epsHz;
+            const bool needLp = lastAppliedLpHz < (Sample) 0 || std::abs ((double)(lpNow - lastAppliedLpHz)) > (double) epsHz;
+            if ((needHp || needLp) && iirCoeffCooldownSamples == 0)
+            {
+                applyHP_LP (sub, hpNow, lpNow);
+                lastAppliedHpHz = hpNow;
+                lastAppliedLpHz = lpNow;
+                iirCoeffCooldownSamples = 64; // guard churn at small buffers
+            }
+            else
+            {
+                // Still process with existing coeffs to keep audio flowing; avoid resetting parameters when unchanged
+                if (lastAppliedHpHz > (Sample) 0 && lastAppliedLpHz > (Sample) 0)
+                {
+                    CtxRep ctxHP (sub);
+                    hpFilter.process (ctxHP);
+                    lpFilter.process (ctxHP);
+                }
+                else
+                {
+                    // Ensure we do not double-apply; set coeffs only once, then process
+                    hpFilter.setCutoffFrequency (hpNow);
+                    lpFilter.setCutoffFrequency (lpNow);
+                    const Sample Qhp = params.eqQLink ? params.filterQ : params.hpQ;
+                    const Sample Qlp = params.eqQLink ? params.filterQ : params.lpQ;
+                    hpFilter.setResonance (juce::jlimit ((Sample)0.5, (Sample)1.2, Qhp));
+                    lpFilter.setResonance (juce::jlimit ((Sample)0.5, (Sample)1.2, Qlp));
+                    CtxRep ctxHP (sub);
+                    hpFilter.process (ctxHP);
+                    lpFilter.process (ctxHP);
+                    lastAppliedHpHz = hpNow;
+                    lastAppliedLpHz = lpNow;
+                }
+            }
         }
+
+        // Apply tone crossfade if active to mask coefficient swap bursts
+        if (toneXfadeSamplesLeft > 0)
+        {
+            const int N = (int) block.getNumSamples();
+            const int C = (int) block.getNumChannels();
+            for (int i = 0; i < N; ++i)
+            {
+                const float a = 1.0f - (float) toneXfadeSamplesLeft / (float) juce::jmax (1, toneXfadeTotal);
+                --toneXfadeSamplesLeft;
+                for (int c = 0; c < C; ++c)
+                {
+                    auto* y = block.getChannelPointer (c);
+                    const Sample d = toneDryBuf.getSample (c, i);
+                    y[i] = (Sample) ((1.0f - a) * (double) d + a * (double) y[i]);
+                }
+                if (toneXfadeSamplesLeft <= 0) break;
+            }
+        }
+    }
+
+    // DC blocker after tone to eliminate DC creep
+    {
+        CtxRep ctx (block);
+        dcBlocker.process (ctx);
     }
 
     // Reverb: compute rvParams then render wet-only to buffer 'wet'
@@ -2270,19 +2628,19 @@ void FieldChain<Sample>::process (Block block)
     // Equal-power mix: Depth × Wet slider
     const float rvMix = juce::jlimit (0.0f, 1.0f, rvParams.wetLevel * (float) params.rvWet01);
     wetMixSmoothed.setTargetValue (rvMix);
-    // Sum Dry + Wet back to output block (equal-power law):
+    // Sum Dry + Wet back to output block (equal-power law) with one shared mix per sample:
     // mix=0 -> 100% dry, mix=1 -> 100% wet
-    for (int c = 0; c < ch; ++c)
+    for (int i = 0; i < n; ++i)
     {
-        auto* out = block.getChannelPointer (c);
-        const Sample* d = dryBusBuf.getReadPointer (c);
-        const Sample* w = wetBusBuf.getReadPointer (c);
-        for (int i = 0; i < n; ++i)
+        const float mix = wetMixSmoothed.getNextValue();
+        const float theta = juce::jlimit (0.0f, 1.0f, mix) * juce::MathConstants<float>::halfPi;
+        const float a = std::cos (theta);
+        const float b = std::sin (theta);
+        for (int c = 0; c < ch; ++c)
         {
-            const float mix = wetMixSmoothed.getNextValue();
-            const float theta = juce::jlimit (0.0f, 1.0f, mix) * juce::MathConstants<float>::halfPi;
-            const float a = std::cos (theta);
-            const float b = std::sin (theta);
+            auto* out = block.getChannelPointer (c);
+            const Sample* d = dryBusBuf.getReadPointer (c);
+            const Sample* w = wetBusBuf.getReadPointer (c);
             out[i] = (Sample) (a * (double) d[i] + b * (double) w[i]);
         }
     }
@@ -2312,15 +2670,42 @@ void FieldChain<Sample>::ensureLinearPhaseKernel (double sampleRate, Sample hpHz
 {
     if (! linConvolver)
         linConvolver = std::make_unique<OverlapSaveConvolver<Sample>>();
-    linConvolver->prepare (sampleRate, maxBlock, linKernelLen, juce::jmax (1, numChannels));
+    // Only re-prepare when block size or channel count changes
+    const int ch = juce::jmax (1, numChannels);
+    if (maxBlock != linPreparedBlockLen || ch != linPreparedChannels)
+    {
+        linConvolver->prepare (sampleRate, maxBlock, linKernelLen, ch);
+        linPreparedBlockLen = maxBlock;
+        linPreparedChannels = ch;
+    }
 
     const double hp = juce::jlimit (20.0, 1000.0, (double) hpHz);
     const double lp = juce::jlimit (1000.0, 20000.0, (double) lpHz);
-    if (! linConvolver->isReady() || (float) hp != lastHpHzLP || (float) lp != lastLpHzLP)
+    // Debounce parameters; if editing, defer heavy rebuild to background
+    const float dHp = std::abs ((float) hp - lastDesignedHpHzLP);
+    const float dLp = std::abs ((float) lp - lastDesignedLpHzLP);
+    const bool largeDelta = (dHp > 5.0f) || (dLp > 5.0f);
+    if (linKernelCooldownSamples > 0) --linKernelCooldownSamples;
+    if (! linConvolver->isReady())
     {
         std::vector<float> kernel; designLinearPhaseBandpassKernel (kernel, sampleRate, hp, lp, linKernelLen, 8.6);
         linConvolver->setKernel (kernel);
         lastHpHzLP = (float) hp; lastLpHzLP = (float) lp;
+        lastDesignedHpHzLP = (float) hp; lastDesignedLpHzLP = (float) lp;
+        linKernelCooldownSamples = juce::jmax (maxBlock, 256);
+    }
+    else if (largeDelta)
+    {
+        // Defer redesign when editing to avoid audio-thread work
+        if (std::is_same<Sample,double>::value)
+        {
+            // processor-level background pool requested via requestLinearPhaseRedesign from float path
+        }
+        else
+        {
+            // For float chain, just update last values; background swap handled by processor gate
+            lastHpHzLP = (float) hp; lastLpHzLP = (float) lp;
+        }
     }
 }
 

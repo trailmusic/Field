@@ -43,7 +43,7 @@ static inline const char* paneKey (PaneID id)
 class PaneManager : public juce::Component, private juce::Timer
 {
 public:
-    struct Options { bool keepAllWarm = false; };
+    // Keep-warm option removed
 
     PaneManager (MyPluginAudioProcessor& p, juce::ValueTree& state, juce::LookAndFeel* lnf, XYPad& xyPadRef)
         : proc(p), vt(state)
@@ -52,7 +52,7 @@ public:
         spec = std::make_unique<ProcessedSpectrumPane> (lnf);
         imgr = std::make_unique<ImagerPane>();
         band = std::make_unique<juce::Component>(); // scaffold placeholder
-        motion = std::make_unique<motion::MotionPanel>(p.apvts, &p.undo);
+        motion = std::make_unique<motion::MotionPanel>(p.apvts, nullptr);
         mach = std::make_unique<MachinePane>(p, state, lnf);
         // Visuals-only Reverb pane (no grid controls duplicated here)
         reverb = std::make_unique<ReverbPanel>(p.apvts,
@@ -87,8 +87,7 @@ public:
             m.addItem (6, "Machine");
             m.addItem (7, "Reverb");
             m.addItem (8, "Delay");
-            m.addSeparator();
-            m.addItem (9, options.keepAllWarm ? "Keep Warm: On" : "Keep Warm: Off");
+            // keep-warm option removed
             // Smoothing preset toggle for Spectrum
             if (spec)
             {
@@ -107,7 +106,7 @@ public:
                                  else if (r == 6) setActive (PaneID::Machine, true);
                                  else if (r == 7) setActive (PaneID::Reverb, true);
                                  else if (r == 8) setActive (PaneID::Delay,  true);
-                                 else if (r == 9) { setOptions({ !options.keepAllWarm }); tabs.repaint(); }
+                                 // keep-warm toggle removed
                                  else if (r == 10)
                                  {
                                      if (spec)
@@ -145,9 +144,8 @@ public:
         if (! vt.hasProperty ("ui_imager_overlay_bounds")) vt.setProperty ("ui_imager_overlay_bounds", juce::var(), nullptr);
         applyImagerOptionsFromState();
 
-        // restore keep-warm option
-        if (vt.hasProperty ("ui_keepWarm")) options.keepAllWarm = (bool) vt.getProperty ("ui_keepWarm");
-        startTimerHz (30);
+        // keep-warm option removed
+        startTimerHz (20);
         if (auto* ip = imgr.get())
         {
             ip->onUiChange = [this](const juce::String& key, const juce::var& v)
@@ -191,9 +189,10 @@ public:
     }
     void timerCallback() override
     {
+        static int uiTick = 0; ++uiTick; const bool doHeavy = (uiTick % 2) == 0; // halve heavy pulls
         static juce::AudioBuffer<float> tmpPre, tmpPost, tmpXY;
         const int maxPull = 2048;
-        const bool wantSpec = (active == PaneID::Spectrum) || options.keepAllWarm;
+        const bool wantSpec = (active == PaneID::Spectrum) && doHeavy;
         if (wantSpec && spec)
         {
             int nPost = proc.visPost.pull (tmpPost, maxPull);
@@ -203,7 +202,7 @@ public:
             if (nPre > 0)
                 spec->analyzer().pushBlockPre (tmpPre.getReadPointer(0), tmpPre.getNumChannels()>1?tmpPre.getReadPointer(1):nullptr, nPre);
         }
-        const bool wantXY = (active == PaneID::XY) || options.keepAllWarm;
+        const bool wantXY = (active == PaneID::XY) && doHeavy;
         if (wantXY && xy)
         {
             int nXY = proc.visPost.pull (tmpXY, 1024);
@@ -215,7 +214,7 @@ public:
                     xy->pushWaveformSample (L[i], R ? R[i] : L[i]);
             }
         }
-        const bool wantImgr = (active == PaneID::Imager) || options.keepAllWarm;
+        const bool wantImgr = (active == PaneID::Imager) && doHeavy;
         if (wantImgr && imgr)
         {
             if (auto* ip = dynamic_cast<ImagerPane*>(imgr.get()))
@@ -237,7 +236,7 @@ public:
                     ip->setWidths (*wLo, *wMi, *wHi);
             }
         }
-        const bool wantMach = (active == PaneID::Machine) || options.keepAllWarm;
+        const bool wantMach = (active == PaneID::Machine) && doHeavy;
         if (wantMach && mach)
         {
             if (auto* mp = mach.get())
@@ -249,8 +248,7 @@ public:
         }
     }
 
-    void setOptions (Options o) { options = o; vt.setProperty ("ui_keepWarm", options.keepAllWarm, nullptr); }
-    Options getOptions() const { return options; }
+    // keep-warm API removed
 
     void setSampleRate (double fs)
     {
@@ -290,16 +288,14 @@ public:
         auto* s = spec.get();
         if (!s) return;
         const PaneID current = getActiveID();
-        if (options.keepAllWarm) { s->onAudioBlock (L, R, n); }
-        else if (current == PaneID::Spectrum) { s->onAudioBlock (L, R, n); }
+        if (current == PaneID::Spectrum) { s->onAudioBlock (L, R, n); }
     }
     void onAudioBlockPre (const float* L, const float* R, int n)
     {
         auto* s = spec.get();
         if (!s) return;
         const PaneID current = getActiveID();
-        if (options.keepAllWarm) { s->onAudioBlockPre (L, R, n); }
-        else if (current == PaneID::Spectrum) { s->onAudioBlockPre (L, R, n); }
+        if (current == PaneID::Spectrum) { s->onAudioBlockPre (L, R, n); }
     }
 
     float getActiveShade() const
@@ -326,11 +322,11 @@ public:
         if (auto* a = getActive())
             a->setVisible (true);
 
-        // Gate spectrum audio feed depending on active tab and keepWarm option
+        // Gate spectrum audio feed depending on active tab only
         if (spec)
         {
-            if (active == PaneID::Spectrum || options.keepAllWarm) spec->analyzer().resumeAudio();
-            else                                                   spec->analyzer().pauseAudio();
+            if (active == PaneID::Spectrum) spec->analyzer().resumeAudio();
+            else                            spec->analyzer().pauseAudio();
         }
 
         if (persist && changed)
@@ -340,7 +336,7 @@ public:
         tabs.repaint();
         resized();
 
-        if (changed && onActivePaneChanged)
+        if (changed and onActivePaneChanged)
             onActivePaneChanged (active);
     }
 
@@ -381,10 +377,7 @@ public:
             if (auto* lf = dynamic_cast<FieldLNF*> (&getLookAndFeel())) lf->setTabGlowPhase (glowPhase);
             repaint();
         }
-        void parentHierarchyChanged() override
-        {
-            startTimerHz (60);
-        }
+        void parentHierarchyChanged() override { startTimerHz (15); }
         void paint (juce::Graphics& g) override
         {
             auto b = getLocalBounds().toFloat();
@@ -440,10 +433,6 @@ public:
                     }
                     case PaneID::Motion: {
                         p.addEllipse (5.0f*s, 5.0f*s, 14.0f*s, 14.0f*s);
-                        gg.strokePath (p, juce::PathStrokeType (st), T);
-                        p.clear();
-                        p.startNewSubPath (12.0f*s, 5.0f*s);
-                        p.cubicTo (16.0f*s, 5.0f*s, 19.0f*s, 8.0f*s, 19.0f*s, 12.0f*s);
                         gg.strokePath (p, juce::PathStrokeType (st), T);
                         p.clear(); // small arrow head on the arc end
                         p.startNewSubPath (18.5f*s, 10.8f*s); p.lineTo (20.25f*s, 12.0f*s); p.lineTo (18.5f*s, 13.2f*s);
@@ -540,7 +529,6 @@ public:
 private:
     MyPluginAudioProcessor& proc;
     juce::ValueTree& vt;
-    Options options;
     PaneID active { PaneID::XY };
     std::atomic<int> activeAtomic { (int) PaneID::XY };
 
