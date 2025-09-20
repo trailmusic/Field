@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "DevNotes.h"
 #include "reverb/ReverbParameters.h"
 
 // =========================
