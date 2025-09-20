@@ -42,7 +42,8 @@ A single, high‑quality, non‑redundant place to capture decisions, designs, d
 
 ## Index (add entries as notes are created)
 - ADR: (none yet)
-- Decision: (none yet)
+- Decision:
+  - DEC-0001 — Phase Modes: IIR stability, FIR normalization, defaults
 - Design: (none yet)
 - Debug: (none yet)
 - Release: (none yet)
