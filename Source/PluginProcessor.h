@@ -216,6 +216,10 @@ private:
 
     // Core filters / EQ
     juce::dsp::StateVariableTPTFilter<Sample> hpFilter, lpFilter, depthLPF;
+    juce::dsp::StateVariableTPTFilter<Sample> hpFilterB, lpFilterB;
+    // Main zero-latency IIR path (non-resonant): Linkwitz–Riley per channel
+    juce::dsp::LinkwitzRileyFilter<Sample> lrHpL, lrHpR;
+    juce::dsp::LinkwitzRileyFilter<Sample> lrLpL, lrLpR;
     MonoLowpassBank<Sample>                   monoLP;                   // mono-maker lows with variable slope
     // Imaging band split filters (3-band via LP@lo and HP@hi)
     juce::dsp::LinkwitzRileyFilter<Sample>    bandLowLP_L, bandLowLP_R;
@@ -295,6 +299,19 @@ private:
     Sample lastAppliedHpHz { (Sample) -1 };
     Sample lastAppliedLpHz { (Sample) -1 };
     int    iirCoeffCooldownSamples { 0 };
+    // HP/LP pinch hysteresis state: 0 = HP+LP, 1 = HP-only
+    int    hpLpPinchState { 0 };
+    // Smooth engage mix for HP/LP to avoid onset clicks
+    juce::SmoothedValue<Sample> hpLpEngage;
+    // Crossfade between A/B SVF banks on retune
+    int  hpLpXfadeSamplesLeft { 0 };
+    int  hpLpXfadeTotal       { 0 };
+    bool hpLpUseBankB         { false }; // active bank: false=A, true=B
+    juce::AudioBuffer<Sample> hpLpTemp;   // temp buffer for inactive-bank output during crossfade
+    int  hpLpTempPreparedCh   { 0 };
+    int  hpLpTempPreparedNs   { 0 };
+    Sample bankA_hpHz { (Sample) 20 }, bankA_lpHz { (Sample) 20000 };
+    Sample bankB_hpHz { (Sample) 20 }, bankB_lpHz { (Sample) 20000 };
 
     // High-order interpolation hooks (for future modulated delay lines)
     template <typename S>

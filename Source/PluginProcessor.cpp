@@ -168,7 +168,7 @@ static inline void computeReverbVoicing (int spaceAlgoIndex, float depth01, juce
         {
             mix01   = lerpFloat (0.00f, 0.28f, d);
             size01  = lerpFloat (0.45f, 0.60f, d);
-            dampHz  = lerpFloat (6000.f, 8000.f, d);
+            dampHz  = lerpFloat (6000.f, 8000.0f, d);
             width01 = 0.90f;
         } break;
 
@@ -996,12 +996,12 @@ void MyPluginAudioProcessor::applyQualityFromParams()
 
     // Recommend values per quality
     int recOs = 0; // Off by default
-    int recPhase = 0; // Zero-latency by default
+    int recPhase = 3; // Prefer Full Linear by default
     switch (q)
     {
         case 0: /* Eco    */ recOs = 0; recPhase = 0; break;
-        case 2: /* High   */ recOs = 2; recPhase = 2; break; // 4x OS, Hybrid Linear
-        default:/* Standard*/ recOs = 1; recPhase = 1; break; // 2x OS, Natural-phase
+        case 2: /* High   */ recOs = 2; recPhase = 3; break; // 4x OS, Full Linear
+        default:/* Standard*/ recOs = 1; recPhase = 2; break; // 2x OS, Hybrid Linear
     }
 
     if (osFollowQuality.load())    setChoiceIndex (IDs::osMode,    recOs);
@@ -1248,6 +1248,21 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     hpFilter.setResonance ((Sample) 0.707);
     lpFilter.setResonance ((Sample) 0.707);
 
+    lrHpL.prepare (spec);
+    lrHpR.prepare (spec);
+    lrLpL.prepare (spec);
+    lrLpR.prepare (spec);
+
+    lrHpL.setType (juce::dsp::LinkwitzRileyFilterType::highpass);
+    lrHpR.setType (juce::dsp::LinkwitzRileyFilterType::highpass);
+    lrLpL.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
+    lrLpR.setType (juce::dsp::LinkwitzRileyFilterType::lowpass);
+
+    lrHpL.setCutoffFrequency ((Sample) 20);
+    lrHpR.setCutoffFrequency ((Sample) 20);
+    lrLpL.setCutoffFrequency ((Sample) juce::jmin<Sample> ((Sample)20000, (Sample)(sr*0.49)));
+    lrLpR.setCutoffFrequency ((Sample) juce::jmin<Sample> ((Sample)20000, (Sample)(sr*0.49)));
+
     if constexpr (std::is_same_v<Sample, double>)
     {
         reverbD = std::make_unique<FloatReverbAdapter>();
@@ -1298,11 +1313,17 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
 
     // Init tone smoothers (slightly slower for silkier feel)
     const double toneSmoothMs = 0.015;   // slightly slower smoothing to reduce zipper/crackle
-    const double hpLpSmoothMs = 0.020;   // slower HP/LP smoothing to tame step responses
+    const double hpLpSmoothMs = 0.060;   // base smoothing
     for (auto* s : { &tiltDbSm, &tiltFreqSm, &bassDbSm, &bassFreqSm, &airDbSm, &airFreqSm, &scoopDbSm, &scoopFreqSm })
         s->reset (spec.sampleRate, toneSmoothMs);
     for (auto* s : { &hpHzSm, &lpHzSm })
         s->reset (spec.sampleRate, hpLpSmoothMs);
+    // Init HP/LP logs so first exp() is valid
+    hpHzSm.setCurrentAndTargetValue ((Sample) std::log (20.0));
+    lpHzSm.setCurrentAndTargetValue ((Sample) std::log (juce::jmin (20000.0, spec.sampleRate * 0.49)));
+    // Smooth engage mix
+    hpLpEngage.reset (spec.sampleRate, 0.06);
+    hpLpEngage.setCurrentAndTargetValue ((Sample) 0);
     tiltDbSm.setCurrentAndTargetValue ((Sample) 0);
     tiltFreqSm.setCurrentAndTargetValue ((Sample) 500);
     bassDbSm.setCurrentAndTargetValue ((Sample) 0);
@@ -1385,16 +1406,29 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     airFreqSm.setTargetValue  (juce::jlimit ((Sample) 2000, (Sample) 20000, params.airFreq));
     scoopDbSm.setTargetValue  (params.scoopDb);
     scoopFreqSm.setTargetValue(juce::jlimit ((Sample) 100, (Sample) 12000, params.scoopFreq));
-    // Push HP/LP smoothed targets
-    hpHzSm.setTargetValue (juce::jlimit ((Sample) 20, (Sample) 1000,  params.hpHz));
-    lpHzSm.setTargetValue (juce::jlimit ((Sample) 1000, (Sample) 20000, params.lpHz));
+    // Push HP/LP targets in log-domain for perceptual smoothing
+    {
+        const Sample nyq = (Sample) (sr * 0.49);
+        const Sample hpT = juce::jlimit ((Sample) 20,   (Sample) 1000,  params.hpHz);
+        const Sample lpCeil = juce::jmin ((Sample) 20000, nyq * (Sample) 0.45);
+        const Sample lpT = juce::jlimit ((Sample) 1000, lpCeil, params.lpHz);
+        hpHzSm.setTargetValue ((Sample) std::log ((double) hpT));
+        lpHzSm.setTargetValue ((Sample) std::log ((double) lpT));
+    }
 
     // If tone changed, hold auto-linear for a short window (converted to samples)
     if (paramsPrimed && toneChanged)
     {
-        const int add = (int) std::ceil (autoLinearHoldSec * sr);
-        autoLinearSamplesLeft = juce::jmax (autoLinearSamplesLeft, add);
-        fullLinearKernelDirty = true; // trigger FIR redesign once
+        if (params.phaseMode >= 2)
+        {
+            const int add = (int) std::ceil (autoLinearHoldSec * sr);
+            autoLinearSamplesLeft = juce::jmax (autoLinearSamplesLeft, add);
+            fullLinearKernelDirty = true; // trigger FIR redesign once
+        }
+        else
+        {
+            autoLinearSamplesLeft = 0; // do not arm FIR in Zero/Natural
+        }
     }
     paramsPrimed = true;
     // Ducking advanced
@@ -1498,6 +1532,7 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.rvWidthPct      = (Sample) hp.rvWidthPct;
     params.rvWet01         = (Sample) hp.rvWet01;
     params.rvOutTrimDb     = (Sample) hp.rvOutTrimDb;
+    params.phaseMode = hp.phaseMode;
 }
 
 // --------- processing utilities ---------
@@ -1533,7 +1568,8 @@ void FieldChain<Sample>::applyHP_LP (Block block, Sample hpHz, Sample lpHz)
 {
     const Sample nyq = (Sample) (sr * 0.49);
     hpHz = juce::jlimit ((Sample) 20,  juce::jmin ((Sample) 1000, nyq),  hpHz);
-    lpHz = juce::jlimit ((Sample) 1000, juce::jmin ((Sample) 20000, nyq), lpHz);
+    lpHz = juce::jlimit ((Sample) 1000, juce::jmin ((Sample) 20000, nyq * (Sample) 0.45), lpHz);
+    if (lpHz <= hpHz) lpHz = juce::jlimit ((Sample) (hpHz + (Sample) 50), juce::jmin ((Sample) 20000, nyq * (Sample) 0.45), lpHz);
     // Safety: avoid razor-thin band-pass which sounds like a telephone
     if (hpHz >= lpHz - (Sample) 50)
     {
@@ -1547,17 +1583,97 @@ void FieldChain<Sample>::applyHP_LP (Block block, Sample hpHz, Sample lpHz)
         }
         return; // skip LP
     }
-    // Set cutoffs
-    hpFilter.setCutoffFrequency (hpHz);
-    lpFilter.setCutoffFrequency (lpHz);
-    // Set resonance (Q): either global or per-filter
+    // Compute effective Qs with droop near extremes
     const Sample Qhp = params.eqQLink ? params.filterQ : params.hpQ;
     const Sample Qlp = params.eqQLink ? params.filterQ : params.lpQ;
-    hpFilter.setResonance (juce::jlimit ((Sample)0.5, (Sample)1.2, Qhp));
-    lpFilter.setResonance (juce::jlimit ((Sample)0.5, (Sample)1.2, Qlp));
-    CtxRep ctx (block);
-    hpFilter.process (ctx);
-    lpFilter.process (ctx);
+    const double nyqD = (double) nyq;
+    const double nhp = juce::jlimit (0.0, 1.0, (double) hpHz / juce::jmax (1e-9, nyqD));
+    const double nlp = juce::jlimit (0.0, 1.0, (double) lpHz / juce::jmax (1e-9, nyqD * 0.45));
+    const Sample qhpEff = (Sample) juce::jlimit (0.5, 0.75, (double) Qhp * (1.0 - 0.7 * nhp * nhp));
+    const Sample qlpEff = (Sample) juce::jlimit (0.5, 0.75, (double) Qlp * (1.0 - 0.7 * nlp * nlp));
+
+    // Prepare temp buffer once per call
+    const int ch = (int) block.getNumChannels();
+    const int N  = (int) block.getNumSamples();
+    if (hpLpTempPreparedCh != ch || hpLpTempPreparedNs < N)
+    {
+        hpLpTemp.setSize (juce::jmax (1, ch), juce::jmax (1, N), false, false, true);
+        hpLpTempPreparedCh = ch; hpLpTempPreparedNs = N;
+    }
+
+    // If target differs from last applied, (re)start a short bank crossfade
+    if (hpHz != lastAppliedHpHz || (hpLpPinchState == 0 && lpHz != lastAppliedLpHz))
+    {
+        hpLpXfadeTotal = hpLpXfadeSamplesLeft = 128; // slightly longer than before
+        lastAppliedHpHz = hpHz;
+        if (hpLpPinchState == 0) lastAppliedLpHz = lpHz; else lastAppliedLpHz = (Sample) -1;
+    }
+
+    // Process in small slices and crossfade banks when retuning
+    const int slice = 16;
+    for (int i = 0; i < N; i += slice)
+    {
+        const int m = juce::jmin (slice, N - i);
+        auto activeSlice = block.getSubBlock ((size_t) i, (size_t) m);
+        CtxRep ctxActive (activeSlice);
+
+        // Set target params on the inactive bank
+        if (!hpLpUseBankB)
+        {
+            hpFilter.setResonance (qhpEff);
+            hpFilter.setCutoffFrequency (hpHz);
+            if (hpLpPinchState == 0) { lpFilter.setResonance (qlpEff); lpFilter.setCutoffFrequency (lpHz); }
+        }
+        else
+        {
+            hpFilter.setResonance (qhpEff);
+            hpFilter.setCutoffFrequency (hpHz);
+            if (hpLpPinchState == 0) { lpFilter.setResonance (qlpEff); lpFilter.setCutoffFrequency (lpHz); }
+        }
+
+        // Make a dry copy for the inactive bank to ensure both banks see identical input
+        for (int c = 0; c < ch; ++c)
+            juce::FloatVectorOperations::copy (hpLpTemp.getWritePointer (c, i), block.getChannelPointer (c) + i, m);
+        juce::dsp::AudioBlock<Sample> tmpBlk (hpLpTemp.getArrayOfWritePointers(), (size_t) ch, (size_t) i, (size_t) m);
+        CtxRep ctxTmp (tmpBlk);
+
+        // Render both banks: active into place, inactive into temp (from dry copy)
+        if (!hpLpUseBankB)
+        {
+            // A active
+            hpFilter.process (ctxActive);
+            if (hpLpPinchState == 0) lpFilter.process (ctxActive);
+            // B inactive → process on dry copy
+            hpFilterB.process (ctxTmp);
+            if (hpLpPinchState == 0) lpFilterB.process (ctxTmp);
+        }
+        else
+        {
+            // B active
+            hpFilterB.process (ctxActive);
+            if (hpLpPinchState == 0) lpFilterB.process (ctxActive);
+            // A inactive → process on dry copy
+            hpFilter.process (ctxTmp);
+            if (hpLpPinchState == 0) lpFilter.process (ctxTmp);
+        }
+
+        // If a retune occurred, crossfade over this slice
+        if (hpLpXfadeSamplesLeft > 0)
+        {
+            for (int c = 0; c < ch; ++c)
+            {
+                auto* yAct = block.getChannelPointer (c) + i;
+                auto* yNew = hpLpTemp.getReadPointer (c, i);
+                for (int n = 0; n < m; ++n)
+                {
+                    const float xf = 1.0f - (float) hpLpXfadeSamplesLeft / (float) juce::jmax (1, hpLpXfadeTotal);
+                    yAct[n] = (Sample) ((1.0f - xf) * (float) yAct[n] + xf * (float) yNew[n]);
+                    --hpLpXfadeSamplesLeft;
+                }
+            }
+            if (hpLpXfadeSamplesLeft <= 0) { hpLpUseBankB = !hpLpUseBankB; }
+        }
+    }
 }
 
 template <typename Sample>
@@ -2196,25 +2312,34 @@ void FieldChain<Sample>::process (Block block)
 
     // Phase Mode: 2 = Hybrid Linear → FIR HP/LP; 3 = Full Linear → composite FIR tone+HP/LP
     // Optional auto-linear during edits: force Full Linear while autoLinearSamplesLeft > 0
-    const bool forceFullLinear = (autoLinearSamplesLeft > 0);
-    if (forceFullLinear)
+    const bool autoLinearActive = (autoLinearSamplesLeft > 0);
+    const bool useFIR = (params.phaseMode >= 2) || autoLinearActive;
+    const bool useIIR = (params.phaseMode <= 1) && !autoLinearActive;
+    if (useFIR)
     {
-        // Disabled auto-linear transitions during edits to prevent swaps
-        // applyFullLinearFIR (block);
+        if (params.phaseMode == 3 || autoLinearActive)
+        {
+            // Full Linear: skip FIR entirely when tone is neutral to avoid needless latency/ringing
+            const bool toneNeutral = std::abs ((double) params.tiltDb)  < 1e-4 &&
+                                     std::abs ((double) params.scoopDb) < 1e-4 &&
+                                     std::abs ((double) params.bassDb)  < 1e-4 &&
+                                     std::abs ((double) params.airDb)   < 1e-4 &&
+                                     params.hpHz <= (Sample) 21 &&
+                                     params.lpHz >= (Sample) 19900;
+            if (!toneNeutral)
+                applyFullLinearFIR (block);
+        }
+        else // params.phaseMode == 2
+        {
+            // Hybrid: bypass FIR when HP/LP are neutral to avoid transient warble when "off"
+            if (! (params.hpHz <= (Sample) 21 && params.lpHz >= (Sample) 19900))
+            {
+                ensureLinearPhaseKernel (sr, params.hpHz, params.lpHz, (int) block.getNumSamples(), (int) block.getNumChannels());
+                linConvolver->process (block);
+            }
+        }
     }
-    else if (params.phaseMode == 3)
-    {
-        applyFullLinearFIR (block);
-    }
-    else if (params.phaseMode == 2)
-    {
-        ensureLinearPhaseKernel (sr, params.hpHz, params.lpHz, (int) block.getNumSamples(), (int) block.getNumChannels());
-        linConvolver->process (block);
-    }
-    else
-    {
-        // Clean filters are already applied inside the sub-block loop using smoothed HP/LP
-    }
+    // else useIIR -> handled later in sub-block loop; no-op here
 
     // Imaging & placement
     if (params.splitMode) applySplitPan (block, params.panL, params.panR);
@@ -2274,7 +2399,7 @@ void FieldChain<Sample>::process (Block block)
     applyRotationAsym (block, params.rotationRad, params.asymmetry);
 
     // Core tone: skip IIR tone when forcing Full Linear this block
-    if (! forceFullLinear)
+    if (! (params.phaseMode == 3 || autoLinearActive))
     {
         // Process in small chunks and use smoothed values to avoid zipper noise
         const int total = (int) block.getNumSamples();
@@ -2321,10 +2446,8 @@ void FieldChain<Sample>::process (Block block)
             airDbSm    .skip (len); const Sample aDb = airDbSm.getCurrentValue();
             airFreqSm  .skip (len); const Sample aHz = airFreqSm.getCurrentValue();
 
-            // Smooth HP/LP cutoffs similarly in IIR mode and gate coefficient churn
+            // Smooth HP/LP cutoffs: handled in slice loop below (log-domain smoothing)
             hpHzSm.skip (len); lpHzSm.skip (len);
-            const Sample hpNow = hpHzSm.getCurrentValue();
-            const Sample lpNow = lpHzSm.getCurrentValue();
 
             // Apply smoothed tone
             // Gate tone coefficient rebuilds with epsilon + cooldown to avoid glitches under rapid moves.
@@ -2389,42 +2512,41 @@ void FieldChain<Sample>::process (Block block)
 
             if (rebuiltAny)
                 toneCoeffCooldownSamples = 64;
-            // Reuse IIR coeffs unless a small epsilon is exceeded and a short cooldown has passed
-            const Sample epsHz = (Sample) 0.5;
-            if (--iirCoeffCooldownSamples < 0) iirCoeffCooldownSamples = 0;
-            const bool needHp = lastAppliedHpHz < (Sample) 0 || std::abs ((double)(hpNow - lastAppliedHpHz)) > (double) epsHz;
-            const bool needLp = lastAppliedLpHz < (Sample) 0 || std::abs ((double)(lpNow - lastAppliedLpHz)) > (double) epsHz;
-            if ((needHp || needLp) && iirCoeffCooldownSamples == 0)
+            // Apply IIR HP/LP only in Zero/Natural modes with log-domain smoothing in small slices
+            if (params.phaseMode == 0 || params.phaseMode == 1)
             {
-                applyHP_LP (sub, hpNow, lpNow);
-                lastAppliedHpHz = hpNow;
-                lastAppliedLpHz = lpNow;
-                iirCoeffCooldownSamples = 64; // guard churn at small buffers
-            }
-            else
-            {
-                // Still process with existing coeffs to keep audio flowing; avoid resetting parameters when unchanged
-                if (lastAppliedHpHz > (Sample) 0 && lastAppliedLpHz > (Sample) 0)
+                const Sample nyqLoc = (Sample) (sr * 0.49);
+                // Slightly slower smoothing for IIR path
+                hpHzSm.reset (sr, 0.090);
+                lpHzSm.reset (sr, 0.090);
+                const Sample hpNowHz = (Sample) std::exp (hpHzSm.getCurrentValue());
+                const Sample lpNowHz = (Sample) std::exp (lpHzSm.getCurrentValue());
+                const Sample hpC = juce::jlimit ((Sample) 20,   (Sample) 1000,  hpNowHz);
+                const Sample lpC = juce::jlimit ((Sample) 1000, juce::jmin ((Sample) 20000, nyqLoc * (Sample) 0.45), lpNowHz);
+                // Epsilon gate to avoid micro-retunes
+                static Sample lastHpLR = (Sample) -1, lastLpLR = (Sample) -1;
+                const Sample eps = (Sample) 3.0;
+                if (lastHpLR < 0 || std::abs ((double)(hpC - lastHpLR)) >= (double) eps)
+                { lrHpL.setCutoffFrequency (hpC); lrHpR.setCutoffFrequency (hpC); lastHpLR = hpC; }
+                if (lastLpLR < 0 || std::abs ((double)(lpC - lastLpLR)) >= (double) eps)
+                { lrLpL.setCutoffFrequency (lpC); lrLpR.setCutoffFrequency (lpC); lastLpLR = lpC; }
+                // Process stereo with LR filters
+                if (sub.getNumChannels() >= 1)
                 {
-                    CtxRep ctxHP (sub);
-                    hpFilter.process (ctxHP);
-                    lpFilter.process (ctxHP);
+                    auto ch0 = sub.getSingleChannelBlock ((size_t) 0);
+                    CtxRep ctx0 (ch0);
+                    lrHpL.process (ctx0);
+                    lrLpL.process (ctx0);
                 }
-                else
+                if (sub.getNumChannels() >= 2)
                 {
-                    // Ensure we do not double-apply; set coeffs only once, then process
-                    hpFilter.setCutoffFrequency (hpNow);
-                    lpFilter.setCutoffFrequency (lpNow);
-                    const Sample Qhp = params.eqQLink ? params.filterQ : params.hpQ;
-                    const Sample Qlp = params.eqQLink ? params.filterQ : params.lpQ;
-                    hpFilter.setResonance (juce::jlimit ((Sample)0.5, (Sample)1.2, Qhp));
-                    lpFilter.setResonance (juce::jlimit ((Sample)0.5, (Sample)1.2, Qlp));
-                    CtxRep ctxHP (sub);
-                    hpFilter.process (ctxHP);
-                    lpFilter.process (ctxHP);
-                    lastAppliedHpHz = hpNow;
-                    lastAppliedLpHz = lpNow;
+                    auto ch1 = sub.getSingleChannelBlock ((size_t) 1);
+                    CtxRep ctx1 (ch1);
+                    lrHpR.process (ctx1);
+                    lrLpR.process (ctx1);
                 }
+                hpHzSm.skip (len);
+                lpHzSm.skip (len);
             }
         }
 
@@ -2448,10 +2570,37 @@ void FieldChain<Sample>::process (Block block)
         }
     }
 
-    // DC blocker after tone to eliminate DC creep
+    // DC blocker after tone to eliminate DC creep (fixed cutoff in IIR modes)
     {
+        const bool iirMode = (params.phaseMode == 0 || params.phaseMode == 1);
+        const bool movingHpLp = (std::abs ((double) (hpHzSm.getTargetValue() - hpHzSm.getCurrentValue())) > 1e-6) ||
+                                 (std::abs ((double) (lpHzSm.getTargetValue() - lpHzSm.getCurrentValue())) > 1e-6);
+        const Sample dcCut = iirMode ? (Sample) 8.0 : (movingHpLp ? (Sample) 15.0 : (Sample) 8.0);
+        dcBlocker.setCutoffFrequency (dcCut);
         CtxRep ctx (block);
         dcBlocker.process (ctx);
+    }
+
+    // Tiny dither to decorrelate state transitions (post-filter) only while HP/LP moving
+    {
+        const bool movingHpLp = (std::abs ((double) (hpHzSm.getTargetValue() - hpHzSm.getCurrentValue())) > 1e-6) ||
+                                 (std::abs ((double) (lpHzSm.getTargetValue() - lpHzSm.getCurrentValue())) > 1e-6);
+        if (movingHpLp)
+        {
+            const int ch = (int) block.getNumChannels();
+            const int n  = (int) block.getNumSamples();
+            static uint32_t rng = 0x1234567u;
+            for (int c = 0; c < ch; ++c)
+            {
+                auto* y = block.getChannelPointer (c);
+                for (int i = 0; i < n; ++i)
+                {
+                    rng = 1664525u * rng + 1013904223u;
+                    const float noise = ((int)(rng >> 9) & 0x7FFF) * (1.0f / 32768.0f) - 0.5f; // ~[-0.5,0.5]
+                    y[i] += (Sample) (noise * 0.001f); // ~ -60 dBFS
+                }
+            }
+        }
     }
 
     // Reverb: compute rvParams then render wet-only to buffer 'wet'
@@ -2689,6 +2838,24 @@ void FieldChain<Sample>::ensureLinearPhaseKernel (double sampleRate, Sample hpHz
     if (! linConvolver->isReady())
     {
         std::vector<float> kernel; designLinearPhaseBandpassKernel (kernel, sampleRate, hp, lp, linKernelLen, 8.6);
+        // Normalize kernel to ~unity gain at geometric mean frequency inside passband
+        if (!kernel.empty())
+        {
+            const double fs = sampleRate;
+            const double fc = juce::jlimit (hp * 1.5, lp * 0.5, std::sqrt (hp * lp));
+            const double w  = 2.0 * juce::MathConstants<double>::pi * (fc / fs);
+            double re = 0.0, im = 0.0; const int M = (int) kernel.size();
+            for (int n = 0; n < M; ++n)
+            {
+                const double phase = -w * n;
+                re += (double) kernel[n] * std::cos (phase);
+                im += (double) kernel[n] * std::sin (phase);
+            }
+            const double mag = std::sqrt (re*re + im*im);
+            const double s = (mag > 1e-9) ? (1.0 / mag) : 1.0;
+            if (std::abs (s - 1.0) > 1e-6)
+                for (auto& k : kernel) k = (float) (k * s);
+        }
         linConvolver->setKernel (kernel);
         lastHpHzLP = (float) hp; lastLpHzLP = (float) lp;
         lastDesignedHpHzLP = (float) hp; lastDesignedLpHzLP = (float) lp;

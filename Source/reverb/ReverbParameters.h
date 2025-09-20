@@ -19,7 +19,7 @@ inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioPa
     };
 
     // Top / Algo
-    p.push_back (B (ReverbIDs::enabled, "Reverb Enable", true));
+    p.push_back (B (ReverbIDs::enabled, "Reverb Enable", false));
     p.push_back (B (ReverbIDs::killDry, "Wet Only", false));
     p.push_back (C (ReverbIDs::algo, "Reverb Algo", StringArray{ "Modern FDN", "Chamber", "Platey", "Vintage" }, 0));
 
