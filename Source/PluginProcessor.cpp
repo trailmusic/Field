@@ -2311,7 +2311,7 @@ void FieldChain<Sample>::process (Block block)
 
     // eco path removed
 
-    // Phase Mode: 2 = Hybrid Linear → FIR HP/LP; 3 = Full Linear → composite FIR tone+HP/LP
+    // [PHASE][core] Modes: 2=Hybrid FIR HP/LP, 3=Full FIR (tone+HP/LP). 0/1 use IIR (LR4).
     // Optional auto-linear during edits: force Full Linear while autoLinearSamplesLeft > 0
     const bool autoLinearActive = (autoLinearSamplesLeft > 0);
     const bool useFIR = (params.phaseMode >= 2) || autoLinearActive;
@@ -2320,7 +2320,7 @@ void FieldChain<Sample>::process (Block block)
     {
         if (params.phaseMode == 3 || autoLinearActive)
         {
-            // Full Linear: skip FIR entirely when tone is neutral to avoid needless latency/ringing
+            // [FIR][neutral-bypass] Full Linear: bypass FIR when tone is neutral to avoid needless latency/pre‑ringing
             const bool toneNeutral = std::abs ((double) params.tiltDb)  < 1e-4 &&
                                      std::abs ((double) params.scoopDb) < 1e-4 &&
                                      std::abs ((double) params.bassDb)  < 1e-4 &&
@@ -2332,7 +2332,7 @@ void FieldChain<Sample>::process (Block block)
         }
         else // params.phaseMode == 2
         {
-            // Hybrid: bypass FIR when HP/LP are neutral to avoid transient warble when "off"
+            // [FIR][neutral-bypass] Hybrid: bypass FIR when HP/LP are neutral; FIR kernel is gain‑normalized
             if (! (params.hpHz <= (Sample) 21 && params.lpHz >= (Sample) 19900))
             {
                 ensureLinearPhaseKernel (sr, params.hpHz, params.lpHz, (int) block.getNumSamples(), (int) block.getNumChannels());
@@ -2513,7 +2513,8 @@ void FieldChain<Sample>::process (Block block)
 
             if (rebuiltAny)
                 toneCoeffCooldownSamples = 64;
-            // Apply IIR HP/LP only in Zero/Natural modes with log-domain smoothing in small slices
+            // [IIR][LR4] Zero/Natural: non‑resonant Linkwitz–Riley HP/LP per channel
+            // [IIR][smoothing] ~90 ms smoothing; [IIR][epsilon] ≥3 Hz retune gate
             if (params.phaseMode == 0 || params.phaseMode == 1)
             {
                 const Sample nyqLoc = (Sample) (sr * 0.49);
