@@ -409,6 +409,7 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.spaceAlgo  = (int) apvts.getParameterAsValue (IDs::spaceAlgo).getValue();
     p.airDb    = getParam(apvts, IDs::airDb);
     p.bassDb   = getParam(apvts, IDs::bassDb);
+    // Legacy ducking retained for Delay duck link, but Reverb uses ReverbIDs now
     p.ducking  = getParam(apvts, IDs::ducking);
     p.duckThresholdDb = getParam(apvts, IDs::duckThrDb);
     p.duckKneeDb      = getParam(apvts, IDs::duckKneeDb);
@@ -514,6 +515,15 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.rvDreqHighX     = apvts.getRawParameterValue (ReverbIDs::dreqHighX)->load();
     p.rvWidthPct      = apvts.getRawParameterValue (ReverbIDs::widthPct)->load();
     p.rvWet01         = apvts.getRawParameterValue (ReverbIDs::wetMix01)->load();
+    // Reverb ducking ingress
+    p.rvDuckDepthDb   = apvts.getRawParameterValue (ReverbIDs::duckDepthDb)->load();
+    p.rvDuckThrDb     = apvts.getRawParameterValue (ReverbIDs::duckThrDb)->load();
+    p.rvDuckKneeDb    = apvts.getRawParameterValue (ReverbIDs::duckKneeDb)->load();
+    p.rvDuckRatio     = apvts.getRawParameterValue (ReverbIDs::duckRatio)->load();
+    p.rvDuckAtkMs     = apvts.getRawParameterValue (ReverbIDs::duckAtkMs)->load();
+    p.rvDuckRelMs     = apvts.getRawParameterValue (ReverbIDs::duckRelMs)->load();
+    p.rvDuckLaMs      = apvts.getRawParameterValue (ReverbIDs::duckLaMs)->load();
+    p.rvDuckRmsMs     = apvts.getRawParameterValue (ReverbIDs::duckRmsMs)->load();
     p.rvOutTrimDb     = apvts.getRawParameterValue (ReverbIDs::outTrimDb)->load();
     
     return p;
@@ -859,6 +869,23 @@ void MyPluginAudioProcessor::setStateInformation (const void* data, int sizeInBy
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes)) {
         apvts.replaceState (juce::ValueTree::fromXml (*xml));
+        // Migration: map legacy duck depth to Reverb Engine duck depth if engine depth is zero
+        if (auto* legacy = apvts.getRawParameterValue (IDs::ducking))
+        if (auto* rvDepth = apvts.getRawParameterValue (ReverbIDs::duckDepthDb))
+        {
+            const float legacy01 = legacy->load();
+            const float currentDb = rvDepth->load();
+            if (legacy01 > 0.001f && currentDb <= 0.001f)
+            {
+                const float mappedDb = juce::jlimit (0.0f, 36.0f, legacy01 * 24.0f);
+                if (auto* p = apvts.getParameter (ReverbIDs::duckDepthDb))
+                {
+                    p->beginChangeGesture();
+                    p->setValueNotifyingHost (p->convertTo0to1 (mappedDb));
+                    p->endChangeGesture();
+                }
+            }
+        }
         
         // Notify editor (if open) to rebind on message thread
         if (auto* ed = dynamic_cast<MyPluginAudioProcessorEditor*>(getActiveEditor())) {
@@ -954,6 +981,24 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
                 }
                 mirrorGuard.store(false);
                 break;
+            }
+        }
+    }
+    // Auto-enable/disable Reverb based on WET amount
+    if (parameterID == ReverbIDs::wetMix01 && !reverbAutoGuard.load())
+    {
+        const float wet = newValue;
+        if (auto* p = apvts.getParameter (ReverbIDs::enabled))
+        {
+            const bool wantOn = wet > 0.0001f;
+            const bool isOn   = apvts.getRawParameterValue (ReverbIDs::enabled)->load() > 0.5f;
+            if (wantOn != isOn)
+            {
+                reverbAutoGuard.store (true);
+                p->beginChangeGesture();
+                p->setValueNotifyingHost (wantOn ? 1.0f : 0.0f);
+                p->endChangeGesture();
+                reverbAutoGuard.store (false);
             }
         }
     }
@@ -1395,6 +1440,17 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.scoopFreq = (Sample) hp.scoopFreq;
     params.bassFreq  = (Sample) hp.bassFreq;
     params.airFreq   = (Sample) hp.airFreq;
+    // Ingest Reverb ducking params (Sample domain)
+    params.rvEnabled      = hp.rvEnabled;
+    params.rvWet01        = (Sample) hp.rvWet01;
+    params.rvDuckDepthDb  = (Sample) hp.rvDuckDepthDb;
+    params.rvDuckThrDb    = (Sample) hp.rvDuckThrDb;
+    params.rvDuckKneeDb   = (Sample) hp.rvDuckKneeDb;
+    params.rvDuckRatio    = (Sample) hp.rvDuckRatio;
+    params.rvDuckAtkMs    = (Sample) hp.rvDuckAtkMs;
+    params.rvDuckRelMs    = (Sample) hp.rvDuckRelMs;
+    params.rvDuckLaMs     = (Sample) hp.rvDuckLaMs;
+    params.rvDuckRmsMs    = (Sample) hp.rvDuckRmsMs;
     // Push smoothed targets
     tiltDbSm.setTargetValue   (params.tiltDb);
     tiltFreqSm.setTargetValue (juce::jlimit ((Sample) 50,  (Sample) 5000, params.tiltFreq));
@@ -2749,19 +2805,30 @@ void FieldChain<Sample>::process (Block block)
         }
     }
 
-    // Duck wet against dry (WetOnly), only when Reverb wet is active to save CPU
-    const bool spaceWetActive = (rvParams.wetLevel > 0.0001f);
-    if (params.ducking > (Sample) 0.001 && spaceWetActive)
+    // Reverb Engine ducking: Duck reverb wet against dry (WetOnly), only when Reverb is active
+    const bool rvEnabled = params.rvEnabled;
+    const float rvWet01 = (float) params.rvWet01;
+    const bool spaceWetActive = (rvParams.wetLevel > 0.0001f) && rvEnabled && (rvWet01 > 0.0001f);
+    // Read Reverb Engine duck parameters from per-block params
+    const float duckDepthDb = (float) params.rvDuckDepthDb;
+    const float duckThrDb   = (float) params.rvDuckThrDb;
+    const float duckKneeDb  = (float) params.rvDuckKneeDb;
+    const float duckRatio   = (float) params.rvDuckRatio;
+    const float duckAtkMs   = (float) params.rvDuckAtkMs;
+    const float duckRelMs   = (float) params.rvDuckRelMs;
+    const float duckLaMs    = (float) params.rvDuckLaMs;
+    const float duckRmsMs   = (float) params.rvDuckRmsMs;
+    if (duckDepthDb > 0.001f && spaceWetActive)
     {
         fielddsp::DuckParams p;
-        p.maxDepthDb  = (float) juce::jlimit ((double)0.0, (double)36.0, (double) params.ducking * 24.0);
-        p.thresholdDb = (float) params.duckThresholdDb;
-        p.kneeDb      = (float) params.duckKneeDb;
-        p.ratio       = (float) params.duckRatio;
-        p.attackMs    = (float) params.duckAttackMs;
-        p.releaseMs   = (float) params.duckReleaseMs;
-        p.lookaheadMs = (float) params.duckLookaheadMs;
-        p.rmsMs       = (float) params.duckRmsMs;
+        p.maxDepthDb  = juce::jlimit (0.0f, 36.0f, duckDepthDb);
+        p.thresholdDb = duckThrDb;
+        p.kneeDb      = duckKneeDb;
+        p.ratio       = duckRatio;
+        p.attackMs    = duckAtkMs;
+        p.releaseMs   = duckRelMs;
+        p.lookaheadMs = duckLaMs;
+        p.rmsMs       = duckRmsMs;
         p.bypass      = (p.maxDepthDb <= 0.001f);
         ducker.setParams (p);
 
@@ -2773,8 +2840,8 @@ void FieldChain<Sample>::process (Block block)
         // Skip ducking entirely when reverb wet is zero; UI will idle the GR meter
     }
 
-    // Equal-power mix: Depth × Wet slider
-    const float rvMix = juce::jlimit (0.0f, 1.0f, rvParams.wetLevel * (float) params.rvWet01);
+    // Equal-power mix: ReverbEngine Wet slider
+    const float rvMix = juce::jlimit (0.0f, 1.0f, (float) params.rvWet01);
     wetMixSmoothed.setTargetValue (rvMix);
     // Sum Dry + Wet back to output block (equal-power law) with one shared mix per sample:
     // mix=0 -> 100% dry, mix=1 -> 100% wet

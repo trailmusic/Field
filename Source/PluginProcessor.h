@@ -462,6 +462,15 @@ private:
         Sample rvWidthPct{};
         Sample rvWet01{};
         Sample rvOutTrimDb{};
+        // Reverb ducking (Sample domain)
+        Sample rvDuckDepthDb{};
+        Sample rvDuckThrDb{};
+        Sample rvDuckKneeDb{};
+        Sample rvDuckRatio{};
+        Sample rvDuckAtkMs{};
+        Sample rvDuckRelMs{};
+        Sample rvDuckLaMs{};
+        Sample rvDuckRmsMs{};
     } params;
 
     // Width Designer runtime state
@@ -551,6 +560,15 @@ struct HostParams
     double rvWidthPct{};
     double rvWet01{};
     double rvOutTrimDb{};
+    // Reverb ducking
+    double rvDuckDepthDb{};
+    double rvDuckThrDb{};
+    double rvDuckKneeDb{};
+    double rvDuckRatio{};
+    double rvDuckAtkMs{};
+    double rvDuckRelMs{};
+    double rvDuckLaMs{};
+    double rvDuckRmsMs{};
         
     // Delay parameters
     bool   delayEnabled{};
@@ -757,6 +775,8 @@ private:
     std::atomic<bool> userPhaseOverride    { false };
     std::atomic<bool> osFollowQuality      { true };
     std::atomic<bool> phaseFollowQuality   { true };
+    // Auto-enable/disable Reverb based on Wet slider guard
+    std::atomic<bool> reverbAutoGuard      { false };
     // Reverb engine (new)
     ReverbEngine reverbEngine;
     // Motion Engine
