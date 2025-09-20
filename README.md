@@ -113,20 +113,20 @@ Plain terms
 * **Mono Maker:** Sums under a cutoff with selectable **slope (6/12/24 dB/oct)**
 * **Audition:** Listen to "what's being mono'd" for confidence checks
  
-### Phase Modes (NEW)
+### Phase Modes (Updated)
 
 FIELD now supports phase behaviors for the core high‑pass / low‑pass and tone path:
 
-- **Zero**: Current minimum‑phase IIR path. Zero added latency. Default.
-- **Natural**: Minimum‑phase IIR with gentle HF guards (wider stability near Nyquist). Zero latency. Musical transient feel.
-- **Hybrid Linear**: Linear‑phase HP/LP via FIR (overlap‑save), while shelves/tilt/peaks remain IIR. Host latency is reported automatically.
+- **Zero**: Minimum‑phase IIR using non‑resonant Linkwitz–Riley HP/LP (per‑channel). Zero added latency. Smoothing ~90 ms and epsilon‑gated retunes reduce zipper/crackle.
+- **Natural**: As Zero with extra HF safety (stronger Nyquist clamps). Zero latency. Musical transient feel; stable on wide‑band program.
+- **Hybrid Linear**: Linear‑phase HP/LP via FIR (overlap‑save), while shelves/tilt/peaks remain IIR. FIR kernel is gain‑normalized and FIR is bypassed when tone is neutral. Host latency is reported automatically.
 - **Full Linear**: One composite linear‑phase FIR replaces HP/LP + Tilt/Bass/Air/Scoop in a single convolver. Magnitude matches the macro tone; phase is strictly linear. Host latency is reported automatically.
 
 Notes:
 - Hybrid Linear primarily de‑warps the most audible phase rotations of the macro slopes. It preserves the tone of your shelves/peaks for a balanced hybrid response.
 - Full Linear synthesizes one FIR from the desired magnitude response (HP/LP + Tilt/Bass/Air/Scoop sampled on a dense grid), IFFTs to time, windows, and truncates to odd length N. Transients stay pristine; latency is fixed.
 - Reported latency ≈ (N−1)/2 samples. Default `4097` taps → ~42.7 ms @ 48 kHz (8193 → ~85.4 ms).
-- HP/LP cutoffs remain clamped: HP ≤ 1 kHz, LP ≥ 1 kHz, and HP < LP.
+- HP/LP clamps: HP ≤ 1 kHz, LP ≤ 0.45·fs and ≥ 1 kHz, and HP < LP. Neutral = HP≈20 Hz & LP≈20 kHz (FIR path bypassed).
 - Natural mode adds subtle HF safety when designing shelves/peaks near Nyquist.
 
 ### Stereoize (P1)
