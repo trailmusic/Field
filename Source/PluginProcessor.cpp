@@ -112,18 +112,18 @@ namespace IDs {
     static constexpr const char* phaseMode  = "phase_mode"; // 0 Zero, 1 Natural, 2 Hybrid Linear
 }
 
-// ================================================================
-// Helper: safe access to APVTS raw values
-// ================================================================
+// ===== [UTIL] APVTS raw access helper =====
+// Why: one-liner get with assert on missing IDs
+DEV_BANNER("UTIL", "APVTS raw access", "assert on missing IDs")
 static inline float getParam (juce::AudioProcessorValueTreeState& apvts, const char* id)
 {
     if (auto* p = apvts.getRawParameterValue (id)) return p->load();
     jassertfalse; return 0.0f;
 }
 
-// ------------------------------------------------
-// New voicing helper for Room/Plate/Hall macro map
-// ------------------------------------------------
+// ===== [REVERB] Macro voicing helper =====
+// Why: map Room/Plate/Hall + Depth to JUCE Reverb params
+DEV_BANNER("REVERB", "Macro voicing helper", "compute parameters from macro")
 static inline float lerpFloat (float a, float b, float t)
 {
     t = juce::jlimit (0.0f, 1.0f, t);
