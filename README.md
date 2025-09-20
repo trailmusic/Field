@@ -25,6 +25,7 @@ This README is optimized for **humans** and **AI builders**: explicit, actionabl
 * [Testing & QA Checklist](#testing--qa-checklist)
 * [Roadmap](#roadmap)
 * [Credits & License](#credits--license)
+* [Developer Notes System](#developer-notes-system)
 
 ---
 
@@ -1389,4 +1390,10 @@ Machine analyzes 60s of program audio and proposes safe, context-driven paramete
 2) Click Learn and play program audio for ~60 s.
 3) Review cards: read mini-meters and reasons.
 4) Use Strength to scale impact; Preview/Apply; Revert if needed.
+
+---
+
+## Developer Notes System
+
+See `DevNotesSystem.md` for standards, taxonomy, templates (ADR, Debug Recipe, Design Brief, Release Note, Decision Note, Postmortem), and the cleanup policy. New notes live under `docs/notes/` using typed ID prefixes (ADR/DEC/DES/DBG/REL/PM).
 
