@@ -1040,9 +1040,11 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     const int calculatedMinHeight = headerH + xyMinH + metersH + totalRowsH + gapsH + Layout::dp (Layout::PAD, s) * 2 + 50; // +50 for bottom margin
     
     // Store resize constraints
-    // Allow narrower widths than full content width; keep full height for control scale
+    // Allow some narrowing vs content width, but never below a conservative floor
     const int minWidthAllowed = juce::jmax (800, (int) std::round ((float) baseWidth * 0.5f));
-    this->minWidth = juce::jmin (calculatedMinWidth, minWidthAllowed);
+    const int minWidthFloor   = Layout::BP_WIDE; // breakpoint for wide layouts (protects 4x16 flats)
+    const int proposedMinW    = juce::jmin (calculatedMinWidth, minWidthAllowed);
+    this->minWidth = juce::jmax (minWidthFloor, proposedMinW);
     this->minHeight = calculatedMinHeight;
     this->maxWidth = 3000;
     this->maxHeight = 2000;
@@ -1050,8 +1052,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // Set minimum size constraints
     setResizeLimits (minWidth, minHeight, maxWidth, maxHeight);
     
-    // Set initial size (respecting minimums)
-    const int initialWidth = juce::jmax (baseWidth, calculatedMinWidth);
+    // Set initial size (respecting minimums). Prefer baseWidth over full content width.
+    const int initialWidth = juce::jmax (baseWidth, minWidth);
     const int initialHeight = juce::jmax (baseHeight, calculatedMinHeight);
     setSize (initialWidth, initialHeight);
     // Initial layout deferred until layoutReady is true
@@ -1444,6 +1446,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // Delay container will be removed; lay out directly on right side
     // addAndMakeVisible (delayContainer);        delayContainer.setTitle ("");     delayContainer.setShowBorder (true);
     // Row containers for EQ/Image are no longer used
+    addAndMakeVisible (leftContentContainer);  leftContentContainer.setTitle ("");    leftContentContainer.setShowBorder (false);
     addAndMakeVisible (metersContainer);       metersContainer.setTitle ("");         metersContainer.setShowBorder (false);
 
     // Width group (image row, bottom-right): invisible container + placeholder slots for spanning grid
@@ -2413,7 +2416,7 @@ void MyPluginAudioProcessorEditor::performLayout()
 {
     if (!layoutReady) return;
 
-    const float s = juce::jmax (0.6f, scaleFactor);
+    const float s = juce::jmax (0.5f, scaleFactor);
     auto r = getLocalBounds().reduced (Layout::dp (Layout::PAD, s)).withTrimmedBottom (50);
     
     
@@ -2779,27 +2782,42 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int lPx_rs   = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
         const int cellW_rs = lPx_rs + Layout::dp (8, s);
         const int metersStripW = juce::jlimit (Layout::dp (120, s), Layout::dp (320, s), cellW_rs * 2 + Layout::dp (8, s));
+        // Split the remaining area: left content container and right meters container
         auto metersArea = r.removeFromRight (metersStripW);
+        auto leftArea   = r; // whatever remains after carving meters
         metersArea = metersArea.reduced (Layout::dp (Layout::GAP, s));
-        metersContainer.setBounds (metersArea);
+        leftArea   = leftArea  .reduced (Layout::dp (Layout::GAP, s));
+        leftContentContainer.setBounds (leftArea);
+        metersContainer.setBounds       (metersArea);
 
         // Allocate the top area as remaining height after rows, with a minimum (left content only)
         const int mainH = juce::jmax (Layout::dp (300, s), r.getHeight() - rowsTotalH_rsv);
         auto main = r.removeFromTop (mainH);
         
-        // Visual dock takes the pad area
-        auto padBounds = main.reduced (Layout::dp (Layout::GAP, s));
-        if (panes) panes->setBounds (padBounds);
-        if (xyShade) xyShade->setBounds (padBounds);
+        // Visual dock takes the pad area exactly matching leftContentContainer width
+        auto padLocal = leftContentContainer.getLocalBounds()
+                           .removeFromTop (mainH)
+                           .reduced (Layout::dp (Layout::GAP, s));
+        if (panes)
+        {
+            if (panes->getParentComponent() != &leftContentContainer) leftContentContainer.addAndMakeVisible (*panes);
+            panes->setBounds (padLocal);
+        }
+        if (xyShade)
+        {
+            if (xyShade->getParentComponent() != &leftContentContainer) leftContentContainer.addAndMakeVisible (*xyShade);
+            xyShade->setBounds (padLocal);
+        }
 
         // Hide center container if present
         phaseCenterContainer.setVisible (false);
 
         // Layout meters stack: [Corr] [IO (vertical In/Out)] [LR (vertical)] side-by-side inside their panels
-        addAndMakeVisible (corrMeter);
-        addAndMakeVisible (lrMeters);
-        addAndMakeVisible (ioMeters);
-        auto mB = metersContainer.getBounds().reduced (Layout::dp (Layout::GAP, s));
+        // Mount meters as children of metersContainer to isolate z-order and clipping
+        if (corrMeter.getParentComponent() != &metersContainer) metersContainer.addAndMakeVisible (corrMeter);
+        if (lrMeters.getParentComponent()   != &metersContainer) metersContainer.addAndMakeVisible (lrMeters);
+        if (ioMeters.getParentComponent()   != &metersContainer) metersContainer.addAndMakeVisible (ioMeters);
+        auto mB = metersContainer.getLocalBounds().reduced (Layout::dp (Layout::GAP, s));
         const int corrH = juce::roundToInt (Layout::dp (Layout::CORR_METER_H, s));
         auto corrB = mB.removeFromTop (corrH);
         corrMeter.setBounds (corrB);
@@ -2818,12 +2836,13 @@ void MyPluginAudioProcessorEditor::performLayout()
 
     const int lPx       = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
     const int gapI      = Layout::dp (Layout::GAP_S, s);
-    const int labelBand = Layout::dp (Layout::LABEL_BAND_EXTRA, s);
     const int dividerW  = Layout::dp (8, s); // global divider column width (thicker + more spacing)
     // microH no longer used (minis integrated into cells)
 
-    // Container height calculation: knob height + label band + extra padding for labels
-    const int containerHeight = lPx + labelBand + Layout::dp (Layout::LABEL_BAND_EXTRA, s);
+    // Container height calculation aligned to KnobCell metrics: knob + gap + value label
+    const int valuePxCommon = Layout::dp (14, s);
+    const int labelGapCommon = Layout::dp (4, s);
+    const int containerHeight = lPx + labelGapCommon + valuePxCommon;
 
     // All rows same height, no extra spacing between rows
     const int rowH1 = containerHeight;                // Row 1
@@ -2837,11 +2856,18 @@ void MyPluginAudioProcessorEditor::performLayout()
     const int delayCardW = delayCols * cellW_right + Layout::dp (Layout::PAD, s);
     juce::Rectangle<int> delayArea; // to be computed after rows are defined
     // Capture the full rows area (left column) for overlay sizing
-    auto rowsArea = r;
+    auto rowsArea = r; // rows live directly below the panes (after main area was removed)
     auto row1 = r.removeFromTop (rowH1);
     auto row2 = r.removeFromTop (rowH2);
     auto row3 = r.removeFromTop (rowH3);
     auto row4 = r.removeFromTop (rowH4);
+    // Align left content container bottom to the bottom of Row 4 to remove extra space
+    {
+        const int rowsBottom = row4.getBottom();
+        auto lc = leftContentContainer.getBounds();
+        lc.setBottom (rowsBottom);
+        leftContentContainer.setBounds (lc);
+    }
     // Alternate bottom panel (slides over bottom rows when enabled)
     {
         // Progress towards target with symmetric easing (smooth but brisk)
@@ -2876,12 +2902,23 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int bottomY  = juce::roundToInt (juce::jmap (effSlide, 0.0f, 1.0f, (float) hiddenBaseline, (float) activeBaseline));
         const int curTop   = bottomY - juce::roundToInt ((float) overlayH * effSlide);
 
-        bottomAltPanel.setBounds (juce::Rectangle<int> (rowsArea.getX(), curTop, overlayW, overlayH));
+        // Mount sliding panel inside leftContentContainer exactly over the 4 control rows
+        const int totalRowsH_local = rowH1 + rowH2 + rowH3 + rowH4;
+        auto rowsLocalRect = leftContentContainer.getLocalBounds().removeFromBottom (totalRowsH_local);
+        auto overlayLocal  = rowsLocalRect;
         const bool showPanel = effSlide > 0.001f;
-        bottomAltPanel.setInterceptsMouseClicks (showPanel, false);
-        bottomAltPanel.setVisible (showPanel);
-        addAndMakeVisible (bottomAltPanel);
-        bottomAltPanel.toFront (true);
+        if (showPanel)
+        {
+            if (bottomAltPanel.getParentComponent() != &leftContentContainer) leftContentContainer.addAndMakeVisible (bottomAltPanel);
+            bottomAltPanel.setBounds (overlayLocal);
+            bottomAltPanel.setInterceptsMouseClicks (true, false);
+            bottomAltPanel.setVisible (true);
+            bottomAltPanel.toFront (true);
+        }
+        else
+        {
+            bottomAltPanel.setVisible (false);
+        }
 
         // Motion Engine now only lives in Group 1; no special visibility toggling here
         // Ensure the toggle button always remains visible above the sliding panel
@@ -2890,17 +2927,22 @@ void MyPluginAudioProcessorEditor::performLayout()
         bottomAreaToggle.toFront (true);
 
         // Motion Engine: removed from Group 2. Lives only in Group 1 flat grid.
+        // Group 2 panel should align exactly over the 4 control rows area
         auto b = bottomAltPanel.getLocalBounds();
         // Delay group positioned directly in Group 2 panel (no container)
+        const int availableWLocal = b.getWidth();
+        const int cellWBase = lPx + Layout::dp (8, s);
+        const int cellWFit  = juce::jmax (1, availableWLocal / 16); // two 8-col blocks (Delay + Reverb)
+        const int cellW     = juce::jmin (cellWBase, cellWFit);
         const int delayGroupX = b.getX();
-        const int delayGroupW = 8 * (lPx + Layout::dp (8, s)); // 8 columns for delay items
+        const int delayGroupW = 8 * cellW; // 8 columns for delay items
         const int delayGroupH = b.getHeight();
-        const int delayGroupY = b.getY();
+        const int delayGroupY = 0;
         
         // Create and layout delay items in exact 4x7 order
         const int valuePx = Layout::dp (14, s);
         const int labelGap = Layout::dp (4, s);
-        const int delayCellW = lPx + Layout::dp (8, s);
+        const int delayCellW = cellW;
         
         // Create delay switch cells
         if (!delayEnabledCell) { delayEnabled.setComponentID ("delayEnabled"); delayEnabled.getProperties().set ("iconType", (int) IconSystem::Power); delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled); delayEnabledCell->setCaption ("Enable"); delayEnabledCell->setDelayTheme (true); }
@@ -3029,9 +3071,9 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Reverb controls group to the right of Delay group in Group 2 (flattened 4x16 grid; 8 columns used)
         {
             const int reverbGroupX = delayGroupX + delayGroupW;
-            const int reverbGroupY = delayGroupY;
+            const int reverbGroupY = 0;
             const int availableW  = b.getRight() - reverbGroupX;
-            const int reverbCellW = lPx + Layout::dp (8, s);
+            const int reverbCellW = cellW;
             const int targetReverbW = reverbCellW * 8; // 8 columns
             const int reverbGroupW = juce::jmin (availableW, targetReverbW);
             const int reverbGroupH = delayGroupH;
@@ -3043,7 +3085,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             // Mirror Delay metrics for Reverb grid so KnobCells match exactly
             const int valuePx2 = Layout::dp (14, s);
             const int labelGap2 = Layout::dp (4, s);
-            const int delayCellW = lPx + Layout::dp (8, s);
+            const int delayCellW = cellW;
             rvPanel->setCellMetrics (lPx, valuePx2, labelGap2, delayCellW);
             rvPanel->setRowHeightPx (containerHeight);
 
@@ -3227,14 +3269,14 @@ void MyPluginAudioProcessorEditor::performLayout()
     {
         const int valuePx = Layout::dp (14, s);
         const int labelGap = Layout::dp (4, s);
-        const int cellW = lPx + Layout::dp (8, s);
+        const int cellWTarget = lPx + Layout::dp (8, s);
+        const int availableWLocal = leftContentContainer.getWidth();
+        const int cellWFit = juce::jmax (1, availableWLocal / 16);
+        const int cellW     = juce::jmin (cellWTarget, cellWFit);
 
-        // Compute a single bounds covering rows 1-4, excluding the right delay card area
-        auto r1 = row1; r1.removeFromRight (delayCardW);
-        auto r2 = row2; r2.removeFromRight (delayCardW);
-        auto r3 = row3; r3.removeFromRight (delayCardW);
-        auto r4 = row4; r4.removeFromRight (delayCardW);
-        juce::Rectangle<int> group1Bounds (r1.getX(), r1.getY(), r1.getWidth(), r1.getHeight() + r2.getHeight() + r3.getHeight() + r4.getHeight());
+        // Compute a single bounds covering rows 1-4 across the full left content width (container-local)
+        const int totalRowsH = rowH1 + rowH2 + rowH3 + rowH4;
+        juce::Rectangle<int> group1BoundsLocal = leftContentContainer.getLocalBounds().removeFromBottom (totalRowsH);
 
         // Ensure cells/components exist and have metrics
         {
@@ -3348,7 +3390,12 @@ void MyPluginAudioProcessorEditor::performLayout()
         }
 
         // Make visible
-        auto addVis = [this](juce::Component* c){ if (c) addAndMakeVisible (*c); };
+        auto addVis = [this](juce::Component* c)
+        {
+            if (!c) return;
+            if (c->getParentComponent() != &leftContentContainer)
+                leftContentContainer.addAndMakeVisible (*c);
+        };
         addVis (bassCell.get());
         addVis (hpCell.get());
         addVis (filterQCell.get());
@@ -3390,7 +3437,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             if (c == nullptr) return;
             if (c->getParentComponent() == &bottomAltPanel)
                 bottomAltPanel.removeChildComponent (c);
-            addAndMakeVisible (*c);
+            if (c->getParentComponent() != &leftContentContainer)
+                leftContentContainer.addAndMakeVisible (*c);
         };
         auto setKMetrics = [lPx, s](KnobCell* kc)
         {
@@ -3547,7 +3595,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         items.add (juce::GridItem (*motionCellsGroup2[23]).withArea (4,16));
 
         g.items = std::move (items);
-        g.performLayout (group1Bounds);
+        g.performLayout (group1BoundsLocal);
 
         // Motion visibility is managed solely by the Group 1 flat grid
 
@@ -3682,12 +3730,13 @@ void MyPluginAudioProcessorEditor::mouseUp (const juce::MouseEvent&) { isResizin
 
 void MyPluginAudioProcessorEditor::resized()
 {
-    // Calculate scale factor based on height only to keep controls consistent when width shrinks
-    const float heightScale = (float)getHeight() / (float)baseHeight;
-    scaleFactor = heightScale;
-    
+    // Calculate scale factor from both width and height; use the smaller to ensure uniform downsizing
+    const float wScale = (float)getWidth()  / (float)baseWidth;
+    const float hScale = (float)getHeight() / (float)baseHeight;
+    scaleFactor = juce::jmin (wScale, hScale);
+
     // Ensure scale factor stays within reasonable bounds
-    scaleFactor = juce::jlimit (0.6f, 2.0f, scaleFactor);
+    scaleFactor = juce::jlimit (0.5f, 2.0f, scaleFactor);
     
     // Call the existing layout code with the calculated scale factor
     if (!layoutReady) return;

@@ -1812,6 +1812,7 @@ private:
     ControlContainer mainControlsContainer, volumeContainer;
     ControlContainer delayContainer;
     ControlContainer metersContainer;
+    ControlContainer leftContentContainer;
     ControlContainer spaceKnobContainer, panKnobContainer;
     
     // Width grouping (Image row): large WIDTH + small W LO/MID/HI
@@ -1945,8 +1946,8 @@ private:
     
     // Scaling
     float scaleFactor = 1.0f;
-    const int baseWidth  = 2000; // increased to accommodate delay + motion grid by default
-    const int baseHeight = 1250;
+    const int baseWidth  = 1500; // 75% of 2000 to try a smaller default
+    const int baseHeight = 938;  // 75% of 1250 to preserve ~1.6:1 aspect
     const int standardKnobSize = 80;
     bool resizingRowGuard = false;
     
