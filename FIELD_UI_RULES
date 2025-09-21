@@ -1,12 +1,108 @@
 Field UI Rules (working notes)
 
-- Knob captions (names): Provided by LookAndFeel from slider.setName(...). Prefer setting the slider name; avoid custom caption drawing in KnobCell unless explicitly required.
-- Value labels: Let KnobCell position them. Use setValueLabelMode(Managed) and setValueLabelGap(...). Do not place labels externally (avoid placeLabelBelow) for KnobCell-managed controls (e.g., WIDTH/SHUF/Motion, Center group knobs).
-- Initial value text: Initialize value labels once (from current slider values) so first paint shows data immediately, then rely on attachments/change callbacks to keep them updated.
-- Panel padding (Group 2): No outer reduced()/padding on Delay/Reverb grids; items should lay edge-to-edge against the panel bounds.
-- Metallic background: Apply only to Group 1 center items; Group 2 uses default background.
-- Reverb label abbreviations: "ER WID" (was ER WIDTH), "TL WID" (was WIDTH), "ER DEN" (was ER DENS).
-- Duck strip metrics (Group 2): DUCK/ATT/REL/THR/RAT use the same knob diameter/value band/label gap as other Reverb knobs.
-- Motion Engine (Group 1 only): Lives solely in Group 1 flat grid; not parented in Group 2. Ensure all Motion knobs use KnobCell-managed labels and have slider names set for captions.
-- Auto-enable/bypass (UX): Reverb may auto-enable when WET > 0 and auto-bypass when WET = 0; explicit Enable remains.
-- Grid flattening: Group 1 and Group 2 are flattened contiguous grids; preserve exact cell metrics and ordering when closing gaps.
+Last updated: 2025-09-21
+Scope: Conventions for Field’s UI (KnobCell/SwitchCell/Combo), Group 1 and Group 2 panels, labels, layout, performance.
+
+---
+Core Principles
+- Consistency over cleverness: same label system and metrics across all knobs.
+- Single source of truth: LNF draws captions from slider.setName(...).
+- KnobCell owns value-label placement (Managed). Avoid external placement for KnobCell controls.
+- Flattened grids: contiguous, gapless layout; fill space by design, not margins.
+
+---
+Controls: Captions and Value Labels
+- Captions (names)
+  - Set via slider.setName("CAP"). Short caps (2–6 chars): ER WID, TL WID, ER DEN, WET, SIZE, XO LO, XO HI, PUNCH, CNTR.
+- Value labels
+  - Use KnobCell::setValueLabelMode(Managed) and setValueLabelGap(...).
+  - KnobCell positions value label under the knob in resized().
+  - Initialize value label text once from current slider value.
+- Precision guidelines
+  - Frequency (HP/LP): 0 decimals (Hz). Percent: 0 decimals. dB: 1 decimal. Time: ms 0–2 decimals; seconds 2–3 sig figs.
+
+---
+KnobCell Metrics & Styling
+- Metrics
+  - Standard knob diameter = L; value band height = dp(14); label gap = dp(4).
+  - DUCK strip (Reverb): DUCK/ATT/REL/THR/RAT use same metrics as other Reverb knobs.
+- Minis & aux
+  - Use KnobCell mini strip for micro sliders/bars (BOOST mini, Q-Link) with explicit thickness; prefer right-side placement when appropriate.
+- LookAndFeel
+  - Blue ticks at 12/3/6/9 via FieldLNF rotary drawing.
+  - Metallic background only for Group 1 center items; Group 2 stays default.
+  - Optional properties: panelBrighten, borderBrighten. Use sparingly.
+  - Combo: tintedSelected to hide default label when custom captioning is used.
+
+---
+Panels, Grids, and Padding
+- Group 1: flattened 4×16 grid (left/center/right merged); preserve exact ordering; close gaps.
+- Group 2: flattened 4×16 grid using 8 columns; place items directly (no sub-containers).
+- Gaps
+  - rowGap = 0, columnGap = 0.
+  - No outer reduced(...) around Group 2 layouts; items lay edge-to-edge with panel bounds.
+- Cell width
+  - Standard = L knob px + dp(8) across Delay/Reverb/Motion/Center.
+
+---
+Reverb Engine (Group 2)
+- Abbreviations
+  - ER WID (was ER WIDTH), TL WID (was WIDTH), ER DEN (was ER DENS).
+- Ducking
+  - DUCK + ATT/REL/THR/RAT standardized to main knob metrics.
+  - GR arc in DUCK; grey-out on inactive.
+- Wet/Enable UX
+  - WET controls amount; Enable remains explicit. Optional auto-enable when WET>0, auto-bypass when WET=0.
+- New controls
+  - SIZE sizePct, DEC XO LO dreqXoverLoHz, DECAY (RT60) rt60Sec, BLOOM bloomPct, DISTANCE distancePct, FREEZE freezeOn, DEC XO HI dreqXoverHiHz.
+
+---
+Motion Engine (Group 1 only)
+- Lives only in Group 1 flat grid; not parented in Group 2.
+- All Motion knobs use KnobCell with Managed value labels.
+- Ensure each Motion knob slider has setName(...) so LNF captions render.
+
+---
+Attachments & Parameters
+- Use slider/button/combo attachments created once and owned long-term.
+- Do not create/destroy attachments in timers or frequent layout passes.
+- Add migration logic in state load when moving legacy parameters.
+
+---
+Performance Guidance (avoid UI lag)
+- Message thread
+  - Never block: no file I/O, heavy JSON, or DSP on the UI thread; use background threads.
+- Painting
+  - Avoid expensive per-pixel noise/texture in paint() without caching. If using metallic/grain/scratches, pre-render to an Image.
+  - Minimize layers/shadows/alpha per frame.
+- Timers & layout
+  - Keep timer frequencies reasonable (15–30 Hz). Avoid performLayout or reparenting in high-rate timers.
+  - Parent once; toggle visibility instead of reparenting frequently.
+- Allocation churn
+  - Avoid creating/destroying Components/Attachments during interaction/animation.
+- Repaints
+  - Repaint the smallest region necessary.
+
+---
+Discrepancies & Redundancies (to monitor/fix)
+- Duplicate caption systems: remove external placeLabelBelow for knobs; standardize on slider.setName + KnobCell Managed.
+- Metallic background drift: only Group 1 center cells should be metallic.
+- Right-align/reduction remnants: ensure no stale right-align or reduced(...) in Group 2 layouts.
+- Label coverage: audit all Motion/Center/Reverb knobs for setName(...); abbreviations per spec.
+- Value label precision: HP/LP 0 decimals; dB 1 decimal; percent 0 by default.
+- Punch Mode duplicate labels: prefer tintedSelected to suppress default Combo label when custom captioning is present.
+- DUCK strip sizing: verify DUCK/ATT/REL/THR/RAT match other Reverb knobs in size and label band alignment.
+
+---
+Checklist for New Controls
+- [ ] Create slider/button/combo + setName (caption).
+- [ ] Attach to APVTS with persistent attachment.
+- [ ] Wrap in KnobCell/SwitchCell; set metrics; set ValueLabelMode::Managed and label gap.
+- [ ] Initialize the value label text once (format per type) before first paint.
+- [ ] Place in the flat grid with explicit row/column; no row/column gaps.
+- [ ] Apply group styling (metallic only in Group 1 center) via properties.
+- [ ] Verify performance: no heavy work on UI thread; minimal repaints.
+
+---
+Notes
+- Keep this document updated when patterns change or discrepancies are resolved.

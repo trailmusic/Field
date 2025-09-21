@@ -2116,6 +2116,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                     motionComboCells[i]->setCaption(comboLabels[i]);
                     // Apply same green border treatment as other Motion items
                     motionComboCells[i]->getProperties().set ("motionGreenBorder", true);
+                    motionComboCells[i]->getProperties().set ("metallic", true);
                     motionComboCells[i]->setShowBorder(true);
                 }
                 // Now lives only in Group 1 grid; do not add to bottomAltPanel
@@ -2141,6 +2142,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                     motionButtonCells[i]->setCaption(buttonLabels[i]);
                     // Apply same green border treatment as other Motion items
                     motionButtonCells[i]->getProperties().set ("motionGreenBorder", true);
+                    motionButtonCells[i]->getProperties().set ("metallic", true);
                     motionButtonCells[i]->setShowBorder(true);
                 }
                 // Now lives only in Group 1 grid; do not add to bottomAltPanel
@@ -3412,6 +3414,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                     motionValuesGroup2[i].setText ("", juce::dontSendNotification);
                     motionCellsGroup2[i] = std::make_unique<KnobCell>(motionDummiesGroup2[i], motionValuesGroup2[i], motionLabels[i]);
                     motionCellsGroup2[i]->getProperties().set ("motionGreenBorder", true);
+                    motionCellsGroup2[i]->getProperties().set ("metallic", true);
 
                     // Configure slider styles for dummy controls
                     if (i == 0) // Enable (button)

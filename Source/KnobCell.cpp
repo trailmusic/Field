@@ -324,9 +324,12 @@ void KnobCell::paint (juce::Graphics& g)
         auto rr = r.reduced (3.0f);
         if (metallic)
         {
-            // Darker, toned-down brushed-metal gradient
-            juce::Colour top = juce::Colour (0xFF9AA0A7);
-            juce::Colour bot = juce::Colour (0xFF7F858D);
+            // Brushed-metal gradient; allow Motion variant to lean cooler to match purple border
+            const bool motionGreen = (bool) getProperties().getWithDefault ("motionGreenBorder", false);
+            // Reverb keeps neutral steel; Motion tilts cooler/darker
+            // Motion variant: deeper bluish-purple to match the purple border
+            juce::Colour top = motionGreen ? juce::Colour (0xFF7B81C1) : juce::Colour (0xFF9AA0A7);
+            juce::Colour bot = motionGreen ? juce::Colour (0xFF555A99) : juce::Colour (0xFF7F858D);
             juce::ColourGradient grad (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
             g.setGradientFill (grad);
             g.fillRoundedRectangle (rr, rad);
@@ -377,10 +380,11 @@ void KnobCell::paint (juce::Graphics& g)
                 }
             }
 
-            // Vignette to reduce perceived brightness near edges
+            // Vignette to reduce perceived brightness near edges (slightly stronger for Motion)
             {
+                const float edgeAlpha = motionGreen ? 0.22f : 0.16f;
                 juce::ColourGradient vg (juce::Colours::transparentBlack, rr.getCentreX(), rr.getCentreY(),
-                                         juce::Colours::black.withAlpha (0.16f), rr.getCentreX(), rr.getCentreY() - rr.getHeight() * 0.6f, true);
+                                         juce::Colours::black.withAlpha (edgeAlpha), rr.getCentreX(), rr.getCentreY() - rr.getHeight() * 0.6f, true);
                 g.setGradientFill (vg);
                 g.fillRoundedRectangle (rr, rad);
             }

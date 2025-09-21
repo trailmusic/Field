@@ -971,14 +971,34 @@ public:
                     // Custom paint for Motion cells with deep blue/purple border
                     auto r = getLocalBounds().toFloat();
                     const float rad = 8.0f;
-                    
-                    g.setColour (lf->theme.panel);
-                    g.fillRoundedRectangle (r.reduced (3.0f), rad);
-                    
+                    const bool metallicOn = (bool) getProperties().getWithDefault ("metallic", false);
+
+                    auto rr = r.reduced (3.0f);
+                    if (metallicOn)
+                    {
+                        // Bluish-purple metallic gradient to pair with the purple border
+                        juce::Colour top = juce::Colour (0xFF7B81C1);
+                        juce::Colour bot = juce::Colour (0xFF555A99);
+                        juce::ColourGradient grad (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
+                        g.setGradientFill (grad);
+                        g.fillRoundedRectangle (rr, rad);
+
+                        // Subtle vignette for depth
+                        juce::ColourGradient vg (juce::Colours::transparentBlack, rr.getCentreX(), rr.getCentreY(),
+                                                 juce::Colours::black.withAlpha (0.22f), rr.getCentreX(), rr.getCentreY() - rr.getHeight() * 0.6f, true);
+                        g.setGradientFill (vg);
+                        g.fillRoundedRectangle (rr, rad);
+                    }
+                    else
+                    {
+                        g.setColour (lf->theme.panel);
+                        g.fillRoundedRectangle (rr, rad);
+                    }
+
                     juce::DropShadow ds1 (lf->theme.shadowDark.withAlpha (0.35f), 12, { -1, -1 });
                     juce::DropShadow ds2 (lf->theme.shadowLight.withAlpha (0.25f),  6, { -1, -1 });
-                    ds1.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
-                    ds2.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
+                    ds1.drawForRectangle (g, rr.getSmallestIntegerContainer());
+                    ds2.drawForRectangle (g, rr.getSmallestIntegerContainer());
                     
                     g.setColour (lf->theme.sh.withAlpha (0.18f));
                     g.drawRoundedRectangle (r.reduced (4.0f), rad - 1.0f, 0.8f);
