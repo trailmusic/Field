@@ -3005,8 +3005,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*delayDuckRatioCell).withArea (4,8)
         };
         
-        // Perform layout within delay group area
-        auto delayBounds = juce::Rectangle<int>(delayGroupX, delayGroupY, delayGroupW, delayGroupH).reduced(Layout::dp(Layout::GAP, s));
+        // Perform layout within delay group area (no outer reduction/padding)
+        auto delayBounds = juce::Rectangle<int>(delayGroupX, delayGroupY, delayGroupW, delayGroupH);
         delayGrid.performLayout(delayBounds);
 
         // Delay visuals are rendered in the top Delay tab via PaneManager, not in Group 2
@@ -3213,8 +3213,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             if (dreqXHiCell) { ensureAdd (dreqXHiCell.get()); items.add (juce::GridItem (*dreqXHiCell).withArea (4, 8)); }
             reverbGrid.items = std::move (items);
 
-            // Center a fixed-width 7-column block inside the available group width
-            auto rb = juce::Rectangle<int>(reverbGroupX, reverbGroupY, reverbGroupW, reverbGroupH).reduced(Layout::dp(Layout::GAP, s));
+            // Center a fixed-width 7-column block inside the available group width (no outer reduction/padding)
+            auto rb = juce::Rectangle<int>(reverbGroupX, reverbGroupY, reverbGroupW, reverbGroupH);
             const int fixedW = delayCellW * 8;
             auto rbCentered = rb.withWidth (juce::jmin (rb.getWidth(), fixedW));
             rbCentered.setX (rb.getX() + (rb.getWidth() - rbCentered.getWidth())); // right-align to match group placement
