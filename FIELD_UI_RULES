@@ -30,7 +30,7 @@ KnobCell Metrics & Styling
   - Use KnobCell mini strip for micro sliders/bars (BOOST mini, Q-Link) with explicit thickness; prefer right-side placement when appropriate.
 - LookAndFeel
   - Blue ticks at 12/3/6/9 via FieldLNF rotary drawing.
-  - Metallic background only for Group 1 center items; Group 2 stays default.
+  - Metallic background for Group 1 center items and Motion Engine cells; Group 2 stays default.
   - Optional properties: panelBrighten, borderBrighten. Use sparingly.
   - Combo: tintedSelected to hide default label when custom captioning is used.
 
@@ -61,6 +61,11 @@ Motion Engine (Group 1 only)
 - Lives only in Group 1 flat grid; not parented in Group 2.
 - All Motion knobs use KnobCell with Managed value labels.
 - Ensure each Motion knob slider has setName(...) so LNF captions render.
+- Theme-driven Motion colors (color-mode compliant):
+  - Background gradient from theme.motionPanelTop/motionPanelBot.
+  - Border from theme.motionBorder.
+  - Property flag for styling: motionPurpleBorder (legacy motionGreenBorder still recognized but migrate away).
+  - Motion ComboBoxes and Buttons adopt the same background/border via SwitchCell when the flag is set.
 
 ---
 Attachments & Parameters
@@ -86,7 +91,7 @@ Performance Guidance (avoid UI lag)
 ---
 Discrepancies & Redundancies (to monitor/fix)
 - Duplicate caption systems: remove external placeLabelBelow for knobs; standardize on slider.setName + KnobCell Managed.
-- Metallic background drift: only Group 1 center cells should be metallic.
+- Metallic background drift: only Group 1 center cells and Motion Engine should be metallic; do not tint Group 2.
 - Right-align/reduction remnants: ensure no stale right-align or reduced(...) in Group 2 layouts.
 - Label coverage: audit all Motion/Center/Reverb knobs for setName(...); abbreviations per spec.
 - Value label precision: HP/LP 0 decimals; dB 1 decimal; percent 0 by default.
@@ -100,9 +105,76 @@ Checklist for New Controls
 - [ ] Wrap in KnobCell/SwitchCell; set metrics; set ValueLabelMode::Managed and label gap.
 - [ ] Initialize the value label text once (format per type) before first paint.
 - [ ] Place in the flat grid with explicit row/column; no row/column gaps.
-- [ ] Apply group styling (metallic only in Group 1 center) via properties.
+- [ ] Apply group styling (metallic only in Group 1 center and Motion) via properties.
 - [ ] Verify performance: no heavy work on UI thread; minimal repaints.
 
 ---
 Notes
 - Keep this document updated when patterns change or discrepancies are resolved.
+
+---
+UI Performance Practices (snappy drags, minimal lag)
+- Component architecture
+  - Create controls and APVTS attachments once; avoid creating/destroying or reparenting during interaction. Toggle visibility instead.
+  - Prefer one canonical KnobCell/SwitchCell/Combo style; reduce per-control branching and custom code paths.
+  - Set setOpaque(true) on components that fully paint their backgrounds to reduce compositor work.
+- Painting and textures
+  - Centralize paint logic in LNF/Cell helpers and keep it lightweight.
+  - Cache heavy textures (metallic/brush/noise) to an Image per size/scale; reuse instead of regenerating per paint.
+  - Repaint narrowly (only the control’s local bounds). Avoid triggering large parent repaints for small updates.
+  - Prefer simple strokes/gradients; avoid randomization in paint paths during interaction.
+- Timers and updates
+  - Keep timers at 15–30 Hz for UI indicators; never call performLayout or reparent in timers.
+  - Batch non-critical updates; avoid string churn and label layout in mouse drag paths.
+- Parameter/value plumbing
+  - One attachment per control, owned long-term. Initialize value labels once before first paint; attachments update text only.
+- Memory and allocations
+  - Avoid allocations in paint/mouseDrag; pre-allocate Fonts/Paths/StringBuffers used repeatedly.
+  - Cache LookAndFeel* at the start of paint and reuse within the scope.
+- Layout
+  - Use flat grids with fixed cell metrics and zero gaps. Avoid outer reductions/padding that trigger re-layout.
+- Theme & color modes
+  - Derive all colors from FieldLNF::theme (including Motion: motionPanelTop/motionPanelBot/motionBorder). No hardcoded hex in paint paths.
+
+---
+Audit System (how we audit UI performance & consistency)
+Purpose: Regularly verify the entire plugin UI meets responsiveness, consistency, and theme-compliance standards without over-engineering.
+
+What we audit (entire plugin)
+- Consistency
+  - All controls (EQ, Center, Delay, Reverb, Motion, meters) use canonical KnobCell/SwitchCell/Combo patterns with Managed value labels and slider.setName captions.
+  - Legacy caption/placement systems removed (no external placeLabelBelow for KnobCell-managed controls).
+  - Styling rules respected: metallic only for Group 1 center and Motion; Group 2 default background.
+  - Border/theme flags used consistently per system: Reverb uses reverbMaroonBorder; Motion uses motionPurpleBorder (legacy motionGreenBorder allowed only for backward-compat); Delay uses delayThemeBorderTextGrey when intended.
+- Theme compliance
+  - No hardcoded hex colours in paint paths across the codebase; all colours derived from FieldLNF::theme (including Motion’s motionPanelTop/motionPanelBot/motionBorder).
+  - Color mode changes (palette button) update visuals across all modules (EQ overlays, Center, Delay, Reverb, Motion, menus).
+- Churn & layout
+  - No component/attachment creation, deletion, or reparenting during drag/timer paths.
+  - performLayout only on size/layout changes; not in timers.
+  - No outer reduced(...) around active Group 2 grids.
+- Paint cost
+  - No per-paint randomization or heavy loops in hot controls; textures cached.
+  - Repaint regions are minimal; no large parent repaints from child updates.
+- Timers & updates
+  - Timer frequencies within 15–30 Hz; no heavy work inside timer callbacks.
+  - Labels initialized once; ongoing updates avoid re-layout.
+
+How to run the audit (manual checklist)
+1) Theme sweep
+   - Cycle color modes (Ocean/Green/Pink/Yellow/Grey). Confirm Motion/Reverb/Center colors track theme values.
+2) Interaction sweep
+   - Drag representative knobs rapidly; observe for lag/hitches on start/stop. Ensure no component churn in logs.
+3) Repaint scope
+   - Turn on repaint highlighting/profiling (dev build). Verify only control bounds repaint during drags.
+4) Timer scope
+   - Disable meters/animations; confirm responsiveness. Re-enable at 15–30 Hz and confirm no stutter.
+5) Code scan
+   - Grep for hardcoded hex in UI paint paths; ensure theme usage. Grep for reparent/addAndMakeVisible in timers/drag handlers.
+6) Texture cache
+   - Confirm metallic/brush/noise cached; no per-paint random generation in hot paths.
+7) Layout review
+   - Verify flat grid bounds, zero gaps, and no outer reductions on Group 2 grids.
+
+Pass criteria
+- No frame hitches on rapid drags; repaint region is minimal; timers within target frequencies; zero hardcoded Motion colors; no runtime component churn.

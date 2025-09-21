@@ -325,14 +325,25 @@ void KnobCell::paint (juce::Graphics& g)
         if (metallic)
         {
             // Brushed-metal gradient; allow Motion variant to lean cooler to match purple border
-            const bool motionGreen = (bool) getProperties().getWithDefault ("motionGreenBorder", false);
+            const bool motionGreen = (bool) getProperties().getWithDefault ("motionPurpleBorder", (bool) getProperties().getWithDefault ("motionGreenBorder", false));
             // Reverb keeps neutral steel; Motion tilts cooler/darker
             // Motion variant: deeper bluish-purple to match the purple border
-            juce::Colour top = motionGreen ? juce::Colour (0xFF7B81C1) : juce::Colour (0xFF9AA0A7);
-            juce::Colour bot = motionGreen ? juce::Colour (0xFF555A99) : juce::Colour (0xFF7F858D);
-            juce::ColourGradient grad (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
-            g.setGradientFill (grad);
-            g.fillRoundedRectangle (rr, rad);
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            {
+                juce::Colour top = motionGreen ? lf->theme.motionPanelTop : juce::Colour (0xFF9AA0A7);
+                juce::Colour bot = motionGreen ? lf->theme.motionPanelBot : juce::Colour (0xFF7F858D);
+                juce::ColourGradient grad (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
+                g.setGradientFill (grad);
+                g.fillRoundedRectangle (rr, rad);
+            }
+            else
+            {
+                juce::Colour top = motionGreen ? juce::Colour (0xFF7B81C1) : juce::Colour (0xFF9AA0A7);
+                juce::Colour bot = motionGreen ? juce::Colour (0xFF555A99) : juce::Colour (0xFF7F858D);
+                juce::ColourGradient grad (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
+                g.setGradientFill (grad);
+                g.fillRoundedRectangle (rr, rad);
+            }
 
             // Subtle horizontal brushing lines (slightly denser)
             g.setColour (juce::Colours::white.withAlpha (0.045f));
@@ -420,7 +431,16 @@ void KnobCell::paint (juce::Graphics& g)
     // Inner rim
     if (showPanel)
     {
-        g.setColour ((metallic ? juce::Colour (0xFF51565D) : getRimColour()).withAlpha (0.16f));
+        if (auto* lf2 = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
+            const bool motionGreen2 = (bool) getProperties().getWithDefault ("motionPurpleBorder", (bool) getProperties().getWithDefault ("motionGreenBorder", false));
+            auto rimCol = metallic && motionGreen2 ? lf2->theme.motionBorder : (metallic ? juce::Colour (0xFF51565D) : getRimColour());
+            g.setColour (rimCol.withAlpha (0.16f));
+        }
+        else
+        {
+            g.setColour ((metallic ? juce::Colour (0xFF51565D) : getRimColour()).withAlpha (0.16f));
+        }
         g.drawRoundedRectangle (r.reduced (4.0f), rad - 1.0f, 0.8f);
     }
 
@@ -445,10 +465,15 @@ void KnobCell::paint (juce::Graphics& g)
         // or a vintage orange/red maroon border for reverb cells
         auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
         const bool delayTheme = (bool) getProperties().getWithDefault ("delayThemeBorderTextGrey", false);
-        const bool motionGreen = (bool) getProperties().getWithDefault ("motionGreenBorder", false);
+        const bool motionGreen = (bool) getProperties().getWithDefault ("motionPurpleBorder", (bool) getProperties().getWithDefault ("motionGreenBorder", false));
         const bool reverbMaroon = (bool) getProperties().getWithDefault ("reverbMaroonBorder", false);
         if (motionGreen)
-            g.setColour (juce::Colour (0xFF4A4A8E)); // Deep blue/purple matching accent hue family
+        {
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                g.setColour (lf->theme.motionBorder);
+            else
+                g.setColour (juce::Colour (0xFF4A4A8E));
+        }
         else if (reverbMaroon)
             g.setColour (juce::Colour (0xFF8E3A2F)); // Vintage orange-red maroon
         else if (delayTheme && lf != nullptr)

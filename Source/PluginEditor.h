@@ -955,7 +955,7 @@ public:
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
             {
                 const bool metallic = (bool) getProperties().getWithDefault ("metallic", false);
-                const bool motionGreen = (bool) getProperties().getWithDefault ("motionGreenBorder", false);
+                const bool motionGreen = (bool) getProperties().getWithDefault ("motionPurpleBorder", (bool) getProperties().getWithDefault ("motionGreenBorder", false));
                 const bool reverbMaroon = (bool) getProperties().getWithDefault ("reverbMaroonBorder", false);
                 
                 if (isDelayTheme)
@@ -976,9 +976,9 @@ public:
                     auto rr = r.reduced (3.0f);
                     if (metallicOn)
                     {
-                        // Bluish-purple metallic gradient to pair with the purple border
-                        juce::Colour top = juce::Colour (0xFF7B81C1);
-                        juce::Colour bot = juce::Colour (0xFF555A99);
+                        // Bluish-purple metallic gradient from theme
+                        juce::Colour top = lf->theme.motionPanelTop;
+                        juce::Colour bot = lf->theme.motionPanelBot;
                         juce::ColourGradient grad (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
                         g.setGradientFill (grad);
                         g.fillRoundedRectangle (rr, rad);
@@ -1006,18 +1006,18 @@ public:
                     if (showBorder)
                     {
                         auto border = r.reduced (2.0f);
-                        g.setColour (juce::Colour (0xFF4A4A8E)); // Deep blue/purple matching accent hue family
+                        g.setColour (lf->theme.motionBorder); // purple border from theme
                         if (isMouseOverOrDragging() || hoverActive)
                         {
                             for (int i = 1; i <= 6; ++i)
                             {
                                 const float t = (float) i / 6.0f;
                                 const float expand = 2.0f + t * 8.0f;
-                                g.setColour (juce::Colour (0xFF4A4A8E).withAlpha ((1.0f - t) * 0.22f));
+                                g.setColour (lf->theme.motionBorder.withAlpha ((1.0f - t) * 0.22f));
                                 g.drawRoundedRectangle (border.expanded (expand), rad + expand * 0.35f, 2.0f);
                             }
                         }
-                        g.setColour (juce::Colour (0xFF4A4A8E));
+                        g.setColour (lf->theme.motionBorder);
                         g.drawRoundedRectangle (border, rad, 1.5f);
                     }
                 }

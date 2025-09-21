@@ -31,6 +31,11 @@ struct FieldTheme
     // Secondary accent for borders/accents needing neutral tone (dark charcoal)
     juce::Colour accentSecondary { 0xFF202226 };
 
+    // Motion (purple-metal) system colours (used by Motion Engine UI)
+    juce::Colour motionPanelTop { 0xFF7B81C1 }; // bluish-purple top
+    juce::Colour motionPanelBot { 0xFF555A99 }; // deeper bluish-purple bottom
+    juce::Colour motionBorder   { 0xFF4A4A8E }; // purple border
+
     // EQ palette (defaults set in FieldLNF::setGreenMode(false))
     struct EqPalette {
         juce::Colour hp;
@@ -107,6 +112,10 @@ public:
                 theme.eq.bass      = juce::Colour (0xFF43A047);
                 theme.eq.scoop     = juce::Colour (0xFF98EE99);
                 theme.eq.monoShade = juce::Colour (0xFF0D1E0D).withAlpha (0.18f);
+                // Motion colours tuned for Green mode (keep purple bias slightly cooler)
+                theme.motionPanelTop = juce::Colour (0xFF6F76B5);
+                theme.motionPanelBot = juce::Colour (0xFF4B5096);
+                theme.motionBorder   = juce::Colour (0xFF45458A);
                 break;
             }
             case ThemeVariant::Pink:
@@ -131,6 +140,10 @@ public:
                 theme.eq.bass      = juce::Colour (0xFFEC407A); // vivid pink
                 theme.eq.scoop     = juce::Colour (0xFFBA68C8); // magenta/plum
                 theme.eq.monoShade = juce::Colour (0xFF2A2C30).withAlpha (0.15f);
+                // Motion colours for Pink mode (cooler violet to balance pink)
+                theme.motionPanelTop = juce::Colour (0xFF877FC8);
+                theme.motionPanelBot = juce::Colour (0xFF5E58A8);
+                theme.motionBorder   = juce::Colour (0xFF504A9A);
                 break;
             }
             case ThemeVariant::Yellow:
@@ -154,6 +167,10 @@ public:
                 theme.eq.bass      = juce::Colour (0xFFFFA000); // amber 700
                 theme.eq.scoop     = juce::Colour (0xFFFFB74D); // orange/amber
                 theme.eq.monoShade = juce::Colour (0xFF2A2C30).withAlpha (0.15f);
+                // Motion colours for Yellow mode (a bit more saturated purple for contrast)
+                theme.motionPanelTop = juce::Colour (0xFF7E74C9);
+                theme.motionPanelBot = juce::Colour (0xFF5A50A9);
+                theme.motionBorder   = juce::Colour (0xFF4F479B);
                 break;
             }
             case ThemeVariant::Grey:
@@ -178,6 +195,10 @@ public:
                 theme.eq.bass      = juce::Colour (0xFF9EA3AA);
                 theme.eq.scoop     = juce::Colour (0xFFC7CCD3);
                 theme.eq.monoShade = juce::Colour (0xFF202226).withAlpha (0.16f);
+                // Motion colours for Grey mode (muted violet)
+                theme.motionPanelTop = juce::Colour (0xFF8086B0);
+                theme.motionPanelBot = juce::Colour (0xFF5D628A);
+                theme.motionBorder   = juce::Colour (0xFF52577F);
                 break;
             }
             case ThemeVariant::Ocean:
@@ -202,6 +223,10 @@ public:
                 theme.eq.bass      = juce::Colour (0xFF66BB6A); // Bass: green
                 theme.eq.scoop     = juce::Colour (0xFFAB47BC); // Scoop: plum/purple
                 theme.eq.monoShade = juce::Colour (0xFF2A2C30).withAlpha (0.15f);
+                // Motion colours for Ocean mode (default bluish-purple)
+                theme.motionPanelTop = juce::Colour (0xFF7B81C1);
+                theme.motionPanelBot = juce::Colour (0xFF555A99);
+                theme.motionBorder   = juce::Colour (0xFF4A4A8E);
                 break;
             }
         }
