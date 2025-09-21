@@ -109,6 +109,17 @@ namespace IDs {
     static constexpr const char* widthMax           = "width_max";
     // Phase Modes
     static constexpr const char* phaseMode  = "phase_mode"; // 0 Zero, 1 Natural, 2 Hybrid Linear
+
+    // Center Group (Rows 3-4)
+    static constexpr const char* centerPromDb        = "center_prom_db";        // -9..+9 dB
+    static constexpr const char* centerFocusLoHz     = "center_f_lo_hz";        // 40..1000 Hz (log)
+    static constexpr const char* centerFocusHiHz     = "center_f_hi_hz";        // 1000..12000 Hz (log)
+    static constexpr const char* centerPunchAmt01    = "center_punch_amt";      // 0..1
+    static constexpr const char* centerPunchMode     = "center_punch_mode";     // 0 toSides, 1 toCenter
+    static constexpr const char* centerPhaseRecOn    = "center_phase_rec_on";   // bool
+    static constexpr const char* centerPhaseAmt01    = "center_phase_rec_amt";  // 0..1
+    static constexpr const char* centerLockOn        = "center_lock_on";        // bool
+    static constexpr const char* centerLockDb        = "center_lock_db";        // 0..6 dB cap
 }
 
 // ===== [UTIL] APVTS raw access helper =====
@@ -1108,6 +1119,37 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::shufXHz,   1 },   "Shuffler Xover (Hz)",juce::NormalisableRange<float> (150.0f, 2000.0f, 0.01f, 0.5f), 700.0f));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::monoSlope,1 },   "Mono Slope (dB/oct)", juce::StringArray { "6", "12", "24" }, 1));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::monoAud, 1 },      "Mono Audition", false));
+
+    // Center Group parameters (Rows 3-4)
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::centerPromDb, 1 }, "Center Prominence (dB)",
+        juce::NormalisableRange<float> (-9.0f, 9.0f, 0.01f), 0.0f));
+    // Focus band (log sliders via skew of 0.5)
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::centerFocusLoHz, 1 }, "Center Focus Lo (Hz)",
+        juce::NormalisableRange<float> (40.0f, 1000.0f, 0.0f, 0.5f), 140.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::centerFocusHiHz, 1 }, "Center Focus Hi (Hz)",
+        juce::NormalisableRange<float> (1000.0f, 12000.0f, 0.0f, 0.5f), 3500.0f));
+    // Punch
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::centerPunchAmt01, 1 }, "Center Punch Amount",
+        juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.35f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::centerPunchMode, 1 }, "Center Punch Mode",
+        juce::StringArray { "toSides", "toCenter" }, 0));
+    // Phase Recovery
+    params.push_back (std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{ IDs::centerPhaseRecOn, 1 }, "Phase Recovery", true));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::centerPhaseAmt01, 1 }, "Phase Rec Amount",
+        juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.40f));
+    // Center Lock
+    params.push_back (std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{ IDs::centerLockOn, 1 }, "Center Lock", true));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::centerLockDb, 1 }, "Center Lock dB",
+        juce::NormalisableRange<float> (0.0f, 6.0f, 0.01f), 3.0f));
 
     // Width Designer
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::widthMode, 1 }, "Width Mode", juce::StringArray { "Classic", "Designer" }, 0));

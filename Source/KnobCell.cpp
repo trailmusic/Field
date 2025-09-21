@@ -317,26 +317,106 @@ void KnobCell::paint (juce::Graphics& g)
     auto r = getLocalBounds().toFloat();
     const float rad = 8.0f;
 
-    // Panel fill (optional)
+    // Panel fill (optional) with metallic mode
+    const bool metallic = (bool) getProperties().getWithDefault ("metallic", false);
     if (showPanel)
     {
-        g.setColour (getPanelColour());
-        g.fillRoundedRectangle (r.reduced (3.0f), rad);
+        auto rr = r.reduced (3.0f);
+        if (metallic)
+        {
+            // Darker, toned-down brushed-metal gradient
+            juce::Colour top = juce::Colour (0xFF9AA0A7);
+            juce::Colour bot = juce::Colour (0xFF7F858D);
+            juce::ColourGradient grad (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
+            g.setGradientFill (grad);
+            g.fillRoundedRectangle (rr, rad);
+
+            // Subtle horizontal brushing lines (slightly denser)
+            g.setColour (juce::Colours::white.withAlpha (0.045f));
+            const int step = 1;
+            for (int y = (int) rr.getY() + step; y < rr.getBottom(); y += step)
+                g.fillRect (juce::Rectangle<int> ((int) rr.getX() + 4, y, (int) rr.getWidth() - 8, 1));
+
+            // Fine grain noise overlay (very low alpha)
+            {
+                juce::Random rng ((int) juce::Time::getMillisecondCounter());
+                g.setColour (juce::Colours::black.withAlpha (0.040f));
+                const int noiseRows = juce::jmax (1, (int) rr.getHeight() / 4);
+                for (int i = 0; i < noiseRows; ++i)
+                {
+                    const int y = (int) rr.getY() + 2 + i * 4 + (rng.nextInt (3) - 1);
+                    const int w = juce::jmax (8, (int) rr.getWidth() - 8 - rng.nextInt (12));
+                    const int x = (int) rr.getX() + 4 + rng.nextInt (12);
+                    g.fillRect (juce::Rectangle<int> (x, y, w, 1));
+                }
+            }
+
+            // Diagonal micro-scratches
+            {
+                juce::Random rng ((int) juce::Time::getMillisecondCounter() ^ 0xA5A5);
+                const int scratches = juce::jmax (6, (int) rr.getWidth() / 22);
+                g.setColour (juce::Colours::white.withAlpha (0.035f));
+                for (int i = 0; i < scratches; ++i)
+                {
+                    float sx = rr.getX() + 6 + rng.nextFloat() * (rr.getWidth() - 12);
+                    float sy = rr.getY() + 6 + rng.nextFloat() * (rr.getHeight() - 12);
+                    float len = 10.0f + rng.nextFloat() * 18.0f;
+                    float dx = len * 0.86f; // cos(~40deg)
+                    float dy = len * 0.50f; // sin(~30deg)
+                    g.drawLine (sx, sy, sx + dx, sy + dy, 1.0f);
+                }
+                g.setColour (juce::Colours::black.withAlpha (0.025f));
+                for (int i = 0; i < scratches; ++i)
+                {
+                    float sx = rr.getX() + 6 + rng.nextFloat() * (rr.getWidth() - 12);
+                    float sy = rr.getY() + 6 + rng.nextFloat() * (rr.getHeight() - 12);
+                    float len = 8.0f + rng.nextFloat() * 14.0f;
+                    float dx = len * -0.80f;
+                    float dy = len * 0.58f;
+                    g.drawLine (sx, sy, sx + dx, sy + dy, 1.0f);
+                }
+            }
+
+            // Vignette to reduce perceived brightness near edges
+            {
+                juce::ColourGradient vg (juce::Colours::transparentBlack, rr.getCentreX(), rr.getCentreY(),
+                                         juce::Colours::black.withAlpha (0.16f), rr.getCentreX(), rr.getCentreY() - rr.getHeight() * 0.6f, true);
+                g.setGradientFill (vg);
+                g.fillRoundedRectangle (rr, rad);
+            }
+        }
+        else
+        {
+            g.setColour (getPanelColour());
+            g.fillRoundedRectangle (rr, rad);
+        }
     }
 
     // Depth (soft)
     if (showPanel)
     {
-        juce::DropShadow ds1 (getShadowDark().withAlpha (0.35f), 12, { -1, -1 });
-        juce::DropShadow ds2 (getShadowLight().withAlpha (0.25f),  6, { -1, -1 });
-        ds1.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
-        ds2.drawForRectangle (g, r.reduced (3.0f).getSmallestIntegerContainer());
+        auto ri = r.reduced (3.0f).getSmallestIntegerContainer();
+        if (metallic)
+        {
+            // Softer, slightly cooler shadows for metal
+            juce::DropShadow ds1 (juce::Colours::black.withAlpha (0.28f), 10, { -1, -1 });
+            juce::DropShadow ds2 (juce::Colours::white.withAlpha (0.18f),  5, { -1, -1 });
+            ds1.drawForRectangle (g, ri);
+            ds2.drawForRectangle (g, ri);
+        }
+        else
+        {
+            juce::DropShadow ds1 (getShadowDark().withAlpha (0.35f), 12, { -1, -1 });
+            juce::DropShadow ds2 (getShadowLight().withAlpha (0.25f),  6, { -1, -1 });
+            ds1.drawForRectangle (g, ri);
+            ds2.drawForRectangle (g, ri);
+        }
     }
 
     // Inner rim
     if (showPanel)
     {
-        g.setColour (getRimColour().withAlpha (0.18f));
+        g.setColour ((metallic ? juce::Colour (0xFF51565D) : getRimColour()).withAlpha (0.16f));
         g.drawRoundedRectangle (r.reduced (4.0f), rad - 1.0f, 0.8f);
     }
 
@@ -374,7 +454,21 @@ void KnobCell::paint (juce::Graphics& g)
         g.drawRoundedRectangle (border, rad, 1.5f);
     }
 
-    // No title: knob name already shown by LNF; retain only numeric/value labels via valueLabel
+// Title: draw caption inside the cell using LookAndFeel helper when present
+
+    // Draw caption/name above knob using LNF helper if available
+    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+    {
+        juce::String caption;
+        if (getProperties().contains ("caption"))
+            caption = getProperties()["caption"].toString();
+        if (caption.isNotEmpty())
+        {
+            auto r = getLocalBounds().toFloat();
+            r.removeFromBottom (juce::jmax (2, V + G)); // leave space for value label band
+            lf->drawKnobLabel (g, r, caption);
+        }
+    }
 
     // Recessed background badge behind value label text (slightly larger + darker + stronger inner shadow)
     if (valueLabel.isShowing())

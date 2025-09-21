@@ -954,6 +954,7 @@ public:
         {
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
             {
+                const bool metallic = (bool) getProperties().getWithDefault ("metallic", false);
                 const bool motionGreen = (bool) getProperties().getWithDefault ("motionGreenBorder", false);
                 const bool reverbMaroon = (bool) getProperties().getWithDefault ("reverbMaroonBorder", false);
                 
@@ -997,6 +998,93 @@ public:
                             }
                         }
                         g.setColour (juce::Colour (0xFF4A4A8E));
+                        g.drawRoundedRectangle (border, rad, 1.5f);
+                    }
+                }
+                else if (metallic)
+                {
+                    auto r = getLocalBounds().toFloat().reduced (3.0f);
+                    const float rad = 8.0f;
+                    // Darker metallic panel
+                    juce::Colour top = juce::Colour (0xFF9AA0A7);
+                    juce::Colour bot = juce::Colour (0xFF7F858D);
+                    juce::ColourGradient grad (top, r.getX(), r.getY(), bot, r.getX(), r.getBottom(), false);
+                    g.setGradientFill (grad);
+                    g.fillRoundedRectangle (r, rad);
+
+                    // Brushing lines
+                    g.setColour (juce::Colours::white.withAlpha (0.045f));
+                    const int step = 1;
+                    for (int y = (int) r.getY() + step; y < r.getBottom(); y += step)
+                        g.fillRect (juce::Rectangle<int> ((int) r.getX() + 4, y, (int) r.getWidth() - 8, 1));
+
+                    // Fine noise
+                    {
+                        juce::Random rng ((int) juce::Time::getMillisecondCounter());
+                        g.setColour (juce::Colours::black.withAlpha (0.040f));
+                        const int noiseRows = juce::jmax (1, (int) r.getHeight() / 4);
+                        for (int i = 0; i < noiseRows; ++i)
+                        {
+                            const int y = (int) r.getY() + 2 + i * 4 + (rng.nextInt (3) - 1);
+                            const int w = juce::jmax (8, (int) r.getWidth() - 8 - rng.nextInt (12));
+                            const int x = (int) r.getX() + 4 + rng.nextInt (12);
+                            g.fillRect (juce::Rectangle<int> (x, y, w, 1));
+                        }
+                    }
+
+                    // Diagonal micro-scratches
+                    {
+                        juce::Random rng ((int) juce::Time::getMillisecondCounter() ^ 0x5A5A);
+                        const int scratches = juce::jmax (6, (int) r.getWidth() / 22);
+                        g.setColour (juce::Colours::white.withAlpha (0.035f));
+                        for (int i = 0; i < scratches; ++i)
+                        {
+                            float sx = r.getX() + 6 + rng.nextFloat() * (r.getWidth() - 12);
+                            float sy = r.getY() + 6 + rng.nextFloat() * (r.getHeight() - 12);
+                            float len = 10.0f + rng.nextFloat() * 18.0f;
+                            float dx = len * 0.86f;
+                            float dy = len * 0.50f;
+                            g.drawLine (sx, sy, sx + dx, sy + dy, 1.0f);
+                        }
+                        g.setColour (juce::Colours::black.withAlpha (0.025f));
+                        for (int i = 0; i < scratches; ++i)
+                        {
+                            float sx = r.getX() + 6 + rng.nextFloat() * (r.getWidth() - 12);
+                            float sy = r.getY() + 6 + rng.nextFloat() * (r.getHeight() - 12);
+                            float len = 8.0f + rng.nextFloat() * 14.0f;
+                            float dx = len * -0.80f;
+                            float dy = len * 0.58f;
+                            g.drawLine (sx, sy, sx + dx, sy + dy, 1.0f);
+                        }
+                    }
+
+                    // Vignette
+                    {
+                        juce::ColourGradient vg (juce::Colours::transparentBlack, r.getCentreX(), r.getCentreY(),
+                                                 juce::Colours::black.withAlpha (0.16f), r.getCentreX(), r.getCentreY() - r.getHeight() * 0.6f, true);
+                        g.setGradientFill (vg);
+                        g.fillRoundedRectangle (r, rad);
+                    }
+
+                    // Subtle rim
+                    g.setColour (lf->theme.sh.withAlpha (0.14f));
+                    g.drawRoundedRectangle (r.reduced (1.0f), rad - 1.0f, 0.8f);
+
+                    if (showBorder)
+                    {
+                        auto border = r.reduced (2.0f);
+                        g.setColour (juce::Colour (0xFF5A5F66));
+                        if (isMouseOverOrDragging() || hoverActive)
+                        {
+                            for (int i = 1; i <= 6; ++i)
+                            {
+                                const float t = (float) i / 6.0f;
+                                const float expand = 2.0f + t * 8.0f;
+                                g.setColour (juce::Colour (0xFF5A5F66).withAlpha ((1.0f - t) * 0.22f));
+                                g.drawRoundedRectangle (border.expanded (expand), rad + expand * 0.35f, 2.0f);
+                            }
+                        }
+                        g.setColour (juce::Colour (0xFF51565D));
                         g.drawRoundedRectangle (border, rad, 1.5f);
                     }
                 }
@@ -1256,6 +1344,33 @@ private:
     GainSlider   gain;
     juce::Slider width, tilt, monoHz, hpHz, lpHz, satDrive, satMix, air, bass, scoop; // includes Scoop
     juce::ComboBox  monoSlopeChoice;
+    // Center group (Rows 3-4) controls
+    juce::Slider centerPromDb;
+    juce::Label  centerPromVal;
+    juce::Slider centerFocusLoHz;
+    juce::Label  centerFocusLoVal;
+    juce::Slider centerFocusHiHz;
+    juce::Label  centerFocusHiVal;
+    juce::Slider centerPunchAmt01;
+    juce::Label  centerPunchAmtVal;
+    juce::ComboBox centerPunchMode;
+    juce::ToggleButton centerPhaseRecOn;
+    juce::Slider centerPhaseAmt01;
+    juce::Label  centerPhaseAmtVal;
+    juce::ToggleButton centerLockOn;
+    juce::Slider centerLockDb;
+    juce::Label  centerLockDbVal;
+
+    // Center group cells
+    std::unique_ptr<KnobCell>   centerPromCell;
+    std::unique_ptr<KnobCell>   centerFocusLoCell;
+    std::unique_ptr<KnobCell>   centerFocusHiCell;
+    std::unique_ptr<KnobCell>   centerPunchAmtCell;
+    std::unique_ptr<SwitchCell> centerPunchModeCell;
+    std::unique_ptr<SwitchCell> centerPhaseRecCell;
+    std::unique_ptr<KnobCell>   centerPhaseAmtCell;
+    std::unique_ptr<SwitchCell> centerLockOnCell;
+    std::unique_ptr<KnobCell>   centerLockDbCell;
     // AUD audition: custom-styled toggle button (non-checkbox)
     class AuditionButton : public ThemedIconButton, public juce::Timer
     {

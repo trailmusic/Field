@@ -1801,6 +1801,35 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     monoSlopeChoice.addItem ("6",  1);
     monoSlopeChoice.addItem ("12", 2);
     monoSlopeChoice.addItem ("24", 3);
+
+    // Center group: init punch mode choices
+    centerPunchMode.addItem ("toSides",  1);
+    centerPunchMode.addItem ("toCenter", 2);
+
+    // Center group: ensure rotary knobs and no text boxes (avoid duplicate labels)
+    auto initCenterKnob = [this] (juce::Slider& s)
+    {
+        s.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+        s.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+        // Match standard tick system (12/3/6/9 o'clock): π to π + 2π and our LNF
+        constexpr float kStart = juce::MathConstants<float>::pi;
+        constexpr float kEnd   = juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi;
+        s.setRotaryParameters (kStart, kEnd, true);
+        s.setLookAndFeel (&lnf);
+    };
+    initCenterKnob (centerPromDb);
+    initCenterKnob (centerFocusLoHz);
+    initCenterKnob (centerFocusHiHz);
+    initCenterKnob (centerPunchAmt01);
+    initCenterKnob (centerPhaseAmt01);
+    initCenterKnob (centerLockDb);
+    // Provide names for LNF to draw knob-centered labels (match left-group behavior)
+    centerPromDb.setName    ("CENTER PROM");
+    centerFocusLoHz.setName ("FOCUS LO");
+    centerFocusHiHz.setName ("FOCUS HI");
+    centerPunchAmt01.setName("PUNCH AMT");
+    centerPhaseAmt01.setName("PHASE AMT");
+    centerLockDb.setName    ("LOCK dB");
     if (!monoSlopeSwitch)
         monoSlopeSwitch = std::make_unique<MonoSlopeSwitch>();
     addAndMakeVisible (*monoSlopeSwitch);
@@ -1922,6 +1951,17 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // Mono maker APVTS attachments
     comboAttachments .push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "mono_slope_db_oct", monoSlopeChoice));
     buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>   (proc.apvts, "mono_audition",      monoAuditionButton));
+
+    // Center group attachments
+    attachments.push_back (std::make_unique<SA> (proc.apvts, "center_prom_db",        centerPromDb));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, "center_f_lo_hz",       centerFocusLoHz));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, "center_f_hi_hz",       centerFocusHiHz));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, "center_punch_amt",     centerPunchAmt01));
+    comboAttachments .push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "center_punch_mode",   centerPunchMode));
+    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>   (proc.apvts, "center_phase_rec_on", centerPhaseRecOn));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, "center_phase_rec_amt", centerPhaseAmt01));
+    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>   (proc.apvts, "center_lock_on",      centerLockOn));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, "center_lock_db",       centerLockDb));
 
     attachments.push_back (std::make_unique<SA> (proc.apvts, "tilt_freq",     tiltFreqSlider));
     attachments.push_back (std::make_unique<SA> (proc.apvts, "scoop_freq",    scoopFreqSlider));
@@ -3281,8 +3321,8 @@ void MyPluginAudioProcessorEditor::performLayout()
 
         // Left group width = 8 columns across all 4 rows (EQ lives here)
         const int leftW = cellW * 8;
-        // Center group width = 3 columns (Gain/Mix/WetOnly and Pan)
-        const int centerW = cellW * 3;
+        // Center group width = 4 columns (Row1: Gain/Mix/WetOnly; Row2: Pan x2 + Mono x2)
+        const int centerW = cellW * 4;
 
         // Left group Row1: BASS, AIR, TILT, SCOOP (4 columns)
         {
@@ -3330,18 +3370,31 @@ void MyPluginAudioProcessorEditor::performLayout()
                 mini->getProperties().set ("micro", true);
         }
 
-        // Center: Row1 = Gain/Mix/WetOnly, Row2 = Pan (center)
+        // Center: Row1 = Gain/Mix/WetOnly, Row2 = Pan (2 cols) + Mono (2 cols)
         {
-            // Carve center from fresh copies so left row2 remains intact for width group
-            auto tmpR1 = row1Area; auto tmpR2 = row2Base;
-            auto tmpLeftR1 = tmpR1.removeFromLeft (leftW); juce::ignoreUnused (tmpLeftR1);
-            auto centerR1 = tmpR1.removeFromLeft (centerW);
+            // Row1 left group already consumed leftW from row1Area above; use remaining directly
+            auto centerR1 = row1Area.removeFromLeft (centerW);
+            // For row2, start from base and consume left group first, then center
+            auto tmpR2 = row2Base;
             auto tmpLeftR2 = tmpR2.removeFromLeft (leftW); juce::ignoreUnused (tmpLeftR2);
             auto centerR2 = tmpR2.removeFromLeft (centerW);
             if (!panCell) panCell = std::make_unique<KnobCell>(panKnob, panValue, "");
             panCell   ->setMetrics (lPx, valuePx, labelGap);
             gainCell  ->setMetrics (lPx, valuePx, labelGap);
             satMixCell->setMetrics (lPx, valuePx, labelGap);
+            // Prepare Mono in Row 2 to span two columns on the right
+            if (!monoCell) return; // safety
+            monoCell  ->setMetrics (lPx, valuePx, labelGap, Layout::dp (24, s));
+            monoCell  ->setMiniPlacementRight (true);
+            monoCell  ->setMiniThicknessPx (juce::jmax (8, Layout::dp (12, s)));
+            if (monoSlopeSwitch != nullptr)
+            {
+                monoCell->setAuxComponents ({ monoSlopeSwitch.get(), &monoAuditionButton }, juce::jmax (32, Layout::dp (90, s)));
+                monoCell->setAuxWeights ({ 2.0f, 1.0f });
+                monoCell->setAuxAsBars (false);
+                monoSlopeSwitch->setVisible (true);
+                monoSlopeSwitch->toFront (false);
+            }
             if (!wetOnlyCell)
             {
                 wetOnlyToggle.getProperties().set ("iconType", (int) IconSystem::Mix);
@@ -3353,11 +3406,19 @@ void MyPluginAudioProcessorEditor::performLayout()
             addAndMakeVisible (*satMixCell);
             addAndMakeVisible (*wetOnlyCell);
             addAndMakeVisible (*panCell);
+            addAndMakeVisible (*monoCell);
+            // Tag center-group controls with metallic background hint
+            gainCell   ->getProperties().set ("metallic", true);
+            satMixCell ->getProperties().set ("metallic", true);
+            panCell    ->getProperties().set ("metallic", true);
+            if (wetOnlyCell) wetOnlyCell->getProperties().set ("metallic", true);
+            monoCell   ->getProperties().set ("metallic", true);
             // Row1 center
             {
                 juce::Grid cg1; cg1.rowGap = juce::Grid::Px (0); cg1.columnGap = juce::Grid::Px (0);
                 cg1.templateRows = { juce::Grid::Px (containerHeight) };
-                cg1.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
+                // 4 columns: use first three for Gain/Mix/WetOnly; leave col4 empty for balance/future
+                cg1.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
                 cg1.items = {
                     juce::GridItem (*gainCell)   .withArea (1, 1),
                     juce::GridItem (*satMixCell) .withArea (1, 2),
@@ -3365,32 +3426,23 @@ void MyPluginAudioProcessorEditor::performLayout()
                 };
                 cg1.performLayout (centerR1);
             }
-            // Row2 center: directly size Pan to fill the 3-column center region
-            panCell->setBounds (centerR2);
-            panCell->resized();
+            // Row2 center: Pan spans left two columns; Mono spans right two columns
+            {
+                auto r = centerR2;
+                auto panArea  = r.removeFromLeft (cellW * 2);
+                auto monoArea = r; // remaining 2 columns
+                panCell ->setBounds (panArea);
+                monoCell->setBounds (monoArea);
+                panCell ->resized();
+            monoCell->resized();
+            }
             for (auto* c : { gainCell.get(), satMixCell.get() }) { if (c) { c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGap); } }
             panCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             panCell->setValueLabelGap (labelGap);
+            monoCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            monoCell->setValueLabelGap (labelGap);
 
-            // Draw a thin border around the center group to distinguish it
-            struct CenterBorderComp : public juce::Component {
-                void paint (juce::Graphics& g) override {
-                    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                        g.setColour (lf->theme.textMuted.withAlpha (0.35f));
-                    else g.setColour (juce::Colours::lightgrey.withAlpha (0.35f));
-                    auto r = getLocalBounds().toFloat().reduced (1.0f);
-                    g.drawRoundedRectangle (r, 6.0f, 1.0f);
-                }
-            };
-            static std::unique_ptr<CenterBorderComp> centerBorder;
-            if (!centerBorder) {
-                centerBorder = std::make_unique<CenterBorderComp>();
-                centerBorder->setInterceptsMouseClicks (false, false);
-                addAndMakeVisible (*centerBorder);
-                centerBorder->toBack();
-            }
-            auto centerUnion = centerR1.getUnion (centerR2).reduced (Layout::dp (2, s));
-            centerBorder->setBounds (centerUnion);
+            // Center group border removed after alignment verified
         }
 
         // Left group Row2: HP, LP, Q, Q-Link (slots 1-4) | Width (5-8)
@@ -3453,29 +3505,85 @@ void MyPluginAudioProcessorEditor::performLayout()
                 if (c) { c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGap); }
         }
 
-        // Center group Row3: Mono maker (moved here)
+        // Center group Row3 and Row4: 4 columns each with Center controls
         {
             auto row3Area = row3; row3Area.removeFromRight (delayCardW);
-            // Reserve left group width on row3
-            auto tmp = row3Area.removeFromLeft (leftW);
-            juce::ignoreUnused (tmp);
+            auto row4Area = row4; row4Area.removeFromRight (delayCardW);
+            // consume left group width to align with center region
+            row3Area.removeFromLeft (leftW);
+            row4Area.removeFromLeft (leftW);
+            // layout within centerW width
             auto centerR3 = row3Area.removeFromLeft (centerW);
-            if (!monoCell) return; // safety
-            monoCell->setMetrics (lPx, valuePx, labelGap, Layout::dp (24, s));
-            monoCell->setMiniPlacementRight (true);
-            monoCell->setMiniThicknessPx (juce::jmax (8, Layout::dp (12, s)));
-            if (monoSlopeSwitch != nullptr)
+            auto centerR4 = row4Area.removeFromLeft (centerW);
+
+            const int valuePx2 = Layout::dp (14, s);
+            const int labelGap2 = Layout::dp (4, s);
+
+            if (!centerPromCell)     centerPromCell     = std::make_unique<KnobCell>(centerPromDb,     centerPromVal,     "");
+            if (!centerFocusLoCell)  centerFocusLoCell  = std::make_unique<KnobCell>(centerFocusLoHz,  centerFocusLoVal,  "");
+            if (!centerFocusHiCell)  centerFocusHiCell  = std::make_unique<KnobCell>(centerFocusHiHz,  centerFocusHiVal,  "");
+            if (!centerPunchAmtCell) centerPunchAmtCell = std::make_unique<KnobCell>(centerPunchAmt01, centerPunchAmtVal, "");
+            if (!centerPunchModeCell) { centerPunchModeCell = std::make_unique<SwitchCell>(centerPunchMode); centerPunchModeCell->setCaption ("PUNCH MODE"); }
+            if (!centerPhaseRecCell)  { centerPhaseRecCell  = std::make_unique<SwitchCell>(centerPhaseRecOn); centerPhaseRecCell->setCaption ("PHASE REC"); }
+            if (!centerPhaseAmtCell)  centerPhaseAmtCell  = std::make_unique<KnobCell>(centerPhaseAmt01, centerPhaseAmtVal, "");
+            if (!centerLockOnCell)    { centerLockOnCell    = std::make_unique<SwitchCell>(centerLockOn); centerLockOnCell->setCaption ("CENTER LOCK"); }
+            if (!centerLockDbCell)    centerLockDbCell    = std::make_unique<KnobCell>(centerLockDb, centerLockDbVal, "");
+
+            for (auto* kc : { centerPromCell.get(), centerFocusLoCell.get(), centerFocusHiCell.get(), centerPunchAmtCell.get(), centerPhaseAmtCell.get(), centerLockDbCell.get() })
+                if (kc) { kc->setMetrics (lPx, valuePx2, labelGap2); kc->getProperties().set ("metallic", true); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap2); }
+            for (auto* sc : { centerPunchModeCell.get(), centerPhaseRecCell.get(), centerLockOnCell.get() })
+                if (sc) { sc->getProperties().set ("metallic", true); }
+
+            addAndMakeVisible (*centerPromCell);
+            addAndMakeVisible (*centerFocusLoCell);
+            addAndMakeVisible (*centerFocusHiCell);
+            addAndMakeVisible (*centerPunchAmtCell);
+            addAndMakeVisible (*centerPunchModeCell);
+            addAndMakeVisible (*centerPhaseRecCell);
+            addAndMakeVisible (*centerPhaseAmtCell);
+            addAndMakeVisible (*centerLockOnCell);
+            addAndMakeVisible (*centerLockDbCell);
+
+            // Row 3 grid
             {
-                monoCell->setAuxComponents ({ monoSlopeSwitch.get(), &monoAuditionButton }, juce::jmax (32, Layout::dp (90, s)));
-                monoCell->setAuxWeights ({ 2.0f, 1.0f });
-                monoCell->setAuxAsBars (false);
-                monoSlopeSwitch->setVisible (true);
-                monoSlopeSwitch->toFront (false);
+                juce::Grid g; g.rowGap = juce::Grid::Px (0); g.columnGap = juce::Grid::Px (0);
+                g.templateRows = { juce::Grid::Px (containerHeight) };
+                g.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
+                g.items = {
+                    juce::GridItem (*centerPromCell)    .withArea (1, 1),
+                    juce::GridItem (*centerFocusLoCell) .withArea (1, 2),
+                    juce::GridItem (*centerFocusHiCell) .withArea (1, 3),
+                    juce::GridItem (*centerPunchAmtCell).withArea (1, 4)
+                };
+                g.performLayout (centerR3);
             }
-            addAndMakeVisible (*monoCell);
-            monoCell->setBounds (centerR3);
-            monoCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            monoCell->setValueLabelGap (labelGap);
+            // Row 4 grid
+            {
+                juce::Grid g; g.rowGap = juce::Grid::Px (0); g.columnGap = juce::Grid::Px (0);
+                g.templateRows = { juce::Grid::Px (containerHeight) };
+                g.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
+        g.items = {
+                    juce::GridItem (*centerPunchModeCell).withArea (1, 1),
+                    juce::GridItem (*centerPhaseRecCell) .withArea (1, 2),
+                    juce::GridItem (*centerPhaseAmtCell) .withArea (1, 3),
+                    juce::GridItem (*centerLockOnCell)   .withArea (1, 4)
+                };
+                g.performLayout (centerR4);
+            }
+
+            // UX: disable Phase Amt when Phase Rec is off; clamp label precision
+            const bool phaseOn = centerPhaseRecOn.getToggleState();
+            centerPhaseAmt01.setEnabled (phaseOn);
+            auto setValText = [] (juce::Label& lbl, double v, int digits)
+            {
+                lbl.setText (juce::String (v, digits), juce::dontSendNotification);
+            };
+            setValText (centerPromVal,      centerPromDb.getValue(), 1);
+            setValText (centerFocusLoVal,   centerFocusLoHz.getValue(), 0);
+            setValText (centerFocusHiVal,   centerFocusHiHz.getValue(), 0);
+            setValText (centerPunchAmtVal,  centerPunchAmt01.getValue() * 100.0, 0);
+            setValText (centerPhaseAmtVal,  centerPhaseAmt01.getValue() * 100.0, 0);
+            setValText (centerLockDbVal,    centerLockDb.getValue(), 1);
         }
     }
 
@@ -3497,7 +3605,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         // For now only Drive lives here; more knobs to follow.
         if (!satDriveCell) satDriveCell = std::make_unique<KnobCell>(satDrive, satDriveValue, "DRIVE");
         satDriveCell->setMetrics (lPx, Layout::dp (14, s), Layout::dp (4, s));
-        satDriveCell->getProperties().set ("metallic", true);
+        satDriveCell->getProperties().set ("metallic", false);
         addAndMakeVisible (*satDriveCell);
         juce::Array<juce::GridItem> satItems;
         satItems.add (juce::GridItem (*satDriveCell).withArea (1, 1));

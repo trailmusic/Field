@@ -372,10 +372,14 @@ void FieldLNF::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h,
         g.drawEllipse (bounds, 1.5f);
     }
 
-    // Knob label in the center
-    const juce::String knobName = slider.getName();
-    if (knobName.isNotEmpty())
-        drawKnobLabel (g, bounds, knobName);
+    // Knob label in the center (unless suppressed)
+    const bool suppress = (bool) slider.getProperties().getWithDefault ("suppressNameLabel", false);
+    if (! suppress)
+    {
+        const juce::String knobName = slider.getName();
+        if (knobName.isNotEmpty())
+            drawKnobLabel (g, bounds, knobName);
+    }
 }
 
 void FieldLNF::drawKnobLabel (juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& text)
