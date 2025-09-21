@@ -1632,6 +1632,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     rotationDeg.setName ("ROT"); asymmetry.setName ("ASYM");
     shufLoPct.setName ("SHUF LO"); shufHiPct.setName ("SHUF HI"); shufXHz.setName ("SHUF XO");
 
+    // HP/LP value label precision: integer Hz
+    hpHz.setNumDecimalPlacesToDisplay (0);
+    lpHz.setNumDecimalPlacesToDisplay (0);
+
     // Imaging static text labels under knobs (hidden to avoid duplication with value labels)
     for (auto* l : { &widthLoName,&widthMidName,&widthHiName,&xoverLoName,&xoverHiName,&rotationName,&asymName,&shufLoName,&shufHiName,&shufXName })
     {
@@ -3324,7 +3328,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Center group width = 4 columns (Row1: Gain/Mix/WetOnly; Row2: Pan x2 + Mono x2)
         const int centerW = cellW * 4;
 
-        // Left group Row1: BASS, AIR, TILT, SCOOP (4 columns)
+        // Left group Row1: BASS (double-wide cols 1-2), HP (col3), LP (col4)
         {
             auto left = row1Area.removeFromLeft (leftW);
             // Ensure EQ primary four are visible and sized with mini bars
@@ -3332,42 +3336,40 @@ void MyPluginAudioProcessorEditor::performLayout()
             const int miniStripW = Layout::dp (90, s);
             const int miniBarH   = Layout::dp (12, s);
             const int valueGap   = Layout::dp (6,  s);
+            // Configure BASS as double-wide with mini strip
             bassCell ->setMetrics (lPx, valuePx, gapPx, miniStripW);
-            airCell  ->setMetrics (lPx, valuePx, gapPx, miniStripW);
-            tiltCell ->setMetrics (lPx, valuePx, gapPx, miniStripW);
-            scoopCell->setMetrics (lPx, valuePx, gapPx, miniStripW);
             bassCell ->setMiniPlacementRight (true);
-            airCell  ->setMiniPlacementRight (true);
-            tiltCell ->setMiniPlacementRight (true);
-            scoopCell->setMiniPlacementRight (true);
             bassCell ->setMiniThicknessPx (miniBarH);
-            airCell  ->setMiniThicknessPx (miniBarH);
-            tiltCell ->setMiniThicknessPx (miniBarH);
-            scoopCell->setMiniThicknessPx (miniBarH);
+            bassCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            bassCell ->setValueLabelGap (valueGap);
+            bassCell ->setMiniWithLabel (&bassFreqSlider, &bassFreqValue, miniStripW);
+            bassFreqSlider.getProperties().set ("micro", true);
+            // Ensure HP/LP exist and configure
+            if (!hpCell) hpCell = std::make_unique<KnobCell>(hpHz, hpValue, "HP");
+            if (!lpCell) lpCell = std::make_unique<KnobCell>(lpHz, lpValue, "LP");
+            hpCell->setMetrics (lPx, valuePx, labelGap);
+            lpCell->setMetrics (lPx, valuePx, labelGap);
+            // Ensure HP/LP value labels are managed and positioned like other knobs
+            hpCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            hpCell->setValueLabelGap (labelGap);
+            lpCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            lpCell->setValueLabelGap (labelGap);
             addAndMakeVisible (*bassCell);
-            addAndMakeVisible (*airCell);
-            addAndMakeVisible (*tiltCell);
-            addAndMakeVisible (*scoopCell);
-            // 1x4 grid across left group row 1
+            addAndMakeVisible (*hpCell);
+            addAndMakeVisible (*lpCell);
+            // 1x8 grid across left group row 1
             juce::Grid lg1; lg1.rowGap = juce::Grid::Px (0); lg1.columnGap = juce::Grid::Px (0);
             lg1.templateRows = { juce::Grid::Px (containerHeight) };
-            const int colW1 = juce::jmax (1, left.getWidth() / 4);
-            lg1.templateColumns = { juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1) };
+            const int colW1 = juce::jmax (1, left.getWidth() / 8);
+            lg1.templateColumns = { juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1) };
             lg1.items = {
-                juce::GridItem (*bassCell) .withHeight (containerHeight),
-                juce::GridItem (*airCell)  .withHeight (containerHeight),
-                juce::GridItem (*tiltCell) .withHeight (containerHeight),
-                juce::GridItem (*scoopCell).withHeight (containerHeight)
+                // BASS spans columns 1-2
+                juce::GridItem (*bassCell) .withArea (1, 1, 2, 3),
+                // HP and LP at 3 and 4
+                juce::GridItem (*hpCell)   .withArea (1, 3),
+                juce::GridItem (*lpCell)   .withArea (1, 4)
             };
             lg1.performLayout (left);
-            // Managed value labels and minis
-            for (auto* c : { bassCell.get(), airCell.get(), tiltCell.get(), scoopCell.get() }) { if (c) { c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (valueGap); } }
-            bassCell ->setMiniWithLabel (&bassFreqSlider, &bassFreqValue, miniStripW);
-            airCell  ->setMiniWithLabel (&airFreqSlider,  &airFreqValue,  miniStripW);
-            tiltCell ->setMiniWithLabel (&tiltFreqSlider, &tiltFreqValue, miniStripW);
-            scoopCell->setMiniWithLabel (&scoopFreqSlider,&scoopFreqValue,miniStripW);
-            for (auto* mini : { &bassFreqSlider, &airFreqSlider, &tiltFreqSlider, &scoopFreqSlider })
-                mini->getProperties().set ("micro", true);
         }
 
         // Center: Row1 = Gain/Mix/WetOnly, Row2 = Pan (2 cols) + Mono (2 cols)
@@ -3445,12 +3447,10 @@ void MyPluginAudioProcessorEditor::performLayout()
             // Center group border removed after alignment verified
         }
 
-        // Left group Row2: HP, LP, Q, Q-Link (slots 1-4) | Width (5-8)
+        // Left group Row2: AIR (double-wide cols 1-2), Q (3), Q-Link (4) | Width (5-8)
         {
             auto leftR2 = row2Base.removeFromLeft (leftW);
             // Ensure cells exist
-            if (!hpCell)       hpCell       = std::make_unique<KnobCell>(hpHz, hpValue, "HP");
-            if (!lpCell)       lpCell       = std::make_unique<KnobCell>(lpHz, lpValue, "LP");
             if (!filterQCell)  filterQCell  = std::make_unique<KnobCell>(filterQ, filterQValue, "Q");
             if (!qClusterCell) qClusterCell = std::make_unique<KnobCell>(qClusterDummySlider, qClusterDummyValue, "Q LINK");
 
@@ -3464,8 +3464,15 @@ void MyPluginAudioProcessorEditor::performLayout()
             lpQSlider.getProperties().set ("micro", true);
 
             // Metrics for all eight slots
-            hpCell      ->setMetrics (lPx, valuePx, labelGap);
-            lpCell      ->setMetrics (lPx, valuePx, labelGap);
+            // AIR double-wide with mini strip
+            const int gapPx      = Layout::dp (0,  s);
+            const int miniStripW = Layout::dp (90, s);
+            const int miniBarH   = Layout::dp (12, s);
+            airCell    ->setMetrics (lPx, valuePx, gapPx, miniStripW);
+            airCell    ->setMiniPlacementRight (true);
+            airCell    ->setMiniThicknessPx (miniBarH);
+            airCell    ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            airCell    ->setValueLabelGap (Layout::dp (6, s));
             filterQCell ->setMetrics (lPx, valuePx, labelGap);
             qClusterCell->setMetrics (lPx, valuePx, labelGap);
             widthCell   ->setMetrics (lPx, valuePx, labelGap);
@@ -3474,8 +3481,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             widthHiCell ->setMetrics (lPx, valuePx, labelGap);
 
             // Add to view
-            addAndMakeVisible (*hpCell);
-            addAndMakeVisible (*lpCell);
+            addAndMakeVisible (*airCell);
             addAndMakeVisible (*filterQCell);
             addAndMakeVisible (*qClusterCell);
             addAndMakeVisible (*widthCell);
@@ -3488,9 +3494,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             wg.templateRows = { juce::Grid::Px (containerHeight) };
             wg.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
             juce::Array<juce::GridItem> wi;
-            // Slots 1-4: HP, LP, Q, Q-Link
-            wi.add (juce::GridItem (*hpCell)      .withArea (1, 1));
-            wi.add (juce::GridItem (*lpCell)      .withArea (1, 2));
+            // Slots 1-2: AIR double-wide; 3-4: Q, Q-Link
+            wi.add (juce::GridItem (*airCell)     .withArea (1, 1, 2, 3));
             wi.add (juce::GridItem (*filterQCell) .withArea (1, 3));
             wi.add (juce::GridItem (*qClusterCell).withArea (1, 4));
             // Slots 5-8: Width cluster
@@ -3501,8 +3506,45 @@ void MyPluginAudioProcessorEditor::performLayout()
             wg.items = std::move (wi);
             wg.performLayout (leftR2);
 
-            for (auto* c : { hpCell.get(), lpCell.get(), filterQCell.get(), qClusterCell.get(), widthCell.get(), widthLoCell.get(), widthMidCell.get(), widthHiCell.get() })
+            for (auto* c : { airCell.get(), filterQCell.get(), qClusterCell.get(), widthCell.get(), widthLoCell.get(), widthMidCell.get(), widthHiCell.get() })
                 if (c) { c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGap); }
+            airCell->setMiniWithLabel (&airFreqSlider, &airFreqValue, miniStripW);
+            airFreqSlider.getProperties().set ("micro", true);
+        }
+
+        // Left group Row3: TILT (double-wide cols 1-2), XO LO (3), XO HI (4)
+        {
+            auto leftR3Area = row3; leftR3Area.removeFromRight (delayCardW);
+            auto leftR3 = leftR3Area.removeFromLeft (leftW);
+            // Configure TILT with mini
+            const int gapPx      = Layout::dp (0,  s);
+            const int miniStripW = Layout::dp (90, s);
+            const int miniBarH   = Layout::dp (12, s);
+            const int valueGap   = Layout::dp (6,  s);
+            tiltCell ->setMetrics (lPx, valuePx, gapPx, miniStripW);
+            tiltCell ->setMiniPlacementRight (true);
+            tiltCell ->setMiniThicknessPx (miniBarH);
+            tiltCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            tiltCell ->setValueLabelGap (valueGap);
+            tiltCell ->setMiniWithLabel (&tiltFreqSlider, &tiltFreqValue, miniStripW);
+            tiltFreqSlider.getProperties().set ("micro", true);
+            // XO cells
+            if (!xoverLoCell)  xoverLoCell  = std::make_unique<KnobCell>(xoverLoHz, xoverLoValue, "XO LO");
+            if (!xoverHiCell)  xoverHiCell  = std::make_unique<KnobCell>(xoverHiHz, xoverHiValue, "XO HI");
+            xoverLoCell->setMetrics (lPx, valuePx, labelGap);
+            xoverHiCell->setMetrics (lPx, valuePx, labelGap);
+            addAndMakeVisible (*tiltCell);
+            addAndMakeVisible (*xoverLoCell);
+            addAndMakeVisible (*xoverHiCell);
+            juce::Grid lg3; lg3.rowGap = juce::Grid::Px (0); lg3.columnGap = juce::Grid::Px (0);
+            lg3.templateRows = { juce::Grid::Px (containerHeight) };
+            lg3.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
+            lg3.items = {
+                juce::GridItem (*tiltCell)   .withArea (1, 1, 2, 3),
+                juce::GridItem (*xoverLoCell).withArea (1, 3),
+                juce::GridItem (*xoverHiCell).withArea (1, 4)
+            };
+            lg3.performLayout (leftR3);
         }
 
         // Center group Row3 and Row4: 4 columns each with Center controls
@@ -3634,6 +3676,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Imaging row: use knob cells for uniform layout
         const int valuePx = Layout::dp (14, s);
         const int gapPx   = Layout::dp (0,  s);
+        // XO cells now live on Row 3; keep metrics for consistency but don't place here
         xoverLoCell->setMetrics (lPx, valuePx, gapPx);
         xoverHiCell->setMetrics (lPx, valuePx, gapPx);
         rotationCell->setMetrics (lPx, valuePx, gapPx);
@@ -3641,6 +3684,17 @@ void MyPluginAudioProcessorEditor::performLayout()
         shufLoCell->setMetrics   (lPx, valuePx, gapPx);
         shufHiCell->setMetrics   (lPx, valuePx, gapPx);
         shufXCell->setMetrics    (lPx, valuePx, gapPx);
+        // SCOOP now occupies Row 4 slots 1-2 (double-wide) with its mini strip
+        const int scoopMiniW = Layout::dp (90, s);
+        const int scoopMiniH = Layout::dp (12, s);
+        scoopCell->setMetrics (lPx, valuePx, gapPx, scoopMiniW);
+        scoopCell->setMiniPlacementRight (true);
+        scoopCell->setMiniThicknessPx (scoopMiniH);
+        scoopCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        scoopCell->setValueLabelGap (Layout::dp (6, s));
+        // Attach BOOST mini slider + label strip
+        scoopCell->setMiniWithLabel (&scoopFreqSlider, &scoopFreqValue, scoopMiniW);
+        scoopFreqSlider.getProperties().set ("micro", true);
         // Managed labels on imaging row
         xoverLoCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
         xoverHiCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
@@ -3658,8 +3712,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         shufHiCell->setValueLabelGap (imgGap);
         shufXCell->setValueLabelGap (imgGap);
 
-        addAndMakeVisible (*xoverLoCell);
-        addAndMakeVisible (*xoverHiCell);
+        addAndMakeVisible (*scoopCell);
         addAndMakeVisible (*rotationCell);
         addAndMakeVisible (*asymCell);
         addAndMakeVisible (*shufLoCell);
@@ -3729,16 +3782,15 @@ void MyPluginAudioProcessorEditor::performLayout()
         }
 
         imgGrid.items = {
-            // 1..7 imaging
-            juce::GridItem (*xoverLoCell) .withHeight (containerHeight),
-            juce::GridItem (*xoverHiCell) .withHeight (containerHeight),
-            juce::GridItem (*rotationCell).withHeight (containerHeight),
-            juce::GridItem (*asymCell)    .withHeight (containerHeight),
-            juce::GridItem (*shufLoCell)  .withHeight (containerHeight),
-            juce::GridItem (*shufHiCell)  .withHeight (containerHeight),
-            juce::GridItem (*shufXCell)   .withHeight (containerHeight),
+            // Row 4: SCOOP spans columns 1-2, then imaging continues
+            juce::GridItem (*scoopCell)   .withArea (1, 1, 2, 3),
+            juce::GridItem (*rotationCell).withArea (1, 3),
+            juce::GridItem (*asymCell)    .withArea (1, 4),
+            juce::GridItem (*shufLoCell)  .withArea (1, 5),
+            juce::GridItem (*shufHiCell)  .withArea (1, 6),
+            juce::GridItem (*shufXCell)   .withArea (1, 7),
             // 8: S only (Q and Q-cluster moved to combined strip)
-            juce::GridItem (*shelfShapeCell).withHeight (containerHeight)
+            juce::GridItem (*shelfShapeCell).withArea (1, 8)
         };
         // Lay out imaging row across full left group width (no reserved HP/LP strip)
         imgGrid.performLayout (row4);
