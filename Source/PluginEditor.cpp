@@ -2118,10 +2118,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                     motionComboCells[i]->getProperties().set ("motionGreenBorder", true);
                     motionComboCells[i]->setShowBorder(true);
                 }
-                // Add to bottomAltPanel like Delay group does
-                if (motionComboCells[i]->getParentComponent() != &bottomAltPanel) {
-                    bottomAltPanel.addAndMakeVisible(*motionComboCells[i]);
-                }
+                // Now lives only in Group 1 grid; do not add to bottomAltPanel
             }
             
             const juce::StringArray buttonLabels = {"Enable", "Retrig", "Anchor", "HeadSafe"};
@@ -2146,10 +2143,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                     motionButtonCells[i]->getProperties().set ("motionGreenBorder", true);
                     motionButtonCells[i]->setShowBorder(true);
                 }
-                // Add to bottomAltPanel like Delay group does
-                if (motionButtonCells[i]->getParentComponent() != &bottomAltPanel) {
-                    bottomAltPanel.addAndMakeVisible(*motionButtonCells[i]);
-                }
+                // Now lives only in Group 1 grid; do not add to bottomAltPanel
             }
             
             // Motion parameter attachments (6x4 grid: 24 total) - Global parameters first
@@ -2887,157 +2881,16 @@ void MyPluginAudioProcessorEditor::performLayout()
         addAndMakeVisible (bottomAltPanel);
         bottomAltPanel.toFront (true);
 
-        // Hide Group 1 Motion Engine cells when Group 2 panel is visible
-        for (int i = 0; i < 24; ++i)
-            if (motionCellsGroup2[i]) motionCellsGroup2[i]->setVisible (!showPanel);
-        for (int i = 0; i < 4; ++i)
-            if (motionComboCells[i]) motionComboCells[i]->setVisible (!showPanel);
-        for (int i = 0; i < 3; ++i)
-            if (motionButtonCells[i]) motionButtonCells[i]->setVisible (!showPanel);
+        // Motion Engine now only lives in Group 1; no special visibility toggling here
         // Ensure the toggle button always remains visible above the sliding panel
         bottomAreaToggle.toFront (true);
         // Ensure the toggle button always remains visible above the sliding panel
         bottomAreaToggle.toFront (true);
 
-        // Group 2 panel layout - Motion group on left side (no padding, full panel)
+        // Motion Engine: removed from Group 2. Lives only in Group 1 flat grid.
         auto b = bottomAltPanel.getLocalBounds();
-        
-        // Motion group positioned directly in Group 2 panel (no container)
-        const int motionGroup2W = 5 * (lPx + Layout::dp (8, s)); // 5 columns for 20 controls
-        const int motionGroup2H = b.getHeight();
-        const int motionGroup2X = b.getX();
-        const int motionGroup2Y = b.getY();
-        
-        // Layout Motion cells in 4x5 grid within Group 2 panel
-        const int motionK = lPx;
-        const int motionV = Layout::dp (14, s);
-        const int motionG = Layout::dp (4, s); // Match Delay group labelGap
-        const int motionCellW = lPx + Layout::dp (8, s); // Match Delay group delayCellW
-        const int motionCellH = containerHeight; // Match Delay group containerHeight
-        
-        // Motion control labels (6x4 grid: 24 total)
-        const juce::StringArray motionLabels = {
-            "Enable", "Panner", "Path", "Rate", "Depth", "Phase",
-            "Spread", "Elev", "Bounce", "Jitter", "Quant", "Swing",
-            "Mode", "Retrig", "Hold", "Sens", "Offset", "Inertia",
-            "Front", "Doppler", "Send", "Anchor", "Bass", "Occlusion"
-        };
-        
-        // Create and layout Group 2 motion cells (6x4 grid: 24 total)
-        for (int i = 0; i < 24; ++i)
-        {
-            if (!motionCellsGroup2[i])
-            {
-                motionValuesGroup2[i].setText ("", juce::dontSendNotification);
-                motionCellsGroup2[i] = std::make_unique<KnobCell>(motionDummiesGroup2[i], motionValuesGroup2[i], motionLabels[i]);
-                motionCellsGroup2[i]->getProperties().set ("motionGreenBorder", true);
-                
-                // Set up slider based on control type
-                if (i == 0) // Enable switch (Button)
-                {
-                    motionDummiesGroup2[i].setSliderStyle (juce::Slider::LinearHorizontal);
-                    motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-                }
-                else if (i == 1 || i == 2 || i == 10 || i == 12) // ComboBox controls (Panner, Path, Quantize, Mode)
-                {
-                    motionDummiesGroup2[i].setSliderStyle (juce::Slider::LinearHorizontal);
-                    motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::TextBoxLeft, false, 60, 18);
-                }
-                else if (i == 13 || i == 21) // Button controls (Retrig, Anchor)
-                {
-                    motionDummiesGroup2[i].setSliderStyle (juce::Slider::LinearHorizontal);
-                    motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-                }
-                else // Knob controls
-                {
-                    motionDummiesGroup2[i].setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-                    motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-                    // Ensure rotary angles match LNF tick system (π → π + 2π)
-                    motionDummiesGroup2[i].setRotaryParameters (
-                        juce::MathConstants<float>::pi,
-                        juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
-                        true
-                    );
-                }
-            }
-            
-            // Add directly to Group 2 panel
-            if (motionCellsGroup2[i]->getParentComponent() != &bottomAltPanel)
-            {
-                bottomAltPanel.addAndMakeVisible (*motionCellsGroup2[i]);
-            }
-            motionCellsGroup2[i]->setMetrics (motionK, motionV, motionG);
-            motionCellsGroup2[i]->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            motionCellsGroup2[i]->setValueLabelGap (motionG);
-        }
-        
-        // Initialize Motion value labels with current parameter values
-        auto set = [](juce::Label& l, const juce::String& t){ l.setText (t, juce::dontSendNotification); };
-        auto Hz  = [](double v){ return juce::String (v, 2) + " Hz"; };
-        auto pct = [](double v){ return juce::String (v, 2) + "%"; };
-        
-        // Initialize Motion knob value labels with current parameter values (6x4 grid: 24 total)
-        set (motionValuesGroup2[3],  Hz (motionDummiesGroup2[3].getValue()));     // Rate
-        set (motionValuesGroup2[4],  pct (motionDummiesGroup2[4].getValue()));    // Depth
-        set (motionValuesGroup2[5],  juce::String (motionDummiesGroup2[5].getValue(), 2) + "°"); // Phase
-        set (motionValuesGroup2[6],  pct (motionDummiesGroup2[6].getValue()));    // Spread
-        set (motionValuesGroup2[7],  juce::String (motionDummiesGroup2[7].getValue(), 2));  // Elev Bias
-        set (motionValuesGroup2[8],  pct (motionDummiesGroup2[8].getValue()));    // Bounce
-        set (motionValuesGroup2[9],  pct (motionDummiesGroup2[9].getValue()));    // Jitter
-        set (motionValuesGroup2[11], pct (motionDummiesGroup2[11].getValue()));   // Swing
-        set (motionValuesGroup2[14], juce::String (motionDummiesGroup2[14].getValue(), 2) + " ms"); // Hold
-        set (motionValuesGroup2[15], pct (motionDummiesGroup2[15].getValue()));   // Sens
-        set (motionValuesGroup2[16], juce::String (motionDummiesGroup2[16].getValue(), 2) + "°"); // Offset
-        set (motionValuesGroup2[17], juce::String (motionDummiesGroup2[17].getValue(), 2) + " ms"); // Inertia
-        set (motionValuesGroup2[18], juce::String (motionDummiesGroup2[18].getValue(), 2)); // Front Bias
-        set (motionValuesGroup2[19], pct (motionDummiesGroup2[19].getValue()));   // Doppler
-        set (motionValuesGroup2[20], pct (motionDummiesGroup2[20].getValue()));   // Motion Send
-        set (motionValuesGroup2[22], Hz (motionDummiesGroup2[22].getValue()));    // Bass Floor
-        set (motionValuesGroup2[23], pct (motionDummiesGroup2[23].getValue()));   // Occlusion
-        
-        // Layout Motion items in 6x4 grid using juce::Grid (fixed pixel units like Delay group)
-        juce::Grid motionGrid;
-        motionGrid.rowGap = juce::Grid::Px (0);
-        motionGrid.columnGap = juce::Grid::Px (0);
-        motionGrid.templateRows = { juce::Grid::Px (motionCellH), juce::Grid::Px (motionCellH), juce::Grid::Px (motionCellH), juce::Grid::Px (motionCellH) };
-        motionGrid.templateColumns = { juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW), juce::Grid::Px (motionCellW) };
-        
-        motionGrid.items = {
-            // Row 1 - Enable + Core Motion (6 controls)
-            juce::GridItem (*motionButtonCells[0]).withArea (1,1),  // Enable (Button)
-            juce::GridItem (*motionComboCells[0]).withArea (1,2),  // Panner (ComboBox)
-            juce::GridItem (*motionComboCells[1]).withArea (1,3),  // Path (ComboBox)
-            juce::GridItem (*motionCellsGroup2[3]).withArea (1,4),  // Rate
-            juce::GridItem (*motionCellsGroup2[4]).withArea (1,5),  // Depth
-            juce::GridItem (*motionCellsGroup2[5]).withArea (1,6),  // Phase
-            // Row 2 - Shape & Feel (6 controls)
-            juce::GridItem (*motionCellsGroup2[6]).withArea (2,1),  // Spread
-            juce::GridItem (*motionCellsGroup2[7]).withArea (2,2),  // Elevation Bias
-            juce::GridItem (*motionCellsGroup2[8]).withArea (2,3),  // Bounce
-            juce::GridItem (*motionCellsGroup2[9]).withArea (2,4),  // Jitter
-            juce::GridItem (*motionComboCells[2]).withArea (2,5),  // Quantize (ComboBox)
-            juce::GridItem (*motionCellsGroup2[11]).withArea (2,6), // Swing
-            // Row 3 - Rhythm & Triggers (6 controls)
-            juce::GridItem (*motionComboCells[3]).withArea (3,1), // Mode (ComboBox)
-            juce::GridItem (*motionButtonCells[1]).withArea (3,2), // Retrig (Button)
-            juce::GridItem (*motionCellsGroup2[14]).withArea (3,3), // Hold
-            juce::GridItem (*motionCellsGroup2[15]).withArea (3,4), // Sens
-            juce::GridItem (*motionCellsGroup2[16]).withArea (3,5), // Offset
-            juce::GridItem (*motionCellsGroup2[17]).withArea (3,6), // Inertia
-            // Row 4 - Depth & Safety (6 controls)
-            juce::GridItem (*motionCellsGroup2[18]).withArea (4,1), // Front Bias
-            juce::GridItem (*motionCellsGroup2[19]).withArea (4,2), // Doppler
-            juce::GridItem (*motionCellsGroup2[20]).withArea (4,3), // Motion Send
-            juce::GridItem (*motionButtonCells[2]).withArea (4,4), // Anchor (Button)
-            juce::GridItem (*motionCellsGroup2[22]).withArea (4,5), // Bass Floor (Knob)
-            juce::GridItem (*motionCellsGroup2[23]).withArea (4,6)  // Occlusion
-        };
-        
-        // Perform layout within motion group area with gap reduction
-        auto motionBounds = juce::Rectangle<int>(motionGroup2X, motionGroup2Y, motionGroup2W, motionGroup2H).reduced(Layout::dp(Layout::GAP, s));
-        motionGrid.performLayout(motionBounds);
         // Delay group positioned directly in Group 2 panel (no container)
-        const int delayGroupX = motionGroup2X + motionGroup2W;
+        const int delayGroupX = b.getX();
         const int delayGroupW = 8 * (lPx + Layout::dp (8, s)); // 8 columns for delay items
         const int delayGroupH = b.getHeight();
         const int delayGroupY = b.getY();
@@ -3319,49 +3172,39 @@ void MyPluginAudioProcessorEditor::performLayout()
             reverbGrid.performLayout (rbCentered);
         }
     }
-    // ---------------- Group 1: three grid sections (Mono | Center | Width) ----
+    // ---------------- Group 1: flat 4x16 contiguous grid -----------------------
     {
-        auto row1Area = row1; row1Area.removeFromRight (delayCardW);
-        auto row2Base = row2; row2Base.removeFromRight (delayCardW);
         const int valuePx = Layout::dp (14, s);
         const int labelGap = Layout::dp (4, s);
         const int cellW = lPx + Layout::dp (8, s);
 
-        // Left group width = 8 columns across all 4 rows (EQ lives here)
-        const int leftW = cellW * 8;
-        // Center group width = 4 columns (Row1: Gain/Mix/WetOnly; Row2: Pan x2 + Mono x2)
-        const int centerW = cellW * 4;
+        // Compute a single bounds covering rows 1-4, excluding the right delay card area
+        auto r1 = row1; r1.removeFromRight (delayCardW);
+        auto r2 = row2; r2.removeFromRight (delayCardW);
+        auto r3 = row3; r3.removeFromRight (delayCardW);
+        auto r4 = row4; r4.removeFromRight (delayCardW);
+        juce::Rectangle<int> group1Bounds (r1.getX(), r1.getY(), r1.getWidth(), r1.getHeight() + r2.getHeight() + r3.getHeight() + r4.getHeight());
 
-        // Left group Row1: BASS (double-wide cols 1-2), HP (3), Q (4), Q LINK (5), LP (6)
+        // Ensure cells/components exist and have metrics
         {
-            auto left = row1Area.removeFromLeft (leftW);
-            // Ensure EQ primary four are visible and sized with mini bars
-            const int gapPx      = Layout::dp (0,  s);
+            // Left: BASS, HP, Q, Q LINK, LP
             const int miniStripW = Layout::dp (90, s);
             const int miniBarH   = Layout::dp (12, s);
             const int valueGap   = Layout::dp (6,  s);
-            // Configure BASS as double-wide with mini strip
-            bassCell ->setMetrics (lPx, valuePx, gapPx, miniStripW);
+            bassCell ->setMetrics (lPx, valuePx, 0, miniStripW);
             bassCell ->setMiniPlacementRight (true);
             bassCell ->setMiniThicknessPx (miniBarH);
             bassCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             bassCell ->setValueLabelGap (valueGap);
             bassCell ->setMiniWithLabel (&bassFreqSlider, &bassFreqValue, miniStripW);
             bassFreqSlider.getProperties().set ("micro", true);
-            // Ensure HP/LP exist and configure
+
             if (!hpCell) hpCell = std::make_unique<KnobCell>(hpHz, hpValue, "HP");
             if (!lpCell) lpCell = std::make_unique<KnobCell>(lpHz, lpValue, "LP");
-            hpCell->setMetrics (lPx, valuePx, labelGap);
-            lpCell->setMetrics (lPx, valuePx, labelGap);
-            // Ensure HP/LP value labels are managed and positioned like other knobs
-            hpCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            hpCell->setValueLabelGap (labelGap);
-            lpCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            lpCell->setValueLabelGap (labelGap);
-            // Ensure Q and Q LINK exist and configured
             if (!filterQCell)  filterQCell  = std::make_unique<KnobCell>(filterQ, filterQValue, "Q");
             if (!qClusterCell) qClusterCell = std::make_unique<KnobCell>(qClusterDummySlider, qClusterDummyValue, "Q LINK");
-            // Configure Q-Link cluster as horizontal aux group
+            for (auto* kc : { hpCell.get(), lpCell.get(), filterQCell.get(), qClusterCell.get() })
+                if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap); }
             qClusterCell->setShowKnob (false);
             qClusterCell->setMiniPlacementRight (true);
             qClusterCell->setMiniThicknessPx (Layout::dp (12, s));
@@ -3369,56 +3212,48 @@ void MyPluginAudioProcessorEditor::performLayout()
             qClusterCell->setAuxComponents ({ &qLinkButton, &hpQSlider, &lpQSlider }, Layout::dp (90, s));
             hpQSlider.getProperties().set ("micro", true);
             lpQSlider.getProperties().set ("micro", true);
-            filterQCell ->setMetrics (lPx, valuePx, labelGap);
-            qClusterCell->setMetrics (lPx, valuePx, labelGap);
-            for (auto* c : { filterQCell.get(), qClusterCell.get() }) { if (c) { c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGap); } }
-            addAndMakeVisible (*bassCell);
-            addAndMakeVisible (*hpCell);
-            addAndMakeVisible (*filterQCell);
-            addAndMakeVisible (*qClusterCell);
-            addAndMakeVisible (*lpCell);
-            // 1x8 grid across left group row 1
-            juce::Grid lg1; lg1.rowGap = juce::Grid::Px (0); lg1.columnGap = juce::Grid::Px (0);
-            lg1.templateRows = { juce::Grid::Px (containerHeight) };
-            const int colW1 = juce::jmax (1, left.getWidth() / 8);
-            lg1.templateColumns = { juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1) };
-            lg1.items = {
-                // BASS spans columns 1-2
-                juce::GridItem (*bassCell) .withArea (1, 1, 2, 3),
-                // HP, Q, Q LINK, LP at 3,4,5,6
-                juce::GridItem (*hpCell)      .withArea (1, 3),
-                juce::GridItem (*filterQCell) .withArea (1, 4),
-                juce::GridItem (*qClusterCell).withArea (1, 5),
-                juce::GridItem (*lpCell)      .withArea (1, 6)
-            };
-            lg1.performLayout (left);
-        }
 
-        // Center: Row1 = Gain/Mix/WetOnly, Row2 = Pan (2 cols) + Mono (2 cols)
-        {
-            // Row1 left group already consumed leftW from row1Area above; use remaining directly
-            auto centerR1 = row1Area.removeFromLeft (centerW);
-            // For row2, start from base and consume left group first, then center
-            auto tmpR2 = row2Base;
-            auto tmpLeftR2 = tmpR2.removeFromLeft (leftW); juce::ignoreUnused (tmpLeftR2);
-            auto centerR2 = tmpR2.removeFromLeft (centerW);
-            if (!panCell) panCell = std::make_unique<KnobCell>(panKnob, panValue, "");
-            panCell   ->setMetrics (lPx, valuePx, labelGap);
-            gainCell  ->setMetrics (lPx, valuePx, labelGap);
-            satMixCell->setMetrics (lPx, valuePx, labelGap);
-            // Prepare Mono in Row 2 to span two columns on the right
-            if (!monoCell) return; // safety
-            monoCell  ->setMetrics (lPx, valuePx, labelGap, Layout::dp (24, s));
-            monoCell  ->setMiniPlacementRight (true);
-            monoCell  ->setMiniThicknessPx (juce::jmax (8, Layout::dp (12, s)));
-            if (monoSlopeSwitch != nullptr)
-            {
-                monoCell->setAuxComponents ({ monoSlopeSwitch.get(), &monoAuditionButton }, juce::jmax (32, Layout::dp (90, s)));
-                monoCell->setAuxWeights ({ 2.0f, 1.0f });
-                monoCell->setAuxAsBars (false);
-                monoSlopeSwitch->setVisible (true);
-                monoSlopeSwitch->toFront (false);
-            }
+            // Left Row2: AIR + WIDTH cluster
+            airCell    ->setMetrics (lPx, valuePx, 0, miniStripW);
+            airCell    ->setMiniPlacementRight (true);
+            airCell    ->setMiniThicknessPx (miniBarH);
+            airCell    ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            airCell    ->setValueLabelGap (valueGap);
+            airCell    ->setMiniWithLabel (&airFreqSlider, &airFreqValue, miniStripW);
+            airFreqSlider.getProperties().set ("micro", true);
+            for (auto* kc : { widthCell.get(), widthLoCell.get(), widthMidCell.get(), widthHiCell.get() })
+                if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap); }
+
+            // Left Row3: TILT + XO/SHUF
+            tiltCell ->setMetrics (lPx, valuePx, 0, miniStripW);
+            tiltCell ->setMiniPlacementRight (true);
+            tiltCell ->setMiniThicknessPx (miniBarH);
+            tiltCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            tiltCell ->setValueLabelGap (valueGap);
+            tiltCell ->setMiniWithLabel (&tiltFreqSlider, &tiltFreqValue, miniStripW);
+            tiltFreqSlider.getProperties().set ("micro", true);
+            if (!xoverLoCell)  xoverLoCell  = std::make_unique<KnobCell>(xoverLoHz, xoverLoValue, "XO LO");
+            if (!xoverHiCell)  xoverHiCell  = std::make_unique<KnobCell>(xoverHiHz, xoverHiValue, "XO HI");
+            for (auto* kc : { xoverLoCell.get(), xoverHiCell.get(), shufLoCell.get(), shufHiCell.get() })
+                if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap); }
+
+            // Left Row4: SCOOP + imaging
+            const int scoopMiniW = Layout::dp (90, s);
+            const int scoopMiniH = Layout::dp (12, s);
+            scoopCell->setMetrics (lPx, valuePx, 0, scoopMiniW);
+            scoopCell->setMiniPlacementRight (true);
+            scoopCell->setMiniThicknessPx (scoopMiniH);
+            scoopCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            scoopCell->setValueLabelGap (valueGap);
+            scoopCell->setMiniWithLabel (&scoopFreqSlider, &scoopFreqValue, scoopMiniW);
+            scoopFreqSlider.getProperties().set ("micro", true);
+            if (!shelfShapeCell) shelfShapeCell = std::make_unique<KnobCell>(shelfShapeS, shelfShapeValue, "Shape");
+            for (auto* kc : { rotationCell.get(), asymCell.get(), shufXCell.get(), shelfShapeCell.get() })
+                if (kc) { kc->setMetrics (lPx, valuePx, 0); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (Layout::dp (6, s)); }
+
+            // Center rows 1-4
+            if (!satDriveCell) satDriveCell = std::make_unique<KnobCell>(satDrive, satDriveValue, "DRIVE");
+            if (!panCell)      panCell      = std::make_unique<KnobCell>(panKnob,  panValue,        "");
             if (!wetOnlyCell)
             {
                 wetOnlyToggle.getProperties().set ("iconType", (int) IconSystem::Mix);
@@ -3426,160 +3261,26 @@ void MyPluginAudioProcessorEditor::performLayout()
                 wetOnlyCell = std::make_unique<SwitchCell> (wetOnlyToggle);
                 wetOnlyCell->setCaption ("Wet Only");
             }
-            addAndMakeVisible (*gainCell);
-            addAndMakeVisible (*satMixCell);
-            addAndMakeVisible (*wetOnlyCell);
-            addAndMakeVisible (*panCell);
-            addAndMakeVisible (*monoCell);
-            // Tag center-group controls with metallic background hint
-            gainCell   ->getProperties().set ("metallic", true);
-            satMixCell ->getProperties().set ("metallic", true);
-            panCell    ->getProperties().set ("metallic", true);
+            for (auto* kc : { gainCell.get(), satMixCell.get(), satDriveCell.get(), panCell.get() })
+                if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap); kc->getProperties().set ("metallic", true); }
             if (wetOnlyCell) wetOnlyCell->getProperties().set ("metallic", true);
-            monoCell   ->getProperties().set ("metallic", true);
-            // Row1 center
+            if (monoCell)
             {
-                juce::Grid cg1; cg1.rowGap = juce::Grid::Px (0); cg1.columnGap = juce::Grid::Px (0);
-                cg1.templateRows = { juce::Grid::Px (containerHeight) };
-                // 4 columns: use first three for Gain/Mix/WetOnly; leave col4 empty for balance/future
-                cg1.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
-                // Add Drive into col3 and move Wet Only to col4
-                if (!satDriveCell) satDriveCell = std::make_unique<KnobCell>(satDrive, satDriveValue, "DRIVE");
-                satDriveCell->setMetrics (lPx, valuePx, labelGap);
-                satDriveCell->getProperties().set ("metallic", true);
-                addAndMakeVisible (*satDriveCell);
-                cg1.items = {
-                    juce::GridItem (*gainCell)    .withArea (1, 1),
-                    juce::GridItem (*satMixCell)  .withArea (1, 2),
-                    juce::GridItem (*satDriveCell).withArea (1, 3),
-                    juce::GridItem (*wetOnlyCell) .withArea (1, 4)
-                };
-                cg1.performLayout (centerR1);
+                monoCell->setMetrics (lPx, valuePx, labelGap, Layout::dp (24, s));
+                monoCell->setMiniPlacementRight (true);
+                monoCell->setMiniThicknessPx (juce::jmax (8, Layout::dp (12, s)));
+                if (monoSlopeSwitch != nullptr)
+                {
+                    monoCell->setAuxComponents ({ monoSlopeSwitch.get(), &monoAuditionButton }, juce::jmax (32, Layout::dp (90, s)));
+                    monoCell->setAuxWeights ({ 2.0f, 1.0f });
+                    monoCell->setAuxAsBars (false);
+                    monoSlopeSwitch->setVisible (true);
+                    monoSlopeSwitch->toFront (false);
+                }
+                monoCell->getProperties().set ("metallic", true);
             }
-            // Row2 center: Pan spans left two columns; Mono spans right two columns
-            {
-                auto r = centerR2;
-                auto panArea  = r.removeFromLeft (cellW * 2);
-                auto monoArea = r; // remaining 2 columns
-                panCell ->setBounds (panArea);
-                monoCell->setBounds (monoArea);
-                panCell ->resized();
-            monoCell->resized();
-            }
-            for (auto* c : { gainCell.get(), satMixCell.get(), satDriveCell.get() }) { if (c) { c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGap); } }
-            panCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            panCell->setValueLabelGap (labelGap);
-            monoCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            monoCell->setValueLabelGap (labelGap);
 
-            // Center group border removed after alignment verified
-        }
-
-        // Left group Row2: AIR (double-wide cols 1-2) | Width (shifted left to 3-6)
-        {
-            auto leftR2 = row2Base.removeFromLeft (leftW);
-            // Ensure cells exist
-            // Q and Q LINK moved to Row 1
-
-            // Configure Q-Link cluster as horizontal aux group
-            // (none here)
-
-            // Metrics for all eight slots
-            // AIR double-wide with mini strip
-            const int gapPx      = Layout::dp (0,  s);
-            const int miniStripW = Layout::dp (90, s);
-            const int miniBarH   = Layout::dp (12, s);
-            airCell    ->setMetrics (lPx, valuePx, gapPx, miniStripW);
-            airCell    ->setMiniPlacementRight (true);
-            airCell    ->setMiniThicknessPx (miniBarH);
-            airCell    ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            airCell    ->setValueLabelGap (Layout::dp (6, s));
-            widthCell   ->setMetrics (lPx, valuePx, labelGap);
-            widthLoCell ->setMetrics (lPx, valuePx, labelGap);
-            widthMidCell->setMetrics (lPx, valuePx, labelGap);
-            widthHiCell ->setMetrics (lPx, valuePx, labelGap);
-
-            // Add to view
-            addAndMakeVisible (*airCell);
-            addAndMakeVisible (*widthCell);
-            addAndMakeVisible (*widthLoCell);
-            addAndMakeVisible (*widthMidCell);
-            addAndMakeVisible (*widthHiCell);
-
-            // 8 columns across left group (no extra col gaps)
-            juce::Grid wg; wg.rowGap = juce::Grid::Px (0); wg.columnGap = juce::Grid::Px (0);
-            wg.templateRows = { juce::Grid::Px (containerHeight) };
-            wg.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
-            juce::Array<juce::GridItem> wi;
-            // Slots 1-2: AIR double-wide; 3-6: Width cluster shifted left; 7-8 remain empty for future
-            wi.add (juce::GridItem (*airCell)     .withArea (1, 1, 2, 3));
-            wi.add (juce::GridItem (*widthCell)   .withArea (1, 3));
-            wi.add (juce::GridItem (*widthLoCell) .withArea (1, 4));
-            wi.add (juce::GridItem (*widthMidCell).withArea (1, 5));
-            wi.add (juce::GridItem (*widthHiCell) .withArea (1, 6));
-            wg.items = std::move (wi);
-            wg.performLayout (leftR2);
-
-            for (auto* c : { airCell.get(), widthCell.get(), widthLoCell.get(), widthMidCell.get(), widthHiCell.get() })
-                if (c) { c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGap); }
-            airCell->setMiniWithLabel (&airFreqSlider, &airFreqValue, miniStripW);
-            airFreqSlider.getProperties().set ("micro", true);
-        }
-
-        // Left group Row3: TILT (double-wide cols 1-2), XO LO (3), XO HI (4)
-        {
-            auto leftR3Area = row3; leftR3Area.removeFromRight (delayCardW);
-            auto leftR3 = leftR3Area.removeFromLeft (leftW);
-            // Configure TILT with mini
-            const int gapPx      = Layout::dp (0,  s);
-            const int miniStripW = Layout::dp (90, s);
-            const int miniBarH   = Layout::dp (12, s);
-            const int valueGap   = Layout::dp (6,  s);
-            tiltCell ->setMetrics (lPx, valuePx, gapPx, miniStripW);
-            tiltCell ->setMiniPlacementRight (true);
-            tiltCell ->setMiniThicknessPx (miniBarH);
-            tiltCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            tiltCell ->setValueLabelGap (valueGap);
-            tiltCell ->setMiniWithLabel (&tiltFreqSlider, &tiltFreqValue, miniStripW);
-            tiltFreqSlider.getProperties().set ("micro", true);
-            // XO cells
-            if (!xoverLoCell)  xoverLoCell  = std::make_unique<KnobCell>(xoverLoHz, xoverLoValue, "XO LO");
-            if (!xoverHiCell)  xoverHiCell  = std::make_unique<KnobCell>(xoverHiHz, xoverHiValue, "XO HI");
-            xoverLoCell->setMetrics (lPx, valuePx, labelGap);
-            xoverHiCell->setMetrics (lPx, valuePx, labelGap);
-            addAndMakeVisible (*tiltCell);
-            addAndMakeVisible (*xoverLoCell);
-            addAndMakeVisible (*xoverHiCell);
-            // Move SHUF LO/HI up to Row 3 (cols 4 and 5)
-            addAndMakeVisible (*shufLoCell);
-            addAndMakeVisible (*shufHiCell);
-            juce::Grid lg3; lg3.rowGap = juce::Grid::Px (0); lg3.columnGap = juce::Grid::Px (0);
-            lg3.templateRows = { juce::Grid::Px (containerHeight) };
-            lg3.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
-            lg3.items = {
-                juce::GridItem (*tiltCell)   .withArea (1, 1, 2, 3),
-                juce::GridItem (*xoverLoCell).withArea (1, 3),
-                juce::GridItem (*shufLoCell) .withArea (1, 4),
-                juce::GridItem (*shufHiCell) .withArea (1, 5),
-                juce::GridItem (*xoverHiCell).withArea (1, 6)
-            };
-            lg3.performLayout (leftR3);
-        }
-
-        // Center group Row3 and Row4: 4 columns each with Center controls
-        {
-            auto row3Area = row3; row3Area.removeFromRight (delayCardW);
-            auto row4Area = row4; row4Area.removeFromRight (delayCardW);
-            // consume left group width to align with center region
-            row3Area.removeFromLeft (leftW);
-            row4Area.removeFromLeft (leftW);
-            // layout within centerW width
-            auto centerR3 = row3Area.removeFromLeft (centerW);
-            auto centerR4 = row4Area.removeFromLeft (centerW);
-
-            const int valuePx2 = Layout::dp (14, s);
-            const int labelGap2 = Layout::dp (4, s);
-
+            // Center R3/R4 cells
             if (!centerPromCell)     centerPromCell     = std::make_unique<KnobCell>(centerPromDb,     centerPromVal,     "");
             if (!centerFocusLoCell)  centerFocusLoCell  = std::make_unique<KnobCell>(centerFocusLoHz,  centerFocusLoVal,  "");
             if (!centerFocusHiCell)  centerFocusHiCell  = std::make_unique<KnobCell>(centerFocusHiHz,  centerFocusHiVal,  "");
@@ -3589,314 +3290,229 @@ void MyPluginAudioProcessorEditor::performLayout()
             if (!centerPhaseAmtCell)  centerPhaseAmtCell  = std::make_unique<KnobCell>(centerPhaseAmt01, centerPhaseAmtVal, "");
             if (!centerLockOnCell)    { centerLockOnCell    = std::make_unique<SwitchCell>(centerLockOn); centerLockOnCell->setCaption ("CNTR LOCK"); }
             if (!centerLockDbCell)    centerLockDbCell    = std::make_unique<KnobCell>(centerLockDb, centerLockDbVal, "");
-
             for (auto* kc : { centerPromCell.get(), centerFocusLoCell.get(), centerFocusHiCell.get(), centerPunchAmtCell.get(), centerPhaseAmtCell.get(), centerLockDbCell.get() })
-                if (kc) { kc->setMetrics (lPx, valuePx2, labelGap2); kc->getProperties().set ("metallic", true); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap2); }
+                if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->getProperties().set ("metallic", true); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap); }
             for (auto* sc : { centerPunchModeCell.get(), centerPhaseRecCell.get(), centerLockOnCell.get() })
                 if (sc) { sc->getProperties().set ("metallic", true); }
-
-            addAndMakeVisible (*centerPromCell);
-            addAndMakeVisible (*centerFocusLoCell);
-            addAndMakeVisible (*centerFocusHiCell);
-            addAndMakeVisible (*centerPunchAmtCell);
-            addAndMakeVisible (*centerPunchModeCell);
-            addAndMakeVisible (*centerPhaseRecCell);
-            addAndMakeVisible (*centerPhaseAmtCell);
-            addAndMakeVisible (*centerLockOnCell);
-            addAndMakeVisible (*centerLockDbCell);
-
-            // Row 3 grid
-            {
-                juce::Grid g; g.rowGap = juce::Grid::Px (0); g.columnGap = juce::Grid::Px (0);
-                g.templateRows = { juce::Grid::Px (containerHeight) };
-                g.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
-                g.items = {
-                    juce::GridItem (*centerPunchAmtCell).withArea (1, 1),
-                    juce::GridItem (*centerPromCell)    .withArea (1, 2),
-                    juce::GridItem (*centerFocusLoCell) .withArea (1, 3),
-                    juce::GridItem (*centerFocusHiCell) .withArea (1, 4)
-                };
-                g.performLayout (centerR3);
-            }
-            // Row 4 grid
-            {
-                juce::Grid g; g.rowGap = juce::Grid::Px (0); g.columnGap = juce::Grid::Px (0);
-                g.templateRows = { juce::Grid::Px (containerHeight) };
-                g.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
-        g.items = {
-                    juce::GridItem (*centerPunchModeCell).withArea (1, 1),
-                    juce::GridItem (*centerPhaseRecCell) .withArea (1, 2),
-                    juce::GridItem (*centerPhaseAmtCell) .withArea (1, 3),
-                    juce::GridItem (*centerLockOnCell)   .withArea (1, 4)
-                };
-                g.performLayout (centerR4);
-            }
-
-            // UX: disable Phase Amt when Phase Rec is off; clamp label precision
-            const bool phaseOn = centerPhaseRecOn.getToggleState();
-            centerPhaseAmt01.setEnabled (phaseOn);
-            auto setValText = [] (juce::Label& lbl, double v, int digits)
-            {
-                lbl.setText (juce::String (v, digits), juce::dontSendNotification);
-            };
-            setValText (centerPromVal,      centerPromDb.getValue(), 1);
-            setValText (centerFocusLoVal,   centerFocusLoHz.getValue(), 0);
-            setValText (centerFocusHiVal,   centerFocusHiHz.getValue(), 0);
-            setValText (centerPunchAmtVal,  centerPunchAmt01.getValue() * 100.0, 0);
-            setValText (centerPhaseAmtVal,  centerPhaseAmt01.getValue() * 100.0, 0);
-            setValText (centerLockDbVal,    centerLockDb.getValue(), 1);
         }
+
+        // Make visible
+        auto addVis = [this](juce::Component* c){ if (c) addAndMakeVisible (*c); };
+        addVis (bassCell.get());
+        addVis (hpCell.get());
+        addVis (filterQCell.get());
+        addVis (qClusterCell.get());
+        addVis (lpCell.get());
+        addVis (airCell.get());
+        addVis (widthCell.get());
+        addVis (widthLoCell.get());
+        addVis (widthMidCell.get());
+        addVis (widthHiCell.get());
+        addVis (tiltCell.get());
+        addVis (xoverLoCell.get());
+        addVis (shufLoCell.get());
+        addVis (shufHiCell.get());
+        addVis (xoverHiCell.get());
+        addVis (scoopCell.get());
+        addVis (rotationCell.get());
+        addVis (asymCell.get());
+        addVis (shufXCell.get());
+        addVis (shelfShapeCell.get());
+        addVis (gainCell.get());
+        addVis (satMixCell.get());
+        addVis (satDriveCell.get());
+        addVis (panCell.get());
+        addVis (wetOnlyCell ? wetOnlyCell.get() : nullptr);
+        addVis (monoCell ? monoCell.get() : nullptr);
+        addVis (centerPunchAmtCell.get());
+        addVis (centerPromCell.get());
+        addVis (centerFocusLoCell.get());
+        addVis (centerFocusHiCell.get());
+        addVis (centerPunchModeCell.get());
+        addVis (centerPhaseRecCell.get());
+        addVis (centerPhaseAmtCell.get());
+        addVis (centerLockOnCell.get());
+
+        // Prepare Motion controls (reparent from Group 2 container if needed)
+        auto reparent = [this](juce::Component* c)
+        {
+            if (c == nullptr) return;
+            if (c->getParentComponent() == &bottomAltPanel)
+                bottomAltPanel.removeChildComponent (c);
+            addAndMakeVisible (*c);
+        };
+        auto setKMetrics = [lPx, s](KnobCell* kc)
+        {
+            if (kc) kc->setMetrics (lPx, Layout::dp (14, s), Layout::dp (4, s));
+        };
+
+        const bool group2Raised  = bottomAltTargetOn || (bottomAltSlide01 > 0.01f);
+
+        // Ensure Motion knob cells exist (now live only in Group 1)
+        {
+            const juce::StringArray motionLabels = {
+                "Enable", "Panner", "Path", "Rate", "Depth", "Phase",
+                "Spread", "Elev", "Bounce", "Jitter", "Quant", "Swing",
+                "Mode", "Retrig", "Hold", "Sens", "Offset", "Inertia",
+                "Front", "Doppler", "Send", "Anchor", "Bass", "Occlusion"
+            };
+            for (int i = 0; i < 24; ++i)
+            {
+                if (!motionCellsGroup2[i])
+                {
+                    motionValuesGroup2[i].setText ("", juce::dontSendNotification);
+                    motionCellsGroup2[i] = std::make_unique<KnobCell>(motionDummiesGroup2[i], motionValuesGroup2[i], motionLabels[i]);
+                    motionCellsGroup2[i]->getProperties().set ("motionGreenBorder", true);
+
+                    // Configure slider styles for dummy controls
+                    if (i == 0) // Enable (button)
+                    {
+                        motionDummiesGroup2[i].setSliderStyle (juce::Slider::LinearHorizontal);
+                        motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+                    }
+                    else if (i == 1 || i == 2 || i == 10 || i == 12) // Combo-backed
+                    {
+                        motionDummiesGroup2[i].setSliderStyle (juce::Slider::LinearHorizontal);
+                        motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::TextBoxLeft, false, 60, 18);
+                    }
+                    else if (i == 13 || i == 21) // Button-backed
+                    {
+                        motionDummiesGroup2[i].setSliderStyle (juce::Slider::LinearHorizontal);
+                        motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+                    }
+                    else // Knobs
+                    {
+                        motionDummiesGroup2[i].setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+                        motionDummiesGroup2[i].setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+                        motionDummiesGroup2[i].setRotaryParameters (
+                            juce::MathConstants<float>::pi,
+                            juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
+                            true);
+                    }
+                }
+                // Apply metrics and value label behavior for all motion knob cells
+                setKMetrics (motionCellsGroup2[i].get());
+                motionCellsGroup2[i]->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+                motionCellsGroup2[i]->setValueLabelGap (Layout::dp (4, s));
+            }
+        }
+
+        // Flat grid: 4 rows x 16 columns (6 left + 4 center + 6 motion)
+        juce::Grid g; g.rowGap = juce::Grid::Px (0); g.columnGap = juce::Grid::Px (0);
+        g.templateRows = { juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight) };
+        g.templateColumns = {
+            juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
+            juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
+            juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW)
+        };
+
+        juce::Array<juce::GridItem> items;
+        // Row 1: Left (1-6)
+        items.add (juce::GridItem (*bassCell)     .withArea (1, 1, 2, 3)); // spans 1-2
+        items.add (juce::GridItem (*hpCell)       .withArea (1, 3));
+        items.add (juce::GridItem (*filterQCell)  .withArea (1, 4));
+        items.add (juce::GridItem (*qClusterCell) .withArea (1, 5));
+        items.add (juce::GridItem (*lpCell)       .withArea (1, 6));
+        // Row 1: Center (7-10)
+        items.add (juce::GridItem (*gainCell)     .withArea (1, 7));
+        items.add (juce::GridItem (*satMixCell)   .withArea (1, 8));
+        items.add (juce::GridItem (*satDriveCell) .withArea (1, 9));
+        if (wetOnlyCell) items.add (juce::GridItem (*wetOnlyCell).withArea (1, 10));
+        // Row 1: Motion (11-16)
+        reparent (motionButtonCells[0].get());
+        reparent (motionComboCells[0].get());
+        reparent (motionComboCells[1].get());
+        for (int idx : {3,4,5}) { if (motionCellsGroup2[idx]) { reparent (motionCellsGroup2[idx].get()); setKMetrics (motionCellsGroup2[idx].get()); } }
+        items.add (juce::GridItem (*motionButtonCells[0]).withArea (1,11));
+        items.add (juce::GridItem (*motionComboCells[0]) .withArea (1,12));
+        items.add (juce::GridItem (*motionComboCells[1]) .withArea (1,13));
+        items.add (juce::GridItem (*motionCellsGroup2[3]).withArea (1,14));
+        items.add (juce::GridItem (*motionCellsGroup2[4]).withArea (1,15));
+        items.add (juce::GridItem (*motionCellsGroup2[5]).withArea (1,16));
+
+        // Row 2: Left (1-6)
+        items.add (juce::GridItem (*airCell)      .withArea (2, 1, 3, 3)); // spans 1-2
+        items.add (juce::GridItem (*widthCell)    .withArea (2, 3));
+        items.add (juce::GridItem (*widthLoCell)  .withArea (2, 4));
+        items.add (juce::GridItem (*widthMidCell) .withArea (2, 5));
+        items.add (juce::GridItem (*widthHiCell)  .withArea (2, 6));
+        // Row 2: Center (7-10)
+        items.add (juce::GridItem (*panCell)      .withArea (2, 7, 3, 9)); // spans 7-8
+        if (monoCell) items.add (juce::GridItem (*monoCell).withArea (2, 9, 3, 11)); // spans 9-10
+        // Row 2: Motion (11-16)
+        for (int idx : {6,7,8,9,11}) { if (motionCellsGroup2[idx]) { reparent (motionCellsGroup2[idx].get()); setKMetrics (motionCellsGroup2[idx].get()); } }
+        reparent (motionComboCells[2].get());
+        items.add (juce::GridItem (*motionCellsGroup2[6]) .withArea (2,11));
+        items.add (juce::GridItem (*motionCellsGroup2[7]) .withArea (2,12));
+        items.add (juce::GridItem (*motionCellsGroup2[8]) .withArea (2,13));
+        items.add (juce::GridItem (*motionCellsGroup2[9]) .withArea (2,14));
+        items.add (juce::GridItem (*motionComboCells[2])  .withArea (2,15));
+        items.add (juce::GridItem (*motionCellsGroup2[11]).withArea (2,16));
+
+        // Row 3: Left (1-6)
+        items.add (juce::GridItem (*tiltCell)     .withArea (3, 1, 4, 3)); // spans 1-2
+        items.add (juce::GridItem (*xoverLoCell)  .withArea (3, 3));
+        items.add (juce::GridItem (*shufLoCell)   .withArea (3, 4));
+        items.add (juce::GridItem (*shufHiCell)   .withArea (3, 5));
+        items.add (juce::GridItem (*xoverHiCell)  .withArea (3, 6));
+        // Row 3: Center (7-10)
+        items.add (juce::GridItem (*centerPunchAmtCell).withArea (3, 7));
+        items.add (juce::GridItem (*centerPromCell)    .withArea (3, 8));
+        items.add (juce::GridItem (*centerFocusLoCell) .withArea (3, 9));
+        items.add (juce::GridItem (*centerFocusHiCell) .withArea (3,10));
+        // Row 3: Motion (11-16)
+        for (int idx : {14,15,16,17}) { if (motionCellsGroup2[idx]) { reparent (motionCellsGroup2[idx].get()); setKMetrics (motionCellsGroup2[idx].get()); } }
+        reparent (motionComboCells[3].get());
+        reparent (motionButtonCells[1].get());
+        items.add (juce::GridItem (*motionComboCells[3])  .withArea (3,11));
+        items.add (juce::GridItem (*motionButtonCells[1]).withArea (3,12));
+        items.add (juce::GridItem (*motionCellsGroup2[14]).withArea (3,13));
+        items.add (juce::GridItem (*motionCellsGroup2[15]).withArea (3,14));
+        items.add (juce::GridItem (*motionCellsGroup2[16]).withArea (3,15));
+        items.add (juce::GridItem (*motionCellsGroup2[17]).withArea (3,16));
+
+        // Row 4: Left (1-6)
+        items.add (juce::GridItem (*scoopCell)    .withArea (4, 1, 5, 3)); // spans 1-2
+        items.add (juce::GridItem (*rotationCell) .withArea (4, 3));
+        items.add (juce::GridItem (*asymCell)     .withArea (4, 4));
+        items.add (juce::GridItem (*shufXCell)    .withArea (4, 5));
+        items.add (juce::GridItem (*shelfShapeCell).withArea (4, 6));
+        // Row 4: Center (7-10)
+        items.add (juce::GridItem (*centerPunchModeCell).withArea (4, 7));
+        items.add (juce::GridItem (*centerPhaseRecCell) .withArea (4, 8));
+        items.add (juce::GridItem (*centerPhaseAmtCell) .withArea (4, 9));
+        items.add (juce::GridItem (*centerLockOnCell)   .withArea (4,10));
+        // Row 4: Motion (11-16)
+        for (int idx : {18,19,20,22,23}) { if (motionCellsGroup2[idx]) { reparent (motionCellsGroup2[idx].get()); setKMetrics (motionCellsGroup2[idx].get()); } }
+        reparent (motionButtonCells[2].get());
+        items.add (juce::GridItem (*motionCellsGroup2[18]).withArea (4,11));
+        items.add (juce::GridItem (*motionCellsGroup2[19]).withArea (4,12));
+        items.add (juce::GridItem (*motionCellsGroup2[20]).withArea (4,13));
+        items.add (juce::GridItem (*motionButtonCells[2]).withArea (4,14));
+        items.add (juce::GridItem (*motionCellsGroup2[22]).withArea (4,15));
+        items.add (juce::GridItem (*motionCellsGroup2[23]).withArea (4,16));
+
+        g.items = std::move (items);
+        g.performLayout (group1Bounds);
+
+        // Motion visibility is managed solely by the Group 1 flat grid
+
+        // UX: disable Phase Amt when Phase Rec is off; clamp label precision
+        const bool phaseOn = centerPhaseRecOn.getToggleState();
+        centerPhaseAmt01.setEnabled (phaseOn);
+        auto setValText = [] (juce::Label& lbl, double v, int digits)
+        {
+            lbl.setText (juce::String (v, digits), juce::dontSendNotification);
+        };
+        setValText (centerPromVal,      centerPromDb.getValue(), 1);
+        setValText (centerFocusLoVal,   centerFocusLoHz.getValue(), 0);
+        setValText (centerFocusHiVal,   centerFocusHiHz.getValue(), 0);
+        setValText (centerPunchAmtVal,  centerPunchAmt01.getValue() * 100.0, 0);
+        setValText (centerPhaseAmtVal,  centerPhaseAmt01.getValue() * 100.0, 0);
+        setValText (centerLockDbVal,    centerLockDb.getValue(), 1);
     }
 
     // Legacy Row 2 reverb group removed; Group 2 Reverb grid now owns reverb/ducking UI
-
-    // --------- Saturation Engine (Group 1 Right): 4x4 grid ---------------------
-    {
-        // Reserve a right-side panel area equal to 4 columns * cellW for Motion Engine (right group)
-        auto row = row1;
-        const int cellW = lPx + Layout::dp (8, s);
-        const int satPanelW = cellW * 6; // allow 6 columns visible
-        auto satBounds = juce::Rectangle<int>(row.getRight() - satPanelW, row.getY(), satPanelW, containerHeight * 4);
-        juce::Grid satGrid;
-        satGrid.rowGap = juce::Grid::Px (0);
-        satGrid.columnGap = juce::Grid::Px (0);
-        // 4 rows (match left/center rows), 4 columns
-        satGrid.templateRows = { juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight) };
-        satGrid.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
-        // Move Motion Engine (legacy 4x6 grid) into this right panel
-        {
-            auto reparent = [this](juce::Component* c)
-            {
-                if (c == nullptr) return;
-                if (c->getParentComponent() == &bottomAltPanel)
-                    bottomAltPanel.removeChildComponent (c);
-                addAndMakeVisible (*c);
-            };
-            // Ensure metrics for knob cells
-            auto setKMetrics = [lPx, s](KnobCell* kc)
-            {
-                if (kc) kc->setMetrics (lPx, Layout::dp (14, s), Layout::dp (4, s));
-            };
-
-            juce::Array<juce::GridItem> items;
-            // Row 1
-            reparent (motionButtonCells[0].get()); // Enable
-            reparent (motionComboCells[0].get());  // Panner
-            reparent (motionComboCells[1].get());  // Path
-            for (int idx : {3,4,5}) { if (motionCellsGroup2[idx]) { reparent (motionCellsGroup2[idx].get()); setKMetrics (motionCellsGroup2[idx].get()); } }
-            items.add (juce::GridItem (*motionButtonCells[0]).withArea (1,1));
-            items.add (juce::GridItem (*motionComboCells[0]) .withArea (1,2));
-            items.add (juce::GridItem (*motionComboCells[1]) .withArea (1,3));
-            items.add (juce::GridItem (*motionCellsGroup2[3]).withArea (1,4));
-            items.add (juce::GridItem (*motionCellsGroup2[4]).withArea (1,5));
-            items.add (juce::GridItem (*motionCellsGroup2[5]).withArea (1,6));
-
-            // Row 2
-            for (int idx : {6,7,8,9,11}) { if (motionCellsGroup2[idx]) { reparent (motionCellsGroup2[idx].get()); setKMetrics (motionCellsGroup2[idx].get()); } }
-            reparent (motionComboCells[2].get()); // Quant
-            items.add (juce::GridItem (*motionCellsGroup2[6]) .withArea (2,1));
-            items.add (juce::GridItem (*motionCellsGroup2[7]) .withArea (2,2));
-            items.add (juce::GridItem (*motionCellsGroup2[8]) .withArea (2,3));
-            items.add (juce::GridItem (*motionCellsGroup2[9]) .withArea (2,4));
-            items.add (juce::GridItem (*motionComboCells[2])  .withArea (2,5));
-            items.add (juce::GridItem (*motionCellsGroup2[11]).withArea (2,6));
-
-            // Row 3
-            for (int idx : {14,15,16,17}) { if (motionCellsGroup2[idx]) { reparent (motionCellsGroup2[idx].get()); setKMetrics (motionCellsGroup2[idx].get()); } }
-            reparent (motionComboCells[3].get());  // Mode
-            reparent (motionButtonCells[1].get()); // Retrig
-            items.add (juce::GridItem (*motionComboCells[3])  .withArea (3,1));
-            items.add (juce::GridItem (*motionButtonCells[1]).withArea (3,2));
-            items.add (juce::GridItem (*motionCellsGroup2[14]).withArea (3,3));
-            items.add (juce::GridItem (*motionCellsGroup2[15]).withArea (3,4));
-            items.add (juce::GridItem (*motionCellsGroup2[16]).withArea (3,5));
-            items.add (juce::GridItem (*motionCellsGroup2[17]).withArea (3,6));
-
-            // Row 4
-            for (int idx : {18,19,20,22,23}) { if (motionCellsGroup2[idx]) { reparent (motionCellsGroup2[idx].get()); setKMetrics (motionCellsGroup2[idx].get()); } }
-            reparent (motionButtonCells[2].get()); // Anchor
-            items.add (juce::GridItem (*motionCellsGroup2[18]).withArea (4,1));
-            items.add (juce::GridItem (*motionCellsGroup2[19]).withArea (4,2));
-            items.add (juce::GridItem (*motionCellsGroup2[20]).withArea (4,3));
-            items.add (juce::GridItem (*motionButtonCells[2]).withArea (4,4));
-            items.add (juce::GridItem (*motionCellsGroup2[22]).withArea (4,5));
-            items.add (juce::GridItem (*motionCellsGroup2[23]).withArea (4,6));
-
-            satGrid.items = std::move (items);
-        }
-        satGrid.performLayout (satBounds);
-    }
-
-    // Row 3 previously hosted EQ; now EQ is in Row 1. Row 3 is handled by HP/LP/Q composite below.
-
-    // ---------------- Row 4: Remaining Imaging items (+ S/Q + Q cluster) ---------------------------
-    {
-        // layout directly
-
-        // Make sure components are children of the editor
-        // First remove from main editor if they're there
-        if (xoverLoHz.getParentComponent() == this) removeChildComponent (&xoverLoHz);
-        if (xoverHiHz.getParentComponent() == this) removeChildComponent (&xoverHiHz);
-        if (rotationDeg.getParentComponent() == this) removeChildComponent (&rotationDeg);
-        if (asymmetry.getParentComponent() == this) removeChildComponent (&asymmetry);
-        if (shufLoPct.getParentComponent() == this) removeChildComponent (&shufLoPct);
-        if (shufHiPct.getParentComponent() == this) removeChildComponent (&shufHiPct);
-        if (shufXHz.getParentComponent() == this) removeChildComponent (&shufXHz);
-        
-        // Cells will manage parenting of knobs/labels; do not add raw knobs here
-
-        // Imaging row: use knob cells for uniform layout
-        const int valuePx = Layout::dp (14, s);
-        const int gapPx   = Layout::dp (0,  s);
-        // XO cells now live on Row 3; keep metrics for consistency but don't place here
-        xoverLoCell->setMetrics (lPx, valuePx, gapPx);
-        xoverHiCell->setMetrics (lPx, valuePx, gapPx);
-        rotationCell->setMetrics (lPx, valuePx, gapPx);
-        asymCell->setMetrics     (lPx, valuePx, gapPx);
-        shufLoCell->setMetrics   (lPx, valuePx, gapPx);
-        shufHiCell->setMetrics   (lPx, valuePx, gapPx);
-        shufXCell->setMetrics    (lPx, valuePx, gapPx);
-        // SCOOP now occupies Row 4 slots 1-2 (double-wide) with its mini strip
-        const int scoopMiniW = Layout::dp (90, s);
-        const int scoopMiniH = Layout::dp (12, s);
-        scoopCell->setMetrics (lPx, valuePx, gapPx, scoopMiniW);
-        scoopCell->setMiniPlacementRight (true);
-        scoopCell->setMiniThicknessPx (scoopMiniH);
-        scoopCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        scoopCell->setValueLabelGap (Layout::dp (6, s));
-        // Attach BOOST mini slider + label strip
-        scoopCell->setMiniWithLabel (&scoopFreqSlider, &scoopFreqValue, scoopMiniW);
-        scoopFreqSlider.getProperties().set ("micro", true);
-        // Managed labels on imaging row
-        xoverLoCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        xoverHiCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        rotationCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        asymCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        shufLoCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        shufHiCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        shufXCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        const int imgGap = Layout::dp (6, s);
-        xoverLoCell->setValueLabelGap (imgGap);
-        xoverHiCell->setValueLabelGap (imgGap);
-        rotationCell->setValueLabelGap (imgGap);
-        asymCell->setValueLabelGap (imgGap);
-        shufLoCell->setValueLabelGap (imgGap);
-        shufHiCell->setValueLabelGap (imgGap);
-        shufXCell->setValueLabelGap (imgGap);
-
-        addAndMakeVisible (*scoopCell);
-        addAndMakeVisible (*rotationCell);
-        addAndMakeVisible (*asymCell);
-        addAndMakeVisible (*shufXCell);
-        juce::Grid imgGrid;
-        imgGrid.rowGap    = juce::Grid::Px (gapI);
-        imgGrid.columnGap = juce::Grid::Px (0);
-        imgGrid.justifyContent = juce::Grid::JustifyContent::start;
-        imgGrid.alignContent   = juce::Grid::AlignContent::start;
-        imgGrid.templateRows = { juce::Grid::Px (containerHeight) };
-        // Columns: 1..7 imaging, 8 S; reserve right strip for combined HP/LP+Q group
-        {
-            const int cellW = lPx + Layout::dp (8, s);
-            imgGrid.templateColumns = {
-                juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
-                juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW)
-            };
-        }
-
-        // Build S/Q cells
-        if (!shelfShapeCell) shelfShapeCell = std::make_unique<KnobCell>(shelfShapeS, shelfShapeValue, "Shape");
-        if (!filterQCell)    filterQCell    = std::make_unique<KnobCell>(filterQ,     filterQValue,    "Q");
-        shelfShapeCell->setMetrics (lPx, valuePx, gapPx);
-        filterQCell   ->setMetrics (lPx, valuePx, gapPx);
-        // Managed value labels for new cells
-        shelfShapeCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        filterQCell   ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        const int sqGap = Layout::dp (6, s);
-        shelfShapeCell->setValueLabelGap (sqGap);
-        filterQCell   ->setValueLabelGap (sqGap);
-        addAndMakeVisible (*shelfShapeCell);
-        // Do not add filterQCell to the editor; its knob/value are hosted inside the QuadKnobCell
-
-        // Q cluster cell: aux-only; hide its knob (use internal dummy slider/value)
-        if (!qClusterCell) qClusterCell = std::make_unique<KnobCell>(qClusterDummySlider, qClusterDummyValue, "Q LINK");
-        qClusterCell->setShowKnob (false);
-        qClusterCell->setMiniPlacementRight (true);
-        qClusterCell->setMiniThicknessPx (Layout::dp (12, s));
-        qClusterCell->setAuxAsBars (true);
-        qClusterCell->setAuxComponents ({ &qLinkButton, &hpQSlider, &lpQSlider }, Layout::dp (90, s));
-        // Style minis like EQ minis
-        hpQSlider.getProperties().set ("micro", true);
-        lpQSlider.getProperties().set ("micro", true);
-        // Do not add qClusterCell to the editor; it will be reparented into the QuadKnobCell
-
-        // Ensure delay row-4 items exist and are visible before layout (avoid zero-size until resize)
-        {
-            const int labelGap = Layout::dp (4, s);
-            if (!delayDuckSourceCell) { delayDuckSourceCell = std::make_unique<SwitchCell> (delayDuckSource); delayDuckSourceCell->setCaption ("Duck Source"); delayDuckSourceCell->setDelayTheme (true); }
-            if (!delayDuckPostCell)   { delayDuckPost.getProperties().set ("iconType", (int) IconSystem::RightArrow); delayDuckPostCell = std::make_unique<SwitchCell> (delayDuckPost); delayDuckPostCell->setCaption ("Post"); delayDuckPostCell->setDelayTheme (true); }
-            if (!delayDuckThresholdCell) delayDuckThresholdCell = std::make_unique<KnobCell>(delayDuckThreshold, delayDuckThresholdValue, "THR");
-            if (!delayDuckLookaheadCell) delayDuckLookaheadCell = std::make_unique<KnobCell>(delayDuckLookahead, delayDuckLookaheadValue, "LA");
-
-            // Apply metrics so these align with imaging row
-            delayDuckThresholdCell->setMetrics (lPx, valuePx, labelGap);
-            delayDuckThresholdCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            delayDuckThresholdCell->setValueLabelGap (labelGap);
-            delayDuckLookaheadCell->setMetrics (lPx, valuePx, labelGap);
-            delayDuckLookaheadCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            delayDuckLookaheadCell->setValueLabelGap (labelGap);
-
-            // Make visible before performLayout
-            // These cells are now added to delayGroupContainer in Group 2
-        }
-
-        imgGrid.items = {
-            // Row 4: SCOOP spans columns 1-2, then imaging continues
-            juce::GridItem (*scoopCell)     .withArea (1, 1, 2, 3),
-            juce::GridItem (*rotationCell)  .withArea (1, 3),
-            juce::GridItem (*asymCell)      .withArea (1, 4),
-            juce::GridItem (*shufXCell)     .withArea (1, 5),
-            juce::GridItem (*shelfShapeCell).withArea (1, 6)
-        };
-        // Lay out imaging row across full left group width (no reserved HP/LP strip)
-        imgGrid.performLayout (row4);
-        
-
-        // Note: filterQCell and qClusterCell are laid out in the combined right strip below
-    }
-    // Removed: Combined HP/LP + Q + Q-Link 2x2 composite; now horizontal on Row 2
-    // ---------------- Delay controls moved to Group 2 ----------------------
-
-    // Draw the global vertical divider line aligned to the divider column across all rows
-    // REMOVED: delayDivider positioning
-
-    // Draw a second vertical divider to the right of the Delay Wet Only row, then place a 4x4 Motion grid
-    // REMOVED: motionDivider positioning
-    {
-        // Find the rightmost of the delay switches on row 1 as our anchor (Wet Only in delay card)
-        int anchorX = 0;
-        if (delayKillDryCell) anchorX = delayKillDryCell->getBounds().getRight();
-        else if (delayFreezeCell) anchorX = delayFreezeCell->getBounds().getRight();
-        else anchorX = row1.getRight() - dividerW; // fallback without delayDivider
-
-        // Build/create 16 motion cells if needed
-        const int motionK = lPx;               // knob diameter same as large knob
-        const int motionV = Layout::dp (14, s);
-        const int motionG = Layout::dp (0,  s);
-        const int cellW   = lPx + Layout::dp (8, s);   // match standard single cell width
-        const int colGap  = 0;
-
-        // Compute a grid area to the right of second divider covering all rows
-        const int motionAreaX = anchorX + Layout::dp (4, s);
-        const int motionAreaW = getWidth() - motionAreaX - Layout::dp (Layout::PAD, s);
-        const int motionAreaY = row1.getY();
-        const int motionAreaH = row1.getHeight() + row2.getHeight() + row3.getHeight() + row4.getHeight();
-        juce::Rectangle<int> motionArea (motionAreaX, motionAreaY, juce::jmax (0, motionAreaW), motionAreaH);
-
-        // Layout as 4x4 cells spanning the full height (4 rows)
-        const int cellH = containerHeight; // one per row
-        // No motion cells in Group 1 - motion only exists in Group 2
-    }
-
     // Delay theme applied in Group 2
 }
 
