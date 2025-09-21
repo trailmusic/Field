@@ -616,6 +616,32 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         hp.tempoBpm = bpm;
     }
     chainF->setParameters (hp);     // cast/copy inside chain
+    // Transport loop/start/seek detection (float path)
+    {
+        const double curT = transportTimeSeconds.load();
+        const bool   curP = transportIsPlaying.load();
+        const int    nS   = buffer.getNumSamples();
+        const double blockSec = (currentSR > 0.0 ? (double) nS / currentSR : 0.0);
+        const double dt = curT - lastTransportTimeSeconds;
+        const bool   started = curP && ! lastTransportWasPlaying;
+        const bool   rewound = curP && lastTransportWasPlaying && (dt < -0.001);
+        const bool   jumped  = curP && lastTransportWasPlaying && (std::abs (dt - blockSec) > 0.25);
+        if (started || rewound || jumped)
+        {
+            if (chainF) chainF->reset();
+            if (chainD) chainD->reset();
+            // Also reset embedded engines to clear crossfades/ducks
+            if (chainF) { /* float chain owns delayEngine<float> internally, reset via chainF->reset() */ }
+            if (chainD) { /* double chain reset as well */ }
+            // short fade-in: 5 ms (do not restart if already fading)
+            if (fadeInSamplesLeft <= 0)
+            {
+                fadeInTotal = fadeInSamplesLeft = juce::roundToInt ((float) currentSR * 0.005f);
+            }
+        }
+        lastTransportTimeSeconds = curT;
+        lastTransportWasPlaying  = curP;
+    }
     // Update Motion host sync so Sync mode rates are correct
     motion::HostInfo hinfo; hinfo.bpm = hp.tempoBpm; hinfo.playing = transportIsPlaying.load();
     if (auto* ph = getPlayHead()) { if (auto pos = ph->getPosition()) { if (auto ppq = pos->getPpqPosition()) hinfo.ppqPosition = *ppq; if (auto bar = pos->getPpqPositionOfLastBarStart()) hinfo.ppqBarStart = *bar; }}
@@ -711,7 +737,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         delayUiBridge.pushMetrics (f);
     }
 
-    // Output RMS after processing
+    // Output RMS after processing + apply fade-in if requested
     {
         const int n = buffer.getNumSamples();
         if (n > 0 && buffer.getNumChannels() > 0)
@@ -720,6 +746,70 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
             for (int c=0;c<cN;++c){ auto* d = buffer.getReadPointer(c); for (int i=0;i<n;++i) { long double v=d[i]; s += v*v; } }
             const float rmsOut = (float) std::sqrt ((double) (s / juce::jmax (1, cN * n)));
             float o = meterOutRms.load(); meterOutRms.store (o + 0.2f * (rmsOut - o));
+        }
+    }
+
+    // Apply short fade-in on output after loop/start (equal gain to L/R to avoid image shift)
+    if (fadeInSamplesLeft > 0)
+    {
+        const int n = buffer.getNumSamples();
+        const int ch = buffer.getNumChannels();
+        int processed = 0;
+        while (processed < n && fadeInSamplesLeft > 0)
+        {
+            const int run = juce::jmin (n - processed, fadeInSamplesLeft);
+            const int offset = processed;
+            const int a0 = fadeInTotal - fadeInSamplesLeft;
+            for (int i = 0; i < run; ++i)
+            {
+                const float g = (float) (a0 + i) / (float) juce::jmax (1, fadeInTotal);
+                if (ch == 2)
+                {
+                    auto* L = buffer.getWritePointer(0);
+                    auto* R = buffer.getWritePointer(1);
+                    const float l = L[offset + i];
+                    const float r = R[offset + i];
+                    // Apply fade in M/S domain to preserve stereo image during ramp
+                    const float k = 0.70710678f;
+                    const float M = k * (l + r) * g;
+                    const float S = k * (l - r) * g;
+                    L[offset + i] = k * (M + S);
+                    R[offset + i] = k * (M - S);
+                }
+                else
+                {
+                    for (int c = 0; c < ch; ++c)
+                        buffer.getWritePointer(c)[offset + i] *= g;
+                }
+            }
+            processed += run;
+            fadeInSamplesLeft -= run;
+        }
+    }
+
+    // Silence watchdog: if input is present but output remains silent for ~100 ms, reset DSP
+    {
+        const int n  = buffer.getNumSamples();
+        if (watchdogWindowSamples <= 0) watchdogWindowSamples = juce::roundToInt ((float) currentSR * 0.10f);
+        const float inNow  = meterInRms.load();
+        const float outNow = meterOutRms.load();
+        recentInRmsAvg  = recentInRmsAvg  + 0.1f * (inNow  - recentInRmsAvg);
+        recentOutRmsAvg = recentOutRmsAvg + 0.1f * (outNow - recentOutRmsAvg);
+        watchdogSamplesAcc += n;
+        if (watchdogSamplesAcc >= watchdogWindowSamples)
+        {
+            watchdogSamplesAcc = 0;
+            const float inDb  = juce::Decibels::gainToDecibels (juce::jmax (1e-6f, recentInRmsAvg));
+            const float outDb = juce::Decibels::gainToDecibels (juce::jmax (1e-6f, recentOutRmsAvg));
+            const bool inputPresent = (inDb > -60.0f);
+            const bool outputSilent = (outDb < -60.0f);
+            if (inputPresent && outputSilent)
+            {
+                if (chainF) chainF->reset();
+                if (chainD) chainD->reset();
+                if (fadeInSamplesLeft <= 0)
+                    fadeInTotal = fadeInSamplesLeft = juce::roundToInt ((float) currentSR * 0.005f);
+            }
         }
     }
 
@@ -758,6 +848,28 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         hp.tempoBpm = bpm;
     }
     chainD->setParameters (hp);
+    // Transport loop/start/seek detection (double path mirrors float path)
+    {
+        const double curT = transportTimeSeconds.load();
+        const bool   curP = transportIsPlaying.load();
+        const int    nS   = buffer.getNumSamples();
+        const double blockSec = (currentSR > 0.0 ? (double) nS / currentSR : 0.0);
+        const double dt = curT - lastTransportTimeSeconds;
+        const bool   started = curP && ! lastTransportWasPlaying;
+        const bool   rewound = curP && lastTransportWasPlaying && (dt < -0.001);
+        const bool   jumped  = curP && lastTransportWasPlaying && (std::abs (dt - blockSec) > 0.25);
+        if (started || rewound || jumped)
+        {
+            if (chainD) chainD->reset();
+            if (chainF) chainF->reset();
+            // Reset embedded engines too
+            if (chainD) { /* double chain owns delayEngine<double> */ }
+            if (fadeInSamplesLeft <= 0)
+                fadeInTotal = fadeInSamplesLeft = juce::roundToInt ((float) currentSR * 0.005f);
+        }
+        lastTransportTimeSeconds = curT;
+        lastTransportWasPlaying  = curP;
+    }
     // Update Motion host sync for double path as well
     motion::HostInfo hinfoD; hinfoD.bpm = hp.tempoBpm; hinfoD.playing = transportIsPlaying.load();
     if (auto* ph2 = getPlayHead()) { if (auto pos = ph2->getPosition()) { if (auto ppq = pos->getPpqPosition()) hinfoD.ppqPosition = *ppq; if (auto bar = pos->getPpqPositionOfLastBarStart()) hinfoD.ppqBarStart = *bar; }}

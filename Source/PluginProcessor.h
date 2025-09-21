@@ -810,5 +810,16 @@ private:
     std::atomic<double> transportTimeSeconds { 0.0 };
     std::atomic<bool>   transportIsPlaying   { false };
 
+    // Loop/start detection + silence watchdog
+    double lastTransportTimeSeconds { 0.0 };
+    bool   lastTransportWasPlaying  { false };
+    int    fadeInSamplesLeft        { 0 };      // short fade-in after loop/start
+    int    fadeInTotal              { 0 };
+    // Watchdog: simple sliding windows of recent RMS to detect stuck silence
+    float  recentInRmsAvg           { 0.0f };
+    float  recentOutRmsAvg          { 0.0f };
+    int    watchdogSamplesAcc       { 0 };
+    int    watchdogWindowSamples    { 0 };      // ~100 ms at current SR
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)
 };

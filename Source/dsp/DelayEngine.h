@@ -328,6 +328,12 @@ struct DelayEngine
         detEnv = 0.0f; duckGL = 1.0f; duckGR = 1.0f;
     }
 
+    void reset()
+    {
+        // Re-run prepare with current configuration to clear all internal states/buffers
+        prepare(sampleRate, 2);
+    }
+
     void setParameters(const DelayParams& p) 
     {
         params = p;
