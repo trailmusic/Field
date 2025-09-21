@@ -3437,6 +3437,8 @@ void MyPluginAudioProcessorEditor::performLayout()
                             juce::MathConstants<float>::pi,
                             juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
                             true);
+                        // Ensure LNF draws captions: set slider name from our labels
+                        motionDummiesGroup2[i].setName (motionLabels[i]);
                     }
                 }
                 // Apply metrics and value label behavior for all motion knob cells
@@ -3559,6 +3561,40 @@ void MyPluginAudioProcessorEditor::performLayout()
         setValText (centerPunchAmtVal,  centerPunchAmt01.getValue() * 100.0, 0);
         setValText (centerPhaseAmtVal,  centerPhaseAmt01.getValue() * 100.0, 0);
         setValText (centerLockDbVal,    centerLockDb.getValue(), 1);
+
+        // Initialize Motion Engine value labels (KnobCell will manage placement)
+        auto placeMotion = [&] (int idx)
+        {
+            if (idx >= 0 && idx < (int) motionCellsGroup2.size())
+                if (motionCellsGroup2[idx])
+                {
+                    // Initialize label text once from current slider value
+                    auto set = [] (juce::Label& lbl, const juce::String& t){ lbl.setText (t, juce::dontSendNotification); };
+                    auto pct = [] (double v){ return juce::String (v, 0) + "%"; };
+                    auto Hz  = [] (double v){ return v < 10.0 ? juce::String (v, 2) + " Hz" : juce::String (v, 0) + " Hz"; };
+                    int i = idx;
+                    if      (i == 3)  set (motionValuesGroup2[i], Hz  (motionDummiesGroup2[i].getValue()));      // Rate
+                    else if (i == 4)  set (motionValuesGroup2[i], pct (motionDummiesGroup2[i].getValue()));      // Depth
+                    else if (i == 5)  set (motionValuesGroup2[i], juce::String (motionDummiesGroup2[i].getValue(), 2) + "°"); // Phase
+                    else if (i == 6)  set (motionValuesGroup2[i], pct (motionDummiesGroup2[i].getValue()));      // Spread
+                    else if (i == 7)  set (motionValuesGroup2[i], juce::String (motionDummiesGroup2[i].getValue(), 2));       // Elev
+                    else if (i == 8)  set (motionValuesGroup2[i], pct (motionDummiesGroup2[i].getValue()));      // Bounce
+                    else if (i == 9)  set (motionValuesGroup2[i], pct (motionDummiesGroup2[i].getValue()));      // Jitter
+                    else if (i == 11) set (motionValuesGroup2[i], pct (motionDummiesGroup2[i].getValue()));      // Swing
+                    else if (i == 14) set (motionValuesGroup2[i], juce::String (motionDummiesGroup2[i].getValue(), 2) + " ms"); // Hold
+                    else if (i == 15) set (motionValuesGroup2[i], pct (motionDummiesGroup2[i].getValue()));      // Sens
+                    else if (i == 16) set (motionValuesGroup2[i], juce::String (motionDummiesGroup2[i].getValue(), 2) + "°"); // Offset
+                    else if (i == 17) set (motionValuesGroup2[i], juce::String (motionDummiesGroup2[i].getValue(), 2) + " ms"); // Inertia
+                    else if (i == 18) set (motionValuesGroup2[i], juce::String (motionDummiesGroup2[i].getValue(), 2));        // Front
+                    else if (i == 19) set (motionValuesGroup2[i], pct (motionDummiesGroup2[i].getValue()));      // Doppler
+                    else if (i == 20) set (motionValuesGroup2[i], pct (motionDummiesGroup2[i].getValue()));      // Send
+                    else if (i == 22) set (motionValuesGroup2[i], Hz  (motionDummiesGroup2[i].getValue()));      // Bass Floor
+                    else if (i == 23) set (motionValuesGroup2[i], pct (motionDummiesGroup2[i].getValue()));      // Occlusion
+                }
+        };
+        // Knob-backed Motion indices (skip combos/buttons)
+        for (int idx : { 3,4,5,6,7,8,9,11,14,15,16,17,18,19,20,22,23 })
+            placeMotion (idx);
     }
 
     // Legacy Row 2 reverb group removed; Group 2 Reverb grid now owns reverb/ducking UI

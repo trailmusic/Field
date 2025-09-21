@@ -1,0 +1,12 @@
+Field UI Rules (working notes)
+
+- Knob captions (names): Provided by LookAndFeel from slider.setName(...). Prefer setting the slider name; avoid custom caption drawing in KnobCell unless explicitly required.
+- Value labels: Let KnobCell position them. Use setValueLabelMode(Managed) and setValueLabelGap(...). Do not place labels externally (avoid placeLabelBelow) for KnobCell-managed controls (e.g., WIDTH/SHUF/Motion, Center group knobs).
+- Initial value text: Initialize value labels once (from current slider values) so first paint shows data immediately, then rely on attachments/change callbacks to keep them updated.
+- Panel padding (Group 2): No outer reduced()/padding on Delay/Reverb grids; items should lay edge-to-edge against the panel bounds.
+- Metallic background: Apply only to Group 1 center items; Group 2 uses default background.
+- Reverb label abbreviations: "ER WID" (was ER WIDTH), "TL WID" (was WIDTH), "ER DEN" (was ER DENS).
+- Duck strip metrics (Group 2): DUCK/ATT/REL/THR/RAT use the same knob diameter/value band/label gap as other Reverb knobs.
+- Motion Engine (Group 1 only): Lives solely in Group 1 flat grid; not parented in Group 2. Ensure all Motion knobs use KnobCell-managed labels and have slider names set for captions.
+- Auto-enable/bypass (UX): Reverb may auto-enable when WET > 0 and auto-bypass when WET = 0; explicit Enable remains.
+- Grid flattening: Group 1 and Group 2 are flattened contiguous grids; preserve exact cell metrics and ordering when closing gaps.
