@@ -2779,14 +2779,23 @@ void MyPluginAudioProcessorEditor::performLayout()
 
         // Meters take the full right side strip (carve from full remaining area first)
         // Use grid-derived width so meters do not get too wide on large windows
-        const int lPx_rs   = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
-        const int cellW_rs = lPx_rs + Layout::dp (8, s);
-        const int metersStripW = juce::jlimit (Layout::dp (120, s), Layout::dp (320, s), cellW_rs * 2 + Layout::dp (8, s));
+        const int lPx_rs     = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
+        const int cellW_rs   = lPx_rs + Layout::dp (8, s);
+        const int colW_m     = juce::jlimit (Layout::dp (24, s), Layout::dp (56, s), juce::roundToInt (cellW_rs * 0.75f));
+        const int corrW_m    = juce::jmax (Layout::dp (10, s), juce::roundToInt (colW_m * 0.5f)); // CORR is half width of others
+        const int inter_m    = juce::jmax (1, Layout::dp (Layout::GAP_S, s) / 2); // tighter spacing between columns
+        const int outerPadM_X= juce::jmax (1, Layout::dp (Layout::GAP_S, s));     // small side padding
+        const int outerPadM_Y= Layout::dp (Layout::GAP, s);                        // match left container vertical pad for bottom align
+        const int targetStripW = colW_m * 2 + corrW_m + inter_m * 2 + outerPadM_X * 2; // IO | LR | CORR(half)
+        const int metersStripW = juce::jlimit (Layout::dp (96, s), Layout::dp (240, s), targetStripW);
         // Split the remaining area: left content container and right meters container
         auto metersArea = r.removeFromRight (metersStripW);
         auto leftArea   = r; // whatever remains after carving meters
-        metersArea = metersArea.reduced (Layout::dp (Layout::GAP, s));
+        metersArea = metersArea.reduced (outerPadM_X, outerPadM_Y);
         leftArea   = leftArea  .reduced (Layout::dp (Layout::GAP, s));
+        // Ensure meters share the same top/bottom as left content so bottoms align
+        metersArea.setY (leftArea.getY());
+        metersArea.setHeight (leftArea.getHeight());
         leftContentContainer.setBounds (leftArea);
         metersContainer.setBounds       (metersArea);
 
@@ -2817,19 +2826,16 @@ void MyPluginAudioProcessorEditor::performLayout()
         if (corrMeter.getParentComponent() != &metersContainer) metersContainer.addAndMakeVisible (corrMeter);
         if (lrMeters.getParentComponent()   != &metersContainer) metersContainer.addAndMakeVisible (lrMeters);
         if (ioMeters.getParentComponent()   != &metersContainer) metersContainer.addAndMakeVisible (ioMeters);
-        auto mB = metersContainer.getLocalBounds().reduced (Layout::dp (Layout::GAP, s));
-        const int corrH = juce::roundToInt (Layout::dp (Layout::CORR_METER_H, s));
-        auto corrB = mB.removeFromTop (corrH);
-        corrMeter.setBounds (corrB);
-        // split remaining area into two equal columns (left=IO, right=LR)
-        auto rightHalf = mB.removeFromRight (mB.getWidth() / 2).reduced (Layout::dp (Layout::GAP_S, s));
-        auto leftHalf  = mB.reduced (Layout::dp (Layout::GAP_S, s));
-        // Make columns slimmer by targeting ~1 cell width each
-        const int colW = juce::jlimit (Layout::dp (56, s), Layout::dp (140, s), cellW_rs);
-        auto lrCol = rightHalf.withSizeKeepingCentre (colW, rightHalf.getHeight());
-        auto ioCol = leftHalf .withSizeKeepingCentre (colW, leftHalf .getHeight());
-        ioMeters.setBounds (ioCol);
-        lrMeters.setBounds (lrCol);
+        auto mB = metersContainer.getLocalBounds();
+        // Lay out three tight columns: IO | LR | CORR (CORR half width), minimal spacing
+        int x = mB.getX();
+        const int h = mB.getHeight();
+        auto ioCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h); x += colW_m + inter_m;
+        auto lrCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h); x += colW_m + inter_m;
+        auto corrCol = juce::Rectangle<int> (x, mB.getY(), corrW_m, h);
+        ioMeters.setBounds   (ioCol);
+        lrMeters.setBounds   (lrCol);
+        corrMeter.setBounds  (corrCol);
     }
 
     // Remove vertical gaps between rows
@@ -2867,6 +2873,27 @@ void MyPluginAudioProcessorEditor::performLayout()
         auto lc = leftContentContainer.getBounds();
         lc.setBottom (rowsBottom);
         leftContentContainer.setBounds (lc);
+        // Align meters container bottom to the same baseline
+        auto mc = metersContainer.getBounds();
+        mc.setBottom (rowsBottom);
+        metersContainer.setBounds (mc);
+    }
+    // Re-layout meter columns now that meters container height is final
+    {
+        const int lPx_rs   = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
+        const int cellW_rs = lPx_rs + Layout::dp (8, s);
+        const int colW_m   = juce::jlimit (Layout::dp (24, s), Layout::dp (56, s), juce::roundToInt (cellW_rs * 0.75f));
+        const int corrW_m  = juce::jmax (Layout::dp (10, s), juce::roundToInt (colW_m * 0.5f));
+        const int inter_m  = juce::jmax (1, Layout::dp (Layout::GAP_S, s) / 2);
+        auto mB = metersContainer.getLocalBounds();
+        int x = mB.getX();
+        const int h = mB.getHeight();
+        auto ioCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h); x += colW_m + inter_m;
+        auto lrCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h); x += colW_m + inter_m;
+        auto corrCol = juce::Rectangle<int> (x, mB.getY(), corrW_m, h);
+        ioMeters.setBounds   (ioCol);
+        lrMeters.setBounds   (lrCol);
+        corrMeter.setBounds  (corrCol);
     }
     // Alternate bottom panel (slides over bottom rows when enabled)
     {

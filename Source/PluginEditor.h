@@ -1994,7 +1994,7 @@ private:
     class CorrelationMeter : public juce::Component, public juce::Timer
     {
     public:
-        CorrelationMeter (MyPluginAudioProcessor& p, FieldLNF& l) : proc (p), lnf (l) { startTimerHz (15); }
+        CorrelationMeter (MyPluginAudioProcessor& p, FieldLNF& l) : proc (p), lnf (l) { startTimerHz (25); }
         void paint (juce::Graphics& g) override
         {
             auto r = getLocalBounds().toFloat();
@@ -2004,42 +2004,44 @@ private:
             g.drawRoundedRectangle (r, 6.0f, 1.0f);
 
             const float corr = juce::jlimit (-1.0f, 1.0f, proc.getCorrelation());
-            const float midX = r.getCentreX();
-            const float barY = r.getY() + r.getHeight() * 0.35f;
-            const float barH = r.getHeight() * 0.30f;
-
-            // background track
+            // Thin vertical track centered horizontally
+            const float pad = 3.0f;
+            const float trackW = juce::jmax (6.0f, r.getWidth() - 2*pad);
+            const float cx = r.getX() + r.getWidth() * 0.5f;
+            juce::Rectangle<float> track (cx - trackW * 0.5f, r.getY() + pad, trackW, r.getHeight() - 2*pad);
+            // Midline
+            const float midY = track.getCentreY();
             g.setColour (lnf.theme.hl.withAlpha (0.35f));
-            g.fillRoundedRectangle ({ r.getX()+6.0f, barY, r.getWidth()-12.0f, barH }, 4.0f);
+            g.fillRoundedRectangle (track, 2.5f);
+            g.setColour (lnf.theme.hl.withAlpha (0.6f));
+            g.fillRect (juce::Rectangle<float> (track.getX(), midY-0.5f, track.getWidth(), 1.0f));
 
+            // Positive = fill upward; Negative = fill downward
             if (corr >= 0.0f)
             {
-                const float w = (r.getWidth()-12.0f) * corr * 0.5f;
+                const float h = (track.getHeight() * 0.5f) * corr;
                 g.setColour (juce::Colour (0xFF66BB6A));
-                g.fillRoundedRectangle ({ midX, barY, w, barH }, 3.0f);
+                g.fillRoundedRectangle (juce::Rectangle<float> (track.getX(), midY - h, track.getWidth(), h), 2.0f);
             }
             else
             {
-                const float w = (r.getWidth()-12.0f) * (-corr) * 0.5f;
+                const float h = (track.getHeight() * 0.5f) * (-corr);
                 g.setColour (juce::Colour (0xFFE57373));
-                g.fillRoundedRectangle ({ midX - w, barY, w, barH }, 3.0f);
+                g.fillRoundedRectangle (juce::Rectangle<float> (track.getX(), midY, track.getWidth(), h), 2.0f);
             }
 
+            // Vertical label on the right side: C O R R
             g.setColour (lnf.theme.textMuted);
-            g.setFont (juce::Font (juce::FontOptions (12.0f).withStyle ("Bold")));
-            g.drawText ("CORR", r.reduced (4).withHeight (16), juce::Justification::centredTop);
-
-            // Minimal units: show -1, 0, +1 under the bar
-            g.setColour (lnf.theme.textMuted.withAlpha (0.9f));
-            g.setFont (juce::Font (juce::FontOptions (10.0f).withStyle ("Bold")));
-            const float labelY = barY + barH + 2.0f;
-            juce::Rectangle<float> unitsArea (r.getX() + 6.0f, labelY, r.getWidth() - 12.0f, 12.0f);
-            auto leftR  = juce::Rectangle<float> (unitsArea.getX(), unitsArea.getY(), unitsArea.getWidth() * 0.33f, unitsArea.getHeight());
-            auto midR   = juce::Rectangle<float> (unitsArea.getX() + unitsArea.getWidth() * 0.33f, unitsArea.getY(), unitsArea.getWidth() * 0.34f, unitsArea.getHeight());
-            auto rightR = juce::Rectangle<float> (unitsArea.getX() + unitsArea.getWidth() * 0.67f, unitsArea.getY(), unitsArea.getWidth() * 0.33f, unitsArea.getHeight());
-            g.drawText ("-1", leftR.toNearestInt(), juce::Justification::centredLeft);
-            g.drawText ("0",  midR.toNearestInt(),  juce::Justification::centred);
-            g.drawText ("+1", rightR.toNearestInt(), juce::Justification::centredRight);
+            g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
+            const float labelX = track.getRight() + 2.0f;
+            const float step   = 12.0f;
+            juce::String chars[] = { "C", "O", "R", "R" };
+            float y = r.getY() + pad;
+            for (auto& ch : chars)
+            {
+                g.drawText (ch, juce::Rectangle<int> ((int)labelX, (int)y, (int)(r.getRight()-labelX-1.0f), 12), juce::Justification::centredLeft);
+                y += step;
+            }
         }
         void timerCallback() override { repaint(); }
         void visibilityChanged() override { if (isVisible()) startTimerHz (15); else stopTimer(); }
@@ -2054,7 +2056,7 @@ private:
     class VerticalLRMeters : public juce::Component, public juce::Timer
     {
     public:
-        VerticalLRMeters (MyPluginAudioProcessor& p, FieldLNF& l) : proc(p), lnf(l) { startTimerHz (20); }
+        VerticalLRMeters (MyPluginAudioProcessor& p, FieldLNF& l) : proc(p), lnf(l) { startTimerHz (30); }
         void paint (juce::Graphics& g) override
         {
             auto r = getLocalBounds().toFloat();
@@ -2082,20 +2084,36 @@ private:
                 // scale 0..1 across height
                 auto hRms  = juce::jlimit (0.0f, 1.0f, rms ) * b.getHeight();
                 auto hPeak = juce::jlimit (0.0f, 1.0f, peak) * b.getHeight();
-                // RMS fill with color shift near clipping
-                const bool nearClip = peak >= 0.98f || rms >= 0.90f;
+                // Zone colours (dBFS thresholds)
+                const float rmsDb  = juce::Decibels::gainToDecibels (juce::jlimit (0.000001f, 1.0f, rms),  -60.0f);
+                const float peakDb = juce::Decibels::gainToDecibels (juce::jlimit (0.000001f, 1.0f, peak), -60.0f);
+                const bool risk    = peakDb >= -1.0f || rmsDb >= -3.0f;
+                const bool warn    = !risk && (peakDb >= -6.0f || rmsDb >= -12.0f);
                 {
-                    auto rmsCol1 = (nearClip ? juce::Colour (0xFFFF8A80) : lnf.theme.accent.withMultipliedAlpha (0.85f));
-                    auto rmsCol2 = (nearClip ? juce::Colour (0xFFE53935) : lnf.theme.accent);
-                    juce::ColourGradient grad (rmsCol1.withAlpha (0.55f), b.getCentreX(), b.getBottom() - hRms,
-                                               rmsCol2.withAlpha (0.85f), b.getCentreX(), b.getBottom(), false);
+                    juce::Colour safe1 = lnf.theme.accent.withAlpha (0.70f);
+                    juce::Colour safe2 = lnf.theme.accent.withAlpha (0.90f);
+                    juce::Colour warn1 = juce::Colour (0xFFFFC107).withAlpha (0.75f); // amber
+                    juce::Colour warn2 = juce::Colour (0xFFFFA000).withAlpha (0.95f);
+                    juce::Colour risk1 = juce::Colour (0xFFFF8A80).withAlpha (0.85f); // soft red
+                    juce::Colour risk2 = juce::Colour (0xFFE53935).withAlpha (0.95f);
+                    auto c1 = risk ? risk1 : (warn ? warn1 : safe1);
+                    auto c2 = risk ? risk2 : (warn ? warn2 : safe2);
+                    juce::ColourGradient grad (c1, b.getCentreX(), b.getBottom() - hRms,
+                                               c2, b.getCentreX(), b.getBottom(), false);
                     g.setFillType (juce::FillType (grad));
                     g.fillRoundedRectangle (juce::Rectangle<float> (b.getX(), b.getBottom() - hRms, b.getWidth(), hRms), 3.0f);
                     g.setFillType (juce::FillType());
                 }
                 // Peak line
-                g.setColour (nearClip ? juce::Colour (0xFFE53935) : lnf.theme.accent);
+                g.setColour (risk ? juce::Colour (0xFFE53935) : lnf.theme.accent);
                 g.fillRect (juce::Rectangle<float> (b.getX(), b.getBottom() - hPeak, b.getWidth(), 2.0f));
+                // Crest factor hint (thin line slightly below peak)
+                const float crestH = juce::jmax (0.0f, hPeak - hRms);
+                if (crestH > 2.0f)
+                {
+                    g.setColour (lnf.theme.text.withAlpha (0.20f));
+                    g.fillRect (juce::Rectangle<float> (b.getX(), b.getBottom() - hPeak + 2.0f, b.getWidth(), 1.0f));
+                }
                 // Gloss
                 g.setColour (juce::Colours::white.withAlpha (0.06f));
                 g.fillRoundedRectangle (juce::Rectangle<float> (b.getX()+1.5f, b.getY()+1.5f, b.getWidth()-3.0f, b.getHeight()*0.25f), 3.0f);
@@ -2139,7 +2157,7 @@ private:
     class IOGainMeters : public juce::Component, public juce::Timer
     {
     public:
-        IOGainMeters (MyPluginAudioProcessor& p, FieldLNF& l) : proc(p), lnf(l) { startTimerHz (20); }
+        IOGainMeters (MyPluginAudioProcessor& p, FieldLNF& l) : proc(p), lnf(l) { startTimerHz (30); }
         void paint (juce::Graphics& g) override
         {
             auto r = getLocalBounds().toFloat();
@@ -2150,8 +2168,19 @@ private:
                 g.setColour (lnf.theme.panel); g.fillRoundedRectangle (b, 4.0f);
                 g.setColour (lnf.theme.sh);    g.drawRoundedRectangle (b, 4.0f, 1.0f);
                 const float h = juce::jlimit (0.0f, 1.0f, rms) * b.getHeight();
-                juce::ColourGradient grad (lnf.theme.accent.withAlpha (0.55f), b.getCentreX(), b.getBottom() - h,
-                                           lnf.theme.accent.withAlpha (0.85f), b.getCentreX(), b.getBottom(), false);
+                const float rmsDb = juce::Decibels::gainToDecibels (juce::jlimit (0.000001f, 1.0f, rms), -60.0f);
+                const bool risk = rmsDb >= -1.0f;
+                const bool warn = !risk && rmsDb >= -6.0f;
+                juce::Colour safe1 = lnf.theme.accent.withAlpha (0.55f);
+                juce::Colour safe2 = lnf.theme.accent.withAlpha (0.85f);
+                juce::Colour warn1 = juce::Colour (0xFFFFC107).withAlpha (0.70f);
+                juce::Colour warn2 = juce::Colour (0xFFFFA000).withAlpha (0.90f);
+                juce::Colour risk1 = juce::Colour (0xFFFF8A80).withAlpha (0.80f);
+                juce::Colour risk2 = juce::Colour (0xFFE53935).withAlpha (0.95f);
+                auto c1 = risk ? risk1 : (warn ? warn1 : safe1);
+                auto c2 = risk ? risk2 : (warn ? warn2 : safe2);
+                juce::ColourGradient grad (c1, b.getCentreX(), b.getBottom() - h,
+                                           c2, b.getCentreX(), b.getBottom(), false);
                 g.setFillType (juce::FillType (grad));
                 g.fillRoundedRectangle (juce::Rectangle<float> (b.getX(), b.getBottom() - h, b.getWidth(), h), 3.0f);
                 g.setFillType (juce::FillType());
