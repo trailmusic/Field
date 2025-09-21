@@ -30,6 +30,9 @@ inline constexpr const char* tiltDb = "reverb_tilt_db";
 inline constexpr const char* dreqLowX  = "reverb_decay_low_mult";
 inline constexpr const char* dreqMidX  = "reverb_decay_mid_mult";
 inline constexpr const char* dreqHighX = "reverb_decay_high_mult";
+// DR-EQ Crossovers (new)
+inline constexpr const char* dreqXoverLoHz = "reverb_decay_xover_lo_hz";
+inline constexpr const char* dreqXoverHiHz = "reverb_decay_xover_hi_hz";
 
 // Motion
 inline constexpr const char* widthPct      = "reverb_width_pct";
@@ -58,6 +61,10 @@ inline constexpr const char* freeze        = "reverb_freeze";
 inline constexpr const char* gateAmtPct    = "reverb_gate_amount_pct";
 inline constexpr const char* shimmerAmtPct = "reverb_shimmer_amt_pct";
 inline constexpr const char* shimmerInt    = "reverb_shimmer_interval"; // +12/+7/-12
+// Macro / shaping (new)
+inline constexpr const char* sizePct     = "reverb_size_pct";
+inline constexpr const char* bloomPct    = "reverb_bloom_pct";
+inline constexpr const char* distancePct = "reverb_distance_pct";
 
 // Post-EQ (wet only)
 inline constexpr const char* eqOn         = "reverb_eq_on";

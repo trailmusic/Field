@@ -3024,13 +3024,13 @@ void MyPluginAudioProcessorEditor::performLayout()
                            delayJitterCell.get(), delayPreDelayCell.get(), delayDuckThresholdCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
             lightenDelayCell (kc);
 
-        // Reverb controls group to the right of Delay group in Group 2
+        // Reverb controls group to the right of Delay group in Group 2 (flattened 4x16 grid; 8 columns used)
         {
             const int reverbGroupX = delayGroupX + delayGroupW;
             const int reverbGroupY = delayGroupY;
             const int availableW  = b.getRight() - reverbGroupX;
             const int reverbCellW = lPx + Layout::dp (8, s);
-            const int targetReverbW = reverbCellW * 7; // 7 columns × standard cell width
+            const int targetReverbW = reverbCellW * 8; // 8 columns
             const int reverbGroupW = juce::jmin (availableW, targetReverbW);
             const int reverbGroupH = delayGroupH;
 
@@ -3045,16 +3045,24 @@ void MyPluginAudioProcessorEditor::performLayout()
             rvPanel->setCellMetrics (lPx, valuePx2, labelGap2, delayCellW);
             rvPanel->setRowHeightPx (containerHeight);
 
-            // Add cells directly to Group 2 (no container) and lay them out with a 4x5 grid
+            // Add cells directly to Group 2 (no container)
             juce::Array<KnobCell*> rvCells;
             rvPanel->collectCells (rvCells);
-            for (auto* c : rvCells) {
-                if (c != nullptr) {
+            auto ensureAdd = [this](juce::Component* c)
+            {
+                if (!c) return;
+                if (c->getParentComponent() != &bottomAltPanel)
                     bottomAltPanel.addAndMakeVisible (*c);
-                    c->setShowBorder (true);
-                    c->getProperties().set ("reverbMaroonBorder", true);
+                if (auto* kc = dynamic_cast<KnobCell*>(c))
+                {
+                    kc->setShowBorder (true);
+                    kc->getProperties().set ("reverbMaroonBorder", true);
                 }
-            }
+                else if (auto* sc = dynamic_cast<SwitchCell*>(c))
+                {
+                    sc->getProperties().set ("reverbMaroonBorder", true);
+                }
+            };
 
             // Create Enable (switch), Algorithm (switch-like), Wet Only (switch) styled like Delay/Motion
             static juce::ToggleButton reverbEnable;
@@ -3100,6 +3108,47 @@ void MyPluginAudioProcessorEditor::performLayout()
             reverbAlgoCell  ->getProperties().set ("reverbMaroonBorder", true);
             reverbWetOnlyCell->getProperties().set ("reverbMaroonBorder", true);
 
+            // Additional knobs (new params): SIZE, DECAY XOVER LO/HI, BLOOM, DISTANCE
+            static std::unique_ptr<KnobCell> sizeCell, dreqXLoCell, dreqXHiCell, bloomCell, distanceCell;
+            static juce::Slider sizeS, dreqXLoS, dreqXHiS, bloomS, distanceS;
+            static juce::Label  sizeV, dreqXLoV, dreqXHiV, bloomV, distanceV;
+            auto attachSlider = [this, &s, lPx](auto& aStore, const char* id, juce::Slider& sl, juce::Label& val, const juce::String& cap, std::unique_ptr<KnobCell>& cell)
+            {
+                if (!cell)
+                {
+                    sl.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+                    sl.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+                    sl.setRotaryParameters (juce::MathConstants<float>::pi,
+                                            juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
+                                            true);
+                    sl.setName (cap);
+                    cell = std::make_unique<KnobCell> (sl, val, cap);
+                    cell->setMetrics (lPx, Layout::dp (14, s), Layout::dp (4, s));
+                    cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+                    cell->setValueLabelGap (Layout::dp (4, s));
+                    bottomAltPanel.addAndMakeVisible (*cell);
+                    aStore.push_back (std::make_unique<SliderAttachment> (proc.apvts, id, sl));
+                }
+            };
+            attachSlider (attachments, ReverbIDs::sizePct,       sizeS,     sizeV,     "SIZE",      sizeCell);
+            attachSlider (attachments, ReverbIDs::dreqXoverLoHz, dreqXLoS,  dreqXLoV,  "DEC XO LO", dreqXLoCell);
+            attachSlider (attachments, ReverbIDs::dreqXoverHiHz, dreqXHiS,  dreqXHiV,  "DEC XO HI", dreqXHiCell);
+            attachSlider (attachments, ReverbIDs::bloomPct,      bloomS,    bloomV,    "BLOOM",     bloomCell);
+            attachSlider (attachments, ReverbIDs::distancePct,   distanceS, distanceV, "DIST",      distanceCell);
+
+            // Freeze switch (Row 4, Col 2)
+            static juce::ToggleButton reverbFreeze;
+            static std::unique_ptr<SwitchCell> reverbFreezeCell;
+            if (!reverbFreezeCell)
+            {
+                reverbFreeze.setComponentID ("reverb_freeze");
+                reverbFreeze.getProperties().set ("iconType", (int) IconSystem::Snowflake);
+                reverbFreezeCell = std::make_unique<SwitchCell> (reverbFreeze);
+                reverbFreezeCell->setCaption ("Freeze");
+                bottomAltPanel.addAndMakeVisible (*reverbFreezeCell);
+                buttonAttachments.push_back (std::make_unique<ButtonAttachment> (proc.apvts, ReverbIDs::freeze, reverbFreeze));
+            }
+
             juce::Grid reverbGrid;
             reverbGrid.rowGap = juce::Grid::Px (0);
             reverbGrid.columnGap = juce::Grid::Px (0);
@@ -3107,66 +3156,66 @@ void MyPluginAudioProcessorEditor::performLayout()
             reverbGrid.templateColumns = {
                 juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW),
                 juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW),
-                juce::Grid::Px (delayCellW)
+                juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW)
             };
-            // Row-major placement into 4x7 grid (pad with empties if fewer than 28)
+            // Explicit placement into 4x8 grid per spec
             juce::Array<juce::GridItem> items;
-            items.ensureStorageAllocated (28);
-            // Add Enable at row1 col1, Algo at col4, WetOnly at col7
-            items.add (juce::GridItem (*reverbEnableCell).withArea (1, 1));
-            items.add (juce::GridItem (*reverbAlgoCell)  .withArea (1, 4));
-            items.add (juce::GridItem (*reverbWetOnlyCell).withArea (1, 7));
-            // Place a curated subset of Reverb panel cells to leave room for Ducking strip
-            const int reservedSwitches = 3;
-            const int duckStripCount = 5;
-            const int maxPanelCells = 28 - reservedSwitches - duckStripCount; // 20
-            for (int i = 0; i < juce::jmin ((int)rvCells.size(), maxPanelCells); ++i)
+            // Row 1: Enable, PRE, ER LVL, Algo, ER DENS, ER WIDTH, WET ONLY, SIZE
+            ensureAdd (reverbEnableCell.get()); items.add (juce::GridItem (*reverbEnableCell)  .withArea (1, 1));
+            if (rvCells.size() > 0 && rvCells[0]) { ensureAdd (rvCells[0]); items.add (juce::GridItem (*rvCells[0]).withArea (1, 2)); } // PRE
+            if (rvCells.size() > 1 && rvCells[1]) { ensureAdd (rvCells[1]); items.add (juce::GridItem (*rvCells[1]).withArea (1, 3)); } // ER LVL
+            ensureAdd (reverbAlgoCell.get());    items.add (juce::GridItem (*reverbAlgoCell)    .withArea (1, 4));
+            if (rvCells.size() > 3 && rvCells[3]) { ensureAdd (rvCells[3]); items.add (juce::GridItem (*rvCells[3]).withArea (1, 5)); } // ER DENS
+            if (rvCells.size() > 4 && rvCells[4]) { ensureAdd (rvCells[4]); items.add (juce::GridItem (*rvCells[4]).withArea (1, 6)); } // ER WIDTH
+            ensureAdd (reverbWetOnlyCell.get()); items.add (juce::GridItem (*reverbWetOnlyCell) .withArea (1, 7));
+            if (sizeCell) { ensureAdd (sizeCell.get()); items.add (juce::GridItem (*sizeCell)      .withArea (1, 8)); }
+
+            // Row 2: DIF, MOD DEP, MOD RATE, HP, LP, TILT, EQ MIX, DECAY XOVER LO
+            if (rvCells.size() > 7  && rvCells[7])  { ensureAdd (rvCells[7]);  items.add (juce::GridItem (*rvCells[7]) .withArea (2, 1)); } // DIF
+            if (rvCells.size() > 8  && rvCells[8])  { ensureAdd (rvCells[8]);  items.add (juce::GridItem (*rvCells[8]) .withArea (2, 2)); } // MOD DEP
+            if (rvCells.size() > 9  && rvCells[9])  { ensureAdd (rvCells[9]);  items.add (juce::GridItem (*rvCells[9]) .withArea (2, 3)); } // MOD RATE
+            if (rvCells.size() > 10 && rvCells[10]) { ensureAdd (rvCells[10]); items.add (juce::GridItem (*rvCells[10]).withArea (2, 4)); } // HP
+            if (rvCells.size() > 11 && rvCells[11]) { ensureAdd (rvCells[11]); items.add (juce::GridItem (*rvCells[11]).withArea (2, 5)); } // LP
+            if (rvCells.size() > 12 && rvCells[12]) { ensureAdd (rvCells[12]); items.add (juce::GridItem (*rvCells[12]).withArea (2, 6)); } // TILT
+            if (rvCells.size() > 13 && rvCells[13]) { ensureAdd (rvCells[13]); items.add (juce::GridItem (*rvCells[13]).withArea (2, 7)); } // EQ MIX
+            if (dreqXLoCell) { ensureAdd (dreqXLoCell.get()); items.add (juce::GridItem (*dreqXLoCell).withArea (2, 8)); }
+
+            // Row 3: ER→TAIL, LOW×, MID×, HIGH×, WIDTH, WET, DECAY (RT60), BLOOM
+            if (rvCells.size() > 14 && rvCells[14]) { ensureAdd (rvCells[14]); items.add (juce::GridItem (*rvCells[14]).withArea (3, 1)); } // ER→TAIL
+            if (rvCells.size() > 15 && rvCells[15]) { ensureAdd (rvCells[15]); items.add (juce::GridItem (*rvCells[15]).withArea (3, 2)); } // LOW×
+            if (rvCells.size() > 16 && rvCells[16]) { ensureAdd (rvCells[16]); items.add (juce::GridItem (*rvCells[16]).withArea (3, 3)); } // MID×
+            if (rvCells.size() > 17 && rvCells[17]) { ensureAdd (rvCells[17]); items.add (juce::GridItem (*rvCells[17]).withArea (3, 4)); } // HIGH×
+            if (rvCells.size() > 18 && rvCells[18]) { ensureAdd (rvCells[18]); items.add (juce::GridItem (*rvCells[18]).withArea (3, 5)); } // WIDTH
+            if (rvCells.size() > 19 && rvCells[19]) { ensureAdd (rvCells[19]); items.add (juce::GridItem (*rvCells[19]).withArea (3, 6)); } // WET
+            if (rvCells.size() > 5  && rvCells[5])  { ensureAdd (rvCells[5]);  items.add (juce::GridItem (*rvCells[5]) .withArea (3, 7)); } // DECAY
+            if (bloomCell) { ensureAdd (bloomCell.get()); items.add (juce::GridItem (*bloomCell)    .withArea (3, 8)); }
+
+            // Row 4: DISTANCE, FREEZE, DUCK, ATT, REL, THR, RAT, DECAY XOVER HI
+            auto setDuckMetrics = [&](KnobCell* kc)
             {
-                const int row = (i / 7) + 1;
-                const int colBase = (i % 7) + 1;
-                int col = colBase;
-                if (row == 1) {
-                    // Shift to skip reserved slots: col1 Enable, col4 Algo, col7 WetOnly
-                    if (col >= 7)      col += 0;
-                    else if (col >= 4) col += 1;
-                    else if (col >= 1) col += 1;
-                }
-                if (col > 7) continue;
-                if (auto* c = rvCells[i]) items.add (juce::GridItem (*c).withArea (row, col));
-            }
-
-            // Add Ducking strip (Row 4, Cols 3..7): leave col1 open, row3 col5-6 open as future slots
-            if (duckCell && duckAttCell && duckRelCell && duckThrCell && duckRatCell)
-            {
-                duckCell   ->setMetrics (lPx, valuePx2, labelGap2);
-                duckAttCell->setMetrics (lPx, valuePx2, labelGap2);
-                duckRelCell->setMetrics (lPx, valuePx2, labelGap2);
-                duckThrCell->setMetrics (lPx, valuePx2, labelGap2);
-                duckRatCell->setMetrics (lPx, valuePx2, labelGap2);
-
-                bottomAltPanel.addAndMakeVisible (*duckCell);
-                bottomAltPanel.addAndMakeVisible (*duckAttCell);
-                bottomAltPanel.addAndMakeVisible (*duckRelCell);
-                bottomAltPanel.addAndMakeVisible (*duckThrCell);
-                bottomAltPanel.addAndMakeVisible (*duckRatCell);
-
-                duckCell   ->getProperties().set ("reverbMaroonBorder", true);
-                duckAttCell->getProperties().set ("reverbMaroonBorder", true);
-                duckRelCell->getProperties().set ("reverbMaroonBorder", true);
-                duckThrCell->getProperties().set ("reverbMaroonBorder", true);
-                duckRatCell->getProperties().set ("reverbMaroonBorder", true);
-
-                items.add (juce::GridItem (*duckCell)   .withArea (4, 3));
-                items.add (juce::GridItem (*duckAttCell).withArea (4, 4));
-                items.add (juce::GridItem (*duckRelCell).withArea (4, 5));
-                items.add (juce::GridItem (*duckThrCell).withArea (4, 6));
-                items.add (juce::GridItem (*duckRatCell).withArea (4, 7));
-            }
+                if (!kc) return;
+                kc->setMetrics (lPx, valuePx2, labelGap2);
+                kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+                kc->setValueLabelGap (labelGap2);
+            };
+            setDuckMetrics (duckCell.get());
+            setDuckMetrics (duckAttCell.get());
+            setDuckMetrics (duckRelCell.get());
+            setDuckMetrics (duckThrCell.get());
+            setDuckMetrics (duckRatCell.get());
+            if (distanceCell) { ensureAdd (distanceCell.get()); items.add (juce::GridItem (*distanceCell).withArea (4, 1)); }
+            ensureAdd (reverbFreezeCell.get()); items.add (juce::GridItem (*reverbFreezeCell).withArea (4, 2));
+            if (duckCell)    { ensureAdd (duckCell.get());    items.add (juce::GridItem (*duckCell)   .withArea (4, 3)); }
+            if (duckAttCell) { ensureAdd (duckAttCell.get()); items.add (juce::GridItem (*duckAttCell).withArea (4, 4)); }
+            if (duckRelCell) { ensureAdd (duckRelCell.get()); items.add (juce::GridItem (*duckRelCell).withArea (4, 5)); }
+            if (duckThrCell) { ensureAdd (duckThrCell.get()); items.add (juce::GridItem (*duckThrCell).withArea (4, 6)); }
+            if (duckRatCell) { ensureAdd (duckRatCell.get()); items.add (juce::GridItem (*duckRatCell).withArea (4, 7)); }
+            if (dreqXHiCell) { ensureAdd (dreqXHiCell.get()); items.add (juce::GridItem (*dreqXHiCell).withArea (4, 8)); }
             reverbGrid.items = std::move (items);
 
             // Center a fixed-width 7-column block inside the available group width
             auto rb = juce::Rectangle<int>(reverbGroupX, reverbGroupY, reverbGroupW, reverbGroupH).reduced(Layout::dp(Layout::GAP, s));
-            const int fixedW = delayCellW * 7;
+            const int fixedW = delayCellW * 8;
             auto rbCentered = rb.withWidth (juce::jmin (rb.getWidth(), fixedW));
             rbCentered.setX (rb.getX() + (rb.getWidth() - rbCentered.getWidth())); // right-align to match group placement
             reverbGrid.performLayout (rbCentered);

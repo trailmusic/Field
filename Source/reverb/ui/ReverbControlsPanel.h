@@ -42,8 +42,8 @@ public:
         attach (preA,  ReverbIDs::preDelayMs,   pre,  preV,  "PRE");
         attach (erLA,  ReverbIDs::erLevelDb,    erL,  erLV,  "ER LVL");
         attach (erTA,  ReverbIDs::erTimeMs,     erT,  erTV,  "ER TIME");
-        attach (erDA,  ReverbIDs::erDensityPct, erD,  erDV,  "ER DENS");
-        attach (erWA,  ReverbIDs::erWidthPct,   erW,  erWV,  "ER WIDTH");
+        attach (erDA,  ReverbIDs::erDensityPct, erD,  erDV,  "ER DEN");
+        attach (erWA,  ReverbIDs::erWidthPct,   erW,  erWV,  "ER WID");
         // Row 2
         attach (decA,  ReverbIDs::decaySec,     dec,  decV,  "DECAY");
         attach (denA,  ReverbIDs::densityPct,   den,  denV,  "DENS");
@@ -60,7 +60,7 @@ public:
         attach (dlA,   ReverbIDs::dreqLowX,     dl,   dlV,   "LOW×");
         attach (dmA,   ReverbIDs::dreqMidX,     dm,   dmV,   "MID×");
         attach (dhA,   ReverbIDs::dreqHighX,    dh,   dhV,   "HIGH×");
-        attach (wA,    ReverbIDs::widthPct,     w,    wV,    "WIDTH");
+        attach (wA,    ReverbIDs::widthPct,     w,    wV,    "TL WID");
         attach (wetA,  ReverbIDs::wetMix01,     wet,  wetV,  "WET");
 
         // Initial sizing (will be overridden by setCellMetrics from parent)

@@ -47,6 +47,8 @@ inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioPa
     p.push_back (F (ReverbIDs::dreqLowX,  "Decay Low ×",  {0.3f, 2.0f, 0.001f}, 0.8f));
     p.push_back (F (ReverbIDs::dreqMidX,  "Decay Mid ×",  {0.5f, 1.5f, 0.001f}, 1.0f));
     p.push_back (F (ReverbIDs::dreqHighX, "Decay High ×", {0.3f, 2.0f, 0.001f}, 0.9f));
+    p.push_back (F (ReverbIDs::dreqXoverLoHz, "Decay Xover Lo (Hz)", {80.f, 800.f, 0.f, 0.5f}, 250.f));
+    p.push_back (F (ReverbIDs::dreqXoverHiHz, "Decay Xover Hi (Hz)", {1000.f, 10000.f, 0.f, 0.5f}, 4500.f));
 
     // Motion
     p.push_back (F (ReverbIDs::widthPct,      "Width (%)",         {0.f, 120.f, 0.01f}, 100.f));
@@ -56,6 +58,9 @@ inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioPa
     p.push_back (F (ReverbIDs::rotStartDeg,   "Rotate Start (deg)", {-30.f, 30.f, 0.01f}, 0.f));
     p.push_back (F (ReverbIDs::rotEndDeg,     "Rotate End (deg)",   {-30.f, 30.f, 0.01f}, 8.f));
     p.push_back (F (ReverbIDs::rotEnvCurve,   "Rotate Curve",       {0.2f, 5.f, 0.001f}, 1.f));
+    p.push_back (F (ReverbIDs::sizePct,       "Size (%)",          {0.f, 100.f, 0.01f}, 50.f));
+    p.push_back (F (ReverbIDs::bloomPct,      "Bloom (%)",         {0.f, 100.f, 0.01f}, 35.f));
+    p.push_back (F (ReverbIDs::distancePct,   "Distance (%)",      {0.f, 100.f, 0.01f}, 35.f));
 
     // Ducking
     p.push_back (C (ReverbIDs::duckMode, "Duck Mode", StringArray{ "WetOnly", "Center", "Band" }, 0));
