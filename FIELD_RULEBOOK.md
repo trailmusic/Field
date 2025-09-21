@@ -38,12 +38,19 @@
 
 - **Scale-aware**
   - All pixel values pass through `Layout::dp(px, scaleFactor)`.
+  - `scaleFactor` is computed from the smaller of width/height ratios: `min(getWidth()/baseWidth, getHeight()/baseHeight)` and clamped (current floor: 0.5; ceiling: 2.0).
   - Define rhythm in `Layout` (see `Source/Layout.h`): `PAD`, `GAP`, knob sizes via `Layout::Knob::{S,M,L,XL}`, micro sizes, and breakpoints.
 - **Where layout happens**
   - The editor owns grid/flow; containers arrange their children only (no sibling knowledge).
   - Use `juce::Grid` for rows/columns; don’t manually sprinkle `setBounds` everywhere. Use layout tokens to size items prior to `performLayout()`.
 - **Breakpoints**
   - Use `getWidth()` vs `Layout::BP_WIDE` to switch grid templates (e.g., collapse “split pan” when narrow).
+  - Minimum width floor uses `Layout::BP_WIDE` (wide breakpoint) or calculated content minimum, whichever is larger. Initial size prefers baseWidth/baseHeight over content min.
+
+- **Containers (Editor-level)**
+  - `leftContentContainer`: holds panes (top) and both control groups (rows) below. All Group 1/2 controls are parented here and use container-local coordinates starting at x=0.
+  - `metersContainer`: sibling at right; meters are children here (no overlap with left content). Width is derived from grid metrics; heights are local to the container.
+  - Stacking: panes at the top of the left container, then 4 uniform control rows directly below; no left padding beyond container border.
 
 ---
 
@@ -222,39 +229,50 @@ if (auto* p = apvts.getParameter("width")) {
 ## 12) Group 2 panel system
 
 - **Panel Architecture**
-  - Group 2 panel (`bottomAltPanel`) is a sliding overlay that covers bottom control rows when activated
-  - Panel uses rounded corners (6px radius) for modern appearance via `g.fillRoundedRectangle()`
-  - No external or internal padding - uses full available space for maximum control density
-  - Panel slides in/out with smooth animation using `bottomAltSlide01` progress value
+  - Group 2 panel (`bottomAltPanel`) is a sliding overlay that covers the four control rows (inside `leftContentContainer`) when activated.
+  - Panel uses rounded corners (6px radius) for modern appearance via `g.fillRoundedRectangle()`.
+  - Bounds are aligned to the exact 4-row rectangle of Group 1 (container-local); top aligns to y=0 of the panel’s local space.
+  - Panel slides in/out with smooth animation using `bottomAltSlide01` progress value; shown only when slide progress > 0.
 
 - **Group Separation**
-  - **Group 1**: Main layout controls (Pan, Width, Gain, Mix, etc.) - always visible
-  - **Group 2**: Specialized controls in sliding panel (Motion group, future controls)
-  - Each group has separate control arrays - no sharing or hide/show logic
-  - Motion controls exist **only** in Group 2, never in Group 1
+  - **Group 1**: Main flat grid (4×16) of controls; always visible below panes.
+  - **Group 2**: Delay + Reverb flat grids (8 columns each) presented in the sliding panel; shares the same rows rectangle as Group 1.
+  - Motion Engine lives only in Group 1’s grid; it is not duplicated in Group 2.
 
-- **Motion Group Implementation**
-  - 4x4 grid of motion controls on left side of Group 2 panel
-  - Uses `motionCellsGroup2`, `motionDummiesGroup2`, `motionValuesGroup2` arrays
-  - Each motion cell is a `KnobCell` with green border styling (`motionGreenBorder` property)
-  - Rotary parameters: π to π + 2π for consistent angle mapping
+- **Grid Fit (Group 2)**
+  - Cell width is derived from available width: `cellW = min(cellWTarget, availableWidth / 16)` so Delay (8) + Reverb (8) columns fit the panel without horizontal scroll.
+  - Delay and Reverb grids use zero column/row gaps; metrics mirror Group 1: `knobPx = Layout::knobPx(L)`, `valuePx`, `labelGap` via `Layout::dp`.
 
 - **Layout Rules**
-  - Group 2 panel bounds: `bottomAltPanel.getLocalBounds()` (no padding)
-  - Motion group container: positioned at panel origin with full height
-  - Future controls area: right side of panel, separated by `Layout::GAP`
-  - All positioning uses `Layout::dp()` for scale awareness
+  - Group 2 panel bounds: `bottomAltPanel.getLocalBounds()` (no extra padding). Delay group at `(x=0,y=0)`, Reverb group immediately to the right.
+  - Panel overlays the same four-row height as Group 1; no top gap between panel and first control row.
+  - All positioning uses `Layout::dp()` for scale awareness; rows are uniform height: `rowH = knobPx + labelGap + valuePx`.
 
 - **Z-Order Management**
-  - Panel uses `toFront(true)` to appear above main layout
-  - Individual controls must NOT use `toFront()` calls that would appear above panel
-  - Panel intercepts mouse clicks when active: `setInterceptsMouseClicks(showPanel, false)`
+  - Panel is a child of `leftContentContainer` (above the row controls); meters live in `metersContainer` (sibling), preventing overlap.
+  - Panel intercepts mouse clicks when active: `setInterceptsMouseClicks(true, false)`; hidden otherwise.
 
 - **Animation & State**
-  - Panel visibility controlled by `bottomAltTargetOn` boolean
-  - Smooth slide animation with cosine easing: `0.5f - 0.5f * cos(π * t0)`
-  - Animation rate: 0.28f for brisk but smooth response
-  - Panel appears only when `effSlide > 0.001f` to prevent flicker
+  - Panel visibility controlled by `bottomAltTargetOn` boolean; bottom toggle sets the target.
+  - Smooth slide animation with cosine easing: `0.5f - 0.5f * cos(π * t0)`; animation rate ≈ 0.28 for brisk smoothness.
+  - Panel appears only when `effSlide > 0.001f` to prevent flicker; starts hidden on load (`bottomAltTargetOn=false`).
+
+---
+
+## 13) Control rows (uniform metrics)
+
+- Four uniform rows beneath panes, with row height:
+  - `rowH = knobPx(L) + labelGap + valuePx` (all via `Layout::dp(scaleFactor)`).
+- Zero column and row gaps inside all control grids (Group 1 and Group 2), consistent with UI rules.
+- Group 1 uses a flat 4×16 grid; Group 2 uses two 8‑column grids (Delay, Reverb) that fit the panel width.
+
+---
+
+## 14) Responsiveness & min sizes
+
+- Minimum width uses a conservative floor (≥ `Layout::BP_WIDE`) combined with calculated content minimum.
+- Initial size prefers base sizes (current defaults: baseWidth/baseHeight set in `PluginEditor.h`).
+- Width shrinking reduces `scaleFactor` (via min of width/height ratios) and compresses grid cell width to avoid clipping.
 
 ---
 
