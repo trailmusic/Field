@@ -1002,7 +1002,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     }
     presetStore.scan();
     DBG("[PresetStore] after add+scan: " << presetStore.getAll().size() << " presets");
-
     // Build knob cells once after all sliders/labels are created
     buildCells();
     // Calculate minimum size based on layout requirements
@@ -1350,7 +1349,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     };
 
     // Removed savePresetButton handler
-
     // A/B + copy
     addAndMakeVisible (abButtonA);
     addAndMakeVisible (abButtonB);
@@ -1685,7 +1683,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     delayFreeze.setButtonText ("");  delayFreeze.setToggleState (delayFreeze.getToggleState(), juce::dontSendNotification);
     delayKillDry.setButtonText (""); delayKillDry.setToggleState (delayKillDry.getToggleState(), juce::dontSendNotification);
     delayMode.setTextWhenNothingSelected ("Mode");
-
     // Populate Delay Mode items from APVTS choice parameter so popup shows options
     if (auto* delayModeParam = dynamic_cast<juce::AudioParameterChoice*>(proc.apvts.getParameter("delay_mode")))
     {
@@ -2889,6 +2886,14 @@ void MyPluginAudioProcessorEditor::performLayout()
         bottomAltPanel.setVisible (showPanel);
         addAndMakeVisible (bottomAltPanel);
         bottomAltPanel.toFront (true);
+
+        // Hide Group 1 Motion Engine cells when Group 2 panel is visible
+        for (int i = 0; i < 24; ++i)
+            if (motionCellsGroup2[i]) motionCellsGroup2[i]->setVisible (!showPanel);
+        for (int i = 0; i < 4; ++i)
+            if (motionComboCells[i]) motionComboCells[i]->setVisible (!showPanel);
+        for (int i = 0; i < 3; ++i)
+            if (motionButtonCells[i]) motionButtonCells[i]->setVisible (!showPanel);
         // Ensure the toggle button always remains visible above the sliding panel
         bottomAreaToggle.toFront (true);
         // Ensure the toggle button always remains visible above the sliding panel
@@ -3031,7 +3036,6 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Perform layout within motion group area with gap reduction
         auto motionBounds = juce::Rectangle<int>(motionGroup2X, motionGroup2Y, motionGroup2W, motionGroup2H).reduced(Layout::dp(Layout::GAP, s));
         motionGrid.performLayout(motionBounds);
-        
         // Delay group positioned directly in Group 2 panel (no container)
         const int delayGroupX = motionGroup2X + motionGroup2W;
         const int delayGroupW = 8 * (lPx + Layout::dp (8, s)); // 8 columns for delay items
@@ -3328,7 +3332,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Center group width = 4 columns (Row1: Gain/Mix/WetOnly; Row2: Pan x2 + Mono x2)
         const int centerW = cellW * 4;
 
-        // Left group Row1: BASS (double-wide cols 1-2), HP (col3), LP (col4)
+        // Left group Row1: BASS (double-wide cols 1-2), HP (3), Q (4), Q LINK (5), LP (6)
         {
             auto left = row1Area.removeFromLeft (leftW);
             // Ensure EQ primary four are visible and sized with mini bars
@@ -3354,20 +3358,38 @@ void MyPluginAudioProcessorEditor::performLayout()
             hpCell->setValueLabelGap (labelGap);
             lpCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             lpCell->setValueLabelGap (labelGap);
+            // Ensure Q and Q LINK exist and configured
+            if (!filterQCell)  filterQCell  = std::make_unique<KnobCell>(filterQ, filterQValue, "Q");
+            if (!qClusterCell) qClusterCell = std::make_unique<KnobCell>(qClusterDummySlider, qClusterDummyValue, "Q LINK");
+            // Configure Q-Link cluster as horizontal aux group
+            qClusterCell->setShowKnob (false);
+            qClusterCell->setMiniPlacementRight (true);
+            qClusterCell->setMiniThicknessPx (Layout::dp (12, s));
+            qClusterCell->setAuxAsBars (true);
+            qClusterCell->setAuxComponents ({ &qLinkButton, &hpQSlider, &lpQSlider }, Layout::dp (90, s));
+            hpQSlider.getProperties().set ("micro", true);
+            lpQSlider.getProperties().set ("micro", true);
+            filterQCell ->setMetrics (lPx, valuePx, labelGap);
+            qClusterCell->setMetrics (lPx, valuePx, labelGap);
+            for (auto* c : { filterQCell.get(), qClusterCell.get() }) { if (c) { c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGap); } }
             addAndMakeVisible (*bassCell);
             addAndMakeVisible (*hpCell);
+            addAndMakeVisible (*filterQCell);
+            addAndMakeVisible (*qClusterCell);
             addAndMakeVisible (*lpCell);
             // 1x8 grid across left group row 1
             juce::Grid lg1; lg1.rowGap = juce::Grid::Px (0); lg1.columnGap = juce::Grid::Px (0);
             lg1.templateRows = { juce::Grid::Px (containerHeight) };
             const int colW1 = juce::jmax (1, left.getWidth() / 8);
-            lg1.templateColumns = { juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1) };
+            lg1.templateColumns = { juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1), juce::Grid::Px (colW1) };
             lg1.items = {
                 // BASS spans columns 1-2
                 juce::GridItem (*bassCell) .withArea (1, 1, 2, 3),
-                // HP and LP at 3 and 4
-                juce::GridItem (*hpCell)   .withArea (1, 3),
-                juce::GridItem (*lpCell)   .withArea (1, 4)
+                // HP, Q, Q LINK, LP at 3,4,5,6
+                juce::GridItem (*hpCell)      .withArea (1, 3),
+                juce::GridItem (*filterQCell) .withArea (1, 4),
+                juce::GridItem (*qClusterCell).withArea (1, 5),
+                juce::GridItem (*lpCell)      .withArea (1, 6)
             };
             lg1.performLayout (left);
         }
@@ -3421,10 +3443,16 @@ void MyPluginAudioProcessorEditor::performLayout()
                 cg1.templateRows = { juce::Grid::Px (containerHeight) };
                 // 4 columns: use first three for Gain/Mix/WetOnly; leave col4 empty for balance/future
                 cg1.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
+                // Add Drive into col3 and move Wet Only to col4
+                if (!satDriveCell) satDriveCell = std::make_unique<KnobCell>(satDrive, satDriveValue, "DRIVE");
+                satDriveCell->setMetrics (lPx, valuePx, labelGap);
+                satDriveCell->getProperties().set ("metallic", true);
+                addAndMakeVisible (*satDriveCell);
                 cg1.items = {
-                    juce::GridItem (*gainCell)   .withArea (1, 1),
-                    juce::GridItem (*satMixCell) .withArea (1, 2),
-                    juce::GridItem (*wetOnlyCell).withArea (1, 3)
+                    juce::GridItem (*gainCell)    .withArea (1, 1),
+                    juce::GridItem (*satMixCell)  .withArea (1, 2),
+                    juce::GridItem (*satDriveCell).withArea (1, 3),
+                    juce::GridItem (*wetOnlyCell) .withArea (1, 4)
                 };
                 cg1.performLayout (centerR1);
             }
@@ -3438,7 +3466,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                 panCell ->resized();
             monoCell->resized();
             }
-            for (auto* c : { gainCell.get(), satMixCell.get() }) { if (c) { c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGap); } }
+            for (auto* c : { gainCell.get(), satMixCell.get(), satDriveCell.get() }) { if (c) { c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGap); } }
             panCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             panCell->setValueLabelGap (labelGap);
             monoCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
@@ -3447,21 +3475,14 @@ void MyPluginAudioProcessorEditor::performLayout()
             // Center group border removed after alignment verified
         }
 
-        // Left group Row2: AIR (double-wide cols 1-2), Q (3), Q-Link (4) | Width (5-8)
+        // Left group Row2: AIR (double-wide cols 1-2) | Width (shifted left to 3-6)
         {
             auto leftR2 = row2Base.removeFromLeft (leftW);
             // Ensure cells exist
-            if (!filterQCell)  filterQCell  = std::make_unique<KnobCell>(filterQ, filterQValue, "Q");
-            if (!qClusterCell) qClusterCell = std::make_unique<KnobCell>(qClusterDummySlider, qClusterDummyValue, "Q LINK");
+            // Q and Q LINK moved to Row 1
 
             // Configure Q-Link cluster as horizontal aux group
-            qClusterCell->setShowKnob (false);
-            qClusterCell->setMiniPlacementRight (true);
-            qClusterCell->setMiniThicknessPx (Layout::dp (12, s));
-            qClusterCell->setAuxAsBars (true);
-            qClusterCell->setAuxComponents ({ &qLinkButton, &hpQSlider, &lpQSlider }, Layout::dp (90, s));
-            hpQSlider.getProperties().set ("micro", true);
-            lpQSlider.getProperties().set ("micro", true);
+            // (none here)
 
             // Metrics for all eight slots
             // AIR double-wide with mini strip
@@ -3473,8 +3494,6 @@ void MyPluginAudioProcessorEditor::performLayout()
             airCell    ->setMiniThicknessPx (miniBarH);
             airCell    ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             airCell    ->setValueLabelGap (Layout::dp (6, s));
-            filterQCell ->setMetrics (lPx, valuePx, labelGap);
-            qClusterCell->setMetrics (lPx, valuePx, labelGap);
             widthCell   ->setMetrics (lPx, valuePx, labelGap);
             widthLoCell ->setMetrics (lPx, valuePx, labelGap);
             widthMidCell->setMetrics (lPx, valuePx, labelGap);
@@ -3482,8 +3501,6 @@ void MyPluginAudioProcessorEditor::performLayout()
 
             // Add to view
             addAndMakeVisible (*airCell);
-            addAndMakeVisible (*filterQCell);
-            addAndMakeVisible (*qClusterCell);
             addAndMakeVisible (*widthCell);
             addAndMakeVisible (*widthLoCell);
             addAndMakeVisible (*widthMidCell);
@@ -3492,21 +3509,18 @@ void MyPluginAudioProcessorEditor::performLayout()
             // 8 columns across left group (no extra col gaps)
             juce::Grid wg; wg.rowGap = juce::Grid::Px (0); wg.columnGap = juce::Grid::Px (0);
             wg.templateRows = { juce::Grid::Px (containerHeight) };
-            wg.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
+            wg.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
             juce::Array<juce::GridItem> wi;
-            // Slots 1-2: AIR double-wide; 3-4: Q, Q-Link
+            // Slots 1-2: AIR double-wide; 3-6: Width cluster shifted left; 7-8 remain empty for future
             wi.add (juce::GridItem (*airCell)     .withArea (1, 1, 2, 3));
-            wi.add (juce::GridItem (*filterQCell) .withArea (1, 3));
-            wi.add (juce::GridItem (*qClusterCell).withArea (1, 4));
-            // Slots 5-8: Width cluster
-            wi.add (juce::GridItem (*widthCell)   .withArea (1, 5));
-            wi.add (juce::GridItem (*widthLoCell) .withArea (1, 6));
-            wi.add (juce::GridItem (*widthMidCell).withArea (1, 7));
-            wi.add (juce::GridItem (*widthHiCell) .withArea (1, 8));
+            wi.add (juce::GridItem (*widthCell)   .withArea (1, 3));
+            wi.add (juce::GridItem (*widthLoCell) .withArea (1, 4));
+            wi.add (juce::GridItem (*widthMidCell).withArea (1, 5));
+            wi.add (juce::GridItem (*widthHiCell) .withArea (1, 6));
             wg.items = std::move (wi);
             wg.performLayout (leftR2);
 
-            for (auto* c : { airCell.get(), filterQCell.get(), qClusterCell.get(), widthCell.get(), widthLoCell.get(), widthMidCell.get(), widthHiCell.get() })
+            for (auto* c : { airCell.get(), widthCell.get(), widthLoCell.get(), widthMidCell.get(), widthHiCell.get() })
                 if (c) { c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGap); }
             airCell->setMiniWithLabel (&airFreqSlider, &airFreqValue, miniStripW);
             airFreqSlider.getProperties().set ("micro", true);
@@ -3536,13 +3550,18 @@ void MyPluginAudioProcessorEditor::performLayout()
             addAndMakeVisible (*tiltCell);
             addAndMakeVisible (*xoverLoCell);
             addAndMakeVisible (*xoverHiCell);
+            // Move SHUF LO/HI up to Row 3 (cols 4 and 5)
+            addAndMakeVisible (*shufLoCell);
+            addAndMakeVisible (*shufHiCell);
             juce::Grid lg3; lg3.rowGap = juce::Grid::Px (0); lg3.columnGap = juce::Grid::Px (0);
             lg3.templateRows = { juce::Grid::Px (containerHeight) };
-            lg3.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
+            lg3.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
             lg3.items = {
                 juce::GridItem (*tiltCell)   .withArea (1, 1, 2, 3),
                 juce::GridItem (*xoverLoCell).withArea (1, 3),
-                juce::GridItem (*xoverHiCell).withArea (1, 4)
+                juce::GridItem (*shufLoCell) .withArea (1, 4),
+                juce::GridItem (*shufHiCell) .withArea (1, 5),
+                juce::GridItem (*xoverHiCell).withArea (1, 6)
             };
             lg3.performLayout (leftR3);
         }
@@ -3633,25 +3652,78 @@ void MyPluginAudioProcessorEditor::performLayout()
 
     // --------- Saturation Engine (Group 1 Right): 4x4 grid ---------------------
     {
-        // Reserve a right-side panel area equal to 4 columns * cellW
+        // Reserve a right-side panel area equal to 4 columns * cellW for Motion Engine (right group)
         auto row = row1;
         const int cellW = lPx + Layout::dp (8, s);
-        const int satPanelW = cellW * 4;
+        const int satPanelW = cellW * 6; // allow 6 columns visible
         auto satBounds = juce::Rectangle<int>(row.getRight() - satPanelW, row.getY(), satPanelW, containerHeight * 4);
         juce::Grid satGrid;
         satGrid.rowGap = juce::Grid::Px (0);
         satGrid.columnGap = juce::Grid::Px (0);
+        // 4 rows (match left/center rows), 4 columns
         satGrid.templateRows = { juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight) };
-        satGrid.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
+        satGrid.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
+        // Move Motion Engine (legacy 4x6 grid) into this right panel
+        {
+            auto reparent = [this](juce::Component* c)
+            {
+                if (c == nullptr) return;
+                if (c->getParentComponent() == &bottomAltPanel)
+                    bottomAltPanel.removeChildComponent (c);
+                addAndMakeVisible (*c);
+            };
+            // Ensure metrics for knob cells
+            auto setKMetrics = [lPx, s](KnobCell* kc)
+            {
+                if (kc) kc->setMetrics (lPx, Layout::dp (14, s), Layout::dp (4, s));
+            };
 
-        // For now only Drive lives here; more knobs to follow.
-        if (!satDriveCell) satDriveCell = std::make_unique<KnobCell>(satDrive, satDriveValue, "DRIVE");
-        satDriveCell->setMetrics (lPx, Layout::dp (14, s), Layout::dp (4, s));
-        satDriveCell->getProperties().set ("metallic", false);
-        addAndMakeVisible (*satDriveCell);
-        juce::Array<juce::GridItem> satItems;
-        satItems.add (juce::GridItem (*satDriveCell).withArea (1, 1));
-        satGrid.items = std::move (satItems);
+            juce::Array<juce::GridItem> items;
+            // Row 1
+            reparent (motionButtonCells[0].get()); // Enable
+            reparent (motionComboCells[0].get());  // Panner
+            reparent (motionComboCells[1].get());  // Path
+            for (int idx : {3,4,5}) { if (motionCellsGroup2[idx]) { reparent (motionCellsGroup2[idx].get()); setKMetrics (motionCellsGroup2[idx].get()); } }
+            items.add (juce::GridItem (*motionButtonCells[0]).withArea (1,1));
+            items.add (juce::GridItem (*motionComboCells[0]) .withArea (1,2));
+            items.add (juce::GridItem (*motionComboCells[1]) .withArea (1,3));
+            items.add (juce::GridItem (*motionCellsGroup2[3]).withArea (1,4));
+            items.add (juce::GridItem (*motionCellsGroup2[4]).withArea (1,5));
+            items.add (juce::GridItem (*motionCellsGroup2[5]).withArea (1,6));
+
+            // Row 2
+            for (int idx : {6,7,8,9,11}) { if (motionCellsGroup2[idx]) { reparent (motionCellsGroup2[idx].get()); setKMetrics (motionCellsGroup2[idx].get()); } }
+            reparent (motionComboCells[2].get()); // Quant
+            items.add (juce::GridItem (*motionCellsGroup2[6]) .withArea (2,1));
+            items.add (juce::GridItem (*motionCellsGroup2[7]) .withArea (2,2));
+            items.add (juce::GridItem (*motionCellsGroup2[8]) .withArea (2,3));
+            items.add (juce::GridItem (*motionCellsGroup2[9]) .withArea (2,4));
+            items.add (juce::GridItem (*motionComboCells[2])  .withArea (2,5));
+            items.add (juce::GridItem (*motionCellsGroup2[11]).withArea (2,6));
+
+            // Row 3
+            for (int idx : {14,15,16,17}) { if (motionCellsGroup2[idx]) { reparent (motionCellsGroup2[idx].get()); setKMetrics (motionCellsGroup2[idx].get()); } }
+            reparent (motionComboCells[3].get());  // Mode
+            reparent (motionButtonCells[1].get()); // Retrig
+            items.add (juce::GridItem (*motionComboCells[3])  .withArea (3,1));
+            items.add (juce::GridItem (*motionButtonCells[1]).withArea (3,2));
+            items.add (juce::GridItem (*motionCellsGroup2[14]).withArea (3,3));
+            items.add (juce::GridItem (*motionCellsGroup2[15]).withArea (3,4));
+            items.add (juce::GridItem (*motionCellsGroup2[16]).withArea (3,5));
+            items.add (juce::GridItem (*motionCellsGroup2[17]).withArea (3,6));
+
+            // Row 4
+            for (int idx : {18,19,20,22,23}) { if (motionCellsGroup2[idx]) { reparent (motionCellsGroup2[idx].get()); setKMetrics (motionCellsGroup2[idx].get()); } }
+            reparent (motionButtonCells[2].get()); // Anchor
+            items.add (juce::GridItem (*motionCellsGroup2[18]).withArea (4,1));
+            items.add (juce::GridItem (*motionCellsGroup2[19]).withArea (4,2));
+            items.add (juce::GridItem (*motionCellsGroup2[20]).withArea (4,3));
+            items.add (juce::GridItem (*motionButtonCells[2]).withArea (4,4));
+            items.add (juce::GridItem (*motionCellsGroup2[22]).withArea (4,5));
+            items.add (juce::GridItem (*motionCellsGroup2[23]).withArea (4,6));
+
+            satGrid.items = std::move (items);
+        }
         satGrid.performLayout (satBounds);
     }
 
@@ -3715,10 +3787,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         addAndMakeVisible (*scoopCell);
         addAndMakeVisible (*rotationCell);
         addAndMakeVisible (*asymCell);
-        addAndMakeVisible (*shufLoCell);
-        addAndMakeVisible (*shufHiCell);
         addAndMakeVisible (*shufXCell);
-
         juce::Grid imgGrid;
         imgGrid.rowGap    = juce::Grid::Px (gapI);
         imgGrid.columnGap = juce::Grid::Px (0);
@@ -3730,8 +3799,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             const int cellW = lPx + Layout::dp (8, s);
             imgGrid.templateColumns = {
                 juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
-                juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
-                juce::Grid::Px (cellW)
+                juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW)
             };
         }
 
@@ -3783,14 +3851,11 @@ void MyPluginAudioProcessorEditor::performLayout()
 
         imgGrid.items = {
             // Row 4: SCOOP spans columns 1-2, then imaging continues
-            juce::GridItem (*scoopCell)   .withArea (1, 1, 2, 3),
-            juce::GridItem (*rotationCell).withArea (1, 3),
-            juce::GridItem (*asymCell)    .withArea (1, 4),
-            juce::GridItem (*shufLoCell)  .withArea (1, 5),
-            juce::GridItem (*shufHiCell)  .withArea (1, 6),
-            juce::GridItem (*shufXCell)   .withArea (1, 7),
-            // 8: S only (Q and Q-cluster moved to combined strip)
-            juce::GridItem (*shelfShapeCell).withArea (1, 8)
+            juce::GridItem (*scoopCell)     .withArea (1, 1, 2, 3),
+            juce::GridItem (*rotationCell)  .withArea (1, 3),
+            juce::GridItem (*asymCell)      .withArea (1, 4),
+            juce::GridItem (*shufXCell)     .withArea (1, 5),
+            juce::GridItem (*shelfShapeCell).withArea (1, 6)
         };
         // Lay out imaging row across full left group width (no reserved HP/LP strip)
         imgGrid.performLayout (row4);
@@ -4045,7 +4110,6 @@ void MyPluginAudioProcessorEditor::setScaleFactor (float newScale)
     resized();
     repaint();
 }
-
 void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
 {
     auto set = [](juce::Label& l, const juce::String& t){ l.setText (t, juce::dontSendNotification); };
@@ -4390,7 +4454,6 @@ void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
     pad.setShuffler    ((float) shufLoPct.getValue(), (float) shufHiPct.getValue(), (float) shufXHz.getValue());
     updateMutedKnobVisuals();
 }
-
 void MyPluginAudioProcessorEditor::updateMotionParameterAttachments(int pannerSelect)
 {
     using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
