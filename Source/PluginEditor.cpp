@@ -1824,11 +1824,11 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     initCenterKnob (centerPhaseAmt01);
     initCenterKnob (centerLockDb);
     // Provide names for LNF to draw knob-centered labels (match left-group behavior)
-    centerPromDb.setName    ("CENTER PROM");
-    centerFocusLoHz.setName ("FOCUS LO");
-    centerFocusHiHz.setName ("FOCUS HI");
-    centerPunchAmt01.setName("PUNCH AMT");
-    centerPhaseAmt01.setName("PHASE AMT");
+    centerPromDb.setName    ("CNTR");
+    centerFocusLoHz.setName ("LO");
+    centerFocusHiHz.setName ("HI");
+    centerPunchAmt01.setName("PUNCH");
+    centerPhaseAmt01.setName("PHASE");
     centerLockDb.setName    ("LOCK dB");
     if (!monoSlopeSwitch)
         monoSlopeSwitch = std::make_unique<MonoSlopeSwitch>();
@@ -3526,7 +3526,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             if (!centerPunchModeCell) { centerPunchModeCell = std::make_unique<SwitchCell>(centerPunchMode); centerPunchModeCell->setCaption ("PUNCH MODE"); }
             if (!centerPhaseRecCell)  { centerPhaseRecCell  = std::make_unique<SwitchCell>(centerPhaseRecOn); centerPhaseRecCell->setCaption ("PHASE REC"); }
             if (!centerPhaseAmtCell)  centerPhaseAmtCell  = std::make_unique<KnobCell>(centerPhaseAmt01, centerPhaseAmtVal, "");
-            if (!centerLockOnCell)    { centerLockOnCell    = std::make_unique<SwitchCell>(centerLockOn); centerLockOnCell->setCaption ("CENTER LOCK"); }
+            if (!centerLockOnCell)    { centerLockOnCell    = std::make_unique<SwitchCell>(centerLockOn); centerLockOnCell->setCaption ("CNTR LOCK"); }
             if (!centerLockDbCell)    centerLockDbCell    = std::make_unique<KnobCell>(centerLockDb, centerLockDbVal, "");
 
             for (auto* kc : { centerPromCell.get(), centerFocusLoCell.get(), centerFocusHiCell.get(), centerPunchAmtCell.get(), centerPhaseAmtCell.get(), centerLockDbCell.get() })
@@ -3550,10 +3550,10 @@ void MyPluginAudioProcessorEditor::performLayout()
                 g.templateRows = { juce::Grid::Px (containerHeight) };
                 g.templateColumns = { juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW) };
                 g.items = {
-                    juce::GridItem (*centerPromCell)    .withArea (1, 1),
-                    juce::GridItem (*centerFocusLoCell) .withArea (1, 2),
-                    juce::GridItem (*centerFocusHiCell) .withArea (1, 3),
-                    juce::GridItem (*centerPunchAmtCell).withArea (1, 4)
+                    juce::GridItem (*centerPunchAmtCell).withArea (1, 1),
+                    juce::GridItem (*centerPromCell)    .withArea (1, 2),
+                    juce::GridItem (*centerFocusLoCell) .withArea (1, 3),
+                    juce::GridItem (*centerFocusHiCell) .withArea (1, 4)
                 };
                 g.performLayout (centerR3);
             }
