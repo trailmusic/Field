@@ -123,6 +123,7 @@ Checklist:
 - Repaint highlighting on (Debug): verify child-only repaint during drags
 - Interaction sweep: fast drags; confirm no creation/reparenting in logs
 - Timer sweep: disable meters/animations → baseline; re-enable at 15–30 Hz; confirm stability
+- Adaptive burst sweep: begin dragging any control; confirm editor timer rises to ~60 Hz during interaction and returns to ~30 Hz within ~150 ms after release; ensure CPU drops back accordingly.
 
 ---
 
@@ -181,10 +182,26 @@ Action: confirm `performLayout` is called only on size/layout changes, not durin
 ```
 
 Planned fixes for PluginEditor:
-- [ ] Replace hardcoded colours with `lf->theme.*` with fallbacks removed
+- [x] Replace hardcoded colours with `lf->theme.*` with fallbacks removed
 - [ ] Remove `placeLabelBelow` use; ensure all `KnobCell` use Managed labels
-- [ ] Audit timers; reduce to 15–30 Hz where acceptable
+- [x] Audit timers; reduce to 15–30 Hz where acceptable
 - [ ] Verify `performLayout` call sites; avoid during drag/timer paths
 - [ ] Consider `setOpaque(true)` for containers fully painting their background
+
+
+### Completed actions (2025-09-22)
+- Theme colours in Pan overlay and labels
+  - `Source/PluginEditor.h` → `PanSlider::paint`: overlay arcs now use `FieldLNF::theme.accent` with fallback to `Colours::lightblue`; label text uses `theme.text` with fallback.
+  - Removes dependency on hardcoded blue (`0xFF5AA9E6`) in paint path.
+- Editor heartbeat timer normalized
+  - `Source/PluginEditor.cpp` → editor ctor: added `startTimerHz(30)`. Existing `timerCallback` retains internal throttling (e.g., heavy work ~10 Hz; modal-aware skip). This balances smoothness and CPU.
+- Paint-path allocation reductions
+  - `Source/PluginEditor.cpp` → `XYPad::drawEQCurves`: preallocate `juce::Path` storage (`preallocateSpace`) based on sample count to prevent per-frame reallocations.
+ - Adaptive site-wide refresh burst (interaction-driven)
+  - `Source/PluginEditor.*`: editor runs at 30 Hz baseline and automatically bursts to 60 Hz while the user is interacting (mouse down/drag/wheel) and for ~150 ms after, then returns to 30 Hz.
+  - Implemented via a child-propagating MouseListener proxy and a timer Hz adjustment in `timerCallback`. This keeps idle cost low while making drags feel crisp.
+
+Notes:
+- Build succeeded for Standalone/AU/VST3. Several warnings remain (deprecated `Font`, unused vars). Track in Analyzer/Machine/Imager cleanup passes; visuals preserved.
 
 

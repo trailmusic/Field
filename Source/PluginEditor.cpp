@@ -777,6 +777,19 @@ void XYPad::drawEQCurves (juce::Graphics& g, juce::Rectangle<float> b)
     };
 
     juce::Path hpLp, hpFill, lpFill, airP, airFill, tiltP, tiltFill, bassP, bassFill, scoopP, scoopFill;
+    // Reserve to reduce per-frame allocations in paint
+    const int reservePts = juce::jmax (N * 3, 256);
+    hpLp.preallocateSpace (reservePts);
+    hpFill.preallocateSpace (reservePts);
+    lpFill.preallocateSpace (reservePts);
+    airP.preallocateSpace (reservePts);
+    airFill.preallocateSpace (reservePts);
+    tiltP.preallocateSpace (reservePts);
+    tiltFill.preallocateSpace (reservePts);
+    bassP.preallocateSpace (reservePts);
+    bassFill.preallocateSpace (reservePts);
+    scoopP.preallocateSpace (reservePts);
+    scoopFill.preallocateSpace (reservePts);
     for (int i = 0; i < N; ++i)
     {
         const float t01 = (float) i / (float) (N - 1);
@@ -1137,6 +1150,11 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     lnf.theme.accent = juce::Colour (0xFF5AA9E6); // ocean default
     lnf.setupColours();
     setLookAndFeel (&lnf);
+
+    // Drive editor heartbeat at 30 Hz (UI updates throttled within timer)
+    startTimerHz (30);
+    uiTimerHzCurrent = 30;
+    addMouseListener (this, true); // receive events from all children
 
     // History removed
 
@@ -3738,6 +3756,7 @@ void MyPluginAudioProcessorEditor::performLayout()
 
 void MyPluginAudioProcessorEditor::mouseDown (const juce::MouseEvent& e)
 {
+    noteUserInteraction();
     const int grip = 16;
     if (e.position.x > getWidth() - grip && e.position.y > getHeight() - grip)
     {
@@ -3749,6 +3768,7 @@ void MyPluginAudioProcessorEditor::mouseDown (const juce::MouseEvent& e)
 
 void MyPluginAudioProcessorEditor::mouseDrag (const juce::MouseEvent& e)
 {
+    noteUserInteraction();
     if (!isResizing) return;
     auto d = e.getPosition() - resizeStart;
     
@@ -3810,7 +3830,12 @@ void MyPluginAudioProcessorEditor::mouseDrag (const juce::MouseEvent& e)
     setBounds (originalBounds.withSize (newWidth, newHeight));
 }
 
-void MyPluginAudioProcessorEditor::mouseUp (const juce::MouseEvent&) { isResizing = false; }
+void MyPluginAudioProcessorEditor::mouseUp (const juce::MouseEvent& e)
+{
+    noteUserInteraction();
+    juce::ignoreUnused (e);
+    isResizing = false;
+}
 
 void MyPluginAudioProcessorEditor::resized()
 {
@@ -3831,6 +3856,15 @@ void MyPluginAudioProcessorEditor::resized()
 void MyPluginAudioProcessorEditor::timerCallback()
 {
     if (! isShowing()) return;
+    // Adaptive timer: burst to 60 Hz for ~150 ms after any user interaction, then 30 Hz
+    const auto now = juce::Time::getMillisecondCounter();
+    const bool burst = (now - lastUserInteractionMs) <= 150;
+    const int targetHz = burst ? 60 : 30;
+    if (targetHz != uiTimerHzCurrent)
+    {
+        uiTimerHzCurrent = targetHz;
+        startTimerHz (uiTimerHzCurrent);
+    }
     // Throttle heavy UI work to reduce message-thread contention (combobox/popup lag)
     static int uiTick = 0; ++uiTick;
     const bool doHeavyUi = (uiTick % 3) == 0; // ~6-7 Hz when timer is 20 Hz

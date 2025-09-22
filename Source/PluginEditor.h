@@ -654,6 +654,8 @@ public:
     void buttonClicked(juce::Button* button) override;
     void parameterChanged(const juce::String& parameterID, float newValue) override;
 
+    // Site-wide interaction tracking (proxy captures child events; we patch explicit handlers in cpp)
+
     // Header hover (kept timer; cosmetic)
     void mouseEnter (const juce::MouseEvent& e) override
     { 
@@ -736,7 +738,10 @@ public:
                                             juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi);
                 valueBorder.addArc(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(),
                                  juce::MathConstants<float>::pi, valueAngle, true);
-                g.setColour(juce::Colour(0xFF5AA9E6).withAlpha(0.8f)); // blue accent
+                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                    g.setColour(lf->theme.accent.withAlpha(0.8f));
+                else
+                    g.setColour(juce::Colours::lightblue.withAlpha(0.8f));
                 g.strokePath(valueBorder, juce::PathStrokeType(borderThickness));
             }
             
@@ -751,7 +756,10 @@ public:
                                            juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi);
                 leftBorder.addArc(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(),
                                  juce::MathConstants<float>::pi, leftAngle, true);
-                g.setColour(juce::Colour(0xFF5AA9E6).withAlpha(0.8f));
+                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                    g.setColour(lf->theme.accent.withAlpha(0.8f));
+                else
+                    g.setColour(juce::Colours::lightblue.withAlpha(0.8f));
                 g.strokePath(leftBorder, juce::PathStrokeType(borderThickness));
                 
                 juce::Path rightBorder;
@@ -766,7 +774,10 @@ public:
             
             if (knobLabel.isNotEmpty())
             {
-                g.setColour(juce::Colour(0xFFF0F2F5));
+                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                    g.setColour(lf->theme.text);
+                else
+                    g.setColour(juce::Colours::ghostwhite);
                 g.setFont(juce::Font(juce::FontOptions(14.0f).withStyle("Bold")));
                 g.drawText(knobLabel, bounds, juce::Justification::centred);
             }
@@ -2215,6 +2226,23 @@ private:
     bool headerHovered = false;
     bool headerHoverActive = false;
     const int headerHoverOffDelayMs = 160;
+
+    // Adaptive UI refresh (burst to 60 Hz during user interaction)
+    juce::uint32 lastUserInteractionMs { 0 };
+    int          uiTimerHzCurrent { 30 };
+    void noteUserInteraction() { lastUserInteractionMs = juce::Time::getMillisecondCounter(); }
+
+    struct BurstMouseProxy : public juce::MouseListener
+    {
+        explicit BurstMouseProxy (MyPluginAudioProcessorEditor& o) : owner (o) {}
+        void mouseDown (const juce::MouseEvent&) override               { owner.noteUserInteraction(); }
+        void mouseDrag (const juce::MouseEvent&) override               { owner.noteUserInteraction(); }
+        void mouseUp   (const juce::MouseEvent&) override               { owner.noteUserInteraction(); }
+        void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override { owner.noteUserInteraction(); }
+    private:
+        MyPluginAudioProcessorEditor& owner;
+    };
+    std::unique_ptr<BurstMouseProxy> burstMouseProxy;
 
     // Cached layout
     juce::Rectangle<int> dividerVolBounds;
