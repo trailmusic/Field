@@ -2,6 +2,7 @@
 #include <JuceHeader.h>
 #include "ProcessedSpectrumPane.h"
 #include "ImagerPane.h"
+#include "BandPane.h"
 #include "machine/MachinePane.h"
 #include "../IconSystem.h"
 #include "../motion/MotionPanel.h"
@@ -51,7 +52,7 @@ public:
         xy   = std::make_unique<XYPaneAdapter> (xyPadRef);
         spec = std::make_unique<ProcessedSpectrumPane> (lnf);
         imgr = std::make_unique<ImagerPane>();
-        band = std::make_unique<juce::Component>(); // scaffold placeholder
+        band = std::make_unique<BandPane>();
         motion = std::make_unique<motion::MotionPanel>(p.apvts, nullptr);
         mach = std::make_unique<MachinePane>(p, state, lnf);
         // Visuals-only Reverb pane (no grid controls duplicated here)
@@ -147,6 +148,10 @@ public:
 
         // keep-warm option removed
         startTimerHz (20);
+        if (auto* bp = dynamic_cast<BandPane*>(band.get()))
+        {
+            bp->setParamEditCallback ([this](const juce::String& id, float value){ setParamAutomated (id, value); });
+        }
         if (auto* ip = imgr.get())
         {
             ip->onUiChange = [this](const juce::String& key, const juce::var& v)
@@ -237,6 +242,27 @@ public:
                     ip->setWidths (*wLo, *wMi, *wHi);
             }
         }
+        const bool wantBand = (active == PaneID::Band) && doHeavy;
+        if (wantBand && band)
+        {
+            if (auto* bp = dynamic_cast<BandPane*>(band.get()))
+            {
+                int nPost = proc.visPost.pull (tmpPost, maxPull);
+                if (nPost > 0)
+                    bp->pushBlock (tmpPost.getReadPointer(0), tmpPost.getNumChannels()>1?tmpPost.getReadPointer(1):nullptr, nPost, false);
+                int nPre = proc.visPre.pull (tmpPre, maxPull);
+                if (nPre > 0)
+                    bp->pushBlock (tmpPre.getReadPointer(0), tmpPre.getNumChannels()>1?tmpPre.getReadPointer(1):nullptr, nPre, true);
+
+                if (auto* pLo = proc.apvts.getRawParameterValue ("xover_lo_hz"))
+                if (auto* pHi = proc.apvts.getRawParameterValue ("xover_hi_hz"))
+                    bp->setCrossovers (*pLo, *pHi);
+                if (auto* wLo = proc.apvts.getRawParameterValue ("width_lo"))
+                if (auto* wMi = proc.apvts.getRawParameterValue ("width_mid"))
+                if (auto* wHi = proc.apvts.getRawParameterValue ("width_hi"))
+                    bp->setWidths (*wLo, *wMi, *wHi);
+            }
+        }
         const bool wantMach = (active == PaneID::Machine) && doHeavy;
         if (wantMach && mach)
         {
@@ -255,6 +281,7 @@ public:
     {
         if (spec) spec->setSampleRate (fs);
         if (auto* ip = dynamic_cast<ImagerPane*>(imgr.get())) ip->setSampleRate (fs);
+        if (auto* bp = dynamic_cast<BandPane*>(band.get())) bp->setSampleRate (fs);
         if (auto* mp = mach.get()) mp->setSampleRate (fs);
     }
     
@@ -506,14 +533,14 @@ public:
             draw (2, "Imager",     PaneID::Imager);
             draw (3, "Band",       PaneID::Band);
             draw (4, "Motion",     PaneID::Motion);
-            draw (5, "Machine",    PaneID::Machine);
-            draw (6, "Reverb",     PaneID::Reverb);
-            draw (7, "Delay",      PaneID::Delay);
+            draw (5, "Reverb",     PaneID::Reverb);
+            draw (6, "Delay",      PaneID::Delay);
+            draw (7, "Machine",    PaneID::Machine);
         }
         void mouseUp (const juce::MouseEvent& e) override
         {
             const int N = 8; int idx = juce::jlimit (0, N-1, e.x * N / juce::jmax (1, getWidth()));
-            PaneID id = idx==0 ? PaneID::XY : idx==1 ? PaneID::Spectrum : idx==2 ? PaneID::Imager : idx==3 ? PaneID::Band : idx==4 ? PaneID::Motion : idx==5 ? PaneID::Machine : idx==6 ? PaneID::Reverb : PaneID::Delay;
+            PaneID id = idx==0 ? PaneID::XY : idx==1 ? PaneID::Spectrum : idx==2 ? PaneID::Imager : idx==3 ? PaneID::Band : idx==4 ? PaneID::Motion : idx==5 ? PaneID::Reverb : idx==6 ? PaneID::Delay : PaneID::Machine;
             current = id; if (onSelect) onSelect (id); repaint();
             if (e.mods.isPopupMenu()) { if (onShowMenu) onShowMenu (e.getPosition()); }
         }
@@ -530,7 +557,7 @@ private:
     std::unique_ptr<XYPaneAdapter>         xy;
     std::unique_ptr<ProcessedSpectrumPane> spec;
     std::unique_ptr<ImagerPane>            imgr;
-    std::unique_ptr<juce::Component>       band;
+    std::unique_ptr<BandPane>              band;
     std::unique_ptr<juce::Component>       motion;
     std::unique_ptr<MachinePane>           mach;
     std::unique_ptr<ReverbPanel>            reverb;

@@ -1895,6 +1895,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // Center group: init punch mode choices
     centerPunchMode.addItem ("toSides",  1);
     centerPunchMode.addItem ("toCenter", 2);
+    centerPunchMode.getProperties().set ("tintedSelected", true);
 
     // Center group: ensure rotary knobs and no text boxes (avoid duplicate labels)
     auto initCenterKnob = [this] (juce::Slider& s)
@@ -2817,23 +2818,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         helpButton.setBounds (helpX, helpY, btnW, btnH);
         addAndMakeVisible (helpButton);
 
-        // Bottom-center toggle button to switch bottom control area
-        {
-            const int toggleW = Layout::dp (120, s);
-            const int toggleH = btnH * 2;
-            const int cx = bounds.getCentreX() - Layout::dp (80, s);
-            const int ty = bounds.getBottom() - padding - toggleH;
-            bottomAreaToggle.setButtonText ("");
-            bottomAreaToggle.setClickingTogglesState (true);
-            static BottomChevronLNF bottomChevronLNF; bottomAreaToggle.setLookAndFeel (&bottomChevronLNF);
-            addAndMakeVisible (bottomAreaToggle);
-            bottomAreaToggle.setBounds (cx - toggleW/2, ty, toggleW, toggleH);
-            bottomAreaToggle.onClick = [this]
-            {
-                bottomAltTargetOn = bottomAreaToggle.getToggleState();
-                // kick simple slide animation by repainting/relayout in timer
-            };
-        }
+        // Bottom-center toggle removed; free scrolling via viewport replaces this trigger
     }
 
     // divider left of Snap (Divider | Snap | Split)
@@ -2974,11 +2959,6 @@ void MyPluginAudioProcessorEditor::performLayout()
     }
     // Alternate bottom panel (slides over bottom rows when enabled)
     {
-        // Progress towards target with symmetric easing (smooth but brisk)
-        const float target    = bottomAltTargetOn ? 1.0f : 0.0f;
-        const float rate      = 0.28f; // higher = faster response; tuned for brisk smoothness
-        bottomAltSlide01     += (target - bottomAltSlide01) * rate;
-        bottomAltSlide01      = juce::jlimit (0.0f, 1.0f, bottomAltSlide01);
 
         // Reserve a rectangle covering bottom rows (1..4), just below the XY pad
         // Stop position (active): panel bottom sits above the bottom bar by a small gap
@@ -2993,46 +2973,40 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int stackTop        = row1.getY();
         const int activeGapPx     = Layout::dp (20,  s);  // keep a tight visual gap when active
         const int hiddenGapPx     = Layout::dp (100, s);  // move panel further DOWN when hidden
-        const int activeBaseline  = juce::jmax (stackTop, bottomBarTop - activeGapPx);
-        const int hiddenBaseline  = bottomBarBottom + hiddenGapPx;
-        const int overlayH        = juce::jmax (0, activeBaseline - stackTop);
-        const int overlayW        = rowsArea.getWidth();
-        // Delay appearance so the top never breaks the baseline when nearly inactive (symmetric)
-        const float appearThresh = 0.10f; // wait until ~10% of slide to show
-        const float t0           = juce::jlimit (0.0f, 1.0f, (bottomAltSlide01 - appearThresh) / juce::jmax (0.0001f, 1.0f - appearThresh));
-        // Cosine ease-in-out for matching up/down feel
-        const float effSlide     = 0.5f - 0.5f * std::cos (juce::MathConstants<float>::pi * t0);
-        // Animate bottom edge between hidden and active baselines; top rises from bottom towards stackTop
-        const int bottomY  = juce::roundToInt (juce::jmap (effSlide, 0.0f, 1.0f, (float) hiddenBaseline, (float) activeBaseline));
-        const int curTop   = bottomY - juce::roundToInt ((float) overlayH * effSlide);
+        overlayActiveBaseline  = juce::jmax (stackTop, bottomBarTop - activeGapPx);
+        overlayHiddenBaseline  = bottomBarBottom + hiddenGapPx;
+        overlayHeightPx        = juce::jmax (0, overlayActiveBaseline - stackTop);
 
-        // Mount sliding panel inside leftContentContainer exactly over the 4 control rows
+        // Mount viewport over the 4 control rows area and stack Group 1 (top) and Group 2 (below)
         const int totalRowsH_local = rowH1 + rowH2 + rowH3 + rowH4;
+        controlRowsHeightPx = totalRowsH_local;
         auto rowsLocalRect = leftContentContainer.getLocalBounds().removeFromBottom (totalRowsH_local);
-        auto overlayLocal  = rowsLocalRect;
-        const bool showPanel = effSlide > 0.001f;
-        if (showPanel)
+        if (controlsViewport.getParentComponent() != &leftContentContainer)
+            leftContentContainer.addAndMakeVisible (controlsViewport);
+        controlsViewport.setBounds (rowsLocalRect);
+        controlsViewport.setScrollBarsShown (true, false);
+        controlsViewport.setInterceptsMouseClicks (true, true);
+        // Theme the vertical scrollbar with accent
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
         {
-            if (bottomAltPanel.getParentComponent() != &leftContentContainer) leftContentContainer.addAndMakeVisible (bottomAltPanel);
-            bottomAltPanel.setBounds (overlayLocal);
-            bottomAltPanel.setInterceptsMouseClicks (true, false);
-            bottomAltPanel.setVisible (true);
-            bottomAltPanel.toFront (true);
+            auto& vsb = controlsViewport.getVerticalScrollBar();
+            vsb.setColour (juce::ScrollBar::thumbColourId, lf->theme.accent);
+            vsb.setColour (juce::ScrollBar::trackColourId, lf->theme.panel.darker (0.10f));
         }
-        else
-        {
-            bottomAltPanel.setVisible (false);
-        }
+        if (group1Container.getParentComponent() != &controlsContent)
+            controlsContent.addAndMakeVisible (group1Container);
+        if (group2Container.getParentComponent() != &controlsContent)
+            controlsContent.addAndMakeVisible (group2Container);
+        group1Container.setBounds (juce::Rectangle<int> (0, 0, rowsLocalRect.getWidth(), totalRowsH_local));
+        group2Container.setBounds (juce::Rectangle<int> (0, totalRowsH_local, rowsLocalRect.getWidth(), totalRowsH_local));
+        controlsContent.setBounds (juce::Rectangle<int> (0, 0, rowsLocalRect.getWidth(), totalRowsH_local * 2));
+        controlsViewport.setViewedComponent (&controlsContent, false);
 
-        // Motion Engine now only lives in Group 1; no special visibility toggling here
-        // Ensure the toggle button always remains visible above the sliding panel
-        bottomAreaToggle.toFront (true);
-        // Ensure the toggle button always remains visible above the sliding panel
-        bottomAreaToggle.toFront (true);
+        // Remove reliance on bottomAreaToggle; viewport scrolling will replace this trigger
 
         // Motion Engine: removed from Group 2. Lives only in Group 1 flat grid.
-        // Group 2 panel should align exactly over the 4 control rows area
-        auto b = bottomAltPanel.getLocalBounds();
+        // Group 2 content local bounds (will be used in viewport stack)
+        auto b = juce::Rectangle<int> (0, 0, group2Container.getWidth(), totalRowsH_local);
         // Delay group positioned directly in Group 2 panel (no container)
         const int availableWLocal = b.getWidth();
         const int cellWBase = lPx + Layout::dp (8, s);
@@ -3048,7 +3022,55 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int labelGap = Layout::dp (4, s);
         const int delayCellW = cellW;
         
-        // Create delay switch cells
+        // Build overlay contents once; mark dirty for reflow when size/scale changes
+        if (!overlayContentsBuilt)
+        {
+            // Create delay switch cells
+            if (!delayEnabledCell) { delayEnabled.setComponentID ("delayEnabled"); delayEnabled.getProperties().set ("iconType", (int) IconSystem::Power); delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled); delayEnabledCell->setCaption ("Enable"); delayEnabledCell->setDelayTheme (true); }
+            if (!delayModeCell)    { delayModeCell    = std::make_unique<SwitchCell> (delayMode);    delayModeCell->setCaption ("Mode"); delayMode.getProperties().set ("iconOnly", true); delayModeCell->setDelayTheme (true); }
+            if (!delaySyncCell)    { delaySync.getProperties().set ("iconType", (int) IconSystem::Link); delaySyncCell    = std::make_unique<SwitchCell> (delaySync);    delaySyncCell->setCaption ("Sync"); delaySyncCell->setDelayTheme (true); }
+            if (!delayGridFlavorSegments) delayGridFlavorSegments = std::make_unique<Segmented3Control>(proc.apvts, "delay_grid_flavor", juce::StringArray{ "S", "D", "T" });
+            if (!delayGridFlavorCell) { delayGridFlavorCell = std::make_unique<SwitchCell> (*delayGridFlavorSegments); delayGridFlavorCell->setCaption ("Feel"); delayGridFlavorCell->setDelayTheme (true); }
+            if (!delayPingpongCell)   { delayPingpong.getProperties().set ("iconType", (int) IconSystem::Stereo); delayPingpongCell = std::make_unique<SwitchCell> (delayPingpong); delayPingpongCell->setCaption ("Ping-Pong"); delayPingpongCell->setDelayTheme (true); }
+            if (!delayFreezeCell)     { delayFreeze.getProperties().set ("iconType", (int) IconSystem::Snowflake); delayFreezeCell  = std::make_unique<SwitchCell> (delayFreeze);   delayFreezeCell->setCaption ("Freeze"); delayFreezeCell->setDelayTheme (true); }
+            if (!delayKillDryCell)    { delayKillDry.getProperties().set ("iconType", (int) IconSystem::Mix); delayKillDryCell = std::make_unique<SwitchCell> (delayKillDry);  delayKillDryCell->setCaption ("Wet Only"); delayKillDry.setTooltip ("Wet Only: Removes the dry signal from the output (effects only)"); delayKillDryCell->setDelayTheme (true); }
+            if (!delayFilterTypeCell) { delayFilterTypeCell = std::make_unique<SwitchCell> (delayFilterType); delayFilterTypeCell->setCaption ("Filter"); delayFilterTypeCell->setDelayTheme (true); }
+            if (!delayDuckSourceCell) { delayDuckSourceCell = std::make_unique<SwitchCell> (delayDuckSource); delayDuckSourceCell->setCaption ("Duck Source"); delayDuckSourceCell->setDelayTheme (true); }
+            if (!delayDuckPostCell)   { delayDuckPost.getProperties().set ("iconType", (int) IconSystem::RightArrow); delayDuckPostCell = std::make_unique<SwitchCell> (delayDuckPost); delayDuckPostCell->setCaption ("Post"); delayDuckPostCell->setDelayTheme (true); }
+
+            // Create delay knob cells
+            if (!delayTimeCell)      delayTimeCell       = std::make_unique<KnobCell>(delayTime,      delayTimeValue,      "TIME");
+            if (!delayFeedbackCell)  delayFeedbackCell   = std::make_unique<KnobCell>(delayFeedback,  delayFeedbackValue,  "FB");
+            if (!delayWetCell)       delayWetCell        = std::make_unique<KnobCell>(delayWet,       delayWetValue,       "WET");
+            if (!delaySpreadCell)    delaySpreadCell     = std::make_unique<KnobCell>(delaySpread,    delaySpreadValue,    "SPREAD");
+            if (!delayWidthCell)     delayWidthCell      = std::make_unique<KnobCell>(delayWidth,     delayWidthValue,     "WIDTH");
+            if (!delayModRateCell)   delayModRateCell    = std::make_unique<KnobCell>(delayModRate,   delayModRateValue,   "RATE");
+            if (!delayModDepthCell)  delayModDepthCell   = std::make_unique<KnobCell>(delayModDepth,  delayModDepthValue,  "DEPTH");
+            if (!delayWowflutterCell)delayWowflutterCell = std::make_unique<KnobCell>(delayWowflutter,delayWowflutterValue,"WOW");
+            if (!delayJitterCell)    delayJitterCell     = std::make_unique<KnobCell>(delayJitter,    delayJitterValue,    "JITTER");
+            if (!delayHpCell)        delayHpCell         = std::make_unique<KnobCell>(delayHp,        delayHpValue,        "HP");
+            if (!delayLpCell)        delayLpCell         = std::make_unique<KnobCell>(delayLp,        delayLpValue,        "LP");
+            if (!delayTiltCell)      delayTiltCell       = std::make_unique<KnobCell>(delayTilt,      delayTiltValue,      "TILT");
+            if (!delaySatCell)       delaySatCell        = std::make_unique<KnobCell>(delaySat,       delaySatValue,       "SAT");
+            if (!delayDiffusionCell) delayDiffusionCell  = std::make_unique<KnobCell>(delayDiffusion, delayDiffusionValue, "DIFF");
+            if (!delayDiffuseSizeCell)delayDiffuseSizeCell= std::make_unique<KnobCell>(delayDiffuseSize, delayDiffuseSizeValue, "SIZE");
+            if (!delayDuckDepthCell) delayDuckDepthCell  = std::make_unique<KnobCell>(delayDuckDepth, delayDuckDepthValue, "DEPTH");
+            if (!delayDuckAttackCell)delayDuckAttackCell = std::make_unique<KnobCell>(delayDuckAttack,delayDuckAttackValue,"ATT");
+            if (!delayDuckReleaseCell)delayDuckReleaseCell=std::make_unique<KnobCell>(delayDuckRelease,delayDuckReleaseValue,"REL");
+            if (!delayDuckThresholdCell) delayDuckThresholdCell = std::make_unique<KnobCell>(delayDuckThreshold, delayDuckThresholdValue, "THR");
+            if (!delayDuckLookaheadCell) delayDuckLookaheadCell = std::make_unique<KnobCell>(delayDuckLookahead, delayDuckLookaheadValue, "LA");
+            if (!delayDuckRatioCell) delayDuckRatioCell = std::make_unique<KnobCell>(delayDuckRatio, delayDuckRatioValue, "RAT");
+            if (!delayPreDelayCell) delayPreDelayCell = std::make_unique<KnobCell>(delayPreDelay, delayPreDelayValue, "PRE");
+
+            // Add all delay cells directly to the Group 2 panel (once)
+            for (auto* c : { delayEnabledCell.get(), delayModeCell.get(), delaySyncCell.get(), delayGridFlavorCell.get(), delayPingpongCell.get(), delayFreezeCell.get(), delayKillDryCell.get(), delayFilterTypeCell.get(), delayDuckSourceCell.get(), delayDuckPostCell.get() })
+                if (c) { group2Container.addAndMakeVisible (*c); c->setShowBorder (true); }
+            for (auto* c : { delayTimeCell.get(), delayFeedbackCell.get(), delayWetCell.get(), delaySpreadCell.get(), delayWidthCell.get(), delayModRateCell.get(), delayModDepthCell.get(), delayWowflutterCell.get(), delayJitterCell.get(), delayPreDelayCell.get(), delayHpCell.get(), delayLpCell.get(), delayTiltCell.get(), delaySatCell.get(), delayDiffusionCell.get(), delayDiffuseSizeCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckThresholdCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
+                if (c) { group2Container.addAndMakeVisible (*c); c->setShowBorder (true); }
+
+            overlayContentsBuilt = true;
+            overlayLayoutDirty = true;
+        }
         if (!delayEnabledCell) { delayEnabled.setComponentID ("delayEnabled"); delayEnabled.getProperties().set ("iconType", (int) IconSystem::Power); delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled); delayEnabledCell->setCaption ("Enable"); delayEnabledCell->setDelayTheme (true); }
         if (!delayModeCell)    { delayModeCell    = std::make_unique<SwitchCell> (delayMode);    delayModeCell->setCaption ("Mode"); delayMode.getProperties().set ("iconOnly", true); delayModeCell->setDelayTheme (true); }
         if (!delaySyncCell)    { delaySync.getProperties().set ("iconType", (int) IconSystem::Link); delaySyncCell    = std::make_unique<SwitchCell> (delaySync);    delaySyncCell->setCaption ("Sync"); delaySyncCell->setDelayTheme (true); }
@@ -3097,12 +3119,14 @@ void MyPluginAudioProcessorEditor::performLayout()
         
         // Add all delay cells directly to the Group 2 panel
         for (auto* c : { delayEnabledCell.get(), delayModeCell.get(), delaySyncCell.get(), delayGridFlavorCell.get(), delayPingpongCell.get(), delayFreezeCell.get(), delayKillDryCell.get(), delayFilterTypeCell.get(), delayDuckSourceCell.get(), delayDuckPostCell.get() })
-            if (c) { bottomAltPanel.addAndMakeVisible (*c); c->setShowBorder (true); }
+            if (c) { group2Container.addAndMakeVisible (*c); c->setShowBorder (true); }
             
         for (auto* c : { delayTimeCell.get(), delayFeedbackCell.get(), delayWetCell.get(), delaySpreadCell.get(), delayWidthCell.get(), delayModRateCell.get(), delayModDepthCell.get(), delayWowflutterCell.get(), delayJitterCell.get(), delayPreDelayCell.get(), delayHpCell.get(), delayLpCell.get(), delayTiltCell.get(), delaySatCell.get(), delayDiffusionCell.get(), delayDiffuseSizeCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckThresholdCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
-            if (c) { bottomAltPanel.addAndMakeVisible (*c); c->setShowBorder (true); }
+            if (c) { group2Container.addAndMakeVisible (*c); c->setShowBorder (true); }
         
-        // Layout delay items in exact 4x7 grid order
+        // Layout delay items in exact 4x7 order (only when dirty)
+        if (overlayLayoutDirty)
+        {
         juce::Grid delayGrid;
         delayGrid.rowGap = juce::Grid::Px (0);
         delayGrid.columnGap = juce::Grid::Px (0);
@@ -3153,9 +3177,10 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::GridItem (*delayDuckRatioCell).withArea (4,8)
         };
         
-        // Perform layout within delay group area (no outer reduction/padding)
+        // Perform layout within delay group area (no outer reduction/padding) in group2Container local coords
         auto delayBounds = juce::Rectangle<int>(delayGroupX, delayGroupY, delayGroupW, delayGroupH);
         delayGrid.performLayout(delayBounds);
+        }
 
         // Delay visuals are rendered in the top Delay tab via PaneManager, not in Group 2
         
@@ -3201,8 +3226,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             auto ensureAdd = [this](juce::Component* c)
             {
                 if (!c) return;
-                if (c->getParentComponent() != &bottomAltPanel)
-                    bottomAltPanel.addAndMakeVisible (*c);
+                if (c->getParentComponent() != &group2Container)
+                    group2Container.addAndMakeVisible (*c);
                 if (auto* kc = dynamic_cast<KnobCell*>(c))
                 {
                     kc->setShowBorder (true);
@@ -3251,9 +3276,9 @@ void MyPluginAudioProcessorEditor::performLayout()
                 buttonAttachments.push_back (std::make_unique<ButtonAttachment> (proc.apvts, ReverbIDs::killDry, reverbWetOnly));
             }
 
-            bottomAltPanel.addAndMakeVisible (*reverbEnableCell);
-            bottomAltPanel.addAndMakeVisible (*reverbAlgoCell);
-            bottomAltPanel.addAndMakeVisible (*reverbWetOnlyCell);
+            group2Container.addAndMakeVisible (*reverbEnableCell);
+            group2Container.addAndMakeVisible (*reverbAlgoCell);
+            group2Container.addAndMakeVisible (*reverbWetOnlyCell);
             reverbEnableCell->getProperties().set ("reverbMaroonBorder", true);
             reverbAlgoCell  ->getProperties().set ("reverbMaroonBorder", true);
             reverbWetOnlyCell->getProperties().set ("reverbMaroonBorder", true);
@@ -3295,7 +3320,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                 reverbFreeze.getProperties().set ("iconType", (int) IconSystem::Snowflake);
                 reverbFreezeCell = std::make_unique<SwitchCell> (reverbFreeze);
                 reverbFreezeCell->setCaption ("Freeze");
-                bottomAltPanel.addAndMakeVisible (*reverbFreezeCell);
+                group2Container.addAndMakeVisible (*reverbFreezeCell);
                 buttonAttachments.push_back (std::make_unique<ButtonAttachment> (proc.apvts, ReverbIDs::freeze, reverbFreeze));
             }
 
@@ -3369,6 +3394,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             auto rbCentered = rb.withWidth (juce::jmin (rb.getWidth(), fixedW));
             rbCentered.setX (rb.getX() + (rb.getWidth() - rbCentered.getWidth())); // right-align to match group placement
             reverbGrid.performLayout (rbCentered);
+            overlayLayoutDirty = false;
         }
     }
     // ---------------- Group 1: flat 4x16 contiguous grid -----------------------
@@ -3376,13 +3402,13 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int valuePx = Layout::dp (14, s);
         const int labelGap = Layout::dp (4, s);
         const int cellWTarget = lPx + Layout::dp (8, s);
-        const int availableWLocal = leftContentContainer.getWidth();
+        const int availableWLocal = group1Container.getWidth();
         const int cellWFit = juce::jmax (1, availableWLocal / 16);
         const int cellW     = juce::jmin (cellWTarget, cellWFit);
 
         // Compute a single bounds covering rows 1-4 across the full left content width (container-local)
         const int totalRowsH = rowH1 + rowH2 + rowH3 + rowH4;
-        juce::Rectangle<int> group1BoundsLocal = leftContentContainer.getLocalBounds().removeFromBottom (totalRowsH);
+        juce::Rectangle<int> group1BoundsLocal = juce::Rectangle<int>(0, 0, group1Container.getWidth(), totalRowsH);
 
         // Ensure cells/components exist and have metrics
         {
@@ -3495,12 +3521,12 @@ void MyPluginAudioProcessorEditor::performLayout()
                 if (sc) { sc->getProperties().set ("metallic", true); }
         }
 
-        // Make visible
+        // Make visible (Group 1 into group1Container)
         auto addVis = [this](juce::Component* c)
         {
             if (!c) return;
-            if (c->getParentComponent() != &leftContentContainer)
-                leftContentContainer.addAndMakeVisible (*c);
+            if (c->getParentComponent() != &group1Container)
+                group1Container.addAndMakeVisible (*c);
         };
         addVis (bassCell.get());
         addVis (hpCell.get());
@@ -3541,10 +3567,10 @@ void MyPluginAudioProcessorEditor::performLayout()
         auto reparent = [this](juce::Component* c)
         {
             if (c == nullptr) return;
-            if (c->getParentComponent() == &bottomAltPanel)
-                bottomAltPanel.removeChildComponent (c);
-            if (c->getParentComponent() != &leftContentContainer)
-                leftContentContainer.addAndMakeVisible (*c);
+            if (c->getParentComponent() == &group2Container)
+                group2Container.removeChildComponent (c);
+            if (c->getParentComponent() != &group1Container)
+                group1Container.addAndMakeVisible (*c);
         };
         auto setKMetrics = [lPx, s](KnobCell* kc)
         {
@@ -3963,11 +3989,13 @@ void MyPluginAudioProcessorEditor::timerCallback()
         }
     }
 
-    // Drive bottom panel slide animation
+    // Drive bottom panel slide animation (move-only; no full relayout)
     if (doHeavyUi)
     {
-        if (bottomAltTargetOn && bottomAltSlide01 < 1.0f) { bottomAltSlide01 = juce::jmin (1.0f, bottomAltSlide01 + 0.06f); performLayout(); }
-        else if (!bottomAltTargetOn && bottomAltSlide01 > 0.0f) { bottomAltSlide01 = juce::jmax (0.0f, bottomAltSlide01 - 0.06f); performLayout(); }
+        bool changed = false;
+        if (bottomAltTargetOn && bottomAltSlide01 < 1.0f) { bottomAltSlide01 = juce::jmin (1.0f, bottomAltSlide01 + 0.06f); changed = true; }
+        else if (!bottomAltTargetOn && bottomAltSlide01 > 0.0f) { bottomAltSlide01 = juce::jmax (0.0f, bottomAltSlide01 - 0.06f); changed = true; }
+        if (changed) updateGroup2OverlayDuringSlide();
     }
 }
 
@@ -3977,6 +4005,35 @@ void MyPluginAudioProcessorEditor::paintOverChildren (juce::Graphics& g)
 {
     juce::ignoreUnused (g);
     // No extra overlay on top of children for now
+}
+
+// Move-only animation of Group 2 overlay; avoid reflow during slide
+void MyPluginAudioProcessorEditor::updateGroup2OverlayDuringSlide()
+{
+    // Compute eased slide progress for visual feel
+    const float appearThresh = 0.10f;
+    const float t0 = juce::jlimit (0.0f, 1.0f, (bottomAltSlide01 - appearThresh) / juce::jmax (0.0001f, 1.0f - appearThresh));
+    const float effSlide = 0.5f - 0.5f * std::cos (juce::MathConstants<float>::pi * t0);
+
+    // Animate between cached baselines; keep bounds fixed to overlay rect
+    const int bottomY = juce::roundToInt (juce::jmap (effSlide, 0.0f, 1.0f, (float) overlayHiddenBaseline, (float) overlayActiveBaseline));
+    const int curTop  = bottomY - juce::roundToInt ((float) overlayHeightPx * effSlide);
+
+    // Set visibility based on threshold
+    const bool showPanel = effSlide > 0.001f;
+    bottomAltPanel.setVisible (showPanel);
+    if (!showPanel) return;
+
+    // We keep the overlay sized to overlayLocalRect, and slide its clip region via setBounds() within that local rect
+    // Move by adjusting Y within the overlayLocalRect height (top anchored by curTop relative to leftContentContainer rows stack top)
+    // Here we compute a translation within the same width and height
+    auto base = overlayLocalRect;
+    const int desiredTop = curTop; // curTop is relative to leftContentContainer
+    const int deltaY = desiredTop - base.getY();
+    base.translate (0, deltaY);
+    bottomAltPanel.setBounds (base);
+    bottomAltPanel.toFront (true);
+    bottomAreaToggle.toFront (true);
 }
 
 void MyPluginAudioProcessorEditor::setScaleFactor (float newScale)

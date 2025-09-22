@@ -232,34 +232,35 @@ if (auto* p = apvts.getParameter("width")) {
 
 ## 12) Group 2 panel system
 
-- **Panel Architecture**
-  - Group 2 panel (`bottomAltPanel`) is a sliding overlay that covers the four control rows (inside `leftContentContainer`) when activated.
-  - Panel uses rounded corners (6px radius) for modern appearance via `g.fillRoundedRectangle()`.
-  - Bounds are aligned to the exact 4-row rectangle of Group 1 (container-local); top aligns to y=0 of the panel’s local space.
-  - Panel slides in/out with smooth animation using `bottomAltSlide01` progress value; shown only when slide progress > 0.
+ - **Panel Architecture**
+  - Group 2 panel (`bottomAltPanel`) is a sliding overlay above the four control rows (inside `leftContentContainer`).
+  - Panel uses rounded corners (6px radius) via `g.fillRoundedRectangle()`.
+  - Base bounds match the exact 4‑row rectangle of Group 1 (container‑local). The panel is mounted once as a child of `leftContentContainer`.
+  - Panel slides in/out with smooth animation driven by a single timer; slide progress is `bottomAltSlide01`. During slide, the overlay moves only; children are not reflowed.
 
 - **Group Separation**
   - **Group 1**: Main flat grid (4×16) of controls; always visible below panes.
   - **Group 2**: Delay + Reverb flat grids (8 columns each) presented in the sliding panel; shares the same rows rectangle as Group 1.
   - Motion Engine lives only in Group 1’s grid; it is not duplicated in Group 2.
 
-- **Grid Fit (Group 2)**
+ - **Grid Fit (Group 2)**
   - Cell width is derived from available width: `cellW = min(cellWTarget, availableWidth / 16)` so Delay (8) + Reverb (8) columns fit the panel without horizontal scroll.
-  - Delay and Reverb grids use zero column/row gaps; metrics mirror Group 1: `knobPx = Layout::knobPx(L)`, `valuePx`, `labelGap` via `Layout::dp`.
+  - Delay and Reverb grids use zero gaps; metrics mirror Group 1: `knobPx = Layout::knobPx(L)`, `valuePx`, `labelGap` via `Layout::dp`.
 
-- **Layout Rules**
-  - Group 2 panel bounds: `bottomAltPanel.getLocalBounds()` (no extra padding). Delay group at `(x=0,y=0)`, Reverb group immediately to the right.
-  - Panel overlays the same four-row height as Group 1; no top gap between panel and first control row.
-  - All positioning uses `Layout::dp()` for scale awareness; rows are uniform height: `rowH = knobPx + labelGap + valuePx`.
+ - **Layout Rules**
+  - Base bounds: `overlayLocalRect = leftContentContainer.getLocalBounds().removeFromBottom(totalRowsH)`; no extra padding. Delay group at `(x=0,y=0)`, Reverb immediately to the right.
+  - The overlay children (Delay/Reverb cells) are created once and added to `bottomAltPanel` once. Reflow of their grids happens only when the editor size/scale changes.
+  - All positioning uses `Layout::dp()`; rows are uniform height: `rowH = knobPx + labelGap + valuePx`.
 
-- **Z-Order Management**
-  - Panel is a child of `leftContentContainer` (above the row controls); meters live in `metersContainer` (sibling), preventing overlap.
-  - Panel intercepts mouse clicks when active: `setInterceptsMouseClicks(true, false)`; hidden otherwise.
+ - **Z-Order Management**
+  - Panel is a child of `leftContentContainer` (above row controls); meters live in `metersContainer`.
+  - Panel intercepts mouse clicks when active: `setInterceptsMouseClicks(true, false)`; hidden when fully retracted.
 
-- **Animation & State**
-  - Panel visibility controlled by `bottomAltTargetOn` boolean; bottom toggle sets the target.
-  - Smooth slide animation with cosine easing: `0.5f - 0.5f * cos(π * t0)`; animation rate ≈ 0.28 for brisk smoothness.
-  - Panel appears only when `effSlide > 0.001f` to prevent flicker; starts hidden on load (`bottomAltTargetOn=false`).
+ - **Animation & State**
+  - Single animation driver: the editor timer advances `bottomAltSlide01` toward the target (`bottomAltTargetOn`). No slide advancement inside layout.
+  - Cosine easing: `effSlide = 0.5f - 0.5f * cos(π * t0)` with a small appearance threshold to avoid flicker.
+  - Move-only animation: during slide, only the `bottomAltPanel` Y is adjusted between cached `overlayHiddenBaseline` and `overlayActiveBaseline`. No per-frame `Grid::performLayout()`.
+  - Overlay layout caching: recompute `overlayLocalRect` and grid layouts only when size/scale changes; mark dirty via a flag.
 
 ---
 

@@ -42,6 +42,9 @@ MachinePane::MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, juc
     genreBox.setSelectedId (3, juce::dontSendNotification);
     venueBox.setSelectedId (1, juce::dontSendNotification);
     trackTypeBox.setSelectedId (7, juce::dontSendNotification);
+    // Ensure these use tintedSelected rendering (hide default label, use accent text)
+    for (juce::ComboBox* cb : { &genreBox, &venueBox, &trackTypeBox })
+        cb->getProperties().set ("tintedSelected", true);
     // no quality/capture combos
     strength.setRange (0.0, 1.0, 0.01);
     strength.setNumDecimalPlacesToDisplay (0);

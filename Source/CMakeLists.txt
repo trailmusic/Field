@@ -30,6 +30,7 @@ set(SRC
     ui/delay/DelayVisuals.h
     ui/ProcessedSpectrumPane.h
     ui/ImagerPane.h
+    ui/BandPane.h
     ui/StereoFieldEngine.h
     ui/StereoFieldEngine.cpp
     ui/PaneManager.h

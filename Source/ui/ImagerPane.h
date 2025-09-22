@@ -12,7 +12,6 @@ public:
         bool showPre = true;
         bool autoGain = true;
         int  fps = 30; // UI refresh
-        bool freeze = false;
         enum class Mode { XY, Polar, Width, Heat } mode { Mode::XY };
     };
 
@@ -22,25 +21,28 @@ public:
         startTimerHz (opts.fps);
 
         // Tooling UI (right side)
+        addAndMakeVisible (preLabel);
+        preLabel.setText ("PRE overlay", juce::dontSendNotification);
+        preLabel.setJustificationType (juce::Justification::centredLeft);
+        preLabel.setInterceptsMouseClicks (false, false);
+        preLabel.setColour (juce::Label::textColourId, juce::Colours::white.withAlpha (0.90f));
         addAndMakeVisible (preToggle);
-        preToggle.setButtonText ("Pre Overlay");
+        preToggle.setButtonText ("Show");
+        preToggle.setTooltip ("Show input (PRE) overlay behind POST visuals");
         preToggle.onClick = [this]{
             opts.showPre = preToggle.getToggleState();
             if (onUiChange) onUiChange ("ui_imager_showPre", opts.showPre);
             repaint();
         };
 
-        addAndMakeVisible (freezeToggle);
-        freezeToggle.setButtonText ("Freeze");
-        freezeToggle.onClick = [this]{
-            opts.freeze = freezeToggle.getToggleState();
-            if (onUiChange) onUiChange ("ui_imager_freeze", opts.freeze);
-        };
+        
 
         addAndMakeVisible (qualityBox);
         qualityBox.addItem ("15 fps", 15);
         qualityBox.addItem ("30 fps", 30);
         qualityBox.addItem ("60 fps", 60);
+        // Use tintedSelected rendering to avoid default label duplication and use accent colours
+        qualityBox.getProperties().set ("tintedSelected", true);
         qualityBox.onChange = [this]{
             const int sel = qualityBox.getSelectedId();
             if (sel > 0) { opts.fps = sel; startTimerHz (opts.fps); if (onUiChange) onUiChange ("ui_imager_quality", opts.fps); }
@@ -68,7 +70,6 @@ public:
     {
         opts = o; startTimerHz (juce::jlimit (10, 120, opts.fps));
         preToggle.setToggleState (opts.showPre, juce::dontSendNotification);
-        freezeToggle.setToggleState (opts.freeze, juce::dontSendNotification);
         qualityBox.setSelectedId (juce::jlimit (10, 120, opts.fps), juce::dontSendNotification);
         // highlight current mode
         auto setOn = [&](juce::TextButton& b, bool on){ b.setToggleState (on, juce::dontSendNotification); };
@@ -152,8 +153,14 @@ public:
         const int sideW = juce::jlimit (120, 220, W / 4);
         auto side = r.removeFromRight (sideW).reduced (8);
         auto row  = [&](int h){ auto a = side.removeFromTop (h); side.removeFromTop (6); return a; };
-        preToggle   .setBounds (row (24));
-        freezeToggle.setBounds (row (24));
+        {
+            auto rp = row (24);
+            const int lblW = juce::jlimit (70, rp.getWidth() - 60, rp.getWidth() / 2);
+            auto l = rp.removeFromLeft (lblW);
+            preLabel.setBounds (l);
+            preToggle.setBounds (rp);
+        }
+        
         qualityBox  .setBounds (row (24));
         auto modes = row (28);
         const int mW = (modes.getWidth() - 9) / 4;
@@ -202,7 +209,7 @@ public:
             const float scalePre  = opts.autoGain ? (rmsPre  > 1.0e-6f ? target / rmsPre  : 1.0f) : 1.0f;
             if (opts.showPre && havePre)
                 drawGoniometer (g, b.reduced (8.0f), fifoPre,  writePre,  juce::Colours::white.withAlpha (0.35f), scalePre);
-            if (havePost && !opts.freeze)
+            if (havePost)
                 drawGoniometer (g, b.reduced (8.0f), fifoPost, writePost, juce::Colours::aqua.withAlpha (0.70f), scalePost);
             drawCorrelationBar (g, b);
         }
@@ -509,7 +516,8 @@ private:
     float rmsPost = 0.0f, rmsPre = 0.0f;
 
     // Tooling UI
-    juce::ToggleButton preToggle, freezeToggle;
+    juce::Label preLabel;
+    juce::ToggleButton preToggle;
     juce::ComboBox qualityBox;
     juce::TextButton modeXY, modePolar, modeWidth, modeHeat;
     // Designer controls (owned by pane, hosted in overlay)

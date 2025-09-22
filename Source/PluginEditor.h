@@ -1470,6 +1470,12 @@ private:
     BypassButton     bypassButton;
     ToggleSwitch     splitToggle;
     
+    // Unified controls viewport (stacks Group 1 and Group 2 vertically)
+    juce::Viewport controlsViewport;
+    juce::Component controlsContent;     // content for the viewport
+    juce::Component group1Container;     // holds Group 1 controls (flat 4x16 grid)
+    juce::Component group2Container;     // holds Group 2 controls (Delay/Reverb grids)
+    
     // Frequency control sliders
     juce::Slider tiltFreqSlider, scoopFreqSlider, bassFreqSlider, airFreqSlider;
     // EQ shape/Q controls
@@ -1994,8 +2000,18 @@ private:
     bool bottomAltTargetOn { false };  // target state for slide animation
     float bottomAltSlide01 { 0.0f };   // 0..1 slide progress (0=hidden)
     bool bottomAltAnimating { false }; // animate slide in timer
+    // Group 2 overlay layout caching to avoid per-frame reflow
+    bool overlayLayoutDirty { true };
+    bool overlayContentsBuilt { false };
+    juce::Rectangle<int> overlayLocalRect;  // leftContentContainer-local rect for Group 2 overlay
+    int overlayActiveBaseline { 0 };
+    int overlayHiddenBaseline { 0 };
+    int overlayHeightPx { 0 };
+    // Fast-path overlay movement during slide (no child reflow)
+    void updateGroup2OverlayDuringSlide();
     // New Reverb panel mounted in Group 2
     std::unique_ptr<class ReverbPanel> reverbPanel;
+    int controlRowsHeightPx { 0 };
 
     // Correlation meter mini component
     class CorrelationMeter : public juce::Component, public juce::Timer

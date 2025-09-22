@@ -118,12 +118,16 @@ Checklist:
 - [ ] Audit and set `setOpaque(true)` where applicable
 - [ ] Verify Group 2 layouts have no outer `reduced(...)`; keep zero gaps
 - [ ] Ensure texture caching for metallic/brush/noise where used
+ - [ ] Confirm overlay children are built once and not re-parented during slide
+ - [ ] Ensure overlay grids reflow only on size/scale change (dirty flag)
+ - [ ] Timer is the sole animation driver for overlay; no easing in layout
 
 ### Runtime verification steps
 - Repaint highlighting on (Debug): verify child-only repaint during drags
 - Interaction sweep: fast drags; confirm no creation/reparenting in logs
 - Timer sweep: disable meters/animations → baseline; re-enable at 15–30 Hz; confirm stability
 - Adaptive burst sweep: begin dragging any control; confirm editor timer rises to ~60 Hz during interaction and returns to ~30 Hz within ~150 ms after release; ensure CPU drops back accordingly.
+ - Group 2 overlay: toggle repeatedly and verify smooth slide with minimal repaints; check logs show no add/remove/reparent during slide and no `performLayout()` calls from the timer
 
 ---
 
@@ -208,5 +212,10 @@ Planned fixes for PluginEditor:
 
 Notes:
 - Build succeeded for Standalone/AU/VST3. Several warnings remain (deprecated `Font`, unused vars). Track in Analyzer/Machine/Imager cleanup passes; visuals preserved.
+
+Overlay slide refactor (2025-09-22):
+- Unified overlay animation driver (timer only); removed in-layout easing
+- Cached `overlayLocalRect`/baselines; reflow happens only on size/scale changes
+- Slide is move-only; no per-frame `Grid::performLayout()`; no per-frame add/remove
 
 

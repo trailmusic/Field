@@ -762,8 +762,7 @@ FIELD's main view is organized into three panes accessible via tabs:
 ### Architecture
 
 - **PaneManager (`Source/ui/PaneManager.h`)** controls tab selection, child visibility, and a lightweight UI‑thread timer used for visualization polling.
-- A "Keep Warm" option allows Spectrum to continue receiving data while inactive for instant visuals when switching in; otherwise Spectrum sleeps while not visible.
-- On tab switches, Spectrum's analyzer is explicitly gated (`pauseAudio`/`resumeAudio`) to avoid lifetime races.
+- Spectrum audio feed is explicitly gated on tab switches (`pauseAudio`/`resumeAudio`) to avoid lifetime races.
 
 ### First‑Paint Behavior & Safety
 
@@ -1074,6 +1073,7 @@ Notes
 - **Layout**: `juce::Grid` with shared tokens in `Source/Layout.h`; all sizing in `resized()`; scale via `Layout::dp()`.
 - **Icons**: `Source/IconSystem.*` renders vector icons from `juce::Path` (crisp, tintable, no bitmaps).
 - **Motion visuals**: UI pulls a `motion::VisualState` from the engine; if stale, it synthesizes visuals from parameters so the panel never draws empty.
+- **Group 2 overlay**: Sliding panel is animated by a single timer; during slide we only move the overlay component (no child reflow). Delay/Reverb grids are built once and reflowed only on size/scale changes.
 - **Attachments**: APVTS attachments bind controls; Motion uses dedicated attachment buckets and an `AsyncUpdater` to rebind safely on P1/P2/Link.
 
 CSS/WebView?

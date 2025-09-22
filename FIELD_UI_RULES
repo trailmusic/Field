@@ -40,7 +40,7 @@ KnobCell Metrics & Styling
 ---
 Panels, Grids, and Padding
 - Group 1: flattened 4×16 grid (left/center/right merged); preserve exact ordering; close gaps.
-- Group 2: flattened 4×16 grid using 8 columns; place items directly (no sub-containers).
+- Group 2: flattened 4×16 grid using 8 columns; place items directly (no sub-containers). Build once; reflow only on size/scale changes (dirty flag).
 - Gaps
   - rowGap = 0, columnGap = 0.
   - No outer reduced(...) around Group 2 layouts; items lay edge-to-edge with panel bounds.
@@ -83,11 +83,11 @@ Performance Guidance (avoid UI lag)
 - Painting
   - Avoid expensive per-pixel noise/texture in paint() without caching. If using metallic/grain/scratches, pre-render to an Image.
   - Minimize layers/shadows/alpha per frame.
-- Timers & layout
-  - Editor heartbeat (global): baseline ~30 Hz. It may burst to ~60 Hz during user interaction (mouse down/drag/wheel) and for ~150 ms after, then return to 30 Hz.
-  - Component timers (local): default to 0 Hz when hidden; 15–30 Hz when visible. 60 Hz is exceptional and requires profiling + tiny repaint regions.
-  - Prefer leveraging the editor heartbeat for smoothness; only add a component timer where a local animation truly needs it.
-  - Avoid performLayout or reparenting in timers. Parent once; toggle visibility instead of reparenting frequently.
+ - Timers & layout
+  - Editor heartbeat (global): baseline ~30 Hz, bursts to ~60 Hz briefly on interaction.
+  - Component timers (local): 0 Hz when hidden; 15–30 Hz when visible; 60 Hz only with profiling and tiny repaints.
+  - Overlay (Group 2) policy: single animation driver (editor timer), move-only slide (adjust overlay Y), no per-frame grid reflow; children built once; reflow on size/scale only.
+  - Avoid performLayout or reparenting in timers. Parent once; toggle visibility instead.
   - Visibility gating pattern for component timers:
     
     ```cpp
