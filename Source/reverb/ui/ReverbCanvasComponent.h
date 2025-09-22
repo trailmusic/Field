@@ -31,6 +31,7 @@ private:
 
     // === paint pipeline ===
     void timerCallback() override;
+    void visibilityChanged() override { if (isVisible()) startTimerHz(30); else stopTimer(); }
     void drawBackground(juce::Graphics&, juce::Rectangle<float> r);
     void drawER(juce::Graphics&, juce::Rectangle<float> r);
     void drawTailHeatmapImage(juce::Graphics&, juce::Rectangle<float> r);

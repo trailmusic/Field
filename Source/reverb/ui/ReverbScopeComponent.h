@@ -10,6 +10,7 @@ public:
     { startTimerHz (30); }
 
     void paint (juce::Graphics& g) override;
+    void visibilityChanged() override { if (isVisible()) startTimerHz(30); else stopTimer(); }
 
 private:
     std::function<float()> getEr, getTail, getDuck, getWidth;

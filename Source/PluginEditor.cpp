@@ -218,14 +218,15 @@ void ToggleSwitch::paint (juce::Graphics& g)
     const float rad = b.getHeight() * 0.5f;
     const float knobR = b.getHeight() * 0.45f;
 
-    // match editor accent
+    // match editor theme
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    const auto accent = lf ? lf->theme.accent : juce::Colour (0xFF2196F3);
+    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
+    const auto accent = th.accent;
 
     // track
-    g.setColour (lf ? lf->theme.sh : juce::Colour (0xFF1A1D25));
+    g.setColour (th.sh);
     g.fillRoundedRectangle (b, rad);
-    g.setColour (lf ? lf->theme.hl : juce::Colour (0xFF4A4D55));
+    g.setColour (th.hl);
     g.drawRoundedRectangle (b, rad, 2.0f);
 
     // hover glow

@@ -13,6 +13,7 @@ private:
     juce::AudioProcessorValueTreeState& state;
     int dragBand = -1; // 0=low, 1=mid, 2=high
     void timerCallback() override { if (isShowing()) repaint(); }
+    void visibilityChanged() override { if (isVisible()) startTimerHz(30); else stopTimer(); }
 };
 
 

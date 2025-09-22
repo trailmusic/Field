@@ -8,6 +8,7 @@ MotionPanel::MotionPanel(juce::AudioProcessorValueTreeState& s, juce::UndoManage
 {
     // Start timer for real-time visual updates (normalized to 30 Hz per UI rules)
     startTimerHz(30);
+    setOpaque(true);
     
     // Initialize path points for smooth animation
     pathPoints.ensureStorageAllocated(64);

@@ -17,6 +17,7 @@ private:
     juce::String lowParamId, midParamId, highParamId;
     int dragIdx = -1;
     void timerCallback() override { if (isShowing()) repaint(); }
+    void visibilityChanged() override { if (isVisible()) startTimerHz(30); else stopTimer(); }
 };
 
 
