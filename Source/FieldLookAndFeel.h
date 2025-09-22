@@ -342,7 +342,6 @@ public:
 
     // Top tabs pill background (active/inactive) to keep styling centralized
     void drawTabPill (juce::Graphics& g, juce::Rectangle<float> r, bool active) const;
-    void setTabGlowPhase (float phase01) { tabGlowPhase = juce::jlimit (0.0f, 1.0f, phase01); }
 
     // Active theme (mutable for runtime palette switching)
     FieldTheme theme;
@@ -352,6 +351,5 @@ private:
     // Popup menu per-item tinting support (applies to ComboBox popups using this LNF)
     juce::Array<juce::Colour> popupItemTints;
     mutable int popupPaintIndex { 0 };
-    float tabGlowPhase { 0.0f };
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FieldLNF)
 };

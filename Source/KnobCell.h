@@ -10,13 +10,13 @@ class FieldLNF;
  *
  * A lightweight container that:
  *  - Hosts a rotary knob (juce::Slider) you already own
- *  - Optionally hosts its value Label (you already own it) — you’re positioning it via placeLabelBelow()
+ *  - Optionally hosts its value Label (you already own it)
  *  - Optionally hosts a mini control (Linear slider) under the knob (e.g., frequency minis)
  *
  * Notes:
  *  - This class does **not** own the controls; it only reparents them when laid out.
- *  - It cooperates with your existing value-label placement (placeLabelBelow), so it
- *    doesn't move the label; it just ensures the label can live inside the same parent.
+ *  - Preferred: use Managed value-label mode so the cell positions the label under the knob.
+ *    External placement remains supported via ValueLabelMode::External.
  *  - Call setMetrics(...) before layout to update target sizes.
  *  - Call setMini(...) if the cell should include a mini control.
  */
@@ -99,7 +99,7 @@ private:
     juce::Colour getRimColour()   const;
 
     juce::Slider& knob;
-    juce::Label&  valueLabel;     // not positioned here; you do it via placeLabelBelow(...)
+    juce::Label&  valueLabel;     // positioned by Managed mode in resized(), or externally when External
     juce::Component* mini { nullptr }; // legacy single-mini path
     juce::Label*     miniLabel { nullptr }; // optional label for mini
     std::vector<juce::Component*> auxComponents;     // arbitrary aux components (non-owned)

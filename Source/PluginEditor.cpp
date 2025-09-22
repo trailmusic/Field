@@ -25,16 +25,20 @@ struct TintMenuLNFEx : public juce::LookAndFeel_V4
     {
         paintIndex = 0;
         auto r = juce::Rectangle<float> (0, 0, (float) w, (float) h);
-        g.setGradientFill (juce::ColourGradient (juce::Colour (0xFF2C2F35), r.getTopLeft(), juce::Colour (0xFF24272B), r.getBottomRight(), false));
+        // Use configured colours when available; avoid hardcoded hex
+        auto bg = findColour (juce::PopupMenu::backgroundColourId);
+        auto text = findColour (juce::PopupMenu::textColourId);
+        g.setColour (bg);
         g.fillRect (r);
-        g.setColour (juce::Colours::white.withAlpha (0.06f));
+        g.setColour (text.withAlpha (0.06f));
         g.drawRoundedRectangle (r.reduced (1.0f), 5.0f, 1.0f);
     }
 
     void drawPopupMenuSeparator (juce::Graphics& g, const juce::Rectangle<int>& area)
     {
         auto r = area.toFloat().reduced (10.0f, 0.0f);
-        g.setColour (juce::Colours::white.withAlpha (0.10f));
+        auto text = findColour (juce::PopupMenu::textColourId);
+        g.setColour (text.withAlpha (0.10f));
         g.fillRect (juce::Rectangle<float> (r.getX(), r.getCentreY() - 0.5f, r.getWidth(), 1.0f));
     }
 
@@ -42,7 +46,8 @@ struct TintMenuLNFEx : public juce::LookAndFeel_V4
                                      const juce::Rectangle<int>& area)
     {
         auto r = area.toFloat().reduced (8.0f, 4.0f);
-        g.setColour (juce::Colours::white.withAlpha (0.60f));
+        auto text = findColour (juce::PopupMenu::textColourId);
+        g.setColour (text.withAlpha (0.60f));
         g.setFont (juce::Font (juce::FontOptions (12.5f)).withExtraKerningFactor (0.02f).boldened());
         g.drawFittedText (title.toUpperCase(), r.toNearestInt(), juce::Justification::centredLeft, 1);
     }
@@ -63,18 +68,19 @@ struct TintMenuLNFEx : public juce::LookAndFeel_V4
         {
             g.setColour (tint.withAlpha (isHighlighted ? 0.90f : 0.65f));
             g.fillRoundedRectangle (r, 4.0f);
-            g.setColour (juce::Colours::white.withAlpha (0.10f));
+        auto text = findColour (juce::PopupMenu::textColourId);
+        g.setColour (text.withAlpha (0.10f));
             g.drawRoundedRectangle (r, 4.0f, 1.0f);
         }
 
         auto ta = r.reduced (hideChecks ? 8.0f : 22.0f, 0.0f);
-        g.setColour (textColour ? *textColour : juce::Colours::white.withAlpha (0.95f));
+        g.setColour (textColour ? *textColour : findColour (juce::PopupMenu::textColourId).withAlpha (0.95f));
         g.setFont (juce::Font (juce::FontOptions (14.0f)));
         g.drawFittedText (text, ta.toNearestInt(), juce::Justification::centredLeft, 1);
 
         if (shortcutKeyText.isNotEmpty())
         {
-            g.setColour (juce::Colours::white.withAlpha (0.55f));
+            g.setColour (findColour (juce::PopupMenu::textColourId).withAlpha (0.55f));
             g.setFont (juce::Font (juce::FontOptions (13.0f)));
             auto rt = ta.removeFromRight (60).toNearestInt();
             g.drawFittedText (shortcutKeyText, rt, juce::Justification::centredRight, 1);
@@ -158,9 +164,9 @@ void ToggleSwitch::paint (juce::Graphics& g)
     const auto accent = lf ? lf->theme.accent : juce::Colour (0xFF2196F3);
 
     // track
-    g.setColour (juce::Colour (0xFF1A1D25));
+    g.setColour (lf ? lf->theme.sh : juce::Colour (0xFF1A1D25));
     g.fillRoundedRectangle (b, rad);
-    g.setColour (juce::Colour (0xFF4A4D55));
+    g.setColour (lf ? lf->theme.hl : juce::Colour (0xFF4A4D55));
     g.drawRoundedRectangle (b, rad, 2.0f);
 
     // hover glow
@@ -180,19 +186,19 @@ void ToggleSwitch::paint (juce::Graphics& g)
     juce::Rectangle<float> k (kx, ky, knobR * 2.0f, knobR * 2.0f);
 
     // shadow
-    g.setColour (juce::Colours::black.withAlpha (0.4f));
+    g.setColour ((lf ? lf->theme.shadowDark : juce::Colours::black).withAlpha (0.4f));
     g.fillEllipse (k.translated (2.0f, 2.0f));
 
     // fill: stereo = accent blue/green, split = grey
-    g.setColour (isOn ? juce::Colour (0xFF7A7D85) : accent);
+    g.setColour (isOn ? (lf ? lf->theme.textMuted : juce::Colour (0xFF7A7D85)) : accent);
     g.fillEllipse (k);
 
     // rim + split marker
-    g.setColour (juce::Colour (0xFF9A9DA5));
+    g.setColour (lf ? lf->theme.textMuted : juce::Colour (0xFF9A9DA5));
     g.drawEllipse (k, 2.0f);
     if (isOn)
     {
-        g.setColour (juce::Colour (0xFFB0B3B8));
+        g.setColour (lf ? lf->theme.text : juce::Colour (0xFFB0B3B8));
         const float cx = k.getCentreX();
         g.drawLine (cx, k.getY() + 4.0f, cx, k.getBottom() - 4.0f, 1.5f);
     }
@@ -222,14 +228,14 @@ void ControlContainer::paint (juce::Graphics& g)
         g.fillRoundedRectangle (r.reduced (3.0f), rad);
 
         // depth
-        juce::DropShadow ds1 (juce::Colour (0xFF1A1C20).withAlpha (0.6f), 20, { -2, -2 });
-        juce::DropShadow ds2 (juce::Colour (0xFF60646C).withAlpha (0.4f),  8, { -1, -1 });
+        juce::DropShadow ds1 ((lf ? lf->theme.shadowDark  : juce::Colour (0xFF1A1C20)).withAlpha (0.6f), 20, { -2, -2 });
+        juce::DropShadow ds2 ((lf ? lf->theme.shadowLight : juce::Colour (0xFF60646C)).withAlpha (0.4f),  8, { -1, -1 });
         auto ri = r.reduced (3.0f).getSmallestIntegerContainer();
         ds1.drawForRectangle (g, ri);
         ds2.drawForRectangle (g, ri);
 
         // inner rim
-        g.setColour (juce::Colour (0xFF2A2C30).withAlpha (0.3f));
+        g.setColour ((lf ? lf->theme.sh : juce::Colour (0xFF2A2C30)).withAlpha (0.3f));
         g.drawRoundedRectangle (r.reduced (4.0f), rad - 1.0f, 1.0f);
     }
 
@@ -916,7 +922,7 @@ void XYPad::drawBalls (juce::Graphics& g, juce::Rectangle<float> b)
 
     if (!isSplitMode)
     {
-        g.setColour (juce::Colours::black.withAlpha (0.4f));
+        g.setColour ((lf ? lf->theme.shadowDark : juce::Colours::black).withAlpha (0.4f));
         g.fillEllipse (cx - r + 2.0f, cy - r + 2.0f, r * 2.0f, r * 2.0f);
         g.setColour (accent);
         g.fillEllipse (cx - r, cy - r, r * 2.0f, r * 2.0f);
@@ -943,7 +949,8 @@ void XYPad::drawBalls (juce::Graphics& g, juce::Rectangle<float> b)
     const float rx = b.getX() + rightPt * b.getWidth();
     const float y  = cy;
 
-    g.setColour (juce::Colours::black.withAlpha (0.4f));
+    g.setColour ((lf ? lf->theme.shadowDark : juce::Colours::black).withAlpha (0.4f));
+    g.setColour ((lf ? lf->theme.shadowDark : juce::Colours::black).withAlpha (0.4f));
     g.fillEllipse (lx - r + 2.0f, y - r + 2.0f, r * 2.0f, r * 2.0f);
     g.fillEllipse (rx - r + 2.0f, y - r + 2.0f, r * 2.0f, r * 2.0f);
 
@@ -1100,10 +1107,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                 struct Row { int id; const char* text; juce::Colour tint; bool enabled; };
                 juce::Array<Row> rows;
                 rows.add ({ 1, "1x (Off)",          lnf.theme.textMuted, true });
-                rows.add ({ 2, "2x (High Quality)", juce::Colour (0xFF8BC34A), numChoices > 1 });
-                rows.add ({ 3, "4x (Ultra)",        juce::Colour (0xFFFFC107), numChoices > 2 });
-                rows.add ({ 4, "8x (Max)",          juce::Colour (0xFFFF7043), numChoices > 3 });
-                rows.add ({ 5, "16x (Extreme)",     juce::Colour (0xFFE91E63), numChoices > 4 });
+                rows.add ({ 2, "2x (High Quality)", lnf.theme.eq.bass.withAlpha (0.95f),   numChoices > 1 });   // vibrant green
+                rows.add ({ 3, "4x (Ultra)",        lnf.theme.accent.withHue   (lnf.theme.accent.getHue() + 0.08f).withSaturation (0.9f), numChoices > 2 });
+                rows.add ({ 4, "8x (Max)",          lnf.theme.accent.withHue   (lnf.theme.accent.getHue() - 0.08f).withBrightness (0.95f), numChoices > 3 });
+                rows.add ({ 5, "16x (Extreme)",     lnf.theme.eq.scoop.withAlpha (0.95f), numChoices > 4 });    // bold magenta/plum
 
                 lnfEx.itemTints.clear();
                 for (int i = 0; i < rows.size(); ++i)
@@ -1144,10 +1151,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         switch (sel)
         {
             case 0: tint = lnf.theme.textMuted; label = "1x"; break;
-            case 1: tint = juce::Colour (0xFF8BC34A); label = "2x"; break;
-            case 2: tint = juce::Colour (0xFFFFC107); label = "4x"; break;
-            case 3: tint = juce::Colour (0xFFFF7043); label = "8x"; break;
-            case 4: tint = juce::Colour (0xFFE91E63); label = "16x"; break;
+            case 1: tint = lnf.theme.eq.bass.withAlpha (0.95f); label = "2x"; break;
+            case 2: tint = lnf.theme.accent.withHue (lnf.theme.accent.getHue() + 0.08f).withSaturation (0.9f); label = "4x"; break;
+            case 3: tint = lnf.theme.accent.withHue (lnf.theme.accent.getHue() - 0.08f).withBrightness (0.95f); label = "8x"; break;
+            case 4: tint = lnf.theme.eq.scoop.withAlpha (0.95f); label = "16x"; break;
         }
         optionsButton.getProperties().set ("accentOverrideARGB", (int) tint.getARGB());
         optionsButton.getProperties().set ("iconOverrideARGB", (int) tint.getARGB());
@@ -1699,9 +1706,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
         {
             juce::Array<juce::Colour> tints;
-            tints.add (juce::Colour (0xFF64B5F6)); // Digital
-            tints.add (juce::Colour (0xFFFFB74D)); // Analog
-            tints.add (juce::Colour (0xFFFF8A65)); // Tape
+            tints.add (lnf.theme.accent.withAlpha (0.85f));                                   // Digital: accent
+            tints.add (lnf.theme.eq.tilt.withAlpha (0.90f));                                   // Analog: orange tilt
+            tints.add (lnf.theme.eq.bass.withHue (lnf.theme.eq.bass.getHue() - 0.10f));        // Tape: warmer green
             lf->setPopupItemTints (tints);
         }
         delayMode.getProperties().set ("tintedSelected", true);
@@ -1718,9 +1725,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
         {
             juce::Array<juce::Colour> tints;
-            tints.add (juce::Colour (0xFF42A5F5)); // Pre
-            tints.add (juce::Colour (0xFF26C6DA)); // Post
-            tints.add (juce::Colour (0xFFAB47BC)); // External
+            tints.add (lnf.theme.eq.hp.withAlpha (0.95f));                                     // Pre: HP blue
+            tints.add (lnf.theme.accent.withHue (lnf.theme.accent.getHue() + 0.12f));          // Post: cyan shift
+            tints.add (lnf.theme.eq.scoop.withAlpha (0.95f));                                  // External: plum
             lf->setPopupItemTints (tints);
         }
         delayDuckSource.getProperties().set ("tintedSelected", true);
@@ -2076,38 +2083,39 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                 
                 // Path ComboBox tints (Circle, Figure-8, Bounce, Arc, Spiral, Polygon, Random Walk, User Shape) - Rainbow
                 juce::Array<juce::Colour> pathTints;
-                pathTints.add (juce::Colour (0xFFE57373)); // Circle - Red
-                pathTints.add (juce::Colour (0xFFFFB74D)); // Figure-8 - Orange
-                pathTints.add (juce::Colour (0xFFFFCA28)); // Bounce - Yellow
-                pathTints.add (juce::Colour (0xFF66BB6A)); // Arc - Green
-                pathTints.add (juce::Colour (0xFF26C6DA)); // Spiral - Cyan
-                pathTints.add (juce::Colour (0xFF42A5F5)); // Polygon - Blue
-                pathTints.add (juce::Colour (0xFFAB47BC)); // Random Walk - Purple
-                pathTints.add (juce::Colour (0xFF8D6E63)); // User Shape - Brown
+                pathTints.add (lnf.theme.accent.withHue (lnf.theme.accent.getHue() - 0.33f).withSaturation (0.85f)); // Circle - warm red/orange
+                pathTints.add (lnf.theme.eq.tilt.withAlpha (0.95f));   // Figure-8 - Orange
+                pathTints.add (lnf.theme.accent.withHue (lnf.theme.accent.getHue() + 0.16f).withBrightness (0.95f)); // Bounce - Yellow
+                pathTints.add (lnf.theme.eq.bass);                     // Arc - Green
+                pathTints.add (lnf.theme.accent.withHue (lnf.theme.accent.getHue() + 0.12f)); // Spiral - Cyan-ish
+                pathTints.add (lnf.theme.eq.hp);                       // Polygon - Blue
+                pathTints.add (lnf.theme.eq.scoop);                    // Random Walk - Purple/Plum
+                pathTints.add (lnf.theme.sh.brighter (0.6f));          // User Shape - Neutral brownish via shadow tint
                 lf->setPopupItemTints (pathTints);
                 motionComboBoxes[1].getProperties().set ("tintedSelected", true);
                 
                 // Quantize ComboBox tints (Off, 1/1, 1/2, 1/4, 1/8, 1/16, 1/32, Triplet, Dotted) - Purple family
                 juce::Array<juce::Colour> quantTints;
-                quantTints.add (juce::Colour (0xFF90A4AE)); // Off - Grey
-                quantTints.add (juce::Colour (0xFFE1BEE7)); // 1/1 - Light Purple
-                quantTints.add (juce::Colour (0xFFCE93D8)); // 1/2 - Medium Purple
-                quantTints.add (juce::Colour (0xFFBA68C8)); // 1/4 - Purple
-                quantTints.add (juce::Colour (0xFFAB47BC)); // 1/8 - Dark Purple
-                quantTints.add (juce::Colour (0xFF9C27B0)); // 1/16 - Deeper Purple
-                quantTints.add (juce::Colour (0xFF8E24AA)); // 1/32 - Deepest Purple
-                quantTints.add (juce::Colour (0xFF7B1FA2)); // Triplet - Very Deep Purple
-                quantTints.add (juce::Colour (0xFF6A1B9A)); // Dotted - Darkest Purple
+                quantTints.add (lnf.theme.textMuted); // Off - Grey
+                auto baseScoop = lnf.theme.eq.scoop;
+                quantTints.add (baseScoop.withAlpha (0.75f));
+                quantTints.add (baseScoop.withBrightness (juce::jlimit (0.0f, 1.0f, baseScoop.getBrightness() * 1.05f)));
+                quantTints.add (baseScoop);
+                quantTints.add (baseScoop.withSaturation (juce::jlimit (0.0f, 1.0f, baseScoop.getSaturation() * 1.05f)));
+                quantTints.add (baseScoop.withHue (baseScoop.getHue() - 0.03f));
+                quantTints.add (baseScoop.withHue (baseScoop.getHue() - 0.06f));
+                quantTints.add (baseScoop.withHue (baseScoop.getHue() - 0.09f));
+                quantTints.add (baseScoop.withHue (baseScoop.getHue() - 0.12f));
                 lf->setPopupItemTints (quantTints);
                 motionComboBoxes[2].getProperties().set ("tintedSelected", true);
                 
                 // Mode ComboBox tints (Free, Sync, Input Env, Sidechain, One-Shot) - Green family
                 juce::Array<juce::Colour> modeTints;
-                modeTints.add (juce::Colour (0xFFA5D6A7)); // Free - Light Green
-                modeTints.add (juce::Colour (0xFF81C784)); // Sync - Medium Green
-                modeTints.add (juce::Colour (0xFF66BB6A)); // Input Env - Green
-                modeTints.add (juce::Colour (0xFF4CAF50)); // Sidechain - Dark Green
-                modeTints.add (juce::Colour (0xFF388E3C)); // One-Shot - Darkest Green
+                modeTints.add (lnf.theme.eq.bass.withAlpha (0.80f)); // Free
+                modeTints.add (lnf.theme.eq.bass);                   // Sync
+                modeTints.add (lnf.theme.eq.bass.withSaturation (juce::jlimit (0.0f, 1.0f, lnf.theme.eq.bass.getSaturation() * 0.9f))); // Input Env
+                modeTints.add (lnf.theme.eq.bass.darker (0.10f));    // Sidechain
+                modeTints.add (lnf.theme.eq.bass.darker (0.20f));    // One-Shot
                 lf->setPopupItemTints (modeTints);
                 motionComboBoxes[3].getProperties().set ("tintedSelected", true);
             }
@@ -2366,9 +2374,9 @@ void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
 {
     // background gradient (original vibe)
     auto full = getLocalBounds();
-    juce::Colour top    = juce::Colour (0xFF2A2C30);
-    juce::Colour mid    = juce::Colour (0xFF4A4D55);
-    juce::Colour bottom = juce::Colour (0xFF2A2C30);
+    juce::Colour top    = lnf.theme.sh;
+    juce::Colour mid    = lnf.theme.hl;
+    juce::Colour bottom = lnf.theme.sh;
     juce::ColourGradient bg (top, (float) full.getCentreX(), (float) full.getY(),
                              bottom, (float) full.getCentreX(), (float) full.getBottom(), false);
     bg.addColour (0.85, mid);
@@ -2405,7 +2413,7 @@ void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
     // resize handle
     auto bounds = getLocalBounds();
     auto resizeArea = bounds.removeFromRight (20).removeFromBottom (20);
-    g.setColour (juce::Colour (0xFF6A6D75));
+    g.setColour (lnf.theme.textMuted);
     for (int i = 0; i < 3; ++i)
     {
         int off = i * 4;
@@ -2424,23 +2432,8 @@ void MyPluginAudioProcessorEditor::performLayout()
     auto r = getLocalBounds().reduced (Layout::dp (Layout::PAD, s)).withTrimmedBottom (bottomReserve);
     
     
-    // Ensure value labels are positioned in the same parent coordinate space
-    // as their corresponding controls, directly below the control.
-    auto placeLabelBelow = [&] (juce::Label& label, juce::Component& target, int yOffset)
-    {
-        if (auto* parent = target.getParentComponent())
-        {
-            if (label.getParentComponent() != parent)
-            {
-                if (auto* oldParent = label.getParentComponent())
-                    oldParent->removeChildComponent (&label);
-                parent->addAndMakeVisible (label);
-            }
-            auto b = target.getBounds();
-            label.setBounds (b.withY (b.getBottom() + yOffset));
-            label.toFront (false);
-        }
-    };
+    // Legacy value-label placement helper removed; KnobCell in Managed mode
+    // positions value labels directly below the knob in its resized().
 
     // 1) wood bar controls (reduced height)
     auto woodBar = r.removeFromTop (Layout::dp (50, s));
@@ -2586,9 +2579,9 @@ void MyPluginAudioProcessorEditor::performLayout()
              juce::String label = "Z";
              switch (cur)
              {
-                 case 1: tint = juce::Colour (0xFF00BCD4); label = "N"; break; // Natural (Cyan)
-                 case 2: tint = juce::Colour (0xFF2196F3); label = "H"; break; // Hybrid (Blue)
-                 case 3: tint = juce::Colour (0xFF3F51B5); label = "F"; break; // Full Linear (Indigo)
+                case 1: tint = lnf.theme.accent.withHue (lnf.theme.accent.getHue() + 0.12f); label = "N"; break;
+                case 2: tint = lnf.theme.eq.hp;                                            label = "H"; break;
+                case 3: tint = lnf.theme.accent.withHue (lnf.theme.accent.getHue() - 0.18f); label = "F"; break;
              }
              phaseModeButton.getProperties().set ("accentOverrideARGB", (int) tint.getARGB());
              phaseModeButton.getProperties().set ("iconOverrideARGB",   (int) tint.getARGB());
@@ -2621,10 +2614,10 @@ void MyPluginAudioProcessorEditor::performLayout()
                     m.addSectionHeader ("Phase");
                     struct Row { int id; const char* text; juce::Colour tint; bool ticked; };
                     juce::Array<Row> rows;
-                    rows.add ({ 1, "Zero-latency",    lnf.theme.textMuted,          cur == 0 });
-                    rows.add ({ 2, "Natural-phase",   juce::Colour (0xFF00BCD4),    cur == 1 });  // Cyan
-                    rows.add ({ 3, "Hybrid Linear",   juce::Colour (0xFF2196F3),    cur == 2 });  // Blue
-                    rows.add ({ 4, "Full Linear",     juce::Colour (0xFF3F51B5),    cur == 3 });  // Indigo
+                rows.add ({ 1, "Zero-latency",    lnf.theme.textMuted,          cur == 0 });
+                rows.add ({ 2, "Natural-phase",   lnf.theme.accent.withHue (lnf.theme.accent.getHue() + 0.12f), cur == 1 });
+                rows.add ({ 3, "Hybrid Linear",   lnf.theme.eq.hp,               cur == 2 });
+                rows.add ({ 4, "Full Linear",     lnf.theme.accent.withHue (lnf.theme.accent.getHue() - 0.18f), cur == 3 });
 
                     lnfEx.itemTints.clear();
                     for (auto& r : rows) { m.addItem (r.id, r.text, true, r.ticked); lnfEx.itemTints[r.id] = r.tint; }
@@ -2667,9 +2660,9 @@ void MyPluginAudioProcessorEditor::performLayout()
             juce::String label = "E";
             switch (cur)
             {
-                case 0: tint = juce::Colour (0xFF9E9E9E); label = "E"; break; // Eco: Grey 500
-                case 1: tint = juce::Colour (0xFF4CAF50); label = "S"; break; // Standard: Green 500
-                case 2: tint = juce::Colour (0xFF9C27B0); label = "H"; break; // High: Purple 500
+                case 0: tint = lnf.theme.textMuted;            label = "E"; break; // Eco
+                case 1: tint = lnf.theme.eq.bass;              label = "S"; break; // Standard
+                case 2: tint = lnf.theme.eq.scoop;             label = "H"; break; // High
             }
             qualityButton.getProperties().set ("accentOverrideARGB", (int) tint.getARGB());
             qualityButton.getProperties().set ("iconOverrideARGB",   (int) tint.getARGB());
@@ -2701,9 +2694,9 @@ void MyPluginAudioProcessorEditor::performLayout()
                     m.addSectionHeader ("Quality");
                     struct Row { int id; const char* text; juce::Colour tint; bool ticked; };
                     juce::Array<Row> rows;
-                    rows.add ({ 1, "Eco",      juce::Colour (0xFF9E9E9E),  cur == 0 }); // Grey
-                    rows.add ({ 2, "Standard", juce::Colour (0xFF4CAF50),  cur == 1 }); // Green
-                    rows.add ({ 3, "High",     juce::Colour (0xFF9C27B0),  cur == 2 }); // Purple
+                    rows.add ({ 1, "Eco",      lnf.theme.textMuted,        cur == 0 });
+                    rows.add ({ 2, "Standard", lnf.theme.eq.bass,          cur == 1 });
+                    rows.add ({ 3, "High",     lnf.theme.eq.scoop,         cur == 2 });
                     lnfEx.itemTints.clear();
                     for (auto& r : rows) { m.addItem (r.id, r.text, true, r.ticked); lnfEx.itemTints[r.id] = r.tint; }
                 },

@@ -128,8 +128,7 @@ void KnobCell::ensureChildrenAreHere()
         if (c != nullptr && c->getParentComponent() != this)
             addAndMakeVisible (c);
 
-    // Let the value label live inside the same parent as the knob if the caller moves it here.
-    // We do not position it; the editor’s placeLabelBelow(...) handles that.
+    // Ensure the value label is parented; Managed mode positions it in resized().
     if (valueLabel.getParentComponent() == nullptr)
         addAndMakeVisible (valueLabel);
 }

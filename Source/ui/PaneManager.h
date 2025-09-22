@@ -370,14 +370,8 @@ public:
         std::function<void(PaneID)> onSelect;
         std::function<void(juce::Point<int>)> onShowMenu;
         PaneID current { PaneID::XY };
-        float glowPhase { 0.0f };
-        void timerCallback() override
-        {
-            glowPhase += 0.005f; if (glowPhase > 1.0f) glowPhase -= 1.0f;
-            if (auto* lf = dynamic_cast<FieldLNF*> (&getLookAndFeel())) lf->setTabGlowPhase (glowPhase);
-            repaint();
-        }
-        void parentHierarchyChanged() override { startTimerHz (15); }
+        void timerCallback() override {}
+        void parentHierarchyChanged() override { stopTimer(); }
         void paint (juce::Graphics& g) override
         {
             auto b = getLocalBounds().toFloat();

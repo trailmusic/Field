@@ -1,6 +1,6 @@
 Field UI Rules (working notes)
 
-Last updated: 2025-09-21
+Last updated: 2025-09-22
 Scope: Conventions for Field’s UI (KnobCell/SwitchCell/Combo), Group 1 and Group 2 panels, labels, layout, performance.
 
 ---
@@ -33,6 +33,9 @@ KnobCell Metrics & Styling
   - Metallic background for Group 1 center items and Motion Engine cells; Group 2 stays default.
   - Optional properties: panelBrighten, borderBrighten. Use sparingly.
   - Combo: tintedSelected to hide default label when custom captioning is used.
+
+  - Tabs: active tab uses a static accent border (no animated glow). Any previous glow animation is removed.
+  - Menus (PopupMenu): draw colours from LookAndFeel configured colourIds; do not hardcode whites/greys.
 
 ---
 Panels, Grids, and Padding
@@ -135,6 +138,11 @@ UI Performance Practices (snappy drags, minimal lag)
   - Use flat grids with fixed cell metrics and zero gaps. Avoid outer reductions/padding that trigger re-layout.
 - Theme & color modes
   - Derive all colors from FieldLNF::theme (including Motion: motionPanelTop/motionPanelBot/motionBorder). No hardcoded hex in paint paths.
+  - Tint palettes must derive from FieldLNF::theme. It’s acceptable to apply small hue/saturation/brightness/alpha adjustments to theme colours for differentiation (e.g., menu item tints for modes/paths), but avoid fixed hex.
+  - Examples:
+    - Oversampling tints: use theme.eq.bass, theme.eq.scoop, and accent hue-shifts.
+    - Phase/quality tints: use theme.eq.hp and accent hue offsets.
+    - Path/quant/mode tints: compose from theme families (accent/eq.*) with minor hue/sat tweaks.
 
 ---
 Audit System (how we audit UI performance & consistency)

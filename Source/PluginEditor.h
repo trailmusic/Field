@@ -318,12 +318,14 @@ private:
             juce::Colour accent = juce::Colour(0xFF2196F3);
             juce::Colour textGrey = juce::Colour(0xFFB8BDC7);
             juce::Colour panel = juce::Colour(0xFF3A3D45);
+            FieldLNF* lnf = nullptr;
             {
                 const juce::Component* c = &button;
                 while (c)
                 {
                     if (auto* lf = dynamic_cast<FieldLNF*>(&c->getLookAndFeel()))
                     {
+                        lnf = lf;
                         accent = lf->theme.accent;
                         textGrey = lf->theme.textMuted; // theme font grey
                         panel = lf->theme.panel;
@@ -338,11 +340,7 @@ private:
             {
                 // When bypassed: use theme font grey for the button body
                 baseColour = textGrey;
-                auto now = juce::Time::getMillisecondCounter();
-                const bool phase = ((now / 250) % 2) == 0;
-                // Blink by alternating brightness noticeably
-                baseColour = phase ? baseColour.darker(0.35f) : baseColour.brighter(0.05f);
-                g.setColour(baseColour.withAlpha(phase ? 0.35f : 0.18f)); // pulsing glow
+                g.setColour(baseColour.withAlpha(0.20f));
                 g.fillRoundedRectangle(bounds.expanded(4.0f), 6.0f);
             }
             else
@@ -354,16 +352,14 @@ private:
                 baseColour = baseColour.brighter(0.1f);
             
             // shadow
-            g.setColour(juce::Colour(0x40000000));
+            g.setColour(lnf ? lnf->theme.shadowDark.withAlpha (0.25f) : juce::Colour(0x40000000));
             g.fillRoundedRectangle(bounds.translated(2.0f, 2.0f), 4.0f);
             
-            // bg + border with animated stroke width when bypassed
+            // bg + border
             g.setColour(baseColour);
             g.fillRoundedRectangle(bounds, 4.0f);
-            auto now2 = juce::Time::getMillisecondCounter();
-            const float pulse = (float) ((now2 / 200) % 2 == 0 ? 2.0f : 1.0f);
             g.setColour(baseColour.darker(0.45f));
-            g.drawRoundedRectangle(bounds, 4.0f, pulse);
+            g.drawRoundedRectangle(bounds, 4.0f, 1.0f);
         }
         
         void drawButtonText(juce::Graphics& g, juce::TextButton& button,
@@ -469,7 +465,7 @@ protected:
         }
 
         // subtle elevation shadow
-        g.setColour(juce::Colour(0x40000000));
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) g.setColour(lf->theme.shadowDark.withAlpha (0.25f)); else g.setColour(juce::Colour(0x40000000));
         g.fillRoundedRectangle(r.translated(1.5f, 1.5f), options.corner);
     }
 
@@ -546,7 +542,7 @@ public:
         }
         else
         {
-            IconSystem::drawIcon(g, IconSystem::ColorPalette, r.reduced(4.0f), juce::Colour(0xFF5AA9E6));
+            IconSystem::drawIcon(g, IconSystem::ColorPalette, r.reduced(4.0f), lf ? lf->theme.accent : juce::Colour(0xFF5AA9E6));
         }
     }
 };
@@ -581,7 +577,7 @@ public:
         auto bounds = getLocalBounds().toFloat().reduced(2.0f);
 
         // shadow
-        g.setColour(juce::Colour(0x40000000));
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) g.setColour(lf->theme.shadowDark.withAlpha (0.25f)); else g.setColour(juce::Colour(0x40000000));
         g.fillRoundedRectangle(bounds.translated(1.5f, 1.5f), 3.0f);
 
         // panel gradient
@@ -1412,7 +1408,7 @@ private:
             auto hl     = lf ? lf->theme.hl     : juce::Colour (0xFF4A4A4A);
 
             // Elevation shadow first
-            g.setColour (juce::Colour (0x40000000));
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) g.setColour (lf->theme.shadowDark.withAlpha (0.25f)); else g.setColour (juce::Colour (0x40000000));
             g.fillRoundedRectangle (r.translated (1.5f, 1.5f), 4.0f);
 
             const bool on = getToggleState();
@@ -1729,7 +1725,7 @@ private:
             {
                 const bool on = (current == idx);
                 // Elevation shadow like AUD
-                g.setColour (juce::Colour (0x40000000));
+                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) g.setColour (lf->theme.shadowDark.withAlpha (0.25f)); else g.setColour (juce::Colour (0x40000000));
                 g.fillRoundedRectangle (r.translated (1.5f, 1.5f), 6.0f);
 
                 if (on)
