@@ -11,15 +11,18 @@ void ReverbEQComponent::paint (Graphics& g)
 {
     auto r = getLocalBounds().toFloat().reduced (4);
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    const Colour panel = lf ? lf->theme.panel : Colours::black;
-    const Colour rim   = lf ? lf->theme.text.withAlpha (0.20f) : Colours::white.withAlpha (0.2f);
+    FieldLNF defaultLnf;
+    const auto& theme = lf ? lf->theme : defaultLnf.theme;
+    const Colour panel = theme.panel;
+    const Colour rim   = theme.text.withAlpha (0.20f);
     g.setColour (panel.withAlpha (0.40f)); g.fillRoundedRectangle (r, 6.f);
     g.setColour (rim);                     g.drawRoundedRectangle (r, 6.f, 1.2f);
 
     auto mapX = [r](float hz){ float n=(std::log10 (hz)-std::log10 (20.f))/(std::log10 (20000.f)-std::log10 (20.f)); return r.getX()+n*r.getWidth(); };
     auto mapY = [r](float dB){ return jmap (dB, 18.f, -18.f, r.getY()+8, r.getBottom()-8); };
 
-    Path curve; const int steps = jmax (10, (int) r.getWidth());
+    Path curve; curve.preallocateSpace (jmax (32, (int) r.getWidth()));
+    const int steps = jmax (10, (int) r.getWidth());
     for (int i=0;i<steps;++i)
     {
         float n=(float)i/(float)(steps-1);
@@ -34,12 +37,12 @@ void ReverbEQComponent::paint (Graphics& g)
         if (i==0) curve.startNewSubPath (x,y); else curve.lineTo (x,y);
         ignoreUnused (hz);
     }
-    g.setColour (lf ? lf->theme.accent : Colours::aqua); g.strokePath (curve, PathStrokeType (2.f));
+    g.setColour (theme.accent); g.strokePath (curve, PathStrokeType (2.f));
 
-    auto drawNode = [&](float hz, float dB, Colour c){ float x=mapX (hz), y=mapY (dB); g.setColour (c); g.fillEllipse (x-5,y-5,10,10); g.setColour ((lf ? lf->theme.sh : Colours::black).withAlpha (0.6f)); g.drawEllipse (x-5,y-5,10,10,1.2f); };
-    drawNode (getF(state, ReverbIDs::eqLowFreqHz),  getF(state, ReverbIDs::eqLowGainDb),  (lf ? lf->theme.eq.bass  : Colours::orange));
-    drawNode (getF(state, ReverbIDs::eqMidFreqHz),  getF(state, ReverbIDs::eqMidGainDb),  (lf ? lf->theme.eq.tilt  : Colours::yellow));
-    drawNode (getF(state, ReverbIDs::eqHighFreqHz), getF(state, ReverbIDs::eqHighGainDb), (lf ? lf->theme.eq.air   : Colours::lime));
+    auto drawNode = [&](float hz, float dB, Colour c){ float x=mapX (hz), y=mapY (dB); g.setColour (c); g.fillEllipse (x-5,y-5,10,10); g.setColour (theme.sh.withAlpha (0.6f)); g.drawEllipse (x-5,y-5,10,10,1.2f); };
+    drawNode (getF(state, ReverbIDs::eqLowFreqHz),  getF(state, ReverbIDs::eqLowGainDb),  theme.eq.bass);
+    drawNode (getF(state, ReverbIDs::eqMidFreqHz),  getF(state, ReverbIDs::eqMidGainDb),  theme.eq.tilt);
+    drawNode (getF(state, ReverbIDs::eqHighFreqHz), getF(state, ReverbIDs::eqHighGainDb), theme.eq.air);
 }
 
 void ReverbEQComponent::mouseDown (const MouseEvent& e)

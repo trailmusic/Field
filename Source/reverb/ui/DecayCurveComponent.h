@@ -16,7 +16,7 @@ private:
     juce::AudioProcessorValueTreeState& state;
     juce::String lowParamId, midParamId, highParamId;
     int dragIdx = -1;
-    void timerCallback() override { repaint(); }
+    void timerCallback() override { if (isShowing()) repaint(); }
 };
 
 

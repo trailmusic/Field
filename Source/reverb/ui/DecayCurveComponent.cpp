@@ -14,8 +14,10 @@ void DecayCurveComponent::paint (Graphics& g)
 {
     auto r = getLocalBounds().toFloat().reduced (4);
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    const Colour panel = lf ? lf->theme.panel : Colours::black;
-    const Colour rim   = lf ? lf->theme.text.withAlpha (0.20f) : Colours::white.withAlpha (0.2f);
+    FieldLNF defaultLnf;
+    const auto& theme = lf ? lf->theme : defaultLnf.theme;
+    const Colour panel = theme.panel;
+    const Colour rim   = theme.text.withAlpha (0.20f);
     g.setColour (panel.withAlpha (0.40f)); g.fillRoundedRectangle (r, 6.f);
     g.setColour (rim);                     g.drawRoundedRectangle (r, 6.f, 1.2f);
 
@@ -26,17 +28,17 @@ void DecayCurveComponent::paint (Graphics& g)
     const float midX  = getParam (state, midParamId);
     const float highX = getParam (state, highParamId);
 
-    Path curve; curve.startNewSubPath (mapX (40.f), mapY (lowX));
+    Path curve; curve.preallocateSpace (64); curve.startNewSubPath (mapX (40.f), mapY (lowX));
     curve.quadraticTo (mapX (150.f),  mapY (lowX),  mapX (1500.f),  mapY (midX));
     curve.quadraticTo (mapX (10000.f),mapY (highX), mapX (18000.f), mapY (highX));
-    g.setColour (lf ? lf->theme.hl : Colours::orange); g.strokePath (curve, PathStrokeType (2.f));
+    g.setColour (theme.hl); g.strokePath (curve, PathStrokeType (2.f));
 
     auto drawHandle = [&] (float hz, float mult)
     {
         auto p = Point<float> (mapX (hz), mapY (mult));
-        g.setColour ((lf ? lf->theme.hl : Colours::orange).withAlpha (0.85f));
+        g.setColour (theme.hl.withAlpha (0.85f));
         g.fillEllipse (p.x-4, p.y-4, 8, 8);
-        g.setColour ((lf ? lf->theme.sh : Colours::black).withAlpha (0.6f));
+        g.setColour (theme.sh.withAlpha (0.6f));
         g.drawEllipse (p.x-4, p.y-4, 8, 8, 1.2f);
     };
     drawHandle (150.f,  lowX);

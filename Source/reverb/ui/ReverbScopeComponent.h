@@ -13,7 +13,7 @@ public:
 
 private:
     std::function<float()> getEr, getTail, getDuck, getWidth;
-    void timerCallback() override { repaint(); }
+    void timerCallback() override { if (isShowing()) repaint(); }
 };
 
 
