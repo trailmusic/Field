@@ -2402,7 +2402,16 @@ void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
                                       header.getWidth(), (int) (14 * scaleFactor + 2)),
                 juce::Justification::centredLeft);
 
-    // resize grip removed (zoom button replaces it)
+    // resize handle
+    auto bounds = getLocalBounds();
+    auto resizeArea = bounds.removeFromRight (20).removeFromBottom (20);
+    g.setColour (juce::Colour (0xFF6A6D75));
+    for (int i = 0; i < 3; ++i)
+    {
+        int off = i * 4;
+        g.drawLine (resizeArea.getRight() - 8 - off, resizeArea.getBottom() - 4 - off,
+                    resizeArea.getRight() - 4 - off, resizeArea.getBottom() - 8 - off, 1.0f);
+    }
 }
 void MyPluginAudioProcessorEditor::performLayout()
 {
@@ -2731,13 +2740,8 @@ void MyPluginAudioProcessorEditor::performLayout()
         bottomBarRect = bottomBarRect.getUnion (bottomAreaToggle.getBounds());
         const int bottomBarTop    = bottomBarRect.getY();
 
-        // Zoom control at bottom-right, help to its left
-        const int zoomX = bounds.getRight() - Layout::dp (24, s) - btnW;
-        const int zoomY = leftY;
-        zoomButton.setBounds (zoomX, zoomY, btnW, btnH);
-        addAndMakeVisible (zoomButton);
-
-        const int helpX = zoomButton.getX() - Layout::dp (8, s) - btnW;
+        // Help to bottom-right (left of resize grip)
+        const int helpX = bounds.getRight() - Layout::dp (24, s) - btnW;
         const int helpY = leftY;
         helpButton.setBounds (helpX, helpY, btnW, btnH);
         addAndMakeVisible (helpButton);
@@ -2758,37 +2762,6 @@ void MyPluginAudioProcessorEditor::performLayout()
                 // kick simple slide animation by repainting/relayout in timer
             };
         }
-
-        // Zoom menu: 25%, 50%, 75% (default), 100%
-        zoomButton.onClick = [this]
-        {
-            TintMenuLNFEx menuLnf; menuLnf.defaultTint = lnf.theme.accent; menuLnf.hideChecks = false;
-            menuLnf.setColour (juce::PopupMenu::textColourId, lnf.theme.text);
-            juce::PopupMenu m;
-            const int options[4] = {25, 50, 75, 100};
-            for (int i = 0; i < 4; ++i)
-            {
-                const int p = options[i];
-                m.addItem (1000 + p, juce::String (p) + "%", true, currentZoomPercent == p);
-                menuLnf.itemTints[1000 + p] = lnf.theme.accent;
-            }
-            showTintedMenu (zoomButton, menuLnf,
-                // BUILD
-                [&, this] (juce::PopupMenu& menu, TintMenuLNFEx&){ /* already built above */ },
-                // RESULT
-                [this] (int id)
-                {
-                    if (id < 1025 || id > 1100) return;
-                    const int pct = id - 1000;
-                    currentZoomPercent = pct;
-                    const float scale = (float) pct / 75.0f; // base sizes represent 75%
-                    const int targetW = juce::roundToInt ((float) baseWidth  * scale);
-                    const int targetH = juce::roundToInt ((float) baseHeight * scale);
-                    // Snap editor to exact size at fixed aspect; clamp limits to this size
-                    setResizeLimits (targetW, targetH, targetW, targetH);
-                    setSize (targetW, targetH);
-                });
-        };
     }
 
     // divider left of Snap (Divider | Snap | Split)
@@ -3710,11 +3683,81 @@ void MyPluginAudioProcessorEditor::performLayout()
     // Delay theme applied in Group 2
 }
 
-void MyPluginAudioProcessorEditor::mouseDown (const juce::MouseEvent&) {}
+void MyPluginAudioProcessorEditor::mouseDown (const juce::MouseEvent& e)
+{
+    const int grip = 16;
+    if (e.position.x > getWidth() - grip && e.position.y > getHeight() - grip)
+    {
+        isResizing = true;
+        resizeStart = e.getPosition();
+        originalBounds = getBounds();
+    }
+}
 
-void MyPluginAudioProcessorEditor::mouseDrag (const juce::MouseEvent&) {}
+void MyPluginAudioProcessorEditor::mouseDrag (const juce::MouseEvent& e)
+{
+    if (!isResizing) return;
+    auto d = e.getPosition() - resizeStart;
+    
+    // Calculate new size
+    int newWidth = originalBounds.getWidth() + d.x;
+    int newHeight = originalBounds.getHeight() + d.y;
+    
+    // Apply minimum size constraints
+    newWidth = juce::jmax (newWidth, minWidth);
+    newHeight = juce::jmax (newHeight, minHeight);
+    
+    // Apply maximum size constraints
+    newWidth = juce::jmin (newWidth, maxWidth);
+    newHeight = juce::jmin (newHeight, maxHeight);
+    
+    // Do not maintain aspect ratio by default; hold Shift to lock aspect
+    const bool maintainAspectRatio = e.mods.isShiftDown();
+    
+    if (maintainAspectRatio)
+    {
+        const float aspectRatio = (float)baseWidth / (float)baseHeight;
+        if (std::abs(d.x) > std::abs(d.y))
+        {
+            // Width changed more, adjust height to maintain ratio
+            newHeight = (int)(newWidth / aspectRatio);
+        }
+        else
+        {
+            // Height changed more, adjust width to maintain ratio
+            newWidth = (int)(newHeight * aspectRatio);
+        }
+        
+        // Re-apply constraints after aspect ratio adjustment
+        newWidth = juce::jlimit (minWidth, maxWidth, newWidth);
+        newHeight = juce::jlimit (minHeight, maxHeight, newHeight);
+        
+        // If constraints broke the aspect ratio, adjust the other dimension
+        const float currentRatio = (float)newWidth / (float)newHeight;
+        const float targetRatio = aspectRatio;
+        const float ratioError = std::abs(currentRatio - targetRatio);
+        
+        if (ratioError > 0.01f) // Allow small tolerance
+        {
+            if (currentRatio > targetRatio)
+            {
+                // Too wide, reduce width
+                newWidth = (int)(newHeight * aspectRatio);
+                newWidth = juce::jlimit (minWidth, maxWidth, newWidth);
+            }
+            else
+            {
+                // Too tall, reduce height  
+                newHeight = (int)(newWidth / aspectRatio);
+                newHeight = juce::jlimit (minHeight, maxHeight, newHeight);
+            }
+        }
+    }
+    
+    setBounds (originalBounds.withSize (newWidth, newHeight));
+}
 
-void MyPluginAudioProcessorEditor::mouseUp (const juce::MouseEvent&) {}
+void MyPluginAudioProcessorEditor::mouseUp (const juce::MouseEvent&) { isResizing = false; }
 
 void MyPluginAudioProcessorEditor::resized()
 {
