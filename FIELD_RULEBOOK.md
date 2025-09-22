@@ -119,8 +119,12 @@ if (auto* p = apvts.getParameter("pan")) { p->beginChangeGesture(); p->setValueN
   - Heavy visuals (waveforms) gated by `hasWaveformData`; keep buffers bounded.
 - **No allocations in hot paths**
   - Reserve vectors or keep them as members; do not allocate in high-frequency `paint()` unless trivial.
-- **Threading**
-  - UI thread only touches components; audio thread never accesses UI. Data passed via atomics/copies.
+ - **Threading**
+   - UI thread only touches components; audio thread never accesses UI. Data passed via atomics/copies.
+
+ - **Timers**
+   - Editor heartbeat (top-level editor): baseline ~30 Hz and may burst to ~60 Hz during interaction and for ~150 ms after.
+   - Component timers (per-widget): 0 Hz when hidden; 15–30 Hz when visible. 60 Hz only with profiling and tiny repaint regions. Gate via `visibilityChanged()`.
 
 ---
 

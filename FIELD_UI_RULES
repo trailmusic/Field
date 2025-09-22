@@ -84,8 +84,20 @@ Performance Guidance (avoid UI lag)
   - Avoid expensive per-pixel noise/texture in paint() without caching. If using metallic/grain/scratches, pre-render to an Image.
   - Minimize layers/shadows/alpha per frame.
 - Timers & layout
-  - Baseline editor timer ~30 Hz. Adaptive burst: raise to ~60 Hz during user interaction (mouse down/drag/wheel) and for ~150 ms after idle, then fall back to 30 Hz.
+  - Editor heartbeat (global): baseline ~30 Hz. It may burst to ~60 Hz during user interaction (mouse down/drag/wheel) and for ~150 ms after, then return to 30 Hz.
+  - Component timers (local): default to 0 Hz when hidden; 15–30 Hz when visible. 60 Hz is exceptional and requires profiling + tiny repaint regions.
+  - Prefer leveraging the editor heartbeat for smoothness; only add a component timer where a local animation truly needs it.
   - Avoid performLayout or reparenting in timers. Parent once; toggle visibility instead of reparenting frequently.
+  - Visibility gating pattern for component timers:
+    
+    ```cpp
+    class Foo : public juce::Component, private juce::Timer {
+    public:
+        Foo() { startTimerHz(30); }
+        void visibilityChanged() override { if (isVisible()) startTimerHz(30); else stopTimer(); }
+        void timerCallback() override { if (isShowing()) repaint(); }
+    };
+    ```
 - Allocation churn
   - Avoid creating/destroying Components/Attachments during interaction/animation.
 - Repaints
@@ -128,7 +140,7 @@ UI Performance Practices (snappy drags, minimal lag)
   - Prefer simple strokes/gradients; avoid randomization in paint paths during interaction.
   - Preallocate hot-path geometry: call Path::preallocateSpace for curves rebuilt each paint (e.g., EQ/Scope curves) to avoid per-frame allocations.
 - Timers and updates
-  - Keep component timers at 15–30 Hz for UI indicators; rely on editor heartbeat ~30 Hz with adaptive bursts to ~60 Hz on interaction. Never call performLayout or reparent in timers.
+  - Keep component timers at 15–30 Hz for UI indicators; rely on editor heartbeat ~30 Hz with adaptive bursts to ~60 Hz on interaction (editor only). Never call performLayout or reparent in timers. Start/stop component timers based on visibility.
   - Batch non-critical updates; avoid string churn and label layout in mouse drag paths.
 - Parameter/value plumbing
   - One attachment per control, owned long-term. Initialize value labels once before first paint; attachments update text only.

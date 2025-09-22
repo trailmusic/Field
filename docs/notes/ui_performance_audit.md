@@ -111,10 +111,10 @@ Checklist:
 
 ---
 
-### Action items queue (initial)
+### Action items queue (current)
 - [ ] Replace hardcoded colours in `PluginEditor.*` with `FieldLNF::theme` lookups
 - [ ] Remove `placeLabelBelow` path; enforce Managed labels in all `KnobCell` usages
-- [ ] Normalize timer rates to 15–30 Hz where feasible (Motion/Delay visuals at 60 Hz require profiling justification)
+- [x] Normalize timer rates to 15–30 Hz where feasible (Motion/Delay visuals at 60 Hz require profiling justification)
 - [ ] Audit and set `setOpaque(true)` where applicable
 - [ ] Verify Group 2 layouts have no outer `reduced(...)`; keep zero gaps
 - [ ] Ensure texture caching for metallic/brush/noise where used
@@ -200,6 +200,11 @@ Planned fixes for PluginEditor:
  - Adaptive site-wide refresh burst (interaction-driven)
   - `Source/PluginEditor.*`: editor runs at 30 Hz baseline and automatically bursts to 60 Hz while the user is interacting (mouse down/drag/wheel) and for ~150 ms after, then returns to 30 Hz.
   - Implemented via a child-propagating MouseListener proxy and a timer Hz adjustment in `timerCallback`. This keeps idle cost low while making drags feel crisp.
+
+- Component timer normalization and visibility gating
+  - `Source/motion/MotionPanel.*`: reduced to 30 Hz and added `visibilityChanged()` gating (start at 30 Hz when visible, stop when hidden).
+  - `Source/PluginEditor.h` → `ShadeOverlay`: reduced to 30 Hz and added `visibilityChanged()` gating.
+  - Policy clarified in `FIELD_UI_RULES` and `FIELD_RULEBOOK.md`: editor may burst to 60 Hz; components stay ≤30 Hz unless profiled; timers off when hidden.
 
 Notes:
 - Build succeeded for Standalone/AU/VST3. Several warnings remain (deprecated `Font`, unused vars). Track in Analyzer/Machine/Imager cleanup passes; visuals preserved.
