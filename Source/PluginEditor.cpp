@@ -1027,17 +1027,18 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                                    + delayCardWMin + Layout::dp (Layout::GAP, s)
                                    + motionAreaWMin;
     
-    // Calculate minimum height based on layout structure
+    // Calculate minimum height based on layout structure (XY + meters + rows + gaps)
     const int headerH = Layout::dp (50, s);
     const int xyMinH = Layout::dp (Layout::XY_MIN_H, s);
     const int metersH = Layout::dp (84, s);
     const int rowH1 = lPx + Layout::dp (Layout::LABEL_BAND_EXTRA, s);
     const int rowH2 = lPx + Layout::dp (Layout::LABEL_BAND_EXTRA, s);
-    const int rowH3 = lPx + Layout::dp (Layout::LABEL_BAND_EXTRA, s) + Layout::dp (18, s) + gapS;
+    const int rowH3 = lPx + Layout::dp (Layout::LABEL_BAND_EXTRA, s) + gapS;
     const int rowH4 = lPx + Layout::dp (Layout::LABEL_BAND_EXTRA, s);
     const int totalRowsH = rowH1 + rowH2 + rowH3 + rowH4;
     const int gapsH = 3 * Layout::dp (Layout::GAP, s);
-    const int calculatedMinHeight = headerH + xyMinH + metersH + totalRowsH + gapsH + Layout::dp (Layout::PAD, s) * 2 + 50; // +50 for bottom margin
+    const int bottomReserveMin = Layout::dp (6, s) + Layout::dp (22, s);
+    const int calculatedMinHeight = headerH + juce::jmax (xyMinH, metersH) + totalRowsH + gapsH + Layout::dp (Layout::PAD, s) + bottomReserveMin;
     
     // Store resize constraints
     // Allow some narrowing vs content width, but never below a conservative floor
@@ -2417,7 +2418,10 @@ void MyPluginAudioProcessorEditor::performLayout()
     if (!layoutReady) return;
 
     const float s = juce::jmax (0.5f, scaleFactor);
-    auto r = getLocalBounds().reduced (Layout::dp (Layout::PAD, s)).withTrimmedBottom (50);
+    // Use height-driven scale for vertical metrics to decouple bottom spacing from width changes
+    const float sv = juce::jlimit (0.5f, 2.0f, (float) getHeight() / (float) baseHeight);
+    const int bottomReserve = Layout::dp (6, sv) + Layout::dp (22, sv);
+    auto r = getLocalBounds().reduced (Layout::dp (Layout::PAD, s)).withTrimmedBottom (bottomReserve);
     
     
     // Ensure value labels are positioned in the same parent coordinate space
@@ -2772,9 +2776,9 @@ void MyPluginAudioProcessorEditor::performLayout()
     // 2) main XY area + vertical meters on right side
     {
         // Pre-compute row heights to reserve exact space for rows below, so XY/meters respond consistently
-        const int lPx_rsv       = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
-        const int labelBand_rsv = Layout::dp (Layout::LABEL_BAND_EXTRA, s);
-        const int containerH_rsv = lPx_rsv + labelBand_rsv + Layout::dp (Layout::LABEL_BAND_EXTRA, s);
+        const int lPx_rsv       = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), sv);
+        const int labelBand_rsv = Layout::dp (Layout::LABEL_BAND_EXTRA, sv);
+        const int containerH_rsv = lPx_rsv + labelBand_rsv + Layout::dp (Layout::LABEL_BAND_EXTRA, sv);
         const int rowsTotalH_rsv = containerH_rsv * 4; // four uniform rows
 
         // Meters take the full right side strip (carve from full remaining area first)
@@ -2785,28 +2789,28 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int corrW_m    = juce::jmax (Layout::dp (10, s), juce::roundToInt (colW_m * 0.5f)); // CORR is half width of others
         const int inter_m    = juce::jmax (1, Layout::dp (Layout::GAP_S, s) / 2); // tighter spacing between columns
         const int outerPadM_X= juce::jmax (1, Layout::dp (Layout::GAP_S, s));     // small side padding
-        const int outerPadM_Y= Layout::dp (Layout::GAP, s);                        // match left container vertical pad for bottom align
+        const int outerPadM_Y= Layout::dp (Layout::GAP, sv);                       // match left container vertical pad for bottom align
         const int targetStripW = colW_m * 2 + corrW_m + inter_m * 2 + outerPadM_X * 2; // IO | LR | CORR(half)
         const int metersStripW = juce::jlimit (Layout::dp (96, s), Layout::dp (240, s), targetStripW);
         // Split the remaining area: left content container and right meters container
         auto metersArea = r.removeFromRight (metersStripW);
         auto leftArea   = r; // whatever remains after carving meters
         metersArea = metersArea.reduced (outerPadM_X, outerPadM_Y);
-        leftArea   = leftArea  .reduced (Layout::dp (Layout::GAP, s));
+        leftArea   = leftArea  .reduced (Layout::dp (Layout::GAP, s), Layout::dp (Layout::GAP, sv));
         // Ensure meters share the same top/bottom as left content so bottoms align
         metersArea.setY (leftArea.getY());
         metersArea.setHeight (leftArea.getHeight());
         leftContentContainer.setBounds (leftArea);
         metersContainer.setBounds       (metersArea);
 
-        // Allocate the top area as remaining height after rows, with a minimum (left content only)
-        const int mainH = juce::jmax (Layout::dp (300, s), r.getHeight() - rowsTotalH_rsv);
+        // Allocate the top area as remaining height after rows, with a minimum equal to XY pad min height
+        const int mainH = juce::jmax (Layout::dp (Layout::XY_MIN_H, s), r.getHeight() - rowsTotalH_rsv);
         auto main = r.removeFromTop (mainH);
         
         // Visual dock takes the pad area exactly matching leftContentContainer width
         auto padLocal = leftContentContainer.getLocalBounds()
                            .removeFromTop (mainH)
-                           .reduced (Layout::dp (Layout::GAP, s));
+                           .reduced (Layout::dp (Layout::GAP, s), Layout::dp (Layout::GAP, sv));
         if (panes)
         {
             if (panes->getParentComponent() != &leftContentContainer) leftContentContainer.addAndMakeVisible (*panes);

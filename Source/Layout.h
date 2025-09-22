@@ -50,7 +50,7 @@ namespace Layout
 	constexpr int HEADER_SPLIT_W   = 120;
 
 	// XY / meters
-	constexpr int XY_MIN_H     = 300;
+	constexpr int XY_MIN_H     = 500;
 	constexpr int METERS_W     = 160;
 	constexpr int CORR_METER_H = 140;
 
