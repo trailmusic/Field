@@ -6,8 +6,8 @@ namespace motion {
 MotionPanel::MotionPanel(juce::AudioProcessorValueTreeState& s, juce::UndoManager*)
 : state(s)
 {
-    // Start timer for real-time visual updates
-    startTimerHz(60);
+    // Start timer for real-time visual updates (normalized to 30 Hz per UI rules)
+    startTimerHz(30);
     
     // Initialize path points for smooth animation
     pathPoints.ensureStorageAllocated(64);
@@ -17,6 +17,11 @@ void MotionPanel::setVisualState(const VisualState& newState)
 {
     visualState = newState;
     repaint(); // Trigger immediate repaint when visual state changes
+}
+
+void MotionPanel::visibilityChanged()
+{
+    if (isVisible()) startTimerHz(30); else stopTimer();
 }
 
 void MotionPanel::paint(juce::Graphics& g)

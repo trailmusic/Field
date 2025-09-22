@@ -33,6 +33,7 @@ public:
     
     // Update visual state from motion engine (passive view)
     void setVisualState(const VisualState& state);
+    void visibilityChanged() override;
     
 private:
     void timerCallback() override { repaint(); }

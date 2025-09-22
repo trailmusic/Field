@@ -2262,7 +2262,7 @@ private:
             setInterceptsMouseClicks(true, true);
             amount.reset(0.0, 0.12);
             amount.setCurrentAndTargetValue(0.0f);
-            startTimerHz(60);
+            startTimerHz(30);
         }
 
         void setAmount (float a, bool animate = true)
@@ -2307,6 +2307,8 @@ private:
 
             drawHandle(g, getHandle());
         }
+
+        void visibilityChanged() override { if (isVisible()) startTimerHz(30); else stopTimer(); }
 
         void mouseDown (const juce::MouseEvent& e) override { dragStartY = e.y; startAmt = amount.getTargetValue(); }
         void mouseDrag (const juce::MouseEvent& e) override
