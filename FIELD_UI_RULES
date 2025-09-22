@@ -1,6 +1,6 @@
 Field UI Rules (working notes)
 
-Last updated: 2025-09-21
+Last updated: 2025-09-22
 Scope: Conventions for Field’s UI (KnobCell/SwitchCell/Combo), Group 1 and Group 2 panels, labels, layout, performance.
 
 ---
@@ -43,6 +43,25 @@ Panels, Grids, and Padding
   - No outer reduced(...) around Group 2 layouts; items lay edge-to-edge with panel bounds.
 - Cell width
   - Standard = L knob px + dp(8) across Delay/Reverb/Motion/Center.
+
+---
+Layout Floors & Bottom Bar (Editor-level)
+- XY minimum height
+  - The main pane area (PaneManager host) enforces a minimum height of `Layout::XY_MIN_H` for all panes.
+  - Current value: `Layout::XY_MIN_H = 500` dp (scaled).
+- Minimum editor height (formula)
+  - `minHeight = headerH + max(xyMinH, metersH) + totalRowsH + gapsH + PAD_top + bottomReserve`.
+  - `xyMinH = dp(Layout::XY_MIN_H)`, `metersH ≈ dp(84)`, `totalRowsH = 4 × (L knob + label band)`, `gapsH = 3 × dp(GAP)`.
+  - `PAD_top = dp(Layout::PAD)`; bottom padding is handled by `bottomReserve` instead of duplicating PAD.
+- Bottom reserve (bottom controls bar clearance)
+  - Baseline reserve: `bottomReserve = dp(6) + dp(22)`; kept small and tidy.
+  - Reserve is applied consistently in layout and in min-height calculation so bottoms align at all sizes.
+- Vertical scaling principle
+  - General scale `s = min(width/baseWidth, height/baseHeight)`; used for most metrics.
+  - To avoid width-dependent vertical drift, certain vertical-only paddings/reservations use a height-driven scale.
+  - Keep vertical spacing simple and stable; prefer small, fixed reserves over large margins.
+- Bottom alignment
+  - The left content container and meters container bottoms are aligned to the bottom of Row 4, eliminating extra space.
 
 ---
 Reverb Engine (Group 2)
