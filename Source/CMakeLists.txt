@@ -24,6 +24,8 @@ set(SRC
     reverb/ui/ReverbEQComponent.cpp
     reverb/ui/ReverbScopeComponent.h
     reverb/ui/ReverbScopeComponent.cpp
+    reverb/ui/ReverbCanvasComponent.h
+    reverb/ui/ReverbCanvasComponent.cpp
     reverb/ui/ReverbPanel.h
     reverb/ui/ReverbPanel.cpp
     ui/SpectrumAnalyzer.h

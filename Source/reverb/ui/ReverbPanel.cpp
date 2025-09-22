@@ -18,13 +18,18 @@ ReverbPanel::ReverbPanel (juce::AudioProcessorValueTreeState& s,
 {
     // Visuals-only: no top switches/algorithm here; those live in Group 2 controls
 
+    canvas.reset (new ReverbCanvasComponent (state,
+                                             std::move(getEr), std::move(getTail), std::move(getDuckDb), std::move(getWidthNow)));
+    addAndMakeVisible (*canvas);
+
+    // Optionally keep the smaller visuals for now (can remove later)
     decayCurve.reset (new DecayCurveComponent (state, ReverbIDs::dreqLowX, ReverbIDs::dreqMidX, ReverbIDs::dreqHighX));
     eqGraph   .reset (new ReverbEQComponent (state));
-    scope     .reset (new ReverbScopeComponent (std::move(getEr), std::move(getTail), std::move(getDuckDb), std::move(getWidthNow)));
-
-    addAndMakeVisible (*decayCurve);
-    addAndMakeVisible (*eqGraph);
-    addAndMakeVisible (*scope);
+    scope     .reset (new ReverbScopeComponent ([]{return 0.f;}, []{return 0.f;}, []{return 0.f;}, []{return 100.f;}));
+    // Do not add the legacy visuals by default; comment in if needed during transition
+    // addAndMakeVisible (*decayCurve);
+    // addAndMakeVisible (*eqGraph);
+    // addAndMakeVisible (*scope);
 
     // No 5x4 grid attachments here (those live in Group 2 UI)
 
@@ -54,11 +59,8 @@ void ReverbPanel::resized()
     auto r = getLocalBounds().reduced (6);
     // No header controls
 
-    auto vis = r; // take full area for visuals in the tab
-    auto vh = vis.getHeight();
-    decayCurve->setBounds (vis.removeFromTop (vh * 0.33f).reduced (4));
-    eqGraph   ->setBounds (vis.removeFromTop (vh * 0.34f).reduced (4));
-    scope     ->setBounds (vis.reduced (4));
+    auto vis = r; // visuals occupy full panel for now
+    canvas->setBounds (vis); // full width top canvas
 
     // No grid or duck strip in the tab; visuals only
 }

@@ -4,6 +4,7 @@
 #include "DecayCurveComponent.h"
 #include "ReverbEQComponent.h"
 #include "ReverbScopeComponent.h"
+#include "ReverbCanvasComponent.h"
 
 class ReverbPanel : public juce::Component
 {
@@ -24,9 +25,10 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> algoA;
 
     // Small visuals column
-    std::unique_ptr<DecayCurveComponent> decayCurve;
-    std::unique_ptr<ReverbEQComponent>   eqGraph;
-    std::unique_ptr<ReverbScopeComponent> scope;
+    std::unique_ptr<ReverbCanvasComponent> canvas; // top-wide visualization
+    std::unique_ptr<DecayCurveComponent>   decayCurve; // optional keep
+    std::unique_ptr<ReverbEQComponent>     eqGraph;    // optional keep
+    std::unique_ptr<ReverbScopeComponent>  scope;      // optional keep
 
     // Core 5×4 grid controls (sliders + value labels)
     juce::Slider preDelay, erLvl, erTime, erDens, erWidth;
