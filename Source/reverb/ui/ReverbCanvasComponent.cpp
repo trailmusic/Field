@@ -30,6 +30,7 @@ void ReverbCanvasComponent::paint(Graphics& g)
     drawToneCurtainAndEQ(g, R);
     drawDucking(g, R);
     drawSpecials(g, R);
+    drawDynEqOverlays(g, R);
 
     g.setColour(th.text.withAlpha(0.20f));
     g.drawRoundedRectangle(R, 8.f, 1.2f);
@@ -273,45 +274,7 @@ void ReverbCanvasComponent::drawToneCurtainAndEQ(Graphics& g, Rectangle<float> r
         g.fillRoundedRectangle(r.reduced(6.f), 7.f);
     }
 
-    if (getB(ReverbIDs::eqOn, false))
-    {
-        const double fs = srNow ? srNow() : 48000.0;
-        const double lf = getF(ReverbIDs::eqLowFreqHz, 150.f);
-        const double lg = getF(ReverbIDs::eqLowGainDb, 0.f);
-        const double lq = jmax(0.1, (double)getF(ReverbIDs::eqLowQ, 0.7f));
-        const double mf = getF(ReverbIDs::eqMidFreqHz, 1000.f);
-        const double mg = getF(ReverbIDs::eqMidGainDb, 0.f);
-        const double mq = jmax(0.1, (double)getF(ReverbIDs::eqMidQ, 1.0f));
-        const double hf = getF(ReverbIDs::eqHighFreqHz, 8000.f);
-        const double hg = getF(ReverbIDs::eqHighGainDb, 0.f);
-        const double hq = jmax(0.1, (double)getF(ReverbIDs::eqHighQ, 0.7f));
-        const float  mix = clamp01(getF(ReverbIDs::postEqMixPct, 100.f)/100.f);
-
-        double b0,b1,b2,a0,a1,a2;
-        Path pre, post;
-        const int N = jmax(64, (int) r.getWidth());
-        for (int i=0;i<N;++i)
-        {
-            const float n = (float) i / (float)(N-1);
-            const float hz = hzFromLog01(n);
-            const double w = 2.0 * MathConstants<double>::pi * (double) hz / fs;
-            const float yPre = jmap(0.f, 18.f, -18.f, r.getY()+8.f, r.getBottom()-10.f);
-
-            RBJ::lowShelf(fs, lf, lq, lg, b0,b1,b2,a0,a1,a2);  double H1 = RBJ::magAt(b0,b1,b2,a0,a1,a2, w);
-            RBJ::peaking (fs, mf, mq, mg, b0,b1,b2,a0,a1,a2);  double H2 = RBJ::magAt(b0,b1,b2,a0,a1,a2, w);
-            RBJ::highShelf(fs, hf, hq, hg, b0,b1,b2,a0,a1,a2); double H3 = RBJ::magAt(b0,b1,b2,a0,a1,a2, w);
-
-            const float dB = (float) Decibels::gainToDecibels(H1*H2*H3, -200.0);
-            const float x  = jmap(n, 0.f, 1.f, r.getX()+6.f, r.getRight()-6.f);
-            const float y  = jmap(dB, 18.f, -18.f, r.getY()+8.f, r.getBottom()-10.f);
-            if (i==0) { pre.startNewSubPath(x, yPre); post.startNewSubPath(x, y); }
-            else      { pre.lineTo(x, yPre);         post.lineTo(x, y); }
-        }
-        g.setColour(th.text.withAlpha(0.15f * (1.f - mix)));
-        g.strokePath(pre, PathStrokeType(1.0f));
-        g.setColour(th.accent.withAlpha(0.65f * mix));
-        g.strokePath(post, PathStrokeType(2.0f));
-    }
+    // Intentionally omit drawing the full post-EQ magnitude curve here; EQ editing lives in the EQ pane.
 }
 
 void ReverbCanvasComponent::drawDucking(Graphics& g, Rectangle<float> r)
@@ -379,6 +342,34 @@ void ReverbCanvasComponent::drawSpecials(Graphics& g, Rectangle<float> r)
         auto rr = r.reduced(6.f);
         for (float y = rr.getY(); y < rr.getBottom(); y += 16.f)
             g.fillRect(rr.getX(), y, rr.getWidth(), 8.f);
+    }
+}
+
+void ReverbCanvasComponent::drawDynEqOverlays(Graphics& g, Rectangle<float> r)
+{
+    if (!dyneqGrNow) return;
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
+
+    const auto grs = dyneqGrNow(); // dB per band, positive means reduction
+    const float left = r.getX()+6.f, right = r.getRight()-6.f, top = r.getY()+8.f, bottom = r.getBottom()-10.f;
+
+    // Fetch band freqs from APVTS for positioning (fallbacks typical)
+    const float fz[4] = {
+        getF(ReverbIDs::dyneq1_freqHz, 120.f),
+        getF(ReverbIDs::dyneq2_freqHz, 750.f),
+        getF(ReverbIDs::dyneq3_freqHz, 2500.f),
+        getF(ReverbIDs::dyneq4_freqHz, 8000.f)
+    };
+    for (int i=0;i<4;++i)
+    {
+        const float gr = grs[i]; if (gr <= 0.01f) continue;
+        const float x = left + log01FromHz(fz[i]) * (right - left);
+        const float h = jmap (jlimit (0.f, 12.f, gr), 0.f, 12.f, 0.f, (bottom-top) * 0.22f);
+        g.setColour (th.accent.withAlpha (0.25f));
+        g.fillRoundedRectangle (x - 4.f, top + 22.f, 8.f, h, 3.f);
+        g.setColour (th.text.withAlpha (0.65f));
+        g.drawText (juce::String (gr, 1) + " dB", Rectangle<int> ((int) (x - 20), (int) (top + 22.f + h + 2.f), 40, 14), Justification::centred, false);
     }
 }
 

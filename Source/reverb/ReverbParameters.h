@@ -94,6 +94,26 @@ inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioPa
     p.push_back (F (ReverbIDs::eqHighGainDb, "EQ High Gain (dB)",{ -18.f, 18.f, 0.01f}, 0.f));
     p.push_back (F (ReverbIDs::eqHighQ,      "EQ High Q",        {0.3f, 2.0f, 0.001f}, 0.71f));
 
+  // DynEQ (wet-only) — 4 bands
+  auto modeChoices = StringArray{ "Bell", "LowShelf", "HighShelf" };
+  auto addDyn = [&] (int idx, const char* onId, const char* modeId, const char* fId, const char* gId, const char* qId, const char* thrId, const char* ratioId, const char* attId, const char* relId, const char* rangeId)
+  {
+      p.push_back (B (onId,  String ("DynEQ ") + String (idx) + " On", false));
+      p.push_back (C (modeId, String ("DynEQ ") + String (idx) + " Mode", modeChoices, 0));
+      p.push_back (F (fId,   String ("DynEQ ") + String (idx) + " Freq (Hz)", {20.f, 20000.f, 1.f, 0.35f}, idx==1?220.f: idx==2?1200.f: idx==3?3500.f:8000.f));
+      p.push_back (F (gId,   String ("DynEQ ") + String (idx) + " Makeup (dB)", {-12.f, 12.f, 0.01f}, 0.f));
+      p.push_back (F (qId,   String ("DynEQ ") + String (idx) + " Q", {0.3f, 8.0f, 0.001f}, 1.0f));
+      p.push_back (F (thrId, String ("DynEQ ") + String (idx) + " Thr (dB)", {-60.f, 0.f, 0.01f}, -24.f));
+      p.push_back (F (ratioId, String ("DynEQ ") + String (idx) + " Ratio", {1.f, 20.f, 0.01f}, 4.f));
+      p.push_back (F (attId, String ("DynEQ ") + String (idx) + " Attack (ms)", {1.f, 60.f, 0.01f}, 10.f));
+      p.push_back (F (relId, String ("DynEQ ") + String (idx) + " Release (ms)", {10.f, 800.f, 0.1f}, 200.f));
+      p.push_back (F (rangeId, String ("DynEQ ") + String (idx) + " Range (dB)", {0.f, 24.f, 0.01f}, 6.f));
+  };
+  addDyn (1, ReverbIDs::dyneq1_on, ReverbIDs::dyneq1_mode, ReverbIDs::dyneq1_freqHz, ReverbIDs::dyneq1_gainDb, ReverbIDs::dyneq1_Q, ReverbIDs::dyneq1_thrDb, ReverbIDs::dyneq1_ratio, ReverbIDs::dyneq1_attMs, ReverbIDs::dyneq1_relMs, ReverbIDs::dyneq1_rangeDb);
+  addDyn (2, ReverbIDs::dyneq2_on, ReverbIDs::dyneq2_mode, ReverbIDs::dyneq2_freqHz, ReverbIDs::dyneq2_gainDb, ReverbIDs::dyneq2_Q, ReverbIDs::dyneq2_thrDb, ReverbIDs::dyneq2_ratio, ReverbIDs::dyneq2_attMs, ReverbIDs::dyneq2_relMs, ReverbIDs::dyneq2_rangeDb);
+  addDyn (3, ReverbIDs::dyneq3_on, ReverbIDs::dyneq3_mode, ReverbIDs::dyneq3_freqHz, ReverbIDs::dyneq3_gainDb, ReverbIDs::dyneq3_Q, ReverbIDs::dyneq3_thrDb, ReverbIDs::dyneq3_ratio, ReverbIDs::dyneq3_attMs, ReverbIDs::dyneq3_relMs, ReverbIDs::dyneq3_rangeDb);
+  addDyn (4, ReverbIDs::dyneq4_on, ReverbIDs::dyneq4_mode, ReverbIDs::dyneq4_freqHz, ReverbIDs::dyneq4_gainDb, ReverbIDs::dyneq4_Q, ReverbIDs::dyneq4_thrDb, ReverbIDs::dyneq4_ratio, ReverbIDs::dyneq4_attMs, ReverbIDs::dyneq4_relMs, ReverbIDs::dyneq4_rangeDb);
+
     // Mix / Out
     p.push_back (F (ReverbIDs::wetMix01,  "Reverb Wet 0..1", {0.f, 1.f, 0.001f}, 0.25f));
     p.push_back (F (ReverbIDs::outTrimDb, "Reverb Out (dB)", { -24.f, 12.f, 0.01f}, 0.f));

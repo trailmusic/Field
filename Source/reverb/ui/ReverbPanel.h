@@ -1,10 +1,8 @@
 #pragma once
 #include <JuceHeader.h>
 #include "../../KnobCell.h"
-#include "DecayCurveComponent.h"
-#include "ReverbEQComponent.h"
-#include "ReverbScopeComponent.h"
 #include "ReverbCanvasComponent.h"
+#include "ReverbDynEQPane.h"
 
 class ReverbPanel : public juce::Component
 {
@@ -24,11 +22,18 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> enableA, wetOnlyA;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> algoA;
 
-    // Small visuals column
-    std::unique_ptr<ReverbCanvasComponent> canvas; // top-wide visualization
-    std::unique_ptr<DecayCurveComponent>   decayCurve; // optional keep
-    std::unique_ptr<ReverbEQComponent>     eqGraph;    // optional keep
-    std::unique_ptr<ReverbScopeComponent>  scope;      // optional keep
+    // Top-wide visualization
+    std::unique_ptr<ReverbCanvasComponent> canvas;
+    // Provide DynEQ GR to the canvas if available (wired from processor later)
+    std::function<std::array<float,4>()> dyneqGrProvider;
+    // DynEQ editor (bottom area row inside Reverb Group)
+    std::unique_ptr<ReverbDynEQPane> dyneqPane;
+
+public:
+    void setDynEqGrProvider (std::function<std::array<float,4>()> fn) {
+        dyneqGrProvider = std::move (fn);
+        if (canvas) canvas->setDynEqGrProvider (dyneqGrProvider);
+    }
 
     // Core 5×4 grid controls (sliders + value labels)
     juce::Slider preDelay, erLvl, erTime, erDens, erWidth;

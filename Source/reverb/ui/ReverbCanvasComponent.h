@@ -14,6 +14,8 @@ public:
                           std::function<double()> sampleRateNow = []{ return 48000.0; });
 
     void paint(juce::Graphics&) override;
+    // Optional: provider for per-band DynEQ GR in dB (size<=4)
+    void setDynEqGrProvider (std::function<std::array<float,4>()> provider) { dyneqGrNow = std::move(provider); }
 
 private:
     juce::AudioProcessorValueTreeState& state;
@@ -36,6 +38,7 @@ private:
     void drawToneCurtainAndEQ(juce::Graphics&, juce::Rectangle<float> r);
     void drawDucking(juce::Graphics&, juce::Rectangle<float> r);
     void drawSpecials(juce::Graphics&, juce::Rectangle<float> r);
+    void drawDynEqOverlays(juce::Graphics&, juce::Rectangle<float> r);
 
     // === heatmap writer ===
     void advanceHeatmapRow();
@@ -67,6 +70,9 @@ private:
         static void highShelf(double fs, double f0, double Q, double gainDb, double& b0,double& b1,double& b2,double& a0,double& a1,double& a2);
         static double magAt (double b0,double b1,double b2,double a0,double a1,double a2, double omega);
     };
+
+    // Optional DynEQ GR callback
+    std::function<std::array<float,4>()> dyneqGrNow;
 };
 
 

@@ -20,16 +20,11 @@ ReverbPanel::ReverbPanel (juce::AudioProcessorValueTreeState& s,
 
     canvas.reset (new ReverbCanvasComponent (state,
                                              std::move(getEr), std::move(getTail), std::move(getDuckDb), std::move(getWidthNow)));
+    if (dyneqGrProvider) canvas->setDynEqGrProvider (dyneqGrProvider);
     addAndMakeVisible (*canvas);
 
-    // Optionally keep the smaller visuals for now (can remove later)
-    decayCurve.reset (new DecayCurveComponent (state, ReverbIDs::dreqLowX, ReverbIDs::dreqMidX, ReverbIDs::dreqHighX));
-    eqGraph   .reset (new ReverbEQComponent (state));
-    scope     .reset (new ReverbScopeComponent ([]{return 0.f;}, []{return 0.f;}, []{return 0.f;}, []{return 100.f;}));
-    // Do not add the legacy visuals by default; comment in if needed during transition
-    // addAndMakeVisible (*decayCurve);
-    // addAndMakeVisible (*eqGraph);
-    // addAndMakeVisible (*scope);
+    dyneqPane = std::make_unique<ReverbDynEQPane> (state);
+    addAndMakeVisible (*dyneqPane);
 
     // No 5x4 grid attachments here (those live in Group 2 UI)
 
@@ -59,10 +54,9 @@ void ReverbPanel::resized()
     auto r = getLocalBounds().reduced (6);
     // No header controls
 
-    auto vis = r; // visuals occupy full panel for now
-    canvas->setBounds (vis); // full width top canvas
-
-    // No grid or duck strip in the tab; visuals only
+    auto top = r.removeFromTop (juce::roundToInt (r.getHeight() * 0.62f));
+    canvas->setBounds (top);
+    dyneqPane->setBounds (r);
 }
 
 

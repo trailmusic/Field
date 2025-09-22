@@ -60,6 +60,7 @@ public:
                                                [&p]{ return p.getReverbTailRms(); },
                                                [&p]{ return p.getReverbDuckGrDb(); },
                                                [&p]{ return p.getReverbWidthNow(); });
+        reverb->setDynEqGrProvider ([&p]{ return p.getReverbDynEqGrDb(); });
         // Delay pane: direct DelayVisuals instance wired to processor buses/bridge
         {
             auto* dv = new DelayVisuals (p.getDelayUiBridge(), &p);

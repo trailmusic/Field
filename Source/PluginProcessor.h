@@ -727,6 +727,7 @@ public:
         return 0.0f;
     }
     float getReverbWidthNow() const { return 100.0f; }
+    std::array<float,4> getReverbDynEqGrDb() const { return reverbEngine.getDynEqGrDb(); }
     
     // Transport info (UI polling)
     double getTransportTimeSeconds() const { return transportTimeSeconds.load(); }

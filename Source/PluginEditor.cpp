@@ -10,6 +10,7 @@ void XYPaneAdapter::pushWaveformSample (double L, double R) { pad.pushWaveformSa
 #include "dsp/DelayPresetLibrary.h"
 #include "reverb/ui/ReverbControlsPanel.h"
 #include "reverb/ui/ReverbPanel.h"
+#include "reverb/ui/ReverbDynEQPane.h"
 
 //==============================================================
 
@@ -3183,6 +3184,8 @@ void MyPluginAudioProcessorEditor::performLayout()
             static std::unique_ptr<class ReverbControlsPanel> rvPanel;
             if (!rvPanel)
                 rvPanel = std::make_unique<ReverbControlsPanel> (proc.apvts);
+
+            // DynEQ sub-pane is created but not laid out here; wiring is deferred
 
             // Mirror Delay metrics for Reverb grid so KnobCells match exactly
             const int valuePx2 = Layout::dp (14, s);

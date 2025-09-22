@@ -18,16 +18,12 @@ set(SRC
     reverb/ReverbParameters.h
     reverb/ReverbEngine.h
     reverb/ReverbEngine.cpp
-    reverb/ui/DecayCurveComponent.h
-    reverb/ui/DecayCurveComponent.cpp
-    reverb/ui/ReverbEQComponent.h
-    reverb/ui/ReverbEQComponent.cpp
-    reverb/ui/ReverbScopeComponent.h
-    reverb/ui/ReverbScopeComponent.cpp
+    # legacy visuals removed: DecayCurve/ReverbEQ/ReverbScope
     reverb/ui/ReverbCanvasComponent.h
     reverb/ui/ReverbCanvasComponent.cpp
     reverb/ui/ReverbPanel.h
     reverb/ui/ReverbPanel.cpp
+    reverb/ui/ReverbDynEQPane.h
     ui/SpectrumAnalyzer.h
     ui/SpectrumAnalyzer.cpp
     ui/delay/DelayUiBridge.h
