@@ -1492,6 +1492,10 @@ private:
     HelpButton       helpButton;
     CopyButton       copyButton;
     LockButton       lockButton;
+    class ZoomButton : public ThemedIconButton { public: ZoomButton()
+    : ThemedIconButton(Options{ IconSystem::Options, false, ThemedIconButton::Style::GradientPanel, 3.0f, 4.0f, false }) {} };
+    ZoomButton       zoomButton;
+    int              currentZoomPercent { 75 }; // absolute percent of "full"; base size represents 75%
 
     // Global Wet Only (Kill Dry) UI toggle (no param binding per instructions)
     juce::ToggleButton wetOnlyToggle;
