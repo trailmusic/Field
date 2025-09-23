@@ -27,11 +27,6 @@ public:
         auto m = ControlGridMetrics::compute (r.getWidth(), r.getHeight());
         if (controls) { controls->setCellMetrics (m.knobPx, m.valuePx, m.labelGapPx, m.colW); controls->setRowHeightPx (m.rowH); }
         auto controlsArea = r.removeFromBottom (m.controlsH);
-        // reduce visuals height by 25%
-        {
-            const int newH = (r.getHeight() * 3) / 4;
-            r.removeFromBottom (r.getHeight() - newH);
-        }
         if (visuals) visuals->setBounds (r);
         if (controls) controls->setBounds (controlsArea);
     }
