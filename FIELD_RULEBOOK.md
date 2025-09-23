@@ -269,7 +269,28 @@ if (auto* p = apvts.getParameter("width")) {
 - Four uniform rows beneath panes, with row height:
   - `rowH = knobPx(L) + labelGap + valuePx` (all via `Layout::dp(scaleFactor)`).
 - Zero column and row gaps inside all control grids (Group 1 and Group 2), consistent with UI rules.
-- Group 1 uses a flat 4×16 grid; Group 2 uses two 8‑column grids (Delay, Reverb) that fit the panel width.
+- Group 1 uses a flat 4×16 grid; Group 2 uses two 8‑column grids (Delay, Reverb) that fit the panel width. [Legacy - replaced by per‑tab 2×16 grids]
+
+---
+
+## 12b) Tabs‑Driven UI (Sep 2025 Update)
+
+- Ownership & switching
+  - Tabs own visuals and controls; switching is visibility‑only (no create/destroy churn).
+  - Legacy Group 1/2 rows are retired. Each tab standardizes on a 2×16 flat grid of controls.
+- Per‑tab layout
+  - Delay, Reverb, Motion, Band, XY each host their own 2×16 grid (styled empty `KnobCell` for blanks).
+  - Imager tab is visuals‑only (no controls grid). Band hosts Imager Width visuals and `WIDTH LO/MID/HI` controls.
+  - XY tab hosts XO LO/HI, ROT, ASYM, SHUF LO/HI/XO, MONO, PAN, SAT MIX, SCOOP.
+- Metrics & sizing
+  - All tabs use `ControlGridMetrics::compute(w,h)` → `colW, knobPx, valuePx, labelGapPx, rowH, controlsH`.
+  - Controls strip height is exactly `controlsH = 2 * rowH` at the bottom; visuals fill the remainder above (no extra 25% trim).
+  - Min‑height formula: `HEADER + max(XY_MIN_H, metersH) + GAP + controlsH + PAD + bottomReserve`.
+  - Defaults: `XY_MIN_H = 420`, `baseWidth = 1500`, `baseHeight = 700` (initial size may clamp to min).
+- Styling
+  - Metallic gradients on Motion and Center cells only. All colours from `FieldLNF::theme`.
+- Tooling policy
+  - Band: all Imager tooling disabled (no PRE/FPS/mode buttons). Imager: tooling kept, Width button removed.
 
 ---
 

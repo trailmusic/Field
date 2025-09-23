@@ -11,6 +11,7 @@ void XYPaneAdapter::pushWaveformSample (double L, double R) { pad.pushWaveformSa
 #include "reverb/ui/ReverbControlsPanel.h"
 #include "reverb/ui/ReverbPanel.h"
 #include "reverb/ui/ReverbDynEQPane.h"
+#include "ui/ControlGridMetrics.h"
 
 //==============================================================
 
@@ -1107,18 +1108,15 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                                    + delayCardWMin + Layout::dp (Layout::GAP, s)
                                    + motionAreaWMin;
     
-    // Calculate minimum height based on layout structure (XY + meters + rows + gaps)
+    // Calculate minimum height based on current architecture: visuals + 2x16 controls
     const int headerH = Layout::dp (50, s);
     const int xyMinH = Layout::dp (Layout::XY_MIN_H, s);
     const int metersH = Layout::dp (84, s);
-    const int rowH1 = lPx + Layout::dp (Layout::LABEL_BAND_EXTRA, s);
-    const int rowH2 = lPx + Layout::dp (Layout::LABEL_BAND_EXTRA, s);
-    const int rowH3 = lPx + Layout::dp (Layout::LABEL_BAND_EXTRA, s) + gapS;
-    const int rowH4 = lPx + Layout::dp (Layout::LABEL_BAND_EXTRA, s);
-    const int totalRowsH = rowH1 + rowH2 + rowH3 + rowH4;
-    const int gapsH = 3 * Layout::dp (Layout::GAP, s);
     const int bottomReserveMin = Layout::dp (6, s) + Layout::dp (22, s);
-    const int calculatedMinHeight = headerH + juce::jmax (xyMinH, metersH) + totalRowsH + gapsH + Layout::dp (Layout::PAD, s) + bottomReserveMin;
+    const int gapH = Layout::dp (Layout::GAP, s);
+    const auto gridMetrics = ControlGridMetrics::compute (baseWidth, baseHeight);
+    const int controlsHMin = gridMetrics.controlsH; // 2 rows of the flat grid
+    const int calculatedMinHeight = headerH + juce::jmax (xyMinH, metersH) + gapH + controlsHMin + Layout::dp (Layout::PAD, s) + bottomReserveMin;
     
     // Store resize constraints
     // Allow some narrowing vs content width, but never below a conservative floor

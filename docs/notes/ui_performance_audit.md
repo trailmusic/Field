@@ -9,7 +9,8 @@ Scope: Validate responsiveness, consistency, theme-compliance, and lifecycle rul
 - Conditional add/remove in layout paths; verify no creation/reparenting in timers/drag.
 - Excessive timer rates: `startTimerHz(60)` in several components; target 15–30 Hz per rules.
 - Opaqueness: defer changes to visuals. Identify candidates only (components that fully paint their backgrounds) and revisit later.
-- Widespread `reduced(...)` use; ensure Group 2 panels do not use outer reductions and grids remain gapless.
+- Remove legacy 4-row assumptions; tabs now use per‑pane 2×16 grids with zero gaps.
+- Widespread `reduced(...)` use; ensure no outer reductions on grid containers; grids remain gapless.
 - Texture/paint cost review needed in metallic/gradient-heavy paths; cache images where needed.
 
 ### How to verify per component
@@ -17,7 +18,7 @@ Scope: Validate responsiveness, consistency, theme-compliance, and lifecycle rul
 - Attachments: created once and owned long-term; none created in `resized/timer/drag`.
 - Paint: no heavy per-pixel/random work; textures cached; repaint minimal region; `setOpaque(true)` when fully painting.
 - Timers: 15–30 Hz; no layout or heavy work in callbacks.
-- Layout: flat grids; zero gaps; no outer `reduced(...)` on Group 2; DUCK strip metrics match.
+- Layout: per‑tab flat 2×16 grids; zero gaps; no outer `reduced(...)`; DUCK strip metrics match.
 - Theme: no hardcoded hex/`Colours::`; colours derived from `FieldLNF::theme`; correct metallic scope and border flags.
 
 ---
@@ -36,7 +37,7 @@ Checklist:
 - [ ] No hardcoded colours; all from `FieldLNF::theme`
 - [ ] No heavy/random allocations in `paint()`; cache textures; minimal repaints
 - [ ] Timers 15–30 Hz; no layout in timers
-- [ ] Flat grids; zero gaps; no outer `reduced(...)` on Group 2
+- [ ] Per‑tab 2×16 grids; zero gaps; no outer `reduced(...)`
 - [ ] `setOpaque(true)` if fully painting background
 - [ ] Remove legacy `placeLabelBelow` usage
 
@@ -84,6 +85,7 @@ Checklist:
 
 Checklist:
 - [ ] Managed labels where using KnobCell; captions set
+- [ ] Imager: visuals‑only tab; Band pane owns Width visuals; Imager tooling off in Band
 - [ ] Theme-only colours; no random per-paint
 - [ ] Timers 15–30 Hz (Spectrum/Scopes may justify higher; measure); minimal repaints
 

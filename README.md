@@ -751,28 +751,30 @@ DP helper: `Layout::dp(px, scale)`; always scale sizes with the editor `scaleFac
 
 ---
 
-## Tabs & Pane System (NEW)
+## Tabs & Pane System (UPDATED)
 
 FIELD's main view is organized into three panes accessible via tabs:
 
-- **XY**: The hero XY Pad with the time‑domain oscilloscope overlay.
-- **Spectrum**: High‑resolution spectrum analyzer with optional pre overlay and EQ curve.
-- **Imager**: Placeholder (future) for advanced image field tools.
+- **Delay**: Delay visuals + 2×16 controls grid (owned by tab).
+- **Reverb**: Reverb visuals + 2×16 controls grid (owned by tab).
+- **Motion**: Motion visuals + 2×16 controls grid (owned by tab).
+- **Band**: Imager Width visuals (Width mode) + WIDTH LO/MID/HI controls. No Imager tooling.
+- **Imager**: Visuals‑only (no 2×16 controls). Tooling present (no Width button).
+- **XY**: XY visuals + 2×16 controls grid (hosts Imaging controls: XO LO/HI, ROT, ASYM, SHUF LO/HI/XO, MONO, PAN, SAT MIX, SCOOP).
 
 ### Architecture
 
-- **PaneManager (`Source/ui/PaneManager.h`)** controls tab selection, child visibility, and a lightweight UI‑thread timer used for visualization polling.
-- Spectrum audio feed is explicitly gated on tab switches (`pauseAudio`/`resumeAudio`) to avoid lifetime races.
+- **PaneManager (`Source/ui/PaneManager.h`)** controls tab selection and toggles child visibility. Tabs own their visuals/control panes; switching is visibility‑only (no churn).
+- Visual feeds (e.g., XY oscilloscope) are forwarded via UI timer; feeds are gated on tab selection to avoid races.
 
 ### First‑Paint Behavior & Safety
 
-- Spectrum shows a **grid‑only fallback** until a full, valid FFT frame is ready. This prevents any draw‑time crashes on first activation or when no audio is present.
 - XY oscilloscope is fed on the UI thread via the pane manager and always renders safely on first load.
 
 ### UX Notes
 
 - Switching tabs is glitch‑free and does not affect audio processing. Only visualization feeds are paused/resumed.
-- The Imager tab is currently a placeholder component; its activation is safe and has no audio side‑effects.
+- Imager is visuals‑only; Band hosts Width visuals + width controls.
 
 ---
 

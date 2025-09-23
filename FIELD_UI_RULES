@@ -1,7 +1,7 @@
 Field UI Rules (working notes)
 
 Last updated: 2025-09-22
-Scope: Conventions for Field’s UI (KnobCell/SwitchCell/Combo), Group 1 and Group 2 panels, labels, layout, performance.
+Scope: Conventions for Field’s UI (KnobCell/SwitchCell/Combo), tabs-driven panes (per‑tab 2×16 grids), labels, layout, performance.
 
 ---
 Core Principles
@@ -30,7 +30,7 @@ KnobCell Metrics & Styling
   - Use KnobCell mini strip for micro sliders/bars (BOOST mini, Q-Link) with explicit thickness; prefer right-side placement when appropriate.
 - LookAndFeel
   - Blue ticks at 12/3/6/9 via FieldLNF rotary drawing.
-  - Metallic background for Group 1 center items and Motion Engine cells; Group 2 stays default.
+  - Metallic background for Motion and Center items; other tabs default.
   - Optional properties: panelBrighten, borderBrighten. Use sparingly.
   - Combo: tintedSelected to hide default label when custom captioning is used.
 
@@ -39,13 +39,15 @@ KnobCell Metrics & Styling
 
 ---
 Panels, Grids, and Padding
-- Group 1: flattened 4×16 grid (left/center/right merged); preserve exact ordering; close gaps.
-- Group 2: flattened 4×16 grid using 8 columns; place items directly (no sub-containers). Build once; reflow only on size/scale changes (dirty flag).
+- Tabs: each tab owns a flattened 2×16 grid; close gaps; styled empty KnobCell fills blanks.
+- Band pane: Imager Width visuals + WIDTH LO/MID/HI controls; no Imager tooling (no PRE/FPS/mode buttons).
+- Imager tab: visuals‑only; tooling present but Width button removed.
 - Gaps
   - rowGap = 0, columnGap = 0.
-  - No outer reduced(...) around Group 2 layouts; items lay edge-to-edge with panel bounds.
-- Cell width
-  - Standard = L knob px + dp(8) across Delay/Reverb/Motion/Center.
+  - No outer reduced(...) around grid containers; items lay edge-to-edge with panel bounds.
+- ControlGridMetrics
+  - Derived from available width: colW, knobPx, valuePx, labelGapPx, rowH, controlsH=2*rowH.
+  - Controls sit flush under visuals (no 25% visuals trim).
 
 ---
 Reverb Engine (Group 2)
@@ -83,7 +85,7 @@ Performance Guidance (avoid UI lag)
 - Painting
   - Avoid expensive per-pixel noise/texture in paint() without caching. If using metallic/grain/scratches, pre-render to an Image.
   - Minimize layers/shadows/alpha per frame.
- - Timers & layout
+- Timers & layout
   - Editor heartbeat (global): baseline ~30 Hz, bursts to ~60 Hz briefly on interaction.
   - Component timers (local): 0 Hz when hidden; 15–30 Hz when visible; 60 Hz only with profiling and tiny repaints.
   - Overlay (Group 2) policy: single animation driver (editor timer), move-only slide (adjust overlay Y), no per-frame grid reflow; children built once; reflow on size/scale only.
@@ -106,8 +108,8 @@ Performance Guidance (avoid UI lag)
 ---
 Discrepancies & Redundancies (to monitor/fix)
 - Duplicate caption systems: remove external placeLabelBelow for knobs; standardize on slider.setName + KnobCell Managed.
-- Metallic background drift: only Group 1 center cells and Motion Engine should be metallic; do not tint Group 2.
-- Right-align/reduction remnants: ensure no stale right-align or reduced(...) in Group 2 layouts.
+- Metallic background drift: only Motion and Center cells should be metallic; do not tint others.
+- Right-align/reduction remnants: ensure no stale right-align or reduced(...) layouts.
 - Label coverage: audit all Motion/Center/Reverb knobs for setName(...); abbreviations per spec.
 - Value label precision: HP/LP 0 decimals; dB 1 decimal; percent 0 by default.
 - Punch Mode duplicate labels: prefer tintedSelected to suppress default Combo label when custom captioning is present.
@@ -120,7 +122,7 @@ Checklist for New Controls
 - [ ] Wrap in KnobCell/SwitchCell; set metrics; set ValueLabelMode::Managed and label gap.
 - [ ] Initialize the value label text once (format per type) before first paint.
 - [ ] Place in the flat grid with explicit row/column; no row/column gaps.
-- [ ] Apply group styling (metallic only in Group 1 center and Motion) via properties.
+- [ ] Apply styling (metallic for Motion/Center where appropriate) via properties.
 - [ ] Verify performance: no heavy work on UI thread; minimal repaints.
 
 ---
@@ -165,37 +167,18 @@ What we audit (entire plugin)
 - Consistency
   - All controls (EQ, Center, Delay, Reverb, Motion, meters) use canonical KnobCell/SwitchCell/Combo patterns with Managed value labels and slider.setName captions.
   - Legacy caption/placement systems removed (no external placeLabelBelow for KnobCell-managed controls).
-  - Styling rules respected: metallic only for Group 1 center and Motion; Group 2 default background.
-  - Border/theme flags used consistently per system: Reverb uses reverbMaroonBorder; Motion uses motionPurpleBorder (legacy motionGreenBorder allowed only for backward-compat); Delay uses delayThemeBorderTextGrey when intended.
+  - Styling rules respected: metallic only for Motion and Center; others default background.
+  - Border/theme flags used consistently per system: Reverb uses reverbMaroonBorder; Motion uses motionPurpleBorder; Delay uses delayThemeBorderTextGrey when intended.
 - Theme compliance
   - No hardcoded hex colours in paint paths across the codebase; all colours derived from FieldLNF::theme (including Motion’s motionPanelTop/motionPanelBot/motionBorder).
   - Color mode changes (palette button) update visuals across all modules (EQ overlays, Center, Delay, Reverb, Motion, menus).
 - Churn & layout
   - No component/attachment creation, deletion, or reparenting during drag/timer paths.
   - performLayout only on size/layout changes; not in timers.
-  - No outer reduced(...) around active Group 2 grids.
+  - No outer reduced(...) around active grids.
 - Paint cost
   - No per-paint randomization or heavy loops in hot controls; textures cached.
   - Repaint regions are minimal; no large parent repaints from child updates.
 - Timers & updates
   - Timer frequencies within 15–30 Hz; no heavy work inside timer callbacks.
   - Labels initialized once; ongoing updates avoid re-layout.
-
-How to run the audit (manual checklist)
-1) Theme sweep
-   - Cycle color modes (Ocean/Green/Pink/Yellow/Grey). Confirm Motion/Reverb/Center colors track theme values.
-2) Interaction sweep
-   - Drag representative knobs rapidly; observe for lag/hitches on start/stop. Ensure no component churn in logs.
-3) Repaint scope
-   - Turn on repaint highlighting/profiling (dev build). Verify only control bounds repaint during drags.
-4) Timer scope
-   - Disable meters/animations; confirm responsiveness. Re-enable at 15–30 Hz and confirm no stutter.
-5) Code scan
-   - Grep for hardcoded hex in UI paint paths; ensure theme usage. Grep for reparent/addAndMakeVisible in timers/drag handlers.
-6) Texture cache
-   - Confirm metallic/brush/noise cached; no per-paint random generation in hot paths.
-7) Layout review
-   - Verify flat grid bounds, zero gaps, and no outer reductions on Group 2 grids.
-
-Pass criteria
-- No frame hitches on rapid drags; repaint region is minimal; timers within target frequencies; zero hardcoded Motion colors; no runtime component churn.
