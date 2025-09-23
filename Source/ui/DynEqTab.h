@@ -370,12 +370,14 @@ private:
     {
         if (! overlay.isVisible() || selected < 0 || selected >= (int) points.size()) return;
         const float x = mapHzToX (points[(size_t) selected].hz);
-        const float y = mapDbToY (points[(size_t) selected].db);
         auto pane = getLocalBounds();
         const int w = 360, h = 84;
-        int ox = (int) x + 12, oy = (int) y - h - 12;
-        if (ox + w > pane.getRight()) ox = (int) x - w - 12;
-        if (oy < pane.getY()) oy = (int) y + 12;
+        // Fixed Y near bottom; X follows the point's latitude
+        int oy = pane.getBottom() - h - 12;
+        // Center overlay around the point's X, clamped within pane
+        int ox = (int) x - (w / 2);
+        if (ox < pane.getX()) ox = pane.getX() + 12;
+        if (ox + w > pane.getRight()) ox = pane.getRight() - w - 12;
         overlay.setBounds (juce::Rectangle<int> (ox, oy, w, h));
         overlay.toFront (false);
     }
