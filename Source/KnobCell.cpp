@@ -323,26 +323,76 @@ void KnobCell::paint (juce::Graphics& g)
         auto rr = r.reduced (3.0f);
         if (metallic)
         {
-            // Brushed-metal gradient; allow Motion variant to lean cooler to match purple border
-            const bool motionGreen = (bool) getProperties().getWithDefault ("motionPurpleBorder", (bool) getProperties().getWithDefault ("motionGreenBorder", false));
-            // Reverb keeps neutral steel; Motion tilts cooler/darker
-            // Motion variant: deeper bluish-purple to match the purple border
+            // Brushed-metal gradient with per-system tinting
+            const bool motionGreen   = (bool) getProperties().getWithDefault ("motionPurpleBorder", (bool) getProperties().getWithDefault ("motionGreenBorder", false));
+            const bool reverbMetal   = (bool) getProperties().getWithDefault ("reverbMetallic", false);
+            const bool delayMetal    = (bool) getProperties().getWithDefault ("delayMetallic", false);
+            const bool bandMetal     = (bool) getProperties().getWithDefault ("bandMetallic",  false);
+
+            juce::Colour top, bot;
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
             {
-                juce::Colour top = motionGreen ? lf->theme.motionPanelTop : juce::Colour (0xFF9AA0A7);
-                juce::Colour bot = motionGreen ? lf->theme.motionPanelBot : juce::Colour (0xFF7F858D);
-                juce::ColourGradient grad (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
-                g.setGradientFill (grad);
-                g.fillRoundedRectangle (rr, rad);
+                if (reverbMetal)
+                {
+                    // Burnt orange metallic
+                    top = juce::Colour (0xFFB1592A);
+                    bot = juce::Colour (0xFF7F2D1C);
+                }
+                else if (delayMetal)
+                {
+                    // Light yellowish-green metallic
+                    top = juce::Colour (0xFFBFD86A);
+                    bot = juce::Colour (0xFF88A845);
+                }
+                else if (bandMetal)
+                {
+                    // Band pane metallic blue
+                    top = juce::Colour (0xFF6AA0D8);
+                    bot = juce::Colour (0xFF3A6EA8);
+                }
+                else if (motionGreen)
+                {
+                    top = lf->theme.motionPanelTop;
+                    bot = lf->theme.motionPanelBot;
+                }
+                else
+                {
+                    // Neutral steel fallback
+                    top = juce::Colour (0xFF9AA0A7);
+                    bot = juce::Colour (0xFF7F858D);
+                }
             }
             else
             {
-                juce::Colour top = motionGreen ? juce::Colour (0xFF7B81C1) : juce::Colour (0xFF9AA0A7);
-                juce::Colour bot = motionGreen ? juce::Colour (0xFF555A99) : juce::Colour (0xFF7F858D);
-                juce::ColourGradient grad (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
-                g.setGradientFill (grad);
-                g.fillRoundedRectangle (rr, rad);
+                if (reverbMetal)
+                {
+                    top = juce::Colour (0xFFB1592A);
+                    bot = juce::Colour (0xFF7F2D1C);
+                }
+                else if (delayMetal)
+                {
+                    top = juce::Colour (0xFFBFD86A);
+                    bot = juce::Colour (0xFF88A845);
+                }
+                else if (bandMetal)
+                {
+                    top = juce::Colour (0xFF6AA0D8);
+                    bot = juce::Colour (0xFF3A6EA8);
+                }
+                else if (motionGreen)
+                {
+                    top = juce::Colour (0xFF7B81C1);
+                    bot = juce::Colour (0xFF555A99);
+                }
+                else
+                {
+                    top = juce::Colour (0xFF9AA0A7);
+                    bot = juce::Colour (0xFF7F858D);
+                }
             }
+            juce::ColourGradient grad (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
+            g.setGradientFill (grad);
+            g.fillRoundedRectangle (rr, rad);
 
             // Subtle horizontal brushing lines (slightly denser)
             g.setColour (juce::Colours::white.withAlpha (0.045f));

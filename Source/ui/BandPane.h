@@ -2,7 +2,7 @@
 #include <JuceHeader.h>
 #include "ImagerPane.h"
 #include "ControlGridMetrics.h"
-#include "ImagerControlsPane.h"
+#include "BandControlsPane.h"
 
 // BandPane: A focused view that reuses Imager's Width mode (including Designer overlay)
 class BandPane : public juce::Component
@@ -20,8 +20,8 @@ public:
         o.enableWidthView = true; // allow Width rendering
         o.mode = ImagerPane::Options::Mode::Width; // force Width view
         imager->setOptions (o);
-        // Use real width controls from Imager
-        controls = std::make_unique<ImagerControlsPane>(p.apvts);
+        // Band-specific controls pane (WIDTH + band widths)
+        controls = std::make_unique<BandControlsPane>(p.apvts);
         addAndMakeVisible (*controls);
     }
 
@@ -53,7 +53,7 @@ public:
 
 private:
     std::unique_ptr<ImagerPane> imager;
-    std::unique_ptr<ImagerControlsPane> controls;
+    std::unique_ptr<BandControlsPane> controls;
 };
 
 

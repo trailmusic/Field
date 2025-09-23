@@ -35,6 +35,7 @@ set(SRC
     ui/ProcessedSpectrumPane.h
     ui/ImagerPane.h
     ui/ImagerControlsPane.h
+    ui/BandControlsPane.h
     ui/ImagerTab.h
     ui/XYControlsPane.h
     ui/XYTab.h

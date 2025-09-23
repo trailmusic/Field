@@ -106,10 +106,29 @@ private:
             auto cell = std::make_unique<KnobCell> (s, v, cap);
             cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             cell->setValueLabelGap (labelGapPx);
+            // Styling: Delay metallic (light yellowish-green) + border
+            cell->getProperties().set ("delayThemeBorderTextGrey", true);
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("delayMetallic", true);
             addAndMakeVisible (*cell);
             knobCells.emplace_back (cell.get());
             ownedCells.emplace_back (std::move (cell));
             sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, pid, s));
+
+            // Initialize and live-update value labels
+            auto applyLabel = [&]()
+            {
+                int decimals = 2;
+                juce::String id (pid);
+                if (id.containsIgnoreCase ("_hz")) decimals = 0;
+                else if (id.containsIgnoreCase ("_db")) decimals = 1;
+                else if (id.containsIgnoreCase ("_pct")) decimals = 0;
+                else if (id.containsIgnoreCase ("_ms")) decimals = 0;
+                else if (id.containsIgnoreCase ("_sec")) decimals = 2;
+                v.setText (juce::String (s.getValue(), decimals), juce::dontSendNotification);
+            };
+            applyLabel();
+            s.onValueChange = [&, applyLabel]() { applyLabel(); };
         };
 
         // Row A tail (TIME..PRE)
@@ -176,6 +195,29 @@ private:
         push (ownedCells[19].get()); // REL
         push (ownedCells[20].get()); // LA
         push (ownedCells[21].get()); // RAT
+
+        // Fill blanks up to 32 with styled Delay blanks
+        const int totalNeeded = 32;
+        while ((int) ownedCells.size() < totalNeeded)
+        {
+            auto sl = std::make_unique<juce::Slider>();
+            auto lb = std::make_unique<juce::Label>(); lb->setVisible (false);
+            styleKnob (*sl);
+            auto cell = std::make_unique<KnobCell> (*sl, *lb, juce::String());
+            cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            cell->setValueLabelGap (labelGapPx);
+            cell->setShowKnob (false);
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("delayMetallic", true);
+            cell->getProperties().set ("delayThemeBorderTextGrey", true);
+            addAndMakeVisible (*cell);
+            knobCells.emplace_back (cell.get());
+            blankSliders.emplace_back (std::move (sl));
+            blankLabels.emplace_back (std::move (lb));
+            ownedCells.emplace_back (std::move (cell));
+        }
+        for (int i = (int) gridOrder.size(); i < totalNeeded; ++i)
+            push (ownedCells[(size_t) i].get());
     }
 
     void applyMetricsToAll()
@@ -212,6 +254,8 @@ private:
     std::vector<KnobCell*> knobCells;
     std::vector<std::unique_ptr<KnobCell>> ownedCells;
     std::vector<juce::Component*> gridOrder;
+    std::vector<std::unique_ptr<juce::Slider>> blankSliders;
+    std::vector<std::unique_ptr<juce::Label>>  blankLabels;
 
     // Metrics
     int knobPx     = 48;

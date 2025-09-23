@@ -61,28 +61,69 @@ private:
         auto cell = std::make_unique<KnobCell> (s, v, cap);
         cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
         cell->setValueLabelGap (labelGapPx);
+        // Band pane styling: metallic blue
+        cell->getProperties().set ("metallic", true);
+        cell->getProperties().set ("bandMetallic", true);
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
         ownedCells.emplace_back (std::move (cell));
         sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, pid, s));
+
+        // Initialize and live-update label with sensible precision
+        auto applyLabel = [&]()
+        {
+            int decimals = 2;
+            juce::String id (pid);
+            if (id.containsIgnoreCase ("_hz")) decimals = 0;
+            else if (id.equalsIgnoreCase ("width")) decimals = 2;
+            else if (id.containsIgnoreCase ("_db")) decimals = 1;
+            else if (id.containsIgnoreCase ("_pct")) decimals = 0;
+            v.setText (juce::String (s.getValue(), decimals), juce::dontSendNotification);
+        };
+        applyLabel();
+        s.onValueChange = [&, applyLabel]() { applyLabel(); };
     }
 
     void buildControls()
     {
-        // Imaging width only (other imaging/placement controls moved to XY)
-        makeCell (widthLo, widthLoV, "WIDTH LO", "width_lo");
+        // Imaging widths for Band: Global + per-band
+        makeCell (width,    widthV,    "WIDTH",     "width");
+        makeCell (widthLo,  widthLoV,  "WIDTH LO",  "width_lo");
         makeCell (widthMid, widthMidV, "WIDTH MID", "width_mid");
-        makeCell (widthHi, widthHiV, "WIDTH HI", "width_hi");
+        makeCell (widthHi,  widthHiV,  "WIDTH HI",  "width_hi");
 
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
-        // Row A: width lo/mid/hi, [13 empty]
-        push (ownedCells[0].get()); // WIDTH LO
-        push (ownedCells[1].get()); // WIDTH MID
-        push (ownedCells[2].get()); // WIDTH HI
-        for (int i = 0; i < 13; ++i) gridOrder.push_back (nullptr);
+        // Row A: WIDTH, WIDTH LO, WIDTH MID, WIDTH HI, [12 empty]
+        push (ownedCells[0].get()); // WIDTH
+        push (ownedCells[1].get()); // WIDTH LO
+        push (ownedCells[2].get()); // WIDTH MID
+        push (ownedCells[3].get()); // WIDTH HI
+        for (int i = 0; i < 12; ++i) gridOrder.push_back (nullptr);
 
         // Row B: [16 empty]
         for (int i = 0; i < 16; ++i) gridOrder.push_back (nullptr);
+
+        // Fill blanks up to 32 with styled Band blanks (metallic blue)
+        const int totalNeeded = 32;
+        while ((int) ownedCells.size() < totalNeeded)
+        {
+            auto sl = std::make_unique<juce::Slider>();
+            auto lb = std::make_unique<juce::Label>(); lb->setVisible (false);
+            styleKnob (*sl);
+            auto cell = std::make_unique<KnobCell> (*sl, *lb, juce::String());
+            cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            cell->setValueLabelGap (labelGapPx);
+            cell->setShowKnob (false);
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("bandMetallic", true); // metallic blue mapping in KnobCell
+            addAndMakeVisible (*cell);
+            knobCells.emplace_back (cell.get());
+            blankSliders.emplace_back (std::move (sl));
+            blankLabels.emplace_back (std::move (lb));
+            ownedCells.emplace_back (std::move (cell));
+        }
+        for (int i = (int) gridOrder.size(); i < totalNeeded; ++i)
+            push (ownedCells[(size_t) i].get());
     }
 
     void applyMetricsToAll()
@@ -97,13 +138,15 @@ private:
     }
 
     juce::AudioProcessorValueTreeState& apvts;
-    // Sliders/labels (width only; other imaging controls moved to XY)
-    juce::Slider widthLo, widthMid, widthHi;
-    juce::Label  widthLoV, widthMidV, widthHiV;
+    // Sliders/labels (Band): master width + per-band widths
+    juce::Slider width, widthLo, widthMid, widthHi;
+    juce::Label  widthV, widthLoV, widthMidV, widthHiV;
     std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>> sAtts;
     std::vector<KnobCell*> knobCells;
     std::vector<std::unique_ptr<KnobCell>> ownedCells;
     std::vector<juce::Component*> gridOrder;
+    std::vector<std::unique_ptr<juce::Slider>> blankSliders;
+    std::vector<std::unique_ptr<juce::Label>>  blankLabels;
     int knobPx = 48, valuePx = 14, labelGapPx = 4, colW = 56, rowH = 0;
 };
 

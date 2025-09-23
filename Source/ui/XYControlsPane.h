@@ -175,6 +175,30 @@ private:
         push (ownedCells[20].get()); // MONO
         push (ownedCells[21].get()); // PAN
         push (ownedCells[22].get()); // SAT MIX
+
+        // Fill existing nullptr slots with styled XY blanks (metallic grey)
+        const int totalNeeded = 32;
+        if ((int) gridOrder.size() < totalNeeded) gridOrder.resize (totalNeeded, nullptr);
+        for (int i = 0; i < totalNeeded; ++i)
+        {
+            if (gridOrder[(size_t) i] == nullptr)
+            {
+                auto sl = std::make_unique<juce::Slider>();
+                auto lb = std::make_unique<juce::Label>(); lb->setVisible (false);
+                styleKnob (*sl);
+                auto cell = std::make_unique<KnobCell> (*sl, *lb, juce::String());
+                cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+                cell->setValueLabelGap (labelGapPx);
+                cell->setShowKnob (false);
+                cell->getProperties().set ("metallic", true); // metallic grey default for XY
+                addAndMakeVisible (*cell);
+                knobCells.emplace_back (cell.get());
+                blankSliders.emplace_back (std::move (sl));
+                blankLabels.emplace_back (std::move (lb));
+                ownedCells.emplace_back (std::move (cell));
+                gridOrder[(size_t) i] = ownedCells.back().get();
+            }
+        }
     }
 
     void applyMetricsToAll()
@@ -207,6 +231,8 @@ private:
     std::vector<std::unique_ptr<KnobCell>> ownedCells;
     std::vector<std::unique_ptr<SimpleSwitchCell>> ownedSwitches;
     std::vector<juce::Component*> gridOrder;
+    std::vector<std::unique_ptr<juce::Slider>> blankSliders;
+    std::vector<std::unique_ptr<juce::Label>>  blankLabels;
 
     int knobPx = 48, valuePx = 14, labelGapPx = 4, colW = 56, rowH = 0;
 };

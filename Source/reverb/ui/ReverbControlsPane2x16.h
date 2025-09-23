@@ -83,10 +83,29 @@ private:
             auto cell = std::make_unique<KnobCell> (s, v, cap);
             cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             cell->setValueLabelGap (labelGapPx);
+            // Styling: Reverb metallic (burnt orange) + border
+            cell->getProperties().set ("reverbMaroonBorder", true);
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("reverbMetallic", true);
             addAndMakeVisible (*cell);
             knobCells.emplace_back (cell.get());
             ownedCells.emplace_back (std::move (cell));
             sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, pid, s));
+
+            // Initialize and live-update value labels
+            auto applyLabel = [&]()
+            {
+                int decimals = 2;
+                juce::String id (pid);
+                if (id.containsIgnoreCase ("_hz")) decimals = 0;
+                else if (id.containsIgnoreCase ("_db")) decimals = 1;
+                else if (id.containsIgnoreCase ("_pct") || id.containsIgnoreCase ("_ratio")) decimals = 0;
+                else if (id.containsIgnoreCase ("_ms")) decimals = 0;
+                else if (id.containsIgnoreCase ("_sec")) decimals = 2;
+                v.setText (juce::String (s.getValue(), decimals), juce::dontSendNotification);
+            };
+            applyLabel();
+            s.onValueChange = [&, applyLabel]() { applyLabel(); };
         };
 
         // Row A first 8 (Enable/Algo/WetOnly/SIZE handled in ReverbTab header area if needed)
@@ -130,6 +149,31 @@ private:
         for (int i = 0; i < 16; ++i) push (ownedCells[(size_t) i].get());
         // Row B (WET..RAT then XO HI)
         for (int i = 16; i < ownedCells.size(); ++i) push (ownedCells[(size_t) i].get());
+
+        // Fill blanks up to 32 with styled Reverb blanks
+        const int totalNeeded = 32;
+        while ((int) ownedCells.size() < totalNeeded)
+        {
+            // Dummy slider/label (hidden label)
+            auto sl = std::make_unique<juce::Slider>();
+            auto lb = std::make_unique<juce::Label>(); lb->setVisible (false);
+            styleKnob (*sl);
+            auto cell = std::make_unique<KnobCell> (*sl, *lb, juce::String());
+            cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            cell->setValueLabelGap (labelGapPx);
+            cell->setShowKnob (false);
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("reverbMetallic", true);
+            cell->getProperties().set ("reverbMaroonBorder", true);
+            addAndMakeVisible (*cell);
+            knobCells.emplace_back (cell.get());
+            blankSliders.emplace_back (std::move (sl));
+            blankLabels.emplace_back (std::move (lb));
+            ownedCells.emplace_back (std::move (cell));
+        }
+        // Append blanks to grid until 32
+        for (int i = (int) gridOrder.size(); i < totalNeeded; ++i)
+            push (ownedCells[(size_t) i].get());
     }
 
     void applyMetricsToAll()
@@ -150,6 +194,8 @@ private:
     std::vector<KnobCell*> knobCells;
     std::vector<std::unique_ptr<KnobCell>> ownedCells;
     std::vector<juce::Component*> gridOrder;
+    std::vector<std::unique_ptr<juce::Slider>> blankSliders;
+    std::vector<std::unique_ptr<juce::Label>>  blankLabels;
 
     int knobPx     = 48;
     int valuePx    = 14;
