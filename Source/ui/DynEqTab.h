@@ -53,6 +53,7 @@ public:
                 points[(size_t) selected].type = tp;
                 if (points[(size_t) selected].bandIdx >= 0)
                     setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::type, (float) tp);
+                rebuildEqPath();
                 repaint();
             }
         };
@@ -76,6 +77,22 @@ public:
                 repaint();
             }
         };
+        overlay.onDynChanged = [this](bool on)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                auto& p = points[(size_t) selected]; p.dynOn = on;
+                if (p.bandIdx >= 0) setBandParam (p.bandIdx, dynEq::Band::dynOn, on ? 1.0f : 0.0f);
+            }
+        };
+        overlay.onSpecChanged = [this](bool on)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                auto& p = points[(size_t) selected]; p.specOn = on;
+                if (p.bandIdx >= 0) setBandParam (p.bandIdx, dynEq::Band::specOn, on ? 1.0f : 0.0f);
+            }
+        };
     }
 
     void paint (juce::Graphics& g) override
@@ -90,10 +107,12 @@ public:
 
     void paintOverChildren (juce::Graphics& g) override
     {
-        // Points overlay on top of analyzer
-        // Combined EQ curve (approximate visual)
-        g.setColour (juce::Colours::cyan.withAlpha (0.85f));
-        g.strokePath (eqPath, juce::PathStrokeType (1.6f));
+        // Band-wise light curves
+        g.setColour (juce::Colours::white.withAlpha (0.20f));
+        for (auto& bp : bandPaths) g.strokePath (bp, juce::PathStrokeType (1.0f));
+        // Combined EQ curve (macro)
+        g.setColour (juce::Colours::cyan.withAlpha (0.95f));
+        g.strokePath (eqPath, juce::PathStrokeType (1.8f));
 
         g.setColour (juce::Colours::yellow.withAlpha (0.95f));
         for (const auto& pt : points)
@@ -128,10 +147,11 @@ public:
     void pushBlockPre (const float* L, const float* R, int n) { analyzer.pushBlockPre (L, R, n); }
 
 private:
-    struct BandPoint { float hz=1000.f; float db=0.f; float q=0.707f; int type=0; int phase=1; int channel=0; int bandIdx=-1; };
+    struct BandPoint { float hz=1000.f; float db=0.f; float q=0.707f; int type=0; int phase=1; int channel=0; int bandIdx=-1; bool dynOn=false; bool specOn=false; };
     std::vector<BandPoint> points;
     int selected { -1 };
     juce::Path eqPath;
+    std::vector<juce::Path> bandPaths;
 
     // Floating band editor overlay
     class BandOverlay : public juce::Component
@@ -142,6 +162,8 @@ private:
         std::function<void(int)>   onTypeChanged;
         std::function<void(int)>   onPhaseChanged;
         std::function<void(int)>   onChanChanged;
+        std::function<void(bool)>  onDynChanged;
+        std::function<void(bool)>  onSpecChanged;
         BandOverlay()
         {
             setInterceptsMouseClicks (true, true);
@@ -165,12 +187,13 @@ private:
             qLabel.setJustificationType (juce::Justification::centredLeft);
             addAndMakeVisible (qLabel);
 
-            // Type / Phase / Channel selectors
+            // Type icon + selectors
+            addAndMakeVisible (typeIcon);
             typeLabel.setText ("TYPE", juce::dontSendNotification);
             typeLabel.setJustificationType (juce::Justification::centredLeft);
             addAndMakeVisible (typeLabel);
             typeCb.addItemList (juce::StringArray{ "Bell","LowShelf","HighShelf","HP","LP","Notch","BandPass","AllPass" }, 1);
-            typeCb.onChange = [this]{ if (!updating && onTypeChanged) onTypeChanged (typeCb.getSelectedItemIndex()); };
+            typeCb.onChange = [this]{ if (!updating) { typeIcon.setType (typeCb.getSelectedItemIndex()); if (onTypeChanged) onTypeChanged (typeCb.getSelectedItemIndex()); } };
             addAndMakeVisible (typeCb);
 
             phaseLabel.setText ("PHASE", juce::dontSendNotification);
@@ -186,6 +209,14 @@ private:
             chanCb.addItemList (juce::StringArray{ "Stereo","Mid","Side","Left","Right" }, 1);
             chanCb.onChange = [this]{ if (!updating && onChanChanged) onChanChanged (chanCb.getSelectedItemIndex()); };
             addAndMakeVisible (chanCb);
+
+            // Dynamic / Spectral toggles
+            dynToggle.setButtonText ("DYN");
+            dynToggle.onClick = [this]{ if (!updating && onDynChanged) onDynChanged (dynToggle.getToggleState()); };
+            addAndMakeVisible (dynToggle);
+            specToggle.setButtonText ("SPEC");
+            specToggle.onClick = [this]{ if (!updating && onSpecChanged) onSpecChanged (specToggle.getToggleState()); };
+            addAndMakeVisible (specToggle);
         }
         void paint (juce::Graphics& g) override
         {
@@ -208,16 +239,19 @@ private:
 
             r.removeFromTop (8);
             auto half = r.removeFromTop (22);
-            typeLabel.setBounds (half.removeFromLeft (40));
-            typeCb.setBounds (half.removeFromLeft (90));
+            typeIcon.setBounds (half.removeFromLeft (28));
+            typeLabel.setBounds (half.removeFromLeft (36));
+            typeCb.setBounds (half.removeFromLeft (110));
             phaseLabel.setBounds (half.removeFromLeft (50));
-            phaseCb.setBounds (half);
+            phaseCb.setBounds (half.removeFromLeft (110));
+            dynToggle.setBounds (half.removeFromLeft (50));
+            specToggle.setBounds (half.removeFromLeft (60));
 
             auto half2 = r.removeFromTop (22);
             chanLabel.setBounds (half2.removeFromLeft (40));
             chanCb.setBounds (half2.removeFromLeft (120));
         }
-        void setValues (float gainDb, float qVal, int typeIdx, int phaseIdx, int chanIdx)
+        void setValues (float gainDb, float qVal, int typeIdx, int phaseIdx, int chanIdx, bool dynOn, bool specOn)
         {
             juce::ScopedValueSetter<bool> sv (updating, true);
             gain.setValue (gainDb, juce::dontSendNotification);
@@ -225,11 +259,39 @@ private:
             typeCb.setSelectedItemIndex (juce::jlimit (0, juce::jmax (0, typeCb.getNumItems()-1), typeIdx), juce::dontSendNotification);
             phaseCb.setSelectedItemIndex (juce::jlimit (0, juce::jmax (0, phaseCb.getNumItems()-1), phaseIdx), juce::dontSendNotification);
             chanCb.setSelectedItemIndex (juce::jlimit (0, juce::jmax (0, chanCb.getNumItems()-1), chanIdx), juce::dontSendNotification);
+            typeIcon.setType (typeIdx);
+            dynToggle.setToggleState (dynOn, juce::dontSendNotification);
+            specToggle.setToggleState (specOn, juce::dontSendNotification);
         }
     private:
         juce::Slider gain, q;
         juce::Label gainLabel, qLabel, typeLabel, phaseLabel, chanLabel;
         juce::ComboBox typeCb, phaseCb, chanCb;
+        juce::ToggleButton dynToggle, specToggle;
+        struct SmallCurveIcon : public juce::Component {
+            int type { 0 };
+            void setType (int t){ type = t; repaint(); }
+            void paint (juce::Graphics& g) override {
+                auto r = getLocalBounds().toFloat();
+                g.setColour (juce::Colours::white.withAlpha (0.75f));
+                juce::Path p; const int N = 28;
+                auto mapx = [&](int i){ return r.getX() + (float) i / (float) (N-1) * r.getWidth(); };
+                auto mapy = [&](float v01){ return juce::jmap (v01, 0.0f, 1.0f, r.getBottom(), r.getY()); };
+                auto shape = [&](float t){
+                    if (type == 0) return 0.5f + 0.35f * std::sin ((t-0.5f) * juce::MathConstants<float>::pi);
+                    if (type == 1) return 0.35f + 0.5f * 1.0f / (1.0f + std::exp (-10.0f*(t-0.45f)));
+                    if (type == 2) return 0.65f - 0.5f * 1.0f / (1.0f + std::exp (-10.0f*(t-0.55f)));
+                    if (type == 3) return juce::jlimit (0.0f,1.0f, (t*1.6f));
+                    if (type == 4) return juce::jlimit (0.0f,1.0f, 1.0f-(t*1.6f));
+                    if (type == 5) return 0.5f + 0.45f * std::sin ((t-0.5f) * juce::MathConstants<float>::twoPi);
+                    if (type == 6) return 0.5f + 0.45f * std::abs (std::sin ((t-0.5f) * juce::MathConstants<float>::twoPi));
+                    return 0.5f;
+                };
+                p.startNewSubPath (mapx(0), mapy (shape(0)));
+                for (int i=1;i<N;++i) p.lineTo (mapx(i), mapy (shape((float) i/(N-1))));
+                g.strokePath (p, juce::PathStrokeType (1.2f));
+            }
+        } typeIcon;
         bool updating { false };
     } overlay;
 
@@ -277,25 +339,68 @@ private:
     void rebuildEqPath()
     {
         eqPath.clear();
+        bandPaths.clear();
         auto r = analyzer.getBounds().toFloat();
         if (r.isEmpty()) return;
 
         const int N = juce::jmax (128, (int) r.getWidth());
-        auto dbAt = [this](double hz)
+        auto bandDbAt = [this](const BandPoint& b, double hz)
         {
-            if (points.empty()) return 0.0f;
-            // Approximate bell contributions in log domain using Gaussian shaped gain with Q
             const double logHz = std::log10 (juce::jlimit (20.0, 20000.0, hz));
-            float sumDb = 0.0f;
-            for (const auto& pt : points)
+            const double logC  = std::log10 (juce::jlimit (20.0f, 20000.0f, b.hz));
+            const double q     = juce::jlimit (0.1, 36.0, (double) b.q);
+            const double width = juce::jlimit (0.02, 0.50, 0.22 / q);
+            const double d     = (logHz - logC) / width;
+            switch (b.type)
             {
-                const double logC = std::log10 (juce::jlimit (20.0f, 20000.0f, pt.hz));
-                const double bw = juce::jlimit (0.02, 0.50, 0.22 / juce::jmax (0.1, (double) pt.q)); // heuristic width
-                const double d = (logHz - logC) / bw;
-                const float w = (float) std::exp (-0.5 * d * d);
-                sumDb += pt.db * w;
+                case 0: { // Bell
+                    const float w = (float) std::exp (-0.5 * d * d);
+                    return b.db * w;
+                }
+                case 1: { // LowShelf
+                    const double k = 8.0 * juce::jlimit (0.2, 3.0, q * 0.25);
+                    const double s = 1.0 / (1.0 + std::exp (-k * (logHz - logC)));
+                    return (float) (b.db * s);
+                }
+                case 2: { // HighShelf
+                    const double k = 8.0 * juce::jlimit (0.2, 3.0, q * 0.25);
+                    const double s = 1.0 / (1.0 + std::exp (-k * (logHz - logC)));
+                    return (float) (b.db * (1.0 - s));
+                }
+                case 3: { // HP
+                    const double n = 2.0; // ~12 dB/oct
+                    const double fc = std::pow (10.0, logC);
+                    const double ratio = juce::jlimit (1e-6, 1e6, fc / juce::jlimit (20.0, 20000.0, hz));
+                    const double att = -std::abs ((double) b.db <= 0.01 ? 24.0 : (double) b.db);
+                    const double mag = 1.0 / std::sqrt (1.0 + std::pow (ratio, 2.0 * n));
+                    return (float) (att * (1.0 - mag));
+                }
+                case 4: { // LP
+                    const double n = 2.0;
+                    const double fc = std::pow (10.0, logC);
+                    const double ratio = juce::jlimit (1e-6, 1e6, juce::jlimit (20.0, 20000.0, hz) / fc);
+                    const double att = -std::abs ((double) b.db <= 0.01 ? 24.0 : (double) b.db);
+                    const double mag = 1.0 / std::sqrt (1.0 + std::pow (ratio, 2.0 * n));
+                    return (float) (att * (1.0 - mag));
+                }
+                case 5: { // Notch
+                    const float depth = -std::abs (b.db);
+                    const float w = (float) std::exp (-0.5 * d * d);
+                    return depth * w;
+                }
+                case 6: { // BandPass
+                    const float w = (float) std::exp (-0.5 * d * d);
+                    return std::abs (b.db) * w;
+                }
+                default: // AllPass
+                    return 0.0f;
             }
-            return sumDb;
+        };
+        auto totalDbAt = [&](double hz)
+        {
+            float s = 0.0f;
+            for (const auto& b : points) s += bandDbAt (b, hz);
+            return s;
         };
 
         auto mapX = [&](int i)
@@ -305,7 +410,7 @@ private:
             const double a = std::log10 (minHz), b = std::log10 (maxHz);
             const double logF = juce::jmap (t, 0.0, 1.0, a, b);
             const double hz = std::pow (10.0, logF);
-            return std::pair<float,float> ((float) hz, mapDbToY (dbAt (hz)));
+            return std::pair<float,float> ((float) hz, mapDbToY (totalDbAt (hz)));
         };
 
         auto p0 = mapX (0); eqPath.startNewSubPath (r.getX(), p0.second);
@@ -314,6 +419,28 @@ private:
             auto p = mapX (i);
             const float x = r.getX() + (float) i / (float) (N - 1) * r.getWidth();
             eqPath.lineTo (x, p.second);
+        }
+
+        // Per-band paths
+        bandPaths.resize (points.size());
+        for (size_t bi = 0; bi < points.size(); ++bi)
+        {
+            auto& bp = bandPaths[bi];
+            auto mapBand = [&](int i){
+                const double minHz = 20.0, maxHz = 20000.0;
+                const double t = (double) i / (double) (N - 1);
+                const double a = std::log10 (minHz), b = std::log10 (maxHz);
+                const double logF = juce::jmap (t, 0.0, 1.0, a, b);
+                const double hz = std::pow (10.0, logF);
+                return std::pair<float,float> ((float) hz, mapDbToY (bandDbAt (points[bi], hz)));
+            };
+            auto q0 = mapBand (0); bp.startNewSubPath (r.getX(), q0.second);
+            for (int i = 1; i < N; ++i)
+            {
+                auto q = mapBand (i);
+                const float x = r.getX() + (float) i / (float) (N - 1) * r.getWidth();
+                bp.lineTo (x, q.second);
+            }
         }
     }
 
@@ -338,6 +465,12 @@ private:
         {
             // Add new band at click
             BandPoint bp; bp.hz = juce::jlimit (20.f, 20000.f, mapXToHz (e.getPosition().x)); bp.db = juce::jlimit (-24.f, 24.f, mapYToDb (e.getPosition().y));
+            // Predict type based on click longitude
+            const auto pane = analyzer.getBounds();
+            const float x01 = juce::jlimit (0.0f, 1.0f, (e.getPosition().x - pane.getX()) / (float) juce::jmax (1, pane.getWidth()));
+            if (bp.hz < 80.0f || x01 < 0.12f) { bp.type = 3; bp.db = -12.0f; }
+            else if (bp.hz > 8000.0f || x01 > 0.88f) { bp.type = 4; bp.db = -12.0f; }
+            else { bp.type = 0; }
             // Allocate APVTS band slot and sync
             const int slot = allocateBandSlot();
             if (slot >= 0)
@@ -361,7 +494,7 @@ private:
         if (selected >= 0 && selected < (int) points.size())
         {
             auto& pt = points[(size_t) selected];
-            overlay.setValues (pt.db, pt.q, pt.type, pt.phase, pt.channel);
+            overlay.setValues (pt.db, pt.q, pt.type, pt.phase, pt.channel, pt.dynOn, pt.specOn);
             overlay.setVisible (true);
             positionOverlay();
         }
@@ -385,7 +518,7 @@ private:
             }
             rebuildEqPath();
             repaint();
-            overlay.setValues (pt.db, pt.q, pt.type, pt.phase, pt.channel);
+            overlay.setValues (pt.db, pt.q, pt.type, pt.phase, pt.channel, pt.dynOn, pt.specOn);
             positionOverlay();
         }
     }
@@ -402,7 +535,7 @@ private:
             if (selected == idx) selected = -1; else if (selected > idx) --selected;
             rebuildEqPath();
             repaint();
-            if (selected < 0) overlay.setVisible (false); else { auto& pt2 = points[(size_t) selected]; overlay.setValues (pt2.db, pt2.q, pt2.type, pt2.phase, pt2.channel); positionOverlay(); }
+            if (selected < 0) overlay.setVisible (false); else { auto& pt2 = points[(size_t) selected]; overlay.setValues (pt2.db, pt2.q, pt2.type, pt2.phase, pt2.channel, pt2.dynOn, pt2.specOn); positionOverlay(); }
         }
     }
 
@@ -417,7 +550,7 @@ private:
                 setBandParam (pt.bandIdx, dynEq::Band::q, pt.q);
             rebuildEqPath();
             repaint();
-            overlay.setValues (pt.db, pt.q, pt.type, pt.phase, pt.channel);
+            overlay.setValues (pt.db, pt.q, pt.type, pt.phase, pt.channel, pt.dynOn, pt.specOn);
             positionOverlay();
         }
     }
