@@ -1,6 +1,6 @@
 Field UI Rules (working notes)
 
-Last updated: 2025-09-22
+Last updated: 2025-09-23
 Scope: Conventions for Field’s UI (KnobCell/SwitchCell/Combo), tabs-driven panes (per‑tab 2×16 grids), labels, layout, performance.
 
 ---
@@ -30,7 +30,12 @@ KnobCell Metrics & Styling
   - Use KnobCell mini strip for micro sliders/bars (BOOST mini, Q-Link) with explicit thickness; prefer right-side placement when appropriate.
 - LookAndFeel
   - Blue ticks at 12/3/6/9 via FieldLNF rotary drawing.
-  - Metallic background for Motion and Center items; other tabs default.
+  - Metallic backgrounds:
+    - Motion and Center (as before).
+    - Delay: light yellow‑green metallic (`delayMetallic` + `delayThemeBorderTextGrey`).
+    - Reverb: burnt‑orange metallic (`reverbMetallic` + `reverbMaroonBorder`).
+    - Band: metallic blue (`bandMetallic`).
+    - XY blanks: metallic grey (`metallic` only) for empty cells.
   - Optional properties: panelBrighten, borderBrighten. Use sparingly.
   - Combo: tintedSelected to hide default label when custom captioning is used.
 
@@ -40,7 +45,7 @@ KnobCell Metrics & Styling
 ---
 Panels, Grids, and Padding
 - Tabs: each tab owns a flattened 2×16 grid; close gaps; styled empty KnobCell fills blanks.
-- Band pane: Imager Width visuals + WIDTH LO/MID/HI controls; no Imager tooling (no PRE/FPS/mode buttons).
+- Band pane: Imager Width visuals + WIDTH (global) + WIDTH LO/MID/HI controls; no Imager tooling (no PRE/FPS/mode buttons). Seven Designer controls (TILT S, PIVOT, AUTO DEP, AUTO THR, ATT, REL, MAX) live here as full KnobCells.
 - Imager tab: visuals‑only; tooling present but Width button removed.
 - Gaps
   - rowGap = 0, columnGap = 0.
@@ -108,7 +113,7 @@ Performance Guidance (avoid UI lag)
 ---
 Discrepancies & Redundancies (to monitor/fix)
 - Duplicate caption systems: remove external placeLabelBelow for knobs; standardize on slider.setName + KnobCell Managed.
-- Metallic background drift: only Motion and Center cells should be metallic; do not tint others.
+- Metallic background drift: allowed metallic sets are Motion, Center, Delay, Reverb, Band; XY may use metallic grey for blanks only.
 - Right-align/reduction remnants: ensure no stale right-align or reduced(...) layouts.
 - Label coverage: audit all Motion/Center/Reverb knobs for setName(...); abbreviations per spec.
 - Value label precision: HP/LP 0 decimals; dB 1 decimal; percent 0 by default.

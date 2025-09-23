@@ -67,11 +67,7 @@ public:
         modeWidth.onClick = [=]{ setMode (Options::Mode::Width,"width");};
         modeHeat .onClick = [=]{ setMode (Options::Mode::Heat, "heat"); };
 
-        // Floating translucent bottom-center panel (container for Designer controls)
-        initDesignerControls();
-        overlay = std::make_unique<DesignerOverlay>(*this);
-        addAndMakeVisible (*overlay);
-        overlay->setVisible (false);
+        // Designer overlay removed; controls migrated to BandControlsPane
     }
 
     void setOptions (const Options& o)
@@ -196,19 +192,7 @@ public:
         // Resize heatmap history width
         engine.setHistoryWidth (juce::jmax (64, W - sideW - 16));
 
-        // Floating Designer overlay: bottom-centered within main area (outside right panel)
-        auto mainArea = r.toFloat();
-        const int ow = juce::jlimit (260, 520, (int) std::round (mainArea.getWidth() * 0.70f));
-        const int oh = juce::jlimit (110, 180, (int) std::round (mainArea.getHeight() * 0.22f));
-        const int ox = (int) mainArea.getX() + ((int) mainArea.getWidth() - ow) / 2;
-        const int oy = (int) mainArea.getBottom() - oh - 10;
-        if (! overlayBoundsSet)
-            overlayBounds = juce::Rectangle<int> (ox, oy, ow, oh);
-        // Clamp to main area
-        overlayBounds.setPosition ({ juce::jlimit ((int) mainArea.getX()+4, (int) (mainArea.getRight()-overlayBounds.getWidth()-4), overlayBounds.getX()),
-                                     juce::jlimit ((int) mainArea.getY()+4, (int) (mainArea.getBottom()-overlayBounds.getHeight()-4), overlayBounds.getY()) });
-        if (overlay) overlay->setBounds (overlayBounds);
-        if (overlay) overlay->setVisible (opts.enableWidthView && opts.mode == Options::Mode::Width);
+        // No overlay
     }
 
     void paint (juce::Graphics& g) override
@@ -540,11 +524,7 @@ private:
     juce::ToggleButton preToggle;
     juce::ComboBox qualityBox;
     juce::TextButton modeXY, modePolar, modeWidth, modeHeat;
-    // Designer controls (owned by pane, hosted in overlay)
-    juce::Slider sideTiltDbOct, pivotHz, autoDepth, autoThrDb, autoAtkMs, autoRelMs, maxWidth;
-    juce::Label  valSideTilt, valPivot, valAutoDepth, valAutoThr, valAtk, valRel, valMax;
-    std::unique_ptr<MiniKnobCell> kcSideTilt, kcPivot, kcAutoDepth, kcAutoThr, kcAtk, kcRel, kcMax;
-    juce::Label  lblSideTilt, lblPivot, lblAutoDepth, lblAutoThr, lblAtk, lblRel, lblMax;
+    // Designer controls migrated to BandControlsPane
 
 public:
     std::function<void(const juce::String&, const juce::var&)> onUiChange;
@@ -635,90 +615,7 @@ public:
     StereoFieldEngine engine;
     bool enginePrepared = false;
 
-    // --- Floating Designer overlay component ---
-    struct DesignerOverlay : public juce::Component
-    {
-        ImagerPane& owner;
-        juce::Point<int> dragStartPos {0,0};
-        juce::Rectangle<int> dragStartBounds;
-        DesignerOverlay (ImagerPane& p) : owner(p)
-        {
-            setInterceptsMouseClicks (true, true);
-            // Re-parent controls into this overlay
-            addAndMakeVisible (owner.sideTiltDbOct);
-            addAndMakeVisible (owner.pivotHz);
-            addAndMakeVisible (owner.autoDepth);
-            addAndMakeVisible (owner.autoThrDb);
-            addAndMakeVisible (owner.autoAtkMs);
-            addAndMakeVisible (owner.autoRelMs);
-            addAndMakeVisible (owner.maxWidth);
-        }
-        void paint (juce::Graphics& g) override
-        {
-            auto r = getLocalBounds().toFloat();
-            juce::Colour cTop = juce::Colour (0xCC1F242B);
-            juce::Colour cBot = juce::Colour (0x661F242B);
-            juce::Colour stroke = juce::Colours::white.withAlpha (0.10f);
-            juce::Colour inner  = juce::Colours::white.withAlpha (0.06f);
-            juce::Path rr; rr.addRoundedRectangle (r.reduced (1.0f), 8.0f);
-            juce::ColourGradient grad (cTop, r.getX(), r.getY(), cBot, r.getX(), r.getBottom(), false);
-            g.setGradientFill (grad); g.fillPath (rr);
-            g.setColour (inner); g.fillPath (rr);
-            g.setColour (stroke); g.strokePath (rr, juce::PathStrokeType (1.2f));
-        }
-        void resized() override
-        {
-            auto r = getLocalBounds().reduced (10);
-            const int gap = 8;
-            auto placeKnobs = [&](juce::Rectangle<int> area, std::initializer_list<std::tuple<const char*, juce::Slider*, juce::Label*>> items)
-            {
-                const int n = (int) items.size(); if (n <= 0) return;
-                const int w = (area.getWidth() - gap * (n - 1)) / n;
-                int x = area.getX();
-                for (auto& it : items)
-                {
-                    const char* caption; juce::Slider* slider; juce::Label* val;
-                    std::tie (caption, slider, val) = it;
-                    juce::Rectangle<int> cell (x, area.getY(), w, area.getHeight());
-                    const int kSize = juce::jmin (cell.getWidth(), cell.getHeight() - 28);
-                    juce::Rectangle<int> kBox (kSize, kSize);
-                    kBox = kBox.withCentre ({ cell.getCentreX(), cell.getY() + kSize / 2 });
-                    slider->setBounds (kBox);
-                    auto cap = juce::Rectangle<int> (cell.getX(), kBox.getBottom() + 2, cell.getWidth(), 14);
-                    auto valb= juce::Rectangle<int> (cell.getX(), cap.getBottom(), cell.getWidth(), 14);
-                    juce::Label* c = nullptr;
-                    if (caption != nullptr)
-                    {
-                        c = new juce::Label();
-                        c->setText (caption, juce::dontSendNotification);
-                        c->setJustificationType (juce::Justification::centred);
-                        c->setInterceptsMouseClicks (false, false);
-                        ownedCaptions.add (c);
-                        addAndMakeVisible (c);
-                        c->setBounds (cap);
-                    }
-                    if (val) { val->setJustificationType (juce::Justification::centred); val->setBounds (valb); }
-                    x += w + gap;
-                }
-            };
-            ownedCaptions.clear (true);
-            // Single-row layout with all 7 knobs
-            placeKnobs (r, { { "Side Tilt", &owner.sideTiltDbOct, &owner.valSideTilt },
-                             { "Pivot Hz", &owner.pivotHz, &owner.valPivot },
-                             { "Auto Depth", &owner.autoDepth, &owner.valAutoDepth },
-                             { "Auto Thr",  &owner.autoThrDb, &owner.valAutoThr },
-                             { "ATT",       &owner.autoAtkMs, &owner.valAtk },
-                             { "REL",       &owner.autoRelMs, &owner.valRel },
-                             { "Max",       &owner.maxWidth,  &owner.valMax } });
-        }
-        void paintOverChildren (juce::Graphics&) override {}
-        juce::OwnedArray<juce::Label> ownedCaptions;
-        void mouseDown (const juce::MouseEvent&) override {}
-        void mouseDrag (const juce::MouseEvent&) override {}
-        void mouseUp   (const juce::MouseEvent&) override {}
-    };
-
-    std::unique_ptr<DesignerOverlay> overlay;
+    // Overlay removed
     juce::Rectangle<int> overlayBounds { 0,0,0,0 };
     bool overlayBoundsSet { false };
 
@@ -731,51 +628,7 @@ public:
         return r;
     }
 
-    void initDesignerControls()
-    {
-        // Always-on Designer controls; labels
-        lblSideTilt.setText ("Side Tilt dB/Oct", juce::dontSendNotification);
-        lblPivot.setText    ("Pivot Hz",         juce::dontSendNotification);
-        lblAutoDepth.setText("Auto Depth",       juce::dontSendNotification);
-        lblAutoThr.setText  ("Auto Thr dB",      juce::dontSendNotification);
-        lblAtk.setText      ("Attack ms",        juce::dontSendNotification);
-        lblRel.setText      ("Release ms",       juce::dontSendNotification);
-        lblMax.setText      ("Max Width",        juce::dontSendNotification);
-
-        auto prepSlider = [&](juce::Slider& s, juce::Label& valueLbl, float min, float max, float step, const juce::String& pid)
-        {
-            s.setRange (min, max, step);
-            s.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-            s.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-            s.setRotaryParameters (-juce::MathConstants<float>::halfPi, juce::MathConstants<float>::pi * 1.5f, true);
-            valueLbl.setInterceptsMouseClicks (false, false);
-            s.onValueChange = [this, &s, &valueLbl, pid]
-            {
-                if (onParamEdit) onParamEdit (pid, (float) s.getValue());
-                valueLbl.setText (juce::String (s.getValue(), 2), juce::dontSendNotification);
-            };
-        };
-
-        prepSlider (sideTiltDbOct, valSideTilt, -6.0f, 6.0f, 0.01f,  "width_side_tilt_db_oct");
-        prepSlider (pivotHz,       valPivot,    150.0f, 2000.0f, 1.0f, "width_tilt_pivot_hz");
-        prepSlider (autoDepth,     valAutoDepth,0.0f, 1.0f, 0.001f,   "width_auto_depth");
-        prepSlider (autoThrDb,     valAutoThr, -24.0f, 12.0f, 0.01f,  "width_auto_thr_db");
-        prepSlider (autoAtkMs,     valAtk,       1.0f, 200.0f, 0.1f,  "width_auto_atk_ms");
-        prepSlider (autoRelMs,     valRel,      20.0f, 1200.0f, 0.1f, "width_auto_rel_ms");
-        prepSlider (maxWidth,      valMax,       0.5f, 2.5f, 0.001f,  "width_max");
-
-        // Defaults matching processor layout
-        sideTiltDbOct.setValue (0.0, juce::dontSendNotification);  valSideTilt.setText ("0.00", juce::dontSendNotification);
-        pivotHz.setValue (650.0, juce::dontSendNotification);      valPivot.setText    ("650", juce::dontSendNotification);
-        autoDepth.setValue (0.0, juce::dontSendNotification);      valAutoDepth.setText("0.00", juce::dontSendNotification);
-        autoThrDb.setValue (-3.0, juce::dontSendNotification);     valAutoThr.setText  ("-3.0", juce::dontSendNotification);
-        autoAtkMs.setValue (25.0, juce::dontSendNotification);     valAtk.setText      ("25.0", juce::dontSendNotification);
-        autoRelMs.setValue (250.0, juce::dontSendNotification);    valRel.setText      ("250", juce::dontSendNotification);
-        maxWidth.setValue (2.0, juce::dontSendNotification);       valMax.setText      ("2.00", juce::dontSendNotification);
-
-        // Restore overlay bounds from persisted UI state if available
-        if (onUiChange) onUiChange ("ui_imager_overlay_bounds_query", true);
-    }
+    // initDesignerControls removed
 
     // Utility: serialize/deserialize rectangle to var
     juce::var serializeRect (const juce::Rectangle<int>& r) const

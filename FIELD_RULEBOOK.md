@@ -280,15 +280,16 @@ if (auto* p = apvts.getParameter("width")) {
   - Legacy Group 1/2 rows are retired. Each tab standardizes on a 2×16 flat grid of controls.
 - Per‑tab layout
   - Delay, Reverb, Motion, Band, XY each host their own 2×16 grid (styled empty `KnobCell` for blanks).
-  - Imager tab is visuals‑only (no controls grid). Band hosts Imager Width visuals and `WIDTH LO/MID/HI` controls.
-  - XY tab hosts XO LO/HI, ROT, ASYM, SHUF LO/HI/XO, MONO, PAN, SAT MIX, SCOOP.
+  - Band: Imager Width visuals plus WIDTH (global) + WIDTH LO/MID/HI, and seven Designer controls (TILT S, PIVOT, AUTO DEP, AUTO THR, ATT, REL, MAX) migrated from the floating overlay into `BandControlsPane`.
+  - Imager: visuals‑only (no controls grid); floating Designer overlay removed; Width button removed from tooling.
+  - XY: XO LO/HI, ROT, ASYM, SHUF LO/HI/XO, MONO, PAN, SAT MIX, SCOOP.
 - Metrics & sizing
   - All tabs use `ControlGridMetrics::compute(w,h)` → `colW, knobPx, valuePx, labelGapPx, rowH, controlsH`.
   - Controls strip height is exactly `controlsH = 2 * rowH` at the bottom; visuals fill the remainder above (no extra 25% trim).
   - Min‑height formula: `HEADER + max(XY_MIN_H, metersH) + GAP + controlsH + PAD + bottomReserve`.
   - Defaults: `XY_MIN_H = 420`, `baseWidth = 1500`, `baseHeight = 700` (initial size may clamp to min).
 - Styling
-  - Metallic gradients on Motion and Center cells only. All colours from `FieldLNF::theme`.
+  - Metallic gradients by pane: Motion/Center; Delay (light yellow‑green); Reverb (burnt‑orange); Band (blue). XY uses metallic grey for blanks only. All colours via `FieldLNF::theme`.
 - Tooling policy
   - Band: all Imager tooling disabled (no PRE/FPS/mode buttons). Imager: tooling kept, Width button removed.
 

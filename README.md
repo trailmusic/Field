@@ -758,7 +758,7 @@ FIELD's main view is organized into three panes accessible via tabs:
 - **Delay**: Delay visuals + 2×16 controls grid (owned by tab).
 - **Reverb**: Reverb visuals + 2×16 controls grid (owned by tab).
 - **Motion**: Motion visuals + 2×16 controls grid (owned by tab).
-- **Band**: Imager Width visuals (Width mode) + WIDTH LO/MID/HI controls. No Imager tooling.
+- **Band**: Imager Width visuals (Width mode) + WIDTH (global) + WIDTH LO/MID/HI + seven Designer controls (Tilt S, Pivot, Auto Depth/Thr, Attack, Release, Max). No Imager tooling.
 - **Imager**: Visuals‑only (no 2×16 controls). Tooling present (no Width button).
 - **XY**: XY visuals + 2×16 controls grid (hosts Imaging controls: XO LO/HI, ROT, ASYM, SHUF LO/HI/XO, MONO, PAN, SAT MIX, SCOOP).
 
@@ -774,7 +774,7 @@ FIELD's main view is organized into three panes accessible via tabs:
 ### UX Notes
 
 - Switching tabs is glitch‑free and does not affect audio processing. Only visualization feeds are paused/resumed.
-- Imager is visuals‑only; Band hosts Width visuals + width controls.
+- Imager is visuals‑only; Band hosts Width visuals + width/Designer controls.
 
 ---
 

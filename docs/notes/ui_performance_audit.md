@@ -19,6 +19,7 @@ Scope: Validate responsiveness, consistency, theme-compliance, and lifecycle rul
 - Paint: no heavy per-pixel/random work; textures cached; repaint minimal region; `setOpaque(true)` when fully painting.
 - Timers: 15–30 Hz; no layout or heavy work in callbacks.
 - Layout: per‑tab flat 2×16 grids; zero gaps; no outer `reduced(...)`; DUCK strip metrics match.
+- Band: verify Designer overlay removed from `ImagerPane`; seven Designer controls live in `BandControlsPane` with metallic blue; blanks filled.
 - Theme: no hardcoded hex/`Colours::`; colours derived from `FieldLNF::theme`; correct metallic scope and border flags.
 
 ---
@@ -76,16 +77,18 @@ Checklist:
 - [ ] Managed value labels; captions present for LNF rendering
 - [ ] No hardcoded colours; cache heavy paints
 
-#### Delay/Imager/Stereo/Meters
+#### Delay/Imager/Band/XY/Stereo/Meters
 - `Source/ui/delay/DelayVisuals.h`
 - `Source/ui/ImagerPane.h`
+- `Source/ui/BandControlsPane.h`
 - `Source/ui/StereoFieldEngine.*`
 - `Source/ui/SpectrumAnalyzer.*`
 - `Source/ui/ProcessedSpectrumPane.h`
 
 Checklist:
 - [ ] Managed labels where using KnobCell; captions set
-- [ ] Imager: visuals‑only tab; Band pane owns Width visuals; Imager tooling off in Band
+- [ ] Imager: visuals‑only tab; Band pane owns Width visuals + WIDTH + Designer controls; Imager tooling off in Band
+- [ ] Styled blanks present in Delay/Reverb/Band/XY with correct metallic tints
 - [ ] Theme-only colours; no random per-paint
 - [ ] Timers 15–30 Hz (Spectrum/Scopes may justify higher; measure); minimal repaints
 
