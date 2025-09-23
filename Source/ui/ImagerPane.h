@@ -12,6 +12,8 @@ public:
         bool showPre = true;
         bool autoGain = true;
         int  fps = 30; // UI refresh
+        bool toolingEnabled = true;
+        bool enableWidthView = true;
         enum class Mode { XY, Polar, Width, Heat } mode { Mode::XY };
     };
 
@@ -21,38 +23,44 @@ public:
         startTimerHz (opts.fps);
 
         // Tooling UI (right side)
-        addAndMakeVisible (preLabel);
-        preLabel.setText ("PRE overlay", juce::dontSendNotification);
-        preLabel.setJustificationType (juce::Justification::centredLeft);
-        preLabel.setInterceptsMouseClicks (false, false);
-        preLabel.setColour (juce::Label::textColourId, juce::Colours::white.withAlpha (0.90f));
-        addAndMakeVisible (preToggle);
-        preToggle.setButtonText ("Show");
-        preToggle.setTooltip ("Show input (PRE) overlay behind POST visuals");
-        preToggle.onClick = [this]{
-            opts.showPre = preToggle.getToggleState();
-            if (onUiChange) onUiChange ("ui_imager_showPre", opts.showPre);
-            repaint();
-        };
+        if (opts.toolingEnabled) {
+            addAndMakeVisible (preLabel);
+            preLabel.setText ("PRE overlay", juce::dontSendNotification);
+            preLabel.setJustificationType (juce::Justification::centredLeft);
+            preLabel.setInterceptsMouseClicks (false, false);
+            preLabel.setColour (juce::Label::textColourId, juce::Colours::white.withAlpha (0.90f));
+            addAndMakeVisible (preToggle);
+            preToggle.setButtonText ("Show");
+            preToggle.setTooltip ("Show input (PRE) overlay behind POST visuals");
+            preToggle.onClick = [this]{
+                opts.showPre = preToggle.getToggleState();
+                if (onUiChange) onUiChange ("ui_imager_showPre", opts.showPre);
+                repaint();
+            };
+        }
 
         
 
-        addAndMakeVisible (qualityBox);
-        qualityBox.addItem ("15 fps", 15);
-        qualityBox.addItem ("30 fps", 30);
-        qualityBox.addItem ("60 fps", 60);
-        // Use tintedSelected rendering to avoid default label duplication and use accent colours
-        qualityBox.getProperties().set ("tintedSelected", true);
-        qualityBox.onChange = [this]{
-            const int sel = qualityBox.getSelectedId();
-            if (sel > 0) { opts.fps = sel; startTimerHz (opts.fps); if (onUiChange) onUiChange ("ui_imager_quality", opts.fps); }
-        };
+        if (opts.toolingEnabled) {
+            addAndMakeVisible (qualityBox);
+            qualityBox.addItem ("15 fps", 15);
+            qualityBox.addItem ("30 fps", 30);
+            qualityBox.addItem ("60 fps", 60);
+            qualityBox.getProperties().set ("tintedSelected", true);
+            qualityBox.onChange = [this]{
+                const int sel = qualityBox.getSelectedId();
+                if (sel > 0) { opts.fps = sel; startTimerHz (opts.fps); if (onUiChange) onUiChange ("ui_imager_quality", opts.fps); }
+            };
+        }
 
         // Mode buttons (simple sub-tabs)
-        addAndMakeVisible (modeXY);   modeXY  .setButtonText ("XY");
-        addAndMakeVisible (modePolar);modePolar.setButtonText ("Polar");
-        addAndMakeVisible (modeWidth);modeWidth.setButtonText ("Width");
-        addAndMakeVisible (modeHeat); modeHeat .setButtonText ("Heat");
+        if (opts.toolingEnabled)
+        {
+            addAndMakeVisible (modeXY);   modeXY  .setButtonText ("XY");
+            addAndMakeVisible (modePolar);modePolar.setButtonText ("Polar");
+            // Width button removed from Imager
+            addAndMakeVisible (modeHeat); modeHeat .setButtonText ("Heat");
+        }
         auto setMode = [this](Options::Mode m, const juce::String& v){ opts.mode = m; if (onUiChange) onUiChange ("ui_imager_mode", v); repaint(); resized(); };
         modeXY  .onClick = [=]{ setMode (Options::Mode::XY,   "xy");   };
         modePolar.onClick = [=]{ setMode (Options::Mode::Polar,"polar");};
@@ -69,14 +77,21 @@ public:
     void setOptions (const Options& o)
     {
         opts = o; startTimerHz (juce::jlimit (10, 120, opts.fps));
-        preToggle.setToggleState (opts.showPre, juce::dontSendNotification);
-        qualityBox.setSelectedId (juce::jlimit (10, 120, opts.fps), juce::dontSendNotification);
+        preToggle.setVisible (opts.toolingEnabled);
+        preLabel .setVisible (opts.toolingEnabled);
+        qualityBox.setVisible (opts.toolingEnabled);
+        modeXY   .setVisible (opts.toolingEnabled);
+        modePolar.setVisible (opts.toolingEnabled);
+        modeWidth.setVisible (false);
+        modeHeat .setVisible (opts.toolingEnabled);
+        if (opts.toolingEnabled)
+        {
+            preToggle.setToggleState (opts.showPre, juce::dontSendNotification);
+            qualityBox.setSelectedId (juce::jlimit (10, 120, opts.fps), juce::dontSendNotification);
+        }
         // highlight current mode
         auto setOn = [&](juce::TextButton& b, bool on){ b.setToggleState (on, juce::dontSendNotification); };
-        setOn (modeXY,   opts.mode == Options::Mode::XY);
-        setOn (modePolar,opts.mode == Options::Mode::Polar);
-        setOn (modeWidth,opts.mode == Options::Mode::Width);
-        setOn (modeHeat, opts.mode == Options::Mode::Heat);
+        if (opts.toolingEnabled) { setOn (modeXY, opts.mode == Options::Mode::XY); setOn (modePolar, opts.mode == Options::Mode::Polar); setOn (modeHeat, opts.mode == Options::Mode::Heat); }
         repaint();
     }
 
@@ -150,9 +165,10 @@ public:
 
         // Layout tooling area on right
         auto r = getLocalBounds();
-        const int sideW = juce::jlimit (120, 220, W / 4);
-        auto side = r.removeFromRight (sideW).reduced (8);
+        const int sideW = opts.toolingEnabled ? juce::jlimit (120, 220, W / 4) : 0;
+        auto side = sideW > 0 ? r.removeFromRight (sideW).reduced (8) : juce::Rectangle<int>();
         auto row  = [&](int h){ auto a = side.removeFromTop (h); side.removeFromTop (6); return a; };
+        if (opts.toolingEnabled)
         {
             auto rp = row (24);
             const int lblW = juce::jlimit (70, rp.getWidth() - 60, rp.getWidth() / 2);
@@ -161,17 +177,21 @@ public:
             preToggle.setBounds (rp);
         }
         
-        qualityBox  .setBounds (row (24));
+        if (opts.toolingEnabled) qualityBox.setBounds (row (24));
         auto modes = row (28);
-        const int mW = (modes.getWidth() - 9) / 4;
+        const int nBtns = 3; // no Width button
+        const int gap = 3;
+        const int mW = (opts.toolingEnabled ? (modes.getWidth() - gap * (nBtns - 1)) / nBtns : 0);
         modeXY  .setClickingTogglesState (true);
         modePolar.setClickingTogglesState (true);
-        modeWidth.setClickingTogglesState (true);
+        // modeWidth removed from UI
         modeHeat .setClickingTogglesState (true);
-        modeXY  .setBounds (modes.removeFromLeft (mW)); modes.removeFromLeft (3);
-        modePolar.setBounds (modes.removeFromLeft (mW)); modes.removeFromLeft (3);
-        modeWidth.setBounds (modes.removeFromLeft (mW)); modes.removeFromLeft (3);
-        modeHeat .setBounds (modes.removeFromLeft (mW));
+        if (opts.toolingEnabled)
+        {
+            modeXY  .setBounds (modes.removeFromLeft (mW)); modes.removeFromLeft (gap);
+            modePolar.setBounds (modes.removeFromLeft (mW)); modes.removeFromLeft (gap);
+            modeHeat .setBounds (modes.removeFromLeft (mW));
+        }
 
         // Resize heatmap history width
         engine.setHistoryWidth (juce::jmax (64, W - sideW - 16));
@@ -188,7 +208,7 @@ public:
         overlayBounds.setPosition ({ juce::jlimit ((int) mainArea.getX()+4, (int) (mainArea.getRight()-overlayBounds.getWidth()-4), overlayBounds.getX()),
                                      juce::jlimit ((int) mainArea.getY()+4, (int) (mainArea.getBottom()-overlayBounds.getHeight()-4), overlayBounds.getY()) });
         if (overlay) overlay->setBounds (overlayBounds);
-        if (overlay) overlay->setVisible (opts.mode == Options::Mode::Width);
+        if (overlay) overlay->setVisible (opts.enableWidthView && opts.mode == Options::Mode::Width);
     }
 
     void paint (juce::Graphics& g) override
@@ -219,7 +239,7 @@ public:
             const float scale = opts.autoGain ? (rmsPost > 1.0e-6f ? target / rmsPost : 1.0f) : 1.0f;
             drawPolarEnergy (g, b.reduced (8.0f), fifoPost, writePost, scale);
         }
-        else if (opts.mode == Options::Mode::Width)
+        else if (opts.enableWidthView && opts.mode == Options::Mode::Width)
         {
             drawWidthWaveform (g, b.reduced (8.0f));
             drawWidthEditor (g, b.reduced (8.0f));

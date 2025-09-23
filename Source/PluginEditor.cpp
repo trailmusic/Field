@@ -2861,8 +2861,8 @@ void MyPluginAudioProcessorEditor::performLayout()
         metersContainer.setBounds       (metersArea);
         // (Reverted) bottom toggle remains a direct child of the editor; positioned earlier
 
-        // Allocate the top area as remaining height after rows, with a minimum equal to XY pad min height
-        const int mainH = juce::jmax (Layout::dp (Layout::XY_MIN_H, s), r.getHeight() - rowsTotalH_rsv);
+        // Allocate the top area to full height (legacy rows disabled)
+        const int mainH = juce::jmax (Layout::dp (Layout::XY_MIN_H, s), r.getHeight());
         auto main = r.removeFromTop (mainH);
         
         // Visual dock takes the pad area exactly matching leftContentContainer width
@@ -2900,64 +2900,71 @@ void MyPluginAudioProcessorEditor::performLayout()
         corrMeter.setBounds  (corrCol);
     }
 
-    // Remove vertical gaps between rows
-
+    // Predeclare legacy layout metrics (used only if legacy path is compiled/executed)
     const int lPx       = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
-    const int gapI      = Layout::dp (Layout::GAP_S, s);
-    const int dividerW  = Layout::dp (8, s); // global divider column width (thicker + more spacing)
-    // microH no longer used (minis integrated into cells)
-
-    // Container height calculation aligned to KnobCell metrics: knob + gap + value label
     const int valuePxCommon = Layout::dp (14, s);
     const int labelGapCommon = Layout::dp (4, s);
     const int containerHeight = lPx + labelGapCommon + valuePxCommon;
+    const int rowH1 = containerHeight, rowH2 = containerHeight, rowH3 = containerHeight, rowH4 = containerHeight;
+    juce::Rectangle<int> row1, row2, row3, row4;
 
-    // All rows same height, no extra spacing between rows
-    const int rowH1 = containerHeight;                // Row 1
-    const int rowH2 = containerHeight;                // Row 2
-    const int rowH3 = containerHeight;                // Row 3
-    const int rowH4 = containerHeight;                // Row 4
-    // Compute desired delay column width, but do not carve a separate right-hand container.
-    // We'll integrate delay into the same 4-row system and just reserve a right strip later.
-    const int delayCols = 7;
-    const int cellW_right = lPx + Layout::dp (8, s);
-    const int delayCardW = delayCols * cellW_right + Layout::dp (Layout::PAD, s);
-    juce::Rectangle<int> delayArea; // to be computed after rows are defined
-    // Capture the full rows area (left column) for overlay sizing
-    auto rowsArea = r; // rows live directly below the panes (after main area was removed)
-    auto row1 = r.removeFromTop (rowH1);
-    auto row2 = r.removeFromTop (rowH2);
-    auto row3 = r.removeFromTop (rowH3);
-    auto row4 = r.removeFromTop (rowH4);
-    // Align left content container bottom to the bottom of Row 4 to remove extra space
+    // Legacy controls are disabled; skip legacy layout entirely
+    if (false)
     {
-        const int rowsBottom = row4.getBottom();
-        auto lc = leftContentContainer.getBounds();
-        lc.setBottom (rowsBottom);
-        leftContentContainer.setBounds (lc);
-        // Align meters container bottom to the same baseline
-        auto mc = metersContainer.getBounds();
-        mc.setBottom (rowsBottom);
-        metersContainer.setBounds (mc);
-    }
-    // Re-layout meter columns now that meters container height is final
-    {
-        const int lPx_rs   = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
-        const int cellW_rs = lPx_rs + Layout::dp (8, s);
-        const int colW_m   = juce::jlimit (Layout::dp (24, s), Layout::dp (56, s), juce::roundToInt (cellW_rs * 0.75f));
-        const int corrW_m  = juce::jmax (Layout::dp (10, s), juce::roundToInt (colW_m * 0.5f));
-        const int inter_m  = juce::jmax (1, Layout::dp (Layout::GAP_S, s) / 2);
-        auto mB = metersContainer.getLocalBounds();
-        int x = mB.getX();
-        const int h = mB.getHeight();
-        auto ioCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h); x += colW_m + inter_m;
-        auto lrCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h); x += colW_m + inter_m;
-        auto corrCol = juce::Rectangle<int> (x, mB.getY(), corrW_m, h);
-        ioMeters.setBounds   (ioCol);
-        lrMeters.setBounds   (lrCol);
-        corrMeter.setBounds  (corrCol);
+        const int gapI      = Layout::dp (Layout::GAP_S, s);
+        const int dividerW  = Layout::dp (8, s); // global divider column width (thicker + more spacing)
+        // microH no longer used (minis integrated into cells)
+
+        // Compute desired delay column width, but do not carve a separate right-hand container.
+        // We'll integrate delay into the same 4-row system and just reserve a right strip later.
+        const int delayCols = 7;
+        const int cellW_right = lPx + Layout::dp (8, s);
+        const int delayCardW = delayCols * cellW_right + Layout::dp (Layout::PAD, s);
+        juce::Rectangle<int> delayArea; // to be computed after rows are defined
+        // Capture the full rows area (left column) for overlay sizing
+        auto rowsArea = r; // rows live directly below the panes (after main area was removed)
+        row1 = r.removeFromTop (rowH1);
+        row2 = r.removeFromTop (rowH2);
+        row3 = r.removeFromTop (rowH3);
+        row4 = r.removeFromTop (rowH4);
+        // Align left content container bottom to the bottom of Row 4 to remove extra space
+        {
+            const int rowsBottom = row4.getBottom();
+            auto lc = leftContentContainer.getBounds();
+            lc.setBottom (rowsBottom);
+            leftContentContainer.setBounds (lc);
+            // Align meters container bottom to the same baseline
+            auto mc = metersContainer.getBounds();
+            mc.setBottom (rowsBottom);
+            metersContainer.setBounds (mc);
+        }
+        // Re-layout meter columns now that meters container height is final
+        {
+            const int lPx_rs   = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
+            const int cellW_rs = lPx_rs + Layout::dp (8, s);
+            const int colW_m   = juce::jlimit (Layout::dp (24, s), Layout::dp (56, s), juce::roundToInt (cellW_rs * 0.75f));
+            const int corrW_m  = juce::jmax (Layout::dp (10, s), juce::roundToInt (colW_m * 0.5f));
+            const int inter_m  = juce::jmax (1, Layout::dp (Layout::GAP_S, s) / 2);
+            auto mB = metersContainer.getLocalBounds();
+            int x = mB.getX();
+            const int h = mB.getHeight();
+            auto ioCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h); x += colW_m + inter_m;
+            auto lrCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h); x += colW_m + inter_m;
+            auto corrCol = juce::Rectangle<int> (x, mB.getY(), corrW_m, h);
+            ioMeters.setBounds   (ioCol);
+            lrMeters.setBounds   (lrCol);
+            corrMeter.setBounds  (corrCol);
+        }
     }
     // Alternate bottom panel (slides over bottom rows when enabled)
+    if (true)
+    {
+        if (controlsViewport.getParentComponent() == &leftContentContainer)
+            leftContentContainer.removeChildComponent (&controlsViewport);
+        group1Container.setVisible (false);
+        group2Container.setVisible (false);
+    }
+    if (false)
     {
 
         // Reserve a rectangle covering bottom rows (1..4), just below the XY pad

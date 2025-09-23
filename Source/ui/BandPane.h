@@ -1,27 +1,43 @@
 #pragma once
 #include <JuceHeader.h>
 #include "ImagerPane.h"
+#include "ControlGridMetrics.h"
+#include "ImagerControlsPane.h"
 
 // BandPane: A focused view that reuses Imager's Width mode (including Designer overlay)
 class BandPane : public juce::Component
 {
 public:
-    BandPane()
+    BandPane (MyPluginAudioProcessor& p)
     {
         imager = std::make_unique<ImagerPane>();
         addAndMakeVisible (*imager);
         ImagerPane::Options o;
-        o.showPre = true;
+        o.showPre = false;     // hide pre overlay in Band
+        o.toolingEnabled = false; // remove all Imager tooling in Band
         o.autoGain = true;
         o.fps = 30;
+        o.enableWidthView = true; // allow Width rendering
         o.mode = ImagerPane::Options::Mode::Width; // force Width view
         imager->setOptions (o);
+        // Use real width controls from Imager
+        controls = std::make_unique<ImagerControlsPane>(p.apvts);
+        addAndMakeVisible (*controls);
     }
 
     void resized() override
     {
-        if (imager)
-            imager->setBounds (getLocalBounds());
+        auto r = getLocalBounds();
+        auto m = ControlGridMetrics::compute (r.getWidth(), r.getHeight());
+        if (controls) { controls->setCellMetrics (m.knobPx, m.valuePx, m.labelGapPx, m.colW); controls->setRowHeightPx (m.rowH); }
+        auto controlsArea = r.removeFromBottom (m.controlsH);
+        // reduce visuals height by 25% to match other panes
+        {
+            const int newH = (r.getHeight() * 3) / 4;
+            r.removeFromBottom (r.getHeight() - newH);
+        }
+        if (imager) imager->setBounds (r);
+        if (controls) controls->setBounds (controlsArea);
     }
 
     // Runtime hooks forwarded to the underlying Imager
@@ -42,6 +58,7 @@ public:
 
 private:
     std::unique_ptr<ImagerPane> imager;
+    std::unique_ptr<ImagerControlsPane> controls;
 };
 
 

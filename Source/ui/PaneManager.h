@@ -1,14 +1,15 @@
 #pragma once
 #include <JuceHeader.h>
 #include "ProcessedSpectrumPane.h"
-#include "ImagerPane.h"
+#include "XYTab.h"
+#include "ImagerTab.h"
 #include "BandPane.h"
 #include "machine/MachinePane.h"
 #include "../IconSystem.h"
-#include "../motion/MotionPanel.h"
+#include "../motion/MotionTab.h"
 #include "../motion/MotionVisual.h"
-#include "../reverb/ui/ReverbPanel.h"
-#include "delay/DelayVisuals.h"
+#include "../reverb/ui/ReverbTab.h"
+#include "delay/DelayTab.h"
 
 class XYPad; // forward (lives in PluginEditor.h/cpp)
 
@@ -51,29 +52,16 @@ public:
     {
         xy   = std::make_unique<XYPaneAdapter> (xyPadRef);
         spec = std::make_unique<ProcessedSpectrumPane> (lnf);
-        imgr = std::make_unique<ImagerPane>();
-        band = std::make_unique<BandPane>();
-        motion = std::make_unique<motion::MotionPanel>(p.apvts, nullptr);
+        xyTab= std::make_unique<XYTab>(p, *(juce::Component*) xy.get());
+        imgr = std::make_unique<ImagerTab>(p, lnf);
+        band = std::make_unique<BandPane>(p);
+        motion = std::make_unique<MotionTab>(p);
         mach = std::make_unique<MachinePane>(p, state, lnf);
-        // Visuals-only Reverb pane (no grid controls duplicated here)
-        reverb = std::make_unique<ReverbPanel>(p.apvts,
-                                               [&p]{ return p.getReverbErRms(); },
-                                               [&p]{ return p.getReverbTailRms(); },
-                                               [&p]{ return p.getReverbDuckGrDb(); },
-                                               [&p]{ return p.getReverbWidthNow(); });
-        reverb->setDynEqGrProvider ([&p]{ return p.getReverbDynEqGrDb(); });
-        // Delay pane: direct DelayVisuals instance wired to processor buses/bridge
-        {
-            auto* dv = new DelayVisuals (p.getDelayUiBridge(), &p);
-            dv->setScopes (
-                [&p] (juce::AudioBuffer<float>& out, int maxSamples) { return p.visPre.pull (out, maxSamples); },
-                [&p] (juce::AudioBuffer<float>& out, int maxSamples) { return p.visPost.pull (out, maxSamples); }
-            );
-            dv->setParamSetter ([&p](const juce::String& id, float value){ if (auto* par = p.apvts.getParameter(id)) par->setValueNotifyingHost (value); });
-            delay.reset (dv);
-        }
+        // Reverb/Delay composite tabs (controls grid hidden until migration completes)
+        reverb = std::make_unique<ReverbTab>(p);
+        delay  = std::make_unique<DelayTab>(p);
 
-        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
+        for (auto* c : { (juce::Component*) xyTab.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
             addChildComponent (c);
 
         addAndMakeVisible (tabs);
@@ -339,7 +327,7 @@ public:
     {
         const bool changed = (id != active);
         // Always enforce correct visibility, even if selecting the same pane.
-        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
+        for (auto* c : { (juce::Component*) xyTab.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
             if (c) c->setVisible (false);
 
         if (changed)
@@ -371,8 +359,8 @@ public:
     PaneID getActiveID() const { return (PaneID) activeAtomic.load (std::memory_order_acquire); }
     juce::Component* getActive()
     {
-        switch (active) { case PaneID::XY: return xy.get(); case PaneID::Spectrum: return spec.get(); case PaneID::Imager: return imgr.get(); case PaneID::Band: return band.get(); case PaneID::Motion: return motion.get(); case PaneID::Machine: return mach.get(); case PaneID::Reverb: return reverb.get(); case PaneID::Delay: return delay.get(); }
-        return xy.get();
+        switch (active) { case PaneID::XY: return (juce::Component*) xyTab.get(); case PaneID::Spectrum: return spec.get(); case PaneID::Imager: return (juce::Component*) imgr.get(); case PaneID::Band: return band.get(); case PaneID::Motion: return (juce::Component*) motion.get(); case PaneID::Machine: return mach.get(); case PaneID::Reverb: return reverb.get(); case PaneID::Delay: return delay.get(); }
+        return (juce::Component*) xyTab.get();
     }
 
     ProcessedSpectrumPane* spectrumPane() { return spec.get(); }
@@ -389,7 +377,7 @@ public:
         // Content starts directly under tabs with a tiny breathing space
         auto paneTop = tabs.getBottom() + 2;
         juce::Rectangle<int> paneR (full.getX(), paneTop, full.getWidth(), full.getBottom() - paneTop);
-        for (auto* c : { (juce::Component*) xy.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
+        for (auto* c : { (juce::Component*) xyTab.get(), (juce::Component*) spec.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
             if (c) c->setBounds (paneR);
     }
 
@@ -555,13 +543,14 @@ private:
     std::atomic<int> activeAtomic { (int) PaneID::XY };
 
     std::unique_ptr<XYPaneAdapter>         xy;
+    std::unique_ptr<XYTab>                 xyTab;
     std::unique_ptr<ProcessedSpectrumPane> spec;
-    std::unique_ptr<ImagerPane>            imgr;
+    std::unique_ptr<ImagerTab>             imgr;
     std::unique_ptr<BandPane>              band;
-    std::unique_ptr<juce::Component>       motion;
+    std::unique_ptr<MotionTab>             motion;
     std::unique_ptr<MachinePane>           mach;
-    std::unique_ptr<ReverbPanel>            reverb;
-    std::unique_ptr<juce::Component>       delay;
+    std::unique_ptr<ReverbTab>            reverb;
+    std::unique_ptr<DelayTab>             delay;
 
     void applyImagerOptionsFromState()
     {

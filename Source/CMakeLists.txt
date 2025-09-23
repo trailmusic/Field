@@ -24,16 +24,25 @@ set(SRC
     reverb/ui/ReverbPanel.h
     reverb/ui/ReverbPanel.cpp
     reverb/ui/ReverbDynEQPane.h
+    reverb/ui/ReverbControlsPane2x16.h
+    reverb/ui/ReverbTab.h
     ui/SpectrumAnalyzer.h
     ui/SpectrumAnalyzer.cpp
     ui/delay/DelayUiBridge.h
     ui/delay/DelayVisuals.h
+    ui/delay/DelayControlsPane.h
+    ui/delay/DelayTab.h
     ui/ProcessedSpectrumPane.h
     ui/ImagerPane.h
+    ui/ImagerControlsPane.h
+    ui/ImagerTab.h
+    ui/XYControlsPane.h
+    ui/XYTab.h
     ui/BandPane.h
     ui/StereoFieldEngine.h
     ui/StereoFieldEngine.cpp
     ui/PaneManager.h
+    ui/SimpleSwitchCell.h
     ui/machine/ParamPatch.h
     ui/machine/ProposalCard.h
     ui/machine/ProposalCard.cpp
@@ -50,6 +59,8 @@ set(SRC
     motion/MotionParams.h
     motion/MotionPath.h
     motion/MotionIDs.h
+    motion/MotionControlsPane.h
+    motion/MotionTab.h
     
     dsp/DelayPresetLibrary.h
     dsp/DelayPresetLibrary.cpp
