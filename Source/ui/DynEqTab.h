@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "SpectrumAnalyzer.h"
+#include "../dynEQ/DynamicEqParamIDs.h"
 
 class MyPluginAudioProcessor; // fwd
 
@@ -38,9 +39,41 @@ public:
             if (selected >= 0 && selected < (int) points.size())
             {
                 points[(size_t) selected].q = juce::jlimit (0.1f, 36.0f, qv);
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::q, points[(size_t) selected].q);
                 rebuildEqPath();
                 repaint();
                 positionOverlay();
+            }
+        };
+        overlay.onTypeChanged = [this](int tp)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                points[(size_t) selected].type = tp;
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::type, (float) tp);
+                repaint();
+            }
+        };
+        overlay.onPhaseChanged = [this](int ph)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                points[(size_t) selected].phase = ph;
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::phase, (float) ph);
+                repaint();
+            }
+        };
+        overlay.onChanChanged = [this](int ch)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                points[(size_t) selected].channel = ch;
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::channel, (float) ch);
+                repaint();
             }
         };
     }
@@ -95,7 +128,7 @@ public:
     void pushBlockPre (const float* L, const float* R, int n) { analyzer.pushBlockPre (L, R, n); }
 
 private:
-    struct BandPoint { float hz=1000.f; float db=0.f; float q=0.707f; int type=0; int phase=1; int channel=0; };
+    struct BandPoint { float hz=1000.f; float db=0.f; float q=0.707f; int type=0; int phase=1; int channel=0; int bandIdx=-1; };
     std::vector<BandPoint> points;
     int selected { -1 };
     juce::Path eqPath;
@@ -305,6 +338,19 @@ private:
         {
             // Add new band at click
             BandPoint bp; bp.hz = juce::jlimit (20.f, 20000.f, mapXToHz (e.getPosition().x)); bp.db = juce::jlimit (-24.f, 24.f, mapYToDb (e.getPosition().y));
+            // Allocate APVTS band slot and sync
+            const int slot = allocateBandSlot();
+            if (slot >= 0)
+            {
+                bp.bandIdx = slot;
+                setBandParam (slot, dynEq::Band::active, 1.0f);
+                setBandParam (slot, dynEq::Band::freqHz, bp.hz);
+                setBandParam (slot, dynEq::Band::gainDb, bp.db);
+                setBandParam (slot, dynEq::Band::q, bp.q);
+                setBandParam (slot, dynEq::Band::type, (float) bp.type);
+                setBandParam (slot, dynEq::Band::phase, (float) bp.phase);
+                setBandParam (slot, dynEq::Band::channel, (float) bp.channel);
+            }
             points.push_back (bp);
             selected = (int) points.size() - 1;
             rebuildEqPath();
@@ -332,6 +378,11 @@ private:
             auto& pt = points[(size_t) selected];
             pt.hz = juce::jlimit (20.f, 20000.f, mapXToHz (e.getPosition().x));
             pt.db = juce::jlimit (-24.f, 24.f, mapYToDb (e.getPosition().y));
+            if (pt.bandIdx >= 0)
+            {
+                setBandParam (pt.bandIdx, dynEq::Band::freqHz, pt.hz);
+                setBandParam (pt.bandIdx, dynEq::Band::gainDb, pt.db);
+            }
             rebuildEqPath();
             repaint();
             overlay.setValues (pt.db, pt.q, pt.type, pt.phase, pt.channel);
@@ -344,6 +395,9 @@ private:
         const int idx = hitTestPoint (e.getPosition());
         if (idx >= 0 && idx < (int) points.size())
         {
+            const int bandIdx = points[(size_t) idx].bandIdx;
+            if (bandIdx >= 0)
+                setBandParam (bandIdx, dynEq::Band::active, 0.0f);
             points.erase (points.begin() + idx);
             if (selected == idx) selected = -1; else if (selected > idx) --selected;
             rebuildEqPath();
@@ -359,6 +413,8 @@ private:
             auto& pt = points[(size_t) selected];
             const float delta = (float) (wheel.deltaY * (e.mods.isShiftDown() ? 1.0 : 0.2));
             pt.q = juce::jlimit (0.1f, 36.0f, pt.q * (1.0f + delta));
+            if (pt.bandIdx >= 0)
+                setBandParam (pt.bandIdx, dynEq::Band::q, pt.q);
             rebuildEqPath();
             repaint();
             overlay.setValues (pt.db, pt.q, pt.type, pt.phase, pt.channel);
@@ -380,6 +436,32 @@ private:
         if (ox + w > pane.getRight()) ox = pane.getRight() - w - 12;
         overlay.setBounds (juce::Rectangle<int> (ox, oy, w, h));
         overlay.toFront (false);
+    }
+
+    // ----- APVTS helpers -----
+    static constexpr int kMaxBands = 24;
+    static juce::String bandId (const char* base, int idx) { return juce::String (base) + "_" + juce::String (idx); }
+    int allocateBandSlot()
+    {
+        for (int i = 0; i < kMaxBands; ++i)
+        {
+            auto id = bandId (dynEq::Band::active, i);
+            if (auto* v = proc.apvts.getRawParameterValue (id))
+            {
+                if (v->load() < 0.5f)
+                    return i;
+            }
+        }
+        return -1;
+    }
+    void setBandParam (int bandIdx, const char* baseId, float value)
+    {
+        auto id = bandId (baseId, bandIdx);
+        if (auto* p = proc.apvts.getParameter (id))
+        {
+            const float norm = p->convertTo0to1 (value);
+            p->setValueNotifyingHost (norm);
+        }
     }
 
     MyPluginAudioProcessor& proc;
