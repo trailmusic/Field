@@ -32,7 +32,10 @@ set(SRC
     ui/delay/DelayVisuals.h
     ui/delay/DelayControlsPane.h
     ui/delay/DelayTab.h
-    ui/ProcessedSpectrumPane.h
+    ui/DynEqTab.h
+    dynEQ/DynamicEqParamIDs.h
+    dynEQ/DynamicEqState.h
+    dynEQ/DynamicEqState.cpp
     ui/ImagerPane.h
     ui/ImagerControlsPane.h
     ui/BandControlsPane.h

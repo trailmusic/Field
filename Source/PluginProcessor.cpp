@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "reverb/ReverbParameters.h"
+#include "dynEQ/DynamicEqParamIDs.h"
 
 // =========================
 // Parameter IDs
@@ -1322,6 +1323,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckRatio, 1 }, "Delay Duck Ratio", juce::NormalisableRange<float>(1.0f, 8.0f, 0.01f), 2.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckLookaheadMs, 1 }, "Delay Duck Lookahead (ms)", juce::NormalisableRange<float>(0.0f, 15.0f, 0.01f), 5.0f));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayDuckLinkGlobal, 1 }, "Delay Duck Link Global", true));
+
+    // Dynamic EQ parameters (24 bands)
+    dynEq::addDynamicEqParameters (params, 24);
 
     // Motion parameters - Dual Panner System
     #include "motion/MotionIDs.h"

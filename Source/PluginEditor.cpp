@@ -1469,46 +1469,14 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     };
     splitToggle.setToggleState (false, juce::dontSendNotification);
     linkButton.setVisible (false);
-    // Multi-pane dock (XY, Spectrum, Imager) + shade overlay
+    // Multi-pane dock (XY, Dynamic EQ, Imager) + shade overlay
     panes = std::make_unique<PaneManager> (proc, proc.apvts.state, &getLookAndFeel(), pad);
     addAndMakeVisible (*panes);
     panes->setSampleRate (proc.getSampleRate());
     // keep-warm removed; no pane warm-up needed
     // Default to XY view on startup
     panes->setActive (PaneID::XY, true);
-    // Theme spectrum (optional)
-    if (auto* sp = panes->spectrumPane())
-    {
-        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        {
-            auto& a = sp->analyzer();
-            a.fillColour      = lf->theme.accent.withAlpha (0.25f);
-            a.strokeColour    = lf->theme.text.withAlpha   (0.85f);
-            a.peakColour      = lf->theme.accent.withAlpha (0.90f);
-            a.gridColour      = lf->theme.text.withAlpha   (0.12f);
-            a.eqOverlayColour = lf->theme.accent.withAlpha (0.95f);
-        }
-
-        // Defaults for spectrum feel
-        SpectrumAnalyzer::Params p;
-        p.fftOrder         = 11;      // 2048
-        p.avgTimeMs        = 120.0f;
-        p.peakHoldSec      = 1.1f;
-        p.peakFallDbPerSec = 10.0f;
-        p.minDb            = -84.0f;
-        p.maxDb            =  +6.0f;
-        // Leave slope flat by default; set to +3.0f if you want pink flattening
-        p.slopeDbPerOct    = 0.0f;
-        p.monoSum          = true;
-        p.fps              = 30;
-        sp->analyzer().setParams (p);
-        sp->analyzer().setFreqRange (20.0, 20000.0);
-
-        // Headroom defaults
-        sp->analyzer().setAutoHeadroomEnabled (true);
-        sp->analyzer().setHeadroomTargetFill (0.70f);
-        sp->analyzer().setDisplayHeadroomDb (30.0f);
-    }
+    // Spectrum removed; Dynamic EQ pane owns its analyzer styling
 
     xyShade = std::make_unique<ShadeOverlay> (lnf);
     addAndMakeVisible (*xyShade);
@@ -2292,7 +2260,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         {
             if (!mgr) return false;
             if (k.getTextCharacter()=='1') { mgr->setActive (PaneID::XY, true);       return true; }
-            if (k.getTextCharacter()=='2') { mgr->setActive (PaneID::Spectrum, true); return true; }
+            if (k.getTextCharacter()=='2') { mgr->setActive (PaneID::DynEQ, true); return true; }
             if (k.getTextCharacter()=='3') { mgr->setActive (PaneID::Imager, true);   return true; }
             // keep-warm toggle removed (K/k)
             return false;
