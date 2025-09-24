@@ -51,6 +51,42 @@ Replace the former Spectrum tab with a precision-first Dynamic/Spectral EQ pane 
 - Inspector: bottom 2×16 grid using `KnobCell` with Managed labels; precision: Hz 0 decimals, dB 1 decimal, ms 0–2 decimals.
 - Hz mapping: reuse log 20–20k helpers consistent with XY/Analyzer.
 
+#### Curve Rendering & Colour System
+
+- Curve taxonomy:
+  - Band Contribution Curves: per-band responses rendered as light paths (code: `bandPaths`) with optional area fills (`bandAreas`) for dynamic/spectral states.
+  - Macro EQ Curve: composite response of all active bands (code: `eqPath`), visually more prominent.
+- Theme-driven palette (no hard-coded colours):
+  - All colours derive from `FieldLNF::theme`.
+  - Macro curve colour = `theme.accent` with slight prominence (thicker stroke).
+  - Band colours: generated per-band by hue-cycling around `theme.accent` using a golden-ratio offset; saturation/brightness clamped to readable ranges.
+  - Channel variants: per-band base colour tinted by channel selection — Stereo/Mid=base, Side=increased saturation/brightness, Left=slight negative hue shift, Right=slight positive hue shift.
+- Dynamic/Spectral visualization:
+  - When Dynamics or Spectral is ON for a band, a subtle vertical gradient fill under that band’s path is shown (area path in `bandAreas`).
+  - Fill alpha is slightly higher for Dynamic than Spectral to improve legibility while respecting UI performance rules.
+- Dynamic range path & handle:
+  - Each band draws a secondary “dynamic range” path (`bandDynPaths`) indicating the max compression/expansion envelope relative to its Band Contribution Curve.
+  - A central handle sits at the band’s center frequency; dragging it adjusts `dynRangeDb` (respects `dynMode` Up/Down), Gaussian-weighted by Q so the shape mirrors the band.
+  - Visuals are theme-tinted (slightly darker variant of the band colour); optional dashed stroke in polish phase.
+- Units & grid:
+  - Horizontal dB lines and labels are drawn by the pane (not the analyzer).
+  - Vertical Hz ticks from analyzer remain; pane adds Hz labels at major points (20, 50, 100, 200, 500, 1k, 2k, 5k, 10k, 20k).
+
+#### Overlay (Floating Per-Band Panel)
+
+- Positioning: anchored near bottom of pane at a fixed Y; X follows the selected band’s latitude. Panel stays out of the EQ curves.
+- Drag behavior: during overlay slider drags (Gain/Q/Freq), the panel position is frozen to prevent the Freq slider from chasing the mouse as the band moves.
+- Controls: Gain (dB), Q, Freq (log 20–20k), Type, Phase, Channel, Dynamic/Spectral toggles. Small curve icon mirrors current Type.
+
+#### Interaction Details
+
+- Predictive type on add: HP auto-selects below 50 Hz; LP auto-selects above 10 kHz. Otherwise Bell.
+- Wheel adjusts Q; Shift+wheel for faster adjustment. Double-click deletes band. Right-click offers per-band quick actions.
+
+Implementation references:
+- `DynEqTab.h`: colour helpers `bandColourFor(bandIdx)`, `applyChannelTint(colour, channel)`, and `macroColour()`.
+- `FieldLookAndFeel.h`: `FieldLNF::theme` supplies all base colours including `theme.accent` and EQ palette.
+
 ### Interop Hooks
 
 - XY: "Adopt XY node" (one-shot copy + optional soft link); hold-⌥ to temporarily bypass overlapping XY bands.

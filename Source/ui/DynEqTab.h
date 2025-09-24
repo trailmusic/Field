@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "SpectrumAnalyzer.h"
 #include "../dynEQ/DynamicEqParamIDs.h"
+#include "../FieldLookAndFeel.h"
 
 class MyPluginAudioProcessor; // fwd
 
@@ -46,6 +47,26 @@ public:
                 repaint();
                 positionOverlay();
             }
+        };
+        overlay.onFreqChanged = [this](float hz)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                points[(size_t) selected].hz = juce::jlimit (20.0f, 20000.0f, hz);
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::freqHz, points[(size_t) selected].hz);
+                rebuildEqPath();
+                repaint();
+                positionOverlay();
+            }
+        };
+        overlay.onDragAny = [this](bool dragging)
+        {
+            overlayFrozen = dragging;
+            if (dragging)
+                overlayLastBounds = overlay.getBounds();
+            else
+                positionOverlay();
         };
         overlay.onTypeChanged = [this](int tp)
         {
@@ -110,12 +131,52 @@ public:
     {
         // Units
         drawUnits (g);
-        // Band-wise light curves
-        g.setColour (juce::Colours::white.withAlpha (0.20f));
-        for (auto& bp : bandPaths) g.strokePath (bp, juce::PathStrokeType (1.0f));
-        // Combined EQ curve (macro)
-        g.setColour (juce::Colours::cyan.withAlpha (0.95f));
-        g.strokePath (eqPath, juce::PathStrokeType (1.8f));
+        // Band-wise curves with theme-driven colours and optional fills for dyn/spec
+        const bool hasAreas = bandAreas.size() == bandPaths.size();
+        const bool hasDyn   = bandDynPaths.size() == bandPaths.size();
+        for (size_t i = 0; i < bandPaths.size(); ++i)
+        {
+            juce::Colour base = bandColourFor ((int) i);
+            const auto& pt = points.size() > i ? points[i] : BandPoint{};
+            base = applyChannelTint (base, pt.channel); // M/S/L/R tinting
+
+            if (hasAreas && (pt.dynOn || pt.specOn))
+            {
+                auto area = bandAreas[i];
+                auto r = analyzer.getBounds().toFloat();
+                juce::Colour fillC = base.withAlpha (pt.dynOn ? 0.22f : 0.14f);
+                juce::Colour fillB = base.withAlpha (0.03f);
+                juce::ColourGradient grad (fillC, r.getCentreX(), r.getY()+r.getHeight()*0.40f,
+                                           fillB, r.getCentreX(), r.getBottom(), false);
+                g.setGradientFill (grad);
+                g.fillPath (area);
+            }
+
+            g.setColour (base.withAlpha (selected == (int) i ? 1.0f : 0.90f));
+            const float width = (selected == (int) i ? 1.8f : 1.2f);
+            g.strokePath (bandPaths[i], juce::PathStrokeType (width));
+
+            // Dynamic range visualization (secondary path + handle)
+            if (hasDyn && pt.dynOn)
+            {
+                juce::Colour dynCol = base.darker (0.15f).withAlpha (0.85f);
+                g.setColour (dynCol);
+                g.strokePath (bandDynPaths[i], juce::PathStrokeType (1.4f));
+
+                const float cx = mapHzToX (pt.hz);
+                // Approx: use band path Y (base) and offset by signed dynamic range at center (no DSP yet)
+                const float baseY = mapDbToY (bandDbAtForPaint (pt, pt.hz));
+                const float signedRange = (ptDynModeUp ((int) i) ? +1.0f : -1.0f) * ptDynRangeDb ((int) i);
+                const float offsetY = mapDbToY (signedRange + 18.0f) - mapDbToY (18.0f);
+                const float cy = baseY + offsetY;
+                g.fillEllipse (cx-4.5f, cy-4.5f, 9.0f, 9.0f);
+                g.setColour (base.withAlpha (0.8f));
+                g.drawEllipse (cx-6.0f, cy-6.0f, 12.0f, 12.0f, 1.0f);
+            }
+        }
+        // Combined EQ curve (macro) slightly more prominent
+        g.setColour (macroColour());
+        g.strokePath (eqPath, juce::PathStrokeType (3.0f));
 
         g.setColour (juce::Colours::yellow.withAlpha (0.95f));
         for (const auto& pt : points)
@@ -155,6 +216,8 @@ private:
     int selected { -1 };
     juce::Path eqPath;
     std::vector<juce::Path> bandPaths;
+    std::vector<juce::Path> bandAreas;
+    std::vector<juce::Path> bandDynPaths;
 
     // Floating band editor overlay
     class BandOverlay : public juce::Component
@@ -162,11 +225,13 @@ private:
     public:
         std::function<void(float)> onGainChanged;
         std::function<void(float)> onQChanged;
+        std::function<void(float)> onFreqChanged;
         std::function<void(int)>   onTypeChanged;
         std::function<void(int)>   onPhaseChanged;
         std::function<void(int)>   onChanChanged;
         std::function<void(bool)>  onDynChanged;
         std::function<void(bool)>  onSpecChanged;
+        std::function<void(bool)>  onDragAny; // notify begin/end of any slider drag
         BandOverlay()
         {
             setInterceptsMouseClicks (true, true);
@@ -174,13 +239,26 @@ private:
             gain.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
             gain.setRange (-24.0, 24.0, 0.1);
             gain.onValueChange = [this]{ if (!updating && onGainChanged) onGainChanged ((float) gain.getValue()); };
+            gain.onDragStart = [this]{ if (onDragAny) onDragAny (true); };
+            gain.onDragEnd   = [this]{ if (onDragAny) onDragAny (false); };
             addAndMakeVisible (gain);
 
             q.setSliderStyle (juce::Slider::LinearHorizontal);
             q.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
             q.setRange (0.1, 36.0, 0.01);
             q.onValueChange = [this]{ if (!updating && onQChanged) onQChanged ((float) q.getValue()); };
+            q.onDragStart = [this]{ if (onDragAny) onDragAny (true); };
+            q.onDragEnd   = [this]{ if (onDragAny) onDragAny (false); };
             addAndMakeVisible (q);
+
+            freq.setSliderStyle (juce::Slider::LinearHorizontal);
+            freq.setTextBoxStyle (juce::Slider::TextBoxRight, false, 64, 18);
+            freq.setRange (20.0, 20000.0, 0.01);
+            freq.setSkewFactorFromMidPoint (1000.0);
+            freq.onValueChange = [this]{ if (!updating && onFreqChanged) onFreqChanged ((float) freq.getValue()); };
+            freq.onDragStart = [this]{ if (onDragAny) onDragAny (true); };
+            freq.onDragEnd   = [this]{ if (onDragAny) onDragAny (false); };
+            addAndMakeVisible (freq);
 
             gainLabel.setText ("GAIN", juce::dontSendNotification);
             gainLabel.setJustificationType (juce::Justification::centredLeft);
@@ -189,6 +267,10 @@ private:
             qLabel.setText ("Q", juce::dontSendNotification);
             qLabel.setJustificationType (juce::Justification::centredLeft);
             addAndMakeVisible (qLabel);
+
+            freqLabel.setText ("FREQ", juce::dontSendNotification);
+            freqLabel.setJustificationType (juce::Justification::centredLeft);
+            addAndMakeVisible (freqLabel);
 
             // Type icon + selectors
             addAndMakeVisible (typeIcon);
@@ -239,6 +321,10 @@ private:
             row = r.removeFromTop (22);
             qLabel.setBounds (row.removeFromLeft (40));
             q.setBounds (row);
+            r.removeFromTop (6);
+            row = r.removeFromTop (22);
+            freqLabel.setBounds (row.removeFromLeft (40));
+            freq.setBounds (row);
 
             r.removeFromTop (8);
             auto half = r.removeFromTop (22);
@@ -254,11 +340,12 @@ private:
             chanLabel.setBounds (half2.removeFromLeft (40));
             chanCb.setBounds (half2.removeFromLeft (120));
         }
-        void setValues (float gainDb, float qVal, int typeIdx, int phaseIdx, int chanIdx, bool dynOn, bool specOn)
+        void setValues (float gainDb, float qVal, float freqHz, int typeIdx, int phaseIdx, int chanIdx, bool dynOn, bool specOn)
         {
             juce::ScopedValueSetter<bool> sv (updating, true);
             gain.setValue (gainDb, juce::dontSendNotification);
             q.setValue (qVal, juce::dontSendNotification);
+            freq.setValue (freqHz, juce::dontSendNotification);
             typeCb.setSelectedItemIndex (juce::jlimit (0, juce::jmax (0, typeCb.getNumItems()-1), typeIdx), juce::dontSendNotification);
             phaseCb.setSelectedItemIndex (juce::jlimit (0, juce::jmax (0, phaseCb.getNumItems()-1), phaseIdx), juce::dontSendNotification);
             chanCb.setSelectedItemIndex (juce::jlimit (0, juce::jmax (0, chanCb.getNumItems()-1), chanIdx), juce::dontSendNotification);
@@ -267,8 +354,8 @@ private:
             specToggle.setToggleState (specOn, juce::dontSendNotification);
         }
     private:
-        juce::Slider gain, q;
-        juce::Label gainLabel, qLabel, typeLabel, phaseLabel, chanLabel;
+        juce::Slider gain, q, freq;
+        juce::Label gainLabel, qLabel, freqLabel, typeLabel, phaseLabel, chanLabel;
         juce::ComboBox typeCb, phaseCb, chanCb;
         juce::ToggleButton dynToggle, specToggle;
         struct SmallCurveIcon : public juce::Component {
@@ -339,10 +426,30 @@ private:
         return -1;
     }
 
+    int hitTestDynHandle (juce::Point<int> p) const
+    {
+        if (bandDynPaths.size() != points.size()) return -1;
+        for (int i = (int) points.size()-1; i >= 0; --i)
+        {
+            const auto& pt = points[(size_t) i];
+            if (!pt.dynOn) continue;
+            const float cx = mapHzToX (pt.hz);
+            const float baseY = mapDbToY (bandDbAtForPaint (pt, pt.hz));
+            const float signedRange = (ptDynModeUp (i) ? +1.0f : -1.0f) * ptDynRangeDb (i);
+            const float offsetY = mapDbToY (signedRange + 18.0f) - mapDbToY (18.0f);
+            const float cy = baseY + offsetY;
+            if (juce::Point<float> (cx, cy).getDistanceFrom (p.toFloat()) <= 8.0f)
+                return i;
+        }
+        return -1;
+    }
+
     void rebuildEqPath()
     {
         eqPath.clear();
         bandPaths.clear();
+        bandAreas.clear();
+        bandDynPaths.clear();
         auto r = analyzer.getBounds().toFloat();
         if (r.isEmpty()) return;
 
@@ -426,9 +533,13 @@ private:
 
         // Per-band paths
         bandPaths.resize (points.size());
+        bandAreas.resize (points.size());
+        bandDynPaths.resize (points.size());
         for (size_t bi = 0; bi < points.size(); ++bi)
         {
             auto& bp = bandPaths[bi];
+            auto& ba = bandAreas[bi];
+            auto& bd = bandDynPaths[bi];
             auto mapBand = [&](int i){
                 const double minHz = 20.0, maxHz = 20000.0;
                 const double t = (double) i / (double) (N - 1);
@@ -438,18 +549,48 @@ private:
                 return std::pair<float,float> ((float) hz, mapDbToY (bandDbAt (points[bi], hz)));
             };
             auto q0 = mapBand (0); bp.startNewSubPath (r.getX(), q0.second);
+            ba.startNewSubPath (r.getX(), r.getBottom());
+            ba.lineTo (r.getX(), q0.second);
+            bd.startNewSubPath (r.getX(), q0.second);
             for (int i = 1; i < N; ++i)
             {
                 auto q = mapBand (i);
                 const float x = r.getX() + (float) i / (float) (N - 1) * r.getWidth();
                 bp.lineTo (x, q.second);
+                ba.lineTo (x, q.second);
+                // dynamic offset curve (gaussian around band center, scaled by dynRange)
+                const auto& bpt = points[bi];
+                const double minHz = 20.0, maxHz = 20000.0;
+                const double t = (double) i / (double) (N - 1);
+                const double logF = juce::jmap (t, std::log10 (minHz), std::log10 (maxHz));
+                const double hz   = std::pow (10.0, logF);
+                const double logHz= std::log10 (juce::jlimit (20.0, 20000.0, hz));
+                const double logC = std::log10 (juce::jlimit (20.0f, 20000.0f, bpt.hz));
+                const double qv   = juce::jlimit (0.1, 36.0, (double) bpt.q);
+                const double width= juce::jlimit (0.02, 0.50, 0.22 / qv);
+                const double d    = (logHz - logC) / width;
+                const float  w    = (float) std::exp (-0.5 * d * d);
+                const float  range= ptDynRangeDb ((int) bi);
+                const bool   up   = ptDynModeUp ((int) bi);
+                const float  signedRange = (up ? +1.0f : -1.0f) * range * w;
+                const float  baseY = q.second;
+                const float  offsetY = mapDbToY (signedRange + 18.0f) - mapDbToY (18.0f);
+                bd.lineTo (x, baseY + offsetY);
             }
+            ba.lineTo (r.getRight(), r.getBottom());
+            ba.closeSubPath();
         }
     }
 
     void mouseDown (const juce::MouseEvent& e) override
     {
         selected = hitTestPoint (e.getPosition());
+        // If no point hit and user clicked near a dynamic handle, select that band for range drag
+        if (selected < 0)
+        {
+            const int idx = hitTestDynHandle (e.getPosition());
+            if (idx >= 0) { selected = idx; draggingDynHandle = true; dragStartY = (float) e.getPosition().y; startDynRange = ptDynRangeDb (idx); }
+        }
         if (e.mods.isPopupMenu())
         {
             juce::PopupMenu m;
@@ -470,7 +611,7 @@ private:
             BandPoint bp; bp.hz = juce::jlimit (20.f, 20000.f, mapXToHz (e.getPosition().x)); bp.db = juce::jlimit (-24.f, 24.f, mapYToDb (e.getPosition().y));
             // Predict type based on frequency (early HP/LP adoption)
             if (bp.hz <= 50.0f) { bp.type = 3; bp.db = -12.0f; }
-            else if (bp.hz >= 15000.0f) { bp.type = 4; bp.db = -12.0f; }
+            else if (bp.hz >= 10000.0f) { bp.type = 4; bp.db = -12.0f; }
             else { bp.type = 0; }
             // Allocate APVTS band slot and sync
             const int slot = allocateBandSlot();
@@ -495,7 +636,7 @@ private:
         if (selected >= 0 && selected < (int) points.size())
         {
             auto& pt = points[(size_t) selected];
-            overlay.setValues (pt.db, pt.q, pt.type, pt.phase, pt.channel, pt.dynOn, pt.specOn);
+            overlay.setValues (pt.db, pt.q, pt.hz, pt.type, pt.phase, pt.channel, pt.dynOn, pt.specOn);
             overlay.setVisible (true);
             positionOverlay();
         }
@@ -507,6 +648,16 @@ private:
 
     void mouseDrag (const juce::MouseEvent& e) override
     {
+        if (draggingDynHandle && selected >= 0 && selected < (int) points.size())
+        {
+            const float dy = (float) e.getPosition().y - dragStartY;
+            const float dbPerPx = 0.10f; // sensitivity
+            float newRange = juce::jlimit (-24.0f, 24.0f, startDynRange - dy * dbPerPx);
+            const int bi = selected;
+            setBandParam (points[(size_t) bi].bandIdx, dynEq::Band::dynRangeDb, newRange);
+            rebuildEqPath(); repaint();
+            return;
+        }
         if (selected >= 0 && selected < (int) points.size())
         {
             auto& pt = points[(size_t) selected];
@@ -519,7 +670,7 @@ private:
             }
             rebuildEqPath();
             repaint();
-            overlay.setValues (pt.db, pt.q, pt.type, pt.phase, pt.channel, pt.dynOn, pt.specOn);
+            overlay.setValues (pt.db, pt.q, pt.hz, pt.type, pt.phase, pt.channel, pt.dynOn, pt.specOn);
             positionOverlay();
         }
     }
@@ -536,7 +687,7 @@ private:
             if (selected == idx) selected = -1; else if (selected > idx) --selected;
             rebuildEqPath();
             repaint();
-            if (selected < 0) overlay.setVisible (false); else { auto& pt2 = points[(size_t) selected]; overlay.setValues (pt2.db, pt2.q, pt2.type, pt2.phase, pt2.channel, pt2.dynOn, pt2.specOn); positionOverlay(); }
+            if (selected < 0) overlay.setVisible (false); else { auto& pt2 = points[(size_t) selected]; overlay.setValues (pt2.db, pt2.q, pt2.hz, pt2.type, pt2.phase, pt2.channel, pt2.dynOn, pt2.specOn); positionOverlay(); }
         }
     }
 
@@ -551,14 +702,26 @@ private:
                 setBandParam (pt.bandIdx, dynEq::Band::q, pt.q);
             rebuildEqPath();
             repaint();
-            overlay.setValues (pt.db, pt.q, pt.type, pt.phase, pt.channel, pt.dynOn, pt.specOn);
+            overlay.setValues (pt.db, pt.q, pt.hz, pt.type, pt.phase, pt.channel, pt.dynOn, pt.specOn);
             positionOverlay();
         }
+    }
+
+    void mouseUp (const juce::MouseEvent&) override
+    {
+        draggingDynHandle = false;
     }
 
     void positionOverlay()
     {
         if (! overlay.isVisible() || selected < 0 || selected >= (int) points.size()) return;
+        if (overlayFrozen)
+        {
+            if (overlayLastBounds.isEmpty()) overlayLastBounds = overlay.getBounds();
+            overlay.setBounds (overlayLastBounds);
+            overlay.toFront (false);
+            return;
+        }
         const float x = mapHzToX (points[(size_t) selected].hz);
         auto pane = getLocalBounds();
         const int w = 360, h = 84;
@@ -568,7 +731,8 @@ private:
         int ox = (int) x - (w / 2);
         if (ox < pane.getX()) ox = pane.getX() + 12;
         if (ox + w > pane.getRight()) ox = pane.getRight() - w - 12;
-        overlay.setBounds (juce::Rectangle<int> (ox, oy, w, h));
+        overlayLastBounds = juce::Rectangle<int> (ox, oy, w, h);
+        overlay.setBounds (overlayLastBounds);
         overlay.toFront (false);
     }
 
@@ -595,7 +759,7 @@ private:
         }
 
         // Hz ticks
-        const double hzTicks[] = { 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 15000, 20000 };
+        const double hzTicks[] = { 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000 };
         for (double hz : hzTicks)
         {
             const float x = mapHzToX ((float) hz);
@@ -606,6 +770,80 @@ private:
             if (hz >= 1000.0) lbl = juce::String ((int) std::round (hz/1000.0)) + "k";
             else lbl = juce::String ((int) hz);
             g.drawFittedText (lbl, juce::Rectangle<int> ((int) x-18, (int) r.getBottom()-26, 36, 14), juce::Justification::centred, 1);
+        }
+    }
+
+    // --- Colour system (theme-driven) ---
+    juce::Colour macroColour() const
+    {
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            return lf->theme.accent.withAlpha (0.95f);
+        return juce::Colours::cyan.withAlpha (0.95f);
+    }
+
+    // Lightweight helpers for dynamic visuals (read-only APVTS)
+    float getBandParamFloat (int bandIdx, const char* baseId, float fallback) const
+    {
+        auto id = bandId (baseId, bandIdx);
+        if (auto* v = proc.apvts.getRawParameterValue (id)) return v->load();
+        return fallback;
+    }
+    // Approximate band dB at a given Hz using current visual model
+    float bandDbAtForPaint (const BandPoint& b, float hz) const
+    {
+        const double logHz = std::log10 (juce::jlimit (20.0f, 20000.0f, hz));
+        const double logC  = std::log10 (juce::jlimit (20.0f, 20000.0f, b.hz));
+        const double q     = juce::jlimit (0.1, 36.0, (double) b.q);
+        const double width = juce::jlimit (0.02, 0.50, 0.22 / q);
+        const double d     = (logHz - logC) / width;
+        switch (b.type)
+        {
+            case 0: { const float w = (float) std::exp (-0.5 * d * d); return b.db * w; }
+            case 1: { const double k = 8.0 * juce::jlimit (0.2, 3.0, q * 0.25); const double s = 1.0 / (1.0 + std::exp (-k * (logHz - logC))); return (float) (b.db * s); }
+            case 2: { const double k = 8.0 * juce::jlimit (0.2, 3.0, q * 0.25); const double s = 1.0 / (1.0 + std::exp (-k * (logHz - logC))); return (float) (b.db * (1.0 - s)); }
+            case 3: { const double n = 2.0; const double fc = std::pow (10.0, logC); const double ratio = juce::jlimit (1e-6, 1e6, fc / juce::jlimit (20.0, 20000.0, (double) hz)); const double att = -std::abs ((double) b.db <= 0.01 ? 24.0 : (double) b.db); const double mag = 1.0 / std::sqrt (1.0 + std::pow (ratio, 2.0 * n)); return (float) (att * (1.0 - mag)); }
+            case 4: { const double n = 2.0; const double fc = std::pow (10.0, logC); const double ratio = juce::jlimit (1e-6, 1e6, juce::jlimit (20.0, 20000.0, (double) hz) / fc); const double att = -std::abs ((double) b.db <= 0.01 ? 24.0 : (double) b.db); const double mag = 1.0 / std::sqrt (1.0 + std::pow (ratio, 2.0 * n)); return (float) (att * (1.0 - mag)); }
+            case 5: { const float depth = -std::abs (b.db); const float w = (float) std::exp (-0.5 * d * d); return depth * w; }
+            case 6: { const float w = (float) std::exp (-0.5 * d * d); return std::abs (b.db) * w; }
+            default: return 0.0f;
+        }
+    }
+    float ptDynRangeDb (int bandIdx) const { return getBandParamFloat (bandIdx, dynEq::Band::dynRangeDb, -3.0f); }
+    bool  ptDynModeUp  (int bandIdx) const { return (int) std::round (getBandParamFloat (bandIdx, dynEq::Band::dynMode, 0.0f)) == 1; }
+
+    // Drag state for dynamic handle
+    bool  draggingDynHandle { false };
+    float dragStartY { 0.0f };
+    float startDynRange { 0.0f };
+
+    // Overlay positioning freeze while dragging overlay sliders
+    bool overlayFrozen { false };
+    juce::Rectangle<int> overlayLastBounds;
+    juce::Colour bandColourFor (int bandIdx) const
+    {
+        juce::Colour accent = juce::Colours::deepskyblue;
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            accent = lf->theme.accent;
+        const float baseHue = accent.getHue();
+        const float baseSat = juce::jlimit (0.25f, 0.95f, accent.getSaturation());
+        const float baseBrt = juce::jlimit (0.35f, 0.95f, accent.getBrightness());
+        const float golden = 0.61803398875f;
+        float hue = std::fmod (baseHue + golden * (float) (bandIdx + 1), 1.0f);
+        hue = juce::jlimit (0.0f, 1.0f, 0.65f * hue + 0.35f * baseHue);
+        float sat = juce::jlimit (0.30f, 0.95f, baseSat * 0.9f + 0.1f);
+        float brt = juce::jlimit (0.40f, 0.95f, baseBrt * 0.9f + 0.1f);
+        return juce::Colour::fromHSV (hue, sat, brt, 1.0f);
+    }
+    static juce::Colour applyChannelTint (juce::Colour c, int channel)
+    {
+        // 0=Stereo,1=M,2=S,3=L,4=R
+        switch (channel)
+        {
+            case 2: return c.withSaturation (juce::jlimit (0.0f, 1.0f, c.getSaturation() * 1.10f))
+                             .withBrightness (juce::jlimit (0.0f, 1.0f, c.getBrightness() * 1.06f));
+            case 3: return c.withHue (std::fmod (c.getHue() - 0.03f + 1.0f, 1.0f));
+            case 4: return c.withHue (std::fmod (c.getHue() + 0.03f, 1.0f));
+            default: return c;
         }
     }
 
