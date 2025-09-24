@@ -42,6 +42,7 @@ namespace Band
     static constexpr const char* dynSAmount  = "b_dynSAmount";
 
     static constexpr const char* specOn      = "b_specOn";
+    static constexpr const char* specRangeDb = "b_specRangeDb"; // downward range (0..24 dB)
     static constexpr const char* specSelect  = "b_specSelect"; // 0..100
     static constexpr const char* specResol   = "b_specResol";  // 0=Low,1=Med,2=High
     static constexpr const char* specAdaptive= "b_specAdaptive";
@@ -117,6 +118,7 @@ inline void addDynamicEqParameters (std::vector<std::unique_ptr<juce::RangedAudi
         params.push_back (floatp (S(Band::dynSAmount),   "Dyn Sustain",   {0.f, 1.f, 0.f}, 0.5f));
 
         params.push_back (boolp  (S(Band::specOn),    "Spec On", false));
+        params.push_back (floatp (S(Band::specRangeDb), "Spec Range", {0.f, 24.f, 0.f}, 3.f));
         params.push_back (floatp (S(Band::specSelect), "Spec Select", {0.f, 100.f, 0.f}, 50.f));
         params.push_back (choice (S(Band::specResol),  "Spec Res", StringArray{ "Low","Med","High" }, 1));
         params.push_back (boolp  (S(Band::specAdaptive), "Spec Adaptive", true));

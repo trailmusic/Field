@@ -260,6 +260,7 @@ public:
         const bool hasAreas = bandAreas.size() == bandPaths.size();
         const bool hasDyn   = bandDynPaths.size() == bandPaths.size();
         const bool hasDynReg= bandDynRegions.size() == bandPaths.size();
+        const bool hasSpecReg= bandSpecRegions.size() == bandPaths.size();
         for (size_t i = 0; i < bandPaths.size(); ++i)
         {
             juce::Colour base = bandColourFor ((int) i);
@@ -283,17 +284,19 @@ public:
                     g.setGradientFill (grad);
                     g.fillPath (bandDynRegions[i]);
                 }
-                else if (pt.specOn)
+                else if (pt.specOn && hasSpecReg)
                 {
-                    auto area = bandAreas[i];
-                    // Heavier near spectral band curve, fading towards bottom
+                    // Gradient between spectral curve and base band curve (heavier at spectral curve)
                     const float cx = mapHzToX (pt.hz);
-                    const float curveY = mapDbToY (bandDbAtForPaint (pt, pt.hz));
-                    juce::Colour fillNear = base.withAlpha (0.28f);
-                    juce::Colour fillFar  = base.withAlpha (0.04f);
-                    juce::ColourGradient grad (fillNear, cx, curveY, fillFar, cx, r.getBottom(), false);
+                    const float baseY = mapDbToY (bandDbAtForPaint (pt, pt.hz));
+                    const float specRange = ptSpecRangeDb ((int) i);
+                    const float specOff = mapDbToY (-specRange + 18.0f) - mapDbToY (18.0f);
+                    const float specY = baseY + specOff;
+                    juce::Colour fillNear = base.withAlpha (0.30f);
+                    juce::Colour fillFar  = base.withAlpha (0.05f);
+                    juce::ColourGradient grad (fillNear, cx, specY, fillFar, cx, baseY, false);
                     g.setGradientFill (grad);
-                    g.fillPath (area);
+                    g.fillPath (bandSpecRegions[i]);
                 }
             }
 
@@ -326,8 +329,20 @@ public:
             // Spectral attenuation preview path (if Spec ON)
             if (pt.specOn && bandSpecPaths.size() > i)
             {
-                g.setColour (base.withAlpha (0.65f));
-                g.strokePath (bandSpecPaths[i], juce::PathStrokeType (1.2f));
+                g.setColour (base.withAlpha (0.75f));
+                g.strokePath (bandSpecPaths[i], juce::PathStrokeType (1.4f));
+                // Draw spectral amount indicator similar to dynamics (always downward)
+                const float cx = mapHzToX (pt.hz);
+                const float baseY = mapDbToY (bandDbAtForPaint (pt, pt.hz));
+                const float specRange = ptSpecRangeDb ((int) i);
+                const float offsetY = mapDbToY (-specRange + 18.0f) - mapDbToY (18.0f);
+                const float cy = baseY + offsetY;
+                g.setColour (base.darker (0.10f).withAlpha (0.90f));
+                g.drawLine (cx, baseY, cx, cy, 2.0f);
+                g.setColour (juce::Colours::white.withAlpha (0.90f));
+                g.fillEllipse (juce::Rectangle<float> (cx-5.0f, cy-5.0f, 10.0f, 10.0f));
+                g.setColour (base.darker (0.10f).withAlpha (0.90f));
+                g.drawEllipse (juce::Rectangle<float> (cx-5.0f, cy-5.0f, 10.0f, 10.0f), 1.2f);
             }
 
             // Hover/selection gradient for inactive bands (neither dyn nor spec):
@@ -528,6 +543,7 @@ private:
     std::vector<juce::Path> bandDynPaths;
     std::vector<juce::Path> bandDynRegions;
     std::vector<juce::Path> bandSpecPaths;
+    std::vector<juce::Path> bandSpecRegions;
 
     // Floating band editor overlay
     class BandOverlay : public juce::Component
@@ -948,6 +964,24 @@ private:
         return -1;
     }
 
+    int hitTestSpecHandle (juce::Point<int> p) const
+    {
+        if (bandSpecPaths.size() != points.size()) return -1;
+        for (int i = (int) points.size()-1; i >= 0; --i)
+        {
+            const auto& pt = points[(size_t) i];
+            if (!pt.specOn && i != selected) continue; // allow selected band even if spec off
+            const float cx = mapHzToX (pt.hz);
+            const float baseY = mapDbToY (bandDbAtForPaint (pt, pt.hz));
+            const float specRange = ptSpecRangeDb (i);
+            const float offsetY = mapDbToY (-specRange + 18.0f) - mapDbToY (18.0f);
+            const float cy = baseY + offsetY;
+            if (juce::Point<float> (cx, cy).getDistanceFrom (p.toFloat()) <= 10.0f)
+                return i;
+        }
+        return -1;
+    }
+
     void rebuildEqPath()
     {
         eqPath.clear();
@@ -956,6 +990,7 @@ private:
         bandDynPaths.clear();
         bandDynRegions.clear();
         bandSpecPaths.clear();
+        bandSpecRegions.clear();
         auto r = analyzer.getBounds().toFloat();
         if (r.isEmpty()) return;
 
@@ -1043,6 +1078,7 @@ private:
         bandDynPaths.resize (points.size());
         bandDynRegions.resize (points.size());
         bandSpecPaths.resize (points.size());
+        bandSpecRegions.resize (points.size());
         for (size_t bi = 0; bi < points.size(); ++bi)
         {
             auto& bp = bandPaths[bi];
@@ -1050,6 +1086,7 @@ private:
             auto& bd = bandDynPaths[bi];
             auto& br = bandDynRegions[bi];
             auto& sp = bandSpecPaths[bi];
+            auto& sr = bandSpecRegions[bi];
             auto mapBand = [&](int i){
                 const double minHz = 20.0, maxHz = 20000.0;
                 const double t = (double) i / (double) (N - 1);
@@ -1063,6 +1100,7 @@ private:
             ba.lineTo (r.getX(), q0.second);
             bd.startNewSubPath (r.getX(), q0.second);
             sp.startNewSubPath (r.getX(), q0.second);
+            sr.startNewSubPath (r.getX(), q0.second);
             br.clear();
             br.startNewSubPath (r.getX(), q0.second);
             for (int i = 1; i < N; ++i)
@@ -1091,23 +1129,39 @@ private:
                 bd.lineTo (x, baseY + offsetY);
                 br.lineTo (x, baseY + offsetY);
 
-                // spectral attenuation visualization: similar shape, always downward (soothe-like)
-                const float specAmt = bpt.specOn ? (w * 3.0f) : 0.0f; // preview amount (3 dB max)
+                // spectral attenuation visualization: similar shape, always downward, scaled by Spec Range param
+                const float specAmt = bpt.specOn ? (w * ptSpecRangeDb ((int) bi)) : 0.0f;
                 const float specOff = mapDbToY (-specAmt + 18.0f) - mapDbToY (18.0f);
                 sp.lineTo (x, baseY + specOff);
+                sr.lineTo (x, baseY + specOff);
             }
             ba.lineTo (r.getRight(), r.getBottom());
             ba.closeSubPath();
-            // Close dynamic region back along the base curve (reverse)
+            // Close dynamic region back along the MACRO curve (reverse)
             for (int i = N-1; i >= 0; --i)
             {
                 const float x = r.getX() + (float) i / (float) (N - 1) * r.getWidth();
-                // recompute baseY by sampling bp path y at x approximation
-                // We approximate using stored band path point q.second again by mapBand
-                auto q = mapBand (i);
-                br.lineTo (x, q.second);
+                const double minHz = 20.0, maxHz = 20000.0;
+                const double t = (double) i / (double) (N - 1);
+                const double logF = juce::jmap (t, std::log10 (minHz), std::log10 (maxHz));
+                const double hz = std::pow (10.0, logF);
+                const float macroY = mapDbToY (totalDbAt (hz));
+                br.lineTo (x, macroY);
             }
             br.closeSubPath();
+
+            // Close spectral region back along the MACRO curve (reverse)
+            for (int i = N-1; i >= 0; --i)
+            {
+                const float x = r.getX() + (float) i / (float) (N - 1) * r.getWidth();
+                const double minHz = 20.0, maxHz = 20000.0;
+                const double t = (double) i / (double) (N - 1);
+                const double logF = juce::jmap (t, std::log10 (minHz), std::log10 (maxHz));
+                const double hz = std::pow (10.0, logF);
+                const float macroY = mapDbToY (totalDbAt (hz));
+                sr.lineTo (x, macroY);
+            }
+            sr.closeSubPath();
         }
     }
 
@@ -1118,7 +1172,12 @@ private:
         if (selected < 0)
         {
             const int idx = hitTestDynHandle (e.getPosition());
-            if (idx >= 0) { selected = idx; draggingDynHandle = true; dragStartY = (float) e.getPosition().y; startDynRange = ptDynRangeDb (idx); dragDynModeUp = ptDynModeUp (idx); }
+            if (idx >= 0) { selected = idx; draggingDynHandle = true; draggingSpecHandle = false; dragStartY = (float) e.getPosition().y; startDynRange = ptDynRangeDb (idx); dragDynModeUp = ptDynModeUp (idx); return; }
+        }
+        if (selected < 0)
+        {
+            const int idx = hitTestSpecHandle (e.getPosition());
+            if (idx >= 0) { selected = idx; draggingSpecHandle = true; draggingDynHandle = false; dragStartY = (float) e.getPosition().y; startSpecRange = ptSpecRangeDb (idx); return; }
         }
         // Single-click creates a band when empty area is clicked
         if (selected < 0 && !e.mods.isPopupMenu())
@@ -1188,6 +1247,19 @@ private:
             newRange = juce::jlimit (-24.0f, 24.0f, newRange);
             const int bi = selected;
             setBandParam (points[(size_t) bi].bandIdx, dynEq::Band::dynRangeDb, newRange);
+            rebuildEqPath(); repaint();
+            return;
+        }
+        if (draggingSpecHandle && selected >= 0 && selected < (int) points.size())
+        {
+            const float dy = (float) e.getPosition().y - dragStartY;
+            const float dbPerPx = 0.10f;
+            // Down drag increases attenuation (more downward), up reduces
+            float delta = dy * dbPerPx;
+            float newRange = juce::jlimit (0.0f, 24.0f, startSpecRange + delta);
+            const int bi = selected;
+            if (points[(size_t) bi].bandIdx >= 0)
+                setBandParam (points[(size_t) bi].bandIdx, dynEq::Band::specRangeDb, newRange);
             rebuildEqPath(); repaint();
             return;
         }
@@ -1272,6 +1344,7 @@ private:
     void mouseUp (const juce::MouseEvent&) override
     {
         draggingDynHandle = false;
+        draggingSpecHandle = false;
     }
 
     void mouseMove (const juce::MouseEvent& e) override
@@ -1441,12 +1514,15 @@ private:
     }
     float ptDynRangeDb (int bandIdx) const { return getBandParamFloat (bandIdx, dynEq::Band::dynRangeDb, -3.0f); }
     bool  ptDynModeUp  (int bandIdx) const { return (int) std::round (getBandParamFloat (bandIdx, dynEq::Band::dynMode, 0.0f)) == 1; }
+    float ptSpecRangeDb (int bandIdx) const { return getBandParamFloat (bandIdx, dynEq::Band::specRangeDb, 3.0f); }
 
     // Drag state for dynamic handle
     bool  draggingDynHandle { false };
+    bool  draggingSpecHandle { false };
     bool  dragDynModeUp { false };
     float dragStartY { 0.0f };
     float startDynRange { 0.0f };
+    float startSpecRange { 0.0f };
 
     // Overlay positioning freeze while dragging overlay sliders
     bool overlayFrozen { false };
