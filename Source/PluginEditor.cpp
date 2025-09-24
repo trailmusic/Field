@@ -1321,6 +1321,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
 
     // Color mode cycle (Ocean → Green → Pink → Yellow → Grey)
     addAndMakeVisible (colorModeButton);
+    addAndMakeVisible (tooltipsButton);
     colorModeButton.setTooltip (FieldLNF::getThemeName (lnf.currentVariant));
     colorModeButton.onClick = [this]
     {
@@ -1342,6 +1343,13 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         spaceKnob.setGreenMode (greenNow);
         spaceAlgorithmSwitch.setGreenMode (greenNow);
         pad.setGreenMode (greenNow);
+        repaint();
+    };
+
+    tooltipsButton.setTooltip ("Toggle Tooltips");
+    tooltipsButton.onClick = [this]
+    {
+        tooltipAssistantOn_ = tooltipsButton.getToggleState();
         repaint();
     };
 
@@ -2559,6 +2567,7 @@ void MyPluginAudioProcessorEditor::performLayout()
     }
     // history controls removed
     sizeBtn (colorModeButton,    Layout::dp (40, s));
+    sizeBtn (tooltipsButton,     Layout::dp (40, s));
     sizeBtn (fullScreenButton,   Layout::dp (40, s));
     sizeBtn (optionsButton,      Layout::dp (40, s));
 
@@ -2579,6 +2588,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         juce::GridItem(), // spacer before right utilities
         juce::GridItem (transportClockLabel),
         juce::GridItem (colorModeButton),
+        juce::GridItem (tooltipsButton),
         juce::GridItem (fullScreenButton),
     };
 

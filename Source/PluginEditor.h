@@ -1499,12 +1499,17 @@ private:
     SnapButton       snapButton;
     FullScreenButton fullScreenButton;
     ColorModeButton  colorModeButton;
+    class TooltipsButton : public ThemedIconButton { public: TooltipsButton()
+    : ThemedIconButton(Options{ IconSystem::Options, true, ThemedIconButton::Style::GradientPanel, 3.0f, 4.0f, false }) {} };
+    TooltipsButton   tooltipsButton; // Wrench icon (Options) toggles tooltip assistant
     // History and undo/redo removed
     class HelpButton : public ThemedIconButton { public: HelpButton()
     : ThemedIconButton(Options{ IconSystem::Help, false, ThemedIconButton::Style::GradientPanel, 3.0f, 4.0f, false }) {} };
     HelpButton       helpButton;
     CopyButton       copyButton;
     LockButton       lockButton;
+
+    bool tooltipAssistantOn_ { false }; // Header wrench toggle state
 
     // Global Wet Only (Kill Dry) UI toggle (no param binding per instructions)
     juce::ToggleButton wetOnlyToggle;

@@ -1,6 +1,6 @@
 ## Dynamic EQ (DynEQ) Build Plan
 
-Last updated: 2025-09-23
+Last updated: 2025-09-24
 
 ### Scope
 
@@ -47,8 +47,8 @@ Replace the former Spectrum tab with a precision-first Dynamic/Spectral EQ pane 
 
 - Tab 2: `DynEqTab` hosts visuals and editor; setOpaque(true); 30 Hz timer gated by visibility.
 - Visuals: analyzer canvas (pre/post), DynEQ curve overlay, spectral “glitter”, constellation markers; colours from `FieldLNF::theme`.
-- Interaction: click add point, drag (freq/gain), wheel Q; double-click delete; mini menu per point (Type, Slope, Channel, Phase, Dynamics, Spectral, Character, Tap, Solo/Delta, Constellations).
-- Inspector: bottom 2×16 grid using `KnobCell` with Managed labels; precision: Hz 0 decimals, dB 1 decimal, ms 0–2 decimals.
+- Interaction: single‑click add point (predictive type), drag (freq/gain), wheel Q; double‑click delete; mini menu per point (Type, Slope, Channel, Phase, Dynamics, Spectral, Character, Tap, Solo/Delta, Constellations).
+- Inspector: bottom 2×16 grid using `KnobCell` with Managed labels; precision: Hz 0–1 decimals (1 decimal for 1–10 kHz), dB 1 decimal, ms 0–2 decimals.
 - Hz mapping: reuse log 20–20k helpers consistent with XY/Analyzer.
 
 #### Curve Rendering & Colour System
@@ -61,27 +61,38 @@ Replace the former Spectrum tab with a precision-first Dynamic/Spectral EQ pane 
   - Macro curve colour = `theme.accent` with slight prominence (thicker stroke).
   - Band colours: generated per-band by hue-cycling around `theme.accent` using a golden-ratio offset; saturation/brightness clamped to readable ranges.
   - Channel variants: per-band base colour tinted by channel selection — Stereo/Mid=base, Side=increased saturation/brightness, Left=slight negative hue shift, Right=slight positive hue shift.
-- Dynamic/Spectral visualization:
-  - When Dynamics or Spectral is ON for a band, a subtle vertical gradient fill under that band’s path is shown (area path in `bandAreas`).
-  - Fill alpha is slightly higher for Dynamic than Spectral to improve legibility while respecting UI performance rules.
+- Dynamic/Spectral visualization (intensified gradients):
+  - When Dynamics or Spectral is ON for a band, show a vertical gradient fill under that band’s path (`bandAreas`). The gradient is heaviest at the dynamic/spectral curve and fades toward the base/0 line.
+  - Dynamic range region (`bandDynRegions`) uses a higher near‑curve alpha than Spectral for legibility.
 - Dynamic range path & handle:
   - Each band draws a secondary “dynamic range” path (`bandDynPaths`) indicating the max compression/expansion envelope relative to its Band Contribution Curve.
-  - A central handle sits at the band’s center frequency; dragging it adjusts `dynRangeDb` (respects `dynMode` Up/Down), Gaussian-weighted by Q so the shape mirrors the band.
+  - A central vertical indicator + square grab handle sits at the band’s center frequency; dragging adjusts `dynRangeDb` (respects `dynMode` Up/Down). UX: dragging up increases effect.
   - Visuals are theme-tinted (slightly darker variant of the band colour); optional dashed stroke in polish phase.
 - Units & grid:
   - Horizontal dB lines and labels are drawn by the pane (not the analyzer).
-  - Vertical Hz ticks from analyzer remain; pane adds Hz labels at major points (20, 50, 100, 200, 500, 1k, 2k, 5k, 10k, 20k).
+  - Vertical Hz ticks include intermediate labels and decimal kHz between 1–10 kHz (e.g., 1.5k, 3.0k, 7.0k).
 
 #### Overlay (Floating Per-Band Panel)
 
 - Positioning: anchored near bottom of pane at a fixed Y; X follows the selected band’s latitude. Panel stays out of the EQ curves.
 - Drag behavior: during overlay slider drags (Gain/Q/Freq), the panel position is frozen to prevent the Freq slider from chasing the mouse as the band moves.
 - Controls: Gain (dB), Q, Freq (log 20–20k), Type, Phase, Channel, Dynamic/Spectral toggles. Small curve icon mirrors current Type.
+- Type control: the Type glyph acts as the trigger for a popup menu (combo hidden). Clicking toggles open/close; selecting a type closes and updates the glyph.
+- Per‑band accent: overlay and badge show a thin top‑down accent strip tinted by the band colour (channel‑aware).
 
 #### Interaction Details
 
-- Predictive type on add: HP auto-selects below 50 Hz; LP auto-selects above 10 kHz. Otherwise Bell.
+- Predictive type on add: LowShelf/HighShelf ghosting and HP/LP prediction behavior:
+  - Ghosting: shelves in low/high predictive zones; bell elsewhere. Ghost boost/cut sign follows mouse Y vs 0 dB.
+  - Add: HP auto‑selects below 50 Hz; LP auto‑selects above 10 kHz; otherwise Bell.
 - Wheel adjusts Q; Shift+wheel for faster adjustment. Double-click deletes band. Right-click offers per-band quick actions.
+- Single‑click add (in empty area); dynamic handle is distinct and does not create new bands.
+- Hover UX: BandBadge appears on hover (and when selected). Hovering another band while one is selected previews that band’s badge and allows quick edits without changing selection.
+- Scroll on badge: hover cells support wheel edits for Freq/Q/Gain/Range; chips open menus (Type/Slope/Tap), type glyph is clickable.
+- Vertical guides: a center line with soft side lines follows the cursor; it fades smoothly while moving and strengthens when the ghost reveals (~220 ms stillness).
+- Hz badges: lightweight Hz readouts appear at both bottom and top, with 1‑decimal kHz between 1–10 kHz.
+- Ghost reveal: delayed ~220 ms; radial clip window reveals only a local slice; ghost suppressed within ~24–36 px of existing points to avoid distraction.
+- Inactive band area: when neither Dynamic nor Spectral is enabled, hovering fills the area between the band curve and 0 dB with a very light gradient (heavier near the curve); selection intensifies it.
 
 Implementation references:
 - `DynEqTab.h`: colour helpers `bandColourFor(bandIdx)`, `applyChannelTint(colour, channel)`, and `macroColour()`.
@@ -133,6 +144,10 @@ Implementation references:
 - UI meets performance rules (30 Hz components, minimal repaints), labels managed via KnobCell, correct precision.
 
 ### Risks & Follow-ups
+- Live GR readout on badge once DSP hooks land.
+- Linear‑phase/anti‑pre‑ring blend thresholds per band.
+- Spectral engine integration (FFT bins per band, shared pool) and Constellations UI.
+- Tooltip Assistant: header wrench toggles a global tooltip assistant; see `docs/notes/DYN_EQ_TOOLTIPS.md`.
 
 - Linear phase/anti-pre-ring requires careful latency handling and potential blending.
 - Spectral dynamics cost: consider shared FFT pool and decimation.

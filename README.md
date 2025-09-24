@@ -15,6 +15,7 @@ This README is optimized for **humans** and **AI builders**: explicit, actionabl
 * [Parameters (APVTS IDs)](#parameters-apvts-ids)
 * [UI / UX Spec](#ui--ux-spec)
 * [Tabs & Pane System (NEW)](#tabs--pane-system-new)
+* [Dynamic EQ (NEW)](#dynamic-eq-new)
 * [Visualization Bus & Threading Model (NEW)](#visualization-bus--threading-model-new)
 * [Preset System](#preset-system)
 * [Meters & Visualization](#meters--visualization)
@@ -65,6 +66,24 @@ We drew from tools like **Basslane/Basslane Pro** (low-end mono & width treatmen
 * **Shuffler:** LF/HF emphasis & crossover for stereo perception
 * **Rotation & Asymmetry:** S1-style field rotation and center offset
 * **Accurate Curves:** RBJ biquad-magnitude visualization (HP/LP/Shelves/Peak) with soft-knee pixel mapping
+
+### Dynamic EQ (NEW)
+
+Precision-first, in-pane Dynamic/Spectral EQ replacing the old Spectrum tab.
+
+- Interactive point editor on the analyzer: single-click add, drag for freq/gain, wheel for Q; double-click delete; right-click quick menu.
+- Predictive shapes: below 50 Hz → HP; above 10 kHz → LP; elsewhere Bell. Ghost preview uses shelves/bell and follows mouse Y (boost/cut); delayed reveal with radial clip; vertical guide lines.
+- Per-band visuals: Band Contribution Curves (light paths), Macro EQ Curve (prominent), dynamic range path with vertical handle, spectral/dynamic area fills (heaviest at the active curve, fade to base/0).
+- Hover/selection: BandBadge appears on hover and when selected; inactive bands show a very light area fill to 0 dB on hover, intensified on selection.
+- Floating overlay: bottom-anchored control bar that follows band latitude; Gain/Q/Freq sliders; Type glyph triggers popup (combo hidden), Phase/Channel combos, DYN/SPEC toggles; overlay freezes position during slider drags.
+- Colours: theme-driven palette via `FieldLNF::theme`; per-band colours generated from accent and tinted by channel (M/S/L/R).
+- Units: 1-decimal kHz between 1–10 kHz for hover badges, BandBadge, and pane ticks.
+- Global tooltip assistant: header wrench toggles tooltip mode (see `docs/notes/DYN_EQ_TOOLTIPS.md`).
+
+Integration:
+- Signal flow: default post‑XY; per-band detector taps (PreXY/PostXY/External); latency aggregates per-band look-ahead (and later linear-phase).
+- State: APVTS hosts 24 bands with full per-band Dynamics and Spectral blocks (see `Source/dynEQ/*`).
+- Pane system: `PaneID::DynEQ` replaces Spectrum; legacy `spec` pane key is migrated to `dyneq`.
 
 #### Rotation & Asymmetry (details)
 
