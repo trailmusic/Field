@@ -107,6 +107,8 @@ public:
 
     void paintOverChildren (juce::Graphics& g) override
     {
+        // Units
+        drawUnits (g);
         // Band-wise light curves
         g.setColour (juce::Colours::white.withAlpha (0.20f));
         for (auto& bp : bandPaths) g.strokePath (bp, juce::PathStrokeType (1.0f));
@@ -465,11 +467,9 @@ private:
         {
             // Add new band at click
             BandPoint bp; bp.hz = juce::jlimit (20.f, 20000.f, mapXToHz (e.getPosition().x)); bp.db = juce::jlimit (-24.f, 24.f, mapYToDb (e.getPosition().y));
-            // Predict type based on click longitude
-            const auto pane = analyzer.getBounds();
-            const float x01 = juce::jlimit (0.0f, 1.0f, (e.getPosition().x - pane.getX()) / (float) juce::jmax (1, pane.getWidth()));
-            if (bp.hz < 80.0f || x01 < 0.12f) { bp.type = 3; bp.db = -12.0f; }
-            else if (bp.hz > 8000.0f || x01 > 0.88f) { bp.type = 4; bp.db = -12.0f; }
+            // Predict type based on frequency (early HP/LP adoption)
+            if (bp.hz <= 50.0f) { bp.type = 3; bp.db = -12.0f; }
+            else if (bp.hz >= 15000.0f) { bp.type = 4; bp.db = -12.0f; }
             else { bp.type = 0; }
             // Allocate APVTS band slot and sync
             const int slot = allocateBandSlot();
@@ -569,6 +569,43 @@ private:
         if (ox + w > pane.getRight()) ox = pane.getRight() - w - 12;
         overlay.setBounds (juce::Rectangle<int> (ox, oy, w, h));
         overlay.toFront (false);
+    }
+
+    // Units and grid (lightweight, muted)
+    void drawUnits (juce::Graphics& g)
+    {
+        auto r = analyzer.getBounds().toFloat();
+        if (r.isEmpty()) return;
+        g.setFont (12.0f);
+        auto gridCol = juce::Colours::white.withAlpha (0.10f);
+        auto textCol = juce::Colours::white.withAlpha (0.45f);
+        g.setColour (gridCol);
+
+        // dB ticks
+        const float dbVals[] = { 18, 12, 6, 0, -6, -12, -18, -24, -30, -36 };
+        for (float dbv : dbVals)
+        {
+            const float y = mapDbToY (dbv);
+            g.setColour (gridCol);
+            g.drawLine (r.getX(), y, r.getRight(), y, dbv == 0 ? 1.2f : 0.6f);
+            g.setColour (textCol);
+            juce::String lbl = juce::String ((int) dbv) + " dB";
+            g.drawFittedText (lbl, juce::Rectangle<int> ((int) r.getX()+4, (int) y-8, 44, 16), juce::Justification::centredLeft, 1);
+        }
+
+        // Hz ticks
+        const double hzTicks[] = { 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 15000, 20000 };
+        for (double hz : hzTicks)
+        {
+            const float x = mapHzToX ((float) hz);
+            g.setColour (gridCol);
+            g.drawLine (x, r.getBottom()-12.0f, x, r.getBottom(), 0.8f);
+            g.setColour (textCol);
+            juce::String lbl;
+            if (hz >= 1000.0) lbl = juce::String ((int) std::round (hz/1000.0)) + "k";
+            else lbl = juce::String ((int) hz);
+            g.drawFittedText (lbl, juce::Rectangle<int> ((int) x-18, (int) r.getBottom()-26, 36, 14), juce::Justification::centred, 1);
+        }
     }
 
     // ----- APVTS helpers -----
