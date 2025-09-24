@@ -6,6 +6,7 @@
 #include "../FieldLookAndFeel.h"
 
 class MyPluginAudioProcessor; // fwd
+class MyPluginAudioProcessorEditor; // fwd
 
 // Dynamic EQ tab (replaces Spectrum). In-pane experience: visuals + editor.
 // Scaffold component so we can integrate DSP/Editor incrementally.
@@ -494,6 +495,33 @@ public:
                 g.strokePath (ghost, juce::PathStrokeType (1.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
                 }
             }
+        }
+        
+        // Draw tooltip if active
+        if (showTooltip && currentTooltipText.isNotEmpty())
+        {
+            // Position tooltip near the anchor point
+            auto tooltipRect = currentTooltipRect.expanded (8, 8);
+            tooltipRect = tooltipRect.translated (0, -tooltipRect.getHeight() - 8);
+            
+            // Ensure tooltip stays within bounds
+            if (tooltipRect.getY() < getLocalBounds().getY())
+                tooltipRect = tooltipRect.translated (0, tooltipRect.getHeight() + 16);
+            if (tooltipRect.getX() < getLocalBounds().getX())
+                tooltipRect = tooltipRect.translated (getLocalBounds().getX() - tooltipRect.getX(), 0);
+            if (tooltipRect.getRight() > getLocalBounds().getRight())
+                tooltipRect = tooltipRect.translated (getLocalBounds().getRight() - tooltipRect.getRight(), 0);
+            
+            // Draw tooltip background
+            g.setColour (juce::Colours::black.withAlpha (0.85f));
+            g.fillRoundedRectangle (tooltipRect.toFloat(), 4.0f);
+            g.setColour (juce::Colours::white.withAlpha (0.9f));
+            g.drawRoundedRectangle (tooltipRect.toFloat(), 4.0f, 1.0f);
+            
+            // Draw tooltip text
+            g.setColour (juce::Colours::white);
+            g.setFont (12.0f);
+            g.drawFittedText (currentTooltipText, tooltipRect, juce::Justification::centred, 1);
         }
     }
 
@@ -1371,6 +1399,10 @@ private:
         if (hoverInPane)
             hoverHz = juce::jlimit (20.0f, 20000.0f, mapXToHz (hoverPos.x));
         lastMouseMoveMs = (juce::int64) juce::Time::getMillisecondCounterHiRes();
+        
+        // Tooltip support - check if we're over a control that needs tooltips
+        updateTooltipForPosition (e.getPosition());
+        
         repaint();
     }
 
@@ -1381,6 +1413,14 @@ private:
         hoverInPane = false;
         repaint();
     }
+
+    // Tooltip support for Dynamic EQ controls
+    void updateTooltipForPosition (juce::Point<int> pos);
+    
+    // Simple tooltip display
+    juce::String currentTooltipText;
+    juce::Rectangle<int> currentTooltipRect;
+    bool showTooltip = false;
 
     void positionOverlay()
     {
@@ -1585,5 +1625,62 @@ private:
     juce::LookAndFeel* lookAndFeelPtr { nullptr };
     SpectrumAnalyzer analyzer;
 };
+
+// Tooltip implementation for Dynamic EQ controls
+inline void DynEqTab::updateTooltipForPosition (juce::Point<int> pos)
+{
+    juce::String tooltipText;
+    juce::Rectangle<int> anchorRect;
+    
+    // Check if we're over band points
+    if (hover >= 0 && hover < (int) points.size())
+    {
+        const auto& pt = points[(size_t) hover];
+        const float x = mapHzToX (pt.hz);
+        const float y = mapDbToY (pt.db);
+        anchorRect = juce::Rectangle<int> ((int) x - 8, (int) y - 8, 16, 16);
+        tooltipText = "Drag to set Freq (X) and Gain (Y). Scroll to adjust Q";
+    }
+    // Check if we're over dynamic/spectral handles
+    else if (selected >= 0 && selected < (int) points.size())
+    {
+        const auto& pt = points[(size_t) selected];
+        const float x = mapHzToX (pt.hz);
+        
+        // Check dynamic handle
+        if (pt.dynOn)
+        {
+            const float dynY = mapDbToY (pt.db + ptDynRangeDb (selected));
+            if (std::abs (pos.x - (int) x) < 8 && std::abs (pos.y - (int) dynY) < 8)
+            {
+                anchorRect = juce::Rectangle<int> ((int) x - 8, (int) dynY - 8, 16, 16);
+                tooltipText = "Drag the center handle to set ±dB dynamic range";
+            }
+        }
+        
+        // Check spectral handle
+        if (pt.specOn)
+        {
+            const float specY = mapDbToY (pt.db - ptSpecRangeDb (selected));
+            if (std::abs (pos.x - (int) x) < 8 && std::abs (pos.y - (int) specY) < 8)
+            {
+                anchorRect = juce::Rectangle<int> ((int) x - 8, (int) specY - 8, 16, 16);
+                tooltipText = "Drag to set spectral attenuation range";
+            }
+        }
+    }
+    
+    // Update tooltip state
+    if (tooltipText.isNotEmpty())
+    {
+        currentTooltipText = tooltipText;
+        currentTooltipRect = anchorRect;
+        showTooltip = true;
+    }
+    else
+    {
+        showTooltip = false;
+    }
+}
 
 

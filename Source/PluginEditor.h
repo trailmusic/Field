@@ -677,6 +677,7 @@ public:
             startTimer (headerHoverOffDelayMs); 
         }
     }
+    void mouseMove (const juce::MouseEvent& e) override;
     
     void setScaleFactor (float newScale) override;
     
@@ -1500,7 +1501,7 @@ private:
     FullScreenButton fullScreenButton;
     ColorModeButton  colorModeButton;
     class TooltipsButton : public ThemedIconButton { public: TooltipsButton()
-    : ThemedIconButton(Options{ IconSystem::Options, true, ThemedIconButton::Style::GradientPanel, 3.0f, 4.0f, false }) {} };
+    : ThemedIconButton(Options{ IconSystem::CogWheel, true, ThemedIconButton::Style::SolidAccentWhenOn, 3.0f, 4.0f, false }) {} };
     TooltipsButton   tooltipsButton; // Wrench icon (Options) toggles tooltip assistant
     // History and undo/redo removed
     class HelpButton : public ThemedIconButton { public: HelpButton()
@@ -1510,6 +1511,54 @@ private:
     LockButton       lockButton;
 
     bool tooltipAssistantOn_ { false }; // Header wrench toggle state
+
+    // Lightweight tooltip bubble shown when tooltip assistant is ON
+    class TooltipBubble : public juce::Component
+    {
+    public:
+        std::function<void(juce::Point<int>)> onMenu;
+        void setText (juce::String t) { text = std::move (t); repaint(); }
+        void setAnchor (juce::Rectangle<int> target)
+        {
+            const int w = juce::jlimit (160, 300, (int) juce::jlimit (160.0f, 300.0f, (float) text.length() * 6.5f));
+            const int h = 54; // compact height
+            const int x = target.getRight() + 8;
+            const int y = juce::jmax (target.getY() - 8, 6);
+            setBounds (x, y, w, h);
+            infoRect = juce::Rectangle<int> (getWidth() - 20, 6, 14, 14);
+        }
+        void paint (juce::Graphics& g) override
+        {
+            auto r = getLocalBounds().toFloat();
+            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+            auto panel = lf ? lf->theme.panel : juce::Colour (0xFF2F3136);
+            auto border = lf ? lf->theme.hl : juce::Colour (0xFF45484D);
+            auto textCol = lf ? lf->theme.text : juce::Colours::white;
+            // Panel
+            juce::ColourGradient grad (panel.brighter (0.06f), r.getX(), r.getY(), panel.darker (0.10f), r.getX(), r.getBottom(), false);
+            g.setGradientFill (grad); g.fillRoundedRectangle (r, 6.0f);
+            g.setColour (border.withAlpha (0.9f)); g.drawRoundedRectangle (r, 6.0f, 1.0f);
+            // Text
+            g.setColour (textCol.withAlpha (0.92f));
+            g.setFont (juce::Font (juce::FontOptions (11.0f)));
+            auto textArea = getLocalBounds().reduced (8, 8).withTrimmedRight (22);
+            g.drawFittedText (text, textArea, juce::Justification::topLeft, 3);
+            // Small info/menu glyph (three dots)
+            juce::Rectangle<float> dotArea = infoRect.toFloat();
+            g.setColour (textCol.withAlpha (0.8f));
+            const float cx = dotArea.getCentreX(), cy = dotArea.getCentreY();
+            for (int i = -1; i <= 1; ++i) g.fillEllipse (cx + i * 4.0f - 1.25f, cy - 1.25f, 2.5f, 2.5f);
+        }
+        void mouseUp (const juce::MouseEvent& e) override
+        {
+            if (infoRect.contains (e.getPosition()) && onMenu) onMenu (localPointToGlobal (e.getPosition()));
+        }
+    private:
+        juce::String text;
+        juce::Rectangle<int> infoRect;
+    };
+    TooltipBubble tooltipBubble;
+    juce::Component* lastTooltipTarget { nullptr };
 
     // Global Wet Only (Kill Dry) UI toggle (no param binding per instructions)
     juce::ToggleButton wetOnlyToggle;
@@ -1965,7 +2014,7 @@ private:
     // Scaling
     float scaleFactor = 1.0f;
     const int baseWidth  = 1500; // 75% of 2000 to try a smaller default
-    const int baseHeight = 700;  // lowered to reduce overall vertical footprint
+    const int baseHeight = 760;  // slightly increased for more vertical space
     const int standardKnobSize = 80;
     bool resizingRowGuard = false;
     

@@ -1346,11 +1346,13 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         repaint();
     };
 
-    tooltipsButton.setTooltip ("Toggle Tooltips");
+    tooltipsButton.setTooltip ("Tooltip Assistant");
+    tooltipsButton.setToggleState (tooltipAssistantOn_, juce::dontSendNotification);
     tooltipsButton.onClick = [this]
     {
         tooltipAssistantOn_ = tooltipsButton.getToggleState();
-        repaint();
+        tooltipsButton.repaint();
+        tooltipBubble.setVisible (false);
     };
 
     // Full screen (top-level window kiosk toggle; restore original bounds)
@@ -2525,6 +2527,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (176, s))), // transport clock (right group)
         // history group removed (divider, undo, redo, history button)
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // color mode (right)
+        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // tooltips (right)
         juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s)))   // fullscreen (right)
     };
 
@@ -2596,6 +2599,20 @@ void MyPluginAudioProcessorEditor::performLayout()
                              .withTrimmedBottom (Layout::dp (8, s))
                              .withTrimmedTop (Layout::dp (2, s));
     header.performLayout (headerArea);
+
+    // Tooltip bubble menu callback
+    tooltipBubble.onMenu = [this](juce::Point<int> where)
+    {
+        juce::PopupMenu m; m.setLookAndFeel (&lnf);
+        m.addSectionHeader ("Tooltip Options");
+        m.addItem (1, "Open DYN_EQ Tooltips Doc");
+        m.addItem (2, "Turn Assistant Off", tooltipAssistantOn_);
+        m.showMenuAsync (juce::PopupMenu::Options().withTargetScreenArea (juce::Rectangle<int> (where.x, where.y, 1, 1)),
+            [this](int r){ if (r == 1) { juce::URL::createWithoutParsing ("file://docs/notes/DYN_EQ_TOOLTIPS.md").launchInDefaultBrowser(); }
+                           if (r == 2) { tooltipAssistantOn_ = false; tooltipsButton.setToggleState (false, juce::dontSendNotification); tooltipBubble.setVisible (false); repaint(); } });
+    };
+
+    if (! tooltipBubble.isOnDesktop()) addChildComponent (tooltipBubble);
 
     // history panel removed
 
@@ -3863,6 +3880,38 @@ void MyPluginAudioProcessorEditor::resized()
     // Call the existing layout code with the calculated scale factor
     if (!layoutReady) return;
     performLayout();
+}
+
+void MyPluginAudioProcessorEditor::mouseMove (const juce::MouseEvent& e)
+{
+    if (! tooltipAssistantOn_) { tooltipBubble.setVisible (false); return; }
+    auto withinHeader = getLocalBounds().removeFromTop (static_cast<int> (60 * scaleFactor));
+    if (! withinHeader.contains (e.position.toInt())) { tooltipBubble.setVisible (false); lastTooltipTarget = nullptr; return; }
+
+    // Consider a few primary header controls
+    juce::Component* targets[] { &colorModeButton, &tooltipsButton, &fullScreenButton };
+    juce::String tip; juce::Component* hit = nullptr;
+    for (auto* c : targets)
+    {
+        auto rel = e.getEventRelativeTo (c);
+        if (c->isVisible() && c->getBounds().contains (rel.getPosition().toInt())) { hit = c; break; }
+    }
+    if (hit == nullptr) { tooltipBubble.setVisible (false); lastTooltipTarget = nullptr; return; }
+
+    if (hit != lastTooltipTarget)
+    {
+        lastTooltipTarget = hit;
+        if (hit == &colorModeButton) tip = "Cycle colour theme";
+        else if (hit == &tooltipsButton) tip = "Tooltip Assistant – compact, contextual hints";
+        else if (hit == &fullScreenButton) tip = "Toggle fullscreen";
+
+        tooltipBubble.setText (tip);
+        auto anchor = hit->getBounds();
+        anchor.setPosition (hit->getParentComponent()->getBounds().getPosition() + anchor.getPosition());
+        tooltipBubble.setAnchor (anchor);
+        tooltipBubble.setVisible (true);
+        tooltipBubble.toFront (false);
+    }
 }
 
 // Repaint waveform from UI thread at ~30 Hz
