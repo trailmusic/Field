@@ -55,6 +55,12 @@ public:
     void setSmoothingPreset (SmoothingPreset p);
     SmoothingPreset getSmoothingPreset() const { return smoothingPreset; }
 
+    // Grid toggles
+    void setDrawGridVertical (bool on)   { drawGridVertical = on; }
+    void setDrawGridHorizontal (bool on) { drawGridHorizontal = on; }
+    bool getDrawGridVertical() const     { return drawGridVertical; }
+    bool getDrawGridHorizontal() const   { return drawGridHorizontal; }
+
     void paint (juce::Graphics&) override;
     void resized() override;
 
@@ -158,6 +164,10 @@ private:
     float fillAlphaMul    = 1.0f;
     float strokeAlphaMul  = 1.0f;
     float peakAlphaMul    = 1.0f;
+
+    // Grid visibility
+    bool drawGridVertical { true };
+    bool drawGridHorizontal { true };
 };
 
 

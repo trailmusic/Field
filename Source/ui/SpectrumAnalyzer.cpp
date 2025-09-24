@@ -549,18 +549,24 @@ void SpectrumAnalyzer::drawGridOnly (juce::Graphics& g, juce::Rectangle<float> r
 {
     g.setColour (gridColour);
     const double decades[] = { 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000 };
-    for (double f : decades)
+    if (drawGridVertical)
     {
-        if (f < fMin || f > fMax) continue;
-        const float x = freqToX (f, r.getX(), r.getRight());
-        g.drawVerticalLine ((int) std::round (x), r.getY(), r.getBottom());
+        for (double f : decades)
+        {
+            if (f < fMin || f > fMax) continue;
+            const float x = freqToX (f, r.getX(), r.getRight());
+            g.drawVerticalLine ((int) std::round (x), r.getY(), r.getBottom());
+        }
     }
-    const float majors[] = { -60, -48, -36, -24, -12, 0, +6 };
-    for (float d : majors)
+    if (drawGridHorizontal)
     {
-        if (d < params.minDb || d > params.maxDb) continue;
-        const float y = dbToY (d, r.getY(), r.getBottom());
-        g.drawHorizontalLine ((int) std::round (y), r.getX(), r.getRight());
+        const float majors[] = { -60, -48, -36, -24, -12, 0, +6 };
+        for (float d : majors)
+        {
+            if (d < params.minDb || d > params.maxDb) continue;
+            const float y = dbToY (d, r.getY(), r.getBottom());
+            g.drawHorizontalLine ((int) std::round (y), r.getX(), r.getRight());
+        }
     }
 }
 
@@ -632,17 +638,23 @@ void SpectrumAnalyzer::renderPaths (juce::Graphics& g, juce::Rectangle<float> r)
 
     g.setColour (gridColour);
     const double decades[] = { 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000 };
-    for (double f : decades)
+    if (drawGridVertical)
     {
-        const float x = freqToX (f, r.getX(), r.getRight());
-        g.drawVerticalLine ((int) std::round (x), r.getY(), r.getBottom());
+        for (double f : decades)
+        {
+            const float x = freqToX (f, r.getX(), r.getRight());
+            g.drawVerticalLine ((int) std::round (x), r.getY(), r.getBottom());
+        }
     }
-    const float dbMajors[] = { -60, -48, -36, -24, -12, 0, +6 };
-    for (float d : dbMajors)
+    if (drawGridHorizontal)
     {
-        if (d < params.minDb || d > params.maxDb) continue;
-        const float y = dbToY (d, r.getY(), r.getBottom());
-        g.drawHorizontalLine ((int) std::round (y), r.getX(), r.getRight());
+        const float dbMajors[] = { -60, -48, -36, -24, -12, 0, +6 };
+        for (float d : dbMajors)
+        {
+            if (d < params.minDb || d > params.maxDb) continue;
+            const float y = dbToY (d, r.getY(), r.getBottom());
+            g.drawHorizontalLine ((int) std::round (y), r.getX(), r.getRight());
+        }
     }
 
     // Draw PRE overlay first so POST sits visually on top

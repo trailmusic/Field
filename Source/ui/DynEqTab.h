@@ -20,6 +20,7 @@ public:
         analyzer.setAutoHeadroomEnabled (true);
         analyzer.setHeadroomTargetFill (0.70f);
         SpectrumAnalyzer::Params prm; prm.fps = 30; analyzer.setParams (prm);
+        analyzer.setDrawGridHorizontal (false); // we'll draw our own dB units
 
         // Floating per-band mini control panel (Gain/Q). Shown on selection.
         addAndMakeVisible (overlay);
