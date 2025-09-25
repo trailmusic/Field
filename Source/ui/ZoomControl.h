@@ -1,6 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "ZoomState.h"
+#include "../IconSystem.h"
 
 // Zoom control with slider, presets, and reset button
 class ZoomControl : public juce::Component, private juce::Timer
@@ -9,10 +10,10 @@ public:
     explicit ZoomControl (ZoomState& zoomState)
     : zoomState (zoomState)
     {
-        // Preset buttons
+        // Preset buttons with icons
         for (int i = 0; i < 5; ++i)
         {
-            presetButtons[i].setButtonText (getPresetLabel (i));
+            presetButtons[i].setButtonText (""); // Use icons instead
             presetButtons[i].setClickingTogglesState (false);
             presetButtons[i].onClick = [this, i] { setPreset (i); };
             addAndMakeVisible (presetButtons[i]);
@@ -28,8 +29,8 @@ public:
         zoomSlider.onDragEnd = [this] { onSliderDragEnd(); };
         addAndMakeVisible (zoomSlider);
         
-        // Reset button
-        resetButton.setButtonText ("↺");
+        // Reset button with icon
+        resetButton.setButtonText (""); // Use icon instead
         resetButton.onClick = [this] { handleReset(); };
         addAndMakeVisible (resetButton);
         
@@ -74,13 +75,6 @@ public:
         setHalfRangeDb (newValue);
     }
     
-    void paint (juce::Graphics& g) override
-    {
-        auto r = getLocalBounds().toFloat();
-        
-        // Draw preset tick marks on slider
-        drawPresetTicks (g, zoomSlider.getBounds().toFloat());
-    }
     
     void resized() override
     {
@@ -109,6 +103,33 @@ public:
         resetButton.setBounds (r.removeFromTop (24));
     }
     
+    void paint (juce::Graphics& g) override
+    {
+        auto r = getLocalBounds().toFloat();
+        
+        // Draw preset tick marks on slider
+        drawPresetTicks (g, zoomSlider.getBounds().toFloat());
+        
+        // Draw icons on buttons
+        drawButtonIcon (g, resetButton, IconSystem::Reset);
+        
+        // Draw preset icons
+        for (int i = 0; i < 5; ++i)
+        {
+            IconSystem::IconType iconType;
+            switch (i)
+            {
+                case 0: iconType = IconSystem::ZoomOut; break; // ±6 dB
+                case 1: iconType = IconSystem::ZoomOut; break; // ±12 dB  
+                case 2: iconType = IconSystem::ZoomIn; break;  // ±18 dB
+                case 3: iconType = IconSystem::ZoomIn; break;  // ±24 dB
+                case 4: iconType = IconSystem::ZoomIn; break;  // ±36 dB
+                default: iconType = IconSystem::ZoomIn; break;
+            }
+            drawButtonIcon (g, presetButtons[i], iconType);
+        }
+    }
+    
     void mouseWheelMove (const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel) override
     {
         const float anchorY = (float) e.position.y / (float) getHeight();
@@ -116,6 +137,24 @@ public:
     }
     
 private:
+    void drawButtonIcon (juce::Graphics& g, juce::Button& button, IconSystem::IconType iconType)
+    {
+        if (!button.isVisible()) return;
+        
+        auto bounds = button.getBounds().toFloat();
+        auto iconSize = juce::jmin (bounds.getWidth(), bounds.getHeight()) * 0.6f;
+        auto iconBounds = bounds.withSizeKeepingCentre (iconSize, iconSize);
+        
+        // Get appropriate color based on button state
+        juce::Colour iconColour;
+        if (button.getToggleState())
+            iconColour = juce::Colours::white;
+        else
+            iconColour = juce::Colours::white.withAlpha (0.6f);
+        
+        IconSystem::drawIcon (g, iconType, iconBounds, iconColour);
+    }
+    
     ZoomState& zoomState;
     juce::Slider zoomSlider;
     juce::TextButton presetButtons[5];

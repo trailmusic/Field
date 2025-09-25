@@ -45,7 +45,12 @@ public:
         Droplet,
         DropletSlash,
         SidechainKey,
-        Delta
+        Delta,
+        Auto,
+        Manual,
+        Reset,
+        ZoomIn,
+        ZoomOut
     };
 
     static juce::Path createIcon (IconType type, float size = 16.0f);
@@ -93,4 +98,9 @@ private:
     static juce::Path createDropletIcon (float size);
     static juce::Path createDropletSlashIcon (float size);
     static juce::Path createSidechainKeyIcon (float size);
+    static juce::Path createAutoIcon (float size);
+    static juce::Path createManualIcon (float size);
+    static juce::Path createResetIcon (float size);
+    static juce::Path createZoomInIcon (float size);
+    static juce::Path createZoomOutIcon (float size);
 };

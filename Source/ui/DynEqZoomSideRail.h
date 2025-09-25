@@ -2,6 +2,7 @@
 #include <JuceHeader.h>
 #include "ZoomState.h"
 #include "ZoomControl.h"
+#include "../IconSystem.h"
 
 // Side rail container for Dynamic EQ zoom control
 class DynEqZoomSideRail : public juce::Component
@@ -24,14 +25,14 @@ public:
         addAndMakeVisible (ledAuto);
         addAndMakeVisible (ledManual);
         
-        ledAuto.setButtonText ("AUTO");
+        ledAuto.setButtonText (""); // Use icon instead
         ledAuto.setClickingTogglesState (true);
         ledAuto.setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
         ledAuto.setColour (juce::TextButton::buttonOnColourId, juce::Colour (0xFF5AA9E6)); // Accent color
         ledAuto.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
         ledAuto.setColour (juce::TextButton::textColourOffId, juce::Colours::white.withAlpha (0.6f));
         
-        ledManual.setButtonText ("MAN");
+        ledManual.setButtonText (""); // Use icon instead
         ledManual.setClickingTogglesState (true);
         ledManual.setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
         ledManual.setColour (juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha (0.2f));
@@ -58,8 +59,8 @@ public:
         // Zoom control
         addAndMakeVisible (zoomControl);
         
-        // Reset button
-        resetButton.setButtonText ("↺");
+        // Reset button with icon
+        resetButton.setButtonText (""); // Use icon instead
         resetButton.setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
         resetButton.setColour (juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha (0.2f));
         resetButton.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
@@ -132,6 +133,11 @@ public:
             g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.5f));
             g.drawRoundedRectangle (r.reduced (1), 6.f, 2.f);
         }
+        
+        // Draw icons on buttons
+        drawButtonIcon (g, ledAuto, IconSystem::Auto);
+        drawButtonIcon (g, ledManual, IconSystem::Manual);
+        drawButtonIcon (g, resetButton, IconSystem::Reset);
     }
     
     void resized() override
@@ -194,6 +200,24 @@ public:
     ZoomControl& getZoomControl() noexcept { return zoomControl; }
     
 private:
+    void drawButtonIcon (juce::Graphics& g, juce::Button& button, IconSystem::IconType iconType)
+    {
+        if (!button.isVisible()) return;
+        
+        auto bounds = button.getBounds().toFloat();
+        auto iconSize = juce::jmin (bounds.getWidth(), bounds.getHeight()) * 0.6f;
+        auto iconBounds = bounds.withSizeKeepingCentre (iconSize, iconSize);
+        
+        // Get appropriate color based on button state
+        juce::Colour iconColour;
+        if (button.getToggleState())
+            iconColour = juce::Colours::white;
+        else
+            iconColour = juce::Colours::white.withAlpha (0.6f);
+        
+        IconSystem::drawIcon (g, iconType, iconBounds, iconColour);
+    }
+    
     ZoomState& zoomState;
     ZoomControl zoomControl;
     

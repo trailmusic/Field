@@ -55,6 +55,11 @@ juce::Path IconSystem::createIcon (IconType type, float size)
             p.addTriangle (8 * s, 3 * s, 3 * s, 13 * s, 13 * s, 13 * s);
             return p;
         }
+        case Auto:           return createAutoIcon (size);
+        case Manual:         return createManualIcon (size);
+        case Reset:          return createResetIcon (size);
+        case ZoomIn:         return createZoomInIcon (size);
+        case ZoomOut:        return createZoomOutIcon (size);
         default:             return {};
     }
 }
@@ -621,4 +626,120 @@ juce::Path IconSystem::createSidechainKeyIcon (float size)
     }
     p.addPath (w);
     return p;
+}
+
+juce::Path IconSystem::createAutoIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    
+    // "A" letter with automation arrow
+    // A letter
+    path.startNewSubPath (4 * s, 14 * s);
+    path.lineTo (6 * s, 6 * s);
+    path.lineTo (10 * s, 6 * s);
+    path.lineTo (12 * s, 14 * s);
+    path.startNewSubPath (5.5f * s, 10 * s);
+    path.lineTo (10.5f * s, 10 * s);
+    
+    // Automation arrow (small arrow pointing right)
+    path.startNewSubPath (13 * s, 8 * s);
+    path.lineTo (15 * s, 10 * s);
+    path.lineTo (13 * s, 12 * s);
+    
+    return path;
+}
+
+juce::Path IconSystem::createManualIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    
+    // "M" letter with hand symbol
+    // M letter
+    path.startNewSubPath (4 * s, 14 * s);
+    path.lineTo (4 * s, 6 * s);
+    path.lineTo (6 * s, 6 * s);
+    path.lineTo (8 * s, 10 * s);
+    path.lineTo (10 * s, 6 * s);
+    path.lineTo (12 * s, 6 * s);
+    path.lineTo (12 * s, 14 * s);
+    
+    // Hand symbol (small hand pointing)
+    path.startNewSubPath (13 * s, 8 * s);
+    path.lineTo (13 * s, 12 * s);
+    path.lineTo (14.5f * s, 12 * s);
+    path.lineTo (15 * s, 10 * s);
+    path.lineTo (14.5f * s, 8 * s);
+    path.closeSubPath();
+    
+    return path;
+}
+
+juce::Path IconSystem::createResetIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    const float cx = 8 * s;
+    const float cy = 8 * s;
+    const float radius = 6 * s;
+    
+    // Circular arrow (↺)
+    path.addCentredArc (cx, cy, radius, radius, 0, 
+                        juce::MathConstants<float>::pi * 0.25f, 
+                        juce::MathConstants<float>::pi * 1.75f, true);
+    
+    // Arrow head
+    path.startNewSubPath (cx + radius * 0.7f, cy - radius * 0.7f);
+    path.lineTo (cx + radius * 0.3f, cy - radius * 0.3f);
+    path.lineTo (cx + radius * 0.9f, cy - radius * 0.1f);
+    path.closeSubPath();
+    
+    return path;
+}
+
+juce::Path IconSystem::createZoomInIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    const float cx = 8 * s;
+    const float cy = 8 * s;
+    const float radius = 5 * s;
+    
+    // Magnifying glass circle
+    path.addCentredArc (cx, cy, radius, radius, 0, 0, juce::MathConstants<float>::pi * 2, true);
+    
+    // Handle
+    path.startNewSubPath (cx + radius * 0.7f, cy + radius * 0.7f);
+    path.lineTo (cx + radius * 1.8f, cy + radius * 1.8f);
+    
+    // Plus sign inside
+    path.startNewSubPath (cx - 2 * s, cy);
+    path.lineTo (cx + 2 * s, cy);
+    path.startNewSubPath (cx, cy - 2 * s);
+    path.lineTo (cx, cy + 2 * s);
+    
+    return path;
+}
+
+juce::Path IconSystem::createZoomOutIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    const float cx = 8 * s;
+    const float cy = 8 * s;
+    const float radius = 5 * s;
+    
+    // Magnifying glass circle
+    path.addCentredArc (cx, cy, radius, radius, 0, 0, juce::MathConstants<float>::pi * 2, true);
+    
+    // Handle
+    path.startNewSubPath (cx + radius * 0.7f, cy + radius * 0.7f);
+    path.lineTo (cx + radius * 1.8f, cy + radius * 1.8f);
+    
+    // Minus sign inside
+    path.startNewSubPath (cx - 2 * s, cy);
+    path.lineTo (cx + 2 * s, cy);
+    
+    return path;
 }
