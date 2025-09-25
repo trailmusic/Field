@@ -2,7 +2,7 @@
 
 #include <JuceHeader.h>
 #include "../../ui/Components/KnobCell.h"
-#include "../../Layout.h"
+#include "../../ui/Layout.h"
 #include "../ReverbParamIDs.h"
 
 // ReverbControlsPane2x16: 2x16 flat grid container for Reverb controls.

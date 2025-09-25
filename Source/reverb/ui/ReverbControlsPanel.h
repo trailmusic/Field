@@ -1,7 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "../../ui/Components/KnobCell.h"
-#include "../../Layout.h"
+#include "../../ui/Layout.h"
 #include "../ReverbParamIDs.h"
 
 class ReverbControlsPanel : public juce::Component

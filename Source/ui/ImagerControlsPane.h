@@ -2,7 +2,7 @@
 
 #include <JuceHeader.h>
 #include "Components/KnobCell.h"
-#include "../Layout.h"
+#include "../ui/Layout.h"
 
 // ImagerControlsPane: 2x16 grid for imaging/placement controls
 class ImagerControlsPane : public juce::Component

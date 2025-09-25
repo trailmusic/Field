@@ -2,7 +2,7 @@
 
 #include <JuceHeader.h>
 #include "Components/KnobCell.h"
-#include "../Layout.h"
+#include "../ui/Layout.h"
 
 // BandControlsPane: 2x16 grid for Band tab (Width visuals): WIDTH + WIDTH LO/MID/HI
 class BandControlsPane : public juce::Component

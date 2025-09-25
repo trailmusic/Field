@@ -3,7 +3,7 @@
 #include <JuceHeader.h>
 #include "Components/KnobCell.h"
 #include "SimpleSwitchCell.h"
-#include "../Layout.h"
+#include "../ui/Layout.h"
 
 // XYControlsPane: 2x16 grid for EQ/Center controls shown with the XY visuals
 class XYControlsPane : public juce::Component

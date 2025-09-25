@@ -6,7 +6,7 @@ void XYPaneAdapter::resized() { pad.setBounds (getLocalBounds()); }
 void XYPaneAdapter::pushWaveformSample (double L, double R) { pad.pushWaveformSample (L, R); }
 #include "ui/PaneManager.h"
 #include "reverb/ReverbParamIDs.h"
-#include "Layout.h"
+#include "ui/Layout.h"
 #include "dsp/DelayPresetLibrary.h"
 #include "reverb/ui/ReverbControlsPanel.h"
 #include "reverb/ui/ReverbPanel.h"

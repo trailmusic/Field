@@ -2,7 +2,7 @@
 
 #include <JuceHeader.h>
 #include "../Components/KnobCell.h"
-#include "../../Layout.h"
+#include "../../ui/Layout.h"
 
 // DelayControlsPane: 2x16 flat grid container for Delay controls.
 // Scaffolding-only: initially populated with styled empty KnobCells.

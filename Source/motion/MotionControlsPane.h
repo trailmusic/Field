@@ -3,7 +3,7 @@
 #include <JuceHeader.h>
 #include "MotionIDs.h"
 #include "../ui/Components/KnobCell.h"
-#include "../Layout.h"
+#include "../ui/Layout.h"
 
 // MotionControlsPane: 2x16 grid for Motion controls (24 + blanks)
 class MotionControlsPane : public juce::Component
