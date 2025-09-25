@@ -2020,7 +2020,7 @@ private:
     // Scaling
     float scaleFactor = 1.0f;
     const int baseWidth  = 1500; // 75% of 2000 to try a smaller default
-    const int baseHeight = 760;  // slightly increased for more vertical space
+    const int baseHeight = 1000; // increased for Dynamic EQ controls and better layout
     const int standardKnobSize = 80;
     bool resizingRowGuard = false;
     
