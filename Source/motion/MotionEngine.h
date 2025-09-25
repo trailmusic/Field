@@ -166,7 +166,12 @@ private:
 struct PannerState { double sr=48000.0; PathGen path; float phase=0.0f; };
 
 class MotionEngine {
+private:
+    bool initialized = false;
+    
 public:
+    bool isInitialized() const { return initialized; }
+    
     void prepare (double sampleRate, int samplesPerBlock) {
         sr = sampleRate; blockSize = samplesPerBlock; p1.sr = p2.sr = sr; 
         p1.path.prepare(sr); p2.path.prepare(sr); fd.prepare(sr);
@@ -186,6 +191,8 @@ public:
         // Initialize smoothed parameters (slower smoothing to reduce crackle)
         spreadSm.setSmoothingCoeff(0.02f);
         depthSm.setSmoothingCoeff(0.02f);
+        
+        initialized = true;
         rateSm.setSmoothingCoeff(0.02f);
         shelfSm.setSmoothingCoeff(0.02f);
         lvlAtten.setSmoothingCoeff(0.02f);

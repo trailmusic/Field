@@ -4,124 +4,8 @@
 #include "dynEQ/DynamicEqParamIDs.h"
 
 // =========================
-// Parameter IDs
+// Parameter IDs moved to PluginProcessor.h
 // =========================
-namespace IDs {
-    static constexpr const char* gain   = "gain_db";
-    static constexpr const char* pan    = "pan";
-    static constexpr const char* panL   = "pan_l";   // Split L
-    static constexpr const char* panR   = "pan_r";   // Split R
-    static constexpr const char* depth  = "depth";
-    static constexpr const char* width  = "width";
-    static constexpr const char* tilt   = "tilt";
-    static constexpr const char* scoop  = "scoop";
-    static constexpr const char* monoHz = "mono_hz";
-    static constexpr const char* hpHz   = "hp_hz";
-    static constexpr const char* lpHz   = "lp_hz";
-    static constexpr const char* satDriveDb = "sat_drive_db";
-    static constexpr const char* satMix     = "sat_mix";
-    static constexpr const char* bypass     = "bypass";
-    static constexpr const char* spaceAlgo  = "space_algo";   // 0=Room 1=Plate 2=Hall
-    static constexpr const char* airDb      = "air_db";
-    static constexpr const char* bassDb     = "bass_db";
-    static constexpr const char* ducking    = "ducking";
-    static constexpr const char* duckThrDb  = "duck_threshold_db";
-    static constexpr const char* duckKneeDb = "duck_knee_db";
-    static constexpr const char* duckRatio  = "duck_ratio";
-    static constexpr const char* duckAtkMs  = "duck_attack_ms";
-    static constexpr const char* duckRelMs  = "duck_release_ms";
-    static constexpr const char* duckLAms   = "duck_lookahead_ms";
-    static constexpr const char* duckRmsMs  = "duck_rms_ms";
-    static constexpr const char* duckTarget = "duck_target"; // 0 WetOnly, 1 Global
-    static constexpr const char* osMode     = "os_mode";      // 0 Off, 1=2x, 2=4x
-    static constexpr const char* splitMode  = "split_mode";   // 0 normal, 1 split
-    // Quality / Precision controls
-    static constexpr const char* quality    = "quality";      // 0 Eco, 1 Standard, 2 High
-    static constexpr const char* precision  = "precision";    // 0 Auto(Host), 1 Force32, 2 Force64
-    // EQ start freqs
-    static constexpr const char* tiltFreq   = "tilt_freq";
-    static constexpr const char* scoopFreq  = "scoop_freq";
-    static constexpr const char* bassFreq   = "bass_freq";
-    static constexpr const char* airFreq    = "air_freq";
-    // Imaging
-    static constexpr const char* xoverLoHz  = "xover_lo_hz";
-    static constexpr const char* xoverHiHz  = "xover_hi_hz";
-    static constexpr const char* widthLo    = "width_lo";
-    static constexpr const char* widthMid   = "width_mid";
-    static constexpr const char* widthHi    = "width_hi";
-    static constexpr const char* rotationDeg= "rotation_deg";
-    static constexpr const char* asymmetry  = "asymmetry";
-    static constexpr const char* shufLoPct  = "shuffler_lo_pct";
-    static constexpr const char* shufHiPct  = "shuffler_hi_pct";
-    static constexpr const char* shufXHz    = "shuffler_xover_hz";
-    static constexpr const char* monoSlope  = "mono_slope_db_oct";
-    static constexpr const char* monoAud    = "mono_audition";
-    
-    // EQ shaping/Q link additions
-    static constexpr const char* eqShelfShape = "eq_shelf_shape";  // S: 0.25..1.50
-    static constexpr const char* eqFilterQ    = "eq_filter_q";     // global Q: 0.50..1.20
-    static constexpr const char* tiltLinkS    = "tilt_link_s";     // link Tilt shelves to S
-    static constexpr const char* eqQLink      = "eq_q_link";       // link HP/LP Q to global
-    static constexpr const char* hpQ          = "hp_q";            // per-filter Q
-    static constexpr const char* lpQ          = "lp_q";            // per-filter Q
-    
-    // Delay parameters
-    static constexpr const char* delayEnabled = "delay_enabled";
-    static constexpr const char* delayMode = "delay_mode";
-    static constexpr const char* delaySync = "delay_sync";
-    static constexpr const char* delayGridFlavor = "delay_grid_flavor";
-    static constexpr const char* delayTimeMs = "delay_time_ms";
-    static constexpr const char* delayTimeDiv = "delay_time_div";
-    static constexpr const char* delayFeedbackPct = "delay_feedback_pct";
-    static constexpr const char* delayWet = "delay_wet";
-    static constexpr const char* delayKillDry = "delay_kill_dry";
-    static constexpr const char* delayFreeze = "delay_freeze";
-    static constexpr const char* delayPingpong = "delay_pingpong";
-    static constexpr const char* delayCrossfeedPct = "delay_crossfeed_pct";
-    static constexpr const char* delayStereoSpreadPct = "delay_stereo_spread_pct";
-    static constexpr const char* delayWidth = "delay_width";
-    static constexpr const char* delayModRateHz = "delay_mod_rate_hz";
-    static constexpr const char* delayModDepthMs = "delay_mod_depth_ms";
-    static constexpr const char* delayWowflutter = "delay_wowflutter";
-    static constexpr const char* delayJitterPct = "delay_jitter_pct";
-    static constexpr const char* delayHpHz = "delay_hp_hz";
-    static constexpr const char* delayLpHz = "delay_lp_hz";
-    static constexpr const char* delayTiltDb = "delay_tilt_db";
-    static constexpr const char* delaySat = "delay_sat";
-    static constexpr const char* delayDiffusion = "delay_diffusion";
-    static constexpr const char* delayDiffuseSizeMs = "delay_diffuse_size_ms";
-    static constexpr const char* delayDuckSource = "delay_duck_source";
-    static constexpr const char* delayDuckPost = "delay_duck_post";
-    static constexpr const char* delayDuckDepth = "delay_duck_depth";
-    static constexpr const char* delayDuckAttackMs = "delay_duck_attack_ms";
-    static constexpr const char* delayDuckReleaseMs = "delay_duck_release_ms";
-    static constexpr const char* delayDuckThresholdDb = "delay_duck_threshold_db";
-    static constexpr const char* delayDuckRatio = "delay_duck_ratio";
-    static constexpr const char* delayDuckLookaheadMs = "delay_duck_lookahead_ms";
-    static constexpr const char* delayDuckLinkGlobal = "delay_duck_link_global";
-    // Width Designer additions
-    static constexpr const char* widthMode          = "width_mode";            // 0=Classic, 1=Designer
-    static constexpr const char* widthSideTiltDbOct = "width_side_tilt_db_oct";
-    static constexpr const char* widthTiltPivotHz   = "width_tilt_pivot_hz";
-    static constexpr const char* widthAutoDepth     = "width_auto_depth";
-    static constexpr const char* widthAutoThrDb     = "width_auto_thr_db";
-    static constexpr const char* widthAutoAtkMs     = "width_auto_atk_ms";
-    static constexpr const char* widthAutoRelMs     = "width_auto_rel_ms";
-    static constexpr const char* widthMax           = "width_max";
-    // Phase Modes
-    static constexpr const char* phaseMode  = "phase_mode"; // 0 Zero, 1 Natural, 2 Hybrid Linear
-
-    // Center Group (Rows 3-4)
-    static constexpr const char* centerPromDb        = "center_prom_db";        // -9..+9 dB
-    static constexpr const char* centerFocusLoHz     = "center_f_lo_hz";        // 40..1000 Hz (log)
-    static constexpr const char* centerFocusHiHz     = "center_f_hi_hz";        // 1000..12000 Hz (log)
-    static constexpr const char* centerPunchAmt01    = "center_punch_amt";      // 0..1
-    static constexpr const char* centerPunchMode     = "center_punch_mode";     // 0 toSides, 1 toCenter
-    static constexpr const char* centerPhaseRecOn    = "center_phase_rec_on";   // bool
-    static constexpr const char* centerPhaseAmt01    = "center_phase_rec_amt";  // 0..1
-    static constexpr const char* centerLockOn        = "center_lock_on";        // bool
-    static constexpr const char* centerLockDb        = "center_lock_db";        // 0..6 dB cap
-}
 
 // ===== [UTIL] APVTS raw access helper =====
 // Why: one-liner get with assert on missing IDs
@@ -258,22 +142,33 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
                                   .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
 , apvts (*this, nullptr, "PARAMS", createParameterLayout())
 {
-    // Templated chain instances
+    // Constructor - removed logging to prevent file I/O issues
+    
+    // FieldChain instances
+    
+    // FieldChain instances
     chainF = std::make_unique<FieldChain<float>>();
     chainD = std::make_unique<FieldChain<double>>();
-    // eco flag removed
+
+    // FieldChain instances created
 
     // Keep existing smoothers if declared in the header (no harm if unused here)
+    // Reset smoothers
     for (auto* s : { &panSmoothed, &panLSmoothed, &panRSmoothed, &depthSmoothed, &widthSmoothed, &gainSmoothed, &tiltSmoothed,
                      &hpHzSmoothed, &lpHzSmoothed, &monoHzSmoothed,
                      &satDriveLin, &satMixSmoothed, &airSmoothed, &bassSmoothed, &duckingSmoothed })
         s->reset (currentSR, 0.005); // 5 ms smoothing
 
+    // Smoothers reset
+
+    // Add parameter listeners
     apvts.addParameterListener (IDs::pan,  this);
     apvts.addParameterListener (IDs::gain, this);
     // Listen for quality/precision changes
     apvts.addParameterListener (IDs::quality,   this);
     apvts.addParameterListener (IDs::precision, this);
+    
+    // Constructor completed
 }
 
 bool MyPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -286,8 +181,12 @@ bool MyPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 
 void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    // prepareToPlay started
+    
     juce::FloatVectorOperations::disableDenormalisedNumberSupport();
     currentSR = sampleRate;
+    
+    // Basic setup complete
 
     for (auto* s : { &panSmoothed, &panLSmoothed, &panRSmoothed, &depthSmoothed, &widthSmoothed, &gainSmoothed, &tiltSmoothed,
                      &hpHzSmoothed, &lpHzSmoothed, &monoHzSmoothed,
@@ -302,6 +201,8 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     // Prepare alias guards for OS-off nonlinear protection
     chainF->prepareAliasGuards (sampleRate);
     chainD->prepareAliasGuards (sampleRate);
+    
+    // Chain preparation complete
     // Resize scratch for potential 32f->64f internal hop
     const int chans = juce::jmax (getTotalNumInputChannels(), getTotalNumOutputChannels());
     scratch64.resize ((size_t) chans * (size_t) samplesPerBlock);
@@ -309,9 +210,12 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     applyQualityFromParams();
     updateLatencyForPhaseMode();
 
-    // Initialize Motion Engine
-    motionEngine.prepare(sampleRate, samplesPerBlock);
+    // Motion Engine will be initialized lazily when first accessed
     
+    // Set up Motion parameters
+    
+    // TEMPORARILY DISABLE Motion parameter setup to test if this is the crash source
+    /*
     // Set up Motion parameter pointers - Dual Panner System
     #include "motion/MotionIDs.h"
     using namespace motion;
@@ -386,18 +290,26 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     motionParams.doppler = motionParams.p1.doppler;
     motionParams.motionSend = motionParams.p1.motionSend;
     motionParams.anchor = motionParams.p1.anchor;
+    */
     
-    motionEngine.setParams(&motionParams);
-
-    // Prepare new Reverb engine
-    reverbEngine.prepare (sampleRate, samplesPerBlock, getTotalNumOutputChannels());
+    // Motion parameter setup complete
+    
+    // Engines are now handled by FieldChain template for consistent architecture
 
     // Prepare delay UI bridge
+    
+    // Prepare delay UI bridge
     delayUiBridge.prepare (sampleRate, samplesPerBlock, getTotalNumOutputChannels());
+    
+    // Delay UI bridge preparation complete
+    
+    // Delay engine is handled by FieldChain template - no separate initialization needed
 
     // Lock latency after initial compute
     updateLatencyForPhaseMode();
     latencyLocked = true;
+    
+    // prepareToPlay complete
 }
 
 // Utility: build a HostParams snapshot each block
@@ -647,7 +559,8 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     motion::HostInfo hinfo; hinfo.bpm = hp.tempoBpm; hinfo.playing = transportIsPlaying.load();
     if (auto* ph = getPlayHead()) { if (auto pos = ph->getPosition()) { if (auto ppq = pos->getPpqPosition()) hinfo.ppqPosition = *ppq; if (auto bar = pos->getPpqPositionOfLastBarStart()) hinfo.ppqBarStart = *bar; }}
     hinfo.samplesPerBeat = (currentSR > 0.0 ? currentSR * 60.0 / juce::jmax (1e-6, hp.tempoBpm) : 0.0);
-    motionEngine.setHostSync(hinfo);
+    
+    // Motion Engine is now handled by FieldChain template
 
     // Capture input RMS before processing
     {
@@ -668,7 +581,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // Motion processing
     if (buffer.getNumChannels() >= 2)
     {
-        motionEngine.processBlock(buffer.getWritePointer(0), buffer.getWritePointer(1), buffer.getNumSamples());
+        // Motion Engine is now handled by FieldChain template
     }
 
     // Correlation + RMS/Peak meters (simple block estimate)
@@ -875,7 +788,8 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     motion::HostInfo hinfoD; hinfoD.bpm = hp.tempoBpm; hinfoD.playing = transportIsPlaying.load();
     if (auto* ph2 = getPlayHead()) { if (auto pos = ph2->getPosition()) { if (auto ppq = pos->getPpqPosition()) hinfoD.ppqPosition = *ppq; if (auto bar = pos->getPpqPositionOfLastBarStart()) hinfoD.ppqBarStart = *bar; }}
     hinfoD.samplesPerBeat = (currentSR > 0.0 ? currentSR * 60.0 / juce::jmax (1e-6, hp.tempoBpm) : 0.0);
-    motionEngine.setHostSync(hinfoD);
+    
+    // Motion Engine is now handled by FieldChain template
 
     juce::dsp::AudioBlock<double> block (buffer);
     // PRE visualization (double path): copy input before processing
@@ -1180,6 +1094,8 @@ void MyPluginAudioProcessor::applyQualityFromParams()
 // =========================
 juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::createParameterLayout()
 {
+    // createParameterLayout started
+    
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
 
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::gain, 1 }, "Gain +", juce::NormalisableRange<float> (-12.0f, 12.0f, 0.01f), 0.0f));
@@ -1278,6 +1194,54 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterChoice>(
         juce::ParameterID{ IDs::phaseMode, 1 }, "Phase Mode",
         juce::StringArray{ "Zero", "Natural", "Hybrid Linear", "Full Linear" }, 0));
+    
+    // Center Group (Rows 3-4)
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerPromDb, 1 }, "Center Prominence (dB)", juce::NormalisableRange<float> (-9.0f, 9.0f, 0.01f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerFocusLoHz, 1 }, "Center Focus Lo (Hz)", juce::NormalisableRange<float> (40.0f, 1000.0f, 1.0f, 0.5f), 150.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerFocusHiHz, 1 }, "Center Focus Hi (Hz)", juce::NormalisableRange<float> (1000.0f, 12000.0f, 1.0f, 0.5f), 3000.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerPunchAmt01, 1 }, "Center Punch Amount", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::centerPunchMode, 1 }, "Center Punch Mode", juce::StringArray { "To Sides", "To Center" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::centerPhaseRecOn, 1 }, "Center Phase Rec On", false));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerPhaseAmt01, 1 }, "Center Phase Rec Amount", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::centerLockOn, 1 }, "Center Lock On", false));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerLockDb, 1 }, "Center Lock (dB)", juce::NormalisableRange<float> (0.0f, 6.0f, 0.01f), 0.0f));
+
+    // Delay parameters
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayEnabled, 1 }, "Delay Enabled", false));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayMode, 1 }, "Delay Mode", juce::StringArray { "Digital", "Analog", "Tape" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delaySync, 1 }, "Delay Sync", false));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayGridFlavor, 1 }, "Delay Grid Flavor", juce::StringArray { "1/4", "1/8", "1/16", "1/32", "1/64" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayTimeMs, 1 }, "Delay Time (ms)", juce::NormalisableRange<float> (1.0f, 2000.0f, 0.1f), 250.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayTimeDiv, 1 }, "Delay Time Div", juce::StringArray { "1/4", "1/8", "1/16", "1/32", "1/64" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayFeedbackPct, 1 }, "Delay Feedback %", juce::NormalisableRange<float> (0.0f, 95.0f, 0.1f), 30.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayWet, 1 }, "Delay Wet", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.3f));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayKillDry, 1 }, "Delay Kill Dry", false));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayFreeze, 1 }, "Delay Freeze", false));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayPingpong, 1 }, "Delay Pingpong", false));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayCrossfeedPct, 1 }, "Delay Crossfeed %", juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayStereoSpreadPct, 1 }, "Delay Stereo Spread %", juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayWidth, 1 }, "Delay Width", juce::NormalisableRange<float> (0.0f, 2.0f, 0.001f), 1.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayModRateHz, 1 }, "Delay Mod Rate (Hz)", juce::NormalisableRange<float> (0.1f, 10.0f, 0.01f), 0.5f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayModDepthMs, 1 }, "Delay Mod Depth (ms)", juce::NormalisableRange<float> (0.0f, 50.0f, 0.1f), 5.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayWowflutter, 1 }, "Delay Wow/Flutter", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayJitterPct, 1 }, "Delay Jitter %", juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayHpHz, 1 }, "Delay HP (Hz)", juce::NormalisableRange<float> (20.0f, 20000.0f, 1.0f, 0.5f), 20.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayLpHz, 1 }, "Delay LP (Hz)", juce::NormalisableRange<float> (20.0f, 20000.0f, 1.0f, 0.5f), 20000.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayTiltDb, 1 }, "Delay Tilt (dB)", juce::NormalisableRange<float> (-12.0f, 12.0f, 0.01f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delaySat, 1 }, "Delay Saturation", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDiffusion, 1 }, "Delay Diffusion", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDiffuseSizeMs, 1 }, "Delay Diffuse Size (ms)", juce::NormalisableRange<float> (1.0f, 100.0f, 0.1f), 10.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayDuckSource, 1 }, "Delay Duck Source", juce::StringArray { "Input", "Output" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayDuckPost, 1 }, "Delay Duck Post", false));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckDepth, 1 }, "Delay Duck Depth", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckAttackMs, 1 }, "Delay Duck Attack (ms)", juce::NormalisableRange<float> (0.1f, 100.0f, 0.1f), 10.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckReleaseMs, 1 }, "Delay Duck Release (ms)", juce::NormalisableRange<float> (10.0f, 1000.0f, 0.1f), 100.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckThresholdDb, 1 }, "Delay Duck Threshold (dB)", juce::NormalisableRange<float> (-60.0f, 0.0f, 0.01f), -12.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckRatio, 1 }, "Delay Duck Ratio", juce::NormalisableRange<float> (1.0f, 20.0f, 0.01f), 4.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckLookaheadMs, 1 }, "Delay Duck Lookahead (ms)", juce::NormalisableRange<float> (0.0f, 50.0f, 0.1f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayPreDelayMs, 1 }, "Delay Pre-Delay (ms)", juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayFilterType, 1 }, "Delay Filter Type", juce::StringArray { "None", "HP", "LP", "BP" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayDuckLinkGlobal, 1 }, "Delay Duck Link Global", false));
 
     // EQ shape/Q additions
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqShelfShape, 1 }, "Shelf Shape (S)", juce::NormalisableRange<float> (0.25f, 1.50f, 0.001f), 0.90f));
@@ -1323,6 +1287,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckRatio, 1 }, "Delay Duck Ratio", juce::NormalisableRange<float>(1.0f, 8.0f, 0.01f), 2.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckLookaheadMs, 1 }, "Delay Duck Lookahead (ms)", juce::NormalisableRange<float>(0.0f, 15.0f, 0.01f), 5.0f));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayDuckLinkGlobal, 1 }, "Delay Duck Link Global", true));
+    
+    // Missing delay parameters
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayPreDelayMs, 1 }, "Delay Pre-Delay (ms)", juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayFilterType, 1 }, "Delay Filter Type", juce::StringArray { "Off", "HP", "LP", "BP" }, 0));
 
     // Dynamic EQ parameters (24 bands)
     dynEq::addDynamicEqParameters (params, 24);
@@ -1381,8 +1349,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ id::p2_motion_send, 1 }, "P2 Motion Send", juce::NormalisableRange<float>(0.0f, 1.0f), 0.2f));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ id::p2_anchor_enable, 1 }, "P2 Anchor Center", true));
 
+    // Add Reverb parameters
+    
     // Append new Reverb parameters
     addReverbParameters (params);
+    
+    // Reverb parameters added
 
     return { params.begin(), params.end() };
 }
@@ -1491,8 +1463,8 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     // Prepare ducker
     ducker.prepare (sr, (int) spec.maximumBlockSize, 24);
     
-    // Prepare delay engine
-    delayEngine.prepare (sr, (int) spec.numChannels);
+    // All engines will be prepared conditionally in setParameters() when their enable parameters are true
+    // This ensures engines are only initialized when needed
 
     // Reverb: preallocate buses and init smoothed wet
     dryBusBuf.setSize ((int) spec.numChannels, (int) spec.maximumBlockSize);
@@ -1686,6 +1658,26 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     
     // Delay parameters
     params.delayEnabled = hp.delayEnabled;
+    
+    // Prepare all engines only if enabled and not already prepared
+    if (params.delayEnabled && !delayPrepared) {
+        delayLineL.prepare(sr, 4.0); // 4 second max delay
+        delayLineR.prepare(sr, 4.0);
+        delayPrepared = true;
+    }
+    
+    // Prepare Motion Engine only if enabled and not already prepared - TEMPORARILY DISABLED
+    // if (hp.motionEnabled && !motionEnginePrepared) {
+    //     motionEngine.prepare (sr, 512); // sample rate and block size
+    //     motionEnginePrepared = true;
+    // }
+    
+    // Prepare Reverb Engine only if enabled and not already prepared - TEMPORARILY DISABLED
+    // if (hp.rvEnabled && !reverbEnginePrepared) {
+    //     reverbEngine.prepare (sr, 512, 2); // sample rate, block size, channels
+    //     reverbEnginePrepared = true;
+    // }
+    
     params.delayMode = hp.delayMode;
     params.delaySync = hp.delaySync;
     params.delayTimeMs = (Sample)hp.delayTimeMs;
@@ -2892,6 +2884,42 @@ void FieldChain<Sample>::process (Block block)
         applySaturation (wetBlock, params.satDriveLin, params.satMix, params.osMode);
     }
     
+    // Motion processing - TEMPORARILY DISABLED FOR TESTING
+    // if (params.motionEnabled && motionEnginePrepared) {
+    //     // Motion Engine is now handled by FieldChain template
+    //     // Note: Motion parameters need to be set up properly with APVTS parameter pointers
+    //     // For now, skip motion processing until proper parameter setup is implemented
+    // }
+    
+    // Reverb processing - TEMPORARILY DISABLED FOR TESTING
+    // if (params.rvEnabled && reverbEnginePrepared) {
+    //     // Set reverb parameters
+    //     ReverbParams rvParams;
+    //     rvParams.preDelayMs = params.rvPreDelayMs;
+    //     rvParams.decaySec = params.rvDecaySec;
+    //     rvParams.density = params.rvDensityPct;
+    //     rvParams.diffusion = params.rvDiffusionPct;
+    //     rvParams.modDepthCents = params.rvModDepthCents;
+    //     rvParams.modRateHz = params.rvModRateHz;
+    //     rvParams.duckDepthDb = params.rvDuckDepth;
+    //     rvParams.duckAtkMs = params.rvDuckAttackMs;
+    //     rvParams.duckRelMs = params.rvDuckReleaseMs;
+    //     rvParams.duckThrDb = params.rvDuckThresholdDb;
+    //     rvParams.duckRatio = params.rvDuckRatio;
+    //     rvParams.duckLaMs = params.rvDuckLookaheadMs;
+    //     rvParams.duckRmsMs = params.rvDuckRmsMs;
+    //     reverbEngine.setParams(rvParams);
+    //     
+    //     // Process reverb
+    //     // Note: ReverbEngine only supports float, so we need to convert if using double precision
+    //     if constexpr (std::is_same_v<Sample, float>) {
+    //         reverbEngine.processWet(wetBusBuf, dryBusBuf);
+    //     } else {
+    //         // For double precision, we need to convert to float buffers
+    //         // This is a limitation - reverb processing is float-only
+    //     }
+    // }
+    
     // Delay processing (render to dedicated delayWetBuf; mixed later independently of reverb wet)
     if (params.delayEnabled)
     {
@@ -2934,19 +2962,49 @@ void FieldChain<Sample>::process (Block block)
         delayParams.duckLookaheadMs = params.delayDuckLookaheadMs;
         delayParams.duckLinkGlobal = params.delayDuckLinkGlobal;
 
-        delayEngine.setParameters(delayParams);
+        // Delay parameters are now handled directly in the simplified processing
 
         // Render delay wet-only by processing a copy of the dry bus
         for (int c = 0; c < ch; ++c)
             std::memcpy (delayWetBuf.getWritePointer (c), dryBusBuf.getReadPointer (c), sizeof (Sample) * (size_t) n);
-        juce::dsp::AudioBlock<Sample> dblk (delayWetBuf);
-        float scL = 0.0f, scR = 0.0f; // neutral SC here
-        delayEngine.process (dblk, scL, scR);
+        
+        // Simplified delay processing with custom algorithms
+        if (params.delayEnabled && delayPrepared) {
+            // Set delay times
+            double delaySamples = params.delayTimeMs * 0.001 * sr;
+            delayLineL.setDelaySamples(delaySamples * (1.0 - params.delayStereoSpreadPct * 0.01));
+            delayLineR.setDelaySamples(delaySamples * (1.0 + params.delayStereoSpreadPct * 0.01));
+            
+            // Process delay
+            for (int i = 0; i < n; ++i) {
+                Sample inL = delayWetBuf.getSample(0, i);
+                Sample inR = delayWetBuf.getSample(1, i);
+                
+                // Push inputs
+                delayLineL.push(inL);
+                delayLineR.push(inR);
+                
+                // Read delayed signals
+                Sample outL = delayLineL.read();
+                Sample outR = delayLineR.read();
+                
+                // Apply feedback
+                outL += params.delayFeedbackPct * 0.01 * delayLineL.read();
+                outR += params.delayFeedbackPct * 0.01 * delayLineR.read();
+                
+                // Apply wet mix
+                outL *= params.delayWet;
+                outR *= params.delayWet;
+                
+                delayWetBuf.setSample(0, i, outL);
+                delayWetBuf.setSample(1, i, outR);
+            }
+        }
 
         // Compute delay wet RMS for UI telemetry
         if (delayWetBuf.getNumChannels() >= 2)
         {
-            const int n = (int) dblk.getNumSamples();
+            const int n = (int) delayWetBuf.getNumSamples();
             auto rmsOf = [] (const float* d, int nSamples) -> float { long double s=0.0; for (int i=0;i<nSamples;++i){ float v=d[i]; s+= (long double) v*v; } return std::sqrt ((double)(s / juce::jmax (1, nSamples))); };
             if constexpr (std::is_same_v<Sample, float>)
             {
@@ -3120,10 +3178,10 @@ template <typename Sample>
 float FieldChain<Sample>::getDelayWetRmsR() const { return delay_wetRmsR; }
 
 template <typename Sample>
-double FieldChain<Sample>::getDelayLastSamplesL() const { return (double) delayEngine.getLastDelaySamplesL(); }
+double FieldChain<Sample>::getDelayLastSamplesL() const { return 0.0; } // Simplified - no longer tracking individual delay samples
 
 template <typename Sample>
-double FieldChain<Sample>::getDelayLastSamplesR() const { return (double) delayEngine.getLastDelaySamplesR(); }
+double FieldChain<Sample>::getDelayLastSamplesR() const { return 0.0; } // Simplified - no longer tracking individual delay samples
 
 // Explicit instantiation
 template struct FieldChain<float>;

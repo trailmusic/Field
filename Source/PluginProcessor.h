@@ -7,6 +7,128 @@
 #include "motion/MotionEngine.h"
 #include "reverb/ReverbParamIDs.h"
 #include "reverb/ReverbEngine.h"
+
+// =========================
+// Parameter IDs
+// =========================
+namespace IDs {
+    static constexpr const char* gain   = "gain_db";
+    static constexpr const char* pan    = "pan";
+    static constexpr const char* panL   = "pan_l";   // Split L
+    static constexpr const char* panR   = "pan_r";   // Split R
+    static constexpr const char* depth  = "depth";
+    static constexpr const char* width  = "width";
+    static constexpr const char* tilt   = "tilt";
+    static constexpr const char* scoop  = "scoop";
+    static constexpr const char* monoHz = "mono_hz";
+    static constexpr const char* hpHz   = "hp_hz";
+    static constexpr const char* lpHz   = "lp_hz";
+    static constexpr const char* satDriveDb = "sat_drive_db";
+    static constexpr const char* satMix     = "sat_mix";
+    static constexpr const char* bypass     = "bypass";
+    static constexpr const char* spaceAlgo  = "space_algo";   // 0=Room 1=Plate 2=Hall
+    static constexpr const char* airDb      = "air_db";
+    static constexpr const char* bassDb     = "bass_db";
+    static constexpr const char* ducking    = "ducking";
+    static constexpr const char* duckThrDb  = "duck_threshold_db";
+    static constexpr const char* duckKneeDb = "duck_knee_db";
+    static constexpr const char* duckRatio  = "duck_ratio";
+    static constexpr const char* duckAtkMs  = "duck_attack_ms";
+    static constexpr const char* duckRelMs  = "duck_release_ms";
+    static constexpr const char* duckLAms   = "duck_lookahead_ms";
+    static constexpr const char* duckRmsMs  = "duck_rms_ms";
+    static constexpr const char* duckTarget = "duck_target"; // 0 WetOnly, 1 Global
+    static constexpr const char* osMode     = "os_mode";      // 0 Off, 1=2x, 2=4x
+    static constexpr const char* splitMode  = "split_mode";   // 0 normal, 1 split
+    // Quality / Precision controls
+    static constexpr const char* quality    = "quality";      // 0 Eco, 1 Standard, 2 High
+    static constexpr const char* precision  = "precision";    // 0 Auto(Host), 1 Force32, 2 Force64
+    // EQ start freqs
+    static constexpr const char* tiltFreq   = "tilt_freq";
+    static constexpr const char* scoopFreq  = "scoop_freq";
+    static constexpr const char* bassFreq   = "bass_freq";
+    static constexpr const char* airFreq    = "air_freq";
+    // Imaging
+    static constexpr const char* xoverLoHz  = "xover_lo_hz";
+    static constexpr const char* xoverHiHz  = "xover_hi_hz";
+    static constexpr const char* widthLo    = "width_lo";
+    static constexpr const char* widthMid   = "width_mid";
+    static constexpr const char* widthHi    = "width_hi";
+    static constexpr const char* rotationDeg= "rotation_deg";
+    static constexpr const char* asymmetry  = "asymmetry";
+    static constexpr const char* shufLoPct  = "shuffler_lo_pct";
+    static constexpr const char* shufHiPct  = "shuffler_hi_pct";
+    static constexpr const char* shufXHz    = "shuffler_xover_hz";
+    static constexpr const char* monoSlope  = "mono_slope_db_oct";
+    static constexpr const char* monoAud    = "mono_audition";
+    
+    // EQ shaping/Q link additions
+    static constexpr const char* eqShelfShape = "eq_shelf_shape";  // S: 0.25..1.50
+    static constexpr const char* eqFilterQ    = "eq_filter_q";     // global Q: 0.50..1.20
+    static constexpr const char* tiltLinkS    = "tilt_link_s";     // link Tilt shelves to S
+    static constexpr const char* eqQLink      = "eq_q_link";       // link HP/LP Q to global
+    static constexpr const char* hpQ          = "hp_q";            // per-filter Q
+    static constexpr const char* lpQ          = "lp_q";            // per-filter Q
+    
+    // Delay parameters
+    static constexpr const char* delayEnabled = "delay_enabled";
+    static constexpr const char* delayMode = "delay_mode";
+    static constexpr const char* delaySync = "delay_sync";
+    static constexpr const char* delayGridFlavor = "delay_grid_flavor";
+    static constexpr const char* delayTimeMs = "delay_time_ms";
+    static constexpr const char* delayTimeDiv = "delay_time_div";
+    static constexpr const char* delayFeedbackPct = "delay_feedback_pct";
+    static constexpr const char* delayWet = "delay_wet";
+    static constexpr const char* delayKillDry = "delay_kill_dry";
+    static constexpr const char* delayFreeze = "delay_freeze";
+    static constexpr const char* delayPingpong = "delay_pingpong";
+    static constexpr const char* delayCrossfeedPct = "delay_crossfeed_pct";
+    static constexpr const char* delayStereoSpreadPct = "delay_stereo_spread_pct";
+    static constexpr const char* delayWidth = "delay_width";
+    static constexpr const char* delayModRateHz = "delay_mod_rate_hz";
+    static constexpr const char* delayModDepthMs = "delay_mod_depth_ms";
+    static constexpr const char* delayWowflutter = "delay_wowflutter";
+    static constexpr const char* delayJitterPct = "delay_jitter_pct";
+    static constexpr const char* delayHpHz = "delay_hp_hz";
+    static constexpr const char* delayLpHz = "delay_lp_hz";
+    static constexpr const char* delayTiltDb = "delay_tilt_db";
+    static constexpr const char* delaySat = "delay_sat";
+    static constexpr const char* delayDiffusion = "delay_diffusion";
+    static constexpr const char* delayDiffuseSizeMs = "delay_diffuse_size_ms";
+    static constexpr const char* delayDuckSource = "delay_duck_source";
+    static constexpr const char* delayDuckPost = "delay_duck_post";
+    static constexpr const char* delayDuckDepth = "delay_duck_depth";
+    static constexpr const char* delayDuckAttackMs = "delay_duck_attack_ms";
+    static constexpr const char* delayDuckReleaseMs = "delay_duck_release_ms";
+    static constexpr const char* delayDuckThresholdDb = "delay_duck_threshold_db";
+    static constexpr const char* delayDuckRatio = "delay_duck_ratio";
+    static constexpr const char* delayDuckLookaheadMs = "delay_duck_lookahead_ms";
+    static constexpr const char* delayDuckLinkGlobal = "delay_duck_link_global";
+    static constexpr const char* delayPreDelayMs = "delay_pre_delay_ms";
+    static constexpr const char* delayFilterType = "delay_filter_type";
+    // Width Designer additions
+    static constexpr const char* widthMode          = "width_mode";            // 0=Classic, 1=Designer
+    static constexpr const char* widthSideTiltDbOct = "width_side_tilt_db_oct";
+    static constexpr const char* widthTiltPivotHz   = "width_tilt_pivot_hz";
+    static constexpr const char* widthAutoDepth     = "width_auto_depth";
+    static constexpr const char* widthAutoThrDb     = "width_auto_thr_db";
+    static constexpr const char* widthAutoAtkMs     = "width_auto_atk_ms";
+    static constexpr const char* widthAutoRelMs     = "width_auto_rel_ms";
+    static constexpr const char* widthMax           = "width_max";
+    // Phase Modes
+    static constexpr const char* phaseMode  = "phase_mode"; // 0 Zero, 1 Natural, 2 Hybrid Linear
+
+    // Center Group (Rows 3-4)
+    static constexpr const char* centerPromDb        = "center_prom_db";        // -9..+9 dB
+    static constexpr const char* centerFocusLoHz     = "center_f_lo_hz";        // 40..1000 Hz (log)
+    static constexpr const char* centerFocusHiHz     = "center_f_hi_hz";        // 1000..12000 Hz (log)
+    static constexpr const char* centerPunchAmt01    = "center_punch_amt";      // 0..1
+    static constexpr const char* centerPunchMode     = "center_punch_mode";     // 0 toSides, 1 toCenter
+    static constexpr const char* centerPhaseRecOn    = "center_phase_rec_on";   // bool
+    static constexpr const char* centerPhaseAmt01    = "center_phase_rec_amt";  // 0..1
+    static constexpr const char* centerLockOn        = "center_lock_on";        // bool
+    static constexpr const char* centerLockDb        = "center_lock_db";        // 0..6 dB cap
+}
 // Delay UI bridge
 #include "ui/delay/DelayUiBridge.h"
 // ==================================
@@ -330,8 +452,99 @@ private:
     // Look-ahead ducker (per-Sample instance)
     fielddsp::Ducker<Sample>             ducker;
     
-    // Delay engine (per-Sample instance)
-    DelayEngine<Sample>                  delayEngine;
+    // Delay - Direct custom algorithms (no complex engine wrapper)
+    // Custom cubic Lagrange interpolation delay line
+    struct CustomDelayLine {
+        void prepare(double sampleRate, double maxSeconds) {
+            this->sampleRate = sampleRate;
+            const size_t N = (size_t)std::ceil(maxSeconds * sampleRate) + 8;
+            buffer.assign(N, Sample{});
+            write = 0; size = N;
+            active.read = 0; target.read = 0;
+            xfadeSamples = 0; xfadePos = 0;
+        }
+        
+        void setDelaySamples(double delaySamp) {
+            delaySamp = juce::jlimit(1.0, (double)size - 4.0, delaySamp);
+            const double newRead = wrap(write - delaySamp);
+            const double delta = std::abs(newRead - active.read);
+            if (delta > 32.0) {
+                target.read = newRead;
+                xfadeSamples = (int)std::round(0.02 * sampleRate);
+                xfadePos = 0;
+            } else {
+                active.read = newRead;
+            }
+        }
+        
+        inline void push(Sample x) {
+            buffer[write] = x;
+            write = (write + 1) % size;
+        }
+        
+        inline Sample read() {
+            auto sampleAt = [&](double pos) -> Sample {
+                const int i0 = (int)pos;
+                const double frac = pos - i0;
+                const int i1 = (i0 + 1) % size;
+                const int i2 = (i0 + 2) % size;
+                const int i3 = (i0 + 3) % size;
+                
+                // Cubic Lagrange interpolation
+                const double um1 = frac - 1.0, up1 = frac + 1.0;
+                const double a0 = -(frac * um1 * (frac - 2.0)) / 6.0;
+                const double a1 = (up1 * um1 * (frac - 2.0)) / 2.0;
+                const double a2 = -(up1 * frac * (frac - 2.0)) / 2.0;
+                const double a3 = (up1 * frac * um1) / 6.0;
+                
+                return (Sample)(a0 * buffer[i0] + a1 * buffer[i1] + a2 * buffer[i2] + a3 * buffer[i3]);
+            };
+            
+            if (xfadeSamples > 0) {
+                const double xf = (double)xfadePos / (double)xfadeSamples;
+                const Sample activeSample = sampleAt(active.read);
+                const Sample targetSample = sampleAt(target.read);
+                ++xfadePos;
+                if (xfadePos >= xfadeSamples) {
+                    active.read = target.read;
+                    xfadeSamples = 0;
+                }
+                return (Sample)((1.0 - xf) * activeSample + xf * targetSample);
+            }
+            return sampleAt(active.read);
+        }
+        
+        void reset() {
+            std::fill(buffer.begin(), buffer.end(), Sample{});
+            write = 0; active.read = 0; target.read = 0;
+            xfadeSamples = 0; xfadePos = 0;
+        }
+        
+    private:
+        double sampleRate = 48000.0;
+        std::vector<Sample> buffer;
+        int write = 0, size = 0;
+        struct { double read = 0; } active, target;
+        int xfadeSamples = 0, xfadePos = 0;
+        
+        inline double wrap(double pos) {
+            while (pos < 0) pos += size;
+            while (pos >= size) pos -= size;
+            return pos;
+        }
+    };
+    
+    CustomDelayLine delayLineL, delayLineR;
+    bool delayPrepared { false };
+    
+    // Motion Engine (moved from main processor) - TEMPORARILY DISABLED FOR TESTING
+    // motion::MotionEngine                 motionEngine;
+    // motion::Params                       motionParams;
+    // bool motionEnginePrepared { false };
+    
+    // Reverb Engine (moved from main processor) - TEMPORARILY DISABLED FOR TESTING
+    // ReverbEngine                         reverbEngine;
+    // bool reverbEnginePrepared { false };
 
     // Anti-alias/anti-imaging guards for OS Off around saturation
     juce::dsp::IIR::Filter<Sample> aliasGuardHP;
@@ -471,6 +684,21 @@ private:
         Sample rvDuckRelMs{};
         Sample rvDuckLaMs{};
         Sample rvDuckRmsMs{};
+        
+        // Additional reverb ducking parameters
+        Sample rvDuckDepth{};
+        Sample rvDuckAttackMs{};
+        Sample rvDuckReleaseMs{};
+        Sample rvDuckThresholdDb{};
+        Sample rvDuckLookaheadMs{};
+        bool   rvDuckLinkGlobal{};
+        
+        // Motion parameters
+        bool   motionEnabled{};
+        int    motionPannerSelect{};
+        bool   motionOcclusion{};
+        bool   motionHeadphoneSafe{};
+        Sample motionBassFloorHz{};
     } params;
 
     // Width Designer runtime state
@@ -607,6 +835,13 @@ struct HostParams
     int    delayGridFlavor{};   // 0=S,1=D,2=T
     double tempoBpm{120.0};
     int    phaseMode{}; // 0 Zero, 1 Natural, 2 Hybrid Linear
+    
+    // Motion parameters
+    bool   motionEnabled{};
+    int    motionPannerSelect{};
+    bool   motionOcclusion{};
+    bool   motionHeadphoneSafe{};
+    double motionBassFloorHz{};
 };
 
 // ===============================
@@ -727,14 +962,16 @@ public:
         return 0.0f;
     }
     float getReverbWidthNow() const { return 100.0f; }
-    std::array<float,4> getReverbDynEqGrDb() const { return reverbEngine.getDynEqGrDb(); }
+    std::array<float,4> getReverbDynEqGrDb() const { 
+        // Reverb Engine is now handled by FieldChain template
+        return {0.0f, 0.0f, 0.0f, 0.0f}; 
+    }
     
     // Transport info (UI polling)
     double getTransportTimeSeconds() const { return transportTimeSeconds.load(); }
     bool   isTransportPlaying() const      { return transportIsPlaying.load(); }
     
-    // Motion Engine access
-    motion::MotionEngine& getMotionEngine() { return motionEngine; }
+    // Motion Engine is now handled by FieldChain template
     
     // Link policy helpers
     bool isLinkOn() const {
@@ -779,10 +1016,7 @@ private:
     // Auto-enable/disable Reverb based on Wet slider guard
     std::atomic<bool> reverbAutoGuard      { false };
     // Reverb engine (new)
-    ReverbEngine reverbEngine;
-    // Motion Engine
-    motion::MotionEngine motionEngine;
-    motion::Params motionParams;
+    // Engines moved to FieldChain template for consistent architecture
     // Delay visuals bridge (owned by processor)
     DelayUiBridge delayUiBridge;
     

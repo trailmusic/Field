@@ -13,27 +13,27 @@ if [ ! -d "build" ]; then
 fi
 
 # Check Standalone build
-if [ -f "build/Source/Field_artefacts/Debug/Standalone/Field.app/Contents/MacOS/Field" ]; then
+if [ -f "build/Source/Field_artefacts/Standalone/Field.app/Contents/MacOS/Field" ]; then
     echo "✅ Standalone: Field.app (built)"
-    STANDALONE_TIME=$(stat -f "%m" "build/Source/Field_artefacts/Debug/Standalone/Field.app/Contents/MacOS/Field")
+    STANDALONE_TIME=$(stat -f "%m" "build/Source/Field_artefacts/Standalone/Field.app/Contents/MacOS/Field")
 else
     echo "❌ Standalone: Field.app (missing)"
     exit 1
 fi
 
 # Check AU build
-if [ -f "build/Source/Field_artefacts/Debug/AU/Field.component/Contents/MacOS/Field" ]; then
+if [ -f "build/Source/Field_artefacts/AU/Field.component/Contents/MacOS/Field" ]; then
     echo "✅ AU Plugin: Field.component (built)"
-    AU_TIME=$(stat -f "%m" "build/Source/Field_artefacts/Debug/AU/Field.component/Contents/MacOS/Field")
+    AU_TIME=$(stat -f "%m" "build/Source/Field_artefacts/AU/Field.component/Contents/MacOS/Field")
 else
     echo "❌ AU Plugin: Field.component (missing)"
     exit 1
 fi
 
 # Check VST3 build
-if [ -f "build/Source/Field_artefacts/Debug/VST3/Field.vst3/Contents/MacOS/Field" ]; then
+if [ -f "build/Source/Field_artefacts/VST3/Field.vst3/Contents/MacOS/Field" ]; then
     echo "✅ VST3 Plugin: Field.vst3 (built)"
-    VST3_TIME=$(stat -f "%m" "build/Source/Field_artefacts/Debug/VST3/Field.vst3/Contents/MacOS/Field")
+    VST3_TIME=$(stat -f "%m" "build/Source/Field_artefacts/VST3/Field.vst3/Contents/MacOS/Field")
 else
     echo "❌ VST3 Plugin: Field.vst3 (missing)"
     exit 1

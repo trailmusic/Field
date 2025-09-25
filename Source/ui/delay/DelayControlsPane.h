@@ -101,6 +101,13 @@ private:
         // Knobs + cells
         auto makeCell = [&](juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid)
         {
+        // Safety check: ensure parameter exists before creating attachment
+        if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr)
+        {
+            // Skip this cell if parameter doesn't exist
+            return;
+        }
+            
             styleKnob (s);
             s.setName (cap);
             auto cell = std::make_unique<KnobCell> (s, v, cap);

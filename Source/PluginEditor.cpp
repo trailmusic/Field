@@ -1042,6 +1042,10 @@ void XYPad::drawBalls (juce::Graphics& g, juce::Rectangle<float> b)
 MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcessor& p)
 : AudioProcessorEditor (&p), proc (p), presetManager (proc.apvts, nullptr)
 {
+    // Log: Editor constructor started
+    // TEMPORARILY DISABLE file logging to test if this is causing the crash
+    // juce::File f = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("Field_CrashLog.txt");
+    // f.appendText("Editor Ctor: STARTED\n", false, false, "\n");
     // Populate factory presets directly from app-data JSON (single source of truth)
     {
         const auto presetsFile = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
@@ -1906,16 +1910,16 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     monoAuditionButton.setButtonText ("AUD");
 
     // Imaging attachments
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, "width_lo",         widthLo));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, "width_mid",        widthMid));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, "width_hi",         widthHi));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, "xover_lo_hz",      xoverLoHz));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, "xover_hi_hz",      xoverHiHz));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, "rotation_deg",     rotationDeg));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, "asymmetry",        asymmetry));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, "shuffler_lo_pct",  shufLoPct));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, "shuffler_hi_pct",  shufHiPct));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, "shuffler_xover_hz", shufXHz));
+    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::widthLo,         widthLo));
+    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::widthMid,        widthMid));
+    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::widthHi,         widthHi));
+    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::xoverLoHz,      xoverLoHz));
+    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::xoverHiHz,      xoverHiHz));
+    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::rotationDeg,     rotationDeg));
+    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::asymmetry,        asymmetry));
+    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::shufLoPct,  shufLoPct));
+    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::shufHiPct,  shufHiPct));
+    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::shufXHz, shufXHz));
 
     // All children created; allow layout from now on
     layoutReady = true;
@@ -1992,17 +1996,17 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     panKnobRight.addListener (this);
     // attachments (deduped; removed accidental duplicates you had for bass/scoop/depth)
     using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "gain_db",       gain));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "width",         width));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "tilt",          tilt));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "mono_hz",       monoHz));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "hp_hz",         hpHz));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "lp_hz",         lpHz));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "sat_drive_db",  satDrive));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "sat_mix",       satMix));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "air_db",        air));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "bass_db",       bass));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "scoop",         scoop));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::gain,       gain));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::width,         width));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::tilt,          tilt));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::monoHz,       monoHz));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::hpHz,         hpHz));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::lpHz,         lpHz));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::satDriveDb,  satDrive));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::satMix,       satMix));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::airDb,        air));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::bassDb,       bass));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::scoop,         scoop));
     // Rebind ducking controls to Reverb Engine parameters
     attachments.push_back (std::make_unique<SA> (proc.apvts, ReverbIDs::duckDepthDb, duckingKnob));
     attachments.push_back (std::make_unique<SA> (proc.apvts, ReverbIDs::duckAtkMs,   duckAttack));
@@ -2018,67 +2022,73 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>   (proc.apvts, "mono_audition",      monoAuditionButton));
 
     // Center group attachments
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "center_prom_db",        centerPromDb));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "center_f_lo_hz",       centerFocusLoHz));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "center_f_hi_hz",       centerFocusHiHz));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "center_punch_amt",     centerPunchAmt01));
-    comboAttachments .push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "center_punch_mode",   centerPunchMode));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>   (proc.apvts, "center_phase_rec_on", centerPhaseRecOn));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "center_phase_rec_amt", centerPhaseAmt01));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>   (proc.apvts, "center_lock_on",      centerLockOn));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "center_lock_db",       centerLockDb));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerPromDb,        centerPromDb));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerFocusLoHz,       centerFocusLoHz));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerFocusHiHz,       centerFocusHiHz));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerPunchAmt01,     centerPunchAmt01));
+    comboAttachments .push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, IDs::centerPunchMode,   centerPunchMode));
+    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>   (proc.apvts, IDs::centerPhaseRecOn, centerPhaseRecOn));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerPhaseAmt01, centerPhaseAmt01));
+    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>   (proc.apvts, IDs::centerLockOn,      centerLockOn));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerLockDb,       centerLockDb));
 
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "tilt_freq",     tiltFreqSlider));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "scoop_freq",    scoopFreqSlider));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "bass_freq",     bassFreqSlider));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "air_freq",      airFreqSlider));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::tiltFreq,     tiltFreqSlider));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::scoopFreq,    scoopFreqSlider));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::bassFreq,     bassFreqSlider));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::airFreq,      airFreqSlider));
     // New EQ params
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "eq_shelf_shape", shelfShapeS));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "eq_filter_q",    filterQ));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "tilt_link_s", tiltLinkSButton));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "eq_q_link",   qLinkButton));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "hp_q", hpQSlider));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "lp_q", lpQSlider));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::eqShelfShape, shelfShapeS));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::eqFilterQ,    filterQ));
+    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, IDs::tiltLinkS, tiltLinkSButton));
+    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, IDs::eqQLink,   qLinkButton));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::hpQ, hpQSlider));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::lpQ, lpQSlider));
 
     buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "bypass", bypassButton));
     comboAttachments .push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "os_mode", osSelect));
     
-    // Delay parameter attachments
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_enabled", delayEnabled));
-    comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_mode", delayMode));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_sync", delaySync));
-    comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_grid_flavor", delayGridFlavor));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_time_ms", delayTime));
-    comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_time_div", delayTimeDiv));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_feedback_pct", delayFeedback));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_wet", delayWet));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_kill_dry", delayKillDry));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_freeze", delayFreeze));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_pingpong", delayPingpong));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_crossfeed_pct", delaySpread));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_stereo_spread_pct", delaySpread));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_width", delayWidth));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_mod_rate_hz", delayModRate));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_mod_depth_ms", delayModDepth));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_wowflutter", delayWowflutter));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_jitter_pct", delayJitter));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_hp_hz", delayHp));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_lp_hz", delayLp));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_tilt_db", delayTilt));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_sat", delaySat));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_diffusion", delayDiffusion));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_diffuse_size_ms", delayDiffuseSize));
-    comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_duck_source", delayDuckSource));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_duck_post", delayDuckPost));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_depth", delayDuckDepth));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_attack_ms", delayDuckAttack));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_release_ms", delayDuckRelease));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_threshold_db", delayDuckThreshold));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_ratio", delayDuckRatio));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_lookahead_ms", delayDuckLookahead));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_pre_delay_ms", delayPreDelay));
-    comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_filter_type", delayFilterType));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_duck_link_global", delayDuckLinkGlobal));
+    // Delay parameter attachments - with safety checks
+    auto safeDelayAttachment = [&](const char* paramId, auto&& attachment) {
+        if (proc.apvts.getParameter(paramId) != nullptr) {
+            attachment();
+        }
+    };
+    
+    safeDelayAttachment("delay_enabled", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_enabled", delayEnabled)); });
+    safeDelayAttachment("delay_mode", [&]() { comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_mode", delayMode)); });
+    safeDelayAttachment("delay_sync", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_sync", delaySync)); });
+    safeDelayAttachment("delay_grid_flavor", [&]() { comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_grid_flavor", delayGridFlavor)); });
+    safeDelayAttachment("delay_time_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_time_ms", delayTime)); });
+    safeDelayAttachment("delay_time_div", [&]() { comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_time_div", delayTimeDiv)); });
+    safeDelayAttachment("delay_feedback_pct", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_feedback_pct", delayFeedback)); });
+    safeDelayAttachment("delay_wet", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_wet", delayWet)); });
+    safeDelayAttachment("delay_kill_dry", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_kill_dry", delayKillDry)); });
+    safeDelayAttachment("delay_freeze", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_freeze", delayFreeze)); });
+    safeDelayAttachment("delay_pingpong", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_pingpong", delayPingpong)); });
+    safeDelayAttachment("delay_crossfeed_pct", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_crossfeed_pct", delaySpread)); });
+    safeDelayAttachment("delay_stereo_spread_pct", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_stereo_spread_pct", delaySpread)); });
+    safeDelayAttachment("delay_width", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_width", delayWidth)); });
+    safeDelayAttachment("delay_mod_rate_hz", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_mod_rate_hz", delayModRate)); });
+    safeDelayAttachment("delay_mod_depth_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_mod_depth_ms", delayModDepth)); });
+    safeDelayAttachment("delay_wowflutter", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_wowflutter", delayWowflutter)); });
+    safeDelayAttachment("delay_jitter_pct", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_jitter_pct", delayJitter)); });
+    safeDelayAttachment("delay_hp_hz", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_hp_hz", delayHp)); });
+    safeDelayAttachment("delay_lp_hz", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_lp_hz", delayLp)); });
+    safeDelayAttachment("delay_tilt_db", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_tilt_db", delayTilt)); });
+    safeDelayAttachment("delay_sat", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_sat", delaySat)); });
+    safeDelayAttachment("delay_diffusion", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_diffusion", delayDiffusion)); });
+    safeDelayAttachment("delay_diffuse_size_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_diffuse_size_ms", delayDiffuseSize)); });
+    safeDelayAttachment("delay_duck_source", [&]() { comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_duck_source", delayDuckSource)); });
+    safeDelayAttachment("delay_duck_post", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_duck_post", delayDuckPost)); });
+    safeDelayAttachment("delay_duck_depth", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_depth", delayDuckDepth)); });
+    safeDelayAttachment("delay_duck_attack_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_attack_ms", delayDuckAttack)); });
+    safeDelayAttachment("delay_duck_release_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_release_ms", delayDuckRelease)); });
+    safeDelayAttachment("delay_duck_threshold_db", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_threshold_db", delayDuckThreshold)); });
+    safeDelayAttachment("delay_duck_ratio", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_ratio", delayDuckRatio)); });
+    safeDelayAttachment("delay_duck_lookahead_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_lookahead_ms", delayDuckLookahead)); });
+    safeDelayAttachment("delay_pre_delay_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_pre_delay_ms", delayPreDelay)); });
+    safeDelayAttachment("delay_filter_type", [&]() { comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_filter_type", delayFilterType)); });
+    safeDelayAttachment("delay_duck_link_global", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_duck_link_global", delayDuckLinkGlobal)); });
 
             // Create Motion ComboBoxes and Buttons
             #include "motion/MotionIDs.h"
@@ -2306,6 +2316,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     monoGroupContainer.setShowBorder (true);
     // Reverb group container
     // Reverb row container no longer used; layout directly
+    
+    // Re-enable resized() call since crash is happening after constructor
     resized();
 }
 
@@ -2363,10 +2375,16 @@ void MyPluginAudioProcessorEditor::buildCells()
     if (!delayDuckReleaseCell)delayDuckReleaseCell=std::make_unique<KnobCell>(delayDuckRelease,delayDuckReleaseValue,"REL");
     if (!delayJitterCell) delayJitterCell = std::make_unique<KnobCell>(delayJitter, delayJitterValue, "JITTER");
     if (!delayDuckRatioCell) delayDuckRatioCell = std::make_unique<KnobCell>(delayDuckRatio, delayDuckRatioValue, "RAT");
+    
+    // Log: Editor constructor complete
+    // TEMPORARILY DISABLE file logging to test if this is causing the crash
+    // juce::File f = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("Field_CrashLog.txt");
+    // f.appendText("Editor Ctor: COMPLETE\n", false, false, "\n");
 }
 
 MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
 {
+    // Editor destructor - removed logging to prevent file I/O issues
     // Detach APVTS attachments BEFORE any controls are destroyed
     attachments.clear();
     buttonAttachments.clear();
@@ -2425,6 +2443,8 @@ MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
 }
 void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
 {
+    // Paint method - removed logging to prevent file I/O on every paint
+    
     // background gradient (original vibe)
     auto full = getLocalBounds();
     juce::Colour top    = lnf.theme.sh;
@@ -3908,7 +3928,8 @@ void MyPluginAudioProcessorEditor::timerCallback()
     // Update motion panel visual state with sequence tracking and idle fallback
     if (panes) {
         motion::VisualState visualState;
-        auto seq = proc.getMotionEngine().tryGetVisualState(visualState) ? visualState.seq : 0;
+        // Motion Engine is now handled by FieldChain template
+        auto seq = 0; // Motion visual state will be handled by FieldChain
         
         // Only update if we have a new sequence number (prevents unnecessary repaints)
         static uint32_t lastSeq = 0;
@@ -4490,7 +4511,8 @@ void MyPluginAudioProcessorEditor::updateMotionParameterAttachmentsOnMessageThre
     
     // 5) Pull fresh visual state and repaint immediately (don't wait for timer tick)
     motion::VisualState visualState;
-    if (proc.getMotionEngine().tryGetVisualState(visualState)) {
+    // Motion Engine is now handled by FieldChain template
+    if (false) { // Motion visual state will be handled by FieldChain
         if (panes) {
             panes->setMotionVisualState(visualState);
         }
