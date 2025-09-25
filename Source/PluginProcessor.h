@@ -330,7 +330,7 @@ private:
     void renderSpaceWet (juce::AudioBuffer<Sample>& wet);
     
     // Dynamic EQ
-    void applyDynamicEq (Block block);
+    void applyDynamicEq (Block audioBlock);
 
     // ----- state -----
     double sr { 48000.0 };
@@ -540,14 +540,14 @@ private:
     CustomDelayLine delayLineL, delayLineR;
     bool delayPrepared { false };
     
-    // Motion Engine (moved from main processor) - TEMPORARILY DISABLED FOR TESTING
-    // motion::MotionEngine                 motionEngine;
-    // motion::Params                       motionParams;
-    // bool motionEnginePrepared { false };
+    // Motion Engine (moved from main processor)
+    motion::MotionEngine                 motionEngine;
+    motion::Params                       motionParams;
+    bool motionEnginePrepared { false };
     
-    // Reverb Engine (moved from main processor) - TEMPORARILY DISABLED FOR TESTING
-    // ReverbEngine                         reverbEngine;
-    // bool reverbEnginePrepared { false };
+    // Reverb Engine (moved from main processor)
+    ReverbEngine                         reverbEngine;
+    bool reverbEnginePrepared { false };
 
     // Anti-alias/anti-imaging guards for OS Off around saturation
     juce::dsp::IIR::Filter<Sample> aliasGuardHP;
