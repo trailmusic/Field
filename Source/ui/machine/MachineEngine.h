@@ -1,6 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
-#include "../../PluginProcessor.h"
+#include "../../Core/PluginProcessor.h"
 
 struct ParamDelta {
     const char* id; float current{}, target{}, lo{}, hi{}; float weight{}; juce::String reason;

@@ -1,8 +1,8 @@
 set(SRC
-  PluginProcessor.h
-  PluginProcessor.cpp
-  PluginEditor.h
-  PluginEditor.cpp
+  Core/PluginProcessor.h
+  Core/PluginProcessor.cpp
+  Core/PluginEditor.h
+  Core/PluginEditor.cpp
   Core/FieldLookAndFeel.h
   Core/FieldLookAndFeel.cpp
     ui/Components/KnobCell.h
