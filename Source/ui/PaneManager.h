@@ -314,6 +314,46 @@ public:
             onActivePaneChanged (active);
     }
 
+    ~PaneManager() override
+    {
+        // Stop timer before destruction to prevent use-after-free
+        stopTimer();
+        
+        // Add crash logging for debugging
+        juce::File f = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("Field_CrashLog.txt");
+        f.appendText("PaneManager Destructor: STARTED\n", false, false, "\n");
+        
+        // Explicitly destroy components in reverse order
+        delay.reset();
+        f.appendText("PaneManager Destructor: Delay tab destroyed\n", false, false, "\n");
+        
+        reverb.reset();
+        f.appendText("PaneManager Destructor: Reverb tab destroyed\n", false, false, "\n");
+        
+        mach.reset();
+        f.appendText("PaneManager Destructor: Machine tab destroyed\n", false, false, "\n");
+        
+        motion.reset();
+        f.appendText("PaneManager Destructor: Motion tab destroyed\n", false, false, "\n");
+        
+        band.reset();
+        f.appendText("PaneManager Destructor: Band tab destroyed\n", false, false, "\n");
+        
+        imgr.reset();
+        f.appendText("PaneManager Destructor: Imager tab destroyed\n", false, false, "\n");
+        
+        dyneq.reset();
+        f.appendText("PaneManager Destructor: DynEq tab destroyed\n", false, false, "\n");
+        
+        xyTab.reset();
+        f.appendText("PaneManager Destructor: XYTab destroyed\n", false, false, "\n");
+        
+        xy.reset();
+        f.appendText("PaneManager Destructor: XY adapter destroyed\n", false, false, "\n");
+        
+        f.appendText("PaneManager Destructor: COMPLETE\n", false, false, "\n");
+    }
+
     PaneID getActiveID() const { return (PaneID) activeAtomic.load (std::memory_order_acquire); }
     juce::Component* getActive()
     {

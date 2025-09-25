@@ -9,6 +9,12 @@ public:
         : getEr (std::move(er)), getTail (std::move(tail)), getDuck (std::move(duckDb)), getWidth (std::move(widthNow))
     { startTimerHz (30); }
 
+    ~ReverbScopeComponent() override
+    {
+        // Stop timer before destruction to prevent use-after-free
+        stopTimer();
+    }
+
     void paint (juce::Graphics& g) override;
     void visibilityChanged() override { if (isVisible()) startTimerHz(30); else stopTimer(); }
 

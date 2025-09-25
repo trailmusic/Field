@@ -16,6 +16,12 @@ public:
         buildControls();
         applyMetricsToAll();
     }
+    
+    ~ReverbControlsPane2x16() override
+    {
+        // Clear parameter attachments before destruction to prevent crashes
+        sAtts.clear();
+    }
 
     void setCellMetrics (int knobDiameterPx, int valueBandPx, int labelGapPxIn, int columnWidthPx)
     {

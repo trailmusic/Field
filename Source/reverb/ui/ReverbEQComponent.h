@@ -5,6 +5,13 @@ class ReverbEQComponent : public juce::Component, private juce::Timer
 {
 public:
     explicit ReverbEQComponent (juce::AudioProcessorValueTreeState& s) : state (s) { startTimerHz (30); }
+    
+    ~ReverbEQComponent() override
+    {
+        // Stop timer before destruction to prevent use-after-free
+        stopTimer();
+    }
+    
     void paint (juce::Graphics& g) override;
     void mouseDown (const juce::MouseEvent& e) override;
     void mouseDrag (const juce::MouseEvent& e) override;

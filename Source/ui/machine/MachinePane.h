@@ -12,7 +12,11 @@ class MachinePane : public juce::Component, private juce::Timer
 {
 public:
     MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, juce::LookAndFeel* lnf);
-    ~MachinePane() override = default;
+    ~MachinePane() override
+    {
+        // Stop timer before destruction to prevent use-after-free
+        stopTimer();
+    }
 
     void setSampleRate (double sr) { engine.setSampleRate (sr); }
     void pushBlock (const float* L, const float* R, int n) { engine.push (L, R, n); }

@@ -222,6 +222,12 @@ public:
         };
     }
 
+    ~DynEqTab() override
+    {
+        // Stop timer before destruction to prevent use-after-free
+        stopTimer();
+    }
+
     void timerCallback() override
     {
         // Drive delayed ghost repaint and hover HUD updates at 30Hz

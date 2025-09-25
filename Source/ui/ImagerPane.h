@@ -70,6 +70,12 @@ public:
         // Designer overlay removed; controls migrated to BandControlsPane
     }
 
+    ~ImagerPane() override
+    {
+        // Stop timer before destruction to prevent use-after-free
+        stopTimer();
+    }
+
     void setOptions (const Options& o)
     {
         opts = o; startTimerHz (juce::jlimit (10, 120, opts.fps));

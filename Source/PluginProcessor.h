@@ -328,6 +328,9 @@ private:
     void applySaturation (Block, Sample driveLin, Sample mix01, int osModeIndex);
     void applySpaceAlgorithm (Block, Sample depth01, int algo);
     void renderSpaceWet (juce::AudioBuffer<Sample>& wet);
+    
+    // Dynamic EQ
+    void applyDynamicEq (Block block);
 
     // ----- state -----
     double sr { 48000.0 };
@@ -699,6 +702,9 @@ private:
         bool   motionOcclusion{};
         bool   motionHeadphoneSafe{};
         Sample motionBassFloorHz{};
+        
+        // Dynamic EQ parameters
+        bool   dynEqEnabled{};
     } params;
 
     // Width Designer runtime state
@@ -842,6 +848,9 @@ struct HostParams
     bool   motionOcclusion{};
     bool   motionHeadphoneSafe{};
     double motionBassFloorHz{};
+    
+    // Dynamic EQ parameters
+    bool   dynEqEnabled{};
 };
 
 // ===============================

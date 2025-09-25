@@ -8,6 +8,12 @@ public:
                          const juce::String& lowId, const juce::String& midId, const juce::String& highId)
         : state (s), lowParamId (lowId), midParamId (midId), highParamId (highId) { startTimerHz (30); }
 
+    ~DecayCurveComponent() override
+    {
+        // Stop timer before destruction to prevent use-after-free
+        stopTimer();
+    }
+
     void paint (juce::Graphics& g) override;
     void mouseDown (const juce::MouseEvent& e) override;
     void mouseDrag (const juce::MouseEvent& e) override;

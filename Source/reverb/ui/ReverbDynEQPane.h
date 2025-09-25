@@ -69,6 +69,12 @@ public:
         startTimerHz (30);
     }
 
+    ~ReverbDynEQPane() override
+    {
+        // Stop timer before destruction to prevent use-after-free
+        stopTimer();
+    }
+
     void resized() override
     {
         auto r = getLocalBounds().reduced (6);

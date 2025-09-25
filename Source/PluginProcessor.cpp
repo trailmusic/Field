@@ -450,6 +450,9 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.rvDuckRmsMs     = apvts.getRawParameterValue (ReverbIDs::duckRmsMs)->load();
     p.rvOutTrimDb     = apvts.getRawParameterValue (ReverbIDs::outTrimDb)->load();
     
+    // Dynamic EQ parameters
+    p.dynEqEnabled    = apvts.getRawParameterValue (dynEq::IDs::enabled)->load() > 0.5f;
+    
     return p;
 }
 
@@ -1658,6 +1661,9 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     
     // Delay parameters
     params.delayEnabled = hp.delayEnabled;
+    
+    // Dynamic EQ parameters
+    params.dynEqEnabled = hp.dynEqEnabled;
     
     // Prepare all engines only if enabled and not already prepared
     if (params.delayEnabled && !delayPrepared) {
@@ -3156,6 +3162,32 @@ void FieldChain<Sample>::ensureLinearPhaseKernel (double sampleRate, Sample hpHz
             lastHpHzLP = (float) hp; lastLpHzLP = (float) lp;
         }
     }
+
+    // Dynamic EQ processing
+    if (params.dynEqEnabled)
+    {
+        // applyDynamicEq(block); // TODO: Fix naming conflict
+    }
+}
+
+template <typename Sample>
+void FieldChain<Sample>::applyDynamicEq (Block block)
+{
+    // Simple Dynamic EQ implementation - placeholder for now
+    // This is a basic implementation that can be expanded later
+    
+    // For now, just pass through the audio without any processing
+    // The Dynamic EQ parameters are available in params.dynEqEnabled
+    // but we need to implement the actual EQ processing logic
+    
+    // TODO: Implement proper Dynamic EQ processing with:
+    // - Band filtering (Bell, Shelf, HP, LP, etc.)
+    // - Dynamic processing (compression/expansion per band)
+    // - Spectral processing
+    // - Constellation processing
+    
+    // This is a placeholder that does nothing for now
+    // The audio will pass through unchanged
 }
 
 template <typename Sample>

@@ -15,6 +15,12 @@ public:
         setInterceptsMouseClicks (true, true);
     }
 
+    ~DelayVisuals() override
+    {
+        // Stop timer before destruction to prevent use-after-free
+        stopTimer();
+    }
+
     void setScopes (std::function<int(juce::AudioBuffer<float>&, int)> pullPre,
                     std::function<int(juce::AudioBuffer<float>&, int)> pullPost)
     {

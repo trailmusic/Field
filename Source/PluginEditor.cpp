@@ -2386,7 +2386,14 @@ void MyPluginAudioProcessorEditor::buildCells()
 
 MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
 {
-    // Editor destructor - removed logging to prevent file I/O issues
+    // Editor destructor - restore crash logging for debugging
+    juce::File f = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("Field_CrashLog.txt");
+    f.appendText("Editor Destructor: STARTED\n", false, false, "\n");
+    
+    // Cancel AsyncUpdater to prevent use-after-free
+    motionBinding.cancelPendingUpdate();
+    f.appendText("Editor Destructor: AsyncUpdater cancelled\n", false, false, "\n");
+    
     // Detach APVTS attachments BEFORE any controls are destroyed
     attachments.clear();
     buttonAttachments.clear();
@@ -2394,9 +2401,11 @@ MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
     motionSliderAttachments.clear();
     motionButtonAttachments.clear();
     motionComboAttachments.clear();
+    f.appendText("Editor Destructor: APVTS attachments cleared\n", false, false, "\n");
 
     // Stop editor timer early
     stopTimer();
+    f.appendText("Editor Destructor: Editor timer stopped\n", false, false, "\n");
 
     // Remove key listener safely
     if (keyListener)
@@ -2404,11 +2413,13 @@ MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
         removeKeyListener (keyListener.get());
         keyListener.reset();
     }
+    f.appendText("Editor Destructor: Key listener removed\n", false, false, "\n");
 
     // Clear audio->UI callbacks to prevent use-after-free from audio thread
     proc.onAudioSample   = nullptr;
     proc.onAudioBlock    = nullptr;
     proc.onAudioBlockPre = nullptr;
+    f.appendText("Editor Destructor: Audio callbacks cleared\n", false, false, "\n");
 
     // Remove all parameter listeners that were added in the ctor
     proc.apvts.removeParameterListener ("space_algo", this);
@@ -2430,18 +2441,25 @@ MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
     proc.apvts.removeParameterListener ("shuffler_lo_pct", this);
     proc.apvts.removeParameterListener ("shuffler_hi_pct", this);
     proc.apvts.removeParameterListener ("shuffler_xover_hz", this);
+    f.appendText("Editor Destructor: Parameter listeners removed\n", false, false, "\n");
 
     // Detach UI listeners from knobs
     panKnobLeft.removeListener (this);
     panKnobRight.removeListener (this);
+    f.appendText("Editor Destructor: UI listeners removed\n", false, false, "\n");
 
     // Ensure PaneManager timers and children are torn down before editor memory goes away
     panes.reset();
+    f.appendText("Editor Destructor: PaneManager reset\n", false, false, "\n");
 
     // ensure A holds final state if user ended on B
     if (!isStateA) { saveCurrentState(); stateA = stateB; }
+    f.appendText("Editor Destructor: State saved\n", false, false, "\n");
 
     setLookAndFeel (nullptr);
+    f.appendText("Editor Destructor: LookAndFeel detached\n", false, false, "\n");
+    
+    f.appendText("Editor Destructor: COMPLETE\n", false, false, "\n");
 }
 void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
 {

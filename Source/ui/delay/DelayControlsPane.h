@@ -15,6 +15,14 @@ public:
         buildControls();
         applyMetricsToAll();
     }
+    
+    ~DelayControlsPane() override
+    {
+        // Clear parameter attachments before destruction to prevent crashes
+        btnAtts.clear();
+        cmbAtts.clear();
+        sAtts.clear();
+    }
 
     void setCellMetrics (int knobDiameterPx, int valueBandPx, int labelGapPxIn, int columnWidthPx)
     {

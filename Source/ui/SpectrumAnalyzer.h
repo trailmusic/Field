@@ -21,7 +21,11 @@ public:
     };
 
     explicit SpectrumAnalyzer();
-    ~SpectrumAnalyzer() override = default;
+    ~SpectrumAnalyzer() override
+    {
+        // Stop timer before destruction to prevent use-after-free
+        stopTimer();
+    }
 
     void setSampleRate (double sr);
     void setParams     (const Params& p);

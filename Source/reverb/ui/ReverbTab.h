@@ -28,6 +28,23 @@ public:
         controls->setVisible (true);
         addAndMakeVisible (*controls);
     }
+    
+    ~ReverbTab() override
+    {
+        // Add crash logging for debugging
+        juce::File f = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("Field_CrashLog.txt");
+        f.appendText("ReverbTab Destructor: STARTED\n", false, false, "\n");
+        
+        // Destroy controls first
+        controls.reset();
+        f.appendText("ReverbTab Destructor: Controls destroyed\n", false, false, "\n");
+        
+        // Destroy reverb panel
+        reverbPanel.reset();
+        f.appendText("ReverbTab Destructor: ReverbPanel destroyed\n", false, false, "\n");
+        
+        f.appendText("ReverbTab Destructor: COMPLETE\n", false, false, "\n");
+    }
 
     void setControlsVisible (bool on)
     {

@@ -27,6 +27,13 @@ struct LegacyVisualState {
 class MotionPanel : public juce::Component, private juce::Timer {
 public:
     MotionPanel(juce::AudioProcessorValueTreeState& s, juce::UndoManager* um = nullptr);
+    
+    ~MotionPanel() override
+    {
+        // Stop timer before destruction to prevent use-after-free
+        stopTimer();
+    }
+    
     void paint(juce::Graphics& g) override;
     void resized() override;
     void mouseDown (const juce::MouseEvent& e) override;

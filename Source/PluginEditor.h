@@ -69,6 +69,8 @@ using ComboAttachment  = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 class XYPad : public juce::Component, public juce::Timer
 {
 public:
+    ~XYPad() override { stopTimer(); }
+    
     std::function<void (float x01, float y01)> onChange; // x=pan, y=depth
     std::function<void (float leftX01, float rightX01, float y01)> onSplitChange; // for split mode
     std::function<void (int ballIndex, float x01, float y01)> onBallChange; // individual ball control
@@ -228,6 +230,8 @@ private:
 class ControlContainer : public juce::Component, public juce::Timer
 {
 public:
+    ~ControlContainer() override { stopTimer(); }
+    
     ControlContainer();
     
     void setTitle (const juce::String& title);
@@ -251,6 +255,8 @@ private:
 class ToggleSwitch : public juce::Component, public juce::Timer
 {
 public:
+    ~ToggleSwitch() override { stopTimer(); }
+    
     ToggleSwitch();
     
     void setToggleState (bool shouldBeOn, juce::NotificationType notification = juce::dontSendNotification);
@@ -2071,6 +2077,8 @@ private:
     class CorrelationMeter : public juce::Component, public juce::Timer
     {
     public:
+        ~CorrelationMeter() override { stopTimer(); }
+        
         CorrelationMeter (MyPluginAudioProcessor& p, FieldLNF& l) : proc (p), lnf (l) { startTimerHz (25); }
         void paint (juce::Graphics& g) override
         {
@@ -2133,6 +2141,8 @@ private:
     class VerticalLRMeters : public juce::Component, public juce::Timer
     {
     public:
+        ~VerticalLRMeters() override { stopTimer(); }
+        
         VerticalLRMeters (MyPluginAudioProcessor& p, FieldLNF& l) : proc(p), lnf(l) { startTimerHz (30); }
         void paint (juce::Graphics& g) override
         {
@@ -2234,6 +2244,8 @@ private:
     class IOGainMeters : public juce::Component, public juce::Timer
     {
     public:
+        ~IOGainMeters() override { stopTimer(); }
+        
         IOGainMeters (MyPluginAudioProcessor& p, FieldLNF& l) : proc(p), lnf(l) { startTimerHz (30); }
         void paint (juce::Graphics& g) override
         {
@@ -2326,6 +2338,8 @@ private:
     class ShadeOverlay : public juce::Component, private juce::Timer
     {
     public:
+        ~ShadeOverlay() override { stopTimer(); }
+        
         explicit ShadeOverlay (FieldLNF& lnfRef) : lnf(lnfRef)
         {
             setAlwaysOnTop(true);

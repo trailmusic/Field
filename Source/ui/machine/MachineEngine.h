@@ -19,6 +19,8 @@ class MachineEngine : private juce::Timer
 public:
     enum State { Idle, Learning, Ready };
 
+    ~MachineEngine() { stopTimer(); }
+    
     MachineEngine (MyPluginAudioProcessor& procRef, juce::AudioProcessorValueTreeState& stateRef);
 
     void setSampleRate (double sr) { sampleRate = sr; }

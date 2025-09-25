@@ -13,6 +13,12 @@ public:
                           std::function<float()> widthNow,
                           std::function<double()> sampleRateNow = []{ return 48000.0; });
 
+    ~ReverbCanvasComponent() override
+    {
+        // Stop timer before destruction to prevent use-after-free
+        stopTimer();
+    }
+
     void paint(juce::Graphics&) override;
     // Optional: provider for per-band DynEQ GR in dB (size<=4)
     void setDynEqGrProvider (std::function<std::array<float,4>()> provider) { dyneqGrNow = std::move(provider); }
