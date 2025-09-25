@@ -2,7 +2,7 @@
 
 #include <JuceHeader.h>
 #include "DelayUiBridge.h"
-#include "../../FieldLookAndFeel.h"
+#include "../../Core/FieldLookAndFeel.h"
 
 // Composite canvas for Delay visuals: timeline (sync/time/ghost taps), loop EQ strip, ducking meter.
 class DelayVisuals : public juce::Component, private juce::Timer

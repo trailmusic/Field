@@ -1,7 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "../KnobCell.h"
+#include "Components/KnobCell.h"
 #include "../Layout.h"
 
 // ImagerControlsPane: 2x16 grid for imaging/placement controls

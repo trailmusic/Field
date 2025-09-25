@@ -1,6 +1,6 @@
 #include "ReverbCanvasComponent.h"
 #include "../ReverbParamIDs.h"
-#include "../../FieldLookAndFeel.h"
+#include "../../Core/FieldLookAndFeel.h"
 
 using namespace juce;
 

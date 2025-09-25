@@ -1,7 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "StereoFieldEngine.h"
-#include "../KnobCellMini.h"
+#include "Components/KnobCellMini.h"
 
 // Minimal Imager pane: goniometer (Lissajous) with optional PRE overlay
 class ImagerPane : public juce::Component, private juce::Timer

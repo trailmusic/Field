@@ -1,5 +1,5 @@
 #include "KnobCell.h"
-#include "FieldLookAndFeel.h"
+#include "../../Core/FieldLookAndFeel.h"
 
 KnobCell::KnobCell(juce::Slider& knobToHost, juce::Label& valueLabelToHost, const juce::String&)
     : knob(knobToHost), valueLabel(valueLabelToHost)

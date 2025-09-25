@@ -1,14 +1,14 @@
 #pragma once
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "PluginProcessor.h"
-#include "FieldLookAndFeel.h"
-#include "KnobCell.h"
-#include "KnobCellDual.h"
-#include "KnobCellQuad.h"
-#include "IconSystem.h"
-#include "PresetRegistry.h"
-#include "PresetCommandPalette.h"
-#include "PresetManager.h"
+#include "Core/FieldLookAndFeel.h"
+#include "ui/Components/KnobCell.h"
+#include "ui/Components/KnobCellDual.h"
+#include "ui/Components/KnobCellQuad.h"
+#include "Core/IconSystem.h"
+#include "Presets/PresetRegistry.h"
+#include "Presets/PresetCommandPalette.h"
+#include "Presets/PresetManager.h"
 // History system removed
 #include "ui/StereoFieldEngine.h"
 #include "ui/ImagerPane.h"

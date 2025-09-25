@@ -1,6 +1,6 @@
 #include "MachinePane.h"
-#include "../../FieldLookAndFeel.h"
-#include "../../IconSystem.h"
+#include "../../Core/FieldLookAndFeel.h"
+#include "../../Core/IconSystem.h"
 #include "../../PluginProcessor.h"
 
 MachinePane::MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, juce::LookAndFeel* lnf)

@@ -5,7 +5,7 @@
 #include "ImagerTab.h"
 #include "BandPane.h"
 #include "machine/MachinePane.h"
-#include "../IconSystem.h"
+#include "../Core/IconSystem.h"
 #include "../motion/MotionTab.h"
 #include "../motion/MotionVisual.h"
 #include "../reverb/ui/ReverbTab.h"

@@ -3,7 +3,7 @@
 #include <JuceHeader.h>
 #include "SpectrumAnalyzer.h"
 #include "../dynEQ/DynamicEqParamIDs.h"
-#include "../FieldLookAndFeel.h"
+#include "../Core/FieldLookAndFeel.h"
 #include "ZoomState.h"
 #include "DynEqZoomSideRail.h"
 

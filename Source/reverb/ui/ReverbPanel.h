@@ -1,6 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
-#include "../../KnobCell.h"
+#include "../../ui/Components/KnobCell.h"
 #include "ReverbCanvasComponent.h"
 #include "ReverbDynEQPane.h"
 

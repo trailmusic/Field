@@ -1,7 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "../FieldLookAndFeel.h"
+#include "../Core/FieldLookAndFeel.h"
 
 // Minimal reusable switch/host cell with caption and themed panel/border.
 class SimpleSwitchCell : public juce::Component

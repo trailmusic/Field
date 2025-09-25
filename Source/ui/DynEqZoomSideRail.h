@@ -2,7 +2,7 @@
 #include <JuceHeader.h>
 #include "ZoomState.h"
 #include "ZoomControl.h"
-#include "../IconSystem.h"
+#include "../Core/IconSystem.h"
 
 // Side rail container for Dynamic EQ zoom control
 class DynEqZoomSideRail : public juce::Component

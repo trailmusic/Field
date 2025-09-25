@@ -1,7 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "../KnobCell.h"
+#include "Components/KnobCell.h"
 #include "SimpleSwitchCell.h"
 #include "../Layout.h"
 

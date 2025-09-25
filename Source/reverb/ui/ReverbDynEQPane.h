@@ -1,7 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "../ReverbParamIDs.h"
-#include "../../FieldLookAndFeel.h"
+#include "../../Core/FieldLookAndFeel.h"
 
 // Draggable DynEQ editor: 4 band handles on a log-frequency axis with range control.
 class ReverbDynEQPane : public juce::Component, private juce::Timer

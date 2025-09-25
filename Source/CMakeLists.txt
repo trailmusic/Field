@@ -3,17 +3,17 @@ set(SRC
   PluginProcessor.cpp
   PluginEditor.h
   PluginEditor.cpp
-  FieldLookAndFeel.h
-  FieldLookAndFeel.cpp
-      KnobCellQuad.h
-    KnobCellQuad.cpp
-      KnobCellDual.h
-    KnobCellDual.cpp
-      KnobCell.h
-    KnobCell.cpp
-    KnobCellMini.h
-      IconSystem.h
-    IconSystem.cpp
+  Core/FieldLookAndFeel.h
+  Core/FieldLookAndFeel.cpp
+    ui/Components/KnobCell.h
+    ui/Components/KnobCell.cpp
+    ui/Components/KnobCellDual.h
+    ui/Components/KnobCellDual.cpp
+    ui/Components/KnobCellQuad.h
+    ui/Components/KnobCellQuad.cpp
+    ui/Components/KnobCellMini.h
+    Core/IconSystem.h
+    Core/IconSystem.cpp
     reverb/ReverbParamIDs.h
     reverb/ReverbParameters.h
     reverb/ReverbEngine.h
@@ -68,16 +68,21 @@ set(SRC
     
     dsp/DelayPresetLibrary.h
     dsp/DelayPresetLibrary.cpp
-    PresetStore.h
-    PresetStore.cpp
-    PresetManager.h
-    PresetManager.cpp
+    Presets/PresetStore.h
+    Presets/PresetStore.cpp
+    Presets/PresetManager.h
+    Presets/PresetManager.cpp
     
-    PresetRegistry.h
-    PresetRegistry.cpp
-    PresetCommandPalette.h
-    PresetCommandPalette.cpp
+    Presets/PresetRegistry.h
+    Presets/PresetRegistry.cpp
+    Presets/PresetCommandPalette.h
+    Presets/PresetCommandPalette.cpp
+    Presets/PresetSystem.h
+    Presets/PresetTheme.h
 )
+
+# Add include directories
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 juce_add_plugin(Field
     COMPANY_NAME "Trail"

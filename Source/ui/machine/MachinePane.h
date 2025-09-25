@@ -3,8 +3,8 @@
 #include "MachineEngine.h"
 #include "ProposalCard.h"
 #include "WidthDesignerPanel.h"
-#include "../../FieldLookAndFeel.h"
-#include "../../IconSystem.h"
+#include "../../Core/FieldLookAndFeel.h"
+#include "../../Core/IconSystem.h"
 
 class MyPluginAudioProcessor; // fwd
 

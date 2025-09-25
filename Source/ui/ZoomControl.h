@@ -1,7 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "ZoomState.h"
-#include "../IconSystem.h"
+#include "../Core/IconSystem.h"
 
 // Zoom control with slider, presets, and reset button
 class ZoomControl : public juce::Component, private juce::Timer

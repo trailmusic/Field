@@ -2,7 +2,7 @@
 
 #include <JuceHeader.h>
 #include "MotionIDs.h"
-#include "../KnobCell.h"
+#include "../ui/Components/KnobCell.h"
 #include "../Layout.h"
 
 // MotionControlsPane: 2x16 grid for Motion controls (24 + blanks)

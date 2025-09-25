@@ -1,6 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
-#include "FieldLookAndFeel.h"
+#include "../../Core/FieldLookAndFeel.h"
 
 // Composite 2x2 cell: top row HP/LP (two knobs), bottom row Q + Cluster (aux)
 class QuadKnobCell : public juce::Component

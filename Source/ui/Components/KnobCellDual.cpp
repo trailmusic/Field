@@ -1,5 +1,5 @@
 #include "KnobCellDual.h"
-#include "FieldLookAndFeel.h"
+#include "../../Core/FieldLookAndFeel.h"
 
 void DoubleKnobCell::ensureChildren()
 {

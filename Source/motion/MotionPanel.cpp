@@ -1,5 +1,5 @@
 #include "MotionPanel.h"
-#include "../ui/Layout.h"
+#include "../Layout.h"
 using namespace UI;
 namespace motion {
 

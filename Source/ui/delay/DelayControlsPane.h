@@ -1,7 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "../../KnobCell.h"
+#include "../Components/KnobCell.h"
 #include "../../Layout.h"
 
 // DelayControlsPane: 2x16 flat grid container for Delay controls.

@@ -1,6 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
-#include "../../KnobCell.h"
+#include "../../ui/Components/KnobCell.h"
 #include "../../Layout.h"
 #include "../ReverbParamIDs.h"
 
