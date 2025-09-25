@@ -30,6 +30,14 @@ public:
         overlay.setVisible (false);
         addAndMakeVisible (badge);
         badge.setVisible (false);
+        
+        // Zoom slider for manual dB range control
+        addAndMakeVisible (zoomSlider);
+        zoomSlider.setSliderStyle (juce::Slider::LinearVertical);
+        zoomSlider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+        zoomSlider.setRange (0.0, 2.0, 0.1); // 0=±6dB, 1=±18dB, 2=±36dB
+        zoomSlider.setValue (0.0); // Start at ±6dB
+        zoomSlider.onValueChange = [this] { updateZoomFromSlider(); };
         overlay.onGainChanged = [this](float g)
         {
             if (selected >= 0 && selected < (int) points.size())
@@ -534,7 +542,14 @@ public:
     void resized() override
     {
         auto r = getLocalBounds().reduced (6);
-        analyzer.setBounds (r);
+        
+        // Position zoom slider on the left edge
+        const int zoomWidth = 20;
+        const int zoomMargin = 8;
+        zoomSlider.setBounds (zoomMargin, r.getY() + 40, zoomWidth, r.getHeight() - 80);
+        
+        // Adjust analyzer bounds to account for zoom slider
+        analyzer.setBounds (r.reduced (zoomWidth + zoomMargin * 2, 0));
         rebuildEqPath();
         positionOverlay();
     }
@@ -560,6 +575,26 @@ private:
         {
             if (db > 18.0f || db < -18.0f) { currentDbTop = 18.0f; currentDbBottom = -36.0f; }
         }
+    }
+    
+    void updateZoomFromSlider()
+    {
+        const float zoomValue = (float) zoomSlider.getValue();
+        if (zoomValue <= 0.5f) {
+            // ±6dB zoom
+            currentDbTop = 6.0f;
+            currentDbBottom = -6.0f;
+        } else if (zoomValue <= 1.5f) {
+            // ±18dB zoom
+            currentDbTop = 18.0f;
+            currentDbBottom = -18.0f;
+        } else {
+            // ±36dB zoom
+            currentDbTop = 18.0f;
+            currentDbBottom = -36.0f;
+        }
+        rebuildEqPath();
+        repaint();
     }
     struct BandPoint { float hz=1000.f; float db=0.f; float q=0.707f; int type=0; int phase=1; int channel=0; int bandIdx=-1; bool dynOn=false; bool specOn=false; int slopeDb=12; int tapMode=1; };
     std::vector<BandPoint> points;
@@ -1441,8 +1476,8 @@ private:
         const float x = mapHzToX (points[(size_t) selected].hz);
         auto pane = getLocalBounds();
         const int w = 360, h = 132;
-        // Fixed Y near bottom; X follows the point's latitude
-        int oy = pane.getBottom() - h - 12;
+        // Fixed Y higher up to avoid Hz units; X follows the point's latitude
+        int oy = pane.getBottom() - h - 60; // Moved up 48px to clear Hz units
         // Center overlay around the point's X, clamped within pane
         int ox = (int) x - (w / 2);
         if (ox < pane.getX()) ox = pane.getX() + 12;
@@ -1507,19 +1542,19 @@ private:
             g.drawFittedText (lbl, juce::Rectangle<int> ((int) r.getX()+4, (int) y-8, 44, 16), juce::Justification::centredLeft, 1);
         }
 
-        // Hz ticks
+        // Hz ticks (moved down slightly to avoid control bar)
         const double hzTicks[] = { 20, 50, 100, 200, 500, 1000, 1500, 2000, 3000, 4000, 5000, 7000, 8000, 10000, 20000 };
         for (double hz : hzTicks)
         {
             const float x = mapHzToX ((float) hz);
             g.setColour (gridCol);
-            g.drawLine (x, r.getBottom()-12.0f, x, r.getBottom(), 0.8f);
+            g.drawLine (x, r.getBottom()-16.0f, x, r.getBottom(), 0.8f); // Moved down 4px
             g.setColour (textCol);
             juce::String lbl;
             if (hz >= 1000.0 && hz < 10000.0) lbl = juce::String (hz/1000.0, 1) + "k";
             else if (hz >= 10000.0) lbl = juce::String ((int) std::round (hz/1000.0)) + "k";
             else lbl = juce::String ((int) hz);
-            g.drawFittedText (lbl, juce::Rectangle<int> ((int) x-18, (int) r.getBottom()-26, 36, 14), juce::Justification::centred, 1);
+            g.drawFittedText (lbl, juce::Rectangle<int> ((int) x-18, (int) r.getBottom()-30, 36, 14), juce::Justification::centred, 1); // Moved down 4px
         }
     }
 
@@ -1630,6 +1665,9 @@ private:
     MyPluginAudioProcessor& proc;
     juce::LookAndFeel* lookAndFeelPtr { nullptr };
     SpectrumAnalyzer analyzer;
+    
+    // Zoom slider for manual dB range control
+    juce::Slider zoomSlider;
 };
 
 // Tooltip implementation for Dynamic EQ controls
