@@ -4,6 +4,8 @@
 #include "SpectrumAnalyzer.h"
 #include "../dynEQ/DynamicEqParamIDs.h"
 #include "../FieldLookAndFeel.h"
+#include "ZoomState.h"
+#include "DynEqZoomSideRail.h"
 
 class MyPluginAudioProcessor; // fwd
 class MyPluginAudioProcessorEditor; // fwd
@@ -14,10 +16,20 @@ class DynEqTab : public juce::Component, private juce::Timer
 {
 public:
     DynEqTab (MyPluginAudioProcessor& p, juce::LookAndFeel* lnf)
-        : proc (p), lookAndFeelPtr (lnf)
+        : proc (p), lookAndFeelPtr (lnf), zoomState (), zoomRail (zoomState)
     {
         setOpaque (true);
         startTimerHz (30);
+        
+        // Initialize zoom state
+        zoomState.prepare (60.0);
+        
+        // Add zoom rail
+        addAndMakeVisible (zoomRail);
+        zoomRail.onZoomChanged = [this] { repaint(); };
+        zoomRail.onAutoToggled = [this] { /* persist state if needed */ };
+        zoomRail.onReset = [this] { repaint(); };
+        
         addAndMakeVisible (analyzer);
         analyzer.setInterceptsMouseClicks (false, false);
         analyzer.setAutoHeadroomEnabled (true);
@@ -30,14 +42,6 @@ public:
         overlay.setVisible (false);
         addAndMakeVisible (badge);
         badge.setVisible (false);
-        
-        // Zoom slider for manual dB range control
-        addAndMakeVisible (zoomSlider);
-        zoomSlider.setSliderStyle (juce::Slider::LinearVertical);
-        zoomSlider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-        zoomSlider.setRange (0.0, 2.0, 0.1); // 0=±6dB, 1=±18dB, 2=±36dB
-        zoomSlider.setValue (0.0); // Start at ±6dB
-        zoomSlider.onValueChange = [this] { updateZoomFromSlider(); };
         overlay.onGainChanged = [this](float g)
         {
             if (selected >= 0 && selected < (int) points.size())
@@ -543,13 +547,13 @@ public:
     {
         auto r = getLocalBounds().reduced (6);
         
-        // Position zoom slider on the left edge
-        const int zoomWidth = 20;
-        const int zoomMargin = 8;
-        zoomSlider.setBounds (zoomMargin, r.getY() + 40, zoomWidth, r.getHeight() - 80);
+        // Left rail outside the pane (48px width)
+        auto rail = r.removeFromLeft (48);
+        rail.removeFromRight (4); // little breathing room
+        zoomRail.setBounds (rail);
         
-        // Adjust analyzer bounds to account for zoom slider
-        analyzer.setBounds (r.reduced (zoomWidth + zoomMargin * 2, 0));
+        // Analyzer takes remaining area
+        analyzer.setBounds (r);
         rebuildEqPath();
         positionOverlay();
     }
@@ -562,39 +566,20 @@ public:
     void pushBlockPre (const float* L, const float* R, int n) { analyzer.pushBlockPre (L, R, n); }
 
 private:
-    // Adaptive dB zoom (starts at ±6, expands to ±24, then full)
-    float currentDbTop { 6.0f };
-    float currentDbBottom { -6.0f };
+    // Auto-zoom logic for when bands exceed current range
     void adaptDbRangeToPoint (float db)
     {
-        if (currentDbTop == 6.0f && currentDbBottom == -6.0f)
+        if (zoomRail.isAutoMode())
         {
-            if (db > 6.0f || db < -6.0f) { currentDbTop = 18.0f; currentDbBottom = -18.0f; }
+            const float currentRange = zoomState.getCurrent();
+            if (std::abs (db) > currentRange)
+            {
+                // Suggest a new range that accommodates this point
+                const float suggestedRange = std::max (currentRange * 1.5f, std::abs (db) * 1.2f);
+                const float clampedRange = juce::jlimit (zoomState.getMin(), zoomState.getMax(), suggestedRange);
+                zoomState.setTarget (clampedRange);
+            }
         }
-        if (currentDbTop == 18.0f && currentDbBottom == -18.0f)
-        {
-            if (db > 18.0f || db < -18.0f) { currentDbTop = 18.0f; currentDbBottom = -36.0f; }
-        }
-    }
-    
-    void updateZoomFromSlider()
-    {
-        const float zoomValue = (float) zoomSlider.getValue();
-        if (zoomValue <= 0.5f) {
-            // ±6dB zoom
-            currentDbTop = 6.0f;
-            currentDbBottom = -6.0f;
-        } else if (zoomValue <= 1.5f) {
-            // ±18dB zoom
-            currentDbTop = 18.0f;
-            currentDbBottom = -18.0f;
-        } else {
-            // ±36dB zoom
-            currentDbTop = 18.0f;
-            currentDbBottom = -36.0f;
-        }
-        rebuildEqPath();
-        repaint();
     }
     struct BandPoint { float hz=1000.f; float db=0.f; float q=0.707f; int type=0; int phase=1; int channel=0; int bandIdx=-1; bool dynOn=false; bool specOn=false; int slopeDb=12; int tapMode=1; };
     std::vector<BandPoint> points;
@@ -986,7 +971,8 @@ private:
     {
         auto r = analyzer.getBounds().toFloat();
         const float top = r.getY()+8.f, bottom = r.getBottom()-8.f;
-        return juce::jmap (dB, currentDbTop, currentDbBottom, top, bottom);
+        const float halfRange = zoomState.getCurrent();
+        return juce::jmap (dB, +halfRange, -halfRange, top, bottom);
     }
     float mapXToHz (int px) const
     {
@@ -999,7 +985,8 @@ private:
     float mapYToDb (int py) const
     {
         auto r = analyzer.getBounds();
-        return juce::jmap ((float) py, (float) r.getY(), (float) r.getBottom(), currentDbTop, currentDbBottom);
+        const float halfRange = zoomState.getCurrent();
+        return juce::jmap ((float) py, (float) r.getY(), (float) r.getBottom(), +halfRange, -halfRange);
     }
 
     int hitTestPoint (juce::Point<int> p) const
@@ -1530,10 +1517,11 @@ private:
         g.setColour (gridCol);
 
         // dB ticks
+        const float halfRange = zoomState.getCurrent();
         const float dbVals[] = { 18, 12, 6, 0, -6, -12, -18, -24, -30, -36 };
         for (float dbv : dbVals)
         {
-            if (dbv > currentDbTop || dbv < currentDbBottom) continue;
+            if (dbv > halfRange || dbv < -halfRange) continue;
             const float y = mapDbToY (dbv);
             g.setColour (gridCol);
             g.drawLine (r.getX(), y, r.getRight(), y, dbv == 0 ? 1.2f : 0.6f);
@@ -1666,8 +1654,9 @@ private:
     juce::LookAndFeel* lookAndFeelPtr { nullptr };
     SpectrumAnalyzer analyzer;
     
-    // Zoom slider for manual dB range control
-    juce::Slider zoomSlider;
+    // Zoom state and rail
+    ZoomState zoomState;
+    DynEqZoomSideRail zoomRail;
 };
 
 // Tooltip implementation for Dynamic EQ controls
