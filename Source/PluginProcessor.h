@@ -8,6 +8,40 @@
 #include "reverb/ReverbParamIDs.h"
 #include "reverb/ReverbEngine.h"
 
+// Forward declaration for Biquad struct
+struct Biquad;
+
+// Dynamic EQ band structure
+struct DynEqBand {
+    bool active = false;
+    int type = 0;        // 0=Bell,1=LS,2=HS,3=HP,4=LP,5=Notch,6=BP,7=AllPass
+    float freqHz = 1000.0f;
+    float gainDb = 0.0f;
+    float Q = 0.707f;
+    int channel = 0;      // 0=Stereo,1=M,2=S,3=L,4=R
+    
+    // Dynamic processing
+    bool dynOn = false;
+    int dynMode = 0;     // 0=Down,1=Up
+    float dynRangeDb = -3.0f;
+    float dynThreshDb = -24.0f;
+    float dynAtkMs = 10.0f;
+    float dynRelMs = 120.0f;
+    float dynRatio = 4.0f;  // Compression/expansion ratio
+    
+    // Spectral processing
+    bool specOn = false;
+    float specRangeDb = 3.0f;
+    float specSelect = 50.0f;
+    
+    // Constellation processing
+    bool constOn = false;
+    int constRoot = 1;   // 0=Auto,1=Pitch,2=Note,3=Hz
+    float constHz = 110.0f;
+    int constCount = 6;
+    float constSpread = 25.0f;
+};
+
 // =========================
 // Parameter IDs
 // =========================
@@ -331,6 +365,7 @@ private:
     
     // Dynamic EQ
     void applyDynamicEq (Block audioBlock);
+    void processBandChannel (Block audioBlock, int band, int channel, const Biquad& filter);
 
     // ----- state -----
     double sr { 48000.0 };
@@ -705,6 +740,7 @@ private:
         
         // Dynamic EQ parameters
         bool   dynEqEnabled{};
+        DynEqBand dynEqBands[24];
     } params;
 
     // Width Designer runtime state
@@ -851,6 +887,7 @@ struct HostParams
     
     // Dynamic EQ parameters
     bool   dynEqEnabled{};
+    DynEqBand dynEqBands[24];
 };
 
 // ===============================
