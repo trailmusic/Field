@@ -346,7 +346,7 @@ void FieldLNF::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h,
 
     // Tick marks at quarter points across whatever arc span we're given
     const float tickRadius = radius * 0.86f;
-    const float tickSize   = radius * 0.04f;
+    const float tickSize   = radius * 0.06f;
     const float arcSpan    = rotaryEndAngle - rotaryStartAngle;
 
     const std::vector<float> tickAngles = {
