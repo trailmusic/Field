@@ -27,14 +27,14 @@ public:
         
         ledAuto.setButtonText (""); // Use icon instead
         ledAuto.setClickingTogglesState (true);
-        ledAuto.setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
+        ledAuto.setColour (juce::TextButton::buttonColourId, juce::Colours::black.withAlpha (0.3f));
         ledAuto.setColour (juce::TextButton::buttonOnColourId, juce::Colour (0xFF5AA9E6)); // Accent color
         ledAuto.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
         ledAuto.setColour (juce::TextButton::textColourOffId, juce::Colours::white.withAlpha (0.6f));
         
         ledManual.setButtonText (""); // Use icon instead
         ledManual.setClickingTogglesState (true);
-        ledManual.setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
+        ledManual.setColour (juce::TextButton::buttonColourId, juce::Colours::black.withAlpha (0.3f));
         ledManual.setColour (juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha (0.2f));
         ledManual.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
         ledManual.setColour (juce::TextButton::textColourOffId, juce::Colours::white.withAlpha (0.6f));
@@ -61,7 +61,7 @@ public:
         
         // Reset button with icon
         resetButton.setButtonText (""); // Use icon instead
-        resetButton.setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
+        resetButton.setColour (juce::TextButton::buttonColourId, juce::Colours::black.withAlpha (0.3f));
         resetButton.setColour (juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha (0.2f));
         resetButton.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
         resetButton.onClick = [this] { onReset(); };

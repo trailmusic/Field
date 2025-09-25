@@ -15,6 +15,9 @@ public:
         {
             presetButtons[i].setButtonText (""); // Use icons instead
             presetButtons[i].setClickingTogglesState (false);
+            presetButtons[i].setColour (juce::TextButton::buttonColourId, juce::Colours::black.withAlpha (0.3f));
+            presetButtons[i].setColour (juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha (0.2f));
+            presetButtons[i].setColour (juce::TextButton::textColourOnId, juce::Colours::white);
             presetButtons[i].onClick = [this, i] { setPreset (i); };
             addAndMakeVisible (presetButtons[i]);
         }
@@ -31,6 +34,9 @@ public:
         
         // Reset button with icon
         resetButton.setButtonText (""); // Use icon instead
+        resetButton.setColour (juce::TextButton::buttonColourId, juce::Colours::black.withAlpha (0.3f));
+        resetButton.setColour (juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha (0.2f));
+        resetButton.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
         resetButton.onClick = [this] { handleReset(); };
         addAndMakeVisible (resetButton);
         
