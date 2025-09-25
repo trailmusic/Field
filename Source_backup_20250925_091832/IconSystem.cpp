@@ -69,7 +69,6 @@ void IconSystem::drawIcon (juce::Graphics& g, IT type, juce::Rectangle<float> ar
     const float size = juce::jmin (area.getWidth(), area.getHeight());
     const float stroke = juce::jlimit (1.0f, 4.0f, size * 0.085f);
 
-
     auto P = createIcon (type, size);
 
     // shadow pass

@@ -400,17 +400,13 @@ public:
                 switch (id)
                 {
                     case PaneID::XY: {
-                        // XY Pad icon: clean crosshair design
-                        // Vertical line
+                        p.addRoundedRectangle (3.5f*s, 3.5f*s, 17.0f*s, 17.0f*s, 3.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st, juce::PathStrokeType::curved, juce::PathStrokeType::rounded), T);
+                        p.clear();
                         p.startNewSubPath (12.0f*s, 6.0f*s); p.lineTo (12.0f*s, 18.0f*s);
-                        gg.strokePath (p, juce::PathStrokeType (st), T);
-                        p.clear();
-                        // Horizontal line
                         p.startNewSubPath (6.0f*s, 12.0f*s); p.lineTo (18.0f*s, 12.0f*s);
-                        gg.strokePath (p, juce::PathStrokeType (st), T);
-                        p.clear();
-                        // Center dot
-                        p.addEllipse (11.5f*s, 11.5f*s, 1.0f*s, 1.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st, juce::PathStrokeType::curved, juce::PathStrokeType::rounded), T);
+                        p.clear(); p.addEllipse (15.5f*s - 1.25f*s, 8.5f*s - 1.25f*s, 2.5f*s, 2.5f*s);
                         gg.strokePath (p, juce::PathStrokeType (st), T);
                         break;
                     }
@@ -452,54 +448,20 @@ public:
                         break;
                     }
                     case PaneID::Machine: {
-                        // Machine icon: gear/cog with smaller size
-                        const float scale = 0.85f; // Make it slightly smaller
-                        const float centerX = 12.0f*s;
-                        const float centerY = 12.0f*s;
-                        const float radius = 6.0f*s * scale;
-                        
-                        // Outer gear circle
-                        p.addEllipse (centerX - radius, centerY - radius, radius*2, radius*2);
+                        p.addRoundedRectangle (6.0f*s, 7.0f*s, 12.0f*s, 10.0f*s, 2.0f*s);
                         gg.strokePath (p, juce::PathStrokeType (st), T);
-                        p.clear();
-                        
-                        // Gear teeth (8 teeth)
-                        for (int i = 0; i < 8; ++i) {
-                            const float angle = juce::MathConstants<float>::twoPi * (float)i / 8.0f;
-                            const float innerR = radius * 0.6f;
-                            const float outerR = radius * 0.9f;
-                            
-                            p.startNewSubPath (centerX + innerR * std::cos(angle), centerY + innerR * std::sin(angle));
-                            p.lineTo (centerX + outerR * std::cos(angle), centerY + outerR * std::sin(angle));
-                        }
-                        gg.strokePath (p, juce::PathStrokeType (st), T);
-                        p.clear();
-                        
-                        // Center hub
-                        p.addEllipse (centerX - radius*0.3f, centerY - radius*0.3f, radius*0.6f, radius*0.6f);
-                        gg.strokePath (p, juce::PathStrokeType (st), T);
-                        break;
-                    }
-                    case PaneID::Reverb: {
-                        // Reverb icon: sound waves with decay
-                        p.startNewSubPath (4.0f*s, 12.0f*s); p.lineTo (8.0f*s, 12.0f*s);
-                        p.startNewSubPath (6.0f*s, 8.0f*s); p.lineTo (10.0f*s, 8.0f*s);
-                        p.startNewSubPath (8.0f*s, 4.0f*s); p.lineTo (12.0f*s, 4.0f*s);
-                        p.startNewSubPath (10.0f*s, 6.0f*s); p.lineTo (14.0f*s, 6.0f*s);
-                        p.startNewSubPath (12.0f*s, 10.0f*s); p.lineTo (16.0f*s, 10.0f*s);
-                        p.startNewSubPath (14.0f*s, 14.0f*s); p.lineTo (18.0f*s, 14.0f*s);
-                        p.startNewSubPath (16.0f*s, 16.0f*s); p.lineTo (20.0f*s, 16.0f*s);
-                        gg.strokePath (p, juce::PathStrokeType (st), T);
-                        break;
-                    }
-                    case PaneID::Delay: {
-                        // Delay icon: clock/time symbol
-                        p.addEllipse (6.0f*s, 6.0f*s, 12.0f*s, 12.0f*s);
-                        gg.strokePath (p, juce::PathStrokeType (st), T);
-                        p.clear();
-                        // Clock hands
-                        p.startNewSubPath (12.0f*s, 12.0f*s); p.lineTo (12.0f*s, 8.0f*s); // hour hand
-                        p.startNewSubPath (12.0f*s, 12.0f*s); p.lineTo (15.0f*s, 12.0f*s); // minute hand
+                        p.clear(); // sparkle
+                        p.startNewSubPath (12.0f*s, 10.2f*s);
+                        p.lineTo (12.6f*s, 11.4f*s);
+                        p.lineTo (14.0f*s, 11.7f*s);
+                        p.lineTo (13.0f*s, 12.6f*s);
+                        p.lineTo (13.2f*s, 14.0f*s);
+                        p.lineTo (12.0f*s, 13.3f*s);
+                        p.lineTo (10.8f*s, 14.0f*s);
+                        p.lineTo (11.0f*s, 12.6f*s);
+                        p.lineTo (10.0f*s, 11.7f*s);
+                        p.lineTo (11.4f*s, 11.4f*s);
+                        p.closeSubPath();
                         gg.strokePath (p, juce::PathStrokeType (st), T);
                         break;
                     }
@@ -523,8 +485,8 @@ public:
                 if (id == PaneID::Machine)
                 {
                     g.setColour (txtCol);
-                    // Slightly larger font for Machine tab
-                    juce::Font f (juce::FontOptions (on ? 18.0f : 17.0f).withStyle ("Bold"));
+                    // Very bold, larger display for Machine tab
+                    juce::Font f (juce::FontOptions (on ? 36.0f : 33.0f).withStyle ("Bold"));
                     f.setTypefaceName ("Impact");
                     f.setTypefaceStyle ("Bold");
                     f.setExtraKerningFactor (0.20f);
@@ -537,7 +499,7 @@ public:
                     f.setExtraKerningFactor (0.0f);
                     g.setFont (f);
                 }
-                const float pad = (id == PaneID::Machine) ? 3.0f : 6.0f; // Machine keeps tight spacing, others get more
+                const float pad = 6.0f;
                 const float iconSz = (id == PaneID::Machine)
                                       ? juce::jmin (rr.getHeight() - 6.0f, rr.getHeight() - 6.0f)
                                       : juce::jmin (rr.getHeight() - 8.0f, 18.0f);

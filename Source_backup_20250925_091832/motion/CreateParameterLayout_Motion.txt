@@ -1,0 +1,24 @@
+
+// APVTS layout snippet for Motion (paste into your createParameterLayout)
+using namespace motion;
+layout.add (std::make_unique<juce::AudioParameterChoice>(id::panner_select, "Motion Panner", choiceListPanner(), (int)PannerSelect::P1));
+layout.add (std::make_unique<juce::AudioParameterChoice>(id::path,          "Motion Path",   choiceListPath(),   (int)PathType::Circle));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::rate_hz,       "Motion Rate (Hz)", juce::NormalisableRange<float>(0.05f, 16.0f, 0.0f, 0.33f), 0.5f));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::depth_pct,     "Motion Depth", juce::NormalisableRange<float>(0.0f, 1.0f), 0.35f));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::phase_deg,     "Motion Phase", juce::NormalisableRange<float>(0.0f, 360.0f), 0.0f));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::spread_pct,    "Motion Spread", juce::NormalisableRange<float>(0.0f, 2.0f), 1.2f));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::elev_bias,     "Elevation Bias", juce::NormalisableRange<float>(-1.0f, 1.0f), 0.0f));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::shape_bounce,  "Bounce/Tension", juce::NormalisableRange<float>(0.0f, 1.0f), 0.3f));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::jitter_amt,    "Jitter", juce::NormalisableRange<float>(0.0f, 1.0f), 0.0f));
+layout.add (std::make_unique<juce::AudioParameterChoice>(id::quantize_div,  "Quantize", choiceListQuant(), (int)QuantizeDiv::Off));
+layout.add (std::make_unique<juce::AudioParameterChoice>(id::mode,          "Motion Mode", choiceListMode(), (int)MotionMode::Sync));
+layout.add (std::make_unique<juce::AudioParameterBool>  (id::retrig,        "Retrigger", false));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::hold_ms,       "Hold (ms)", juce::NormalisableRange<float>(0.0f, 500.0f), 0.0f));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::sens,          "Sensitivity", juce::NormalisableRange<float>(0.0f, 1.0f), 0.5f));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::offset_deg,    "Offset (deg)", juce::NormalisableRange<float>(0.0f, 360.0f), 90.0f));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::front_bias,    "Front Bias", juce::NormalisableRange<float>(-1.0f, 1.0f), 0.2f));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::doppler_amt,   "Doppler", juce::NormalisableRange<float>(0.0f, 1.0f), 0.1f));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::motion_send,   "Motion Send", juce::NormalisableRange<float>(0.0f, 1.0f), 0.2f));
+layout.add (std::make_unique<juce::AudioParameterBool>  (id::anchor_enable, "Anchor Center", true));
+layout.add (std::make_unique<juce::AudioParameterFloat> (id::bass_floor_hz, "Bass Floor (Hz)", juce::NormalisableRange<float>(20.0f, 250.0f, 0.0f, 0.35f), 120.0f));
+layout.add (std::make_unique<juce::AudioParameterBool>  (id::headphone_safe,"Headphone Safe", true));
