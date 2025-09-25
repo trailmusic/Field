@@ -215,13 +215,7 @@ private:
         else
             iconColour = juce::Colours::white.withAlpha (0.6f);
         
-        // Create the icon path
-        auto path = IconSystem::createIcon (iconType, iconSize);
-        
-        // Draw the icon as a stroke (for line-based icons)
-        g.setColour (iconColour);
-        g.strokePath (path, juce::PathStrokeType (2.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded),
-                      juce::AffineTransform::translation (iconBounds.getX(), iconBounds.getY()));
+        IconSystem::drawIcon (g, iconType, iconBounds, iconColour);
     }
     
     ZoomState& zoomState;
