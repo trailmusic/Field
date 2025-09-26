@@ -686,6 +686,7 @@ public:
     void paint (juce::Graphics&) override;
     void paintOverChildren(juce::Graphics&) override;
     void resized() override;
+    void drawHeaderFieldLogo (juce::Graphics& g, juce::Rectangle<float> area) const;
     void timerCallback() override;
     void sliderValueChanged(juce::Slider* slider) override;
     void comboBoxChanged(juce::ComboBox* comboBox) override;
@@ -2423,6 +2424,9 @@ private:
                 g.fillRect(juce::Rectangle<float>(cover.getX(), cover.getBottom()-1.0f, cover.getWidth(), 1.0f));
                 juce::DropShadow(juce::Colours::black.withAlpha(0.5f), 12, {0,2})
                     .drawForRectangle(g, cover.getSmallestIntegerContainer());
+
+                // Draw large FIELD logo with shadow and glow effects
+                drawFieldLogo(g, cover);
             }
 
             drawHandle(g, getHandle());
@@ -2515,6 +2519,75 @@ private:
         void timerCallback() override
         {
             if (amount.isSmoothing()) repaint();
+        }
+
+        void drawFieldLogo (juce::Graphics& g, juce::Rectangle<float> area) const
+        {
+            // Calculate logo size based on covered area - increased to 80%
+            const float logoHeight = juce::jmin(area.getHeight() * 0.8f, 200.0f);
+            const float logoWidth = logoHeight * 2.5f; // FIELD is wider than tall
+            
+            // Center the logo in the covered area
+            const float logoX = area.getCentreX() - logoWidth * 0.5f;
+            const float logoY = area.getCentreY() - logoHeight * 0.5f;
+            const auto logoRect = juce::Rectangle<float>(logoX, logoY, logoWidth, logoHeight);
+            
+            // Create large bold font matching the main logo
+            juce::Font logoFont(juce::FontOptions(logoHeight * 0.8f).withStyle("Bold"));
+            g.setFont(logoFont);
+            
+            // Enhanced shadow system with more layers and stronger effects
+            const int shadowLayers = 12; // Increased from 8 to 12
+            for (int i = shadowLayers; i > 0; --i)
+            {
+                const float shadowOffset = (float)i * 3.5f; // Increased offset for more dramatic effect
+                const float shadowAlpha = (1.0f - (float)i / shadowLayers) * 0.6f; // Increased alpha for stronger effect
+                
+                // Multiple glow shadows with different colors and intensities
+                // Outer accent glow
+                g.setColour(lnf.theme.accent.withAlpha(shadowAlpha * 0.7f));
+                g.drawText("FIELD", logoRect.translated(shadowOffset, shadowOffset), 
+                          juce::Justification::centred);
+                
+                // Secondary glow with brighter accent
+                g.setColour(lnf.theme.accent.brighter(0.4f).withAlpha(shadowAlpha * 0.5f));
+                g.drawText("FIELD", logoRect.translated(shadowOffset * 0.8f, shadowOffset * 0.8f), 
+                          juce::Justification::centred);
+                
+                // Dark shadow for depth with increased intensity
+                g.setColour(juce::Colours::black.withAlpha(shadowAlpha * 0.8f));
+                g.drawText("FIELD", logoRect.translated(shadowOffset * 0.3f, shadowOffset * 0.3f), 
+                          juce::Justification::centred);
+                
+                // Additional depth shadow
+                g.setColour(juce::Colours::darkgrey.withAlpha(shadowAlpha * 0.4f));
+                g.drawText("FIELD", logoRect.translated(shadowOffset * 0.6f, shadowOffset * 0.6f), 
+                          juce::Justification::centred);
+            }
+            
+            // Enhanced gradient effect with more color stops
+            juce::ColourGradient logoGradient(
+                lnf.theme.accent.brighter(0.5f), logoRect.getX(), logoRect.getY(),
+                lnf.theme.accent.darker(0.3f), logoRect.getX(), logoRect.getBottom(), false);
+            logoGradient.addColour(0.25f, lnf.theme.accent.brighter(0.2f));
+            logoGradient.addColour(0.5f, lnf.theme.accent);
+            logoGradient.addColour(0.75f, lnf.theme.accent.darker(0.1f));
+            
+            g.setGradientFill(logoGradient);
+            g.drawText("FIELD", logoRect, juce::Justification::centred);
+            
+            // Enhanced highlight system with multiple layers
+            // Primary highlight
+            g.setColour(lnf.theme.accent.brighter(0.6f).withAlpha(0.8f));
+            g.drawText("FIELD", logoRect, juce::Justification::centred);
+            
+            // Secondary highlight for extra shine
+            g.setColour(lnf.theme.accent.brighter(0.8f).withAlpha(0.4f));
+            g.drawText("FIELD", logoRect, juce::Justification::centred);
+            
+            // Final white highlight for maximum shine
+            g.setColour(juce::Colours::white.withAlpha(0.3f));
+            g.drawText("FIELD", logoRect, juce::Justification::centred);
         }
     };
 

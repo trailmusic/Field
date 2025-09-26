@@ -2787,21 +2787,23 @@ void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
 
     // logo + tagline
     auto header = getLocalBounds().removeFromTop ((int) (100 * scaleFactor));
-    g.setColour (lnf.theme.text);
-    juce::Font logo (juce::FontOptions (26.0f * scaleFactor).withStyle ("Bold"));
-    g.setFont (logo);
     const int leftInset = Layout::dp (20, scaleFactor);
     auto logoArea = juce::Rectangle<int> (header.getX() + leftInset, header.getY() + Layout::dp (4, scaleFactor),
-                                          header.getWidth(), logo.getHeight() + 2);
-    g.drawText ("FIELD", logoArea, juce::Justification::centredLeft);
+                                          header.getWidth(), (int) (30 * scaleFactor + 2));
+    
+    // Enhanced FIELD logo with shadow and glow effects
+    drawHeaderFieldLogo(g, logoArea.toFloat());
 
-    // version
+    // version - position after the actual logo width
     const juce::String ver = " v" + juce::String (JUCE_STRINGIFY (JucePlugin_VersionString));
     juce::Font vfont (juce::FontOptions (juce::jmax (9, (int) std::round (8 * scaleFactor))));
     g.setFont (vfont);
     g.setColour (lnf.theme.textMuted);
-    const int vx = logoArea.getX() + (int) logo.getStringWidthFloat ("FIELD") + Layout::dp (8, scaleFactor);
-    const int vy = logoArea.getY() + (logo.getHeight() - vfont.getHeight()) * 0.5f + 1;
+    
+    // Calculate actual logo width and position version after it
+    const float actualLogoWidth = juce::jmin(logoArea.getHeight() * 0.8f, 30.0f) * 2.5f;
+    const int vx = logoArea.getX() + (int) actualLogoWidth + Layout::dp (8, scaleFactor);
+    const int vy = logoArea.getY() + (logoArea.getHeight() - vfont.getHeight()) * 0.5f + 1;
     g.drawText (ver, juce::Rectangle<int> (vx, vy, 120, (int) vfont.getHeight() + 2), juce::Justification::centredLeft);
 
     // tagline
@@ -2823,6 +2825,58 @@ void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
                     resizeArea.getRight() - 4 - off, resizeArea.getBottom() - 8 - off, 1.0f);
     }
 }
+
+void MyPluginAudioProcessorEditor::drawHeaderFieldLogo (juce::Graphics& g, juce::Rectangle<float> area) const
+{
+    // Calculate logo size for header (smaller than shade overlay)
+    const float logoHeight = juce::jmin(area.getHeight() * 0.8f, 30.0f);
+    const float logoWidth = logoHeight * 2.5f; // FIELD is wider than tall
+    
+    // Center the logo in the header area
+    const float logoX = area.getX();
+    const float logoY = area.getCentreY() - logoHeight * 0.5f;
+    const auto logoRect = juce::Rectangle<float>(logoX, logoY, logoWidth, logoHeight);
+    
+    // Create bold font for header logo
+    juce::Font logoFont(juce::FontOptions(logoHeight * 0.8f).withStyle("Bold"));
+    g.setFont(logoFont);
+    
+    // Enhanced shadow system for header (stronger effects)
+    const int shadowLayers = 8; // Increased for stronger effect
+    for (int i = shadowLayers; i > 0; --i)
+    {
+        const float shadowOffset = (float)i * 2.0f; // Increased offset for stronger effect
+        const float shadowAlpha = (1.0f - (float)i / shadowLayers) * 0.7f; // Increased alpha for stronger effect
+        
+        // Outer accent glow
+        g.setColour(lnf.theme.accent.withAlpha(shadowAlpha * 0.8f));
+        g.drawText("FIELD", logoRect.translated(shadowOffset, shadowOffset), 
+                  juce::Justification::centredLeft);
+        
+        // Dark shadow for depth
+        g.setColour(juce::Colours::black.withAlpha(shadowAlpha * 0.9f));
+        g.drawText("FIELD", logoRect.translated(shadowOffset * 0.5f, shadowOffset * 0.5f), 
+                  juce::Justification::centredLeft);
+    }
+    
+    // Enhanced gradient effect for header (stronger)
+    juce::ColourGradient logoGradient(
+        lnf.theme.accent.brighter(0.6f), logoRect.getX(), logoRect.getY(),
+        lnf.theme.accent.darker(0.3f), logoRect.getX(), logoRect.getBottom(), false);
+    logoGradient.addColour(0.5f, lnf.theme.accent);
+    
+    g.setGradientFill(logoGradient);
+    g.drawText("FIELD", logoRect, juce::Justification::centredLeft);
+    
+    // Enhanced highlight for header (stronger)
+    g.setColour(lnf.theme.accent.brighter(0.7f).withAlpha(0.9f));
+    g.drawText("FIELD", logoRect, juce::Justification::centredLeft);
+    
+    // Final white highlight for shine (stronger)
+    g.setColour(juce::Colours::white.withAlpha(0.4f));
+    g.drawText("FIELD", logoRect, juce::Justification::centredLeft);
+}
+
 void MyPluginAudioProcessorEditor::performLayout()
 {
     if (!layoutReady) return;
