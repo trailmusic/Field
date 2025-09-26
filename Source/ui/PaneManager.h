@@ -10,6 +10,7 @@
 #include "../motion/MotionVisual.h"
 #include "../reverb/ui/ReverbTab.h"
 #include "delay/DelayTab.h"
+#include "PhaseTab.h"
 
 class XYPad; // forward (lives in PluginEditor.h/cpp)
 
@@ -25,11 +26,12 @@ private:
     XYPad& pad;
 };
 
-enum class PaneID { XY=0, Band=1, Motion=2, Reverb=3, Delay=4, DynEQ=5, Imager=6, Machine=7 };
+enum class PaneID { Phase=0, XY=1, Band=2, Motion=3, Reverb=4, Delay=5, DynEQ=6, Imager=7, Machine=8 };
 
 static inline const char* paneKey (PaneID id)
 {
     switch (id) {
+        case PaneID::Phase: return "phase";
         case PaneID::XY: return "xy";
         case PaneID::DynEQ: return "dyneq";
         case PaneID::Imager: return "imager";
@@ -39,7 +41,7 @@ static inline const char* paneKey (PaneID id)
         case PaneID::Reverb:  return "reverb";
         case PaneID::Delay:   return "delay";
     }
-    return "xy";
+    return "phase";
 }
 
 class PaneManager : public juce::Component, private juce::Timer
@@ -50,6 +52,7 @@ public:
     PaneManager (MyPluginAudioProcessor& p, juce::ValueTree& state, juce::LookAndFeel* lnf, XYPad& xyPadRef)
         : proc(p), vt(state)
     {
+        phase = std::make_unique<PhaseTab>(p, lnf);
         xy   = std::make_unique<XYPaneAdapter> (xyPadRef);
         dyneq = std::make_unique<DynEqTab> (p, lnf);
         xyTab= std::make_unique<XYTab>(p, *(juce::Component*) xy.get());
@@ -61,7 +64,7 @@ public:
         reverb = std::make_unique<ReverbTab>(p);
         delay  = std::make_unique<DelayTab>(p);
 
-        for (auto* c : { (juce::Component*) xyTab.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
+        for (auto* c : { (juce::Component*) phase.get(), (juce::Component*) xyTab.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
             addChildComponent (c);
 
         addAndMakeVisible (tabs);
@@ -69,37 +72,39 @@ public:
         tabs.onShowMenu = [this](juce::Point<int> where)
         {
             juce::PopupMenu m;
-            m.addItem (1, "XY");
-            m.addItem (2, "Band");
-            m.addItem (3, "Motion");
-            m.addItem (4, "Reverb");
-            m.addItem (5, "Delay");
-            m.addItem (6, "Dynamic EQ");
-            m.addItem (7, "Imager");
-            m.addItem (8, "Machine");
+            m.addItem (1, "Phase");
+            m.addItem (2, "XY");
+            m.addItem (3, "Band");
+            m.addItem (4, "Motion");
+            m.addItem (5, "Reverb");
+            m.addItem (6, "Delay");
+            m.addItem (7, "Dynamic EQ");
+            m.addItem (8, "Imager");
+            m.addItem (9, "Machine");
             // keep-warm option removed
             // Spectrum removed; no smoothing toggle
             m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&tabs),
                              [this](int r)
                              {
-                                 if (r == 1) setActive (PaneID::XY, true);
-                                 else if (r == 2) setActive (PaneID::Band, true);
-                                 else if (r == 3) setActive (PaneID::Motion, true);
-                                 else if (r == 4) setActive (PaneID::Reverb, true);
-                                 else if (r == 5) setActive (PaneID::Delay, true);
-                                 else if (r == 6) setActive (PaneID::DynEQ, true);
-                                 else if (r == 7) setActive (PaneID::Imager, true);
-                                 else if (r == 8) setActive (PaneID::Machine, true);
+                                 if (r == 1) setActive (PaneID::Phase, true);
+                                 else if (r == 2) setActive (PaneID::XY, true);
+                                 else if (r == 3) setActive (PaneID::Band, true);
+                                 else if (r == 4) setActive (PaneID::Motion, true);
+                                 else if (r == 5) setActive (PaneID::Reverb, true);
+                                 else if (r == 6) setActive (PaneID::Delay, true);
+                                 else if (r == 7) setActive (PaneID::DynEQ, true);
+                                 else if (r == 8) setActive (PaneID::Imager, true);
+                                 else if (r == 9) setActive (PaneID::Machine, true);
                                  // keep-warm toggle removed
                              });
         };
 
         auto s = vt.getProperty ("ui_activePane").toString();
-        PaneID initial = (s=="dyneq" || s=="spec") ? PaneID::DynEQ : (s=="imager") ? PaneID::Imager : (s=="machine") ? PaneID::Machine : (s=="band") ? PaneID::Band : (s=="motion") ? PaneID::Motion : (s=="reverb") ? PaneID::Reverb : (s=="delay") ? PaneID::Delay : PaneID::XY;
+        PaneID initial = (s=="phase") ? PaneID::Phase : (s=="dyneq" || s=="spec") ? PaneID::DynEQ : (s=="imager") ? PaneID::Imager : (s=="machine") ? PaneID::Machine : (s=="band") ? PaneID::Band : (s=="motion") ? PaneID::Motion : (s=="reverb") ? PaneID::Reverb : (s=="delay") ? PaneID::Delay : PaneID::Phase;
         setActive (initial, false);
         // Dynamic EQ tab manages its own analyzer/timers if needed
 
-        for (auto id : { PaneID::XY, PaneID::Band, PaneID::Motion, PaneID::Reverb, PaneID::Delay, PaneID::DynEQ, PaneID::Imager, PaneID::Machine })
+        for (auto id : { PaneID::Phase, PaneID::XY, PaneID::Band, PaneID::Motion, PaneID::Reverb, PaneID::Delay, PaneID::DynEQ, PaneID::Imager, PaneID::Machine })
         {
             auto key = juce::String("ui_shade_") + paneKey(id);
             if (! vt.hasProperty (key)) vt.setProperty (key, 0.0f, nullptr);
@@ -357,8 +362,8 @@ public:
     PaneID getActiveID() const { return (PaneID) activeAtomic.load (std::memory_order_acquire); }
     juce::Component* getActive()
     {
-        switch (active) { case PaneID::XY: return (juce::Component*) xyTab.get(); case PaneID::Band: return band.get(); case PaneID::Motion: return (juce::Component*) motion.get(); case PaneID::Reverb: return reverb.get(); case PaneID::Delay: return delay.get(); case PaneID::DynEQ: return (juce::Component*) dyneq.get(); case PaneID::Imager: return (juce::Component*) imgr.get(); case PaneID::Machine: return mach.get(); }
-        return (juce::Component*) xyTab.get();
+        switch (active) { case PaneID::Phase: return (juce::Component*) phase.get(); case PaneID::XY: return (juce::Component*) xyTab.get(); case PaneID::Band: return band.get(); case PaneID::Motion: return (juce::Component*) motion.get(); case PaneID::Reverb: return reverb.get(); case PaneID::Delay: return delay.get(); case PaneID::DynEQ: return (juce::Component*) dyneq.get(); case PaneID::Imager: return (juce::Component*) imgr.get(); case PaneID::Machine: return mach.get(); }
+        return (juce::Component*) phase.get();
     }
 
     // spectrumPane removed; Dynamic EQ tab owns its visuals
@@ -375,7 +380,7 @@ public:
         // Content starts directly under tabs with a tiny breathing space
         auto paneTop = tabs.getBottom() + 2;
         juce::Rectangle<int> paneR (full.getX(), paneTop, full.getWidth(), full.getBottom() - paneTop);
-        for (auto* c : { (juce::Component*) xyTab.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
+        for (auto* c : { (juce::Component*) phase.get(), (juce::Component*) xyTab.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
             if (c) c->setBounds (paneR);
     }
 
@@ -389,7 +394,7 @@ public:
         void paint (juce::Graphics& g) override
         {
             auto b = getLocalBounds().toFloat();
-            const int N = 8; float w = b.getWidth() / (float) N;
+            const int N = 9; float w = b.getWidth() / (float) N;
             auto drawInlineIcon = [&] (juce::Graphics& gg, PaneID id, juce::Rectangle<float> iconR, juce::Colour col, bool on)
             {
                 const float s  = iconR.getWidth() / 24.0f;
@@ -399,6 +404,18 @@ public:
                 juce::Path p;
                 switch (id)
                 {
+                    case PaneID::Phase: {
+                        // Phase icon: sine wave with phase indicator
+                        p.startNewSubPath (3.0f*s, 12.0f*s);
+                        p.cubicTo (6.0f*s, 6.0f*s, 9.0f*s, 18.0f*s, 12.0f*s, 12.0f*s);
+                        p.cubicTo (15.0f*s, 6.0f*s, 18.0f*s, 18.0f*s, 21.0f*s, 12.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear();
+                        // Phase indicator dot
+                        p.addEllipse (12.0f*s - 1.0f*s, 12.0f*s - 1.0f*s, 2.0f*s, 2.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
                     case PaneID::XY: {
                         // XY Pad icon: clean crosshair design
                         // Vertical line
@@ -596,11 +613,11 @@ public:
                     f.setExtraKerningFactor (0.0f);
                     g.setFont (f);
                 }
-                const float pad = (id == PaneID::Machine) ? 3.0f : 6.0f; // Machine keeps tight spacing, others get more
+                const float pad = (id == PaneID::Machine) ? 2.0f : 4.0f; // Reduced padding for 9 tabs
                 const float iconSz = (id == PaneID::Machine)
                                       ? juce::jmin (rr.getHeight() - 6.0f, rr.getHeight() - 6.0f)
                                       : juce::jmin (rr.getHeight() - 8.0f, 18.0f);
-                juce::Rectangle<float> content = rr.reduced (8.0f, 2.0f);
+                juce::Rectangle<float> content = rr.reduced (6.0f, 2.0f);
                 juce::String drawLabel = (id == PaneID::DynEQ ? juce::String ("Dynamic EQ") : label);
                 drawLabel = drawLabel.toUpperCase();
                 float textW = g.getCurrentFont().getStringWidthFloat (drawLabel);
@@ -611,19 +628,20 @@ public:
                 juce::Rectangle<float> iconR (x0 + textW + pad, content.getCentreY() - iconSz * 0.5f, iconSz, iconSz);
                 drawInlineIcon (g, id, iconR, txtCol, on);
             };
-            draw (0, "XY",         PaneID::XY);
-            draw (1, "Band",       PaneID::Band);
-            draw (2, "Motion",     PaneID::Motion);
-            draw (3, "Reverb",     PaneID::Reverb);
-            draw (4, "Delay",      PaneID::Delay);
-            draw (5, "Dynamic EQ", PaneID::DynEQ);
-            draw (6, "Imager",     PaneID::Imager);
-            draw (7, "Machine",    PaneID::Machine);
+            draw (0, "Phase",      PaneID::Phase);
+            draw (1, "XY",         PaneID::XY);
+            draw (2, "Band",       PaneID::Band);
+            draw (3, "Motion",     PaneID::Motion);
+            draw (4, "Reverb",     PaneID::Reverb);
+            draw (5, "Delay",      PaneID::Delay);
+            draw (6, "Dynamic EQ", PaneID::DynEQ);
+            draw (7, "Imager",     PaneID::Imager);
+            draw (8, "Machine",    PaneID::Machine);
         }
         void mouseUp (const juce::MouseEvent& e) override
         {
-            const int N = 8; int idx = juce::jlimit (0, N-1, e.x * N / juce::jmax (1, getWidth()));
-            PaneID id = idx==0 ? PaneID::XY : idx==1 ? PaneID::Band : idx==2 ? PaneID::Motion : idx==3 ? PaneID::Reverb : idx==4 ? PaneID::Delay : idx==5 ? PaneID::DynEQ : idx==6 ? PaneID::Imager : PaneID::Machine;
+            const int N = 9; int idx = juce::jlimit (0, N-1, e.x * N / juce::jmax (1, getWidth()));
+            PaneID id = idx==0 ? PaneID::Phase : idx==1 ? PaneID::XY : idx==2 ? PaneID::Band : idx==3 ? PaneID::Motion : idx==4 ? PaneID::Reverb : idx==5 ? PaneID::Delay : idx==6 ? PaneID::DynEQ : idx==7 ? PaneID::Imager : PaneID::Machine;
             current = id; if (onSelect) onSelect (id); repaint();
             if (e.mods.isPopupMenu()) { if (onShowMenu) onShowMenu (e.getPosition()); }
         }
@@ -634,9 +652,10 @@ public:
 private:
     MyPluginAudioProcessor& proc;
     juce::ValueTree& vt;
-    PaneID active { PaneID::XY };
-    std::atomic<int> activeAtomic { (int) PaneID::XY };
+    PaneID active { PaneID::Phase };
+    std::atomic<int> activeAtomic { (int) PaneID::Phase };
 
+    std::unique_ptr<PhaseTab>              phase;
     std::unique_ptr<XYPaneAdapter>         xy;
     std::unique_ptr<XYTab>                 xyTab;
     // Dynamic EQ tab (replaces Spectrum)
