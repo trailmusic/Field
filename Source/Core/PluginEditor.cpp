@@ -285,11 +285,21 @@ void VerticalSlider3D::paint (juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
     const float trackWidth = 8.0f;
-    const float handleSize = 16.0f;
+    const float handleSize = 20.0f; // Slightly larger handle
     
-    // Debug: Add a bright background to make sure the slider is visible
-    g.setColour (juce::Colours::red.withAlpha (0.3f));
-    g.fillRoundedRectangle (bounds, 6.0f);
+    // Get accent color from look and feel
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    auto accentColor = lf ? lf->theme.accent : juce::Colours::cyan;
+    
+    // Add accent color back glow
+    g.setColour (accentColor.withAlpha (0.3f));
+    g.fillRoundedRectangle (bounds.reduced (2.0f), 6.0f);
+    
+    // Add gradient border (full color at top, transparent at bottom) - more prominent
+    juce::ColourGradient borderGradient (accentColor, bounds.getX(), bounds.getY(),
+                                        accentColor.withAlpha (0.0f), bounds.getX(), bounds.getBottom(), false);
+    g.setGradientFill (borderGradient);
+    g.drawRoundedRectangle (bounds.reduced (1.0f), 6.0f, 3.0f); // Increased thickness from 2.0f to 3.0f
     
     // Draw metallic background
     drawMetallicBackground (g, bounds);
@@ -323,6 +333,10 @@ void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> h
                                   false);
     gradient.addColour (0.5, accent);
     
+    // Draw handle under glow
+    g.setColour (accent.withAlpha (0.4f));
+    g.fillEllipse (handleRect.expanded (4, 4));
+    
     // Draw handle shadow
     g.setColour (shadowDark.withAlpha (0.4f));
     g.fillEllipse (handleRect.translated (2, 2));
@@ -338,6 +352,20 @@ void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> h
     // Draw rim
     g.setColour (accent.darker (0.2f));
     g.drawEllipse (handleRect, 1.0f);
+    
+    // Draw handle label (I, O, M) - use component name to identify slider type
+    g.setColour (juce::Colours::white);
+    g.setFont (juce::Font (8.0f, juce::Font::bold));
+    juce::String handleLabel;
+    juce::String componentName = getName();
+    if (componentName.contains ("input")) handleLabel = "I";
+    else if (componentName.contains ("output")) handleLabel = "O";
+    else if (componentName.contains ("mix")) handleLabel = "M";
+    
+    if (!handleLabel.isEmpty())
+    {
+        g.drawText (handleLabel, handleRect, juce::Justification::centred);
+    }
 }
 
 void VerticalSlider3D::drawMetallicTrack (juce::Graphics& g, juce::Rectangle<float> trackRect)
@@ -433,7 +461,9 @@ void ControlContainer::paint (juce::Graphics& g)
 
     if (showBorder)
     {
-        g.setColour (panel);
+        // Use custom background color if set, otherwise use theme panel color
+        juce::Colour bgColor = useCustomBackgroundColour ? backgroundColour : panel;
+        g.setColour (bgColor);
         g.fillRoundedRectangle (r.reduced (3.0f), rad);
 
         // depth
@@ -1661,8 +1691,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // addAndMakeVisible (delayContainer);        delayContainer.setTitle ("");     delayContainer.setShowBorder (true);
     // Row containers for EQ/Image are no longer used
     addAndMakeVisible (MainContentContainer);  MainContentContainer.setTitle ("");    MainContentContainer.setShowBorder (false);
-    addAndMakeVisible (rightSlidersContainer);   rightSlidersContainer.setTitle ("");     rightSlidersContainer.setShowBorder (true);
-    rightSlidersContainer.setBorderColour (juce::Colours::red);
+    addAndMakeVisible (rightSlidersContainer);   rightSlidersContainer.setTitle ("");     rightSlidersContainer.setShowBorder (false);
     addAndMakeVisible (metersContainer);       metersContainer.setTitle ("");         metersContainer.setShowBorder (false);
     
     // Add 3D vertical sliders to rightSlidersContainer
@@ -1673,21 +1702,49 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     rightSlidersContainer.addAndMakeVisible (outputLabel);
     rightSlidersContainer.addAndMakeVisible (mixLabel);
     
-    // Configure sliders
-    inputSlider.setRange (-60.0, 12.0, 0.1);
-    inputSlider.setValue (0.0);
+    // Debug: Test container hierarchy
+    DBG("Container hierarchy test:");
+    DBG("  rightSlidersContainer child count: " << rightSlidersContainer.getNumChildComponents());
+    DBG("  inputSlider parent: " << inputSlider.getParentComponent());
+    DBG("  outputSlider parent: " << outputSlider.getParentComponent());
+    DBG("  mixSlider parent: " << mixSlider.getParentComponent());
+    
+    // Configure sliders (ranges and values already set in VerticalSlider3D constructor)
     inputSlider.setTextValueSuffix (" dB");
     inputSlider.setLookAndFeel (&lnf);
     
-    outputSlider.setRange (-60.0, 12.0, 0.1);
-    outputSlider.setValue (0.0);
     outputSlider.setTextValueSuffix (" dB");
     outputSlider.setLookAndFeel (&lnf);
     
-    mixSlider.setRange (0.0, 100.0, 0.1);
+    mixSlider.setRange (0.0, 100.0, 0.1);  // Mix slider has different range
     mixSlider.setValue (100.0);
     mixSlider.setTextValueSuffix (" %");
     mixSlider.setLookAndFeel (&lnf);
+    
+    // Add small units display to sliders
+    inputSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 15);
+    outputSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 15);
+    mixSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 15);
+    
+    // Set component names for handle labels
+    inputSlider.setName ("inputSlider");
+    outputSlider.setName ("outputSlider");
+    mixSlider.setName ("mixSlider");
+    
+    // Style labels with knobcell color background
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    auto sh = lf ? lf->theme.sh : juce::Colour (0xFF2A2C30);
+    
+    auto labelStyle = [&](juce::Label& label) {
+        label.setColour (juce::Label::backgroundColourId, sh.withAlpha (0.15f));
+        label.setColour (juce::Label::textColourId, juce::Colours::white);
+        label.setJustificationType (juce::Justification::centred);
+        label.setFont (juce::Font (10.0f, juce::Font::bold));
+    };
+    
+    labelStyle (inputLabel);
+    labelStyle (outputLabel);
+    labelStyle (mixLabel);
     
     // Configure labels
     inputLabel.setText ("INPUT", juce::dontSendNotification);
@@ -3079,8 +3136,21 @@ void MyPluginAudioProcessorEditor::performLayout()
         metersArea.setHeight (leftArea.getHeight());
         rightSlidersArea.setY (leftArea.getY());
         rightSlidersArea.setHeight (leftArea.getHeight());
+        
+        // Ensure the rightSlidersArea has a minimum size
+        if (rightSlidersArea.getWidth() < 100) {
+            rightSlidersArea.setWidth (100);
+            DBG("WARNING: rightSlidersArea too narrow, forcing width to 100");
+        }
+        if (rightSlidersArea.getHeight() < 100) {
+            rightSlidersArea.setHeight (100);
+            DBG("WARNING: rightSlidersArea too short, forcing height to 100");
+        }
+        
         MainContentContainer.setBounds (leftArea);
         rightSlidersContainer.setBounds (rightSlidersArea);
+        rightSlidersContainer.setVisible (true);
+        rightSlidersContainer.toFront (false);
         metersContainer.setBounds       (metersArea);
         
         // Layout the 3D vertical sliders in rightSlidersContainer
@@ -3088,21 +3158,58 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int sliderWidth = sliderArea.getWidth() / 3;
         const int sliderHeight = sliderArea.getHeight() - 40; // Leave space for labels
         
-        // Debug: Ensure sliders are visible and have proper bounds
-        inputSlider.setBounds (sliderArea.getX(), sliderArea.getY(), sliderWidth, sliderHeight);
-        outputSlider.setBounds (sliderArea.getX() + sliderWidth, sliderArea.getY(), sliderWidth, sliderHeight);
-        mixSlider.setBounds (sliderArea.getX() + sliderWidth * 2, sliderArea.getY(), sliderWidth, sliderHeight);
+        // Debug: Check if the area is too small
+        if (sliderWidth < 10 || sliderHeight < 10) {
+            DBG("WARNING: Slider area too small! sliderWidth=" << sliderWidth << ", sliderHeight=" << sliderHeight);
+        }
         
-        // Position labels below sliders
-        const int labelY = sliderArea.getY() + sliderHeight + 5;
-        inputLabel.setBounds (sliderArea.getX(), labelY, sliderWidth, 20);
-        outputLabel.setBounds (sliderArea.getX() + sliderWidth, labelY, sliderWidth, 20);
-        mixLabel.setBounds (sliderArea.getX() + sliderWidth * 2, labelY, sliderWidth, 20);
+        // Debug: Force minimum slider sizes to ensure visibility
+        const int minSliderWidth = juce::jmax (sliderWidth, 50);
+        const int minSliderHeight = juce::jmax (sliderHeight, 100);
+        DBG("Forced slider sizes: width=" << minSliderWidth << ", height=" << minSliderHeight);
         
-        // Debug: Force sliders to be visible
+        // Center sliders vertically and horizontally in the container with track padding and gaps
+        const int containerWidth = rightSlidersArea.getWidth();
+        const int containerHeight = rightSlidersArea.getHeight();
+        const int sliderGap = 8; // 8px gap between sliders
+        const int reducedSliderWidth = minSliderWidth - 8; // Reduce width to allow for gaps
+        const int totalSliderWidth = (reducedSliderWidth * 3) + (sliderGap * 2);
+        const int startX = (containerWidth - totalSliderWidth) / 2;
+        const int startY = (containerHeight - minSliderHeight) / 2;
+        
+        // Add padding to slider track (reduce height and add offset)
+        const int trackPadding = 20; // 20px padding at top and bottom
+        const int paddedSliderHeight = minSliderHeight - (trackPadding * 2);
+        const int paddedStartY = startY + trackPadding;
+        
+        inputSlider.setBounds (startX, paddedStartY, reducedSliderWidth, paddedSliderHeight);
+        outputSlider.setBounds (startX + reducedSliderWidth + sliderGap, paddedStartY, reducedSliderWidth, paddedSliderHeight);
+        mixSlider.setBounds (startX + (reducedSliderWidth + sliderGap) * 2, paddedStartY, reducedSliderWidth, paddedSliderHeight);
+        
+        // Debug: Test if sliders exist at all
+        DBG("Slider existence test:");
+        DBG("  inputSlider pointer: " << &inputSlider);
+        DBG("  outputSlider pointer: " << &outputSlider);
+        DBG("  mixSlider pointer: " << &mixSlider);
+        
+        // Debug: Force sliders to be visible and repaint
         inputSlider.setVisible (true);
         outputSlider.setVisible (true);
         mixSlider.setVisible (true);
+        inputSlider.repaint();
+        outputSlider.repaint();
+        mixSlider.repaint();
+        
+        // Position labels centered below sliders with gaps
+        const int labelY = startY + minSliderHeight + 10;
+        const int labelHeight = 20;
+        inputLabel.setBounds (startX, labelY, reducedSliderWidth, labelHeight);
+        outputLabel.setBounds (startX + reducedSliderWidth + sliderGap, labelY, reducedSliderWidth, labelHeight);
+        mixLabel.setBounds (startX + (reducedSliderWidth + sliderGap) * 2, labelY, reducedSliderWidth, labelHeight);
+        
+        // Labels will be styled with knobcell background in their paint method
+        
+        // Sliders are already visible from addAndMakeVisible in constructor
         
         // Debug: Add some logging to see what's happening
         DBG("rightSlidersArea (right sliders): " << rightSlidersArea.toString());
@@ -3110,7 +3217,25 @@ void MyPluginAudioProcessorEditor::performLayout()
         DBG("sliderArea: " << sliderArea.toString());
         DBG("sliderWidth: " << sliderWidth << ", sliderHeight: " << sliderHeight);
         DBG("inputSlider bounds: " << inputSlider.getBounds().toString());
-        DBG("rightSlidersContainer visible: " << rightSlidersContainer.isVisible());
+        DBG("rightSlidersContainer visible: " << (rightSlidersContainer.isVisible() ? "true" : "false"));
+        DBG("rightSlidersContainer bounds: " << rightSlidersContainer.getBounds().toString());
+        DBG("rightSlidersContainer title: " << rightSlidersContainer.getTitle());
+        DBG("inputSlider visible: " << (inputSlider.isVisible() ? "true" : "false"));
+        DBG("outputSlider visible: " << (outputSlider.isVisible() ? "true" : "false"));
+        DBG("mixSlider visible: " << (mixSlider.isVisible() ? "true" : "false"));
+        DBG("inputSlider bounds: " << inputSlider.getBounds().toString());
+        DBG("outputSlider bounds: " << outputSlider.getBounds().toString());
+        DBG("mixSlider bounds: " << mixSlider.getBounds().toString());
+        DBG("minSliderWidth: " << minSliderWidth << ", minSliderHeight: " << minSliderHeight);
+        DBG("rightSlidersContainer child count: " << rightSlidersContainer.getNumChildComponents());
+        
+        // Debug: Test if sliders are actually inside the container bounds
+        DBG("Slider positioning test:");
+        DBG("  Container bounds: " << rightSlidersContainer.getBounds().toString());
+        DBG("  Slider area: " << sliderArea.toString());
+        DBG("  Input slider in container: " << (rightSlidersContainer.getBounds().contains(inputSlider.getBounds()) ? "YES" : "NO"));
+        DBG("  Output slider in container: " << (rightSlidersContainer.getBounds().contains(outputSlider.getBounds()) ? "YES" : "NO"));
+        DBG("  Mix slider in container: " << (rightSlidersContainer.getBounds().contains(mixSlider.getBounds()) ? "YES" : "NO"));
         // (Reverted) bottom toggle remains a direct child of the editor; positioned earlier
 
         // Allocate the top area to full height (legacy rows disabled)
@@ -3144,9 +3269,10 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Lay out three tight columns: IO | LR | CORR (CORR half width), minimal spacing
         int x = mB.getX();
         const int h = mB.getHeight();
-        auto ioCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h); x += colW_m + inter_m;
-        auto lrCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h); x += colW_m + inter_m;
-        auto corrCol = juce::Rectangle<int> (x, mB.getY(), corrW_m, h);
+        const int meterBottomPadding = Layout::dp (8, s); // Add padding to bottom of meters
+        auto ioCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h - meterBottomPadding); x += colW_m + inter_m;
+        auto lrCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h - meterBottomPadding); x += colW_m + inter_m;
+        auto corrCol = juce::Rectangle<int> (x, mB.getY(), corrW_m, h - meterBottomPadding);
         ioMeters.setBounds   (ioCol);
         lrMeters.setBounds   (lrCol);
         corrMeter.setBounds  (corrCol);
@@ -3155,7 +3281,7 @@ void MyPluginAudioProcessorEditor::performLayout()
     // Predeclare legacy layout metrics (used only if legacy path is compiled/executed)
     const int lPx       = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
     const int valuePxCommon = Layout::dp (14, s);
-    const int labelGapCommon = Layout::dp (4, s);
+    const int labelGapCommon = Layout::dp (2, s); // Reduced from 4 to 2 for tighter spacing
     const int containerHeight = lPx + labelGapCommon + valuePxCommon;
     const int rowH1 = containerHeight, rowH2 = containerHeight, rowH3 = containerHeight, rowH4 = containerHeight;
     juce::Rectangle<int> row1, row2, row3, row4;
@@ -3200,9 +3326,10 @@ void MyPluginAudioProcessorEditor::performLayout()
             auto mB = metersContainer.getLocalBounds();
             int x = mB.getX();
             const int h = mB.getHeight();
-            auto ioCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h); x += colW_m + inter_m;
-            auto lrCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h); x += colW_m + inter_m;
-            auto corrCol = juce::Rectangle<int> (x, mB.getY(), corrW_m, h);
+            const int meterBottomPadding = Layout::dp (8, s); // Add padding to bottom of meters
+            auto ioCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h - meterBottomPadding); x += colW_m + inter_m;
+            auto lrCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h - meterBottomPadding); x += colW_m + inter_m;
+            auto corrCol = juce::Rectangle<int> (x, mB.getY(), corrW_m, h - meterBottomPadding);
             ioMeters.setBounds   (ioCol);
             lrMeters.setBounds   (lrCol);
             corrMeter.setBounds  (corrCol);
