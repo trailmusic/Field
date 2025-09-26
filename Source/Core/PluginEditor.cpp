@@ -301,10 +301,19 @@ void VerticalSlider3D::paint (juce::Graphics& g)
     g.setGradientFill (borderGradient);
     g.drawRoundedRectangle (bounds.reduced (1.0f), 6.0f, 3.0f); // Increased thickness from 2.0f to 3.0f
     
-    // Draw metallic background extending to container top and bottom
+    // Draw metallic background extending to container top and bottom (meeting meters)
     auto extendedBounds = bounds;
     extendedBounds.setY (0); // Extend to top of container
-    extendedBounds.setHeight (getParentComponent() ? getParentComponent()->getHeight() : bounds.getHeight()); // Extend to bottom of container
+    // Extend to full container height to meet meters at bottom
+    // Account for the padding that was applied to the container
+    if (getParentComponent()) {
+        extendedBounds.setHeight (getParentComponent()->getHeight());
+        // Extend beyond the container bounds to account for padding
+        extendedBounds.setY (-10); // Extend above container
+        extendedBounds.setHeight (extendedBounds.getHeight() + 20); // Extend below container
+    } else {
+        extendedBounds.setHeight (bounds.getHeight());
+    }
     drawMetallicBackground (g, extendedBounds);
     
     // Draw track (shortened with room for labels at bottom)
@@ -1704,10 +1713,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     addAndMakeVisible (rightSlidersContainer);   rightSlidersContainer.setTitle ("");     rightSlidersContainer.setShowBorder (false);
     addAndMakeVisible (metersContainer);       metersContainer.setTitle ("");         metersContainer.setShowBorder (false);
     
-    // Add label containers for organized layout
-    addAndMakeVisible (inputLabelContainer);    inputLabelContainer.setTitle ("");     inputLabelContainer.setShowBorder (false);
-    addAndMakeVisible (outputLabelContainer);   outputLabelContainer.setTitle ("");    outputLabelContainer.setShowBorder (false);
-    addAndMakeVisible (mixLabelContainer);     mixLabelContainer.setTitle ("");       mixLabelContainer.setShowBorder (false);
+    // Add label containers to rightSlidersContainer for organized layout
+    rightSlidersContainer.addAndMakeVisible (inputLabelContainer);    inputLabelContainer.setTitle ("");     inputLabelContainer.setShowBorder (false);
+    rightSlidersContainer.addAndMakeVisible (outputLabelContainer);   outputLabelContainer.setTitle ("");    outputLabelContainer.setShowBorder (false);
+    rightSlidersContainer.addAndMakeVisible (mixLabelContainer);     mixLabelContainer.setTitle ("");       mixLabelContainer.setShowBorder (false);
     
     // Add 3D vertical sliders to rightSlidersContainer
     rightSlidersContainer.addAndMakeVisible (inputSlider);
@@ -3185,22 +3194,22 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int minSliderHeight = juce::jmax (sliderHeight, 100);
         DBG("Forced slider sizes: width=" << minSliderWidth << ", height=" << minSliderHeight);
         
-        // Align sliders with meters at top of container
+        // Align sliders to match meters (full container height)
         const int containerWidth = rightSlidersContainer.getWidth();
         const int containerHeight = rightSlidersContainer.getHeight();
         const int sliderGap = 8; // 8px gap between sliders
         const int reducedSliderWidth = minSliderWidth - 8; // Reduce width to allow for gaps
         const int totalSliderWidth = (reducedSliderWidth * 3) + (sliderGap * 2);
         const int startX = (containerWidth - totalSliderWidth) / 2;
-        const int startY = 0; // Align with top of container (same as meters)
+        const int startY = 0; // Start at top of container
         
-        // Use full slider height in container (no padding)
-        const int paddedSliderHeight = minSliderHeight;
-        const int paddedStartY = startY;
+        // Use full container height to match meters
+        const int fullSliderHeight = containerHeight;
+        const int sliderStartY = startY;
         
-        inputSlider.setBounds (startX, paddedStartY, reducedSliderWidth, paddedSliderHeight);
-        outputSlider.setBounds (startX + reducedSliderWidth + sliderGap, paddedStartY, reducedSliderWidth, paddedSliderHeight);
-        mixSlider.setBounds (startX + (reducedSliderWidth + sliderGap) * 2, paddedStartY, reducedSliderWidth, paddedSliderHeight);
+        inputSlider.setBounds (startX, sliderStartY, reducedSliderWidth, fullSliderHeight);
+        outputSlider.setBounds (startX + reducedSliderWidth + sliderGap, sliderStartY, reducedSliderWidth, fullSliderHeight);
+        mixSlider.setBounds (startX + (reducedSliderWidth + sliderGap) * 2, sliderStartY, reducedSliderWidth, fullSliderHeight);
         
         // Debug: Test if sliders exist at all
         DBG("Slider existence test:");
@@ -3219,7 +3228,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Pin label containers to bottom of respective sliders
         const int labelHeight = 20;
         const int labelContainerHeight = 40; // Space for 2 rows of labels
-        const int labelY = paddedStartY + paddedSliderHeight - labelContainerHeight; // Pin to bottom of slider
+        const int labelY = sliderStartY + fullSliderHeight - labelContainerHeight; // Pin to bottom of slider
         
         // Position label containers pinned to bottom of sliders
         inputLabelContainer.setBounds (startX, labelY, reducedSliderWidth, labelContainerHeight);
@@ -3230,6 +3239,14 @@ void MyPluginAudioProcessorEditor::performLayout()
         inputLabel.setBounds (0, 0, reducedSliderWidth, labelHeight);
         outputLabel.setBounds (0, 0, reducedSliderWidth, labelHeight);
         mixLabel.setBounds (0, 0, reducedSliderWidth, labelHeight);
+        
+        // Make sure labels are visible
+        inputLabel.setVisible (true);
+        outputLabel.setVisible (true);
+        mixLabel.setVisible (true);
+        inputLabelContainer.setVisible (true);
+        outputLabelContainer.setVisible (true);
+        mixLabelContainer.setVisible (true);
         
         // Labels will be styled with knobcell background in their paint method
         
