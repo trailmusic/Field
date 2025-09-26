@@ -278,7 +278,18 @@ private:
         if (slopePid == nullptr || apvts.getParameter(juce::String(slopePid)) == nullptr) return;
         if (audPid == nullptr || apvts.getParameter(juce::String(audPid)) == nullptr) return;
         
-        styleKnob (monoS); monoS.setName (monoCap);
+        monoS.setName (monoCap);
+        
+        // Style the mono slider like other knobs
+        styleKnob (monoS);
+        
+        // Create standard KnobCell with auxiliary components (templated approach)
+        auto cell = std::make_unique<KnobCell> (monoS, monoV, monoCap);
+        cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        cell->setValueLabelGap (labelGapPx);
+        if (metallic) cell->getProperties().set ("metallic", true);
+        cell->getProperties().set ("centerStyle", true);
+        // No caption needed for mono group - it's self-explanatory
         
         // Set up slope switch and audition button
         slopeSwitch.setIndex (1); // Default to 12 dB/oct
@@ -290,22 +301,21 @@ private:
         auditionButton.setButtonText ("");
         auditionButton.setToggleState (false, juce::dontSendNotification);
         
-        // Create standard KnobCell with auxiliary components (templated approach)
-        auto cell = std::make_unique<KnobCell> (monoS, monoV, monoCap);
-        cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        cell->setValueLabelGap (labelGapPx);
-        if (metallic) cell->getProperties().set ("metallic", true);
-        cell->getProperties().set ("centerStyle", true);
-        // No caption needed for mono group - it's self-explanatory
-        
         // Add auxiliary components (slope switch and audition button) to the right side
         std::vector<juce::Component*> auxComponents = { &slopeSwitch, &auditionButton };
-        cell->setAuxComponents (auxComponents, 60); // 60px height for aux area
+        cell->setAuxComponents (auxComponents, Layout::dp (40, 1.0f)); // Responsive aux height like other cells
         cell->setAuxWeights ({2.0f, 1.0f}); // Slope switch gets 2x weight, audition button gets 1x
         cell->setMiniPlacementRight (true); // Place auxiliary components on the RIGHT side, not bottom
         // Note: auxAsBars defaults to false, which gives us the natural weighted vertical stack we want
         
+        // Add auxiliary components to XYControlsPane first, then KnobCell will reparent them
+        addAndMakeVisible (slopeSwitch);
+        addAndMakeVisible (auditionButton);
+        slopeSwitch.setVisible (true);
+        auditionButton.setVisible (true);
+        
         addAndMakeVisible (*cell);
+        knobCells.emplace_back (cell.get());
         ownedCells.emplace_back (std::move (cell));
         
         // Create attachments
@@ -481,7 +491,6 @@ private:
     
     MonoSlopeSwitch slopeSwitch;
     juce::ToggleButton auditionButton;
-    
     
     // Center row
     juce::Slider punchAmt, phaseAmt, promDb, focusLo, focusHi;

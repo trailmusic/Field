@@ -37,6 +37,7 @@ void KnobCell::setAuxComponents (const std::vector<juce::Component*>& components
     repaint();
 }
 
+
 void KnobCell::setAuxWeights (const std::vector<float>& weights)
 {
     auxWeights = weights;
