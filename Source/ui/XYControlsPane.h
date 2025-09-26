@@ -301,6 +301,10 @@ private:
         auditionButton.setButtonText ("");
         auditionButton.setToggleState (false, juce::dontSendNotification);
         
+        // Add auxiliary components to XYControlsPane first, then KnobCell will reparent them
+        addAndMakeVisible (slopeSwitch);
+        addAndMakeVisible (auditionButton);
+        
         // Add auxiliary components (slope switch and audition button) to the right side
         std::vector<juce::Component*> auxComponents = { &slopeSwitch, &auditionButton };
         cell->setAuxComponents (auxComponents, Layout::dp (40, 1.0f)); // Responsive aux height like other cells
@@ -308,11 +312,6 @@ private:
         cell->setMiniPlacementRight (true); // Place auxiliary components on the RIGHT side, not bottom
         // Note: auxAsBars defaults to false, which gives us the natural weighted vertical stack we want
         
-        // Add auxiliary components to XYControlsPane first, then KnobCell will reparent them
-        addAndMakeVisible (slopeSwitch);
-        addAndMakeVisible (auditionButton);
-        slopeSwitch.setVisible (true);
-        auditionButton.setVisible (true);
         
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
