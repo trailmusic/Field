@@ -98,18 +98,24 @@ void KnobCellWithAux::resized()
     auto b = getLocalBounds().reduced (4);
     const int rimR = 6;
 
-    // Split into left (knob) and right (aux) areas - give knob more space
+    // Split into left (knob) and right (aux) areas
+    // The left area should behave exactly like a standard KnobCell
     auto leftArea = b.removeFromLeft ((b.getWidth() - G) * 2 / 3); // Knob gets 2/3 of space
-    b.removeFromLeft (G);
+    b.removeFromLeft (G); // Remove the gap between knob and aux areas
     auto rightArea = b;
 
-    // Layout main knob and label in left area - use same sizing logic as KnobCell
+    // Layout main knob and label in left area - exactly like standard KnobCell
+    // Reserve space for the value label first (like standard KnobCell)
+    if (V > 0)
+        leftArea.removeFromBottom (V + G);
+
+    // Fit the knob at the top-center with requested diameter K (like standard KnobCell)
     const int k = juce::jmin (K, juce::jmin (leftArea.getWidth(), leftArea.getHeight()));
     juce::Rectangle<int> knobBox (k, k);
     knobBox = knobBox.withCentre ({ leftArea.getCentreX(), leftArea.getY() + k / 2 });
     mainKnob.setBounds (knobBox);
 
-    // Layout main label
+    // Layout main label (like standard KnobCell)
     const int lh = (int) std::ceil (mainLabel.getFont().getHeight());
     juce::Rectangle<int> lb (knobBox.getX(), knobBox.getBottom() + G, knobBox.getWidth(), juce::jmax (V, lh));
     mainLabel.setBounds (lb);
