@@ -296,7 +296,7 @@ private:
         cell->setValueLabelGap (labelGapPx);
         if (metallic) cell->getProperties().set ("metallic", true);
         cell->getProperties().set ("centerStyle", true);
-        cell->getProperties().set ("caption", monoCap);
+        // No caption needed for mono group - it's self-explanatory
         
         // Add auxiliary components (slope switch and audition button) to the right side
         std::vector<juce::Component*> auxComponents = { &slopeSwitch, &auditionButton };
