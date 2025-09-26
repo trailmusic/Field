@@ -2425,7 +2425,6 @@ private:
                 juce::DropShadow(juce::Colours::black.withAlpha(0.5f), 12, {0,2})
                     .drawForRectangle(g, cover.getSmallestIntegerContainer());
 
-                // Draw large FIELD logo with shadow and glow effects
                 drawFieldLogo(g, cover);
             }
 
@@ -2472,35 +2471,35 @@ private:
         float startAmt   = 0.f;
         bool  hoverHandle = false;
 
-        float shadeEdgeY () const { return (float)getHeight() * getAmount(); }
+        float shadeEdgeY () const 
+        { 
+            // Simplified: just return the actual shade edge position
+            auto r = getLocalBounds().toFloat();
+            return r.getHeight() * getAmount();
+        }
 
         juce::Rectangle<float> getHandle () const
         {
             auto r = getLocalBounds().toFloat();
             float tabW = juce::jmin(120.0f, r.getWidth() * 0.6f);
-            float tabH = 22.0f;
-            float edge = juce::jlimit (0.0f, r.getHeight(), shadeEdgeY());
-            float y = juce::jlimit (0.0f + tabH * 0.5f, r.getHeight() - tabH * 0.5f, edge);
-            return { r.getCentreX() - tabW * 0.5f, y - tabH * 0.5f, tabW, tabH };
+            float tabH = 30.0f;  // Increased from 22.0f to 30.0f
+            
+            // Position handle so its BOTTOM edge aligns with the shade edge
+            const float edge = shadeEdgeY();
+            float y = juce::jlimit (0.0f, r.getHeight() - tabH, edge - tabH);
+            
+            // Center the handle horizontally within the extended bounds
+            float x = r.getCentreX() - tabW * 0.5f;
+            
+            return { x, y, tabW, tabH };
         }
 
         void drawHandle (juce::Graphics& g, juce::Rectangle<float> tab) const
         {
-            // Panel styling similar to Machine dropdown, with subtle hover glow
-            g.setColour (lnf.theme.base);
+            g.setColour (lnf.theme.sh.withAlpha (0.85f));
             g.fillRoundedRectangle (tab, 8.0f);
-            g.setColour (lnf.theme.hl.withAlpha (hoverHandle ? 0.85f : 0.6f));
-            g.drawRoundedRectangle (tab, 8.0f, 1.2f);
-            if (hoverHandle)
-            {
-                for (int i = 1; i <= 3; ++i)
-                {
-                    const float t = (float) i / 3.0f;
-                    const float expand = 2.0f + t * 6.0f;
-                    g.setColour (lnf.theme.accent.withAlpha ((1.0f - t) * 0.18f));
-                    g.drawRoundedRectangle (tab.expanded (expand), 8.0f + expand * 0.35f, 1.8f);
-                }
-            }
+            g.setColour (lnf.theme.hl.withAlpha (0.6f));
+            g.drawRoundedRectangle (tab, 8.0f, 2.0f);
 
             const int numBars = 4;
             const float barW = 10.0f, barH = 6.0f, gap = 14.0f;
@@ -2508,7 +2507,7 @@ private:
             float startX = tab.getCentreX() - totalW * 0.5f;
             float y = tab.getCentreY() - barH * 0.5f;
 
-            g.setColour (hoverHandle ? lnf.theme.accent : lnf.theme.textMuted);
+            g.setColour (juce::Colours::white);
             for (int i = 0; i < numBars; ++i)
             {
                 juce::Rectangle<float> r (startX + i * (barW + gap), y, barW, barH);

@@ -2811,7 +2811,7 @@ void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
     g.setFont (juce::Font (juce::FontOptions (13.0f * scaleFactor).withStyle ("Bold")));
     g.drawText ("Spatial Audio Processor",
                 juce::Rectangle<int> (logoArea.getX(), logoArea.getBottom() + Layout::dp (2, scaleFactor),
-                                      header.getWidth(), (int) (14 * scaleFactor + 2)),
+                                     header.getWidth(), (int) (14 * scaleFactor + 2)),
                 juce::Justification::centredLeft);
 
     // resize handle
@@ -3357,8 +3357,22 @@ void MyPluginAudioProcessorEditor::performLayout()
         }
         if (xyShade)
         {
-            if (xyShade->getParentComponent() != &MainContentContainer) MainContentContainer.addAndMakeVisible (*xyShade);
-            xyShade->setBounds (padLocal);
+            // Keep ShadeOverlay as direct child of main editor for setAlwaysOnTop to work
+            if (xyShade->getParentComponent() != this) addAndMakeVisible (*xyShade);
+            // Extend ShadeOverlay bounds to include tab area above the pad
+            // Convert padLocal (relative to MainContentContainer) to main editor coordinates
+            auto extendedBounds = padLocal;
+            const int tabHeight = 40;  // Tab height from PaneManager
+            const int handleOffset = -10;  // Further reduced space for handle above tabs (was 20px, now -10px)
+            extendedBounds.setY(extendedBounds.getY() - tabHeight - handleOffset);
+            extendedBounds.setHeight(extendedBounds.getHeight() + tabHeight + handleOffset);
+            
+            // Convert to main editor coordinates by adding MainContentContainer position
+            extendedBounds.setX(extendedBounds.getX() + MainContentContainer.getX());
+            extendedBounds.setY(extendedBounds.getY() + MainContentContainer.getY());
+            
+            xyShade->setBounds (extendedBounds);
+            // setAlwaysOnTop(true) in constructor should make it appear above everything
         }
 
         // Hide center container if present
