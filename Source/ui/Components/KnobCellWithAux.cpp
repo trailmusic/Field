@@ -98,12 +98,12 @@ void KnobCellWithAux::resized()
     auto b = getLocalBounds().reduced (4);
     const int rimR = 6;
 
-    // Split into left (knob) and right (aux) areas
-    auto leftArea = b.removeFromLeft ((b.getWidth() - G) / 2);
+    // Split into left (knob) and right (aux) areas - give knob more space
+    auto leftArea = b.removeFromLeft ((b.getWidth() - G) * 2 / 3); // Knob gets 2/3 of space
     b.removeFromLeft (G);
     auto rightArea = b;
 
-    // Layout main knob and label in left area
+    // Layout main knob and label in left area - use same sizing logic as KnobCell
     const int k = juce::jmin (K, juce::jmin (leftArea.getWidth(), leftArea.getHeight()));
     juce::Rectangle<int> knobBox (k, k);
     knobBox = knobBox.withCentre ({ leftArea.getCentreX(), leftArea.getY() + k / 2 });
