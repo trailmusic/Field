@@ -59,7 +59,6 @@ public:
         if (ownedCells.size() > 6) gridLayout.push_back({col, 1, ownedCells[6].get()}); col += 1; // LP
         if (ownedCells.size() > 7) gridLayout.push_back({col, 2, ownedCells[7].get()}); col += 2; // Q+QLink
         if (ownedCells.size() > 8) gridLayout.push_back({col, 1, ownedCells[8].get()}); col += 1; // S
-        if (ownedCells.size() > 9) gridLayout.push_back({col, 1, ownedCells[9].get()}); col += 1; // GAIN
         
         // Row B layout: Center tools + imaging controls
         int rowBCol = 1;
@@ -75,12 +74,11 @@ public:
             if (cell.component)
             {
                 const int x = r.getX() + (cell.col - 1) * cellW;
-                const int y = r.getY() + (cell.component == ownedCells[0].get() || 
-                                         cell.component == ownedCells[1].get() || cell.component == ownedCells[2].get() || 
-                                         cell.component == ownedCells[3].get() || cell.component == ownedCells[4].get() || 
-                                         cell.component == ownedCells[5].get() || cell.component == ownedCells[6].get() || 
-                                         cell.component == ownedCells[7].get() || cell.component == ownedCells[8].get() ||
-                                         cell.component == ownedCells[9].get() ? 0 : 1) * cellH;
+        const int y = r.getY() + (cell.component == ownedCells[0].get() || 
+                                cell.component == ownedCells[1].get() || cell.component == ownedCells[2].get() || 
+                                cell.component == ownedCells[3].get() || cell.component == ownedCells[4].get() || 
+                                cell.component == ownedCells[5].get() || cell.component == ownedCells[6].get() || 
+                                cell.component == ownedCells[7].get() || cell.component == ownedCells[8].get() ? 0 : 1) * cellH;
                 const int width = (cell.width == 2) ? doubleWideWidth : cell.width * cellW;
                 cell.component->setBounds(x, y, width, cellH);
             }
@@ -647,8 +645,6 @@ private:
         // SHELF SHAPE (single-wide, position 15)
         makeCell (shelfS, shelfSV, "S",      "eq_shelf_shape", Mgrey);
         
-        // EQ GAIN (single-wide, position 16)
-        makeCell (eqGain, eqGainV, "GAIN",  "eq_gain",        Mgrey);
 
         // Additional imaging/placement controls moved from Imager to XY
         makeCell (rotation, rotationV, "ROT",      "rotation_deg",     Mgrey);
@@ -703,9 +699,9 @@ private:
 
     juce::AudioProcessorValueTreeState& apvts;
     // EQ row + imaging controls moved from Imager
-    juce::Slider bass, hp, lp, q, air, tilt, scoop, shelfS, eqGain, mix, xoLo, xoHi;
+    juce::Slider bass, hp, lp, q, air, tilt, scoop, shelfS, mix, xoLo, xoHi;
     juce::Slider rotation, asym, shufLo, shufHi, shufX, monoHz, pan, satMix;
-    juce::Label  bassV, hpV, lpV, qV, airV, tiltV, scoopV, shelfSV, eqGainV, mixV, xoLoV, xoHiV;
+    juce::Label  bassV, hpV, lpV, qV, airV, tiltV, scoopV, shelfSV, mixV, xoLoV, xoHiV;
     juce::Label  rotationV, asymV, shufLoV, shufHiV, shufXV, monoV, panV, satMixV;
     juce::ToggleButton qLink;
     

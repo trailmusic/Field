@@ -253,6 +253,31 @@ private:
 };
 
 //==============================================================================
+// VerticalSlider3D - Beautiful 3D vertical slider with metallic treatment
+//==============================================================================
+class VerticalSlider3D : public juce::Slider
+{
+public:
+    VerticalSlider3D();
+    ~VerticalSlider3D() override = default;
+    
+    void paint (juce::Graphics& g) override;
+    void mouseDown (const juce::MouseEvent& e) override;
+    void mouseDrag (const juce::MouseEvent& e) override;
+    void mouseUp (const juce::MouseEvent& e) override;
+    
+    void setSliderStyle (SliderStyle newStyle);
+    
+private:
+    void draw3DHandle (juce::Graphics& g, juce::Rectangle<float> handleRect);
+    void drawMetallicTrack (juce::Graphics& g, juce::Rectangle<float> trackRect);
+    void drawMetallicBackground (juce::Graphics& g, juce::Rectangle<float> backgroundRect);
+    
+    bool isDragging = false;
+    juce::Point<float> lastMousePos;
+};
+
+//==============================================================================
 // ToggleSwitch (kept smoothing for handle; hover timer only for subtle fade)
 //==============================================================================
 class ToggleSwitch : public juce::Component, public juce::Timer
@@ -1890,6 +1915,10 @@ private:
     ControlContainer metersContainer;
     ControlContainer leftContentContainer;
     ControlContainer leftMetersContainer;  // New container to the left of meters
+    
+    // 3D Vertical Sliders for Input, Output, Mix
+    VerticalSlider3D inputSlider, outputSlider, mixSlider;
+    juce::Label inputLabel, outputLabel, mixLabel;
     ControlContainer spaceKnobContainer, panKnobContainer;
     
     // Width grouping (Image row): large WIDTH + small W LO/MID/HI
