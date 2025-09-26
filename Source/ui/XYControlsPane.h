@@ -35,6 +35,9 @@ public:
         const int availableWidth = r.getWidth();
         const int cellW = juce::jmax (colW, availableWidth / 16); // Base cell width
         
+        // Ensure double-wide cells get proper width (minimum 120px for double-wide)
+        const int doubleWideWidth = juce::jmax (120, cellW * 2);
+        
         // Define grid layout with double-wide cells
         struct GridCell {
             int col;
@@ -46,15 +49,15 @@ public:
         
         // Row A layout: MONO(1,2), HP(3), LP(4), BASS(5,6), AIR(7,8), TILT(9,10), SCOOP(11,12), Q+QLink(13,14), Shape(15), [1 empty]
         int col = 1;
-        if (customCells.size() > 0) gridLayout.push_back({col, 2, customCells[0].get()}); col += 2; // MONO
-        if (ownedCells.size() > 0) gridLayout.push_back({col, 1, ownedCells[0].get()}); col += 1; // HP
-        if (ownedCells.size() > 1) gridLayout.push_back({col, 1, ownedCells[1].get()}); col += 1; // LP
-        if (ownedCells.size() > 2) gridLayout.push_back({col, 2, ownedCells[2].get()}); col += 2; // BASS
-        if (ownedCells.size() > 3) gridLayout.push_back({col, 2, ownedCells[3].get()}); col += 2; // AIR
-        if (ownedCells.size() > 4) gridLayout.push_back({col, 2, ownedCells[4].get()}); col += 2; // TILT
-        if (ownedCells.size() > 5) gridLayout.push_back({col, 2, ownedCells[5].get()}); col += 2; // SCOOP
-        if (ownedCells.size() > 6) gridLayout.push_back({col, 2, ownedCells[6].get()}); col += 2; // Q+QLink
-        if (ownedCells.size() > 7) gridLayout.push_back({col, 1, ownedCells[7].get()}); col += 1; // Shape
+        if (ownedCells.size() > 0) gridLayout.push_back({col, 2, ownedCells[0].get()}); col += 2; // MONO
+        if (ownedCells.size() > 1) gridLayout.push_back({col, 1, ownedCells[1].get()}); col += 1; // HP
+        if (ownedCells.size() > 2) gridLayout.push_back({col, 1, ownedCells[2].get()}); col += 1; // LP
+        if (ownedCells.size() > 3) gridLayout.push_back({col, 2, ownedCells[3].get()}); col += 2; // BASS
+        if (ownedCells.size() > 4) gridLayout.push_back({col, 2, ownedCells[4].get()}); col += 2; // AIR
+        if (ownedCells.size() > 5) gridLayout.push_back({col, 2, ownedCells[5].get()}); col += 2; // TILT
+        if (ownedCells.size() > 6) gridLayout.push_back({col, 2, ownedCells[6].get()}); col += 2; // SCOOP
+        if (ownedCells.size() > 7) gridLayout.push_back({col, 2, ownedCells[7].get()}); col += 2; // Q+QLink
+        if (ownedCells.size() > 8) gridLayout.push_back({col, 1, ownedCells[8].get()}); col += 1; // Shape
         
         // Row B layout: Center tools + imaging controls
         int rowBCol = 1;
@@ -70,13 +73,12 @@ public:
             if (cell.component)
             {
                 const int x = r.getX() + (cell.col - 1) * cellW;
-                const int y = r.getY() + (cell.component == customCells[0].get() || 
-                                         cell.component == ownedCells[0].get() || cell.component == ownedCells[1].get() || 
-                                         cell.component == ownedCells[2].get() || cell.component == ownedCells[3].get() || 
-                                         cell.component == ownedCells[4].get() || cell.component == ownedCells[5].get() || 
-                                         cell.component == ownedCells[6].get() || cell.component == ownedCells[7].get() || 
-                                         cell.component == ownedCells[8].get() ? 0 : 1) * cellH;
-                const int width = cell.width * cellW;
+                const int y = r.getY() + (cell.component == ownedCells[0].get() || 
+                                         cell.component == ownedCells[1].get() || cell.component == ownedCells[2].get() || 
+                                         cell.component == ownedCells[3].get() || cell.component == ownedCells[4].get() || 
+                                         cell.component == ownedCells[5].get() || cell.component == ownedCells[6].get() || 
+                                         cell.component == ownedCells[7].get() || cell.component == ownedCells[8].get() ? 0 : 1) * cellH;
+                const int width = (cell.width == 2) ? doubleWideWidth : cell.width * cellW;
                 cell.component->setBounds(x, y, width, cellH);
             }
         }
@@ -167,10 +169,10 @@ private:
         cell->getProperties().set ("centerStyle", true);
         cell->getProperties().set ("caption", cap);
         
-        // Add mini slider with label
+        // Add mini slider with label - place on the right and center vertically
         const int miniHeight = Layout::dp (12, 1.0f); // 12px mini height
         cell->setMiniWithLabel (&freqS, &freqV, miniHeight);
-        cell->setMiniPlacementRight (true);
+        cell->setMiniPlacementRight (true); // Place on the right side
         cell->setMiniThicknessPx (Layout::dp (8, 1.0f)); // 8px thickness
         
         addAndMakeVisible (*cell);
@@ -265,7 +267,149 @@ private:
         linkB.setLookAndFeel (&getLookAndFeel());
     }
     
-    // Copy of MonoSlopeSwitch from PluginEditor
+    
+    // Helper for creating mono group cell (double-wide with slope switch and audition button)
+    void makeMonoGroupCell (juce::Slider& monoS, juce::Label& monoV, const juce::String& monoCap, const char* monoPid,
+                           juce::ComboBox& slopeC, const char* slopePid,
+                           juce::ToggleButton& audB, const char* audPid, bool metallic=false)
+    {
+        // Safety check: ensure parameters exist before creating attachments
+        if (monoPid == nullptr || apvts.getParameter(juce::String(monoPid)) == nullptr) return;
+        if (slopePid == nullptr || apvts.getParameter(juce::String(slopePid)) == nullptr) return;
+        if (audPid == nullptr || apvts.getParameter(juce::String(audPid)) == nullptr) return;
+        
+        styleKnob (monoS); monoS.setName (monoCap);
+        
+        // Set up slope switch and audition button
+        slopeSwitch.setIndex (1); // Default to 12 dB/oct
+        slopeSwitch.onChange = [this, slopePid](int idx) {
+            if (auto* param = apvts.getParameter (slopePid))
+                param->setValueNotifyingHost (idx / 2.0f);
+        };
+        
+        auditionButton.setButtonText ("");
+        auditionButton.setToggleState (false, juce::dontSendNotification);
+        
+        // Create standard KnobCell with auxiliary components (templated approach)
+        auto cell = std::make_unique<KnobCell> (monoS, monoV, monoCap);
+        cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        cell->setValueLabelGap (labelGapPx);
+        if (metallic) cell->getProperties().set ("metallic", true);
+        cell->getProperties().set ("centerStyle", true);
+        cell->getProperties().set ("caption", monoCap);
+        
+        // Add auxiliary components (slope switch and audition button) to the right side
+        std::vector<juce::Component*> auxComponents = { &slopeSwitch, &auditionButton };
+        cell->setAuxComponents (auxComponents, 60); // 60px height for aux area
+        cell->setAuxWeights ({2.0f, 1.0f}); // Slope switch gets 2x weight, audition button gets 1x
+        cell->setMiniPlacementRight (true); // Place auxiliary components on the RIGHT side, not bottom
+        // Note: auxAsBars defaults to false, which gives us the natural weighted vertical stack we want
+        
+        addAndMakeVisible (*cell);
+        ownedCells.emplace_back (std::move (cell));
+        
+        // Create attachments
+        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, monoPid, monoS));
+        cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, slopePid, slopeC));
+        btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, audPid, audB));
+        
+        // Initialize value label
+        monoS.onValueChange = [this, &monoS, &monoV]() { 
+            monoV.setText (juce::String (monoS.getValue(), 0) + "Hz", juce::dontSendNotification); 
+        };
+        
+        monoV.setInterceptsMouseClicks (false, false);
+        monoV.setJustificationType (juce::Justification::centred);
+        monoV.setText (juce::String (monoS.getValue(), 0) + "Hz", juce::dontSendNotification);
+    }
+
+    void buildControls()
+    {
+        // Row A: MONO(1,2), HP(3), LP(4), BASS(5,6), AIR(7,8), TILT(9,10), SCOOP(11,12), Q+QLink(13,14), Shape(15), [1 empty]
+        const bool Mgrey = true; // all XY controls use grey metallic styling
+        
+        // MONO group with slope switch and audition button (double-wide, positions 1-2)
+        makeMonoGroupCell (monoHz, monoV, "MONO", "mono_hz", monoSlopeChoice, "mono_slope_db_oct", 
+                          monoAuditionButton, "mono_audition", Mgrey);
+        
+        // HP and LP (single-wide, positions 3-4)
+        makeCell (hp,     hpV,     "HP",     "hp_hz",          Mgrey);
+        makeCell (lp,     lpV,     "LP",     "lp_hz",          Mgrey);
+        
+        // BASS with frequency mini slider (double-wide, positions 5-6)
+        makeCellWithFreq (bass, bassV, "BASS", "bass_db", bassFreq, bassFreqV, "bass_freq", Mgrey);
+        
+        // AIR with frequency mini slider (double-wide, positions 7-8)
+        makeCellWithFreq (air, airV, "AIR", "air_db", airFreq, airFreqV, "air_freq", Mgrey);
+        
+        // TILT with frequency mini slider (double-wide, positions 9-10)
+        makeCellWithFreq (tilt, tiltV, "TILT", "tilt", tiltFreq, tiltFreqV, "tilt_freq", Mgrey);
+        
+        // SCOOP with frequency mini slider (double-wide, positions 11-12)
+        makeCellWithFreq (scoop, scoopV, "SCOOP", "scoop", scoopFreq, scoopFreqV, "scoop_freq", Mgrey);
+        
+        // Q LINK with HP/LP Q controls (double-wide, positions 13-14)
+        makeQLinkCell (q, qV, "Q", "eq_filter_q", qLink, "Q LINK", "eq_q_link", 
+                      hpQ, hpQV, "hp_q", lpQ, lpQV, "lp_q", Mgrey);
+        
+        // SHELF SHAPE (single-wide, position 15)
+        makeCell (shelfS, shelfSV, "S",      "eq_shelf_shape", Mgrey);
+
+        // Additional imaging/placement controls moved from Imager to XY
+        makeCell (rotation, rotationV, "ROT",      "rotation_deg",     Mgrey);
+        makeCell (asym,     asymV,     "ASYM",     "asymmetry",        Mgrey);
+        makeCell (shufLo,   shufLoV,   "SHUF LO",  "shuffler_lo_pct",  Mgrey);
+        makeCell (shufHi,   shufHiV,   "SHUF HI",  "shuffler_hi_pct",  Mgrey);
+        makeCell (shufX,    shufXV,    "SHUF XO",  "shuffler_xover_hz",Mgrey);
+        makeCell (pan,      panV,      "PAN",      "pan",               Mgrey);
+        makeCell (satMix,   satMixV,   "SAT MIX",  "sat_mix",           Mgrey);
+        for (int i = 0; i < 5; ++i) gridOrder.push_back (nullptr);
+
+        // Row B: Center tools (metallic)
+        const bool M = true;
+        makeCell (punchAmt, punchAmtV, "PUNCH",    "center_punch_amt", M);
+        makeCombo (punchMode,          "PUNCH MODE","center_punch_mode", M);
+        makeSwitch (phaseRecOn,        "PHASE REC", "center_phase_rec_on", M);
+        makeCell (phaseAmt, phaseAmtV, "PHASE",    "center_phase_rec_amt", M);
+        makeSwitch (centerLockOn,      "CNTR LOCK", "center_lock_on", M);
+        makeCell (promDb,   promDbV,   "CNTR",     "center_prom_db", M);
+        makeCell (focusLo,  focusLoV,  "LO",       "center_f_lo_hz", M);
+        makeCell (focusHi,  focusHiV,  "HI",       "center_f_hi_hz", M);
+        for (int i = 0; i < 8; ++i) gridOrder.push_back (nullptr);
+
+        // Grid layout is now handled directly in resized() method
+        // No need for the old gridOrder system since we use explicit component placement
+    }
+
+    void applyMetricsToAll()
+    {
+        for (auto* c : knobCells)
+            if (c) { c->setMetrics (knobPx, valuePx, labelGapPx); c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGapPx); }
+        for (auto* s : switchCells)
+            if (s) s->setShowBorder (true);
+    }
+
+    juce::AudioProcessorValueTreeState& apvts;
+    // EQ row + imaging controls moved from Imager
+    juce::Slider bass, hp, lp, q, air, tilt, scoop, shelfS, xoLo, xoHi;
+    juce::Slider rotation, asym, shufLo, shufHi, shufX, monoHz, pan, satMix;
+    juce::Label  bassV, hpV, lpV, qV, airV, tiltV, scoopV, shelfSV, xoLoV, xoHiV;
+    juce::Label  rotationV, asymV, shufLoV, shufHiV, shufXV, monoV, panV, satMixV;
+    juce::ToggleButton qLink;
+    
+    // Frequency mini sliders for BASS, AIR, TILT, SCOOP
+    juce::Slider bassFreq, airFreq, tiltFreq, scoopFreq;
+    juce::Label  bassFreqV, airFreqV, tiltFreqV, scoopFreqV;
+    
+    // Individual Q controls for HP/LP
+    juce::Slider hpQ, lpQ;
+    juce::Label  hpQV, lpQV;
+    
+    // Mono group controls
+    juce::ComboBox monoSlopeChoice;
+    juce::ToggleButton monoAuditionButton;
+    
+    // Slope switch and audition button for mono group
     class MonoSlopeSwitch : public juce::Component
     {
     public:
@@ -279,7 +423,6 @@ private:
             auto accent = lf ? lf->theme.eq.hp : juce::Colour (0xFF5AA9E6);
             auto panel  = lf ? lf->theme.panel  : juce::Colour (0xFF2A2C30);
             auto sh     = lf ? lf->theme.sh     : juce::Colour (0xFF1A1C20);
-            auto hl     = lf ? lf->theme.hl     : juce::Colour (0xFF4A4A4A);
             auto text   = lf ? lf->theme.text   : juce::Colours::white;
 
             auto b = getLocalBounds().toFloat();
@@ -336,233 +479,9 @@ private:
         int current { 1 }; // default to 12 dB/oct
     };
     
-    // Mono Group Cell using proper KnobCell patterns
-    class MonoGroupCell : public juce::Component
-    {
-    public:
-        MonoGroupCell (juce::AudioProcessorValueTreeState& apvts, const char* monoPid, const char* slopePid, const char* audPid)
-        : apvts(apvts), monoPid(monoPid), slopePid(slopePid), audPid(audPid)
-        {
-            // Set up mono frequency knob with proper styling
-            monoSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-            monoSlider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-            monoSlider.setRotaryParameters (juce::MathConstants<float>::pi,
-                                           juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
-                                           true);
-            monoSlider.setName ("MONO");
-            monoSlider.setRange (20.0, 300.0, 1.0);
-            monoSlider.setValue (120.0);
-            
-            // Set up slope switch with proper height
-            slopeSwitch.setIndex (1); // Default to 12 dB/oct
-            slopeSwitch.onChange = [this, slopePid, &apvts](int idx) {
-                if (auto* param = apvts.getParameter (slopePid))
-                    param->setValueNotifyingHost (idx / 2.0f);
-            };
-            
-            // Set up audition button with icon
-            auditionButton.setButtonText ("");
-            auditionButton.setToggleState (false, juce::dontSendNotification);
-            
-            // Add components directly to the double-wide cell
-            addAndMakeVisible (monoSlider);
-            addAndMakeVisible (monoValueLabel);
-            addAndMakeVisible (slopeSwitch);
-            addAndMakeVisible (auditionButton);
-            
-            // Create attachments
-            monoAtt = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, monoPid, monoSlider);
-            slopeAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, slopePid, slopeCombo);
-            audAtt = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, audPid, auditionButton);
-            
-            // Set up value label
-            monoSlider.onValueChange = [this]() { 
-                monoValueLabel.setText (juce::String (monoSlider.getValue(), 0) + "Hz", juce::dontSendNotification); 
-            };
-            
-            monoValueLabel.setInterceptsMouseClicks (false, false);
-            monoValueLabel.setJustificationType (juce::Justification::centred);
-            monoValueLabel.setText (juce::String (monoSlider.getValue(), 0) + "Hz", juce::dontSendNotification);
-        }
-        
-        void resized() override
-        {
-            auto r = getLocalBounds();
-            const int knobSize = juce::jmin (r.getWidth() / 2, r.getHeight() - 40);
-            const int knobX = r.getX() + (r.getWidth() / 2 - knobSize) / 2;
-            const int knobY = r.getY() + 10;
-            
-            // Mono knob on the left - directly positioned in double-wide cell
-            monoSlider.setBounds (knobX, knobY, knobSize, knobSize);
-            monoValueLabel.setBounds (knobX, knobY + knobSize + 5, knobSize, 20);
-            
-            // Slope switch and audition button on the right
-            const int rightX = r.getX() + r.getWidth() / 2 + 10;
-            const int rightW = r.getWidth() / 2 - 20;
-            const int switchH = (r.getHeight() - 50) / 2; // Increased height for better usability
-            
-            slopeSwitch.setBounds (rightX, r.getY() + 10, rightW, switchH);
-            auditionButton.setBounds (rightX, r.getY() + 15 + switchH, rightW, 25); // Moved down, reduced padding
-        }
-        
-        void paint (juce::Graphics& g) override
-        {
-            // Draw metallic background for the entire double-wide cell
-            auto r = getLocalBounds().toFloat();
-            const float rad = 8.0f;
-            
-            // Apply metallic background to the entire cell
-            auto rr = r.reduced (3.0f);
-            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-            {
-                // XY controls metallic grey styling
-                juce::Colour top = lf->theme.panel.brighter (0.10f);
-                juce::Colour bot = lf->theme.panel.darker (0.10f);
-                juce::ColourGradient grad (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
-                g.setGradientFill (grad);
-                g.fillRoundedRectangle (rr, rad);
-                g.setColour (lf->theme.sh);
-                g.drawRoundedRectangle (rr, rad, 1.0f);
-            }
-            else
-            {
-                // Fallback metallic styling
-                juce::ColourGradient grad (juce::Colour (0xFF4A4D55), rr.getX(), rr.getY(), 
-                                         juce::Colour (0xFF3A3D45), rr.getX(), rr.getBottom(), false);
-                g.setGradientFill (grad);
-                g.fillRoundedRectangle (rr, rad);
-                g.setColour (juce::Colour (0xFF2A2C30));
-                g.drawRoundedRectangle (rr, rad, 1.0f);
-            }
-            
-            // Draw audition button icon
-            if (auditionButton.isVisible())
-            {
-                auto bounds = auditionButton.getBounds().toFloat();
-                bounds = bounds.reduced (4.0f);
-                
-                // Use Speaker icon from IconSystem
-                IconSystem::drawIcon (g, IconSystem::Speaker, bounds, 
-                    auditionButton.getToggleState() ? juce::Colours::white : juce::Colours::lightgrey);
-            }
-        }
-        
-    private:
-        juce::AudioProcessorValueTreeState& apvts;
-        const char* monoPid, *slopePid, *audPid;
-        
-        juce::Slider monoSlider;
-        juce::Label monoValueLabel;
-        MonoSlopeSwitch slopeSwitch;
-        juce::ToggleButton auditionButton;
-        juce::ComboBox slopeCombo; // Hidden combo for APVTS attachment
-        
-        std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> monoAtt;
-        std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> slopeAtt;
-        std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> audAtt;
-    };
+    MonoSlopeSwitch slopeSwitch;
+    juce::ToggleButton auditionButton;
     
-    // Helper for creating mono group cell (double-wide with slope switch and audition button)
-    void makeMonoGroupCell (juce::Slider& monoS, juce::Label& monoV, const juce::String& monoCap, const char* monoPid,
-                           juce::ComboBox& slopeC, const char* slopePid,
-                           juce::ToggleButton& audB, const char* audPid, bool metallic=false)
-    {
-        // Create custom mono group cell with proper styling
-        auto cell = std::make_unique<MonoGroupCell> (apvts, monoPid, slopePid, audPid);
-        cell->setName (monoCap);
-        if (metallic) cell->getProperties().set ("metallic", true);
-
-        addAndMakeVisible (*cell);
-        // Store in a separate vector for custom cells
-        customCells.emplace_back (std::move (cell));
-    }
-
-    void buildControls()
-    {
-        // Row A: MONO(1,2), HP(3), LP(4), BASS(5,6), AIR(7,8), TILT(9,10), SCOOP(11,12), Q+QLink(13,14), Shape(15), [1 empty]
-        const bool Mgrey = true; // all XY controls use grey metallic styling
-        
-        // MONO group with slope switch and audition button (double-wide, positions 1-2)
-        makeMonoGroupCell (monoHz, monoV, "MONO", "mono_hz", monoSlopeChoice, "mono_slope_db_oct", 
-                          monoAuditionButton, "mono_audition", Mgrey);
-        
-        // HP and LP (single-wide, positions 3-4)
-        makeCell (hp,     hpV,     "HP",     "hp_hz",          Mgrey);
-        makeCell (lp,     lpV,     "LP",     "lp_hz",          Mgrey);
-        
-        // BASS with frequency mini slider (double-wide, positions 5-6)
-        makeCellWithFreq (bass, bassV, "BASS", "bass_db", bassFreq, bassFreqV, "bass_freq", Mgrey);
-        
-        // AIR with frequency mini slider (double-wide, positions 7-8)
-        makeCellWithFreq (air, airV, "AIR", "air_db", airFreq, airFreqV, "air_freq", Mgrey);
-        
-        // TILT with frequency mini slider (double-wide, positions 9-10)
-        makeCellWithFreq (tilt, tiltV, "TILT", "tilt", tiltFreq, tiltFreqV, "tilt_freq", Mgrey);
-        
-        // SCOOP with frequency mini slider (double-wide, positions 11-12)
-        makeCellWithFreq (scoop, scoopV, "SCOOP", "scoop", scoopFreq, scoopFreqV, "scoop_freq", Mgrey);
-        
-        // Q LINK with HP/LP Q controls (double-wide, positions 13-14)
-        makeQLinkCell (q, qV, "Q", "eq_filter_q", qLink, "Q LINK", "eq_q_link", 
-                      hpQ, hpQV, "hp_q", lpQ, lpQV, "lp_q", Mgrey);
-        
-        // SHELF SHAPE (single-wide, position 15)
-        makeCell (shelfS, shelfSV, "S",      "eq_shelf_shape", Mgrey);
-
-        // Additional imaging/placement controls moved from Imager to XY
-        makeCell (rotation, rotationV, "ROT",      "rotation_deg",     Mgrey);
-        makeCell (asym,     asymV,     "ASYM",     "asymmetry",        Mgrey);
-        makeCell (shufLo,   shufLoV,   "SHUF LO",  "shuffler_lo_pct",  Mgrey);
-        makeCell (shufHi,   shufHiV,   "SHUF HI",  "shuffler_hi_pct",  Mgrey);
-        makeCell (shufX,    shufXV,    "SHUF XO",  "shuffler_xover_hz",Mgrey);
-        makeCell (monoHz,   monoV,     "MONO",     "mono_hz",          Mgrey);
-        makeCell (pan,      panV,      "PAN",      "pan",               Mgrey);
-        makeCell (satMix,   satMixV,   "SAT MIX",  "sat_mix",           Mgrey);
-        for (int i = 0; i < 5; ++i) gridOrder.push_back (nullptr);
-
-        // Row B: Center tools (metallic)
-        const bool M = true;
-        makeCell (punchAmt, punchAmtV, "PUNCH",    "center_punch_amt", M);
-        makeCombo (punchMode,          "PUNCH MODE","center_punch_mode", M);
-        makeSwitch (phaseRecOn,        "PHASE REC", "center_phase_rec_on", M);
-        makeCell (phaseAmt, phaseAmtV, "PHASE",    "center_phase_rec_amt", M);
-        makeSwitch (centerLockOn,      "CNTR LOCK", "center_lock_on", M);
-        makeCell (promDb,   promDbV,   "CNTR",     "center_prom_db", M);
-        makeCell (focusLo,  focusLoV,  "LO",       "center_f_lo_hz", M);
-        makeCell (focusHi,  focusHiV,  "HI",       "center_f_hi_hz", M);
-        for (int i = 0; i < 8; ++i) gridOrder.push_back (nullptr);
-
-        // Grid layout is now handled directly in resized() method
-        // No need for the old gridOrder system since we use explicit component placement
-    }
-
-    void applyMetricsToAll()
-    {
-        for (auto* c : knobCells)
-            if (c) { c->setMetrics (knobPx, valuePx, labelGapPx); c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGapPx); }
-        for (auto* s : switchCells)
-            if (s) s->setShowBorder (true);
-    }
-
-    juce::AudioProcessorValueTreeState& apvts;
-    // EQ row + imaging controls moved from Imager
-    juce::Slider bass, hp, lp, q, air, tilt, scoop, shelfS, xoLo, xoHi;
-    juce::Slider rotation, asym, shufLo, shufHi, shufX, monoHz, pan, satMix;
-    juce::Label  bassV, hpV, lpV, qV, airV, tiltV, scoopV, shelfSV, xoLoV, xoHiV;
-    juce::Label  rotationV, asymV, shufLoV, shufHiV, shufXV, monoV, panV, satMixV;
-    juce::ToggleButton qLink;
-    
-    // Frequency mini sliders for BASS, AIR, TILT, SCOOP
-    juce::Slider bassFreq, airFreq, tiltFreq, scoopFreq;
-    juce::Label  bassFreqV, airFreqV, tiltFreqV, scoopFreqV;
-    
-    // Individual Q controls for HP/LP
-    juce::Slider hpQ, lpQ;
-    juce::Label  hpQV, lpQV;
-    
-    // Mono group controls
-    juce::ComboBox monoSlopeChoice;
-    juce::ToggleButton monoAuditionButton;
     
     // Center row
     juce::Slider punchAmt, phaseAmt, promDb, focusLo, focusHi;
@@ -578,7 +497,6 @@ private:
     std::vector<SimpleSwitchCell*> switchCells;
     std::vector<std::unique_ptr<KnobCell>> ownedCells;
     std::vector<std::unique_ptr<SimpleSwitchCell>> ownedSwitches;
-    std::vector<std::unique_ptr<MonoGroupCell>> customCells;
     std::vector<juce::Component*> gridOrder;
     std::vector<std::unique_ptr<juce::Slider>> blankSliders;
     std::vector<std::unique_ptr<juce::Label>>  blankLabels;
