@@ -275,6 +275,7 @@ private:
     void draw3DHandle (juce::Graphics& g, juce::Rectangle<float> handleRect);
     void drawMetallicTrack (juce::Graphics& g, juce::Rectangle<float> trackRect);
     void drawMetallicBackground (juce::Graphics& g, juce::Rectangle<float> backgroundRect);
+    void drawMarkers (juce::Graphics& g, juce::Rectangle<float> trackRect);
     
     bool isDragging = false;
     juce::Point<float> lastMousePos;
@@ -1921,10 +1922,6 @@ private:
     
     // 3D Vertical Sliders for Input, Output, Mix
     VerticalSlider3D inputSlider, outputSlider, mixSlider;
-    juce::Label inputLabel, outputLabel, mixLabel;
-    
-    // Label containers for organized layout (3 containers, 2 rows each)
-    ControlContainer inputLabelContainer, outputLabelContainer, mixLabelContainer;
     ControlContainer spaceKnobContainer, panKnobContainer;
     
     // Width grouping (Image row): large WIDTH + small W LO/MID/HI

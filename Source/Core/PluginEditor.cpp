@@ -331,6 +331,9 @@ void VerticalSlider3D::paint (juce::Graphics& g)
     
     // Draw 3D handle
     draw3DHandle (g, handleRect);
+    
+    // Draw visual markers and labels
+    drawMarkers (g, trackRect);
 }
 
 void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> handleRect)
@@ -384,6 +387,69 @@ void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> h
     if (!handleLabel.isEmpty())
     {
         g.drawText (handleLabel, handleRect, juce::Justification::centred);
+    }
+}
+
+void VerticalSlider3D::drawMarkers (juce::Graphics& g, juce::Rectangle<float> trackRect)
+{
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    const auto textColor = lf ? lf->theme.textMuted : juce::Colour (0xFF9A9DA5);
+    const auto accentColor = lf ? lf->theme.accent : juce::Colours::cyan;
+    
+    g.setColour (textColor);
+    g.setFont (juce::Font (9.0f, juce::Font::bold));
+    
+    // Determine marker values based on slider range
+    std::vector<float> markerValues;
+    std::vector<juce::String> markerLabels;
+    
+    const float minVal = (float) getMinimum();
+    const float maxVal = (float) getMaximum();
+    
+    if (maxVal <= 12.0f && minVal >= -60.0f) {
+        // dB range (Input/Output sliders)
+        markerValues = {-60.0f, -40.0f, -20.0f, -10.0f, -6.0f, -3.0f, 0.0f, 3.0f, 6.0f, 12.0f};
+        markerLabels = {"-60", "-40", "-20", "-10", "-6", "-3", "0", "+3", "+6", "+12"};
+    } else if (maxVal <= 100.0f && minVal >= 0.0f) {
+        // Percentage range (Mix slider)
+        markerValues = {0.0f, 25.0f, 50.0f, 75.0f, 100.0f};
+        markerLabels = {"0%", "25%", "50%", "75%", "100%"};
+    } else {
+        // Generic range - create 5 markers
+        const float range = maxVal - minVal;
+        for (int i = 0; i <= 4; ++i) {
+            const float val = minVal + (range * i / 4.0f);
+            markerValues.push_back (val);
+            markerLabels.push_back (juce::String (val, 1));
+        }
+    }
+    
+    // Draw markers
+    for (size_t i = 0; i < markerValues.size(); ++i) {
+        const float markerValue = markerValues[i];
+        const juce::String markerLabel = markerLabels[i];
+        
+        // Calculate position
+        const float normalizedPos = (markerValue - minVal) / (maxVal - minVal);
+        const float markerY = trackRect.getY() + (1.0f - normalizedPos) * trackRect.getHeight();
+        
+        // Draw tick mark
+        const float tickLength = 8.0f;
+        const float tickX = trackRect.getX() - trackRect.getWidth() - 5.0f;
+        g.setColour (textColor.withAlpha (0.8f));
+        g.drawLine (tickX, markerY, tickX + tickLength, markerY, 1.5f);
+        
+        // Draw label
+        g.setColour (textColor);
+        const float labelX = tickX + tickLength + 3.0f;
+        const float labelY = markerY - 6.0f;
+        g.drawText (markerLabel, labelX, labelY, 40.0f, 12.0f, juce::Justification::left);
+        
+        // Add subtle accent highlight for key values
+        if (markerValue == 0.0f || markerValue == 50.0f || markerValue == 100.0f) {
+            g.setColour (accentColor.withAlpha (0.3f));
+            g.fillEllipse (tickX - 2.0f, markerY - 1.0f, 4.0f, 2.0f);
+        }
     }
 }
 
@@ -1713,27 +1779,13 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     addAndMakeVisible (rightSlidersContainer);   rightSlidersContainer.setTitle ("");     rightSlidersContainer.setShowBorder (false);
     addAndMakeVisible (metersContainer);       metersContainer.setTitle ("");         metersContainer.setShowBorder (false);
     
-    // Add label containers to rightSlidersContainer for organized layout
-    rightSlidersContainer.addAndMakeVisible (inputLabelContainer);    inputLabelContainer.setTitle ("");     inputLabelContainer.setShowBorder (false);
-    rightSlidersContainer.addAndMakeVisible (outputLabelContainer);   outputLabelContainer.setTitle ("");    outputLabelContainer.setShowBorder (false);
-    rightSlidersContainer.addAndMakeVisible (mixLabelContainer);     mixLabelContainer.setTitle ("");       mixLabelContainer.setShowBorder (false);
     
     // Add 3D vertical sliders to rightSlidersContainer
     rightSlidersContainer.addAndMakeVisible (inputSlider);
     rightSlidersContainer.addAndMakeVisible (outputSlider);
     rightSlidersContainer.addAndMakeVisible (mixSlider);
     
-    // Add labels to their respective containers
-    inputLabelContainer.addAndMakeVisible (inputLabel);
-    outputLabelContainer.addAndMakeVisible (outputLabel);
-    mixLabelContainer.addAndMakeVisible (mixLabel);
     
-    // Debug: Test container hierarchy
-    DBG("Container hierarchy test:");
-    DBG("  rightSlidersContainer child count: " << rightSlidersContainer.getNumChildComponents());
-    DBG("  inputSlider parent: " << inputSlider.getParentComponent());
-    DBG("  outputSlider parent: " << outputSlider.getParentComponent());
-    DBG("  mixSlider parent: " << mixSlider.getParentComponent());
     
     // Configure sliders (ranges and values already set in VerticalSlider3D constructor)
     inputSlider.setTextValueSuffix (" dB");
@@ -1768,22 +1820,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         label.setFont (juce::Font (10.0f, juce::Font::bold));
     };
     
-    labelStyle (inputLabel);
-    labelStyle (outputLabel);
-    labelStyle (mixLabel);
-    
-    // Configure labels
-    inputLabel.setText ("INPUT", juce::dontSendNotification);
-    inputLabel.setJustificationType (juce::Justification::centred);
-    inputLabel.setColour (juce::Label::textColourId, juce::Colours::white);
-    
-    outputLabel.setText ("OUTPUT", juce::dontSendNotification);
-    outputLabel.setJustificationType (juce::Justification::centred);
-    outputLabel.setColour (juce::Label::textColourId, juce::Colours::white);
-    
-    mixLabel.setText ("MIX", juce::dontSendNotification);
-    mixLabel.setJustificationType (juce::Justification::centred);
-    mixLabel.setColour (juce::Label::textColourId, juce::Colours::white);
 
     // Width group (image row, bottom-right): invisible container + placeholder slots for spanning grid
     addChildComponent (widthGroupContainer);
@@ -3211,11 +3247,6 @@ void MyPluginAudioProcessorEditor::performLayout()
         outputSlider.setBounds (startX + reducedSliderWidth + sliderGap, sliderStartY, reducedSliderWidth, fullSliderHeight);
         mixSlider.setBounds (startX + (reducedSliderWidth + sliderGap) * 2, sliderStartY, reducedSliderWidth, fullSliderHeight);
         
-        // Debug: Test if sliders exist at all
-        DBG("Slider existence test:");
-        DBG("  inputSlider pointer: " << &inputSlider);
-        DBG("  outputSlider pointer: " << &outputSlider);
-        DBG("  mixSlider pointer: " << &mixSlider);
         
         // Debug: Force sliders to be visible and repaint
         inputSlider.setVisible (true);
@@ -3225,28 +3256,12 @@ void MyPluginAudioProcessorEditor::performLayout()
         outputSlider.repaint();
         mixSlider.repaint();
         
-        // Pin label containers to bottom of respective sliders
-        const int labelHeight = 20;
-        const int labelContainerHeight = 40; // Space for 2 rows of labels
-        const int labelY = sliderStartY + fullSliderHeight - labelContainerHeight; // Pin to bottom of slider
         
-        // Position label containers pinned to bottom of sliders
-        inputLabelContainer.setBounds (startX, labelY, reducedSliderWidth, labelContainerHeight);
-        outputLabelContainer.setBounds (startX + reducedSliderWidth + sliderGap, labelY, reducedSliderWidth, labelContainerHeight);
-        mixLabelContainer.setBounds (startX + (reducedSliderWidth + sliderGap) * 2, labelY, reducedSliderWidth, labelContainerHeight);
         
-        // Position labels within their containers (centered)
-        inputLabel.setBounds (0, 0, reducedSliderWidth, labelHeight);
-        outputLabel.setBounds (0, 0, reducedSliderWidth, labelHeight);
-        mixLabel.setBounds (0, 0, reducedSliderWidth, labelHeight);
         
-        // Make sure labels are visible
-        inputLabel.setVisible (true);
-        outputLabel.setVisible (true);
-        mixLabel.setVisible (true);
-        inputLabelContainer.setVisible (true);
-        outputLabelContainer.setVisible (true);
-        mixLabelContainer.setVisible (true);
+        
+        // Force main editor repaint to show containers
+        repaint();
         
         // Labels will be styled with knobcell background in their paint method
         
@@ -3258,12 +3273,6 @@ void MyPluginAudioProcessorEditor::performLayout()
         DBG("sliderArea: " << sliderArea.toString());
         DBG("sliderWidth: " << sliderWidth << ", sliderHeight: " << sliderHeight);
         DBG("inputSlider bounds: " << inputSlider.getBounds().toString());
-        DBG("rightSlidersContainer visible: " << (rightSlidersContainer.isVisible() ? "true" : "false"));
-        DBG("rightSlidersContainer bounds: " << rightSlidersContainer.getBounds().toString());
-        DBG("rightSlidersContainer title: " << rightSlidersContainer.getTitle());
-        DBG("inputSlider visible: " << (inputSlider.isVisible() ? "true" : "false"));
-        DBG("outputSlider visible: " << (outputSlider.isVisible() ? "true" : "false"));
-        DBG("mixSlider visible: " << (mixSlider.isVisible() ? "true" : "false"));
         DBG("inputSlider bounds: " << inputSlider.getBounds().toString());
         DBG("outputSlider bounds: " << outputSlider.getBounds().toString());
         DBG("mixSlider bounds: " << mixSlider.getBounds().toString());
@@ -3274,9 +3283,6 @@ void MyPluginAudioProcessorEditor::performLayout()
         DBG("Slider positioning test:");
         DBG("  Container bounds: " << rightSlidersContainer.getBounds().toString());
         DBG("  Slider area: " << sliderArea.toString());
-        DBG("  Input slider in container: " << (rightSlidersContainer.getBounds().contains(inputSlider.getBounds()) ? "YES" : "NO"));
-        DBG("  Output slider in container: " << (rightSlidersContainer.getBounds().contains(outputSlider.getBounds()) ? "YES" : "NO"));
-        DBG("  Mix slider in container: " << (rightSlidersContainer.getBounds().contains(mixSlider.getBounds()) ? "YES" : "NO"));
         // (Reverted) bottom toggle remains a direct child of the editor; positioned earlier
 
         // Allocate the top area to full height (legacy rows disabled)
