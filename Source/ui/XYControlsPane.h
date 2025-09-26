@@ -48,17 +48,18 @@ public:
         
         std::vector<GridCell> gridLayout;
         
-        // Row A layout: MONO(1,2), HP(3), LP(4), BASS(5,6), AIR(7,8), TILT(9,10), SCOOP(11,12), Q+QLink(13,14), Shape(15), [1 empty]
+        // Row A layout: MONO(1,2), HP(3), BASS(4,5), TILT(6,7), SCOOP(8,9), AIR(10,11), LP(12), Q+QLink(13,14), S(15), GAIN(16)
         int col = 1;
         if (ownedCells.size() > 0) gridLayout.push_back({col, 2, ownedCells[0].get()}); col += 2; // MONO
         if (ownedCells.size() > 1) gridLayout.push_back({col, 1, ownedCells[1].get()}); col += 1; // HP
-        if (ownedCells.size() > 2) gridLayout.push_back({col, 1, ownedCells[2].get()}); col += 1; // LP
-        if (ownedCells.size() > 3) gridLayout.push_back({col, 2, ownedCells[3].get()}); col += 2; // BASS
-        if (ownedCells.size() > 4) gridLayout.push_back({col, 2, ownedCells[4].get()}); col += 2; // AIR
-        if (ownedCells.size() > 5) gridLayout.push_back({col, 2, ownedCells[5].get()}); col += 2; // TILT
-        if (ownedCells.size() > 6) gridLayout.push_back({col, 2, ownedCells[6].get()}); col += 2; // SCOOP
+        if (ownedCells.size() > 2) gridLayout.push_back({col, 2, ownedCells[2].get()}); col += 2; // BASS
+        if (ownedCells.size() > 3) gridLayout.push_back({col, 2, ownedCells[3].get()}); col += 2; // TILT
+        if (ownedCells.size() > 4) gridLayout.push_back({col, 2, ownedCells[4].get()}); col += 2; // SCOOP
+        if (ownedCells.size() > 5) gridLayout.push_back({col, 2, ownedCells[5].get()}); col += 2; // AIR
+        if (ownedCells.size() > 6) gridLayout.push_back({col, 1, ownedCells[6].get()}); col += 1; // LP
         if (ownedCells.size() > 7) gridLayout.push_back({col, 2, ownedCells[7].get()}); col += 2; // Q+QLink
-        if (ownedCells.size() > 8) gridLayout.push_back({col, 1, ownedCells[8].get()}); col += 1; // Shape
+        if (ownedCells.size() > 8) gridLayout.push_back({col, 1, ownedCells[8].get()}); col += 1; // S
+        if (ownedCells.size() > 9) gridLayout.push_back({col, 1, ownedCells[9].get()}); col += 1; // GAIN
         
         // Row B layout: Center tools + imaging controls
         int rowBCol = 1;
@@ -78,7 +79,8 @@ public:
                                          cell.component == ownedCells[1].get() || cell.component == ownedCells[2].get() || 
                                          cell.component == ownedCells[3].get() || cell.component == ownedCells[4].get() || 
                                          cell.component == ownedCells[5].get() || cell.component == ownedCells[6].get() || 
-                                         cell.component == ownedCells[7].get() || cell.component == ownedCells[8].get() ? 0 : 1) * cellH;
+                                         cell.component == ownedCells[7].get() || cell.component == ownedCells[8].get() ||
+                                         cell.component == ownedCells[9].get() ? 0 : 1) * cellH;
                 const int width = (cell.width == 2) ? doubleWideWidth : cell.width * cellW;
                 cell.component->setBounds(x, y, width, cellH);
             }
@@ -268,6 +270,292 @@ private:
         linkB.setLookAndFeel (&getLookAndFeel());
     }
     
+    // Helper for creating BASS cell with frequency mini slider using KnobCellWithAux
+    void makeBassCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid,
+                      juce::Slider& freqS, juce::Label& freqV, const char* freqPid, bool metallic=false)
+    {
+        // Safety check: ensure parameters exist before creating attachments
+        if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr) return;
+        if (freqPid == nullptr || apvts.getParameter(juce::String(freqPid)) == nullptr) return;
+        
+        styleKnob (s); s.setName (cap);
+        
+        // Style frequency slider as linear horizontal
+        freqS.setSliderStyle (juce::Slider::LinearHorizontal);
+        freqS.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+        freqS.setMouseDragSensitivity (140);
+        freqS.setVelocityBasedMode (false);
+        freqS.setSliderSnapsToMousePosition (false);
+        freqS.setDoubleClickReturnValue (true, 0.0);
+        freqS.getProperties().set ("micro", true);
+        
+        // Create KnobCellWithAux with frequency mini slider as aux component
+        std::vector<juce::Component*> auxComponents = { &freqS };
+        std::vector<float> auxWeights = { 1.0f }; // Single aux component gets full weight
+        auto cell = std::make_unique<KnobCellWithAux> (s, v, auxComponents, auxWeights);
+        
+        // Set metrics to match other cells
+        cell->setMetrics (knobPx, valuePx, labelGapPx);
+        cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
+        
+        // Apply metallic styling like other cells
+        if (metallic) cell->getProperties().set ("metallic", true);
+        
+        addAndMakeVisible (*cell);
+        knobCells.emplace_back (cell.get());
+        ownedCells.emplace_back (std::move (cell));
+        
+        // Create attachments
+        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, pid, s));
+        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, freqPid, freqS));
+        
+        // Initialize value labels
+        s.onValueChange = [this, &s, &v]() { v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification); };
+        freqS.onValueChange = [this, &freqS, &freqV]() { 
+            freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification); 
+        };
+        
+        v.setInterceptsMouseClicks (false, false);
+        v.setJustificationType (juce::Justification::centred);
+        v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification);
+        
+        freqV.setInterceptsMouseClicks (false, false);
+        freqV.setJustificationType (juce::Justification::centred);
+        freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification);
+    }
+    
+    // Helper for creating AIR cell with frequency mini slider using KnobCellWithAux
+    void makeAirCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid,
+                      juce::Slider& freqS, juce::Label& freqV, const char* freqPid, bool metallic=false)
+    {
+        // Safety check: ensure parameters exist before creating attachments
+        if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr) return;
+        if (freqPid == nullptr || apvts.getParameter(juce::String(freqPid)) == nullptr) return;
+        
+        styleKnob (s); s.setName (cap);
+        
+        // Style frequency slider as linear horizontal
+        freqS.setSliderStyle (juce::Slider::LinearHorizontal);
+        freqS.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+        freqS.setMouseDragSensitivity (140);
+        freqS.setVelocityBasedMode (false);
+        freqS.setSliderSnapsToMousePosition (false);
+        freqS.setDoubleClickReturnValue (true, 0.0);
+        freqS.getProperties().set ("micro", true);
+        
+        // Create KnobCellWithAux with frequency mini slider as aux component
+        std::vector<juce::Component*> auxComponents = { &freqS };
+        std::vector<float> auxWeights = { 1.0f }; // Single aux component gets full weight
+        auto cell = std::make_unique<KnobCellWithAux> (s, v, auxComponents, auxWeights);
+        
+        // Set metrics to match other cells
+        cell->setMetrics (knobPx, valuePx, labelGapPx);
+        cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
+        
+        // Apply metallic styling like other cells
+        if (metallic) cell->getProperties().set ("metallic", true);
+        
+        addAndMakeVisible (*cell);
+        knobCells.emplace_back (cell.get());
+        ownedCells.emplace_back (std::move (cell));
+        
+        // Create attachments
+        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, pid, s));
+        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, freqPid, freqS));
+        
+        // Initialize value labels
+        s.onValueChange = [this, &s, &v]() { v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification); };
+        freqS.onValueChange = [this, &freqS, &freqV]() { 
+            freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification); 
+        };
+        
+        v.setInterceptsMouseClicks (false, false);
+        v.setJustificationType (juce::Justification::centred);
+        v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification);
+        
+        freqV.setInterceptsMouseClicks (false, false);
+        freqV.setJustificationType (juce::Justification::centred);
+        freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification);
+    }
+    
+    // Helper for creating TILT cell with frequency mini slider using KnobCellWithAux
+    void makeTiltCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid,
+                       juce::Slider& freqS, juce::Label& freqV, const char* freqPid, bool metallic=false)
+    {
+        // Safety check: ensure parameters exist before creating attachments
+        if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr) return;
+        if (freqPid == nullptr || apvts.getParameter(juce::String(freqPid)) == nullptr) return;
+        
+        styleKnob (s); s.setName (cap);
+        
+        // Style frequency slider as linear horizontal
+        freqS.setSliderStyle (juce::Slider::LinearHorizontal);
+        freqS.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+        freqS.setMouseDragSensitivity (140);
+        freqS.setVelocityBasedMode (false);
+        freqS.setSliderSnapsToMousePosition (false);
+        freqS.setDoubleClickReturnValue (true, 0.0);
+        freqS.getProperties().set ("micro", true);
+        
+        // Create KnobCellWithAux with frequency mini slider as aux component
+        std::vector<juce::Component*> auxComponents = { &freqS };
+        std::vector<float> auxWeights = { 1.0f }; // Single aux component gets full weight
+        auto cell = std::make_unique<KnobCellWithAux> (s, v, auxComponents, auxWeights);
+        
+        // Set metrics to match other cells
+        cell->setMetrics (knobPx, valuePx, labelGapPx);
+        cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
+        
+        // Apply metallic styling like other cells
+        if (metallic) cell->getProperties().set ("metallic", true);
+        
+        addAndMakeVisible (*cell);
+        knobCells.emplace_back (cell.get());
+        ownedCells.emplace_back (std::move (cell));
+        
+        // Create attachments
+        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, pid, s));
+        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, freqPid, freqS));
+        
+        // Initialize value labels
+        s.onValueChange = [this, &s, &v]() { v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification); };
+        freqS.onValueChange = [this, &freqS, &freqV]() { 
+            freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification); 
+        };
+        
+        v.setInterceptsMouseClicks (false, false);
+        v.setJustificationType (juce::Justification::centred);
+        v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification);
+        
+        freqV.setInterceptsMouseClicks (false, false);
+        freqV.setJustificationType (juce::Justification::centred);
+        freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification);
+    }
+    
+    // Helper for creating SCOOP cell with frequency mini slider using KnobCellWithAux
+    void makeScoopCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid,
+                        juce::Slider& freqS, juce::Label& freqV, const char* freqPid, bool metallic=false)
+    {
+        // Safety check: ensure parameters exist before creating attachments
+        if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr) return;
+        if (freqPid == nullptr || apvts.getParameter(juce::String(freqPid)) == nullptr) return;
+        
+        styleKnob (s); s.setName (cap);
+        
+        // Style frequency slider as linear horizontal
+        freqS.setSliderStyle (juce::Slider::LinearHorizontal);
+        freqS.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+        freqS.setMouseDragSensitivity (140);
+        freqS.setVelocityBasedMode (false);
+        freqS.setSliderSnapsToMousePosition (false);
+        freqS.setDoubleClickReturnValue (true, 0.0);
+        freqS.getProperties().set ("micro", true);
+        
+        // Create KnobCellWithAux with frequency mini slider as aux component
+        std::vector<juce::Component*> auxComponents = { &freqS };
+        std::vector<float> auxWeights = { 1.0f }; // Single aux component gets full weight
+        auto cell = std::make_unique<KnobCellWithAux> (s, v, auxComponents, auxWeights);
+        
+        // Set metrics to match other cells
+        cell->setMetrics (knobPx, valuePx, labelGapPx);
+        cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
+        
+        // Apply metallic styling like other cells
+        if (metallic) cell->getProperties().set ("metallic", true);
+        
+        addAndMakeVisible (*cell);
+        knobCells.emplace_back (cell.get());
+        ownedCells.emplace_back (std::move (cell));
+        
+        // Create attachments
+        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, pid, s));
+        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, freqPid, freqS));
+        
+        // Initialize value labels
+        s.onValueChange = [this, &s, &v]() { v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification); };
+        freqS.onValueChange = [this, &freqS, &freqV]() { 
+            freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification); 
+        };
+        
+        v.setInterceptsMouseClicks (false, false);
+        v.setJustificationType (juce::Justification::centred);
+        v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification);
+        
+        freqV.setInterceptsMouseClicks (false, false);
+        freqV.setJustificationType (juce::Justification::centred);
+        freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification);
+    }
+    
+    // Helper for creating Q cell with Q link toggle and HP/LP Q sliders using KnobCellWithAux
+    void makeQCell (juce::Slider& qS, juce::Label& qV, const juce::String& qCap, const char* qPid,
+                   juce::ToggleButton& linkB, const juce::String& linkCap, const char* linkPid,
+                   juce::Slider& hpQS, juce::Label& hpQV, const char* hpQPid,
+                   juce::Slider& lpQS, juce::Label& lpQV, const char* lpQPid, bool metallic=false)
+    {
+        // Safety check: ensure parameters exist
+        if (qPid == nullptr || apvts.getParameter(juce::String(qPid)) == nullptr) return;
+        if (linkPid == nullptr || apvts.getParameter(juce::String(linkPid)) == nullptr) return;
+        if (hpQPid == nullptr || apvts.getParameter(juce::String(hpQPid)) == nullptr) return;
+        if (lpQPid == nullptr || apvts.getParameter(juce::String(lpQPid)) == nullptr) return;
+        
+        styleKnob (qS); qS.setName (qCap);
+        
+        // Style HP/LP Q sliders as linear horizontal
+        for (auto* slider : { &hpQS, &lpQS })
+        {
+            slider->setSliderStyle (juce::Slider::LinearHorizontal);
+            slider->setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+            slider->setMouseDragSensitivity (140);
+            slider->setVelocityBasedMode (false);
+            slider->setSliderSnapsToMousePosition (false);
+            slider->setDoubleClickReturnValue (true, 0.0);
+            slider->getProperties().set ("micro", true);
+        }
+        
+        // Create KnobCellWithAux with Q link toggle and HP/LP Q sliders as aux components
+        std::vector<juce::Component*> auxComponents = { &linkB, &hpQS, &lpQS };
+        std::vector<float> auxWeights = { 1.0f, 1.0f, 1.0f }; // Equal weights for all aux components
+        auto cell = std::make_unique<KnobCellWithAux> (qS, qV, auxComponents, auxWeights);
+        
+        // Set metrics to match other cells
+        cell->setMetrics (knobPx, valuePx, labelGapPx);
+        cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
+        
+        // Apply metallic styling like other cells
+        if (metallic) cell->getProperties().set ("metallic", true);
+        
+        addAndMakeVisible (*cell);
+        knobCells.emplace_back (cell.get());
+        ownedCells.emplace_back (std::move (cell));
+        
+        // Create attachments
+        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, qPid, qS));
+        btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, linkPid, linkB));
+        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, hpQPid, hpQS));
+        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, lpQPid, lpQS));
+        
+        // Initialize value labels
+        qS.onValueChange = [this, &qS, &qV]() { qV.setText (juce::String (qS.getValue(), 3), juce::dontSendNotification); };
+        hpQS.onValueChange = [this, &hpQS, &hpQV]() { hpQV.setText (juce::String (hpQS.getValue(), 3), juce::dontSendNotification); };
+        lpQS.onValueChange = [this, &lpQS, &lpQV]() { lpQV.setText (juce::String (lpQS.getValue(), 3), juce::dontSendNotification); };
+        
+        qV.setInterceptsMouseClicks (false, false);
+        qV.setJustificationType (juce::Justification::centred);
+        qV.setText (juce::String (qS.getValue(), 3), juce::dontSendNotification);
+        
+        hpQV.setInterceptsMouseClicks (false, false);
+        hpQV.setJustificationType (juce::Justification::centred);
+        hpQV.setText (juce::String (hpQS.getValue(), 3), juce::dontSendNotification);
+        
+        lpQV.setInterceptsMouseClicks (false, false);
+        lpQV.setJustificationType (juce::Justification::centred);
+        lpQV.setText (juce::String (lpQS.getValue(), 3), juce::dontSendNotification);
+        
+        // Set up Q link toggle
+        linkB.setButtonText (linkCap);
+        linkB.setLookAndFeel (&getLookAndFeel());
+    }
+    
     
     // Helper for creating mono group cell (double-wide with slope switch and audition button)
     void makeMonoGroupCell (juce::Slider& monoS, juce::Label& monoV, const juce::String& monoCap, const char* monoPid,
@@ -327,35 +615,40 @@ private:
 
     void buildControls()
     {
-        // Row A: MONO(1,2), HP(3), LP(4), BASS(5,6), AIR(7,8), TILT(9,10), SCOOP(11,12), Q+QLink(13,14), Shape(15), [1 empty]
+        // Row A: MONO(1,2), HP(3), BASS(4,5), TILT(6,7), SCOOP(8,9), AIR(10,11), LP(12), Q+QLink(13,14), S(15), [1 empty]
         const bool Mgrey = true; // all XY controls use grey metallic styling
         
         // MONO group with slope switch and audition button (double-wide, positions 1-2)
         makeMonoGroupCell (monoHz, monoV, "MONO", "mono_hz", monoSlopeChoice, "mono_slope_db_oct", 
                           monoAuditionButton, "mono_audition", Mgrey);
         
-        // HP and LP (single-wide, positions 3-4)
+        // HP (single-wide, position 3)
         makeCell (hp,     hpV,     "HP",     "hp_hz",          Mgrey);
+        
+        // BASS with frequency mini slider (double-wide, positions 4-5) - using KnobCellWithAux
+        makeBassCell (bass, bassV, "BASS", "bass_db", bassFreq, bassFreqV, "bass_freq", Mgrey);
+        
+        // TILT with frequency mini slider (double-wide, positions 6-7) - using KnobCellWithAux
+        makeTiltCell (tilt, tiltV, "TILT", "tilt", tiltFreq, tiltFreqV, "tilt_freq", Mgrey);
+        
+        // SCOOP with frequency mini slider (double-wide, positions 8-9) - using KnobCellWithAux
+        makeScoopCell (scoop, scoopV, "SCOOP", "scoop", scoopFreq, scoopFreqV, "scoop_freq", Mgrey);
+        
+        // AIR with frequency mini slider (double-wide, positions 10-11) - using KnobCellWithAux
+        makeAirCell (air, airV, "AIR", "air_db", airFreq, airFreqV, "air_freq", Mgrey);
+        
+        // LP (single-wide, position 12)
         makeCell (lp,     lpV,     "LP",     "lp_hz",          Mgrey);
         
-        // BASS with frequency mini slider (double-wide, positions 5-6)
-        makeCellWithFreq (bass, bassV, "BASS", "bass_db", bassFreq, bassFreqV, "bass_freq", Mgrey);
-        
-        // AIR with frequency mini slider (double-wide, positions 7-8)
-        makeCellWithFreq (air, airV, "AIR", "air_db", airFreq, airFreqV, "air_freq", Mgrey);
-        
-        // TILT with frequency mini slider (double-wide, positions 9-10)
-        makeCellWithFreq (tilt, tiltV, "TILT", "tilt", tiltFreq, tiltFreqV, "tilt_freq", Mgrey);
-        
-        // SCOOP with frequency mini slider (double-wide, positions 11-12)
-        makeCellWithFreq (scoop, scoopV, "SCOOP", "scoop", scoopFreq, scoopFreqV, "scoop_freq", Mgrey);
-        
-        // Q LINK with HP/LP Q controls (double-wide, positions 13-14)
-        makeQLinkCell (q, qV, "Q", "eq_filter_q", qLink, "Q LINK", "eq_q_link", 
-                      hpQ, hpQV, "hp_q", lpQ, lpQV, "lp_q", Mgrey);
+        // Q LINK with HP/LP Q controls (double-wide, positions 13-14) - using KnobCellWithAux
+        makeQCell (q, qV, "Q", "eq_filter_q", qLink, "Q LINK", "eq_q_link", 
+                  hpQ, hpQV, "hp_q", lpQ, lpQV, "lp_q", Mgrey);
         
         // SHELF SHAPE (single-wide, position 15)
         makeCell (shelfS, shelfSV, "S",      "eq_shelf_shape", Mgrey);
+        
+        // EQ GAIN (single-wide, position 16)
+        makeCell (eqGain, eqGainV, "GAIN",  "eq_gain",        Mgrey);
 
         // Additional imaging/placement controls moved from Imager to XY
         makeCell (rotation, rotationV, "ROT",      "rotation_deg",     Mgrey);
@@ -365,7 +658,8 @@ private:
         makeCell (shufX,    shufXV,    "SHUF XO",  "shuffler_xover_hz",Mgrey);
         makeCell (pan,      panV,      "PAN",      "pan",               Mgrey);
         makeCell (satMix,   satMixV,   "SAT MIX",  "sat_mix",           Mgrey);
-        for (int i = 0; i < 5; ++i) gridOrder.push_back (nullptr);
+        makeCell (mix,      mixV,      "MIX",      "mix",               Mgrey);
+        for (int i = 0; i < 4; ++i) gridOrder.push_back (nullptr);
 
         // Row B: Center tools (metallic)
         const bool M = true;
@@ -409,9 +703,9 @@ private:
 
     juce::AudioProcessorValueTreeState& apvts;
     // EQ row + imaging controls moved from Imager
-    juce::Slider bass, hp, lp, q, air, tilt, scoop, shelfS, xoLo, xoHi;
+    juce::Slider bass, hp, lp, q, air, tilt, scoop, shelfS, eqGain, mix, xoLo, xoHi;
     juce::Slider rotation, asym, shufLo, shufHi, shufX, monoHz, pan, satMix;
-    juce::Label  bassV, hpV, lpV, qV, airV, tiltV, scoopV, shelfSV, xoLoV, xoHiV;
+    juce::Label  bassV, hpV, lpV, qV, airV, tiltV, scoopV, shelfSV, eqGainV, mixV, xoLoV, xoHiV;
     juce::Label  rotationV, asymV, shufLoV, shufHiV, shufXV, monoV, panV, satMixV;
     juce::ToggleButton qLink;
     

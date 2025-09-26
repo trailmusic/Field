@@ -236,6 +236,7 @@ public:
     
     void setTitle (const juce::String& title);
     void setShowBorder (bool show) { showBorder = show; }
+    void setBorderColour (juce::Colour colour) { borderColour = colour; useCustomBorderColour = true; }
     void paint (juce::Graphics& g) override;
     void mouseEnter (const juce::MouseEvent&) override { hovered = true;  hoverActive = true; stopTimer(); repaint(); }
     void mouseExit  (const juce::MouseEvent&) override { hovered = false; startTimer (hoverOffDelayMs); }
@@ -246,6 +247,8 @@ private:
     bool hovered = false;
     bool hoverActive = false;
     bool showBorder = true;
+    bool useCustomBorderColour = false;
+    juce::Colour borderColour = juce::Colours::transparentBlack;
     const int hoverOffDelayMs = 160;
 };
 
@@ -1886,6 +1889,7 @@ private:
     ControlContainer delayContainer;
     ControlContainer metersContainer;
     ControlContainer leftContentContainer;
+    ControlContainer leftMetersContainer;  // New container to the left of meters
     ControlContainer spaceKnobContainer, panKnobContainer;
     
     // Width grouping (Image row): large WIDTH + small W LO/MID/HI

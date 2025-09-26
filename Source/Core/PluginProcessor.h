@@ -99,6 +99,8 @@ namespace IDs {
     // EQ shaping/Q link additions
     static constexpr const char* eqShelfShape = "eq_shelf_shape";  // S: 0.25..1.50
     static constexpr const char* eqFilterQ    = "eq_filter_q";     // global Q: 0.50..1.20
+    static constexpr const char* eqGain       = "eq_gain";          // EQ gain: -12..+12 dB
+    static constexpr const char* mix          = "mix";              // Mix: 0..100%
     static constexpr const char* tiltLinkS    = "tilt_link_s";     // link Tilt shelves to S
     static constexpr const char* eqQLink      = "eq_q_link";       // link HP/LP Q to global
     static constexpr const char* hpQ          = "hp_q";            // per-filter Q
@@ -616,6 +618,8 @@ private:
         // New EQ shape/Q
         Sample shelfShapeS{};     // 0.25..1.50
         Sample filterQ{};         // 0.50..1.20
+        Sample eqGainDb{};        // EQ gain
+        Sample mixPct{};          // Mix percentage
         Sample hpQ{};             // per-filter Q
         Sample lpQ{};             // per-filter Q
         bool   tiltLinkS{};       // use shelfShapeS for tilt shelves
@@ -768,6 +772,8 @@ struct HostParams
     // New EQ shape/Q
     double eqShelfShapeS{}; // S
     double eqFilterQ{};     // global Q
+    double eqGainDb{};     // EQ gain
+    double mixPct{};        // Mix percentage
     double hpQ{};           // per-filter
     double lpQ{};           // per-filter
     bool   tiltLinkS{};

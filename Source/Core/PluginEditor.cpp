@@ -310,7 +310,7 @@ void ControlContainer::paint (juce::Graphics& g)
             g.setColour (accent.withAlpha (0.5f));
             g.drawRoundedRectangle (border.expanded (2.0f), rad, 2.0f);
         }
-        g.setColour (accent);
+        g.setColour (useCustomBorderColour ? borderColour : accent);
         g.drawRoundedRectangle (border, rad, 1.0f);
     }
 
@@ -1513,6 +1513,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // addAndMakeVisible (delayContainer);        delayContainer.setTitle ("");     delayContainer.setShowBorder (true);
     // Row containers for EQ/Image are no longer used
     addAndMakeVisible (leftContentContainer);  leftContentContainer.setTitle ("");    leftContentContainer.setShowBorder (false);
+    addAndMakeVisible (leftMetersContainer);   leftMetersContainer.setTitle ("");     leftMetersContainer.setShowBorder (true);
+    leftMetersContainer.setBorderColour (juce::Colours::red);
     addAndMakeVisible (metersContainer);       metersContainer.setTitle ("");         metersContainer.setShowBorder (false);
 
     // Width group (image row, bottom-right): invisible container + placeholder slots for spanning grid
@@ -2880,15 +2882,20 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int outerPadM_Y= Layout::dp (Layout::GAP, sv);                       // match left container vertical pad for bottom align
         const int targetStripW = colW_m * 2 + corrW_m + inter_m * 2 + outerPadM_X * 2; // IO | LR | CORR(half)
         const int metersStripW = juce::jlimit (Layout::dp (96, s), Layout::dp (240, s), targetStripW);
-        // Split the remaining area: left content container and right meters container
+        // Split the remaining area: left content container, left meters container, and right meters container
         auto metersArea = r.removeFromRight (metersStripW);
-        auto leftArea   = r; // whatever remains after carving meters
+        auto leftMetersArea = r.removeFromRight (metersStripW); // Same width as meters for now
+        auto leftArea   = r; // whatever remains after carving both meter areas
         metersArea = metersArea.reduced (outerPadM_X, outerPadM_Y);
+        leftMetersArea = leftMetersArea.reduced (outerPadM_X, outerPadM_Y);
         leftArea   = leftArea  .reduced (Layout::dp (Layout::GAP, s), Layout::dp (Layout::GAP, sv));
-        // Ensure meters share the same top/bottom as left content so bottoms align
+        // Ensure all containers share the same top/bottom so bottoms align
         metersArea.setY (leftArea.getY());
         metersArea.setHeight (leftArea.getHeight());
+        leftMetersArea.setY (leftArea.getY());
+        leftMetersArea.setHeight (leftArea.getHeight());
         leftContentContainer.setBounds (leftArea);
+        leftMetersContainer.setBounds (leftMetersArea);
         metersContainer.setBounds       (metersArea);
         // (Reverted) bottom toggle remains a direct child of the editor; positioned earlier
 

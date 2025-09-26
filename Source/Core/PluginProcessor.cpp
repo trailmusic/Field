@@ -378,6 +378,8 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     // New EQ/link params
     p.eqShelfShapeS  = getParam(apvts, IDs::eqShelfShape);
     p.eqFilterQ      = getParam(apvts, IDs::eqFilterQ);
+    p.eqGainDb       = getParam(apvts, IDs::eqGain);
+    p.mixPct         = getParam(apvts, IDs::mix);
     p.tiltLinkS      = (getParam(apvts, IDs::tiltLinkS) >= 0.5f);
     p.eqQLink        = (getParam(apvts, IDs::eqQLink)   >= 0.5f);
     p.hpQ            = getParam(apvts, IDs::hpQ);
@@ -616,9 +618,39 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         }
     }
 
+    // Capture dry signal for MIX control
+    std::vector<std::vector<float>> drySignal;
+    if (std::abs (hp.mixPct - 100.0) > 0.1)
+    {
+        drySignal.resize (buffer.getNumChannels());
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            drySignal[ch].resize (buffer.getNumSamples());
+            const float* src = buffer.getReadPointer (ch);
+            for (int s = 0; s < buffer.getNumSamples(); ++s)
+                drySignal[ch][s] = src[s];
+        }
+    }
+
     juce::dsp::AudioBlock<float> block (buffer);
     chainF->setParameters (hp);
     chainF->process (block);
+    
+    // Apply MIX control (blend between dry and wet)
+    if (std::abs (hp.mixPct - 100.0) > 0.1)
+    {
+        const float wetLevel = hp.mixPct / 100.0f;
+        const float dryLevel = 1.0f - wetLevel;
+        
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            auto* data = buffer.getWritePointer (ch);
+            for (int s = 0; s < buffer.getNumSamples(); ++s)
+            {
+                data[s] = dryLevel * drySignal[ch][s] + wetLevel * data[s];
+            }
+        }
+    }
 
     // Motion processing
     if (buffer.getNumChannels() >= 2)
@@ -833,6 +865,20 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     
     // Motion Engine is now handled by FieldChain template
 
+    // Capture dry signal for MIX control (double precision)
+    std::vector<std::vector<double>> drySignalD;
+    if (std::abs (hp.mixPct - 100.0) > 0.1)
+    {
+        drySignalD.resize (buffer.getNumChannels());
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            drySignalD[ch].resize (buffer.getNumSamples());
+            const double* src = buffer.getReadPointer (ch);
+            for (int s = 0; s < buffer.getNumSamples(); ++s)
+                drySignalD[ch][s] = src[s];
+        }
+    }
+
     juce::dsp::AudioBlock<double> block (buffer);
     // PRE visualization (double path): copy input before processing
     if (buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
@@ -851,6 +897,22 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     }
     chainD->setParameters (hp);
     chainD->process (block);
+    
+    // Apply MIX control (blend between dry and wet) - double precision
+    if (std::abs (hp.mixPct - 100.0) > 0.1)
+    {
+        const double wetLevel = hp.mixPct / 100.0;
+        const double dryLevel = 1.0 - wetLevel;
+        
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            auto* data = buffer.getWritePointer (ch);
+            for (int s = 0; s < buffer.getNumSamples(); ++s)
+            {
+                data[s] = dryLevel * drySignalD[ch][s] + wetLevel * data[s];
+            }
+        }
+    }
 
     // Correlation + RMS/Peak meters
     if (buffer.getNumChannels() >= 2)
@@ -1288,6 +1350,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     // EQ shape/Q additions
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqShelfShape, 1 }, "Shelf Shape (S)", juce::NormalisableRange<float> (0.25f, 1.50f, 0.001f), 0.90f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqFilterQ,    1 }, "Filter Q",        juce::NormalisableRange<float> (0.50f, 1.20f, 0.001f), 0.7071f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqGain,      1 }, "EQ Gain",         juce::NormalisableRange<float> (-12.0f, 12.0f, 0.01f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::mix,         1 }, "Mix",             juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f), 100.0f));
     params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID{ IDs::tiltLinkS,    1 }, "Tilt Uses Shelf S", true));
     params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID{ IDs::eqQLink,      1 }, "Link HP/LP Q",      true));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::hpQ,          1 }, "HP Q",             juce::NormalisableRange<float> (0.50f, 1.20f, 0.001f), 0.7071f));
@@ -1595,6 +1659,8 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     // New EQ shape/Q
     params.shelfShapeS = (Sample) juce::jlimit (0.25, 1.50, hp.eqShelfShapeS);
     params.filterQ     = (Sample) juce::jlimit (0.50, 1.20, hp.eqFilterQ);
+    params.eqGainDb    = (Sample) juce::jlimit (-12.0, 12.0, hp.eqGainDb);
+    params.mixPct      = (Sample) juce::jlimit (0.0, 100.0, hp.mixPct);
     params.hpQ         = (Sample) juce::jlimit (0.50, 1.20, hp.hpQ);
     params.lpQ         = (Sample) juce::jlimit (0.50, 1.20, hp.lpQ);
     params.tiltLinkS   = hp.tiltLinkS;
@@ -2767,6 +2833,18 @@ void FieldChain<Sample>::process (Block block)
 
             if (rebuiltAny)
                 toneCoeffCooldownSamples = 64;
+            
+            // Apply EQ gain (simple gain multiplication)
+            if (std::abs ((double) params.eqGainDb) > 0.01)
+            {
+                const Sample gain = (Sample) juce::Decibels::decibelsToGain ((double) params.eqGainDb);
+                for (int ch = 0; ch < sub.getNumChannels(); ++ch)
+                {
+                    auto* data = sub.getChannelPointer (ch);
+                    for (int s = 0; s < sub.getNumSamples(); ++s)
+                        data[s] *= gain;
+                }
+            }
             // [IIR][LR4] Zero/Natural: non‑resonant Linkwitz–Riley HP/LP per channel
             // [IIR][smoothing] ~90 ms smoothing; [IIR][epsilon] ≥3 Hz retune gate
             if (params.phaseMode == 0 || params.phaseMode == 1)
