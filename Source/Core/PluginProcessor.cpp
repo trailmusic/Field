@@ -378,7 +378,6 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     // New EQ/link params
     p.eqShelfShapeS  = getParam(apvts, IDs::eqShelfShape);
     p.eqFilterQ      = getParam(apvts, IDs::eqFilterQ);
-    p.eqGainDb       = getParam(apvts, IDs::eqGain);
     p.mixPct         = getParam(apvts, IDs::mix);
     p.tiltLinkS      = (getParam(apvts, IDs::tiltLinkS) >= 0.5f);
     p.eqQLink        = (getParam(apvts, IDs::eqQLink)   >= 0.5f);
@@ -1350,7 +1349,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     // EQ shape/Q additions
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqShelfShape, 1 }, "Shelf Shape (S)", juce::NormalisableRange<float> (0.25f, 1.50f, 0.001f), 0.90f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqFilterQ,    1 }, "Filter Q",        juce::NormalisableRange<float> (0.50f, 1.20f, 0.001f), 0.7071f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqGain,      1 }, "EQ Gain",         juce::NormalisableRange<float> (-12.0f, 12.0f, 0.01f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::mix,         1 }, "Mix",             juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f), 100.0f));
     params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID{ IDs::tiltLinkS,    1 }, "Tilt Uses Shelf S", true));
     params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID{ IDs::eqQLink,      1 }, "Link HP/LP Q",      true));
@@ -1659,7 +1657,6 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     // New EQ shape/Q
     params.shelfShapeS = (Sample) juce::jlimit (0.25, 1.50, hp.eqShelfShapeS);
     params.filterQ     = (Sample) juce::jlimit (0.50, 1.20, hp.eqFilterQ);
-    params.eqGainDb    = (Sample) juce::jlimit (-12.0, 12.0, hp.eqGainDb);
     params.mixPct      = (Sample) juce::jlimit (0.0, 100.0, hp.mixPct);
     params.hpQ         = (Sample) juce::jlimit (0.50, 1.20, hp.hpQ);
     params.lpQ         = (Sample) juce::jlimit (0.50, 1.20, hp.lpQ);
@@ -2834,17 +2831,6 @@ void FieldChain<Sample>::process (Block block)
             if (rebuiltAny)
                 toneCoeffCooldownSamples = 64;
             
-            // Apply EQ gain (simple gain multiplication)
-            if (std::abs ((double) params.eqGainDb) > 0.01)
-            {
-                const Sample gain = (Sample) juce::Decibels::decibelsToGain ((double) params.eqGainDb);
-                for (int ch = 0; ch < sub.getNumChannels(); ++ch)
-                {
-                    auto* data = sub.getChannelPointer (ch);
-                    for (int s = 0; s < sub.getNumSamples(); ++s)
-                        data[s] *= gain;
-                }
-            }
             // [IIR][LR4] Zero/Natural: non‑resonant Linkwitz–Riley HP/LP per channel
             // [IIR][smoothing] ~90 ms smoothing; [IIR][epsilon] ≥3 Hz retune gate
             if (params.phaseMode == 0 || params.phaseMode == 1)

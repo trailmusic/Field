@@ -268,6 +268,154 @@ void ToggleSwitch::paint (juce::Graphics& g)
 }
 
 //==============================================================
+// VerticalSlider3D implementation
+//==============================================================
+VerticalSlider3D::VerticalSlider3D()
+{
+    setSliderStyle (juce::Slider::LinearVertical);
+    setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 20);
+    setRange (-60.0, 12.0, 0.1);
+    setValue (0.0);
+    setColour (juce::Slider::textBoxTextColourId, juce::Colours::white);
+    setColour (juce::Slider::textBoxBackgroundColourId, juce::Colour (0x00000000));
+    setColour (juce::Slider::textBoxOutlineColourId, juce::Colour (0x00000000));
+}
+
+void VerticalSlider3D::paint (juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat();
+    const float trackWidth = 8.0f;
+    const float handleSize = 16.0f;
+    
+    // Debug: Add a bright background to make sure the slider is visible
+    g.setColour (juce::Colours::red.withAlpha (0.3f));
+    g.fillRoundedRectangle (bounds, 6.0f);
+    
+    // Draw metallic background
+    drawMetallicBackground (g, bounds);
+    
+    // Draw track
+    auto trackRect = juce::Rectangle<float> (bounds.getCentreX() - trackWidth/2, 10, trackWidth, bounds.getHeight() - 20);
+    drawMetallicTrack (g, trackRect);
+    
+    // Calculate handle position
+    const float value = (float) getValue();
+    const float normalizedValue = (value - getMinimum()) / (getMaximum() - getMinimum());
+    const float handleY = trackRect.getY() + (1.0f - normalizedValue) * trackRect.getHeight();
+    auto handleRect = juce::Rectangle<float> (bounds.getCentreX() - handleSize/2, handleY - handleSize/2, handleSize, handleSize);
+    
+    // Draw 3D handle
+    draw3DHandle (g, handleRect);
+}
+
+void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> handleRect)
+{
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    const auto accent = lf ? lf->theme.accent : juce::Colour (0xFF5AA9E6);
+    const auto shadowDark = lf ? lf->theme.shadowDark : juce::Colour (0xFF1A1C20);
+    const auto shadowLight = lf ? lf->theme.shadowLight : juce::Colour (0xFF60646C);
+    
+    // Create gradient for 3D effect
+    juce::ColourGradient gradient (accent.brighter (0.3f), 
+                                  juce::Point<float>(handleRect.getCentreX(), handleRect.getY()),
+                                  accent.darker (0.3f), 
+                                  juce::Point<float>(handleRect.getCentreX(), handleRect.getBottom()),
+                                  false);
+    gradient.addColour (0.5, accent);
+    
+    // Draw handle shadow
+    g.setColour (shadowDark.withAlpha (0.4f));
+    g.fillEllipse (handleRect.translated (2, 2));
+    
+    // Draw handle body
+    g.setGradientFill (gradient);
+    g.fillEllipse (handleRect);
+    
+    // Draw highlight
+    g.setColour (accent.brighter (0.5f));
+    g.fillEllipse (handleRect.reduced (2));
+    
+    // Draw rim
+    g.setColour (accent.darker (0.2f));
+    g.drawEllipse (handleRect, 1.0f);
+}
+
+void VerticalSlider3D::drawMetallicTrack (juce::Graphics& g, juce::Rectangle<float> trackRect)
+{
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    const auto panel = lf ? lf->theme.panel : juce::Colour (0xFF3A3D45);
+    const auto shadowDark = lf ? lf->theme.shadowDark : juce::Colour (0xFF1A1C20);
+    const auto shadowLight = lf ? lf->theme.shadowLight : juce::Colour (0xFF60646C);
+    
+    // Track background
+    g.setColour (panel.darker (0.2f));
+    g.fillRoundedRectangle (trackRect, 4.0f);
+    
+    // Inner shadow
+    g.setColour (shadowDark.withAlpha (0.3f));
+    g.drawRoundedRectangle (trackRect.reduced (0.5f), 4.0f, 1.0f);
+    
+    // Highlight
+    g.setColour (shadowLight.withAlpha (0.2f));
+    g.drawRoundedRectangle (trackRect.reduced (1.0f), 4.0f, 0.5f);
+}
+
+void VerticalSlider3D::drawMetallicBackground (juce::Graphics& g, juce::Rectangle<float> backgroundRect)
+{
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    const auto panel = lf ? lf->theme.panel : juce::Colour (0xFF3A3D45);
+    const auto shadowDark = lf ? lf->theme.shadowDark : juce::Colour (0xFF1A1C20);
+    const auto shadowLight = lf ? lf->theme.shadowLight : juce::Colour (0xFF60646C);
+    
+    // Background fill
+    g.setColour (panel);
+    g.fillRoundedRectangle (backgroundRect, 6.0f);
+    
+    // Drop shadow
+    juce::DropShadow ds1 (shadowDark.withAlpha (0.4f), 8, { 0, 2 });
+    juce::DropShadow ds2 (shadowLight.withAlpha (0.2f), 4, { 0, 1 });
+    auto ri = backgroundRect.getSmallestIntegerContainer();
+    ds1.drawForRectangle (g, ri);
+    ds2.drawForRectangle (g, ri);
+    
+    // Inner rim
+    g.setColour (shadowDark.withAlpha (0.3f));
+    g.drawRoundedRectangle (backgroundRect.reduced (1.0f), 6.0f, 1.0f);
+}
+
+void VerticalSlider3D::mouseDown (const juce::MouseEvent& e)
+{
+    isDragging = true;
+    lastMousePos = e.position;
+    juce::Slider::mouseDown (e);
+}
+
+void VerticalSlider3D::mouseDrag (const juce::MouseEvent& e)
+{
+    if (isDragging)
+    {
+        const float deltaY = lastMousePos.y - e.position.y;
+        const float sensitivity = 0.5f;
+        const float newValue = getValue() + deltaY * sensitivity;
+        setValue (juce::jlimit (getMinimum(), getMaximum(), (double) newValue));
+        lastMousePos = e.position;
+    }
+    juce::Slider::mouseDrag (e);
+}
+
+void VerticalSlider3D::mouseUp (const juce::MouseEvent& e)
+{
+    isDragging = false;
+    juce::Slider::mouseUp (e);
+}
+
+void VerticalSlider3D::setSliderStyle (SliderStyle newStyle)
+{
+    // Force vertical style
+    juce::Slider::setSliderStyle (juce::Slider::LinearVertical);
+}
+
+//==============================================================
 // ControlContainer (panel with subtle depth + title)
 ControlContainer::ControlContainer() { setWantsKeyboardFocus (false); }
 
@@ -1516,6 +1664,43 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     addAndMakeVisible (rightSlidersContainer);   rightSlidersContainer.setTitle ("");     rightSlidersContainer.setShowBorder (true);
     rightSlidersContainer.setBorderColour (juce::Colours::red);
     addAndMakeVisible (metersContainer);       metersContainer.setTitle ("");         metersContainer.setShowBorder (false);
+    
+    // Add 3D vertical sliders to rightSlidersContainer
+    rightSlidersContainer.addAndMakeVisible (inputSlider);
+    rightSlidersContainer.addAndMakeVisible (outputSlider);
+    rightSlidersContainer.addAndMakeVisible (mixSlider);
+    rightSlidersContainer.addAndMakeVisible (inputLabel);
+    rightSlidersContainer.addAndMakeVisible (outputLabel);
+    rightSlidersContainer.addAndMakeVisible (mixLabel);
+    
+    // Configure sliders
+    inputSlider.setRange (-60.0, 12.0, 0.1);
+    inputSlider.setValue (0.0);
+    inputSlider.setTextValueSuffix (" dB");
+    inputSlider.setLookAndFeel (&lnf);
+    
+    outputSlider.setRange (-60.0, 12.0, 0.1);
+    outputSlider.setValue (0.0);
+    outputSlider.setTextValueSuffix (" dB");
+    outputSlider.setLookAndFeel (&lnf);
+    
+    mixSlider.setRange (0.0, 100.0, 0.1);
+    mixSlider.setValue (100.0);
+    mixSlider.setTextValueSuffix (" %");
+    mixSlider.setLookAndFeel (&lnf);
+    
+    // Configure labels
+    inputLabel.setText ("INPUT", juce::dontSendNotification);
+    inputLabel.setJustificationType (juce::Justification::centred);
+    inputLabel.setColour (juce::Label::textColourId, juce::Colours::white);
+    
+    outputLabel.setText ("OUTPUT", juce::dontSendNotification);
+    outputLabel.setJustificationType (juce::Justification::centred);
+    outputLabel.setColour (juce::Label::textColourId, juce::Colours::white);
+    
+    mixLabel.setText ("MIX", juce::dontSendNotification);
+    mixLabel.setJustificationType (juce::Justification::centred);
+    mixLabel.setColour (juce::Label::textColourId, juce::Colours::white);
 
     // Width group (image row, bottom-right): invisible container + placeholder slots for spanning grid
     addChildComponent (widthGroupContainer);
@@ -2897,6 +3082,35 @@ void MyPluginAudioProcessorEditor::performLayout()
         MainContentContainer.setBounds (leftArea);
         rightSlidersContainer.setBounds (rightSlidersArea);
         metersContainer.setBounds       (metersArea);
+        
+        // Layout the 3D vertical sliders in rightSlidersContainer
+        auto sliderArea = rightSlidersArea.reduced (10);
+        const int sliderWidth = sliderArea.getWidth() / 3;
+        const int sliderHeight = sliderArea.getHeight() - 40; // Leave space for labels
+        
+        // Debug: Ensure sliders are visible and have proper bounds
+        inputSlider.setBounds (sliderArea.getX(), sliderArea.getY(), sliderWidth, sliderHeight);
+        outputSlider.setBounds (sliderArea.getX() + sliderWidth, sliderArea.getY(), sliderWidth, sliderHeight);
+        mixSlider.setBounds (sliderArea.getX() + sliderWidth * 2, sliderArea.getY(), sliderWidth, sliderHeight);
+        
+        // Position labels below sliders
+        const int labelY = sliderArea.getY() + sliderHeight + 5;
+        inputLabel.setBounds (sliderArea.getX(), labelY, sliderWidth, 20);
+        outputLabel.setBounds (sliderArea.getX() + sliderWidth, labelY, sliderWidth, 20);
+        mixLabel.setBounds (sliderArea.getX() + sliderWidth * 2, labelY, sliderWidth, 20);
+        
+        // Debug: Force sliders to be visible
+        inputSlider.setVisible (true);
+        outputSlider.setVisible (true);
+        mixSlider.setVisible (true);
+        
+        // Debug: Add some logging to see what's happening
+        DBG("rightSlidersArea (right sliders): " << rightSlidersArea.toString());
+        DBG("metersArea (left meters): " << metersArea.toString());
+        DBG("sliderArea: " << sliderArea.toString());
+        DBG("sliderWidth: " << sliderWidth << ", sliderHeight: " << sliderHeight);
+        DBG("inputSlider bounds: " << inputSlider.getBounds().toString());
+        DBG("rightSlidersContainer visible: " << rightSlidersContainer.isVisible());
         // (Reverted) bottom toggle remains a direct child of the editor; positioned earlier
 
         // Allocate the top area to full height (legacy rows disabled)
