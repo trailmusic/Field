@@ -222,30 +222,28 @@ void KnobCellWithAux::paint (juce::Graphics& g)
             for (int y = (int) rr.getY() + step; y < rr.getBottom(); y += step)
                 g.fillRect (juce::Rectangle<int> ((int) rr.getX() + 4, y, (int) rr.getWidth() - 8, 1));
 
-            // Fine grain noise overlay (very low alpha)
+            // Static metallic texture (no randomization for performance)
             {
-                juce::Random rng ((int) juce::Time::getMillisecondCounter());
                 g.setColour (juce::Colours::black.withAlpha (0.040f));
                 const int noiseRows = juce::jmax (1, (int) rr.getHeight() / 4);
                 for (int i = 0; i < noiseRows; ++i)
                 {
-                    const int y = (int) rr.getY() + 2 + i * 4 + (rng.nextInt (3) - 1);
-                    const int w = juce::jmax (8, (int) rr.getWidth() - 8 - rng.nextInt (12));
-                    const int x = (int) rr.getX() + 4 + rng.nextInt (12);
+                    const int y = (int) rr.getY() + 2 + i * 4;
+                    const int w = juce::jmax (8, (int) rr.getWidth() - 12);
+                    const int x = (int) rr.getX() + 6;
                     g.fillRect (juce::Rectangle<int> (x, y, w, 1));
                 }
             }
 
-            // Diagonal micro-scratches
+            // Static diagonal micro-scratches (no randomization for performance)
             {
-                juce::Random rng ((int) juce::Time::getMillisecondCounter() ^ 0xA5A5);
                 const int scratches = juce::jmax (6, (int) rr.getWidth() / 22);
                 g.setColour (juce::Colours::white.withAlpha (0.035f));
                 for (int i = 0; i < scratches; ++i)
                 {
-                    float sx = rr.getX() + 6 + rng.nextFloat() * (rr.getWidth() - 12);
-                    float sy = rr.getY() + 6 + rng.nextFloat() * (rr.getHeight() - 12);
-                    float len = 10.0f + rng.nextFloat() * 18.0f;
+                    float sx = rr.getX() + 6 + std::fmod (i * 3.7f, rr.getWidth() - 12);
+                    float sy = rr.getY() + 6 + std::fmod (i * 2.3f, rr.getHeight() - 12);
+                    float len = 14.0f;
                     float dx = len * 0.86f; // cos(~40deg)
                     float dy = len * 0.50f; // sin(~30deg)
                     g.drawLine (sx, sy, sx + dx, sy + dy, 1.0f);
@@ -253,9 +251,9 @@ void KnobCellWithAux::paint (juce::Graphics& g)
                 g.setColour (juce::Colours::black.withAlpha (0.025f));
                 for (int i = 0; i < scratches; ++i)
                 {
-                    float sx = rr.getX() + 6 + rng.nextFloat() * (rr.getWidth() - 12);
-                    float sy = rr.getY() + 6 + rng.nextFloat() * (rr.getHeight() - 12);
-                    float len = 8.0f + rng.nextFloat() * 14.0f;
+                    float sx = rr.getX() + 6 + std::fmod (i * 4.1f, rr.getWidth() - 12);
+                    float sy = rr.getY() + 6 + std::fmod (i * 3.1f, rr.getHeight() - 12);
+                    float len = 11.0f;
                     float dx = len * -0.80f;
                     float dy = len * 0.58f;
                     g.drawLine (sx, sy, sx + dx, sy + dy, 1.0f);
@@ -307,5 +305,14 @@ void KnobCellWithAux::paint (juce::Graphics& g)
         g.fillRoundedRectangle (badge, 3.0f);
         g.setColour (sh.withAlpha (0.25f));
         g.drawRoundedRectangle (badge, 3.0f, 0.5f);
+    }
+
+    // Standard border treatment for XY controls (reduced brightness)
+    const bool isXYControl = (bool) getProperties().getWithDefault ("centerStyle", false);
+    if (isXYControl)
+    {
+        auto accent = lf ? lf->theme.accent : juce::Colours::cyan;
+        g.setColour (accent.withAlpha (0.3f));
+        g.drawRoundedRectangle (r, rad, 1.0f);
     }
 }

@@ -11,7 +11,7 @@ public:
     DelayVisuals (DelayUiBridge& bridgeRef, juce::AudioProcessor* proc)
         : bridge (bridgeRef), processor (proc)
     {
-        startTimerHz (60);
+        startTimerHz (30); // Reduced from 60Hz per UI performance rules
         setInterceptsMouseClicks (true, true);
     }
 

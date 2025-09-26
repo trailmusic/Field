@@ -24,6 +24,7 @@ public:
     }
     void setRowHeightPx (int px) { rowH = juce::jmax (1, px); resized(); repaint(); }
 
+
     void resized() override
     {
         auto r = getLocalBounds();

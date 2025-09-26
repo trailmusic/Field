@@ -1085,30 +1085,28 @@ public:
                     for (int y = (int) r.getY() + step; y < r.getBottom(); y += step)
                         g.fillRect (juce::Rectangle<int> ((int) r.getX() + 4, y, (int) r.getWidth() - 8, 1));
 
-                    // Fine noise
+                    // Static metallic texture (no randomization for performance)
                     {
-                        juce::Random rng ((int) juce::Time::getMillisecondCounter());
                         g.setColour (juce::Colours::black.withAlpha (0.040f));
                         const int noiseRows = juce::jmax (1, (int) r.getHeight() / 4);
                         for (int i = 0; i < noiseRows; ++i)
                         {
-                            const int y = (int) r.getY() + 2 + i * 4 + (rng.nextInt (3) - 1);
-                            const int w = juce::jmax (8, (int) r.getWidth() - 8 - rng.nextInt (12));
-                            const int x = (int) r.getX() + 4 + rng.nextInt (12);
+                            const int y = (int) r.getY() + 2 + i * 4;
+                            const int w = juce::jmax (8, (int) r.getWidth() - 12);
+                            const int x = (int) r.getX() + 6;
                             g.fillRect (juce::Rectangle<int> (x, y, w, 1));
                         }
                     }
 
-                    // Diagonal micro-scratches
+                    // Static diagonal micro-scratches (no randomization for performance)
                     {
-                        juce::Random rng ((int) juce::Time::getMillisecondCounter() ^ 0x5A5A);
                         const int scratches = juce::jmax (6, (int) r.getWidth() / 22);
                         g.setColour (juce::Colours::white.withAlpha (0.035f));
                         for (int i = 0; i < scratches; ++i)
                         {
-                            float sx = r.getX() + 6 + rng.nextFloat() * (r.getWidth() - 12);
-                            float sy = r.getY() + 6 + rng.nextFloat() * (r.getHeight() - 12);
-                            float len = 10.0f + rng.nextFloat() * 18.0f;
+                            float sx = r.getX() + 6 + std::fmod (i * 3.7f, r.getWidth() - 12);
+                            float sy = r.getY() + 6 + std::fmod (i * 2.3f, r.getHeight() - 12);
+                            float len = 14.0f;
                             float dx = len * 0.86f;
                             float dy = len * 0.50f;
                             g.drawLine (sx, sy, sx + dx, sy + dy, 1.0f);
@@ -1116,9 +1114,9 @@ public:
                         g.setColour (juce::Colours::black.withAlpha (0.025f));
                         for (int i = 0; i < scratches; ++i)
                         {
-                            float sx = r.getX() + 6 + rng.nextFloat() * (r.getWidth() - 12);
-                            float sy = r.getY() + 6 + rng.nextFloat() * (r.getHeight() - 12);
-                            float len = 8.0f + rng.nextFloat() * 14.0f;
+                            float sx = r.getX() + 6 + std::fmod (i * 4.1f, r.getWidth() - 12);
+                            float sy = r.getY() + 6 + std::fmod (i * 3.1f, r.getHeight() - 12);
+                            float len = 11.0f;
                             float dx = len * -0.80f;
                             float dy = len * 0.58f;
                             g.drawLine (sx, sy, sx + dx, sy + dy, 1.0f);

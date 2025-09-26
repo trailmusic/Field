@@ -41,7 +41,7 @@ public:
         addAndMakeVisible (resetButton);
         
         // Start animation timer
-        startTimerHz (60);
+        startTimerHz (30); // Reduced from 60Hz per UI performance rules
     }
     
     ~ZoomControl() override

@@ -709,6 +709,10 @@ void XYPad::paint (juce::Graphics& g)
         g.drawRoundedRectangle (border, rad, 2.0f);
     }
 
+    // Standard border treatment: accent border (reduced brightness for XY pad)
+    g.setColour (accent.withAlpha (0.3f));
+    g.drawRoundedRectangle (r, rad, 1.0f);
+
     // inner content
     auto padBounds = r.reduced (40.0f);
 
