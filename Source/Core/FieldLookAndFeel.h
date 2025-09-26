@@ -209,15 +209,15 @@ public:
                 theme.panel       = juce::Colour (0xFF454951);
                 theme.text        = juce::Colour (0xFFF0F2F5);
                 theme.textMuted   = juce::Colour (0xFFB8BDC7);
-                theme.accent      = juce::Colour (0xFF5AA9E6);
+                theme.accent      = juce::Colour (0xFF3D7BB8); // Darker Ocean blue
                 theme.hl          = juce::Colour (0xFF5A5E66);
                 theme.sh          = juce::Colour (0xFF2A2C30);
                 theme.shadowDark  = juce::Colour (0xFF1A1C20);
                 theme.shadowLight = juce::Colour (0xFF60646C);
 
                 theme.accentSecondary = juce::Colour (0xFF202226);
-                theme.eq.hp        = juce::Colour (0xFF42A5F5); // HP: blue
-                theme.eq.lp        = juce::Colour (0xFF1E88E5); // LP: deeper blue
+                theme.eq.hp        = juce::Colour (0xFF2B7BC7); // HP: darker blue
+                theme.eq.lp        = juce::Colour (0xFF1A5F9E); // LP: darker blue
                 theme.eq.air       = juce::Colour (0xFFFFF59D); // Air: soft yellow
                 theme.eq.tilt      = juce::Colour (0xFFFFA726); // Tilt: orange
                 theme.eq.bass      = juce::Colour (0xFF66BB6A); // Bass: green

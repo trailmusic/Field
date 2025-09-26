@@ -2482,7 +2482,7 @@ private:
         {
             auto r = getLocalBounds().toFloat();
             float tabW = juce::jmin(120.0f, r.getWidth() * 0.6f);
-            float tabH = 30.0f;  // Increased from 22.0f to 30.0f
+            float tabH = 26.0f;  // Slightly reduced from 30.0f for better proportions
             
             // Position handle so its BOTTOM edge aligns with the shade edge
             const float edge = shadeEdgeY();
@@ -2496,18 +2496,50 @@ private:
 
         void drawHandle (juce::Graphics& g, juce::Rectangle<float> tab) const
         {
+            // Base handle background
             g.setColour (lnf.theme.sh.withAlpha (0.85f));
             g.fillRoundedRectangle (tab, 8.0f);
-            g.setColour (lnf.theme.hl.withAlpha (0.6f));
-            g.drawRoundedRectangle (tab, 8.0f, 2.0f);
+            
+            // Hover effects with proper accent colors and outer glow
+            if (hoverHandle)
+            {
+                // Use the theme accent color directly (now darker)
+                auto accentColor = lnf.theme.accent;
+                
+                // True outer glow effect - draw multiple shadow layers for proper outer glow
+                juce::DropShadow outerGlow1 (accentColor.withAlpha (0.4f), 20, {0, 0});
+                outerGlow1.drawForRectangle (g, tab.getSmallestIntegerContainer());
+                
+                juce::DropShadow outerGlow2 (accentColor.withAlpha (0.2f), 12, {0, 0});
+                outerGlow2.drawForRectangle (g, tab.getSmallestIntegerContainer());
+                
+                // Accent border using theme accent color
+                g.setColour (accentColor.withAlpha (0.9f));
+                g.drawRoundedRectangle (tab, 8.0f, 1.5f);
+            }
+            else
+            {
+                // Normal border using theme highlight
+                g.setColour (lnf.theme.hl.withAlpha (0.6f));
+                g.drawRoundedRectangle (tab, 8.0f, 1.0f);
+            }
 
+            // Dashed grip bars with hover accent
             const int numBars = 4;
             const float barW = 10.0f, barH = 6.0f, gap = 14.0f;
             const float totalW = numBars * barW + (numBars - 1) * gap;
             float startX = tab.getCentreX() - totalW * 0.5f;
             float y = tab.getCentreY() - barH * 0.5f;
 
-            g.setColour (juce::Colours::white);
+            // Grip bars with theme accent color on hover
+            if (hoverHandle)
+            {
+                g.setColour (lnf.theme.accent.withAlpha (0.9f));
+            }
+            else
+            {
+                g.setColour (juce::Colours::white);
+            }
             for (int i = 0; i < numBars; ++i)
             {
                 juce::Rectangle<float> r (startX + i * (barW + gap), y, barW, barH);
