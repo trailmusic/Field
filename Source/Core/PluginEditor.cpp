@@ -2774,11 +2774,11 @@ void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
 {
     // Paint method - removed logging to prevent file I/O on every paint
     
-    // background gradient (original vibe)
+    // background gradient (toned down and tinted with accent color)
     auto full = getLocalBounds();
-    juce::Colour top    = lnf.theme.sh;
-    juce::Colour mid    = lnf.theme.hl;
-    juce::Colour bottom = lnf.theme.sh;
+    juce::Colour top    = lnf.theme.sh.interpolatedWith(lnf.theme.accent, 0.08f); // Subtle accent tint
+    juce::Colour mid    = lnf.theme.hl.darker(0.15f).interpolatedWith(lnf.theme.accent, 0.12f); // Accent tint on middle
+    juce::Colour bottom = lnf.theme.sh.interpolatedWith(lnf.theme.accent, 0.08f); // Subtle accent tint
     juce::ColourGradient bg (top, (float) full.getCentreX(), (float) full.getY(),
                              bottom, (float) full.getCentreX(), (float) full.getBottom(), false);
     bg.addColour (0.85, mid);
