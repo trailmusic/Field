@@ -334,6 +334,14 @@ void VerticalSlider3D::paint (juce::Graphics& g)
     
     // Draw visual markers and labels
     drawMarkers (g, trackRect);
+    
+    // Standard border treatment: accent border (reduced brightness for sliders)
+    g.setColour (accentColor.withAlpha (0.3f));
+    g.drawRoundedRectangle (bounds, 6.0f, 1.0f);
+    
+    // Peak line (thicker bottom border like meters)
+    g.setColour (accentColor.withAlpha (0.6f));
+    g.fillRect (juce::Rectangle<float> (bounds.getX(), bounds.getBottom() - 1.0f, bounds.getWidth(), 2.0f));
 }
 
 void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> handleRect)
