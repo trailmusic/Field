@@ -301,14 +301,20 @@ void VerticalSlider3D::paint (juce::Graphics& g)
     g.setGradientFill (borderGradient);
     g.drawRoundedRectangle (bounds.reduced (1.0f), 6.0f, 3.0f); // Increased thickness from 2.0f to 3.0f
     
-    // Draw metallic background
-    drawMetallicBackground (g, bounds);
+    // Draw metallic background extending to container top and bottom
+    auto extendedBounds = bounds;
+    extendedBounds.setY (0); // Extend to top of container
+    extendedBounds.setHeight (getParentComponent() ? getParentComponent()->getHeight() : bounds.getHeight()); // Extend to bottom of container
+    drawMetallicBackground (g, extendedBounds);
     
-    // Draw track
-    auto trackRect = juce::Rectangle<float> (bounds.getCentreX() - trackWidth/2, 10, trackWidth, bounds.getHeight() - 20);
+    // Draw track (shortened with room for labels at bottom)
+    const float trackTop = 20.0f; // Start track lower
+    const float trackBottom = bounds.getHeight() - 60.0f; // Leave 60px room for labels at bottom
+    const float trackHeight = trackBottom - trackTop;
+    auto trackRect = juce::Rectangle<float> (bounds.getCentreX() - trackWidth/2, trackTop, trackWidth, trackHeight);
     drawMetallicTrack (g, trackRect);
     
-    // Calculate handle position
+    // Calculate handle position within the shortened track
     const float value = (float) getValue();
     const float normalizedValue = (value - getMinimum()) / (getMaximum() - getMinimum());
     const float handleY = trackRect.getY() + (1.0f - normalizedValue) * trackRect.getHeight();
@@ -345,9 +351,13 @@ void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> h
     g.setGradientFill (gradient);
     g.fillEllipse (handleRect);
     
-    // Draw highlight
-    g.setColour (accent.brighter (0.5f));
-    g.fillEllipse (handleRect.reduced (2));
+    // Draw darker interior for better text visibility
+    g.setColour (accent.darker (0.4f));
+    g.fillEllipse (handleRect.reduced (3));
+    
+    // Draw subtle highlight
+    g.setColour (accent.brighter (0.2f));
+    g.fillEllipse (handleRect.reduced (4));
     
     // Draw rim
     g.setColour (accent.darker (0.2f));
@@ -1694,13 +1704,20 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     addAndMakeVisible (rightSlidersContainer);   rightSlidersContainer.setTitle ("");     rightSlidersContainer.setShowBorder (false);
     addAndMakeVisible (metersContainer);       metersContainer.setTitle ("");         metersContainer.setShowBorder (false);
     
+    // Add label containers for organized layout
+    addAndMakeVisible (inputLabelContainer);    inputLabelContainer.setTitle ("");     inputLabelContainer.setShowBorder (false);
+    addAndMakeVisible (outputLabelContainer);   outputLabelContainer.setTitle ("");    outputLabelContainer.setShowBorder (false);
+    addAndMakeVisible (mixLabelContainer);     mixLabelContainer.setTitle ("");       mixLabelContainer.setShowBorder (false);
+    
     // Add 3D vertical sliders to rightSlidersContainer
     rightSlidersContainer.addAndMakeVisible (inputSlider);
     rightSlidersContainer.addAndMakeVisible (outputSlider);
     rightSlidersContainer.addAndMakeVisible (mixSlider);
-    rightSlidersContainer.addAndMakeVisible (inputLabel);
-    rightSlidersContainer.addAndMakeVisible (outputLabel);
-    rightSlidersContainer.addAndMakeVisible (mixLabel);
+    
+    // Add labels to their respective containers
+    inputLabelContainer.addAndMakeVisible (inputLabel);
+    outputLabelContainer.addAndMakeVisible (outputLabel);
+    mixLabelContainer.addAndMakeVisible (mixLabel);
     
     // Debug: Test container hierarchy
     DBG("Container hierarchy test:");
@@ -3168,19 +3185,18 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int minSliderHeight = juce::jmax (sliderHeight, 100);
         DBG("Forced slider sizes: width=" << minSliderWidth << ", height=" << minSliderHeight);
         
-        // Center sliders vertically and horizontally in the container with track padding and gaps
-        const int containerWidth = rightSlidersArea.getWidth();
-        const int containerHeight = rightSlidersArea.getHeight();
+        // Align sliders with meters at top of container
+        const int containerWidth = rightSlidersContainer.getWidth();
+        const int containerHeight = rightSlidersContainer.getHeight();
         const int sliderGap = 8; // 8px gap between sliders
         const int reducedSliderWidth = minSliderWidth - 8; // Reduce width to allow for gaps
         const int totalSliderWidth = (reducedSliderWidth * 3) + (sliderGap * 2);
         const int startX = (containerWidth - totalSliderWidth) / 2;
-        const int startY = (containerHeight - minSliderHeight) / 2;
+        const int startY = 0; // Align with top of container (same as meters)
         
-        // Add padding to slider track (reduce height and add offset)
-        const int trackPadding = 20; // 20px padding at top and bottom
-        const int paddedSliderHeight = minSliderHeight - (trackPadding * 2);
-        const int paddedStartY = startY + trackPadding;
+        // Use full slider height in container (no padding)
+        const int paddedSliderHeight = minSliderHeight;
+        const int paddedStartY = startY;
         
         inputSlider.setBounds (startX, paddedStartY, reducedSliderWidth, paddedSliderHeight);
         outputSlider.setBounds (startX + reducedSliderWidth + sliderGap, paddedStartY, reducedSliderWidth, paddedSliderHeight);
@@ -3200,12 +3216,20 @@ void MyPluginAudioProcessorEditor::performLayout()
         outputSlider.repaint();
         mixSlider.repaint();
         
-        // Position labels centered below sliders with gaps
-        const int labelY = startY + minSliderHeight + 10;
+        // Pin label containers to bottom of respective sliders
         const int labelHeight = 20;
-        inputLabel.setBounds (startX, labelY, reducedSliderWidth, labelHeight);
-        outputLabel.setBounds (startX + reducedSliderWidth + sliderGap, labelY, reducedSliderWidth, labelHeight);
-        mixLabel.setBounds (startX + (reducedSliderWidth + sliderGap) * 2, labelY, reducedSliderWidth, labelHeight);
+        const int labelContainerHeight = 40; // Space for 2 rows of labels
+        const int labelY = paddedStartY + paddedSliderHeight - labelContainerHeight; // Pin to bottom of slider
+        
+        // Position label containers pinned to bottom of sliders
+        inputLabelContainer.setBounds (startX, labelY, reducedSliderWidth, labelContainerHeight);
+        outputLabelContainer.setBounds (startX + reducedSliderWidth + sliderGap, labelY, reducedSliderWidth, labelContainerHeight);
+        mixLabelContainer.setBounds (startX + (reducedSliderWidth + sliderGap) * 2, labelY, reducedSliderWidth, labelContainerHeight);
+        
+        // Position labels within their containers (centered)
+        inputLabel.setBounds (0, 0, reducedSliderWidth, labelHeight);
+        outputLabel.setBounds (0, 0, reducedSliderWidth, labelHeight);
+        mixLabel.setBounds (0, 0, reducedSliderWidth, labelHeight);
         
         // Labels will be styled with knobcell background in their paint method
         
