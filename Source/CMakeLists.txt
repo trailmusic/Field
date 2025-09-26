@@ -7,6 +7,8 @@ set(SRC
   Core/FieldLookAndFeel.cpp
     ui/Components/KnobCell.h
     ui/Components/KnobCell.cpp
+    ui/Components/KnobCellWithAux.h
+    ui/Components/KnobCellWithAux.cpp
     ui/Components/KnobCellDual.h
     ui/Components/KnobCellDual.cpp
     ui/Components/KnobCellQuad.h

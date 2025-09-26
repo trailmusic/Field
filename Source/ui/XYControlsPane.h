@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "Components/KnobCell.h"
+#include "Components/KnobCellWithAux.h"
 #include "SimpleSwitchCell.h"
 #include "../ui/Layout.h"
 #include "../Core/IconSystem.h"
@@ -283,14 +284,6 @@ private:
         // Style the mono slider like other knobs
         styleKnob (monoS);
         
-        // Create standard KnobCell with auxiliary components (templated approach)
-        auto cell = std::make_unique<KnobCell> (monoS, monoV, monoCap);
-        cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        cell->setValueLabelGap (labelGapPx);
-        if (metallic) cell->getProperties().set ("metallic", true);
-        cell->getProperties().set ("centerStyle", true);
-        // No caption needed for mono group - it's self-explanatory
-        
         // Set up slope switch and audition button
         slopeSwitch.setIndex (1); // Default to 12 dB/oct
         slopeSwitch.onChange = [this, slopePid](int idx) {
@@ -301,17 +294,14 @@ private:
         auditionButton.setButtonText ("");
         auditionButton.setToggleState (false, juce::dontSendNotification);
         
-        // Add auxiliary components to XYControlsPane first, then KnobCell will reparent them
-        addAndMakeVisible (slopeSwitch);
-        addAndMakeVisible (auditionButton);
-        
-        // Add auxiliary components (slope switch and audition button) to the right side
+        // Create KnobCellWithAux template for double-wide with auxiliary components
         std::vector<juce::Component*> auxComponents = { &slopeSwitch, &auditionButton };
-        cell->setAuxComponents (auxComponents, Layout::dp (40, 1.0f)); // Responsive aux height like other cells
-        cell->setAuxWeights ({2.0f, 1.0f}); // Slope switch gets 2x weight, audition button gets 1x
-        cell->setMiniPlacementRight (true); // Place auxiliary components on the RIGHT side, not bottom
-        // Note: auxAsBars defaults to false, which gives us the natural weighted vertical stack we want
+        std::vector<float> auxWeights = { 2.0f, 1.0f }; // Slope switch gets 2x weight, audition button gets 1x
+        auto cell = std::make_unique<KnobCellWithAux> (monoS, monoV, auxComponents, auxWeights);
         
+        // Set metrics to match other cells
+        cell->setMetrics (knobPx, valuePx, labelGapPx);
+        cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
         
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
@@ -393,7 +383,23 @@ private:
     void applyMetricsToAll()
     {
         for (auto* c : knobCells)
-            if (c) { c->setMetrics (knobPx, valuePx, labelGapPx); c->setValueLabelMode (KnobCell::ValueLabelMode::Managed); c->setValueLabelGap (labelGapPx); }
+        {
+            if (c) 
+            {
+                // Handle KnobCell
+                if (auto* knobCell = dynamic_cast<KnobCell*>(c))
+                {
+                    knobCell->setMetrics (knobPx, valuePx, labelGapPx);
+                    knobCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+                    knobCell->setValueLabelGap (labelGapPx);
+                }
+                // Handle KnobCellWithAux
+                else if (auto* knobCellWithAux = dynamic_cast<KnobCellWithAux*>(c))
+                {
+                    knobCellWithAux->setMetrics (knobPx, valuePx, labelGapPx);
+                }
+            }
+        }
         for (auto* s : switchCells)
             if (s) s->setShowBorder (true);
     }
@@ -501,9 +507,9 @@ private:
     std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment>> btnAtts;
     std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment>> cmbAtts;
 
-    std::vector<KnobCell*> knobCells;
+    std::vector<juce::Component*> knobCells;
     std::vector<SimpleSwitchCell*> switchCells;
-    std::vector<std::unique_ptr<KnobCell>> ownedCells;
+    std::vector<std::unique_ptr<juce::Component>> ownedCells;
     std::vector<std::unique_ptr<SimpleSwitchCell>> ownedSwitches;
     std::vector<juce::Component*> gridOrder;
     std::vector<std::unique_ptr<juce::Slider>> blankSliders;

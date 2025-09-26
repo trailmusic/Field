@@ -1,0 +1,170 @@
+#include "KnobCellWithAux.h"
+#include "../../Core/FieldLookAndFeel.h"
+
+KnobCellWithAux::KnobCellWithAux(juce::Slider& mainKnob,
+                                 juce::Label& mainLabel,
+                                 const std::vector<juce::Component*>& auxComponents,
+                                 const std::vector<float>& auxWeights)
+    : mainKnob(mainKnob), mainLabel(mainLabel), auxComponents(auxComponents), auxWeights(auxWeights)
+{
+    // Let the children handle interactions
+    setWantsKeyboardFocus (false);
+    setInterceptsMouseClicks (false, true);
+}
+
+void KnobCellWithAux::setMetrics (int knobPx, int valuePx, int gapPx)
+{
+    K = juce::jmax (16, knobPx);
+    V = juce::jmax (0,  valuePx);
+    G = juce::jmax (0,  gapPx);
+    resized();
+    repaint();
+}
+
+void KnobCellWithAux::setAuxHeight (int auxHeightPx)
+{
+    A = juce::jmax (0, auxHeightPx);
+    resized();
+    repaint();
+}
+
+void KnobCellWithAux::setAuxWeights (const std::vector<float>& weights)
+{
+    auxWeights = weights;
+    resized();
+    repaint();
+}
+
+void KnobCellWithAux::ensureChildren()
+{
+    // Ensure main knob and label are parented
+    if (mainKnob.getParentComponent() != this) addAndMakeVisible (mainKnob);
+    if (mainLabel.getParentComponent() != this) addAndMakeVisible (mainLabel);
+    mainLabel.setInterceptsMouseClicks (false, false);
+
+    // Ensure auxiliary components are parented
+    for (auto* component : auxComponents)
+    {
+        if (component != nullptr && component->getParentComponent() != this)
+            addAndMakeVisible (component);
+    }
+}
+
+void KnobCellWithAux::layoutAuxComponents (juce::Rectangle<int> auxArea)
+{
+    if (auxComponents.empty()) return;
+
+    const int count = (int) auxComponents.size();
+    const int gapY = juce::jmax (6, G);
+    const int totalG = gapY * juce::jmax (0, count - 1);
+    const int H = juce::jmax (1, auxArea.getHeight() - totalG);
+
+    // Calculate heights based on weights
+    juce::Array<float> weights;
+    if ((int) auxWeights.size() == count) {
+        for (float v : auxWeights) weights.add (juce::jmax (0.0f, v));
+    } else {
+        for (int i = 0; i < count; ++i) weights.add (1.0f);
+    }
+    float sum = 0.0f; for (auto w : weights) sum += w; if (sum <= 0.0001f) sum = (float) count;
+
+    juce::Array<int> heights; heights.resize (count);
+    int acc = 0;
+    for (int i = 0; i < count; ++i) { 
+        int h = (int) std::round (H * (weights[i] / sum)); 
+        heights.set (i, h); 
+        acc += h; 
+    }
+    for (int d = 0; d < H - acc; ++d) heights.set (d % count, heights[d % count] + 1);
+
+    // Layout components vertically
+    juce::Rectangle<int> col = auxArea;
+    col.setY (auxArea.getCentreY() - (H + totalG) / 2);
+    col.setHeight (H + totalG);
+    
+    for (int i = 0; i < count; ++i)
+    {
+        auto* component = auxComponents[(size_t) i];
+        auto rCell = col.removeFromTop (heights[i]).reduced (2, 2);
+        if (component != nullptr)
+            component->setBounds (rCell);
+        if (i < count - 1) col.removeFromTop (gapY);
+    }
+}
+
+void KnobCellWithAux::resized()
+{
+    ensureChildren();
+    auto b = getLocalBounds().reduced (4);
+    const int rimR = 6;
+
+    // Split into left (knob) and right (aux) areas
+    auto leftArea = b.removeFromLeft ((b.getWidth() - G) / 2);
+    b.removeFromLeft (G);
+    auto rightArea = b;
+
+    // Layout main knob and label in left area
+    const int k = juce::jmin (K, juce::jmin (leftArea.getWidth(), leftArea.getHeight()));
+    juce::Rectangle<int> knobBox (k, k);
+    knobBox = knobBox.withCentre ({ leftArea.getCentreX(), leftArea.getY() + k / 2 });
+    mainKnob.setBounds (knobBox);
+
+    // Layout main label
+    const int lh = (int) std::ceil (mainLabel.getFont().getHeight());
+    juce::Rectangle<int> lb (knobBox.getX(), knobBox.getBottom() + G, knobBox.getWidth(), juce::jmax (V, lh));
+    mainLabel.setBounds (lb);
+
+    // Layout auxiliary components in right area
+    if (A > 0 && !auxComponents.empty())
+    {
+        auto auxArea = rightArea.removeFromTop (A);
+        layoutAuxComponents (auxArea);
+    }
+}
+
+void KnobCellWithAux::paint (juce::Graphics& g)
+{
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    auto panel = lf ? lf->theme.panel : juce::Colour (0xFF3A3D45);
+    auto sh    = lf ? lf->theme.sh    : juce::Colour (0xFF2A2C30);
+    auto acc2  = lf ? lf->theme.accentSecondary : juce::Colour (0xFF202226);
+
+    auto r = getLocalBounds().toFloat();
+    const float rad = 8.0f;
+
+    if (showPanel)
+    {
+        g.setColour (panel);
+        g.fillRoundedRectangle (r.reduced (3.0f), rad);
+
+        // Depth (soft) – match KnobCell
+        {
+            juce::DropShadow ds1 ((lf ? lf->theme.shadowDark  : juce::Colours::black).withAlpha (0.35f), 12, { -1, -1 });
+            juce::DropShadow ds2 ((lf ? lf->theme.shadowLight : juce::Colours::grey ).withAlpha (0.25f),  6, { -1, -1 });
+            auto ri = r.reduced (3.0f).getSmallestIntegerContainer();
+            ds1.drawForRectangle (g, ri);
+            ds2.drawForRectangle (g, ri);
+        }
+
+        g.setColour (sh.withAlpha (0.18f));
+        g.drawRoundedRectangle (r.reduced (4.0f), rad - 1.0f, 0.8f);
+    }
+
+    if (showBorder)
+    {
+        auto border = r.reduced (2.0f);
+        g.setColour (acc2);
+        g.drawRoundedRectangle (border, rad, 1.5f);
+    }
+
+    // Draw recessed badge for main label
+    auto labelBounds = mainLabel.getBounds().toFloat();
+    if (!labelBounds.isEmpty())
+    {
+        auto badge = labelBounds.reduced (2.0f);
+        g.setColour (sh.withAlpha (0.15f));
+        g.fillRoundedRectangle (badge, 3.0f);
+        g.setColour (sh.withAlpha (0.25f));
+        g.drawRoundedRectangle (badge, 3.0f, 0.5f);
+    }
+}
