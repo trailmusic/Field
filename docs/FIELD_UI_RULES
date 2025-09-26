@@ -40,6 +40,7 @@ KnobCell Metrics & Styling
   - Combo: tintedSelected to hide default label when custom captioning is used.
 
   - Tabs: active tab uses a static accent border (no animated glow). Any previous glow animation is removed.
+  - Phase tab: standard accent border treatment with theme.accent color. Active state uses 2.0px border, inactive state uses 1.0px border with reduced opacity. Phase tab is the first tab in the UI and uses a sine wave icon.
   - Analysis/Tools tabs (Imager, Machine): visual distinction with solid borders and reduced opacity (75%) to indicate they don't affect audio signal. Use theme colors: Imager uses theme.eq.hp (blue), Machine uses theme.eq.bass (green). Border growth: active = 2.0px, inactive = 1.0px.
   - Machine Learn button: uses Machine tab green color (theme.eq.bass) for active state to maintain visual consistency with Machine tab.
   - Standard tabs (XY, Band, Motion, Reverb, Delay, Dynamic EQ): accent border treatment with theme.accent color. Active state uses 2.0px border, inactive state uses 1.0px border with reduced opacity.
@@ -49,6 +50,7 @@ KnobCell Metrics & Styling
 ---
 Panels, Grids, and Padding
 - Tabs: each tab owns a flattened 2×16 grid; close gaps; styled empty KnobCell fills blanks.
+- Phase tab: 2×16 control grid with 32 phase parameters. Uses KnobCell for sliders and SimpleSwitchCell for ComboBox/ToggleButton controls. Integrated with ControlGridMetrics for responsive layout.
 - Band pane: Imager Width visuals + WIDTH (global) + WIDTH LO/MID/HI controls; no Imager tooling (no PRE/FPS/mode buttons). Seven Designer controls (TILT S, PIVOT, AUTO DEP, AUTO THR, ATT, REL, MAX) live here as full KnobCells.
 - Imager tab: visuals‑only; tooling present but Width button removed.
 - Gaps

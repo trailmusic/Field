@@ -48,6 +48,8 @@ set(SRC
     ui/StereoFieldEngine.h
     ui/StereoFieldEngine.cpp
     ui/PaneManager.h
+    ui/PhaseTab.h
+    ui/PhaseTab.cpp
     ui/SimpleSwitchCell.h
     ui/machine/ParamPatch.h
     ui/machine/ProposalCard.h
@@ -70,6 +72,8 @@ set(SRC
     
     dsp/DelayPresetLibrary.h
     dsp/DelayPresetLibrary.cpp
+    dsp/PhaseAlignmentEngine.h
+    dsp/PhaseAlignmentEngine.cpp
     Presets/PresetStore.h
     Presets/PresetStore.cpp
     Presets/PresetManager.h

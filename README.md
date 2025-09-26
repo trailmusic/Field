@@ -67,6 +67,26 @@ We drew from tools like **Basslane/Basslane Pro** (low-end mono & width treatmen
 * **Rotation & Asymmetry:** S1-style field rotation and center offset
 * **Accurate Curves:** RBJ biquad-magnitude visualization (HP/LP/Shelves/Peak) with soft-knee pixel mapping
 
+### Phase Alignment System (NEW)
+
+Professional-grade time and phase correction with advanced DSP algorithms.
+
+- **Fractional Delay**: 4-tap Farrow interpolation for sub-sample accuracy
+- **All-Pass Filters**: Per-band phase rotation (Low/Mid/High) with Q control
+- **FIR Phase Matching**: Linear-phase processing for studio-quality results
+- **Automatic Alignment**: GCC-PHAT with parabolic peak refinement
+- **Dynamic Phase**: Transient-aware phase reduction for natural sound
+- **Audition System**: Internal 50/50 blend with time-aligned dry signal
+- **Processing Modes**: Live (zero latency) and Studio (high quality)
+- **Alignment Goals**: Mono Punch, Bass Tight, Stereo Focus
+- **Monitoring**: Multiple monitoring modes (Stereo, Mono, Mid/Side, A/B)
+
+Integration:
+- Signal flow: Pre-XY processing for optimal phase alignment
+- State: APVTS hosts 32 phase parameters with full automation support
+- Pane system: `PaneID::Phase` as first tab with 2x16 control grid
+- DSP engine: `PhaseAlignmentEngine` with comprehensive algorithms
+
 ### Dynamic EQ (NEW)
 
 Precision-first, in-pane Dynamic/Spectral EQ replacing the old Spectrum tab.

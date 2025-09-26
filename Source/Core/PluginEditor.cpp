@@ -2350,8 +2350,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerFocusHiHz,       centerFocusHiHz));
     attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerPunchAmt01,     centerPunchAmt01));
     comboAttachments .push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, IDs::centerPunchMode,   centerPunchMode));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>   (proc.apvts, IDs::centerPhaseRecOn, centerPhaseRecOn));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerPhaseAmt01, centerPhaseAmt01));
+    // Legacy Phase Recovery parameters removed - using new Phase Alignment system
     buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>   (proc.apvts, IDs::centerLockOn,      centerLockOn));
     attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerLockDb,       centerLockDb));
 

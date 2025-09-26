@@ -152,6 +152,9 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
     chainD = std::make_unique<FieldChain<double>>();
 
     // FieldChain instances created
+    
+    // Phase Alignment Engine
+    phaseAlignmentEngine = std::make_unique<PhaseAlignmentEngine>();
 
     // Keep existing smoothers if declared in the header (no harm if unused here)
     // Reset smoothers
@@ -210,6 +213,10 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     // Apply initial quality/precision profile
     applyQualityFromParams();
     updateLatencyForPhaseMode();
+    
+    // Phase Alignment Engine preparation
+    phaseAlignmentEngine->prepare(sampleRate, samplesPerBlock, getTotalNumInputChannels());
+    phaseDryBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock);
 
     // Motion Engine will be initialized lazily when first accessed
     
@@ -419,7 +426,7 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.delayDuckRatio = getParam(apvts, IDs::delayDuckRatio);
     p.delayDuckLookaheadMs = getParam(apvts, IDs::delayDuckLookaheadMs);
     p.delayDuckLinkGlobal = (getParam(apvts, IDs::delayDuckLinkGlobal) >= 0.5f);
-    p.phaseMode = (int) apvts.getParameterAsValue (IDs::phaseMode).getValue();
+    // p.phaseMode = (int) apvts.getParameterAsValue (IDs::phaseMode).getValue(); // Removed - using new Phase Alignment system
     // Reverb params ingress (APVTS -> HostParams)
     p.rvEnabled       = apvts.getRawParameterValue (ReverbIDs::enabled)->load() > 0.5f;
     p.rvKillDry       = apvts.getRawParameterValue (ReverbIDs::killDry)->load() > 0.5f;
@@ -633,6 +640,15 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         }
     }
 
+    // Phase Alignment Engine processing
+    phaseAlignmentEngine->updateParameters(apvts);
+    
+    // Copy input to dry buffer for audition blend
+    phaseDryBuffer.makeCopyOf(buffer);
+    
+    // Process with Phase Alignment Engine
+    phaseAlignmentEngine->processBlock(buffer, phaseDryBuffer);
+    
     juce::dsp::AudioBlock<float> block (buffer);
     chainF->setParameters (hp);
     chainF->process (block);
@@ -896,6 +912,29 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         for (int i = 0; i < n; ++i) { dL[i] = (float) sL[i]; dR[i] = (float) sR[i]; }
         visPre.push (dL, dR, n);
     }
+    // Phase Alignment Engine processing (double precision)
+    // Note: Phase Alignment Engine works with float internally, so we convert
+    juce::AudioBuffer<float> floatBuffer(buffer.getNumChannels(), buffer.getNumSamples());
+    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+    {
+        auto* src = buffer.getReadPointer(ch);
+        auto* dst = floatBuffer.getWritePointer(ch);
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+            dst[i] = static_cast<float>(src[i]);
+    }
+    
+    phaseAlignmentEngine->updateParameters(apvts);
+    phaseAlignmentEngine->processBlock(floatBuffer, phaseDryBuffer);
+    
+    // Convert back to double
+    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+    {
+        auto* src = floatBuffer.getReadPointer(ch);
+        auto* dst = buffer.getWritePointer(ch);
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+            dst[i] = static_cast<double>(src[i]);
+    }
+    
     chainD->setParameters (hp);
     chainD->process (block);
     
@@ -1041,27 +1080,10 @@ void MyPluginAudioProcessor::setStateInformation (const void* data, int sizeInBy
 
 void MyPluginAudioProcessor::updateLatencyForPhaseMode()
 {
-    int mode = (int) apvts.getParameterAsValue (IDs::phaseMode).getValue();
+    // Legacy function - now handled by Phase Alignment system
+    // Phase alignment latency is managed by the new Phase system
     int latency = 0;
-    if (mode == 2 || mode == 3) // Hybrid Linear or Full Linear
-    {
-        if (mode == 3)
-        {
-            // Full Linear: use fullLinearConvolver latency
-            if (isDoublePrecEnabled && chainD)
-                latency = chainD->getFullLinearLatencySamples();
-            else if (chainF)
-                latency = chainF->getFullLinearLatencySamples();
-        }
-        else
-        {
-            // Hybrid Linear: use linConvolver latency
-            if (isDoublePrecEnabled && chainD)
-                latency = chainD->getLinearPhaseLatencySamples();
-            else if (chainF)
-                latency = chainF->getLinearPhaseLatencySamples();
-        }
-    }
+    
     if (!latencyLocked)
         setLatencySamples (latency);
 }
@@ -1069,7 +1091,7 @@ void MyPluginAudioProcessor::updateLatencyForPhaseMode()
 void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, float newValue)
 {
     juce::ignoreUnused (newValue);
-    if (parameterID == IDs::phaseMode || parameterID == IDs::hpHz || parameterID == IDs::lpHz)
+    if (parameterID == IDs::hpHz || parameterID == IDs::lpHz)
         updateLatencyForPhaseMode();
     if (parameterID == IDs::quality || parameterID == IDs::precision)
         applyQualityFromParams();
@@ -1079,11 +1101,7 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
         userOsOverride.store (true);
         osFollowQuality.store (false);
     }
-    if (parameterID == IDs::phaseMode && !qualityApplyingGuard.load())
-    {
-        userPhaseOverride.store (true);
-        phaseFollowQuality.store (false);
-    }
+    // Legacy phase mode handling removed - using new Phase Alignment system
     
     // No auto-seeding of P2 from P1 – both panners share identical factory defaults by layout
 
@@ -1191,7 +1209,7 @@ void MyPluginAudioProcessor::applyQualityFromParams()
     }
 
     if (osFollowQuality.load())    setChoiceIndex (IDs::osMode,    recOs);
-    if (phaseFollowQuality.load()) setChoiceIndex (IDs::phaseMode,  recPhase);
+    // Legacy phase mode handling removed - using new Phase Alignment system
 }
 
 // =========================
@@ -1274,12 +1292,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterChoice>(
         juce::ParameterID{ IDs::centerPunchMode, 1 }, "Center Punch Mode",
         juce::StringArray { "toSides", "toCenter" }, 0));
-    // Phase Recovery
-    params.push_back (std::make_unique<juce::AudioParameterBool>(
-        juce::ParameterID{ IDs::centerPhaseRecOn, 1 }, "Phase Recovery", true));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(
-        juce::ParameterID{ IDs::centerPhaseAmt01, 1 }, "Phase Rec Amount",
-        juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.40f));
+    // Legacy Phase Recovery parameters removed - using new Phase Alignment system
     // Center Lock
     params.push_back (std::make_unique<juce::AudioParameterBool>(
         juce::ParameterID{ IDs::centerLockOn, 1 }, "Center Lock", true));
@@ -1297,10 +1310,116 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthAutoRelMs, 1 }, "Auto-Width Release (ms)", juce::NormalisableRange<float> (20.0f, 1200.0f, 0.1f), 250.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::widthMax, 1 }, "Max Width", juce::NormalisableRange<float> (0.5f, 2.5f, 0.001f), 2.0f));
 
-    // Phase Mode
+    // Phase Alignment System (32 parameters)
+    // Global/Routing (3 params)
     params.push_back (std::make_unique<juce::AudioParameterChoice>(
-        juce::ParameterID{ IDs::phaseMode, 1 }, "Phase Mode",
-        juce::StringArray{ "Zero", "Natural", "Hybrid Linear", "Full Linear" }, 0));
+        juce::ParameterID{ IDs::phase_ref_source, 1 }, "Reference Direction",
+        juce::StringArray{ "AtoB", "BtoA" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phase_channel_mode, 1 }, "Channel Mode",
+        juce::StringArray{ "Stereo", "MS", "DualMono" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{ IDs::phase_follow_xo, 1 }, "Follow Crossovers", true));
+    
+    // Capture/Align (3 params)
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phase_capture_len, 1 }, "Capture Length",
+        juce::StringArray{ "2s", "5s" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phase_align_mode, 1 }, "Align Mode",
+        juce::StringArray{ "Manual", "Semi", "Auto" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phase_align_goal, 1 }, "Align Goal",
+        juce::StringArray{ "MonoPunch", "BassTight", "StereoFocus" }, 0));
+    
+    // Polarity/Delay (6 params)
+    params.push_back (std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{ IDs::phase_polarity_a, 1 }, "Polarity A", false));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{ IDs::phase_polarity_b, 1 }, "Polarity B", false));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::phase_delay_ms_coarse, 1 }, "Delay Coarse",
+        juce::NormalisableRange<float> (-20.0f, 20.0f, 0.01f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::phase_delay_ms_fine, 1 }, "Delay Fine",
+        juce::NormalisableRange<float> (-1.0f, 1.0f, 0.001f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phase_delay_units, 1 }, "Delay Units",
+        juce::StringArray{ "ms", "samples" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phase_link_mode, 1 }, "Link",
+        juce::StringArray{ "Off", "TimeOnly", "AllBands" }, 1));
+    
+    // Engine/Latency/Commands (4 params)
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phase_engine, 1 }, "Engine",
+        juce::StringArray{ "Live", "Studio" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::phase_latency_ro, 1 }, "Latency",
+        juce::NormalisableRange<float> (0.0f, 200.0f, 0.1f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phase_reset_cmd, 1 }, "Reset",
+        juce::StringArray{ "Time", "Phase", "All" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{ IDs::phase_commit_cmd, 1 }, "Commit to Bands", false));
+    
+    // Banding/Crossovers (2 params)
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::phase_xo_lo_hz, 1 }, "XO Low",
+        juce::NormalisableRange<float> (40.0f, 400.0f, 0.1f, 0.5f), 120.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::phase_xo_hi_hz, 1 }, "XO High",
+        juce::NormalisableRange<float> (800.0f, 6000.0f, 0.1f, 0.5f), 2200.0f));
+    
+    // Per-Band All-Pass (6 params)
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::phase_lo_ap_deg, 1 }, "Low AP Amount",
+        juce::NormalisableRange<float> (0.0f, 180.0f, 0.1f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::phase_lo_q, 1 }, "Low AP Q",
+        juce::NormalisableRange<float> (0.30f, 4.00f, 0.01f), 0.80f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::phase_mid_ap_deg, 1 }, "Mid AP Amount",
+        juce::NormalisableRange<float> (0.0f, 180.0f, 0.1f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::phase_mid_q, 1 }, "Mid AP Q",
+        juce::NormalisableRange<float> (0.30f, 6.00f, 0.01f), 1.00f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::phase_hi_ap_deg, 1 }, "High AP Amount",
+        juce::NormalisableRange<float> (0.0f, 180.0f, 0.1f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::phase_hi_q, 1 }, "High AP Q",
+        juce::NormalisableRange<float> (0.30f, 8.00f, 0.01f), 1.20f));
+    
+    // FIR Phase Match (1 param)
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phase_fir_len, 1 }, "FIR Length",
+        juce::StringArray{ "64", "128", "256", "512", "1024", "2048", "4096" }, 2));
+    
+    // Dynamic Phase (1 param)
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phase_dynamic_mode, 1 }, "Dynamic Phase",
+        juce::StringArray{ "Off", "Light", "Med", "Hard" }, 1));
+    
+    // Monitoring/Output (4 params)
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phase_monitor_mode, 1 }, "Monitor",
+        juce::StringArray{ "Stereo", "MonoMinus6", "Mid", "Side", "A", "B" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phase_metric_mode, 1 }, "Metric",
+        juce::StringArray{ "Corr", "Coherence", "DeltaPhiRMS", "MonoLFRMS" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ IDs::phase_audition_blend, 1 }, "Audition Blend",
+        juce::StringArray{ "Apply100", "Blend50" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(
+        juce::ParameterID{ IDs::phase_trim_db, 1 }, "Output Trim",
+        juce::NormalisableRange<float> (-12.0f, 12.0f, 0.01f), 0.0f));
+    
+    // Logging/Preset Behavior (2 params)
+    params.push_back (std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{ IDs::phase_rec_enable, 1 }, "Phase Rec", false));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{ IDs::phase_apply_on_load, 1 }, "Apply @ Load", false));
     
     // Center Group (Rows 3-4)
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerPromDb, 1 }, "Center Prominence (dB)", juce::NormalisableRange<float> (-9.0f, 9.0f, 0.01f), 0.0f));
@@ -1308,8 +1427,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerFocusHiHz, 1 }, "Center Focus Hi (Hz)", juce::NormalisableRange<float> (1000.0f, 12000.0f, 1.0f, 0.5f), 3000.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerPunchAmt01, 1 }, "Center Punch Amount", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::centerPunchMode, 1 }, "Center Punch Mode", juce::StringArray { "To Sides", "To Center" }, 0));
-    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::centerPhaseRecOn, 1 }, "Center Phase Rec On", false));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerPhaseAmt01, 1 }, "Center Phase Rec Amount", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
+    // Legacy Phase Recovery parameters removed - using new Phase Alignment system
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::centerLockOn, 1 }, "Center Lock On", false));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerLockDb, 1 }, "Center Lock (dB)", juce::NormalisableRange<float> (0.0f, 6.0f, 0.01f), 0.0f));
 

@@ -1,6 +1,10 @@
 #pragma once
 #include <JuceHeader.h>
 #include "../Core/PluginProcessor.h"
+#include "../Core/FieldLookAndFeel.h"
+#include "ControlGridMetrics.h"
+#include "Components/KnobCell.h"
+#include "SimpleSwitchCell.h"
 
 class PhaseTab : public juce::Component
 {
@@ -9,34 +13,8 @@ public:
         : proc (p)
     {
         setLookAndFeel (lnf);
-        
-        // Phase Mode controls
-        phaseModeButton.setButtonText ("Phase Mode");
-        phaseModeButton.setToggleState (true, juce::dontSendNotification);
-        addAndMakeVisible (phaseModeButton);
-        
-        // Phase Recording controls
-        phaseRecButton.setButtonText ("Phase Rec");
-        phaseRecButton.setToggleState (false, juce::dontSendNotification);
-        addAndMakeVisible (phaseRecButton);
-        
-        // Phase Amount slider
-        phaseAmountSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-        phaseAmountSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 60, 20);
-        phaseAmountSlider.setRange (0.0, 1.0, 0.01);
-        phaseAmountSlider.setValue (0.5);
-        addAndMakeVisible (phaseAmountSlider);
-        
-        // Quality button
-        qualityButton.setButtonText ("Quality");
-        qualityButton.setToggleState (true, juce::dontSendNotification);
-        addAndMakeVisible (qualityButton);
-        
-        // Attach parameters
-        phaseModeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, IDs::phaseMode, phaseModeButton);
-        phaseRecAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, IDs::centerPhaseRecOn, phaseRecButton);
-        phaseAmountAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::centerPhaseAmt01, phaseAmountSlider);
-        qualityAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, IDs::quality, qualityButton);
+        buildControls();
+        applyMetricsToAll();
     }
     
     ~PhaseTab() override
@@ -44,65 +22,44 @@ public:
         setLookAndFeel (nullptr);
     }
     
-    void resized() override
-    {
-        auto r = getLocalBounds().reduced (20);
-        
-        // Phase Mode button (top-left)
-        phaseModeButton.setBounds (r.removeFromTop (40).removeFromLeft (120));
-        
-        // Quality button (top-right)
-        qualityButton.setBounds (r.removeFromTop (40).removeFromRight (120));
-        
-        // Phase Rec button (middle-left)
-        r = getLocalBounds().reduced (20);
-        r.removeFromTop (60);
-        phaseRecButton.setBounds (r.removeFromTop (40).removeFromLeft (120));
-        
-        // Phase Amount slider (center)
-        r = getLocalBounds().reduced (20);
-        r.removeFromTop (120);
-        auto centerArea = r.removeFromTop (120);
-        phaseAmountSlider.setBounds (centerArea.removeFromTop (80).reduced (20));
-    }
-    
-    void paint (juce::Graphics& g) override
-    {
-        auto bounds = getLocalBounds().toFloat();
-        
-        // Use theme colors like other components
-        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        {
-            g.setColour(lf->theme.panel);
-            g.fillRoundedRectangle(bounds, 6.0f);
-            
-            // Standard accent border treatment
-            g.setColour(lf->theme.accent.withAlpha(0.3f));
-            g.drawRoundedRectangle(bounds, 6.0f, 1.0f);
-        }
-        else
-        {
-            // Fallback for non-theme look and feel
-            g.setColour(juce::Colours::darkgrey);
-            g.fillRoundedRectangle(bounds, 6.0f);
-        }
-        
-        // Draw title
-        g.setColour (juce::Colours::white);
-        g.setFont (juce::Font (24.0f, juce::Font::bold));
-        g.drawText ("Phase Controls", getLocalBounds().removeFromTop (50), juce::Justification::centred);
-    }
+    void resized() override;
+    void paint (juce::Graphics& g) override;
 
 private:
+    void styleKnob (juce::Slider& k);
+    void makeCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid);
+    void makeComboCell (juce::ComboBox& c, const juce::String& cap, const char* pid);
+    void makeSwitchCell (juce::ToggleButton& t, const juce::String& cap, const char* pid);
+    void buildControls();
+    void applyMetricsToAll();
+
     MyPluginAudioProcessor& proc;
     
-    juce::ToggleButton phaseModeButton;
-    juce::ToggleButton phaseRecButton;
-    juce::Slider phaseAmountSlider;
-    juce::ToggleButton qualityButton;
+    // Control components
+    juce::ComboBox refSourceCombo, channelModeCombo, captureCombo, alignModeCombo, alignGoalCombo;
+    juce::ComboBox unitsCombo, linkCombo, engineCombo, resetCombo;
+    juce::ComboBox firLengthCombo, dynamicPhaseCombo, monitorCombo, metricCombo, auditionBlendCombo;
+    juce::ToggleButton followXOSwitch, polarityASwitch, polarityBSwitch, commitSwitch;
+    juce::ToggleButton phaseRecSwitch, applyOnLoadSwitch;
+    juce::Slider delayCoarseKnob, delayFineKnob, latencyKnob;
+    juce::Slider xoLowKnob, xoHighKnob, lowAPKnob, lowQKnob, midAPKnob, midQKnob;
+    juce::Slider highAPKnob, highQKnob, trimKnob;
+    juce::Label delayCoarseLabel, delayFineLabel, latencyLabel;
+    juce::Label xoLowLabel, xoHighLabel, lowAPLabel, lowQLabel, midAPLabel, midQLabel;
+    juce::Label highAPLabel, highQLabel, trimLabel;
     
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> phaseModeAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> phaseRecAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> phaseAmountAttachment;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> qualityAttachment;
+    // Attachments
+    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>> sAtts;
+    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment>> comboAtts;
+    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment>> buttonAtts;
+    
+    // Control grid system
+    std::vector<KnobCell*> knobCells;
+    std::vector<std::unique_ptr<KnobCell>> ownedCells;
+    std::vector<SimpleSwitchCell*> switchCells;
+    std::vector<std::unique_ptr<SimpleSwitchCell>> ownedSwitches;
+    std::vector<juce::Component*> gridOrder;
+    int knobPx = 48, valuePx = 14, labelGapPx = 4, colW = 56, rowH = 0;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PhaseTab)
 };

@@ -4,6 +4,7 @@
 #include "dsp/Ducker.h"
 #include "dsp/DelayEngine.h"
 #include "dsp/PhaseModes.h"
+#include "dsp/PhaseAlignmentEngine.h"
 #include "motion/MotionEngine.h"
 #include "reverb/ReverbParamIDs.h"
 #include "reverb/ReverbEngine.h"
@@ -152,8 +153,58 @@ namespace IDs {
     static constexpr const char* widthAutoAtkMs     = "width_auto_atk_ms";
     static constexpr const char* widthAutoRelMs     = "width_auto_rel_ms";
     static constexpr const char* widthMax           = "width_max";
-    // Phase Modes
-    static constexpr const char* phaseMode  = "phase_mode"; // 0 Zero, 1 Natural, 2 Hybrid Linear
+    // Phase Alignment System (32 parameters)
+    // Global/Routing (3 params)
+    static constexpr const char* phase_ref_source    = "phase_ref_source";     // enum: AtoB, BtoA
+    static constexpr const char* phase_channel_mode  = "phase_channel_mode";     // enum: Stereo, MS, DualMono
+    static constexpr const char* phase_follow_xo     = "phase_follow_xo";       // bool: Off, On
+    
+    // Capture/Align (3 params)
+    static constexpr const char* phase_capture_len   = "phase_capture_len";     // enum: 2s, 5s
+    static constexpr const char* phase_align_mode    = "phase_align_mode";      // enum: Manual, Semi, Auto
+    static constexpr const char* phase_align_goal    = "phase_align_goal";      // enum: MonoPunch, BassTight, StereoFocus
+    
+    // Polarity/Delay (6 params)
+    static constexpr const char* phase_polarity_a    = "phase_polarity_a";     // bool: Normal, Invert
+    static constexpr const char* phase_polarity_b    = "phase_polarity_b";     // bool: Normal, Invert
+    static constexpr const char* phase_delay_ms_coarse = "phase_delay_ms_coarse"; // float: -20.00 to +20.00
+    static constexpr const char* phase_delay_ms_fine  = "phase_delay_ms_fine";   // float: -1.000 to +1.000
+    static constexpr const char* phase_delay_units    = "phase_delay_units";     // enum: ms, samples
+    static constexpr const char* phase_link_mode     = "phase_link_mode";       // enum: Off, TimeOnly, AllBands
+    
+    // Engine/Latency/Commands (4 params)
+    static constexpr const char* phase_engine         = "phase_engine";         // enum: Live, Studio
+    static constexpr const char* phase_latency_ro    = "phase_latency_ro";      // readout: 0-200ms
+    static constexpr const char* phase_reset_cmd     = "phase_reset_cmd";      // enum: Time, Phase, All
+    static constexpr const char* phase_commit_cmd    = "phase_commit_cmd";      // button: Trigger
+    
+    // Banding/Crossovers (2 params)
+    static constexpr const char* phase_xo_lo_hz      = "phase_xo_lo_hz";       // float: 40-400
+    static constexpr const char* phase_xo_hi_hz      = "phase_xo_hi_hz";       // float: 800-6000
+    
+    // Per-Band All-Pass (6 params)
+    static constexpr const char* phase_lo_ap_deg     = "phase_lo_ap_deg";     // float: 0-180
+    static constexpr const char* phase_lo_q          = "phase_lo_q";           // float: 0.30-4.00
+    static constexpr const char* phase_mid_ap_deg    = "phase_mid_ap_deg";    // float: 0-180
+    static constexpr const char* phase_mid_q         = "phase_mid_q";          // float: 0.30-6.00
+    static constexpr const char* phase_hi_ap_deg     = "phase_hi_ap_deg";     // float: 0-180
+    static constexpr const char* phase_hi_q          = "phase_hi_q";          // float: 0.30-8.00
+    
+    // FIR Phase Match (1 param)
+    static constexpr const char* phase_fir_len       = "phase_fir_len";        // int: 64, 128, 256, 512, 1024, 2048, 4096
+    
+    // Dynamic Phase (1 param)
+    static constexpr const char* phase_dynamic_mode  = "phase_dynamic_mode";    // enum: Off, Light, Med, Hard
+    
+    // Monitoring/Output (4 params)
+    static constexpr const char* phase_monitor_mode  = "phase_monitor_mode";   // enum: Stereo, MonoMinus6, Mid, Side, A, B
+    static constexpr const char* phase_metric_mode   = "phase_metric_mode";     // enum: Corr, Coherence, DeltaPhiRMS, MonoLFRMS
+    static constexpr const char* phase_audition_blend = "phase_audition_blend"; // enum: Apply100, Blend50
+    static constexpr const char* phase_trim_db       = "phase_trim_db";         // float: -12 to +12
+    
+    // Logging/Preset Behavior (2 params)
+    static constexpr const char* phase_rec_enable    = "phase_rec_enable";     // bool: Off, On
+    static constexpr const char* phase_apply_on_load  = "phase_apply_on_load"; // bool: Off, On
 
     // Center Group (Rows 3-4)
     static constexpr const char* centerPromDb        = "center_prom_db";        // -9..+9 dB
@@ -161,8 +212,6 @@ namespace IDs {
     static constexpr const char* centerFocusHiHz     = "center_f_hi_hz";        // 1000..12000 Hz (log)
     static constexpr const char* centerPunchAmt01    = "center_punch_amt";      // 0..1
     static constexpr const char* centerPunchMode     = "center_punch_mode";     // 0 toSides, 1 toCenter
-    static constexpr const char* centerPhaseRecOn    = "center_phase_rec_on";   // bool
-    static constexpr const char* centerPhaseAmt01    = "center_phase_rec_amt";  // 0..1
     static constexpr const char* centerLockOn        = "center_lock_on";        // bool
     static constexpr const char* centerLockDb        = "center_lock_db";        // 0..6 dB cap
 }
@@ -450,6 +499,10 @@ private:
     // Cache last prepared sizes for fullLinearConvolver to avoid per-block prepare
     int   fullPreparedBlockLen { 0 };
     int   fullPreparedChannels { 0 };
+    
+    // Phase Alignment Engine
+    std::unique_ptr<PhaseAlignmentEngine> phaseAlignmentEngine;
+    juce::AudioBuffer<Sample> phaseDryBuffer; // For audition blend
 
     // Smoothed macro tone parameters (to reduce zipper/crackle)
     juce::SmoothedValue<Sample> tiltDbSm, tiltFreqSm;
@@ -1106,6 +1159,10 @@ private:
     float  recentOutRmsAvg          { 0.0f };
     int    watchdogSamplesAcc       { 0 };
     int    watchdogWindowSamples    { 0 };      // ~100 ms at current SR
+
+    // Phase Alignment Engine
+    std::unique_ptr<PhaseAlignmentEngine> phaseAlignmentEngine;
+    juce::AudioBuffer<float> phaseDryBuffer; // For audition blend
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)
 };
