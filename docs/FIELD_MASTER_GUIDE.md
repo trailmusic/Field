@@ -1332,6 +1332,156 @@ drawFieldLogo(g, cover);
 # 
 # ================================================================================
 
+# ================================================================================
+# 🎨 DARKER THEME SYSTEM - Enhanced Visual Consistency with Darker Accents
+# ================================================================================
+# 
+# 📍 LOCATION: Source/Core/FieldLookAndFeel.h (Ocean theme variant)
+# 🎯 PURPOSE: Global theme darkening for enhanced visual consistency
+# 🔧 INTEGRATION: Affects all accent colors across the entire plugin
+# 📊 FEATURES: Darker accent colors, consistent EQ colors, improved contrast
+# 
+# ================================================================================
+
+## 🎨 Darker Theme System - Enhanced Visual Consistency
+
+### **Darker Theme: The Ultimate Visual Consistency Enhancement**
+
+**Achievement**: Successfully implemented a global darker theme system that enhances visual consistency across the entire plugin by darkening accent colors and related UI elements, creating a more cohesive and professional appearance.
+
+#### **🎯 Darker Theme Objectives Achieved**
+
+1. **Global Accent Darkening**: Main accent color darkened from `0xFF5AA9E6` to `0xFF3D7BB8`
+2. **EQ Color Consistency**: High-pass and low-pass colors darkened to match theme
+3. **Visual Cohesion**: All accent elements now use consistent darker palette
+4. **Enhanced Contrast**: Improved readability and visual hierarchy
+5. **Professional Polish**: More sophisticated and refined appearance
+
+#### **🔧 Technical Implementation**
+
+**Theme Color Updates**
+```cpp
+// Source/Core/FieldLookAndFeel.h - Ocean theme variant
+struct Ocean : public FieldTheme
+{
+    Ocean()
+    {
+        // Standard blue palette with darker accents
+        theme.base        = juce::Colour (0xFF3C3F45);
+        theme.panel       = juce::Colour (0xFF454951);
+        theme.text        = juce::Colour (0xFFF0F2F5);
+        theme.textMuted   = juce::Colour (0xFFB8BDC7);
+        theme.accent      = juce::Colour (0xFF3D7BB8); // Darker Ocean blue
+        theme.hl          = juce::Colour (0xFF5A5E66);
+        theme.sh          = juce::Colour (0xFF2A2C30);
+        theme.shadowDark  = juce::Colour (0xFF1A1C20);
+        theme.shadowLight = juce::Colour (0xFF60646C);
+
+        theme.accentSecondary = juce::Colour (0xFF202226);
+        theme.eq.hp        = juce::Colour (0xFF2B7BC7); // HP: darker blue
+        theme.eq.lp        = juce::Colour (0xFF1A5F9E); // LP: deeper blue
+        theme.eq.air       = juce::Colour (0xFFFFF59D); // Air: soft yellow
+        theme.eq.tilt      = juce::Colour (0xFFFFA726); // Tilt: orange
+        theme.eq.bass      = juce::Colour (0xFF66BB6A); // Bass: green
+        theme.eq.scoop     = juce::Colour (0xFFAB47BC); // Scoop: plum/purple
+        theme.eq.monoShade = juce::Colour (0xFF2A2C30).withAlpha (0.15f);
+        
+        // Motion colours for Ocean mode (default bluish-purple)
+        theme.motionPanelTop = juce::Colour (0xFF7B81C1);
+        theme.motionPanelBot = juce::Colour (0xFF555A99);
+        theme.motionBorder   = juce::Colour (0xFF4A4A8E);
+    }
+};
+```
+
+#### **🎨 Visual Impact**
+
+**Before vs After Color Changes**
+- **Main Accent**: `0xFF5AA9E6` → `0xFF3D7BB8` (darker, more sophisticated)
+- **EQ High-Pass**: `0xFF42A5F5` → `0xFF2B7BC7` (consistent with theme)
+- **EQ Low-Pass**: `0xFF1E88E5` → `0xFF1A5F9E` (deeper blue tone)
+
+**Affected Components**
+- ✅ **ShadeOverlay Handle**: Hover effects use darker accent
+- ✅ **All UI Controls**: Knobs, sliders, buttons with accent colors
+- ✅ **EQ Bands**: High-pass and low-pass visual indicators
+- ✅ **Motion Controls**: Panel colors and borders
+- ✅ **Header Elements**: Logo effects and version display
+
+#### **🔧 Integration Benefits**
+
+**Consistent Visual Language**
+- All accent elements now use the same darker palette
+- Improved visual hierarchy and contrast
+- More professional and sophisticated appearance
+- Better integration with the overall dark theme
+
+**Enhanced User Experience**
+- Clearer visual feedback on interactive elements
+- Improved readability and focus
+- More cohesive interface design
+- Professional polish throughout the plugin
+
+#### **📊 Implementation Details**
+
+**Color Calculation Method**
+```cpp
+// Direct color assignment for consistency
+theme.accent = juce::Colour (0xFF3D7BB8); // Darker Ocean blue
+theme.eq.hp  = juce::Colour (0xFF2B7BC7); // HP: darker blue
+theme.eq.lp  = juce::Colour (0xFF1A5F9E); // LP: deeper blue
+```
+
+**Theme Application**
+- Applied globally through `FieldLNF` system
+- Automatically affects all components using `lnf.theme.accent`
+- No component-specific changes required
+- Maintains backward compatibility
+
+#### **🎯 Usage Guidelines**
+
+**Implementing Darker Theme**
+1. **Use Theme Colors**: Always reference `lnf.theme.accent` for accent elements
+2. **Consistent Application**: Apply darker theme across all UI components
+3. **Visual Testing**: Verify contrast and readability in all contexts
+4. **Performance**: No performance impact - pure color value changes
+
+**Maintaining Theme Consistency**
+- All new components should use `lnf.theme.accent`
+- Avoid hardcoded color values
+- Test hover states and interactive feedback
+- Ensure accessibility and contrast requirements
+
+#### **📚 Documentation Coverage**
+
+**Updated Components**
+- ✅ **ShadeOverlay**: Handle hover effects use darker accent
+- ✅ **FIELD Logo**: Shadow effects use theme colors
+- ✅ **All UI Controls**: Consistent accent color application
+- ✅ **EQ System**: High-pass and low-pass color updates
+- ✅ **Motion Controls**: Panel and border color consistency
+
+**Creating New Components with Darker Theme**
+```cpp
+// Always use theme colors for consistency
+g.setColour(lnf.theme.accent.withAlpha(0.9f)); // Hover effects
+g.setColour(lnf.theme.hl.withAlpha(0.6f));      // Normal borders
+g.setColour(lnf.theme.sh.withAlpha(0.85f));    // Backgrounds
+```
+
+**Enhancing Existing Components**
+- Update hardcoded colors to use theme system
+- Apply darker accent for hover states
+- Ensure consistent visual feedback
+- Test across all interaction states
+
+# ✅ COMPLETE: Darker theme system documentation
+# 📚 COVERAGE: Global accent darkening, EQ color consistency, visual cohesion
+# 🔧 PATTERNS: Theme integration, color consistency, visual hierarchy
+# 🎯 USAGE: Clear guidelines for implementing and maintaining darker theme
+
+# ================================================================================
+
 ---
 
 ## 🎨 ShadeOverlay Component - XYPad Block-Vision Control System
@@ -1447,36 +1597,54 @@ void paint (juce::Graphics& g) override
 }
 ```
 
-**Interactive Handle Design**
+**Interactive Handle Design with Darker Theme & Proper Outer Glow**
 ```cpp
 void drawHandle (juce::Graphics& g, juce::Rectangle<float> tab) const
 {
-    // Panel styling with subtle hover glow
-    g.setColour (lnf.theme.base);
+    // Base handle background with darker theme
+    g.setColour (lnf.theme.sh.withAlpha (0.85f));
     g.fillRoundedRectangle (tab, 8.0f);
-    g.setColour (lnf.theme.hl.withAlpha (hoverHandle ? 0.85f : 0.6f));
-    g.drawRoundedRectangle (tab, 8.0f, 1.2f);
     
-    // Hover glow effect
+    // Hover effects with proper accent colors and outer glow
     if (hoverHandle)
     {
-        for (int i = 1; i <= 3; ++i)
-        {
-            const float t = (float) i / 3.0f;
-            const float expand = 2.0f + t * 6.0f;
-            g.setColour (lnf.theme.accent.withAlpha ((1.0f - t) * 0.18f));
-            g.drawRoundedRectangle (tab.expanded (expand), 8.0f + expand * 0.35f, 1.8f);
-        }
+        // Use the theme accent color directly (now darker)
+        auto accentColor = lnf.theme.accent;
+        
+        // True outer glow effect - draw multiple shadow layers for proper outer glow
+        juce::DropShadow outerGlow1 (accentColor.withAlpha (0.4f), 20, {0, 0});
+        outerGlow1.drawForRectangle (g, tab.getSmallestIntegerContainer());
+        
+        juce::DropShadow outerGlow2 (accentColor.withAlpha (0.2f), 12, {0, 0});
+        outerGlow2.drawForRectangle (g, tab.getSmallestIntegerContainer());
+        
+        // Accent border using theme accent color
+        g.setColour (accentColor.withAlpha (0.9f));
+        g.drawRoundedRectangle (tab, 8.0f, 1.5f);
+    }
+    else
+    {
+        // Normal border using theme highlight
+        g.setColour (lnf.theme.hl.withAlpha (0.6f));
+        g.drawRoundedRectangle (tab, 8.0f, 1.0f);
     }
 
-    // Grip bars for visual feedback
+    // Dashed grip bars with hover accent
     const int numBars = 4;
     const float barW = 10.0f, barH = 6.0f, gap = 14.0f;
     const float totalW = numBars * barW + (numBars - 1) * gap;
     float startX = tab.getCentreX() - totalW * 0.5f;
     float y = tab.getCentreY() - barH * 0.5f;
 
-    g.setColour (hoverHandle ? lnf.theme.accent : lnf.theme.textMuted);
+    // Grip bars with theme accent color on hover
+    if (hoverHandle)
+    {
+        g.setColour (lnf.theme.accent.withAlpha (0.9f));
+    }
+    else
+    {
+        g.setColour (juce::Colours::white);
+    }
     for (int i = 0; i < numBars; ++i)
     {
         juce::Rectangle<float> r (startX + i * (barW + gap), y, barW, barH);
