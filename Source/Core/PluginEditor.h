@@ -2531,15 +2531,8 @@ private:
             float startX = tab.getCentreX() - totalW * 0.5f;
             float y = tab.getCentreY() - barH * 0.5f;
 
-            // Grip bars with theme accent color on hover
-            if (hoverHandle)
-            {
-                g.setColour (lnf.theme.accent.withAlpha (0.9f));
-            }
-            else
-            {
-                g.setColour (juce::Colours::white);
-            }
+            // Grip bars with theme accent color
+            g.setColour (lnf.theme.accent.withAlpha (hoverHandle ? 0.9f : 0.7f));
             for (int i = 0; i < numBars; ++i)
             {
                 juce::Rectangle<float> r (startX + i * (barW + gap), y, barW, barH);
