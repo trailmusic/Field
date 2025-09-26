@@ -318,6 +318,8 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
 {
     HostParams p{};
     p.gainDb   = getParam(apvts, IDs::gain);
+    p.inputGainDb = getParam(apvts, IDs::inputGain);
+    p.outputGainDb = getParam(apvts, IDs::outputGain);
     p.pan      = getParam(apvts, IDs::pan);
     p.panL     = getParam(apvts, IDs::panL);
     p.panR     = getParam(apvts, IDs::panR);
@@ -1202,6 +1204,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
 
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::gain, 1 }, "Gain +", juce::NormalisableRange<float> (-12.0f, 12.0f, 0.01f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::inputGain, 1 }, "Input Gain", juce::NormalisableRange<float> (-60.0f, 12.0f, 0.1f), 0.0f));
+    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::outputGain, 1 }, "Output Gain", juce::NormalisableRange<float> (-60.0f, 12.0f, 0.1f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::pan, 1 }, "Pan", juce::NormalisableRange<float> (-1.0f, 1.0f, 0.0001f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::panL, 1 }, "Pan L", juce::NormalisableRange<float> (-1.0f, 1.0f, 0.0001f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::panR, 1 }, "Pan R", juce::NormalisableRange<float> (-1.0f, 1.0f, 0.0001f), 0.0f));
@@ -1631,6 +1635,8 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
 {
     // Cast/copy once per block into Sample domain
     params.gainLin   = juce::Decibels::decibelsToGain ((Sample) hp.gainDb);
+    params.inputGainLin = juce::Decibels::decibelsToGain ((Sample) hp.inputGainDb);
+    params.outputGainLin = juce::Decibels::decibelsToGain ((Sample) hp.outputGainDb);
     params.pan       = (Sample) hp.pan;
     params.panL      = (Sample) hp.panL;
     params.panR      = (Sample) hp.panR;
@@ -2624,6 +2630,9 @@ void FieldChain<Sample>::process (Block block)
     juce::ScopedNoDenormals noDenormals;
 
     // Input gain
+    block.multiplyBy (params.inputGainLin);
+    
+    // Main processing gain
     block.multiplyBy (params.gainLin);
 
     // eco path removed
@@ -3216,6 +3225,9 @@ void FieldChain<Sample>::process (Block block)
     {
         applyDynamicEq(block);
     }
+    
+    // Output gain
+    block.multiplyBy (params.outputGainLin);
 }
 
 template <typename Sample>

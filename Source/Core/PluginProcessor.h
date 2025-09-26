@@ -47,6 +47,8 @@ struct DynEqBand {
 // =========================
 namespace IDs {
     static constexpr const char* gain   = "gain_db";
+    static constexpr const char* inputGain = "input_gain_db";
+    static constexpr const char* outputGain = "output_gain_db";
     static constexpr const char* pan    = "pan";
     static constexpr const char* panL   = "pan_l";   // Split L
     static constexpr const char* panR   = "pan_r";   // Split R
@@ -612,7 +614,7 @@ private:
     // Per-block params converted to Sample domain
     struct FieldParams
     {
-        Sample gainLin{}, pan{}, panL{}, panR{}, depth{}, width{};
+        Sample gainLin{}, inputGainLin{}, outputGainLin{}, pan{}, panL{}, panR{}, depth{}, width{};
         Sample tiltDb{}, scoopDb{}, monoHz{}, hpHz{}, lpHz{};
         // New EQ shape/Q
         Sample shelfShapeS{};     // 0.25..1.50
@@ -765,7 +767,7 @@ public:
 
 struct HostParams
 {
-    double gainDb{}, pan{}, panL{}, panR{}, depth{}, width{};
+    double gainDb{}, inputGainDb{}, outputGainDb{}, pan{}, panL{}, panR{}, depth{}, width{};
     double tiltDb{}, scoopDb{}, monoHz{}, hpHz{}, lpHz{};
     // New EQ shape/Q
     double eqShelfShapeS{}; // S

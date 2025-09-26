@@ -2305,6 +2305,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // attachments (deduped; removed accidental duplicates you had for bass/scoop/depth)
     using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
     attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::gain,       gain));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::inputGain,  inputSlider));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::outputGain, outputSlider));
+    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::mix,       mixSlider));
     attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::width,         width));
     attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::tilt,          tilt));
     attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::monoHz,       monoHz));
