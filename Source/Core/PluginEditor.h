@@ -1888,8 +1888,8 @@ private:
     ControlContainer mainControlsContainer, volumeContainer;
     ControlContainer delayContainer;
     ControlContainer metersContainer;
-    ControlContainer leftContentContainer;
-    ControlContainer leftMetersContainer;  // New container to the left of meters
+    ControlContainer MainContentContainer;
+    ControlContainer rightSlidersContainer;  // Container for sliders on the right
     ControlContainer spaceKnobContainer, panKnobContainer;
     
     // Width grouping (Image row): large WIDTH + small W LO/MID/HI

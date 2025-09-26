@@ -1512,9 +1512,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // Delay container will be removed; lay out directly on right side
     // addAndMakeVisible (delayContainer);        delayContainer.setTitle ("");     delayContainer.setShowBorder (true);
     // Row containers for EQ/Image are no longer used
-    addAndMakeVisible (leftContentContainer);  leftContentContainer.setTitle ("");    leftContentContainer.setShowBorder (false);
-    addAndMakeVisible (leftMetersContainer);   leftMetersContainer.setTitle ("");     leftMetersContainer.setShowBorder (true);
-    leftMetersContainer.setBorderColour (juce::Colours::red);
+    addAndMakeVisible (MainContentContainer);  MainContentContainer.setTitle ("");    MainContentContainer.setShowBorder (false);
+    addAndMakeVisible (rightSlidersContainer);   rightSlidersContainer.setTitle ("");     rightSlidersContainer.setShowBorder (true);
+    rightSlidersContainer.setBorderColour (juce::Colours::red);
     addAndMakeVisible (metersContainer);       metersContainer.setTitle ("");         metersContainer.setShowBorder (false);
 
     // Width group (image row, bottom-right): invisible container + placeholder slots for spanning grid
@@ -2882,20 +2882,20 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int outerPadM_Y= Layout::dp (Layout::GAP, sv);                       // match left container vertical pad for bottom align
         const int targetStripW = colW_m * 2 + corrW_m + inter_m * 2 + outerPadM_X * 2; // IO | LR | CORR(half)
         const int metersStripW = juce::jlimit (Layout::dp (96, s), Layout::dp (240, s), targetStripW);
-        // Split the remaining area: left content container, left meters container, and right meters container
-        auto metersArea = r.removeFromRight (metersStripW);
-        auto leftMetersArea = r.removeFromRight (metersStripW); // Same width as meters for now
+        // Split the remaining area: left meters container, main content container, and right sliders container
+        auto metersArea = r.removeFromLeft (metersStripW);
+        auto rightSlidersArea = r.removeFromRight (metersStripW); // Same width as meters for now
         auto leftArea   = r; // whatever remains after carving both meter areas
         metersArea = metersArea.reduced (outerPadM_X, outerPadM_Y);
-        leftMetersArea = leftMetersArea.reduced (outerPadM_X, outerPadM_Y);
+        rightSlidersArea = rightSlidersArea.reduced (outerPadM_X, outerPadM_Y);
         leftArea   = leftArea  .reduced (Layout::dp (Layout::GAP, s), Layout::dp (Layout::GAP, sv));
         // Ensure all containers share the same top/bottom so bottoms align
         metersArea.setY (leftArea.getY());
         metersArea.setHeight (leftArea.getHeight());
-        leftMetersArea.setY (leftArea.getY());
-        leftMetersArea.setHeight (leftArea.getHeight());
-        leftContentContainer.setBounds (leftArea);
-        leftMetersContainer.setBounds (leftMetersArea);
+        rightSlidersArea.setY (leftArea.getY());
+        rightSlidersArea.setHeight (leftArea.getHeight());
+        MainContentContainer.setBounds (leftArea);
+        rightSlidersContainer.setBounds (rightSlidersArea);
         metersContainer.setBounds       (metersArea);
         // (Reverted) bottom toggle remains a direct child of the editor; positioned earlier
 
@@ -2903,18 +2903,18 @@ void MyPluginAudioProcessorEditor::performLayout()
         const int mainH = juce::jmax (Layout::dp (Layout::XY_MIN_H, s), r.getHeight());
         auto main = r.removeFromTop (mainH);
         
-        // Visual dock takes the pad area exactly matching leftContentContainer width
-        auto padLocal = leftContentContainer.getLocalBounds()
+        // Visual dock takes the pad area exactly matching MainContentContainer width
+        auto padLocal = MainContentContainer.getLocalBounds()
                            .removeFromTop (mainH)
                            .reduced (Layout::dp (Layout::GAP, s), Layout::dp (Layout::GAP, sv));
         if (panes)
         {
-            if (panes->getParentComponent() != &leftContentContainer) leftContentContainer.addAndMakeVisible (*panes);
+            if (panes->getParentComponent() != &MainContentContainer) MainContentContainer.addAndMakeVisible (*panes);
             panes->setBounds (padLocal);
         }
         if (xyShade)
         {
-            if (xyShade->getParentComponent() != &leftContentContainer) leftContentContainer.addAndMakeVisible (*xyShade);
+            if (xyShade->getParentComponent() != &MainContentContainer) MainContentContainer.addAndMakeVisible (*xyShade);
             xyShade->setBounds (padLocal);
         }
 
@@ -2968,9 +2968,9 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Align left content container bottom to the bottom of Row 4 to remove extra space
         {
             const int rowsBottom = row4.getBottom();
-            auto lc = leftContentContainer.getBounds();
+            auto lc = MainContentContainer.getBounds();
             lc.setBottom (rowsBottom);
-            leftContentContainer.setBounds (lc);
+            MainContentContainer.setBounds (lc);
             // Align meters container bottom to the same baseline
             auto mc = metersContainer.getBounds();
             mc.setBottom (rowsBottom);
@@ -2997,8 +2997,8 @@ void MyPluginAudioProcessorEditor::performLayout()
     // Alternate bottom panel (slides over bottom rows when enabled)
     if (true)
     {
-        if (controlsViewport.getParentComponent() == &leftContentContainer)
-            leftContentContainer.removeChildComponent (&controlsViewport);
+        if (controlsViewport.getParentComponent() == &MainContentContainer)
+            MainContentContainer.removeChildComponent (&controlsViewport);
         group1Container.setVisible (false);
         group2Container.setVisible (false);
     }
@@ -3025,9 +3025,9 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Mount viewport over the 4 control rows area and stack Group 1 (top) and Group 2 (below)
         const int totalRowsH_local = rowH1 + rowH2 + rowH3 + rowH4;
         controlRowsHeightPx = totalRowsH_local;
-        auto rowsLocalRect = leftContentContainer.getLocalBounds().removeFromBottom (totalRowsH_local);
-        if (controlsViewport.getParentComponent() != &leftContentContainer)
-            leftContentContainer.addAndMakeVisible (controlsViewport);
+        auto rowsLocalRect = MainContentContainer.getLocalBounds().removeFromBottom (totalRowsH_local);
+        if (controlsViewport.getParentComponent() != &MainContentContainer)
+            MainContentContainer.addAndMakeVisible (controlsViewport);
         controlsViewport.setBounds (rowsLocalRect);
         controlsViewport.setScrollBarsShown (true, false);
         controlsViewport.setInterceptsMouseClicks (true, true);
@@ -4103,10 +4103,10 @@ void MyPluginAudioProcessorEditor::updateGroup2OverlayDuringSlide()
     if (!showPanel) return;
 
     // We keep the overlay sized to overlayLocalRect, and slide its clip region via setBounds() within that local rect
-    // Move by adjusting Y within the overlayLocalRect height (top anchored by curTop relative to leftContentContainer rows stack top)
+    // Move by adjusting Y within the overlayLocalRect height (top anchored by curTop relative to MainContentContainer rows stack top)
     // Here we compute a translation within the same width and height
     auto base = overlayLocalRect;
-    const int desiredTop = curTop; // curTop is relative to leftContentContainer
+    const int desiredTop = curTop; // curTop is relative to MainContentContainer
     const int deltaY = desiredTop - base.getY();
     base.translate (0, deltaY);
     bottomAltPanel.setBounds (base);
