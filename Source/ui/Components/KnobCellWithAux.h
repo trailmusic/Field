@@ -14,6 +14,52 @@ class FieldLNF;
  *
  * This follows the same pattern as DoubleKnobCell but is more flexible
  * for different types of auxiliary components.
+ *
+ * ## Metallic Template System Integration
+ *
+ * KnobCellWithAux fully supports the Field metallic template system, providing
+ * sophisticated brushed-metal backgrounds with multiple variants:
+ *
+ * ### Supported Metallic Variants
+ * - **Grey Metallic** (`metallic` property): Neutral steel for XY controls
+ * - **Reverb Metallic** (`reverbMetallic` property): Burnt orange for reverb
+ * - **Delay Metallic** (`delayMetallic` property): Light yellowish-green for delay
+ * - **Band Metallic** (`bandMetallic` property): Metallic blue for band controls
+ * - **Motion Metallic** (`motionGreenBorder` property): Motion panel colors
+ *
+ * ### Metallic Visual Effects
+ * - **Brushed-metal gradient**: Realistic metal surface appearance
+ * - **Horizontal brushing lines**: Subtle texture for authenticity
+ * - **Fine grain noise overlay**: Low-alpha noise for realism
+ * - **Diagonal micro-scratches**: Random scratches for worn metal look
+ * - **Vignette effects**: Edge darkening for depth perception
+ *
+ * ### Usage Example
+ * ```cpp
+ * // Create KnobCellWithAux with metallic styling
+ * auto cell = std::make_unique<KnobCellWithAux>(mainKnob, mainLabel, auxComponents);
+ * 
+ * // Apply grey metallic background (for XY controls)
+ * cell->getProperties().set("metallic", true);
+ * 
+ * // Apply reverb metallic background
+ * cell->getProperties().set("reverbMetallic", true);
+ * 
+ * // Apply delay metallic background  
+ * cell->getProperties().set("delayMetallic", true);
+ * ```
+ *
+ * ### Layout System
+ * - **Split Layout**: 2/3 space for main knob, 1/3 for auxiliary components
+ * - **Weighted Auxiliary Components**: Supports relative weights for vertical sizing
+ * - **Flexible Component Hosting**: Can host any juce::Component as auxiliary elements
+ * - **Consistent Styling**: Matches visual theme of other cells
+ *
+ * ### Integration with Field Architecture
+ * - Uses same metallic template logic as KnobCell for consistency
+ * - Supports all Field theme variants through properties system
+ * - Maintains visual consistency across all cell types
+ * - No hardcoded backgrounds - fully template-driven
  */
 class KnobCellWithAux : public juce::Component
 {

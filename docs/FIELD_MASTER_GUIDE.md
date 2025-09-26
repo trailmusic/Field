@@ -286,6 +286,197 @@ git commit -m "Organize DSP engines in Source/dsp/"
 
 ---
 
+## 🎨 Metallic Template System Integration (December 2024)
+
+### **KnobCellWithAux Metallic Template System - Complete Integration**
+
+**Achievement**: Successfully integrated the sophisticated metallic template system into `KnobCellWithAux`, providing full compatibility with Field's visual theme system and eliminating hardcoded backgrounds.
+
+#### **🎯 Integration Objectives Achieved**
+
+1. **Full Metallic Template Support**: `KnobCellWithAux` now uses the same sophisticated metallic painting logic as `KnobCell`
+2. **Multi-Variant Support**: Supports all metallic variants (grey, reverb orange, delay green, band blue, motion purple)
+3. **Visual Consistency**: Maintains consistent brushed-metal appearance across all cell types
+4. **Template-Driven Architecture**: No more hardcoded backgrounds - fully properties-driven
+5. **XY Controls Integration**: Grey metallic backgrounds now properly applied to XY controls
+
+#### **🔧 Technical Implementation**
+
+**Metallic Template Logic Integration**
+```cpp
+// KnobCellWithAux now uses the same metallic template system as KnobCell
+const bool metallic = (bool) getProperties().getWithDefault ("metallic", false);
+if (metallic)
+{
+    // Brushed-metal gradient with per-system tinting
+    const bool reverbMetal   = (bool) getProperties().getWithDefault ("reverbMetallic", false);
+    const bool delayMetal    = (bool) getProperties().getWithDefault ("delayMetallic", false);
+    const bool bandMetal     = (bool) getProperties().getWithDefault ("bandMetallic",  false);
+    const bool motionGreen   = (bool) getProperties().getWithDefault ("motionGreenBorder", false);
+    
+    // Apply appropriate metallic variant with full visual effects
+    // - Brushed-metal gradient
+    // - Horizontal brushing lines
+    // - Fine grain noise overlay
+    // - Diagonal micro-scratches
+    // - Vignette effects
+}
+```
+
+**XY Controls Integration**
+```cpp
+// Apply metallic styling like other cells
+if (metallic) cell->getProperties().set ("metallic", true);
+```
+
+#### **🎨 Supported Metallic Variants**
+
+**Grey Metallic** (`metallic` property)
+- **Usage**: XY controls, neutral steel appearance
+- **Colors**: Top `#9AA0A7`, Bottom `#7F858D`
+- **Visual Effects**: Standard brushed-metal with subtle texture
+
+**Reverb Metallic** (`reverbMetallic` property)
+- **Usage**: Reverb controls, burnt orange appearance
+- **Colors**: Top `#B1592A`, Bottom `#7F2D1C`
+- **Visual Effects**: Warmer metallic tones with orange tint
+
+**Delay Metallic** (`delayMetallic` property)
+- **Usage**: Delay controls, light yellowish-green appearance
+- **Colors**: Top `#BFD86A`, Bottom `#88A845`
+- **Visual Effects**: Fresh metallic tones with green tint
+
+**Band Metallic** (`bandMetallic` property)
+- **Usage**: Band controls, metallic blue appearance
+- **Colors**: Top `#6AA0D8`, Bottom `#3A6EA8`
+- **Visual Effects**: Cool metallic tones with blue tint
+
+**Motion Metallic** (`motionGreenBorder` property)
+- **Usage**: Motion controls, motion panel colors
+- **Colors**: Theme-based motion panel colors
+- **Visual Effects**: Dynamic metallic tones with motion tint
+
+#### **🎨 Metallic Visual Effects System**
+
+**Brushed-Metal Gradient**
+- Realistic metal surface appearance with proper lighting
+- Gradient from top to bottom with appropriate color variants
+- Per-system tinting for different control types
+
+**Horizontal Brushing Lines**
+- Subtle texture lines for authenticity
+- Consistent spacing and alpha for realistic metal appearance
+- Applied across the entire metallic surface
+
+**Fine Grain Noise Overlay**
+- Low-alpha noise for added realism
+- Random positioning for natural variation
+- Subtle grain that doesn't interfere with readability
+
+**Diagonal Micro-Scratches**
+- Random scratches for worn metal look
+- Multiple scratch directions for authenticity
+- Varying lengths and positions for natural appearance
+
+**Vignette Effects**
+- Edge darkening for depth perception
+- Stronger vignette for motion controls
+- Subtle gradient from center to edges
+
+#### **📊 Integration Metrics**
+
+- **Files Modified**: 2 files (KnobCellWithAux.cpp, XYControlsPane.h)
+- **Lines Added**: 149 insertions, 11 deletions
+- **Metallic Variants**: 5 fully supported variants
+- **Visual Effects**: 5 sophisticated effects per variant
+- **Template Compatibility**: 100% compatible with existing KnobCell system
+
+#### **✅ Quality Assurance Achievements**
+
+- **Build Verification**: All targets build successfully with metallic integration
+- **Visual Consistency**: KnobCellWithAux matches KnobCell metallic appearance
+- **XY Controls**: Grey metallic backgrounds properly applied
+- **Template System**: Full compatibility with existing metallic template system
+- **No Hardcoded Backgrounds**: Fully properties-driven architecture
+
+#### **🎯 Benefits Realized**
+
+**For Visual Consistency**
+- KnobCellWithAux now matches KnobCell metallic appearance
+- All cell types use the same sophisticated metallic system
+- Consistent visual theme across all control types
+- Professional brushed-metal appearance
+
+**For Architecture**
+- No more hardcoded backgrounds in KnobCellWithAux
+- Fully template-driven metallic system
+- Easy to add new metallic variants
+- Consistent with Field's theme architecture
+
+**For Development**
+- Clear documentation of metallic variants
+- Easy to apply metallic styling to new components
+- Consistent API across all cell types
+- Maintainable metallic template system
+
+#### **🔄 Usage Patterns**
+
+**Creating Metallic KnobCellWithAux**
+```cpp
+// Create cell with auxiliary components
+auto cell = std::make_unique<KnobCellWithAux>(mainKnob, mainLabel, auxComponents);
+
+// Apply grey metallic (for XY controls)
+cell->getProperties().set("metallic", true);
+
+// Apply reverb metallic
+cell->getProperties().set("reverbMetallic", true);
+
+// Apply delay metallic
+cell->getProperties().set("delayMetallic", true);
+```
+
+**XY Controls Integration**
+```cpp
+// In XYControlsPane::makeMonoGroupCell
+auto cell = std::make_unique<KnobCellWithAux>(monoS, monoV, auxComponents, auxWeights);
+cell->setMetrics(knobPx, valuePx, labelGapPx);
+cell->setAuxHeight(Layout::dp(40, 1.0f));
+
+// Apply metallic styling like other cells
+if (metallic) cell->getProperties().set("metallic", true);
+```
+
+#### **📚 Documentation Updates**
+
+- **KnobCellWithAux.h**: Added comprehensive metallic template documentation
+- **FIELD_MASTER_GUIDE.md**: Added metallic integration knowledge
+- **Usage Examples**: Clear examples for all metallic variants
+- **Visual Effects**: Detailed documentation of all metallic effects
+- **Integration Patterns**: Best practices for metallic template usage
+
+#### **🚀 Future Development Guidelines**
+
+**Adding New Metallic Variants**
+1. Add new property check in metallic template logic
+2. Define appropriate color scheme for new variant
+3. Test visual appearance and consistency
+4. Update documentation with new variant details
+
+**Using Metallic Templates**
+1. Always use properties system for metallic styling
+2. Never hardcode metallic backgrounds
+3. Follow existing metallic variant patterns
+4. Test visual consistency across all cell types
+
+**Maintaining Metallic System**
+1. Keep metallic template logic synchronized between KnobCell and KnobCellWithAux
+2. Test all metallic variants after changes
+3. Verify visual consistency across all control types
+4. Update documentation for any metallic system changes
+
+---
+
 ## 🚨 Critical Crash Prevention Knowledge
 
 ### **Plugin Close Crash - The Ultimate Solution**
