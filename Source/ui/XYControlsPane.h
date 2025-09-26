@@ -303,6 +303,9 @@ private:
         cell->setMetrics (knobPx, valuePx, labelGapPx);
         cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
         
+        // Apply metallic styling like other cells
+        if (metallic) cell->getProperties().set ("metallic", true);
+        
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
         ownedCells.emplace_back (std::move (cell));

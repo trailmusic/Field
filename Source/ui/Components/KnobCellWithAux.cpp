@@ -138,22 +138,157 @@ void KnobCellWithAux::paint (juce::Graphics& g)
     auto r = getLocalBounds().toFloat();
     const float rad = 8.0f;
 
+    // Panel fill (optional) with metallic mode - same as KnobCell
+    const bool metallic = (bool) getProperties().getWithDefault ("metallic", false);
     if (showPanel)
     {
-        g.setColour (panel);
-        g.fillRoundedRectangle (r.reduced (3.0f), rad);
-
-        // Depth (soft) – match KnobCell
+        auto rr = r.reduced (3.0f);
+        if (metallic)
         {
-            juce::DropShadow ds1 ((lf ? lf->theme.shadowDark  : juce::Colours::black).withAlpha (0.35f), 12, { -1, -1 });
-            juce::DropShadow ds2 ((lf ? lf->theme.shadowLight : juce::Colours::grey ).withAlpha (0.25f),  6, { -1, -1 });
-            auto ri = r.reduced (3.0f).getSmallestIntegerContainer();
-            ds1.drawForRectangle (g, ri);
-            ds2.drawForRectangle (g, ri);
-        }
+            // Brushed-metal gradient with per-system tinting
+            const bool motionGreen   = (bool) getProperties().getWithDefault ("motionPurpleBorder", (bool) getProperties().getWithDefault ("motionGreenBorder", false));
+            const bool reverbMetal   = (bool) getProperties().getWithDefault ("reverbMetallic", false);
+            const bool delayMetal    = (bool) getProperties().getWithDefault ("delayMetallic", false);
+            const bool bandMetal     = (bool) getProperties().getWithDefault ("bandMetallic",  false);
 
-        g.setColour (sh.withAlpha (0.18f));
-        g.drawRoundedRectangle (r.reduced (4.0f), rad - 1.0f, 0.8f);
+            juce::Colour top, bot;
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            {
+                if (reverbMetal)
+                {
+                    // Burnt orange metallic
+                    top = juce::Colour (0xFFB1592A);
+                    bot = juce::Colour (0xFF7F2D1C);
+                }
+                else if (delayMetal)
+                {
+                    // Light yellowish-green metallic
+                    top = juce::Colour (0xFFBFD86A);
+                    bot = juce::Colour (0xFF88A845);
+                }
+                else if (bandMetal)
+                {
+                    // Band pane metallic blue
+                    top = juce::Colour (0xFF6AA0D8);
+                    bot = juce::Colour (0xFF3A6EA8);
+                }
+                else if (motionGreen)
+                {
+                    top = lf->theme.motionPanelTop;
+                    bot = lf->theme.motionPanelBot;
+                }
+                else
+                {
+                    // Neutral steel fallback
+                    top = juce::Colour (0xFF9AA0A7);
+                    bot = juce::Colour (0xFF7F858D);
+                }
+            }
+            else
+            {
+                if (reverbMetal)
+                {
+                    top = juce::Colour (0xFFB1592A);
+                    bot = juce::Colour (0xFF7F2D1C);
+                }
+                else if (delayMetal)
+                {
+                    top = juce::Colour (0xFFBFD86A);
+                    bot = juce::Colour (0xFF88A845);
+                }
+                else if (bandMetal)
+                {
+                    top = juce::Colour (0xFF6AA0D8);
+                    bot = juce::Colour (0xFF3A6EA8);
+                }
+                else if (motionGreen)
+                {
+                    top = juce::Colour (0xFF7B81C1);
+                    bot = juce::Colour (0xFF555A99);
+                }
+                else
+                {
+                    top = juce::Colour (0xFF9AA0A7);
+                    bot = juce::Colour (0xFF7F858D);
+                }
+            }
+            juce::ColourGradient grad (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
+            g.setGradientFill (grad);
+            g.fillRoundedRectangle (rr, rad);
+
+            // Subtle horizontal brushing lines (slightly denser)
+            g.setColour (juce::Colours::white.withAlpha (0.045f));
+            const int step = 1;
+            for (int y = (int) rr.getY() + step; y < rr.getBottom(); y += step)
+                g.fillRect (juce::Rectangle<int> ((int) rr.getX() + 4, y, (int) rr.getWidth() - 8, 1));
+
+            // Fine grain noise overlay (very low alpha)
+            {
+                juce::Random rng ((int) juce::Time::getMillisecondCounter());
+                g.setColour (juce::Colours::black.withAlpha (0.040f));
+                const int noiseRows = juce::jmax (1, (int) rr.getHeight() / 4);
+                for (int i = 0; i < noiseRows; ++i)
+                {
+                    const int y = (int) rr.getY() + 2 + i * 4 + (rng.nextInt (3) - 1);
+                    const int w = juce::jmax (8, (int) rr.getWidth() - 8 - rng.nextInt (12));
+                    const int x = (int) rr.getX() + 4 + rng.nextInt (12);
+                    g.fillRect (juce::Rectangle<int> (x, y, w, 1));
+                }
+            }
+
+            // Diagonal micro-scratches
+            {
+                juce::Random rng ((int) juce::Time::getMillisecondCounter() ^ 0xA5A5);
+                const int scratches = juce::jmax (6, (int) rr.getWidth() / 22);
+                g.setColour (juce::Colours::white.withAlpha (0.035f));
+                for (int i = 0; i < scratches; ++i)
+                {
+                    float sx = rr.getX() + 6 + rng.nextFloat() * (rr.getWidth() - 12);
+                    float sy = rr.getY() + 6 + rng.nextFloat() * (rr.getHeight() - 12);
+                    float len = 10.0f + rng.nextFloat() * 18.0f;
+                    float dx = len * 0.86f; // cos(~40deg)
+                    float dy = len * 0.50f; // sin(~30deg)
+                    g.drawLine (sx, sy, sx + dx, sy + dy, 1.0f);
+                }
+                g.setColour (juce::Colours::black.withAlpha (0.025f));
+                for (int i = 0; i < scratches; ++i)
+                {
+                    float sx = rr.getX() + 6 + rng.nextFloat() * (rr.getWidth() - 12);
+                    float sy = rr.getY() + 6 + rng.nextFloat() * (rr.getHeight() - 12);
+                    float len = 8.0f + rng.nextFloat() * 14.0f;
+                    float dx = len * -0.80f;
+                    float dy = len * 0.58f;
+                    g.drawLine (sx, sy, sx + dx, sy + dy, 1.0f);
+                }
+            }
+
+            // Vignette to reduce perceived brightness near edges (slightly stronger for Motion)
+            {
+                const float edgeAlpha = motionGreen ? 0.22f : 0.16f;
+                juce::ColourGradient vg (juce::Colours::transparentBlack, rr.getCentreX(), rr.getCentreY(),
+                                         juce::Colours::black.withAlpha (edgeAlpha), rr.getCentreX(), rr.getCentreY() - rr.getHeight() * 0.6f, true);
+                g.setGradientFill (vg);
+                g.fillRoundedRectangle (rr, rad);
+            }
+        }
+        else
+        {
+            // Standard panel background
+            g.setColour (panel);
+            g.fillRoundedRectangle (rr, rad);
+
+            // Depth (soft) – match KnobCell
+            {
+                juce::DropShadow ds1 ((lf ? lf->theme.shadowDark  : juce::Colours::black).withAlpha (0.35f), 12, { -1, -1 });
+                juce::DropShadow ds2 ((lf ? lf->theme.shadowLight : juce::Colours::grey ).withAlpha (0.25f),  6, { -1, -1 });
+                auto ri = rr.getSmallestIntegerContainer();
+                ds1.drawForRectangle (g, ri);
+                ds2.drawForRectangle (g, ri);
+            }
+
+            g.setColour (sh.withAlpha (0.18f));
+            g.drawRoundedRectangle (rr, rad - 1.0f, 0.8f);
+        }
     }
 
     if (showBorder)
