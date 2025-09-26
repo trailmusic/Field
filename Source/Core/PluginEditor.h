@@ -2120,9 +2120,14 @@ private:
         void paint (juce::Graphics& g) override
         {
             auto r = getLocalBounds().toFloat();
+            // Adjust positioning: top moves up 3px (5->2), bottom moves down 2px
+            r = r.withY (r.getY() + 2.0f).withHeight (r.getHeight() - 2.0f + 2.0f);
+            
             g.setColour (lnf.theme.panel);
             g.fillRoundedRectangle (r, 6.0f);
-            g.setColour (lnf.theme.sh);
+            
+            // Standard border treatment: accent border (reduced brightness for meters)
+            g.setColour (lnf.theme.accent.withAlpha (0.3f));
             g.drawRoundedRectangle (r, 6.0f, 1.0f);
 
             const float corr = juce::jlimit (-1.0f, 1.0f, proc.getCorrelation());
@@ -2152,6 +2157,10 @@ private:
                 g.fillRoundedRectangle (juce::Rectangle<float> (track.getX(), midY, track.getWidth(), h), 2.0f);
             }
 
+            // Peak line (thicker bottom border like LR meters)
+            g.setColour (lnf.theme.accent.withAlpha (0.6f));
+            g.fillRect (juce::Rectangle<float> (track.getX(), track.getBottom() - 1.0f, track.getWidth(), 2.0f));
+            
             // Vertical label on the right side: C O R R
             g.setColour (lnf.theme.textMuted);
             g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
@@ -2201,8 +2210,8 @@ private:
                     g.fillRoundedRectangle (b.reduced (1.0f), 3.5f);
                     g.setFillType (juce::FillType());
                 }
-                // Border
-                g.setColour (lnf.theme.sh);
+                // Standard border treatment: accent border (reduced brightness for meters)
+                g.setColour (lnf.theme.accent.withAlpha (0.3f));
                 g.drawRoundedRectangle (b, 4.0f, 1.0f);
 
                 // scale 0..1 across height
@@ -2292,7 +2301,9 @@ private:
             auto drawOne = [&] (juce::Rectangle<float> b, float rms, const juce::String& label)
             {
                 g.setColour (lnf.theme.panel); g.fillRoundedRectangle (b, 4.0f);
-                g.setColour (lnf.theme.sh);    g.drawRoundedRectangle (b, 4.0f, 1.0f);
+                // Standard border treatment: accent border (reduced brightness for meters)
+                g.setColour (lnf.theme.accent.withAlpha (0.3f));
+                g.drawRoundedRectangle (b, 4.0f, 1.0f);
                 const float h = juce::jlimit (0.0f, 1.0f, rms) * b.getHeight();
                 const float rmsDb = juce::Decibels::gainToDecibels (juce::jlimit (0.000001f, 1.0f, rms), -60.0f);
                 const bool risk = rmsDb >= -1.0f;
@@ -2310,6 +2321,11 @@ private:
                 g.setFillType (juce::FillType (grad));
                 g.fillRoundedRectangle (juce::Rectangle<float> (b.getX(), b.getBottom() - h, b.getWidth(), h), 3.0f);
                 g.setFillType (juce::FillType());
+                
+                // Peak line (thicker bottom border like LR meters)
+                g.setColour (risk ? juce::Colour (0xFFE53935) : lnf.theme.accent);
+                g.fillRect (juce::Rectangle<float> (b.getX(), b.getBottom() - h, b.getWidth(), 2.0f));
+                
                 g.setColour (lnf.theme.textMuted);
                 g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
                 g.drawText (label, b.reduced (4.0f), juce::Justification::centredBottom);
@@ -2560,57 +2576,57 @@ private:
             juce::Font logoFont(juce::FontOptions(logoHeight * 0.8f).withStyle("Bold"));
             g.setFont(logoFont);
             
-            // Enhanced shadow system with more layers and stronger effects
+            // Enhanced shadow system with stronger effects (matching header)
             const int shadowLayers = 12; // Increased from 8 to 12
             for (int i = shadowLayers; i > 0; --i)
             {
                 const float shadowOffset = (float)i * 3.5f; // Increased offset for more dramatic effect
-                const float shadowAlpha = (1.0f - (float)i / shadowLayers) * 0.6f; // Increased alpha for stronger effect
+                const float shadowAlpha = (1.0f - (float)i / shadowLayers) * 0.7f; // Increased alpha for stronger effect (matching header)
                 
                 // Multiple glow shadows with different colors and intensities
-                // Outer accent glow
-                g.setColour(lnf.theme.accent.withAlpha(shadowAlpha * 0.7f));
+                // Outer accent glow (stronger)
+                g.setColour(lnf.theme.accent.withAlpha(shadowAlpha * 0.8f));
                 g.drawText("FIELD", logoRect.translated(shadowOffset, shadowOffset), 
                           juce::Justification::centred);
                 
-                // Secondary glow with brighter accent
-                g.setColour(lnf.theme.accent.brighter(0.4f).withAlpha(shadowAlpha * 0.5f));
+                // Secondary glow with brighter accent (stronger)
+                g.setColour(lnf.theme.accent.brighter(0.4f).withAlpha(shadowAlpha * 0.6f));
                 g.drawText("FIELD", logoRect.translated(shadowOffset * 0.8f, shadowOffset * 0.8f), 
                           juce::Justification::centred);
                 
-                // Dark shadow for depth with increased intensity
-                g.setColour(juce::Colours::black.withAlpha(shadowAlpha * 0.8f));
-                g.drawText("FIELD", logoRect.translated(shadowOffset * 0.3f, shadowOffset * 0.3f), 
+                // Dark shadow for depth with increased intensity (stronger)
+                g.setColour(juce::Colours::black.withAlpha(shadowAlpha * 0.9f));
+                g.drawText("FIELD", logoRect.translated(shadowOffset * 0.5f, shadowOffset * 0.5f), 
                           juce::Justification::centred);
                 
-                // Additional depth shadow
-                g.setColour(juce::Colours::darkgrey.withAlpha(shadowAlpha * 0.4f));
+                // Additional depth shadow (stronger)
+                g.setColour(juce::Colours::darkgrey.withAlpha(shadowAlpha * 0.5f));
                 g.drawText("FIELD", logoRect.translated(shadowOffset * 0.6f, shadowOffset * 0.6f), 
                           juce::Justification::centred);
             }
             
-            // Enhanced gradient effect with more color stops
+            // Enhanced gradient effect with stronger effects (matching header)
             juce::ColourGradient logoGradient(
-                lnf.theme.accent.brighter(0.5f), logoRect.getX(), logoRect.getY(),
+                lnf.theme.accent.brighter(0.6f), logoRect.getX(), logoRect.getY(),
                 lnf.theme.accent.darker(0.3f), logoRect.getX(), logoRect.getBottom(), false);
-            logoGradient.addColour(0.25f, lnf.theme.accent.brighter(0.2f));
+            logoGradient.addColour(0.25f, lnf.theme.accent.brighter(0.3f));
             logoGradient.addColour(0.5f, lnf.theme.accent);
             logoGradient.addColour(0.75f, lnf.theme.accent.darker(0.1f));
             
             g.setGradientFill(logoGradient);
             g.drawText("FIELD", logoRect, juce::Justification::centred);
             
-            // Enhanced highlight system with multiple layers
-            // Primary highlight
-            g.setColour(lnf.theme.accent.brighter(0.6f).withAlpha(0.8f));
+            // Enhanced highlight system with stronger effects (matching header)
+            // Primary highlight (stronger)
+            g.setColour(lnf.theme.accent.brighter(0.7f).withAlpha(0.9f));
             g.drawText("FIELD", logoRect, juce::Justification::centred);
             
-            // Secondary highlight for extra shine
-            g.setColour(lnf.theme.accent.brighter(0.8f).withAlpha(0.4f));
+            // Secondary highlight for extra shine (stronger)
+            g.setColour(lnf.theme.accent.brighter(0.9f).withAlpha(0.5f));
             g.drawText("FIELD", logoRect, juce::Justification::centred);
             
-            // Final white highlight for maximum shine
-            g.setColour(juce::Colours::white.withAlpha(0.3f));
+            // Final white highlight for maximum shine (stronger)
+            g.setColour(juce::Colours::white.withAlpha(0.4f));
             g.drawText("FIELD", logoRect, juce::Justification::centred);
         }
     };

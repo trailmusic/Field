@@ -1277,11 +1277,12 @@ g.drawText (ver, juce::Rectangle<int> (vx, vy, 120, (int) vfont.getHeight() + 2)
 - **Alpha Range**: 0.7f maximum (stronger than original)
 - **Logo Size**: 80% of header area, max 30px
 
-**ShadeOverlay Logo (Dramatic)**
+**ShadeOverlay Logo (Dramatic with Enhanced Effects)**
 - **Shadow Layers**: 12 layers (maximum for dramatic effect)
 - **Shadow Offset**: 3.5px (large for dramatic depth)
-- **Alpha Range**: 0.6f maximum (strong visibility)
+- **Alpha Range**: 0.7f maximum (enhanced visibility, matching header)
 - **Logo Size**: 80% of shade area, max 200px
+- **Enhanced Effects**: Stronger shadows, glows, and highlights matching header logo
 
 #### **🎯 Integration Patterns**
 
@@ -1652,6 +1653,48 @@ void drawHandle (juce::Graphics& g, juce::Rectangle<float> tab) const
     }
 }
 ```
+
+#### **🎨 Tab Visual Distinction System**
+
+**Analysis/Tools Tab Styling**
+```cpp
+// Visual distinction for tabs that don't affect audio signal
+const bool isAnalysisTab = (id == PaneID::Imager || id == PaneID::Machine);
+
+// Reduced opacity for analysis tabs
+if (isAnalysisTab)
+{
+    g.saveState();
+    g.setOpacity (0.75f); // 75% opacity for visual distinction
+}
+
+// Solid border with theme colors and border growth
+if (isAnalysisTab)
+{
+    juce::Colour borderColor;
+    if (id == PaneID::Imager)
+        borderColor = lf->theme.eq.hp.withAlpha (on ? 0.9f : 0.6f); // Blue
+    else // Machine
+        borderColor = lf->theme.eq.bass.withAlpha (on ? 0.9f : 0.6f); // Green
+    
+    // Draw solid border with growth: active = 2.0px, inactive = 1.0px
+    g.setColour (borderColor);
+    g.drawRoundedRectangle (rr, 9.0f, on ? 2.0f : 1.0f);
+}
+```
+
+**Design Principles**
+- **Imager Tab**: Blue solid border (`theme.eq.hp`) - indicates visualization/analysis
+- **Machine Tab**: Green solid border (`theme.eq.bass`) - indicates tools/utilities
+- **Machine Learn Button**: Uses Machine tab green color (`theme.eq.bass`) for active state to maintain visual consistency
+- **Individual Meters**: Standard accent border treatment with `theme.accent` color at 0.3f alpha (reduced brightness) for subtle visual consistency. All meters include a peak line (thicker bottom border) for visual consistency. CorrelationMeter has 2px top padding for proper alignment with other meters.
+- **Analysis Tab Border Growth**: Active = 2.0px, Inactive = 1.0px (same as signal tabs)
+- **Standard Tabs**: Accent border treatment with `theme.accent` color
+  - **Active State**: 2.0px border for clear selection indication
+  - **Inactive State**: 1.0px border with reduced opacity for subtle presence
+- **Reduced Opacity**: 75% opacity for analysis tabs to visually distinguish from signal-processing tabs
+- **Theme Integration**: Uses existing theme colors for consistency across color modes
+- **User Education**: Clear visual cue that analysis tabs don't affect the audio signal
 
 #### **🖱️ Interaction System**
 

@@ -25,7 +25,7 @@ private:
     XYPad& pad;
 };
 
-enum class PaneID { XY=0, DynEQ=1, Imager=2, Band=3, Motion=4, Machine=5, Reverb=6, Delay=7 };
+enum class PaneID { XY=0, Band=1, Motion=2, Reverb=3, Delay=4, DynEQ=5, Imager=6, Machine=7 };
 
 static inline const char* paneKey (PaneID id)
 {
@@ -61,7 +61,7 @@ public:
         reverb = std::make_unique<ReverbTab>(p);
         delay  = std::make_unique<DelayTab>(p);
 
-        for (auto* c : { (juce::Component*) xyTab.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
+        for (auto* c : { (juce::Component*) xyTab.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
             addChildComponent (c);
 
         addAndMakeVisible (tabs);
@@ -70,26 +70,26 @@ public:
         {
             juce::PopupMenu m;
             m.addItem (1, "XY");
-            m.addItem (2, "Dynamic EQ");
-            m.addItem (3, "Imager");
-            m.addItem (4, "Band");
-            m.addItem (5, "Motion");
-            m.addItem (6, "Machine");
-            m.addItem (7, "Reverb");
-            m.addItem (8, "Delay");
+            m.addItem (2, "Band");
+            m.addItem (3, "Motion");
+            m.addItem (4, "Reverb");
+            m.addItem (5, "Delay");
+            m.addItem (6, "Dynamic EQ");
+            m.addItem (7, "Imager");
+            m.addItem (8, "Machine");
             // keep-warm option removed
             // Spectrum removed; no smoothing toggle
             m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&tabs),
                              [this](int r)
                              {
                                  if (r == 1) setActive (PaneID::XY, true);
-                                 else if (r == 2) setActive (PaneID::DynEQ, true);
-                                 else if (r == 3) setActive (PaneID::Imager, true);
-                                 else if (r == 4) setActive (PaneID::Band, true);
-                                 else if (r == 5) setActive (PaneID::Motion, true);
-                                 else if (r == 6) setActive (PaneID::Machine, true);
-                                 else if (r == 7) setActive (PaneID::Reverb, true);
-                                 else if (r == 8) setActive (PaneID::Delay,  true);
+                                 else if (r == 2) setActive (PaneID::Band, true);
+                                 else if (r == 3) setActive (PaneID::Motion, true);
+                                 else if (r == 4) setActive (PaneID::Reverb, true);
+                                 else if (r == 5) setActive (PaneID::Delay, true);
+                                 else if (r == 6) setActive (PaneID::DynEQ, true);
+                                 else if (r == 7) setActive (PaneID::Imager, true);
+                                 else if (r == 8) setActive (PaneID::Machine, true);
                                  // keep-warm toggle removed
                              });
         };
@@ -99,7 +99,7 @@ public:
         setActive (initial, false);
         // Dynamic EQ tab manages its own analyzer/timers if needed
 
-        for (auto id : { PaneID::XY, PaneID::DynEQ, PaneID::Imager, PaneID::Band, PaneID::Motion, PaneID::Machine, PaneID::Reverb, PaneID::Delay })
+        for (auto id : { PaneID::XY, PaneID::Band, PaneID::Motion, PaneID::Reverb, PaneID::Delay, PaneID::DynEQ, PaneID::Imager, PaneID::Machine })
         {
             auto key = juce::String("ui_shade_") + paneKey(id);
             if (! vt.hasProperty (key)) vt.setProperty (key, 0.0f, nullptr);
@@ -357,7 +357,7 @@ public:
     PaneID getActiveID() const { return (PaneID) activeAtomic.load (std::memory_order_acquire); }
     juce::Component* getActive()
     {
-        switch (active) { case PaneID::XY: return (juce::Component*) xyTab.get(); case PaneID::DynEQ: return (juce::Component*) dyneq.get(); case PaneID::Imager: return (juce::Component*) imgr.get(); case PaneID::Band: return band.get(); case PaneID::Motion: return (juce::Component*) motion.get(); case PaneID::Machine: return mach.get(); case PaneID::Reverb: return reverb.get(); case PaneID::Delay: return delay.get(); }
+        switch (active) { case PaneID::XY: return (juce::Component*) xyTab.get(); case PaneID::Band: return band.get(); case PaneID::Motion: return (juce::Component*) motion.get(); case PaneID::Reverb: return reverb.get(); case PaneID::Delay: return delay.get(); case PaneID::DynEQ: return (juce::Component*) dyneq.get(); case PaneID::Imager: return (juce::Component*) imgr.get(); case PaneID::Machine: return mach.get(); }
         return (juce::Component*) xyTab.get();
     }
 
@@ -375,7 +375,7 @@ public:
         // Content starts directly under tabs with a tiny breathing space
         auto paneTop = tabs.getBottom() + 2;
         juce::Rectangle<int> paneR (full.getX(), paneTop, full.getWidth(), full.getBottom() - paneTop);
-        for (auto* c : { (juce::Component*) xyTab.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
+        for (auto* c : { (juce::Component*) xyTab.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
             if (c) c->setBounds (paneR);
     }
 
@@ -510,13 +510,72 @@ public:
                 juce::Rectangle<float> r (b.getX() + i*w, b.getY(), w, b.getHeight());
                 const bool on = (current == id);
                 auto rr = r.reduced (1.0f);
-                if (auto* lf = dynamic_cast<FieldLNF*> (&getLookAndFeel())) lf->drawTabPill (g, rr, on);
+                
+                // Check if this is an analysis/tools tab (Imager or Machine)
+                const bool isAnalysisTab = (id == PaneID::Imager || id == PaneID::Machine);
+                
+                if (auto* lf = dynamic_cast<FieldLNF*> (&getLookAndFeel())) 
+                {
+                    // Apply reduced opacity for analysis tabs
+                    if (isAnalysisTab)
+                    {
+                        g.saveState();
+                        g.setOpacity (0.75f); // Reduced opacity for analysis tabs
+                    }
+                    lf->drawTabPill (g, rr, on);
+                    if (isAnalysisTab)
+                    {
+                        g.restoreState();
+                    }
+                    
+                    // Add standard accent border for non-analysis tabs
+                    if (!isAnalysisTab)
+                    {
+                        if (on)
+                        {
+                            // Active state - thicker accent border
+                            g.setColour (lf->theme.accent.withAlpha (0.9f));
+                            g.drawRoundedRectangle (rr, 9.0f, 2.0f);
+                        }
+                        else
+                        {
+                            // Inactive state - subtle accent border
+                            g.setColour (lf->theme.accent.withAlpha (0.3f));
+                            g.drawRoundedRectangle (rr, 9.0f, 1.0f);
+                        }
+                    }
+                }
                 else
                 {
                     g.setColour (juce::Colour (0xFF3A3E45));
                     g.fillRoundedRectangle (rr, 9.0f);
-                    if (on) { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.85f)); g.drawRoundedRectangle (rr, 9.0f, 1.6f); }
-                    else     { g.setColour (juce::Colours::white.withAlpha (0.08f));      g.drawRoundedRectangle (rr, 9.0f, 1.0f); }
+                    if (on) { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.85f)); g.drawRoundedRectangle (rr, 9.0f, 2.0f); }
+                    else     { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.3f)); g.drawRoundedRectangle (rr, 9.0f, 1.0f); }
+                }
+                
+                // Add solid border for analysis tabs with border growth
+                if (isAnalysisTab)
+                {
+                    auto* lf = dynamic_cast<FieldLNF*> (&getLookAndFeel());
+                    juce::Colour borderColor;
+                    if (lf)
+                    {
+                        // Use correct theme colors for border
+                        if (id == PaneID::Imager)
+                            borderColor = lf->theme.eq.hp.withAlpha (on ? 0.9f : 0.6f); // Blue for Imager
+                        else // Machine
+                            borderColor = lf->theme.eq.bass.withAlpha (on ? 0.9f : 0.6f); // Green for Machine
+                    }
+                    else
+                    {
+                        // Fallback colors - blue for Imager, green for Machine
+                        borderColor = (id == PaneID::Imager) ? juce::Colour (0xFF2B7BC7).withAlpha (on ? 0.9f : 0.6f) // Blue
+                                                           : juce::Colour (0xFF66BB6A).withAlpha (on ? 0.9f : 0.6f); // Green
+                    }
+                    
+                    g.setColour (borderColor);
+                    // Border growth: active = 2.0px, inactive = 1.0px
+                    g.drawRoundedRectangle (rr, 9.0f, on ? 2.0f : 1.0f);
                 }
                 // label + icon
                 auto txtCol = juce::Colours::white.withAlpha (on ? 0.95f : 0.65f);
@@ -553,18 +612,18 @@ public:
                 drawInlineIcon (g, id, iconR, txtCol, on);
             };
             draw (0, "XY",         PaneID::XY);
-            draw (1, "Dynamic EQ", PaneID::DynEQ);
-            draw (2, "Imager",     PaneID::Imager);
-            draw (3, "Band",       PaneID::Band);
-            draw (4, "Motion",     PaneID::Motion);
-            draw (5, "Reverb",     PaneID::Reverb);
-            draw (6, "Delay",      PaneID::Delay);
+            draw (1, "Band",       PaneID::Band);
+            draw (2, "Motion",     PaneID::Motion);
+            draw (3, "Reverb",     PaneID::Reverb);
+            draw (4, "Delay",      PaneID::Delay);
+            draw (5, "Dynamic EQ", PaneID::DynEQ);
+            draw (6, "Imager",     PaneID::Imager);
             draw (7, "Machine",    PaneID::Machine);
         }
         void mouseUp (const juce::MouseEvent& e) override
         {
             const int N = 8; int idx = juce::jlimit (0, N-1, e.x * N / juce::jmax (1, getWidth()));
-            PaneID id = idx==0 ? PaneID::XY : idx==1 ? PaneID::DynEQ : idx==2 ? PaneID::Imager : idx==3 ? PaneID::Band : idx==4 ? PaneID::Motion : idx==5 ? PaneID::Reverb : idx==6 ? PaneID::Delay : PaneID::Machine;
+            PaneID id = idx==0 ? PaneID::XY : idx==1 ? PaneID::Band : idx==2 ? PaneID::Motion : idx==3 ? PaneID::Reverb : idx==4 ? PaneID::Delay : idx==5 ? PaneID::DynEQ : idx==6 ? PaneID::Imager : PaneID::Machine;
             current = id; if (onSelect) onSelect (id); repaint();
             if (e.mods.isPopupMenu()) { if (onShowMenu) onShowMenu (e.getPosition()); }
         }

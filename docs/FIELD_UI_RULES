@@ -40,6 +40,10 @@ KnobCell Metrics & Styling
   - Combo: tintedSelected to hide default label when custom captioning is used.
 
   - Tabs: active tab uses a static accent border (no animated glow). Any previous glow animation is removed.
+  - Analysis/Tools tabs (Imager, Machine): visual distinction with solid borders and reduced opacity (75%) to indicate they don't affect audio signal. Use theme colors: Imager uses theme.eq.hp (blue), Machine uses theme.eq.bass (green). Border growth: active = 2.0px, inactive = 1.0px.
+  - Machine Learn button: uses Machine tab green color (theme.eq.bass) for active state to maintain visual consistency with Machine tab.
+  - Standard tabs (XY, Band, Motion, Reverb, Delay, Dynamic EQ): accent border treatment with theme.accent color. Active state uses 2.0px border, inactive state uses 1.0px border with reduced opacity.
+  - Individual meters (CorrelationMeter, VerticalLRMeters, IOGainMeters): standard accent border treatment with theme.accent color at 0.3f alpha (reduced brightness) for subtle visual consistency with other UI elements. All meters include a peak line (thicker bottom border) for visual consistency. CorrelationMeter has 2px top padding for proper alignment with other meters.
   - Menus (PopupMenu): draw colours from LookAndFeel configured colourIds; do not hardcode whites/greys.
 
 ---

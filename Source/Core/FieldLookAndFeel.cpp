@@ -669,10 +669,10 @@ void FieldLNF::drawButtonBackground (juce::Graphics& g, juce::Button& button,
 
         if (showActive)
         {
-            // Subtle blink of the accent fill
+            // Subtle blink of the Machine tab green fill (theme.eq.bass)
             const double t = juce::Time::getMillisecondCounterHiRes() * 0.001;
             const float blink = 0.88f + 0.12f * (0.5f * (1.0f + std::sin (float (t * 2.0 * juce::MathConstants<double>::pi * 0.85))));
-            fill = accent.withAlpha (blink);
+            fill = theme.eq.bass.withAlpha (blink);
         }
         else
         {
