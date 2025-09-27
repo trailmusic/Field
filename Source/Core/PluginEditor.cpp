@@ -474,7 +474,7 @@ void VerticalSlider3D::drawMetallicTrack (juce::Graphics& g, juce::Rectangle<flo
     g.drawRoundedRectangle (trackRect.reduced (0.5f), 4.0f, 1.0f);
     
     // Highlight
-    g.setColour (lf->theme.meters.trackActive.withAlpha (0.3f));
+    g.setColour (lf->theme.meters.trackBase.withAlpha (0.3f));
     g.drawRoundedRectangle (trackRect.reduced (1.0f), 4.0f, 0.5f);
 }
 
