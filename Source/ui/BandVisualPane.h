@@ -87,11 +87,6 @@ private:
         badge (midRect, "MID");
         badge (hiRect,  "HI");
 
-        // Draw crossovers (draggable) - drawn on top of everything
-        auto drawX = [&](float x){ juce::Path p; p.startNewSubPath (x, r.getY()); p.lineTo (x, r.getBottom());
-                                   const float dashes[] = { 5.0f, 4.0f }; juce::Path dashed; juce::PathStrokeType (1.2f).createDashedStroke (dashed, p, dashes, 2);
-                                   g.setColour (grid.withAlpha (0.8f)); g.strokePath (dashed, juce::PathStrokeType (1.6f)); };
-        drawX (xLo); drawX (xHi);
     }
 
     // Background waveform for Width view (mono Mid and Side envelopes)
@@ -267,6 +262,28 @@ private:
         g.drawText (juce::String (shufXHz, 0) + " Hz", 
                    juce::Rectangle<float> (xX - 25, band.getY() + 2, 50, 12), 
                    juce::Justification::centred);
+    }
+    
+    // Draw center lines on top of everything
+    void drawCenterLines (juce::Graphics& g, juce::Rectangle<float> r)
+    {
+        auto xAtHz = [&](float hz)
+        {
+            const float minHz = 20.0f, maxHz = 20000.0f;
+            const float t = (float) (std::log10 (juce::jlimit (minHz, maxHz, hz) / minHz) / std::log10 (maxHz / minHz));
+            return juce::jmap (t, 0.0f, 1.0f, r.getX(), r.getRight());
+        };
+        
+        const float xLo = xAtHz (xoverLoHz);
+        const float xHi = xAtHz (xoverHiHz);
+        
+        auto grid = juce::Colours::white.withAlpha (0.12f);
+        
+        // Draw crossovers (draggable) - drawn on top of everything
+        auto drawX = [&](float x){ juce::Path p; p.startNewSubPath (x, r.getY()); p.lineTo (x, r.getBottom());
+                                   const float dashes[] = { 5.0f, 4.0f }; juce::Path dashed; juce::PathStrokeType (1.2f).createDashedStroke (dashed, p, dashes, 2);
+                                   g.setColour (grid.withAlpha (0.8f)); g.strokePath (dashed, juce::PathStrokeType (1.6f)); };
+        drawX (xLo); drawX (xHi);
     }
 
     // Data members

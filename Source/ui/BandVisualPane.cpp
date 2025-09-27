@@ -124,6 +124,9 @@ void BandVisualPane::paint (juce::Graphics& g)
     
     // Shuffler visual strip
     drawShufflerStrip (g, b.reduced (8.0f));
+    
+    // Draw center lines on top of everything
+    drawCenterLines (g, b.reduced (8.0f));
 }
 
 void BandVisualPane::timerCallback()
