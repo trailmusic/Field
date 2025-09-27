@@ -1,5 +1,6 @@
 #include "KnobCellWithAux.h"
 #include "../../Core/FieldLookAndFeel.h"
+#include "../../Core/FieldMetallic.h"
 
 KnobCellWithAux::KnobCellWithAux(juce::Slider& mainKnob,
                                  juce::Label& mainLabel,

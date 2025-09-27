@@ -5,6 +5,11 @@ set(SRC
   Core/PluginEditor.cpp
   Core/FieldLookAndFeel.h
   Core/FieldLookAndFeel.cpp
+  Core/FieldTheme.h
+  Core/FieldMetallic.h
+  Core/FieldMetallic.cpp
+  Core/FieldRendering.h
+  Core/FieldRendering.cpp
     ui/Components/KnobCell.h
     ui/Components/KnobCell.cpp
     ui/Components/KnobCellWithAux.h
@@ -71,6 +76,7 @@ set(SRC
     motion/MotionIDs.h
     motion/MotionControlsPane.h
     motion/MotionTab.h
+    motion/MotionSlot.h
     
     dsp/DelayPresetLibrary.h
     dsp/DelayPresetLibrary.cpp

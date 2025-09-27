@@ -2,6 +2,8 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "PluginProcessor.h"
 #include "Core/FieldLookAndFeel.h"
+#include "Core/FieldTheme.h"
+#include "Core/FieldMetallic.h"
 #include "ui/Components/KnobCell.h"
 #include "ui/Components/KnobCellDual.h"
 #include "ui/Components/KnobCellQuad.h"

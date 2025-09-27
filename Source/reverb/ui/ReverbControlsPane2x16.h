@@ -5,6 +5,7 @@
 #include "../../ui/Layout.h"
 #include "../ReverbParamIDs.h"
 #include "../../Core/FieldLookAndFeel.h"
+#include "../../Core/FieldMetallic.h"
 
 // ReverbControlsPane2x16: 2x16 flat grid container for Reverb controls.
 // Scaffolding-only: initially populated with styled empty KnobCells.

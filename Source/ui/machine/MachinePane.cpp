@@ -1,5 +1,6 @@
 #include "MachinePane.h"
 #include "../../Core/FieldLookAndFeel.h"
+#include "../../Core/FieldMetallic.h"
 #include "../../Core/IconSystem.h"
 #include "../../Core/PluginProcessor.h"
 

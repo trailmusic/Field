@@ -7,6 +7,7 @@
 #include "../ui/SimpleSwitchCell.h"
 #include "../ui/Layout.h"
 #include "../Core/FieldLookAndFeel.h"
+#include "../Core/FieldMetallic.h"
 
 // MotionControlsPane: 2x16 grid for Motion controls (24 + blanks)
 class MotionControlsPane : public juce::Component

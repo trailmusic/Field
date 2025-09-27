@@ -4,6 +4,7 @@
 #include "ProposalCard.h"
 #include "WidthDesignerPanel.h"
 #include "../../Core/FieldLookAndFeel.h"
+#include "../../Core/FieldMetallic.h"
 #include "../../Core/IconSystem.h"
 
 class MyPluginAudioProcessor; // fwd

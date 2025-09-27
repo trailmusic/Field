@@ -1533,12 +1533,12 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // Color mode cycle (Ocean → Green → Pink → Yellow → Grey)
     addAndMakeVisible (colorModeButton);
     addAndMakeVisible (tooltipsButton);
-    colorModeButton.setTooltip (FieldLNF::getThemeName (lnf.currentVariant));
+    colorModeButton.setTooltip (ThemeManager::getThemeName (lnf.currentVariant));
     colorModeButton.onClick = [this]
     {
         // Determine current by accent; rotate deterministically through variants
-        using TV = FieldLNF::ThemeVariant;
-        static TV order[] = { TV::Ocean, TV::Green, TV::Pink, TV::Yellow, TV::Grey };
+        using TV = ThemeVariant;
+        static ThemeVariant order[] = { ThemeVariant::Ocean, ThemeVariant::Green, ThemeVariant::Pink, ThemeVariant::Yellow, ThemeVariant::Grey };
         auto currentAccent = lnf.theme.accent.getARGB();
         int idx = 0;
         if (currentAccent == juce::Colour (0xFF5AA9E6).getARGB()) idx = 0; // Ocean
@@ -1548,9 +1548,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         else if (currentAccent == juce::Colour (0xFF9EA3AA).getARGB()) idx = 4; // Grey
         idx = (idx + 1) % 5;
         lnf.setTheme (order[idx]);
-        colorModeButton.setTooltip (FieldLNF::getThemeName (order[idx]));
+        colorModeButton.setTooltip (ThemeManager::getThemeName (order[idx]));
         // Propagate to components that cache green flag
-        const bool greenNow = (order[idx] == TV::Green);
+        const bool greenNow = (order[idx] == ThemeVariant::Green);
         spaceKnob.setGreenMode (greenNow);
         spaceAlgorithmSwitch.setGreenMode (greenNow);
         pad.setGreenMode (greenNow);

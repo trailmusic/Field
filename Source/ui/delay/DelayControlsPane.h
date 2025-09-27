@@ -4,6 +4,7 @@
 #include "../Components/KnobCell.h"
 #include "../../ui/Layout.h"
 #include "../../Core/FieldLookAndFeel.h"
+#include "../../Core/FieldMetallic.h"
 
 // DelayControlsPane: 2x16 flat grid container for Delay controls.
 // Scaffolding-only: initially populated with styled empty KnobCells.

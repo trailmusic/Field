@@ -5,6 +5,8 @@
 #include "Components/KnobCellWithAux.h"
 #include "SimpleSwitchCell.h"
 #include "../ui/Layout.h"
+#include "../Core/FieldLookAndFeel.h"
+#include "../Core/FieldMetallic.h"
 #include "../Core/IconSystem.h"
 
 // XYControlsPane: 2x16 grid for EQ/Center controls shown with the XY visuals

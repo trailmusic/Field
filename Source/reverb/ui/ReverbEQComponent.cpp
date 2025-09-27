@@ -1,6 +1,7 @@
 #include "ReverbEQComponent.h"
 #include "../ReverbParamIDs.h"
 #include "../../Core/FieldLookAndFeel.h"
+#include "../../Core/FieldMetallic.h"
 
 using namespace juce;
 

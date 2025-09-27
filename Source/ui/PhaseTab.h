@@ -2,6 +2,7 @@
 #include <JuceHeader.h>
 #include "../Core/PluginProcessor.h"
 #include "../Core/FieldLookAndFeel.h"
+#include "../Core/FieldMetallic.h"
 #include "ControlGridMetrics.h"
 #include "Components/KnobCell.h"
 #include "SimpleSwitchCell.h"
