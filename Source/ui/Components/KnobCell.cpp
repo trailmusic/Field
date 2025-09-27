@@ -1,3 +1,57 @@
+/*
+ * KnobCell.cpp - Complete Development Notes
+ * ========================================
+ * 
+ * OVERVIEW:
+ * Core UI component for rendering knob controls with metallic backgrounds, 
+ * auxiliary components, and sophisticated styling. Foundation of Field plugin's control system.
+ * 
+ * CRITICAL ISSUES:
+ * - Orange border fallback (lines 357-360) - XY controls hit debug fallback
+ * - Debug borders still present in production code
+ * - Missing XY metallic support (no xyMetallic property detection)
+ * 
+ * METALLIC RENDERING SYSTEM:
+ * - Debug borders: Red(Phase), Blue(Band), Green(Reverb), Yellow(Delay), Purple(Motion), Orange(Fallback)
+ * - Properties: metallic, reverbMetallic, delayMetallic, bandMetallic, phaseMetallic, motionPurpleBorder
+ * - Theme integration: FieldLNF::paintMetal(), FieldLNF::paintPhaseMetal()
+ * 
+ * LAYOUT SYSTEM:
+ * - Right-strip mode: Aux components on right side
+ * - Bottom mode: Aux components at bottom
+ * - Metrics: K(knob), V(value), G(gap), M(mini)
+ * 
+ * COLOR SYSTEM:
+ * - Theme-aware: getPanelColour(), getTextColour(), getAccentColour()
+ * - Property-based: panelBrighten, borderBrighten
+ * - Fallback colors when theme unavailable
+ * 
+ * BORDER SYSTEM:
+ * - Hover effects: 6-layer expanding border animation
+ * - Theme-specific: Motion(purple), Reverb(maroon), Delay(text), XY(reduced brightness)
+ * 
+ * LABEL BADGE SYSTEM:
+ * - Value label: Recessed design with multi-layer shadows
+ * - Mini label: Smaller padding, consistent styling
+ * - Aux components: Dynamic text with current slider values
+ * 
+ * INTEGRATION:
+ * - FieldLookAndFeel: Theme colors, metallic rendering, custom drawing
+ * - Property system: Metallic types, border types, layout properties
+ * 
+ * DEVELOPMENT RECOMMENDATIONS:
+ * 1. Remove debug borders (lines 338-360)
+ * 2. Add XY metallic support (xyMetallic property)
+ * 3. Clean fallbacks (replace orange with neutral metallic)
+ * 4. Consolidate metallic logic
+ * 5. Remove all debug code
+ * 
+ * TESTING CHECKLIST:
+ * - Metallic rendering: Phase(red), Reverb(green), Delay(yellow), Motion(purple), Band(blue), XY(orange) ⚠️
+ * - Layout: Right-strip mode, bottom mode, aux positioning
+ * - Styling: Hover effects, badges, shadows, theme integration
+ */
+
 #include "KnobCell.h"
 #include "../../Core/FieldLookAndFeel.h"
 
@@ -105,7 +159,7 @@ juce::Colour KnobCell::getShadowLight() const
 juce::Colour KnobCell::getRimColour() const
 {
     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        return lf->theme.sh;
+        return lf->theme.sh; // Using sh (shadow) as rim colour - this is correct
     return juce::Colours::black.withAlpha (0.2f);
 }
 
@@ -327,81 +381,35 @@ void KnobCell::paint (juce::Graphics& g)
         
         if (metallic)
         {
-            // Upgraded Metallic System - Ocean-harmonized materials
-            const bool motionGreen   = (bool) getProperties().getWithDefault ("motionPurpleBorder", (bool) getProperties().getWithDefault ("motionGreenBorder", false));
-            const bool reverbMetal   = (bool) getProperties().getWithDefault ("reverbMetallic", false);
-            const bool delayMetal    = (bool) getProperties().getWithDefault ("delayMetallic", false);
-            const bool bandMetal     = (bool) getProperties().getWithDefault ("bandMetallic",  false);
-            const bool phaseMetal    = (bool) getProperties().getWithDefault ("phaseMetallic", false);
-            
-            // Debug: Draw different colored borders to see which metallic type is detected
-            const bool isDebugPhaseKnobCell = (bool) getProperties().getWithDefault ("debugPhaseKnobCell", false);
-            if (phaseMetal) {
-                g.setColour(juce::Colours::red);
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            } else if (isDebugPhaseKnobCell) {
-                g.setColour(juce::Colours::cyan); // Cyan for Phase KnobCell that should have phaseMetallic
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            } else if (bandMetal) {
-                g.setColour(juce::Colours::blue);
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            } else if (reverbMetal) {
-                g.setColour(juce::Colours::green);
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            } else if (delayMetal) {
-                g.setColour(juce::Colours::yellow);
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            } else if (motionGreen) {
-                g.setColour(juce::Colours::purple);
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            } else {
-                g.setColour(juce::Colours::orange);
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            }
-
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
             {
-                // Use new metallic theme system
-                if (reverbMetal)
+                const auto kind = metallicFromProps(getProperties());
+                switch (kind)
                 {
-                    FieldLNF::paintMetal(g, rr, lf->theme.metal.reverb, rad);
-                }
-                else if (delayMetal)
-                {
-                    FieldLNF::paintMetal(g, rr, lf->theme.metal.delay, rad);
-                }
-                else if (bandMetal)
-                {
-                    FieldLNF::paintMetal(g, rr, lf->theme.metal.band, rad);
-                }
-                else if (phaseMetal)
-                {
-                    // Phase-Specific Metallic System (Deep Cobalt Interference)
-                    // Debug: Draw a bright red border to verify Phase metallic is being called
-                    g.setColour(juce::Colours::red);
-                    g.drawRoundedRectangle(rr, rad, 3.0f);
-                    
-                    FieldLNF::PhaseMetal phaseMetalConfig {
-                        lf->theme.metal.phase.top, lf->theme.metal.phase.bottom,
-                        lf->theme.metal.phase.tint, lf->theme.metal.phase.tintAlpha,
-                        juce::Colour (0xFF0A0C0F), 0.14f,  // bottom multiply
-                        0.10f  // sheen alpha
-                    };
-                    FieldLNF::paintPhaseMetal(g, rr, phaseMetalConfig, rad);
-                }
-                else if (motionGreen)
-                {
-                    FieldLNF::paintMetal(g, rr, lf->theme.metal.motion, rad);
-                }
-                else
-                {
-                    FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad);
+                    case MetallicKind::Reverb:  FieldLNF::paintMetal(g, rr, lf->theme.metal.reverb,  rad); break;
+                    case MetallicKind::Delay:   FieldLNF::paintMetal(g, rr, lf->theme.metal.delay,   rad); break;
+                    case MetallicKind::Band:    FieldLNF::paintMetal(g, rr, lf->theme.metal.band,    rad); break;
+                    case MetallicKind::Phase:   
+                    {
+                        FieldLNF::PhaseMetal phaseMetalConfig {
+                            lf->theme.metal.phase.top, lf->theme.metal.phase.bottom,
+                            lf->theme.metal.phase.tint, lf->theme.metal.phase.tintAlpha,
+                            juce::Colour (0xFF0A0C0F), 0.14f,  // bottom multiply
+                            0.10f  // sheen alpha
+                        };
+                        FieldLNF::paintPhaseMetal(g, rr, phaseMetalConfig, rad);
+                        break;
+                    }
+                    case MetallicKind::Motion:  FieldLNF::paintMetal(g, rr, lf->theme.metal.motion,  rad); break;
+                    case MetallicKind::XY:      FieldLNF::paintMetal(g, rr, lf->theme.metal.xy,      rad); break;
+                    case MetallicKind::Neutral: FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
+                    default:                    FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
                 }
             }
             else
             {
-                // Fallback to basic metallic rendering (Ocean-harmonized neutral steel)
-                juce::ColourGradient grad (juce::Colour (0xFF9CA4AD), rr.getX(), rr.getY(), 
+                // simple neutral fallback
+                juce::ColourGradient grad (juce::Colour (0xFF9CA4AD), rr.getX(), rr.getY(),
                                            juce::Colour (0xFF6E747C), rr.getX(), rr.getBottom(), false);
                 g.setGradientFill (grad);
                 g.fillRoundedRectangle (rr, rad);
@@ -453,52 +461,22 @@ void KnobCell::paint (juce::Graphics& g)
 
     if (showBorder)
     {
-        // Hover halo
-        const bool over = isMouseOverOrDragging();
         auto border = r.reduced (2.0f);
-        g.setColour (getAccentColour());
-        if (over || hoverActive)
-        {
-            for (int i = 1; i <= 6; ++i)
-            {
-                const float t = (float) i / 6.0f;
-                const float expand = 2.0f + t * 8.0f;
-                g.setColour (getAccentColour().withAlpha ((1.0f - t) * 0.22f));
-                g.drawRoundedRectangle (border.expanded (expand), rad + expand * 0.35f, 2.0f);
-            }
-        }
-        // Use theme text colour for delay-themed cells' borders if requested via property,
-        // or a deep blue/purple border for motion cells,
-        // or a vintage orange/red maroon border for reverb cells
         auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-        const bool delayTheme = (bool) getProperties().getWithDefault ("delayThemeBorderTextGrey", false);
-        const bool motionGreen = (bool) getProperties().getWithDefault ("motionPurpleBorder", (bool) getProperties().getWithDefault ("motionGreenBorder", false));
-        const bool reverbMaroon = (bool) getProperties().getWithDefault ("reverbMaroonBorder", false);
-        if (motionGreen)
-        {
-            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                g.setColour (lf->theme.motionBorder);
-            else
-                g.setColour (juce::Colour (0xFF4A4A8E));
-        }
-        else if (reverbMaroon)
-            g.setColour (juce::Colour (0xFF8E3A2F)); // Vintage orange-red maroon
-        else if (delayTheme && lf != nullptr)
-            g.setColour (lf->theme.text.withAlpha (0.85f));
-        else
-            g.setColour (getAccentColour());
+
+        // selection/engage state? draw a single clean border
+        const bool engaged = (bool) getProperties().getWithDefault ("engaged", false);
+        juce::Colour c =
+            (bool) getProperties().getWithDefault ("reverbMaroonBorder", false) ? juce::Colour (0xFF8E3A2F) :
+            (bool) getProperties().getWithDefault ("delayThemeBorderTextGrey", false) && lf ? lf->theme.text.withAlpha (0.85f) :
+            (bool) getProperties().getWithDefault ("motionMetallic", false) && lf ? lf->theme.motionBorder :
+            getAccentColour();
+
+        g.setColour (c.withAlpha (engaged ? 1.0f : 0.85f));
         g.drawRoundedRectangle (border, rad, 1.5f);
     }
 
-    // Standard border treatment for XY controls (reduced brightness)
-    const bool isXYControl = (bool) getProperties().getWithDefault ("centerStyle", false);
-    if (isXYControl)
-    {
-        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-        auto accent = lf ? lf->theme.accent : juce::Colours::cyan;
-        g.setColour (accent.withAlpha (0.3f));
-        g.drawRoundedRectangle (r, rad, 1.0f);
-    }
+    // XY controls use the main border system above - no additional border needed
 
 // Title: draw caption inside the cell using LookAndFeel helper when present
 

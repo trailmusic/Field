@@ -10,6 +10,25 @@
 #pragma once
 #include <juce_gui_extra/juce_gui_extra.h>
 
+// Metallic system enums and helpers
+enum class MetallicKind : int { 
+    None=0, Neutral, Reverb, Delay, Band, Phase, Motion, XY 
+};
+
+inline MetallicKind metallicFromProps (const juce::NamedValueSet& p) {
+    if ((bool)p.getWithDefault("phaseMetallic", false))  return MetallicKind::Phase;
+    if ((bool)p.getWithDefault("reverbMetallic", false)) return MetallicKind::Reverb;
+    if ((bool)p.getWithDefault("delayMetallic", false))  return MetallicKind::Delay;
+    if ((bool)p.getWithDefault("bandMetallic", false))   return MetallicKind::Band;
+    if ((bool)p.getWithDefault("motionMetallic", false) 
+     || (bool)p.getWithDefault("motionPurpleBorder", false)
+     || (bool)p.getWithDefault("motionGreenBorder", false)) return MetallicKind::Motion;
+    if ((bool)p.getWithDefault("xyMetallic", false)
+     || (bool)p.getWithDefault("centerStyle", false))   return MetallicKind::XY;
+    if ((bool)p.getWithDefault("metallic", false))      return MetallicKind::Neutral;
+    return MetallicKind::None;
+}
+
 // Theme palette (default "Ocean" accent). Other accents mentioned in comments.
 struct FieldTheme
 {
@@ -50,6 +69,7 @@ struct FieldTheme
         MetalStops motion   { juce::Colour (0xFF6D76B2), juce::Colour (0xFF434A86), juce::Colour (0x00C2D8FF), 0.06f };
         MetalStops band     { juce::Colour (0xFF6AA0D8), juce::Colour (0xFF3A6EA8), juce::Colour (0x000A0C0F), 0.12f }; // bottom multiply
         MetalStops phase    { juce::Colour (0xFF3E6BA3), juce::Colour (0xFF24466E), juce::Colour (0xFFC2D8FF), 0.06f }; // Deep Cobalt Interference
+        MetalStops xy       { juce::Colour (0xFF4B5560), juce::Colour (0xFF2E333A), juce::Colour (0xFF3D7BB8), 0.05f }; // Gunmetal with ocean tint
         MetalStops titanium { juce::Colour (0xFF7D858F), juce::Colour (0xFF3B4149), juce::Colour (0x003D7BB8), 0.08f };
     } metal;
 

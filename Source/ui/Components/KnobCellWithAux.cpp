@@ -148,67 +148,37 @@ void KnobCellWithAux::paint (juce::Graphics& g)
         
         if (metallic)
         {
-            // Upgraded Metallic System - Ocean-harmonized materials
-            const bool motionGreen   = (bool) getProperties().getWithDefault ("motionPurpleBorder", (bool) getProperties().getWithDefault ("motionGreenBorder", false));
-            const bool reverbMetal   = (bool) getProperties().getWithDefault ("reverbMetallic", false);
-            const bool delayMetal    = (bool) getProperties().getWithDefault ("delayMetallic", false);
-            const bool bandMetal     = (bool) getProperties().getWithDefault ("bandMetallic",  false);
-            const bool phaseMetal    = (bool) getProperties().getWithDefault ("phaseMetallic", false);
-            const bool xyMetal       = (bool) getProperties().getWithDefault ("xyMetallic", false);
-            
-            // Debug borders removed - metallic system working correctly
-
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
             {
-                // Use new metallic theme system
-                if (reverbMetal)
+                const auto kind = metallicFromProps(getProperties());
+                switch (kind)
                 {
-                    FieldLNF::paintMetal(g, rr, lf->theme.metal.reverb, rad);
-                }
-                else if (delayMetal)
-                {
-                    FieldLNF::paintMetal(g, rr, lf->theme.metal.delay, rad);
-                }
-                else if (bandMetal)
-                {
-                    FieldLNF::paintMetal(g, rr, lf->theme.metal.band, rad);
-                }
-                else if (phaseMetal)
-                {
-                    // Phase-Specific Metallic System (Deep Cobalt Interference)
-                    FieldLNF::PhaseMetal phaseMetalConfig {
-                        lf->theme.metal.phase.top, lf->theme.metal.phase.bottom,
-                        lf->theme.metal.phase.tint, lf->theme.metal.phase.tintAlpha,
-                        juce::Colour (0xFF0A0C0F), 0.14f,  // bottom multiply
-                        0.10f  // sheen alpha
-                    };
-                    FieldLNF::paintPhaseMetal(g, rr, phaseMetalConfig, rad);
-                }
-                else if (motionGreen)
-                {
-                    FieldLNF::paintMetal(g, rr, lf->theme.metal.motion, rad);
-                }
-                else if (xyMetal)
-                {
-                    // XY controls: Neutral metallic (Ocean-harmonized steel)
-                    FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad);
-                }
-                else if (metallic)
-                {
-                    // Fallback neutral metallic for other controls
-                    FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad);
-                }
-                else
-                {
-                    // Clean fallback - no metallic rendering
-                    g.setColour (juce::Colour (0xFF3A3D45));
-                    g.fillRoundedRectangle (rr, rad);
+                    case MetallicKind::Reverb:  FieldLNF::paintMetal(g, rr, lf->theme.metal.reverb,  rad); break;
+                    case MetallicKind::Delay:   FieldLNF::paintMetal(g, rr, lf->theme.metal.delay,   rad); break;
+                    case MetallicKind::Band:    FieldLNF::paintMetal(g, rr, lf->theme.metal.band,    rad); break;
+                    case MetallicKind::Phase:   
+                    {
+                        FieldLNF::PhaseMetal phaseMetalConfig {
+                            lf->theme.metal.phase.top, lf->theme.metal.phase.bottom,
+                            lf->theme.metal.phase.tint, lf->theme.metal.phase.tintAlpha,
+                            juce::Colour (0xFF0A0C0F), 0.14f,  // bottom multiply
+                            0.10f  // sheen alpha
+                        };
+                        FieldLNF::paintPhaseMetal(g, rr, phaseMetalConfig, rad);
+                        break;
+                    }
+                    case MetallicKind::Motion:  FieldLNF::paintMetal(g, rr, lf->theme.metal.motion,  rad); break;
+                    case MetallicKind::XY:      FieldLNF::paintMetal(g, rr, lf->theme.metal.xy,      rad); break;
+                    case MetallicKind::Neutral: FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
+                    default:                    FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
                 }
             }
             else
             {
-                // Clean fallback - no metallic rendering
-                g.setColour (juce::Colour (0xFF3A3D45));
+                // simple neutral fallback
+                juce::ColourGradient grad (juce::Colour (0xFF9CA4AD), rr.getX(), rr.getY(),
+                                           juce::Colour (0xFF6E747C), rr.getX(), rr.getBottom(), false);
+                g.setGradientFill (grad);
                 g.fillRoundedRectangle (rr, rad);
             }
         }
@@ -241,12 +211,5 @@ void KnobCellWithAux::paint (juce::Graphics& g)
 
     // Label background removed - use default styling to match KnobCell
 
-    // Standard border treatment for XY controls (reduced brightness)
-    const bool isXYControl = (bool) getProperties().getWithDefault ("centerStyle", false);
-    if (isXYControl)
-    {
-        auto accent = lf ? lf->theme.accent : juce::Colours::cyan;
-        g.setColour (accent.withAlpha (0.3f));
-        g.drawRoundedRectangle (r, rad, 1.0f);
-    }
+    // XY controls use the main border system above - no additional border needed
 }
