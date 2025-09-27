@@ -1067,9 +1067,9 @@ public:
                 {
                     auto r = getLocalBounds().toFloat().reduced (3.0f);
                     const float rad = 8.0f;
-                    // Darker metallic panel
-                    juce::Colour top = juce::Colour (0xFF9AA0A7);
-                    juce::Colour bot = juce::Colour (0xFF7F858D);
+                    // Darker metallic panel (Ocean-harmonized neutral steel)
+                    juce::Colour top = juce::Colour (0xFF9CA4AD);
+                    juce::Colour bot = juce::Colour (0xFF6E747C);
                     juce::ColourGradient grad (top, r.getX(), r.getY(), bot, r.getX(), r.getBottom(), false);
                     g.setGradientFill (grad);
                     g.fillRoundedRectangle (r, rad);

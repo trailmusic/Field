@@ -322,131 +322,88 @@ void KnobCell::paint (juce::Graphics& g)
     if (showPanel)
     {
         auto rr = r.reduced (3.0f);
+        
+        // Debug: Metallic detection (removed console output for simplicity)
+        
         if (metallic)
         {
-            // Brushed-metal gradient with per-system tinting
+            // Upgraded Metallic System - Ocean-harmonized materials
             const bool motionGreen   = (bool) getProperties().getWithDefault ("motionPurpleBorder", (bool) getProperties().getWithDefault ("motionGreenBorder", false));
             const bool reverbMetal   = (bool) getProperties().getWithDefault ("reverbMetallic", false);
             const bool delayMetal    = (bool) getProperties().getWithDefault ("delayMetallic", false);
             const bool bandMetal     = (bool) getProperties().getWithDefault ("bandMetallic",  false);
+            const bool phaseMetal    = (bool) getProperties().getWithDefault ("phaseMetallic", false);
+            
+            // Debug: Draw different colored borders to see which metallic type is detected
+            const bool isDebugPhaseKnobCell = (bool) getProperties().getWithDefault ("debugPhaseKnobCell", false);
+            if (phaseMetal) {
+                g.setColour(juce::Colours::red);
+                g.drawRoundedRectangle(rr, rad, 3.0f);
+            } else if (isDebugPhaseKnobCell) {
+                g.setColour(juce::Colours::cyan); // Cyan for Phase KnobCell that should have phaseMetallic
+                g.drawRoundedRectangle(rr, rad, 3.0f);
+            } else if (bandMetal) {
+                g.setColour(juce::Colours::blue);
+                g.drawRoundedRectangle(rr, rad, 3.0f);
+            } else if (reverbMetal) {
+                g.setColour(juce::Colours::green);
+                g.drawRoundedRectangle(rr, rad, 3.0f);
+            } else if (delayMetal) {
+                g.setColour(juce::Colours::yellow);
+                g.drawRoundedRectangle(rr, rad, 3.0f);
+            } else if (motionGreen) {
+                g.setColour(juce::Colours::purple);
+                g.drawRoundedRectangle(rr, rad, 3.0f);
+            } else {
+                g.setColour(juce::Colours::orange);
+                g.drawRoundedRectangle(rr, rad, 3.0f);
+            }
 
-            juce::Colour top, bot;
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
             {
+                // Use new metallic theme system
                 if (reverbMetal)
                 {
-                    // Burnt orange metallic
-                    top = juce::Colour (0xFFB1592A);
-                    bot = juce::Colour (0xFF7F2D1C);
+                    FieldLNF::paintMetal(g, rr, lf->theme.metal.reverb, rad);
                 }
                 else if (delayMetal)
                 {
-                    // Light yellowish-green metallic
-                    top = juce::Colour (0xFFBFD86A);
-                    bot = juce::Colour (0xFF88A845);
+                    FieldLNF::paintMetal(g, rr, lf->theme.metal.delay, rad);
                 }
                 else if (bandMetal)
                 {
-                    // Band pane metallic blue
-                    top = juce::Colour (0xFF6AA0D8);
-                    bot = juce::Colour (0xFF3A6EA8);
+                    FieldLNF::paintMetal(g, rr, lf->theme.metal.band, rad);
+                }
+                else if (phaseMetal)
+                {
+                    // Phase-Specific Metallic System (Deep Cobalt Interference)
+                    // Debug: Draw a bright red border to verify Phase metallic is being called
+                    g.setColour(juce::Colours::red);
+                    g.drawRoundedRectangle(rr, rad, 3.0f);
+                    
+                    FieldLNF::PhaseMetal phaseMetalConfig {
+                        lf->theme.metal.phase.top, lf->theme.metal.phase.bottom,
+                        lf->theme.metal.phase.tint, lf->theme.metal.phase.tintAlpha,
+                        juce::Colour (0xFF0A0C0F), 0.14f,  // bottom multiply
+                        0.10f  // sheen alpha
+                    };
+                    FieldLNF::paintPhaseMetal(g, rr, phaseMetalConfig, rad);
                 }
                 else if (motionGreen)
                 {
-                    top = lf->theme.motionPanelTop;
-                    bot = lf->theme.motionPanelBot;
+                    FieldLNF::paintMetal(g, rr, lf->theme.metal.motion, rad);
                 }
                 else
                 {
-                    // Neutral steel fallback
-                    top = juce::Colour (0xFF9AA0A7);
-                    bot = juce::Colour (0xFF7F858D);
+                    FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad);
                 }
             }
             else
             {
-                if (reverbMetal)
-                {
-                    top = juce::Colour (0xFFB1592A);
-                    bot = juce::Colour (0xFF7F2D1C);
-                }
-                else if (delayMetal)
-                {
-                    top = juce::Colour (0xFFBFD86A);
-                    bot = juce::Colour (0xFF88A845);
-                }
-                else if (bandMetal)
-                {
-                    top = juce::Colour (0xFF6AA0D8);
-                    bot = juce::Colour (0xFF3A6EA8);
-                }
-                else if (motionGreen)
-                {
-                    top = juce::Colour (0xFF7B81C1);
-                    bot = juce::Colour (0xFF555A99);
-                }
-                else
-                {
-                    top = juce::Colour (0xFF9AA0A7);
-                    bot = juce::Colour (0xFF7F858D);
-                }
-            }
-            juce::ColourGradient grad (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
-            g.setGradientFill (grad);
-            g.fillRoundedRectangle (rr, rad);
-
-            // Subtle horizontal brushing lines (slightly denser)
-            g.setColour (juce::Colours::white.withAlpha (0.045f));
-            const int step = 1;
-            for (int y = (int) rr.getY() + step; y < rr.getBottom(); y += step)
-                g.fillRect (juce::Rectangle<int> ((int) rr.getX() + 4, y, (int) rr.getWidth() - 8, 1));
-
-            // Fine grain noise overlay (very low alpha)
-            {
-                juce::Random rng ((int) juce::Time::getMillisecondCounter());
-                g.setColour (juce::Colours::black.withAlpha (0.040f));
-                const int noiseRows = juce::jmax (1, (int) rr.getHeight() / 4);
-                for (int i = 0; i < noiseRows; ++i)
-                {
-                    const int y = (int) rr.getY() + 2 + i * 4 + (rng.nextInt (3) - 1);
-                    const int w = juce::jmax (8, (int) rr.getWidth() - 8 - rng.nextInt (12));
-                    const int x = (int) rr.getX() + 4 + rng.nextInt (12);
-                    g.fillRect (juce::Rectangle<int> (x, y, w, 1));
-                }
-            }
-
-            // Diagonal micro-scratches
-            {
-                juce::Random rng ((int) juce::Time::getMillisecondCounter() ^ 0xA5A5);
-                const int scratches = juce::jmax (6, (int) rr.getWidth() / 22);
-                g.setColour (juce::Colours::white.withAlpha (0.035f));
-                for (int i = 0; i < scratches; ++i)
-                {
-                    float sx = rr.getX() + 6 + rng.nextFloat() * (rr.getWidth() - 12);
-                    float sy = rr.getY() + 6 + rng.nextFloat() * (rr.getHeight() - 12);
-                    float len = 10.0f + rng.nextFloat() * 18.0f;
-                    float dx = len * 0.86f; // cos(~40deg)
-                    float dy = len * 0.50f; // sin(~30deg)
-                    g.drawLine (sx, sy, sx + dx, sy + dy, 1.0f);
-                }
-                g.setColour (juce::Colours::black.withAlpha (0.025f));
-                for (int i = 0; i < scratches; ++i)
-                {
-                    float sx = rr.getX() + 6 + rng.nextFloat() * (rr.getWidth() - 12);
-                    float sy = rr.getY() + 6 + rng.nextFloat() * (rr.getHeight() - 12);
-                    float len = 8.0f + rng.nextFloat() * 14.0f;
-                    float dx = len * -0.80f;
-                    float dy = len * 0.58f;
-                    g.drawLine (sx, sy, sx + dx, sy + dy, 1.0f);
-                }
-            }
-
-            // Vignette to reduce perceived brightness near edges (slightly stronger for Motion)
-            {
-                const float edgeAlpha = motionGreen ? 0.22f : 0.16f;
-                juce::ColourGradient vg (juce::Colours::transparentBlack, rr.getCentreX(), rr.getCentreY(),
-                                         juce::Colours::black.withAlpha (edgeAlpha), rr.getCentreX(), rr.getCentreY() - rr.getHeight() * 0.6f, true);
-                g.setGradientFill (vg);
+                // Fallback to basic metallic rendering (Ocean-harmonized neutral steel)
+                juce::ColourGradient grad (juce::Colour (0xFF9CA4AD), rr.getX(), rr.getY(), 
+                                           juce::Colour (0xFF6E747C), rr.getX(), rr.getBottom(), false);
+                g.setGradientFill (grad);
                 g.fillRoundedRectangle (rr, rad);
             }
         }
@@ -531,6 +488,16 @@ void KnobCell::paint (juce::Graphics& g)
         else
             g.setColour (getAccentColour());
         g.drawRoundedRectangle (border, rad, 1.5f);
+    }
+
+    // Standard border treatment for XY controls (reduced brightness)
+    const bool isXYControl = (bool) getProperties().getWithDefault ("centerStyle", false);
+    if (isXYControl)
+    {
+        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+        auto accent = lf ? lf->theme.accent : juce::Colours::cyan;
+        g.setColour (accent.withAlpha (0.3f));
+        g.drawRoundedRectangle (r, rad, 1.0f);
     }
 
 // Title: draw caption inside the cell using LookAndFeel helper when present

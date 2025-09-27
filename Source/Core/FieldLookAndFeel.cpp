@@ -742,3 +742,94 @@ void FieldLNF::drawButtonBackground (juce::Graphics& g, juce::Button& button,
         }
     }
 }
+
+// Upgraded Metallic Rendering System
+void FieldLNF::paintMetal (juce::Graphics& g, const juce::Rectangle<float>& r,
+                           const FieldTheme::MetalStops& m, float corner)
+{
+    // Base gradient with softer break points
+    juce::ColourGradient base(m.top, r.getCentreX(), r.getY(),
+                              m.bottom, r.getCentreX(), r.getBottom(), false);
+    // Add intermediate stops for smoother transitions
+    base.addColour(0.3f, m.top.interpolatedWith(m.bottom, 0.3f));
+    base.addColour(0.7f, m.top.interpolatedWith(m.bottom, 0.7f));
+    g.setGradientFill(base);
+    g.fillRoundedRectangle(r, corner);
+
+    // Optional tint (as overlay)
+    if (m.tintAlpha > 0.0f) {
+        g.setColour(m.tint.withAlpha(m.tintAlpha));
+        g.fillRoundedRectangle(r, corner);
+    }
+
+    // Sheen band (top third)
+    auto sheenH = juce::jlimit(10.0f, 24.0f, r.getHeight() * 0.14f);
+    auto sheen  = r.withHeight(sheenH).withY(r.getY() + r.getHeight() * 0.28f);
+    juce::Colour cSheen = juce::Colours::white.withAlpha(0.10f); // 10%
+    g.setGradientFill(juce::ColourGradient(cSheen, sheen.getX(), sheen.getY(),
+                                           juce::Colours::transparentWhite, sheen.getX(), sheen.getBottom(), false));
+    g.fillRoundedRectangle(sheen, corner);
+
+    // Static brushed lines (no continuous painting)
+    g.setColour(juce::Colours::white.withAlpha(0.02f));
+    g.fillRoundedRectangle(r.reduced(2.0f), corner);
+
+    // Grain
+    g.setColour(juce::Colours::black.withAlpha(0.045f));
+    g.fillRoundedRectangle(r, corner);
+
+    // Vignette
+    juce::Path p; p.addRoundedRectangle(r, corner);
+    g.setColour(juce::Colours::black.withAlpha(0.14f));
+    g.strokePath(p, juce::PathStrokeType(2.0f));
+}
+
+// Phase-Specific Metallic System (Deep Cobalt Interference)
+void FieldLNF::paintPhaseMetal (juce::Graphics& g, const juce::Rectangle<float>& r, 
+                                const FieldLNF::PhaseMetal& m, float corner, float dpi)
+{
+    // Base gradient with softer break points
+    juce::ColourGradient base(m.top, r.getCentreX(), r.getY(),
+                              m.bottom, r.getCentreX(), r.getBottom(), false);
+    // Add intermediate stops for smoother transitions
+    base.addColour(0.3f, m.top.interpolatedWith(m.bottom, 0.3f));
+    base.addColour(0.7f, m.top.interpolatedWith(m.bottom, 0.7f));
+    g.setGradientFill(base);
+    g.fillRoundedRectangle(r, corner);
+
+    // Airy tint overlay
+    if (m.airyAlpha > 0.0f) {
+        g.setColour(m.airyTint.withAlpha(m.airyAlpha));
+        g.fillRoundedRectangle(r, corner);
+    }
+
+    // Sheen band (upper third)
+    const float sheenH = juce::jlimit (10.0f, 24.0f, r.getHeight() * 0.14f);
+    auto sheen = r.withHeight(sheenH).withY (r.getY() + r.getHeight() * 0.28f);
+    juce::Colour cSheen = juce::Colours::white.withAlpha (m.sheenAlpha);
+    g.setGradientFill (juce::ColourGradient (cSheen, sheen.getX(), sheen.getY(),
+                                             juce::Colours::transparentWhite, sheen.getX(), sheen.getBottom(), false));
+    g.fillRoundedRectangle (sheen, corner);
+
+    // Static brushed lines (no continuous painting)
+    g.setColour (juce::Colours::white.withAlpha (0.02f));
+    g.fillRoundedRectangle (r.reduced (2.0f), corner);
+
+    // Static interference motif (no continuous painting)
+    // Use a simple static pattern instead of animated lines
+    g.setColour (juce::Colour (0xFF8FB4E6).withAlpha (0.03f));
+    g.fillRoundedRectangle (r.reduced (2.0f), corner);
+
+    // Bottom multiply (depth)
+    g.setColour (m.bottomMul.withAlpha (m.bottomMulAlpha));
+    g.fillRoundedRectangle (r.withY (r.getY() + r.getHeight() * 0.75f), corner);
+
+    // Borders
+    juce::Path outline; outline.addRoundedRectangle (r, corner);
+    g.setColour (juce::Colour (0xFF202226));
+    g.strokePath (outline, juce::PathStrokeType (1.0f * dpi));
+
+    g.setColour (juce::Colour (0xFFD7E6FF).withAlpha (0.10f));
+    juce::Path innerOutline; innerOutline.addRoundedRectangle (r.reduced (1.0f), corner);
+    g.strokePath (innerOutline, juce::PathStrokeType (1.0f * dpi));
+}

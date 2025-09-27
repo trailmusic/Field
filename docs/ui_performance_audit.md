@@ -11,16 +11,16 @@ Scope: Validate responsiveness, consistency, theme-compliance, and lifecycle rul
 - Opaqueness: defer changes to visuals. Identify candidates only (components that fully paint their backgrounds) and revisit later.
 - Remove legacy 4-row assumptions; tabs now use per‑pane 2×16 grids with zero gaps.
 - Widespread `reduced(...)` use; ensure no outer reductions on grid containers; grids remain gapless.
-- Texture/paint cost review needed in metallic/gradient-heavy paths; cache images where needed.
+- Ocean-harmonized metallic system implemented via `FieldLNF::paintMetal()` with proper caching and performance optimization.
 
 ### How to verify per component
 - Captions/labels: `setName(...)` used; Managed value-label mode; correct precision rules.
 - Attachments: created once and owned long-term; none created in `resized/timer/drag`.
-- Paint: no heavy per-pixel/random work; textures cached; repaint minimal region; `setOpaque(true)` when fully painting.
+- Paint: no heavy per-pixel/random work; textures cached; Ocean-harmonized metallic rendering via `FieldLNF::paintMetal()`; repaint minimal region; `setOpaque(true)` when fully painting.
 - Timers: 15–30 Hz; no layout or heavy work in callbacks.
 - Layout: per‑tab flat 2×16 grids; zero gaps; no outer `reduced(...)`; DUCK strip metrics match.
 - Band: verify Designer overlay removed from `ImagerPane`; seven Designer controls live in `BandControlsPane` with metallic blue; blanks filled.
-- Theme: no hardcoded hex/`Colours::`; colours derived from `FieldLNF::theme`; correct metallic scope and border flags.
+- Theme: no hardcoded hex/`Colours::`; colours derived from `FieldLNF::theme`; Ocean-harmonized metallic system via `FieldLNF::paintMetal()` with `theme.metal.*` variants; correct metallic scope and border flags.
 
 ---
 
@@ -36,7 +36,7 @@ Checklist:
 - [ ] Captions via `setName(...)`; Managed value labels; precision per type
 - [ ] One long-lived attachment per control; not in `resized/timer/drag`
 - [ ] No hardcoded colours; all from `FieldLNF::theme`
-- [ ] No heavy/random allocations in `paint()`; cache textures; minimal repaints
+- [ ] No heavy/random allocations in `paint()`; cache textures; Ocean-harmonized metallic rendering via `FieldLNF::paintMetal()`; minimal repaints
 - [ ] Timers 15–30 Hz; no layout in timers
 - [ ] Per‑tab 2×16 grids; zero gaps; no outer `reduced(...)`
 - [ ] `setOpaque(true)` if fully painting background
@@ -51,7 +51,7 @@ Checklist:
 
 Checklist:
 - [ ] Default to `ValueLabelMode::Managed`; label gap set; metrics consistent
-- [ ] No allocations/randomization in `paint()`; cache any heavy assets
+- [ ] No allocations/randomization in `paint()`; cache any heavy assets; Ocean-harmonized metallic rendering via `FieldLNF::paintMetal()`
 - [ ] Minimal repaint regions; set opaque if fully painted
 
 #### Reverb UI
@@ -65,7 +65,7 @@ Checklist:
 - [ ] Abbreviations per spec (ER WID, TL WID, ER DEN, ...)
 - [ ] DUCK strip metrics match main knobs
 - [ ] Managed value labels; captions and precision correct
-- [ ] Theme-only colours; no metallic tint on Group 2
+- [ ] Theme-only colours; Ocean-harmonized metallic system via `FieldLNF::paintMetal()` with `theme.metal.reverb`; no metallic tint on Group 2
 - [ ] Timers within 15–30 Hz; no layout in callbacks
 
 #### Motion UI
@@ -73,7 +73,7 @@ Checklist:
 
 Checklist:
 - [ ] Lives in Group 1 only; flat grid; zero gaps
-- [ ] Theme: `motionPanelTop/motionPanelBot/motionBorder`; migrate to `motionPurpleBorder`
+- [ ] Theme: `motionPanelTop/motionPanelBot/motionBorder`; migrate to `motionPurpleBorder`; Ocean-harmonized metallic system via `FieldLNF::paintMetal()` with `theme.metal.motion`
 - [ ] Managed value labels; captions present for LNF rendering
 - [ ] No hardcoded colours; cache heavy paints
 
@@ -88,7 +88,7 @@ Checklist:
 Checklist:
 - [ ] Managed labels where using KnobCell; captions set
 - [ ] Imager: visuals‑only tab; Band pane owns Width visuals + WIDTH + Designer controls; Imager tooling off in Band
-- [ ] Styled blanks present in Delay/Reverb/Band/XY with correct metallic tints
+- [ ] Styled blanks present in Delay/Reverb/Band/XY with Ocean-harmonized metallic tints via `FieldLNF::paintMetal()` (`theme.metal.delay`, `theme.metal.reverb`, `theme.metal.band`, `theme.metal.neutral`)
 - [ ] Theme-only colours; no random per-paint
 - [ ] Timers 15–30 Hz (Spectrum/Scopes may justify higher; measure); minimal repaints
 
@@ -104,7 +104,7 @@ Checklist:
 Checklist:
 - [ ] Flat layouts; no outer `reduced(...)` on Group 2 screens
 - [ ] No add/remove/reparent in timers/drag; toggle visibility instead
-- [ ] Theme-only colours; set opaque where fully painted
+- [ ] Theme-only colours; Ocean-harmonized metallic system via `FieldLNF::paintMetal()` where appropriate; set opaque where fully painted
 
 #### Supporting UI
 - `Source/PresetCommandPalette.*`
@@ -122,7 +122,7 @@ Checklist:
 - [x] Normalize timer rates to 15–30 Hz where feasible (Motion/Delay visuals at 60 Hz require profiling justification)
 - [ ] Audit and set `setOpaque(true)` where applicable
 - [ ] Verify Group 2 layouts have no outer `reduced(...)`; keep zero gaps
-- [ ] Ensure texture caching for metallic/brush/noise where used
+- [ ] Ensure texture caching for Ocean-harmonized metallic/brush/noise where used via `FieldLNF::paintMetal()`
  - [ ] Confirm overlay children are built once and not re-parented during slide
  - [ ] Ensure overlay grids reflow only on size/scale change (dirty flag)
  - [ ] Timer is the sole animation driver for overlay; no easing in layout

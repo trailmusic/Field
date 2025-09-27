@@ -30,12 +30,13 @@ KnobCell Metrics & Styling
   - Use KnobCell mini strip for micro sliders/bars (BOOST mini, Q-Link) with explicit thickness; prefer right-side placement when appropriate.
 - LookAndFeel
   - Blue ticks at 12/3/6/9 via FieldLNF rotary drawing.
-  - Metallic backgrounds:
-    - Motion and Center (as before).
-    - Delay: light yellow‑green metallic (`delayMetallic` + `delayThemeBorderTextGrey`).
-    - Reverb: burnt‑orange metallic (`reverbMetallic` + `reverbMaroonBorder`).
-    - Band: metallic blue (`bandMetallic`).
-    - XY blanks: metallic grey (`metallic` only) for empty cells.
+  - Metallic backgrounds (Ocean-harmonized system):
+    - Motion: Indigo anodized (`motionPurpleBorder` + `theme.metal.motion`).
+    - Delay: Champagne nickel (`delayMetallic` + `theme.metal.delay`).
+    - Reverb: Copper/burnished (`reverbMetallic` + `theme.metal.reverb`).
+    - Band/Phase: Ocean anodized (`bandMetallic`/`phaseMetallic` + `theme.metal.band`/`theme.metal.phase`).
+    - XY blanks: Neutral steel (`metallic` + `theme.metal.neutral`) for empty cells.
+    - Pro/Advanced: Dark titanium (`theme.metal.titanium`) for focused states.
   - Optional properties: panelBrighten, borderBrighten. Use sparingly.
   - Combo: tintedSelected to hide default label when custom captioning is used.
 
@@ -119,7 +120,7 @@ Performance Guidance (avoid UI lag)
 ---
 Discrepancies & Redundancies (to monitor/fix)
 - Duplicate caption systems: remove external placeLabelBelow for knobs; standardize on slider.setName + KnobCell Managed.
-- Metallic background drift: allowed metallic sets are Motion, Center, Delay, Reverb, Band; XY may use metallic grey for blanks only.
+- Metallic background system: Ocean-harmonized materials via `FieldLNF::paintMetal()` with `theme.metal.*` variants. Allowed metallic sets are Motion (indigo), Delay (champagne), Reverb (copper), Band/Phase (ocean), XY blanks (neutral steel), Pro/Advanced (titanium).
 - Right-align/reduction remnants: ensure no stale right-align or reduced(...) layouts.
 - Label coverage: audit all Motion/Center/Reverb knobs for setName(...); abbreviations per spec.
 - Value label precision: HP/LP 0 decimals; dB 1 decimal; percent 0 by default.
@@ -133,7 +134,7 @@ Checklist for New Controls
 - [ ] Wrap in KnobCell/SwitchCell; set metrics; set ValueLabelMode::Managed and label gap.
 - [ ] Initialize the value label text once (format per type) before first paint.
 - [ ] Place in the flat grid with explicit row/column; no row/column gaps.
-- [ ] Apply styling (metallic for Motion/Center where appropriate) via properties.
+- [ ] Apply styling (Ocean-harmonized metallic for Motion/Delay/Reverb/Band/Phase where appropriate) via properties and `FieldLNF::paintMetal()`.
 - [ ] Verify performance: no heavy work on UI thread; minimal repaints.
 
 ---
@@ -149,7 +150,8 @@ UI Performance Practices (snappy drags, minimal lag)
 - Painting and textures
   - Centralize paint logic in LNF/Cell helpers and keep it lightweight.
   - Cache heavy textures (metallic/brush/noise) to an Image per size/scale; reuse instead of regenerating per paint.
-  - Repaint narrowly (only the control’s local bounds). Avoid triggering large parent repaints for small updates.
+  - Use `FieldLNF::paintMetal()` for consistent Ocean-harmonized metallic rendering with proper caching.
+  - Repaint narrowly (only the control's local bounds). Avoid triggering large parent repaints for small updates.
   - Prefer simple strokes/gradients; avoid randomization in paint paths during interaction.
   - Preallocate hot-path geometry: call Path::preallocateSpace for curves rebuilt each paint (e.g., EQ/Scope curves) to avoid per-frame allocations.
 - Timers and updates
@@ -164,11 +166,13 @@ UI Performance Practices (snappy drags, minimal lag)
   - Use flat grids with fixed cell metrics and zero gaps. Avoid outer reductions/padding that trigger re-layout.
 - Theme & color modes
   - Derive all colors from FieldLNF::theme (including Motion: motionPanelTop/motionPanelBot/motionBorder). No hardcoded hex in paint paths (replace with theme lookups + minimal hue/sat/alpha tweaks only when necessary).
-  - Tint palettes must derive from FieldLNF::theme. It’s acceptable to apply small hue/saturation/brightness/alpha adjustments to theme colours for differentiation (e.g., menu item tints for modes/paths), but avoid fixed hex.
+  - Use Ocean-harmonized metallic system via `FieldLNF::paintMetal()` with `theme.metal.*` variants for consistent material rendering.
+  - Tint palettes must derive from FieldLNF::theme. It's acceptable to apply small hue/saturation/brightness/alpha adjustments to theme colours for differentiation (e.g., menu item tints for modes/paths), but avoid fixed hex.
   - Examples:
     - Oversampling tints: use theme.eq.bass, theme.eq.scoop, and accent hue-shifts.
     - Phase/quality tints: use theme.eq.hp and accent hue offsets.
     - Path/quant/mode tints: compose from theme families (accent/eq.*) with minor hue/sat tweaks.
+    - Metallic materials: use theme.metal.neutral, theme.metal.reverb, theme.metal.delay, theme.metal.motion, theme.metal.band, theme.metal.phase, theme.metal.titanium.
 
 ---
 Audit System (how we audit UI performance & consistency)
@@ -178,7 +182,7 @@ What we audit (entire plugin)
 - Consistency
   - All controls (EQ, Center, Delay, Reverb, Motion, meters) use canonical KnobCell/SwitchCell/Combo patterns with Managed value labels and slider.setName captions.
   - Legacy caption/placement systems removed (no external placeLabelBelow for KnobCell-managed controls).
-  - Styling rules respected: metallic only for Motion and Center; others default background.
+  - Styling rules respected: Ocean-harmonized metallic system via `FieldLNF::paintMetal()` for Motion (indigo), Delay (champagne), Reverb (copper), Band/Phase (ocean), XY blanks (neutral steel), Pro/Advanced (titanium).
   - Border/theme flags used consistently per system: Reverb uses reverbMaroonBorder; Motion uses motionPurpleBorder; Delay uses delayThemeBorderTextGrey when intended.
 - Theme compliance
   - No hardcoded hex colours in paint paths across the codebase; all colours derived from FieldLNF::theme (including Motion’s motionPanelTop/motionPanelBot/motionBorder).
@@ -189,6 +193,7 @@ What we audit (entire plugin)
   - No outer reduced(...) around active grids.
 - Paint cost
   - No per-paint randomization or heavy loops in hot controls; textures cached.
+  - Ocean-harmonized metallic rendering via `FieldLNF::paintMetal()` with proper caching and minimal repaints.
   - Repaint regions are minimal; no large parent repaints from child updates.
 - Timers & updates
   - Timer frequencies within 15–30 Hz; no heavy work inside timer callbacks.

@@ -299,7 +299,7 @@ public:
     {
         const bool changed = (id != active);
         // Always enforce correct visibility, even if selecting the same pane.
-        for (auto* c : { (juce::Component*) xyTab.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
+        for (auto* c : { (juce::Component*) phase.get(), (juce::Component*) xyTab.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
             if (c) c->setVisible (false);
 
         if (changed)

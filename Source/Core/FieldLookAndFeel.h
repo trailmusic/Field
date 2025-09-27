@@ -36,6 +36,23 @@ struct FieldTheme
     juce::Colour motionPanelBot { 0xFF555A99 }; // deeper bluish-purple bottom
     juce::Colour motionBorder   { 0xFF4A4A8E }; // purple border
 
+    // Upgraded Metallic System - Ocean-harmonized materials
+    struct MetalStops { 
+        juce::Colour top, bottom; 
+        juce::Colour tint; 
+        float tintAlpha; 
+    };
+    
+    struct MetalTheme {
+        MetalStops neutral  { juce::Colour (0xFF9CA4AD), juce::Colour (0xFF6E747C), juce::Colour (0x003D7BB8), 0.06f };
+        MetalStops reverb   { juce::Colour (0xFFB87749), juce::Colour (0xFF7D4D2E), juce::Colour (0x00F2C39A), 0.10f }; // tint used as sheen in band
+        MetalStops delay    { juce::Colour (0xFFC9CFB9), juce::Colour (0xFF8D927F), juce::Colour (0x004AA3FF), 0.05f };
+        MetalStops motion   { juce::Colour (0xFF6D76B2), juce::Colour (0xFF434A86), juce::Colour (0x00C2D8FF), 0.06f };
+        MetalStops band     { juce::Colour (0xFF6AA0D8), juce::Colour (0xFF3A6EA8), juce::Colour (0x000A0C0F), 0.12f }; // bottom multiply
+        MetalStops phase    { juce::Colour (0xFF3E6BA3), juce::Colour (0xFF24466E), juce::Colour (0xFFC2D8FF), 0.06f }; // Deep Cobalt Interference
+        MetalStops titanium { juce::Colour (0xFF7D858F), juce::Colour (0xFF3B4149), juce::Colour (0x003D7BB8), 0.08f };
+    } metal;
+
     // EQ palette (defaults set in FieldLNF::setGreenMode(false))
     struct EqPalette {
         juce::Colour hp;
@@ -342,6 +359,21 @@ public:
 
     // Top tabs pill background (active/inactive) to keep styling centralized
     void drawTabPill (juce::Graphics& g, juce::Rectangle<float> r, bool active) const;
+
+    // Upgraded Metallic Rendering System
+    static void paintMetal (juce::Graphics& g, const juce::Rectangle<float>& r,
+                           const FieldTheme::MetalStops& m, float corner = 8.0f);
+
+    // Phase-Specific Metallic System (Deep Cobalt Interference)
+    struct PhaseMetal {
+        juce::Colour top, bottom;
+        juce::Colour airyTint;   float airyAlpha;   // overlay
+        juce::Colour bottomMul;  float bottomMulAlpha;
+        float sheenAlpha;        // 0.10f default
+    };
+    
+    static void paintPhaseMetal (juce::Graphics& g, const juce::Rectangle<float>& r,
+                                const PhaseMetal& m, float corner = 10.0f, float dpi = 1.0f);
 
     // Active theme (mutable for runtime palette switching)
     FieldTheme theme;

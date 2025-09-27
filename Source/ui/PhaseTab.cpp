@@ -101,6 +101,16 @@ void PhaseTab::makeCell (juce::Slider& s, juce::Label& v, const juce::String& ca
     // Phase tab styling: metallic blue
     cell->getProperties().set ("metallic", true);
     cell->getProperties().set ("phaseMetallic", true);
+    
+    // Debug: Verify properties are set and component type
+    const bool hasMetallic = cell->getProperties().getWithDefault ("metallic", false);
+    const bool hasPhaseMetallic = cell->getProperties().getWithDefault ("phaseMetallic", false);
+    jassert (hasMetallic && hasPhaseMetallic); // This should not fail
+    
+    // Debug: Set a unique property to identify this as a Phase KnobCell
+    cell->getProperties().set ("debugPhaseKnobCell", true);
+    
+    // Debug: Properties are set (removed console output for simplicity)
     addAndMakeVisible (*cell);
     knobCells.emplace_back (cell.get());
     ownedCells.emplace_back (std::move (cell));
@@ -225,6 +235,12 @@ void PhaseTab::makeComboCell (juce::ComboBox& c, const juce::String& cap, const 
     cell->setCaption (cap);
     cell->getProperties().set ("metallic", true);
     cell->getProperties().set ("phaseMetallic", true);
+    
+    // Debug: Verify properties are set
+    const bool hasMetallic = cell->getProperties().getWithDefault ("metallic", false);
+    const bool hasPhaseMetallic = cell->getProperties().getWithDefault ("phaseMetallic", false);
+    jassert (hasMetallic && hasPhaseMetallic); // This should not fail
+    
     addAndMakeVisible (*cell);
     switchCells.emplace_back (cell.get());
     ownedSwitches.emplace_back (std::move (cell));
@@ -243,6 +259,12 @@ void PhaseTab::makeSwitchCell (juce::ToggleButton& t, const juce::String& cap, c
     cell->setCaption (cap);
     cell->getProperties().set ("metallic", true);
     cell->getProperties().set ("phaseMetallic", true);
+    
+    // Debug: Verify properties are set
+    const bool hasMetallic = cell->getProperties().getWithDefault ("metallic", false);
+    const bool hasPhaseMetallic = cell->getProperties().getWithDefault ("phaseMetallic", false);
+    jassert (hasMetallic && hasPhaseMetallic); // This should not fail
+    
     addAndMakeVisible (*cell);
     switchCells.emplace_back (cell.get());
     ownedSwitches.emplace_back (std::move (cell));

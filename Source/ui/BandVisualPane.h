@@ -237,29 +237,73 @@ private:
         auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
         auto gridCol = lf ? lf->theme.text : juce::Colours::white;
         
-        // Updated colors using new sophisticated palette
-        auto loColor = juce::Colour (0xFF2AA88F); // LO: Teal green (matches band colors)
-        auto hiColor = juce::Colour (0xFFB08ED6); // HI: Light purple (matches band colors)
+        // SHUF colors - Option C: Ion Glow gradient accents (Ocean brand echo)
+        // Neutral base colors (no competition with band colors)
+        auto chipIdle = juce::Colour (0xFF1C1F24);
+        auto chipActive = juce::Colour (0xFF232831);
+        auto borderIdle = juce::Colour (0xFF2A2F36);
+        auto borderActive = juce::Colour (0xFF3D7BB8); // Ocean primary outline
+        auto textIdle = juce::Colour (0xFFA7AFBD);
+        auto textActive = juce::Colour (0xFFE6EAF2);
+        
+        // Ion Glow gradient accents (2-3px top stripe) - Ocean brand echo
+        // S: Graphite → Ocean primary (for LO segment)
+        auto accentS_start = juce::Colour (0xFF2A2F36);
+        auto accentS_end = juce::Colour (0xFF3D7BB8);
+        // H: Graphite → Ocean highlight
+        auto accentH_start = juce::Colour (0xFF2A2F36);
+        auto accentH_end = juce::Colour (0xFF4AA3FF);
+        // U: Graphite → Muted azure (for HI segment - more distinct from LO)
+        auto accentU_start = juce::Colour (0xFF2A2F36);
+        auto accentU_end = juce::Colour (0xFF5E96C9);
+        // F: Graphite → Desaturated ocean
+        auto accentF_start = juce::Colour (0xFF2A2F36);
+        auto accentF_end = juce::Colour (0xFF5C86B0);
+        
+        // Use neutral colors for main segments, gradient accents for indicators
+        auto loColor = chipIdle; // Neutral chip color
+        auto hiColor = chipIdle; // Neutral chip color
         auto accentColor = lf ? lf->theme.accent : juce::Colour (0xFF5AA9E6);
 
         // Background grid
         g.setColour (gridCol.withAlpha (0.15f));
         g.fillRect (band);
 
-        // Left segment (Lo%) with sophisticated color
-        g.setColour (loColor.withAlpha (0.4f));
-        g.fillRect (juce::Rectangle<float> (band.getX(), band.getBottom() - widthH (shufLoPct), xX - band.getX(), widthH (shufLoPct)));
+        // Left segment (Lo%) with gradient fill - heaviest at crossover
+        auto leftRect = juce::Rectangle<float> (band.getX(), band.getBottom() - widthH (shufLoPct), xX - band.getX(), widthH (shufLoPct));
+        juce::ColourGradient leftFillGrad (accentS_start.withAlpha (0.2f), leftRect.getX(), leftRect.getCentreY(),
+                                          accentS_end.withAlpha (0.8f), leftRect.getRight(), leftRect.getCentreY(), false);
+        g.setGradientFill (leftFillGrad);
+        g.fillRect (leftRect);
         
-        // Right segment (Hi%) with sophisticated color  
-        g.setColour (hiColor.withAlpha (0.4f));
-        g.fillRect (juce::Rectangle<float> (xX, band.getBottom() - widthH (shufHiPct), band.getRight() - xX, widthH (shufHiPct)));
+        // Right segment (Hi%) with gradient fill - heaviest at crossover (opposite direction from LO)
+        auto rightRect = juce::Rectangle<float> (xX, band.getBottom() - widthH (shufHiPct), band.getRight() - xX, widthH (shufHiPct));
+        juce::ColourGradient rightFillGrad (accentU_end.withAlpha (0.8f), rightRect.getX(), rightRect.getCentreY(),
+                                           accentU_start.withAlpha (0.2f), rightRect.getRight(), rightRect.getCentreY(), false);
+        g.setGradientFill (rightFillGrad);
+        g.fillRect (rightRect);
 
-        // Border around segments
-        g.setColour (loColor.withAlpha (0.7f));
-        g.drawRect (juce::Rectangle<float> (band.getX(), band.getBottom() - widthH (shufLoPct), xX - band.getX(), widthH (shufLoPct)), 1.0f);
+        // Border around segments (neutral borders)
+        g.setColour (borderIdle);
+        g.drawRect (leftRect, 1.0f);
         
-        g.setColour (hiColor.withAlpha (0.7f));
-        g.drawRect (juce::Rectangle<float> (xX, band.getBottom() - widthH (shufHiPct), band.getRight() - xX, widthH (shufHiPct)), 1.0f);
+        g.setColour (borderIdle);
+        g.drawRect (rightRect, 1.0f);
+        
+        // Ion Glow gradient accent indicators (2-3px top stripes for letter identity)
+        // Left segment accent (S/H letters) - S gradient
+        auto leftBar = leftRect.withHeight (3.0f);
+        juce::ColourGradient leftGrad (accentS_start, leftBar.getX(), leftBar.getCentreY(),
+                                       accentS_end, leftBar.getRight(), leftBar.getCentreY(), false);
+        g.setGradientFill (leftGrad);
+        g.fillRect (leftBar);
+        
+        // Right segment accent (U/F letters) - U gradient (flipped direction)
+        auto rightBar = rightRect.withHeight (3.0f);
+        juce::ColourGradient rightGrad (accentU_end, rightBar.getX(), rightBar.getCentreY(),
+                                        accentU_start, rightBar.getRight(), rightBar.getCentreY(), false);
+        g.setGradientFill (rightGrad);
+        g.fillRect (rightBar);
 
         // Center lines drawn on top of segments (always visible)
         // Center vertical line (always visible)

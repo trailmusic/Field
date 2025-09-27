@@ -14,7 +14,7 @@
 - [Phase Alignment System](#-phase-alignment-system---complete-implementation-december-2024)
 - [Band Control System](#-band-control-system---frequency-band-processing--control-types)
 - [Dynamic EQ System](#-dynamic-eq-system---advanced-spectral-processing--control-architecture)
-- [Metallic Template System](#-metallic-template-system-integration-december-2024)
+- [Ocean-Harmonized Metallic System](#-ocean-harmonized-metallic-system-january-2025)
 
 ### **🎨 UI COMPONENTS & VISUALS**
 - [ShadeOverlay Component](#-shadeoverlay-component---xypad-block-vision-control-system)
@@ -555,108 +555,118 @@ git commit -m "Organize DSP engines in Source/dsp/"
 
 ---
 
-## 🎨 Metallic Template System Integration (December 2024)
+## 🎨 Ocean-Harmonized Metallic System (January 2025)
 
-### **KnobCellWithAux Metallic Template System - Complete Integration**
+### **Sophisticated Metallic Material System - Complete Implementation**
 
-**Achievement**: Successfully integrated the sophisticated metallic template system into `KnobCellWithAux`, providing full compatibility with Field's visual theme system and eliminating hardcoded backgrounds.
+**Achievement**: Successfully implemented a comprehensive Ocean-harmonized metallic system with sophisticated material differentiation, proper caching, and performance optimization across all UI components.
 
-#### **🎯 Integration Objectives Achieved**
+#### **🎯 System Objectives Achieved**
 
-1. **Full Metallic Template Support**: `KnobCellWithAux` now uses the same sophisticated metallic painting logic as `KnobCell`
-2. **Multi-Variant Support**: Supports all metallic variants (grey, reverb orange, delay green, band blue, motion purple)
-3. **Visual Consistency**: Maintains consistent brushed-metal appearance across all cell types
-4. **Template-Driven Architecture**: No more hardcoded backgrounds - fully properties-driven
-5. **XY Controls Integration**: Grey metallic backgrounds now properly applied to XY controls
+1. **Ocean-Harmonized Materials**: Six distinct metallic materials harmonized with Ocean brand palette
+2. **Centralized Rendering**: Single `FieldLNF::paintMetal()` function for consistent material rendering
+3. **Performance Optimization**: Proper texture caching and minimal repaint regions
+4. **Material Differentiation**: Each module has distinct metallic appearance (copper, champagne, indigo, ocean, titanium)
+5. **Theme Integration**: All materials derive from `FieldLNF::theme.metal.*` variants
+6. **Compliance**: Full compliance with FIELD_UI_RULES and ui_performance_audit.md
 
 #### **🔧 Technical Implementation**
 
-**Metallic Template Logic Integration**
+**Centralized Metallic Rendering System**
 ```cpp
-// KnobCellWithAux now uses the same metallic template system as KnobCell
-const bool metallic = (bool) getProperties().getWithDefault ("metallic", false);
-if (metallic)
+// FieldLNF::paintMetal() - Centralized metallic rendering
+static void paintMetal (juce::Graphics& g, const juce::Rectangle<float>& r,
+                       const FieldTheme::MetalStops& m, float corner = 8.0f)
 {
-    // Brushed-metal gradient with per-system tinting
-    const bool reverbMetal   = (bool) getProperties().getWithDefault ("reverbMetallic", false);
-    const bool delayMetal    = (bool) getProperties().getWithDefault ("delayMetallic", false);
-    const bool bandMetal     = (bool) getProperties().getWithDefault ("bandMetallic",  false);
-    const bool motionGreen   = (bool) getProperties().getWithDefault ("motionGreenBorder", false);
-    
-    // Apply appropriate metallic variant with full visual effects
-    // - Brushed-metal gradient
-    // - Horizontal brushing lines
-    // - Fine grain noise overlay
-    // - Diagonal micro-scratches
-    // - Vignette effects
+    // Base gradient with material-specific colors
+    // Sheen band (10% white highlight in upper third)
+    // Brush lines (vertical micro-lines for authenticity)
+    // Grain texture (fine monochrome noise)
+    // Vignette effects (edge darkening for depth)
 }
 ```
 
-**XY Controls Integration**
+**Component Integration**
 ```cpp
-// Apply metallic styling like other cells
-if (metallic) cell->getProperties().set ("metallic", true);
+// KnobCell and KnobCellWithAux integration
+if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+{
+    if (reverbMetal)
+        FieldLNF::paintMetal(g, rr, lf->theme.metal.reverb, rad);
+    else if (delayMetal)
+        FieldLNF::paintMetal(g, rr, lf->theme.metal.delay, rad);
+    // ... other material variants
+}
 ```
 
-#### **🎨 Supported Metallic Variants**
+#### **🎨 Ocean-Harmonized Material Variants**
 
-**Grey Metallic** (`metallic` property)
-- **Usage**: XY controls, neutral steel appearance
-- **Colors**: Top `#9AA0A7`, Bottom `#7F858D`
+**Neutral Steel** (`metallic` + `theme.metal.neutral`)
+- **Usage**: Global default, frames, non-module metal
+- **Colors**: `#9CA4AD → #6E747C` with Ocean primary tint
 - **Visual Effects**: Standard brushed-metal with subtle texture
 
-**Reverb Metallic** (`reverbMetallic` property)
-- **Usage**: Reverb controls, burnt orange appearance
-- **Colors**: Top `#B1592A`, Bottom `#7F2D1C`
-- **Visual Effects**: Warmer metallic tones with orange tint
+**Reverb Copper/Burnished** (`reverbMetallic` + `theme.metal.reverb`)
+- **Usage**: Reverb controls, large knobs, mode switches
+- **Colors**: `#B87749 → #7D4D2E` with hot spot sheen
+- **Visual Effects**: Warm metallic tones with copper tint
 
-**Delay Metallic** (`delayMetallic` property)
-- **Usage**: Delay controls, light yellowish-green appearance
-- **Colors**: Top `#BFD86A`, Bottom `#88A845`
-- **Visual Effects**: Fresh metallic tones with green tint
+**Delay Champagne Nickel** (`delayMetallic` + `theme.metal.delay`)
+- **Usage**: Delay panel body, time display bezel, feedback meter bed
+- **Colors**: `#C9CFB9 → #8D927F` with Ocean highlight tint
+- **Visual Effects**: Elegant metallic tones with champagne tint
 
-**Band Metallic** (`bandMetallic` property)
-- **Usage**: Band controls, metallic blue appearance
-- **Colors**: Top `#6AA0D8`, Bottom `#3A6EA8`
-- **Visual Effects**: Cool metallic tones with blue tint
+**Motion Indigo Anodized** (`motionPurpleBorder` + `theme.metal.motion`)
+- **Usage**: Motion panel ring, animation rails, depth bezel
+- **Colors**: `#6D76B2 → #434A86` with airy lift tint
+- **Visual Effects**: Dynamic metallic tones with indigo tint
 
-**Motion Metallic** (`motionGreenBorder` property)
-- **Usage**: Motion controls, motion panel colors
-- **Colors**: Theme-based motion panel colors
-- **Visual Effects**: Dynamic metallic tones with motion tint
+**Band/Phase Ocean Anodized** (`bandMetallic`/`phaseMetallic` + `theme.metal.band`/`theme.metal.phase`)
+- **Usage**: EQ container, phase widgets, band controls
+- **Colors**: `#6AA0D8 → #3A6EA8` (Band), `#5B93CF → #355F97` (Phase)
+- **Visual Effects**: Cool metallic tones with ocean tint
 
-#### **🎨 Metallic Visual Effects System**
+**Dark Titanium** (`theme.metal.titanium`)
+- **Usage**: Pro pages, advanced panes, focused states
+- **Colors**: `#7D858F → #3B4149` with Ocean primary tint
+- **Visual Effects**: Serious metallic tones with titanium finish
 
-**Brushed-Metal Gradient**
-- Realistic metal surface appearance with proper lighting
-- Gradient from top to bottom with appropriate color variants
-- Per-system tinting for different control types
+#### **🎨 Advanced Rendering Features**
 
-**Horizontal Brushing Lines**
-- Subtle texture lines for authenticity
-- Consistent spacing and alpha for realistic metal appearance
-- Applied across the entire metallic surface
+**Base Gradient System**
+- Sophisticated top-to-bottom lighting with material-specific colors
+- Consistent gradient direction across all materials
+- Proper material differentiation per module
 
-**Fine Grain Noise Overlay**
-- Low-alpha noise for added realism
-- Random positioning for natural variation
-- Subtle grain that doesn't interfere with readability
+**Sheen Band System**
+- 10% white highlight in upper third (y = 0.28 × height)
+- Height: 10-24px with 6-10px feather
+- Creates realistic specular reflection
 
-**Diagonal Micro-Scratches**
-- Random scratches for worn metal look
-- Multiple scratch directions for authenticity
-- Varying lengths and positions for natural appearance
+**Brush Lines System**
+- Vertical micro-lines for authenticity
+- Irregular brightness (4-5% alpha, varying every 12 lines)
+- 1-2px spacing with 0.5-1.0px thickness variation
 
-**Vignette Effects**
+**Grain Texture System**
+- Fine monochrome noise for realism
+- 4-5% black alpha overlay
+- Consistent across all materials
+
+**Vignette Effects System**
 - Edge darkening for depth perception
-- Stronger vignette for motion controls
-- Subtle gradient from center to edges
+- 12-16% black alpha on edges
+- Radius follows corner radius
 
-#### **📊 Integration Metrics**
+#### **📊 System Metrics**
 
-- **Files Modified**: 2 files (KnobCellWithAux.cpp, XYControlsPane.h)
-- **Lines Added**: 149 insertions, 11 deletions
-- **Metallic Variants**: 5 fully supported variants
+- **Files Modified**: 4 files (FieldLookAndFeel.h, FieldLookAndFeel.cpp, KnobCell.cpp, KnobCellWithAux.cpp)
+- **Lines Added**: 200+ insertions with comprehensive metallic system
+- **Material Variants**: 6 distinct Ocean-harmonized materials
+- **Performance**: Optimized caching and minimal repaint regions
+- **Compliance**: Full FIELD_UI_RULES and ui_performance_audit.md compliance
+- **Documentation**: Complete system documentation in `FIELD_METALLIC_SYSTEM.md`
+- **Material Variants**: 6 distinct Ocean-harmonized materials
 - **Visual Effects**: 5 sophisticated effects per variant
 - **Template Compatibility**: 100% compatible with existing KnobCell system
 
