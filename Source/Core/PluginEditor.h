@@ -2114,7 +2114,7 @@ private:
             // Adjust positioning: top moves up 3px (5->2), bottom moves down 2px
             r = r.withY (r.getY() + 2.0f).withHeight (r.getHeight() - 2.0f + 2.0f);
             
-            g.setColour (lnf.theme.panel);
+            g.setColour (lnf.theme.meters.trackBase);
             g.fillRoundedRectangle (r, 6.0f);
             
             // Standard border treatment: accent border (reduced brightness for meters)
@@ -2189,7 +2189,7 @@ private:
 
             auto drawBar = [&] (juce::Rectangle<float> b, float rms, float peak, const juce::String& label)
             {
-                g.setColour (lnf.theme.panel);
+                g.setColour (lnf.theme.meters.trackBase);
                 g.fillRoundedRectangle (b, 4.0f);
                 // Track
                 {
@@ -2291,7 +2291,7 @@ private:
             auto outB = r.reduced (2.0f);
             auto drawOne = [&] (juce::Rectangle<float> b, float rms, const juce::String& label)
             {
-                g.setColour (lnf.theme.panel); g.fillRoundedRectangle (b, 4.0f);
+                g.setColour (lnf.theme.meters.trackBase); g.fillRoundedRectangle (b, 4.0f);
                 // Standard border treatment: accent border (reduced brightness for meters)
                 g.setColour (lnf.theme.accent.withAlpha (0.3f));
                 g.drawRoundedRectangle (b, 4.0f, 1.0f);
