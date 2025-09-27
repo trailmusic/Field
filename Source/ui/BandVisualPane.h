@@ -72,10 +72,11 @@ private:
             g.setColour (c.withAlpha (0.95f)); g.drawRoundedRectangle (bar, 4.0f, 2.0f);
         };
 
-        // New sophisticated band color palette
-        const auto cLo  = juce::Colour (0xFF2AA88F);  // LO: Teal green
-        const auto cMid = juce::Colour (0xFF6079D6); // MID: Blue-purple  
-        const auto cHi  = juce::Colour (0xFFB08ED6); // HI: Light purple
+        // Theme-integrated band color palette
+        auto* fieldLNF = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+        const auto cLo  = fieldLNF ? fieldLNF->theme.eq.bass.withHue (fieldLNF->theme.eq.bass.getHue() - 0.1f) : juce::Colour (0xFF2AA88F);  // LO: Green with slight teal shift
+        const auto cMid = fieldLNF ? fieldLNF->theme.accent.withSaturation (juce::jmin (1.0f, fieldLNF->theme.accent.getSaturation() + 0.2f)) : juce::Colour (0xFF6079D6); // MID: Accent with purple tint
+        const auto cHi  = fieldLNF ? fieldLNF->theme.eq.scoop.withBrightness (juce::jmin (1.0f, fieldLNF->theme.eq.scoop.getBrightness() + 0.15f)) : juce::Colour (0xFFB08ED6); // HI: Scoop with brightness boost
         drawBand (r.getX(), xLo, widthLo, cLo);
         drawBand (xLo, xHi, widthMid, cMid);
         drawBand (xHi, r.getRight(), widthHi, cHi);
@@ -229,6 +230,7 @@ private:
         // Shuffler width strip (bottom, 12x taller - doubled from 72px to 144px)
         // Add small spacing buffer between bands and SHUF
         const float spacingBuffer = 12.0f;
+        auto* fieldLNF = dynamic_cast<FieldLNF*>(&getLookAndFeel());
         auto band = r.removeFromBottom (144.0f + spacingBuffer);
         band = band.withY (band.getY() + spacingBuffer); // Move SHUF strip down by spacing
         auto xAtHz = [&](float hz){ const float minHz=20.0f, maxHz=20000.0f; const float t=(float)(std::log10(juce::jlimit(minHz,maxHz,hz)/minHz)/std::log10(maxHz/minHz)); return juce::jmap(t,0.0f,1.0f,band.getX(),band.getRight()); };
@@ -240,36 +242,55 @@ private:
             return juce::jmax (8.0f, h);
         };
 
-        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-        auto gridCol = lf ? lf->theme.text : juce::Colours::white;
+        // SHUF colors - Theme-integrated Ion Glow gradient accents (Ocean brand echo)
+        // Neutral base colors (no competition with band colors) - derived from theme
+        juce::Colour gridCol, chipIdle, chipActive, borderIdle, borderActive, textIdle, textActive;
+        juce::Colour accentS_start, accentS_end, accentH_start, accentH_end, accentU_start, accentU_end, accentF_start, accentF_end;
         
-        // SHUF colors - Option C: Ion Glow gradient accents (Ocean brand echo)
-        // Neutral base colors (no competition with band colors)
-        auto chipIdle = juce::Colour (0xFF1C1F24);
-        auto chipActive = juce::Colour (0xFF232831);
-        auto borderIdle = juce::Colour (0xFF2A2F36);
-        auto borderActive = juce::Colour (0xFF3D7BB8); // Ocean primary outline
-        auto textIdle = juce::Colour (0xFFA7AFBD);
-        auto textActive = juce::Colour (0xFFE6EAF2);
-        
-        // Ion Glow gradient accents (2-3px top stripe) - Ocean brand echo
-        // S: Graphite → Ocean primary (for LO segment)
-        auto accentS_start = juce::Colour (0xFF2A2F36);
-        auto accentS_end = juce::Colour (0xFF3D7BB8);
-        // H: Graphite → Ocean highlight
-        auto accentH_start = juce::Colour (0xFF2A2F36);
-        auto accentH_end = juce::Colour (0xFF4AA3FF);
-        // U: Graphite → Muted azure (for HI segment - more distinct from LO)
-        auto accentU_start = juce::Colour (0xFF2A2F36);
-        auto accentU_end = juce::Colour (0xFF5E96C9);
-        // F: Graphite → Desaturated ocean
-        auto accentF_start = juce::Colour (0xFF2A2F36);
-        auto accentF_end = juce::Colour (0xFF5C86B0);
+        if (fieldLNF)
+        {
+            gridCol = fieldLNF->theme.text;
+            chipIdle = fieldLNF->theme.sh;
+            chipActive = fieldLNF->theme.hl;
+            borderIdle = fieldLNF->theme.shadowDark;
+            borderActive = fieldLNF->theme.accent;
+            textIdle = fieldLNF->theme.textMuted;
+            textActive = fieldLNF->theme.text;
+            
+            // Ion Glow gradient accents (2-3px top stripe) - Ocean brand echo
+            accentS_start = fieldLNF->theme.shadowDark;
+            accentS_end = fieldLNF->theme.accent;
+            accentH_start = fieldLNF->theme.shadowDark;
+            accentH_end = fieldLNF->theme.accent.brighter (0.3f);
+            accentU_start = fieldLNF->theme.shadowDark;
+            accentU_end = fieldLNF->theme.accent.withSaturation (0.7f);
+            accentF_start = fieldLNF->theme.shadowDark;
+            accentF_end = fieldLNF->theme.accent.withSaturation (0.6f);
+        }
+        else
+        {
+            gridCol = juce::Colours::white;
+            chipIdle = juce::Colour (0xFF1C1F24);
+            chipActive = juce::Colour (0xFF232831);
+            borderIdle = juce::Colour (0xFF2A2F36);
+            borderActive = juce::Colour (0xFF3D7BB8);
+            textIdle = juce::Colour (0xFFA7AFBD);
+            textActive = juce::Colour (0xFFE6EAF2);
+            
+            accentS_start = juce::Colour (0xFF2A2F36);
+            accentS_end = juce::Colour (0xFF3D7BB8);
+            accentH_start = juce::Colour (0xFF2A2F36);
+            accentH_end = juce::Colour (0xFF4AA3FF);
+            accentU_start = juce::Colour (0xFF2A2F36);
+            accentU_end = juce::Colour (0xFF5E96C9);
+            accentF_start = juce::Colour (0xFF2A2F36);
+            accentF_end = juce::Colour (0xFF5C86B0);
+        }
         
         // Use neutral colors for main segments, gradient accents for indicators
         auto loColor = chipIdle; // Neutral chip color
         auto hiColor = chipIdle; // Neutral chip color
-        auto accentColor = lf ? lf->theme.accent : juce::Colour (0xFF5AA9E6);
+        auto accentColor = fieldLNF ? fieldLNF->theme.accent : juce::Colour (0xFF5AA9E6);
 
         // Background grid
         g.setColour (gridCol.withAlpha (0.15f));
@@ -413,12 +434,15 @@ private:
         const float xLo = xAtHz (xoverLoHz);
         const float xHi = xAtHz (xoverHiHz);
         
-        auto grid = juce::Colours::white.withAlpha (0.12f);
+        // Theme-integrated crossover line colors
+        auto* fieldLNF = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+        auto grid = fieldLNF ? fieldLNF->theme.text.withAlpha (0.12f) : juce::Colours::white.withAlpha (0.12f);
+        auto crossoverColor = fieldLNF ? fieldLNF->theme.accent : juce::Colours::white;
         
         // Draw crossovers (draggable) - drawn on top of everything with high opacity
         auto drawX = [&](float x){ juce::Path p; p.startNewSubPath (x, r.getY()); p.lineTo (x, r.getBottom());
                                    const float dashes[] = { 5.0f, 4.0f }; juce::Path dashed; juce::PathStrokeType (1.2f).createDashedStroke (dashed, p, dashes, 2);
-                                   g.setColour (grid.withAlpha (1.0f)); g.strokePath (dashed, juce::PathStrokeType (2.0f)); };
+                                   g.setColour (crossoverColor.withAlpha (0.85f)); g.strokePath (dashed, juce::PathStrokeType (2.0f)); };
         drawX (xLo); drawX (xHi);
     }
 
