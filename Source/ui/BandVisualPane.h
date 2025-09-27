@@ -64,18 +64,35 @@ private:
             
             const float h = juce::jmap (width, 0.0f, 2.0f, 0.0f, availableHeight);
             juce::Rectangle<float> bar (x0, bandAreaBottom - h, juce::jmax (6.0f, x1 - x0), h);
-            // New palette: more visible alpha values per band
+            
+            // Vertical gradient for band fills
+            juce::ColourGradient gradient;
+            gradient.point1 = { bar.getX() + bar.getWidth() * 0.5f, bar.getY() }; // Top center
+            gradient.point2 = { bar.getX() + bar.getWidth() * 0.5f, bar.getBottom() }; // Bottom center
+            
+            // New palette: more visible alpha values per band with gradient
             float fillAlpha = 0.35f; // Default for LO - more visible
             if (c == juce::Colour (0xFF6079D6)) fillAlpha = 0.32f; // MID
             if (c == juce::Colour (0xFFB08ED6)) fillAlpha = 0.30f; // HI
-            g.setColour (c.withAlpha (fillAlpha)); g.fillRoundedRectangle (bar, 4.0f);
-            g.setColour (c.withAlpha (0.95f)); g.drawRoundedRectangle (bar, 4.0f, 2.0f);
+            
+            // Create gradient from lighter top to darker bottom
+            juce::Colour topColor = c.withAlpha (fillAlpha * 0.8f); // Lighter at top
+            juce::Colour bottomColor = c.withAlpha (fillAlpha * 1.2f); // Darker at bottom
+            gradient.addColour (0.0f, topColor);
+            gradient.addColour (1.0f, bottomColor);
+            
+            g.setGradientFill (gradient);
+            g.fillRoundedRectangle (bar, 4.0f);
+            
+            // Border with slight gradient too
+            g.setColour (c.withAlpha (0.95f));
+            g.drawRoundedRectangle (bar, 4.0f, 2.0f);
         };
 
         // Theme-integrated band color palette
         auto* fieldLNF = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-        const auto cLo  = fieldLNF ? fieldLNF->theme.eq.bass.withHue (fieldLNF->theme.eq.bass.getHue() - 0.1f) : juce::Colour (0xFF2AA88F);  // LO: Green with slight teal shift
-        const auto cMid = fieldLNF ? fieldLNF->theme.accent.withSaturation (juce::jmin (1.0f, fieldLNF->theme.accent.getSaturation() + 0.2f)) : juce::Colour (0xFF6079D6); // MID: Accent with purple tint
+        const auto cLo  = fieldLNF ? fieldLNF->theme.accent.withSaturation (juce::jmin (1.0f, fieldLNF->theme.accent.getSaturation() + 0.2f)) : juce::Colour (0xFF6079D6); // LO: Accent with purple tint
+        const auto cMid = fieldLNF ? fieldLNF->theme.eq.bass.withHue (fieldLNF->theme.eq.bass.getHue() - 0.1f) : juce::Colour (0xFF2AA88F);  // MID: Green with slight teal shift
         const auto cHi  = fieldLNF ? fieldLNF->theme.eq.scoop.withBrightness (juce::jmin (1.0f, fieldLNF->theme.eq.scoop.getBrightness() + 0.15f)) : juce::Colour (0xFFB08ED6); // HI: Scoop with brightness boost
         drawBand (r.getX(), xLo, widthLo, cLo);
         drawBand (xLo, xHi, widthMid, cMid);
@@ -368,14 +385,16 @@ private:
         
         // Use the already calculated centerY from above
         
-        // LO percentage
+        // LO percentage - positioned at the top of the LO segment
+        const float loLabelY = band.getBottom() - widthH (shufLoPct) - 6;
         g.drawText (juce::String (shufLoPct, 0) + "%", 
-                   juce::Rectangle<float> (band.getX() + 4, centerY - 6, 30, 12), 
+                   juce::Rectangle<float> (band.getX() + 4, loLabelY, 30, 12), 
                    juce::Justification::centredLeft);
         
-        // HI percentage
+        // HI percentage - positioned at the top of the HI segment
+        const float hiLabelY = band.getBottom() - widthH (shufHiPct) - 6;
         g.drawText (juce::String (shufHiPct, 0) + "%", 
-                   juce::Rectangle<float> (band.getRight() - 34, centerY - 6, 30, 12), 
+                   juce::Rectangle<float> (band.getRight() - 34, hiLabelY, 30, 12), 
                    juce::Justification::centredRight);
         
         // Crossover frequency (moved upward)
@@ -501,20 +520,20 @@ private:
                 return; 
             }
             
-            // Check for SHUF level dragging (horizontal drag in respective segments)
+            // Check for SHUF level dragging (vertical drag in respective segments)
             if (px < xX) 
             {
                 drag = DragKind::ShufLo; 
-                dragStartX = px; 
+                dragStartX = py; // Store Y position for vertical drag
                 dragStartVal = shufLoPct; 
             }
             else 
             {
                 drag = DragKind::ShufHi; 
-                dragStartX = px; 
+                dragStartX = py; // Store Y position for vertical drag
                 dragStartVal = shufHiPct; 
             }
-            setMouseCursor (juce::MouseCursor::DraggingHandCursor);
+            setMouseCursor (juce::MouseCursor::UpDownResizeCursor);
             return;
         }
         
@@ -583,10 +602,10 @@ private:
         }
         if (drag == DragKind::ShufLo)
         {
-            // Horizontal drag for SHUF LO level (0-200%)
-            const float dx = e.position.x - dragStartX;
-            const float sensitivity = 2.0f; // pixels per percentage point
-            const float delta = dx / sensitivity;
+            // Vertical drag for SHUF LO level (0-200%) - reversed direction
+            const float dy = e.position.y - dragStartX; // Reversed: up increases, down decreases
+            const float sensitivity = 1.0f; // pixels per percentage point - more sensitive
+            const float delta = dy / sensitivity;
             const float newPct = juce::jlimit (0.0f, 200.0f, dragStartVal + delta);
             shufLoPct = newPct; 
             if (onParamEdit) onParamEdit ("shuffler_lo_pct", shufLoPct); 
@@ -595,10 +614,10 @@ private:
         }
         if (drag == DragKind::ShufHi)
         {
-            // Horizontal drag for SHUF HI level (0-200%)
-            const float dx = e.position.x - dragStartX;
-            const float sensitivity = 2.0f; // pixels per percentage point
-            const float delta = dx / sensitivity;
+            // Vertical drag for SHUF HI level (0-200%) - reversed direction
+            const float dy = e.position.y - dragStartX; // Reversed: up increases, down decreases
+            const float sensitivity = 1.0f; // pixels per percentage point - more sensitive
+            const float delta = dy / sensitivity;
             const float newPct = juce::jlimit (0.0f, 200.0f, dragStartVal + delta);
             shufHiPct = newPct; 
             if (onParamEdit) onParamEdit ("shuffler_hi_pct", shufHiPct); 
@@ -621,7 +640,7 @@ private:
         const float shufStripHeight = 144.0f; // SHUF strip height
         const float spacingBuffer = 12.0f; // Small gap between bands and SHUF
         const float availableHeight = r.getHeight() - shufStripHeight - spacingBuffer;
-        const float dy = (dragStartX - e.position.y) / juce::jmax (1.0f, availableHeight);
+        const float dy = (e.position.y - dragStartX) / juce::jmax (1.0f, availableHeight); // Reversed: up increases, down decreases
         const float delta = dy * 2.0f; // 1.0 height => +/-2.0 width
         float v = juce::jlimit (0.0f, 2.0f, dragStartVal + delta);
         if (drag == DragKind::BandLo)  { widthLo = v;  if (onParamEdit) onParamEdit ("width_lo",  widthLo); }
@@ -631,6 +650,71 @@ private:
     }
     
     void mouseUp (const juce::MouseEvent&) override { drag = DragKind::None; setMouseCursor (juce::MouseCursor::NormalCursor); }
+    
+    void mouseWheelMove (const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel) override
+    {
+        auto r = getLocalBounds().toFloat().reduced (8.0f);
+        const float px = e.position.x;
+        const float py = e.position.y;
+        
+        // Check if mouse is over SHUF strip area
+        const float shufStripHeight = 144.0f;
+        const float spacingBuffer = 12.0f;
+        const float shufStripTop = r.getBottom() - shufStripHeight - spacingBuffer;
+        
+        if (py >= shufStripTop)
+        {
+            // SHUF strip area - wheel controls levels
+            auto xAtHz = [&](float hz){ const float minHz=20.0f, maxHz=20000.0f; const float t=(float)(std::log10(juce::jlimit(minHz,maxHz,hz)/minHz)/std::log10(maxHz/minHz)); return juce::jmap(t,0.0f,1.0f,r.getX(),r.getRight()); };
+            const float xX = xAtHz (juce::jlimit (150.0f, 2000.0f, shufXHz));
+            
+            const float wheelSensitivity = 15.0f; // percentage points per wheel step
+            const float delta = -wheel.deltaY * wheelSensitivity; // Reversed: scroll up increases, scroll down decreases
+            
+            if (px < xX) 
+            {
+                // Left segment - control SHUF LO
+                shufLoPct = juce::jlimit (0.0f, 200.0f, shufLoPct + delta);
+                if (onParamEdit) onParamEdit ("shuffler_lo_pct", shufLoPct);
+            }
+            else 
+            {
+                // Right segment - control SHUF HI
+                shufHiPct = juce::jlimit (0.0f, 200.0f, shufHiPct + delta);
+                if (onParamEdit) onParamEdit ("shuffler_hi_pct", shufHiPct);
+            }
+            repaint();
+            return;
+        }
+        
+        // Band area - wheel controls width values
+        auto xAtHz = [&](float hz){ const float minHz=20.0f, maxHz=20000.0f; const float t=(float)(std::log10(juce::jlimit(minHz,maxHz,hz)/minHz)/std::log10(maxHz/minHz)); return juce::jmap(t,0.0f,1.0f,r.getX(),r.getRight()); };
+        const float xLo = xAtHz (xoverLoHz);
+        const float xHi = xAtHz (xoverHiHz);
+        
+        const float wheelSensitivity = 0.1f; // width units per wheel step
+        const float delta = -wheel.deltaY * wheelSensitivity; // Reversed: scroll up increases, scroll down decreases
+        
+        if (px < xLo) 
+        {
+            // LO band
+            widthLo = juce::jlimit (0.0f, 2.0f, widthLo + delta);
+            if (onParamEdit) onParamEdit ("width_lo", widthLo);
+        }
+        else if (px < xHi) 
+        {
+            // MID band
+            widthMid = juce::jlimit (0.0f, 2.0f, widthMid + delta);
+            if (onParamEdit) onParamEdit ("width_mid", widthMid);
+        }
+        else 
+        {
+            // HI band
+            widthHi = juce::jlimit (0.0f, 2.0f, widthHi + delta);
+            if (onParamEdit) onParamEdit ("width_hi", widthHi);
+        }
+        repaint();
+    }
 
 public:
     // Callbacks

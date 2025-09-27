@@ -21,6 +21,7 @@
 - [FIELD Logo System](#-field-logo-system---enhanced-branding-with-shadow--glow-effects)
 - [Band Visual Integration](#-visual-integration)
 - [Dynamic EQ Visual System](#-visual-system)
+- [UI Interaction Standards & Rules](#-ui-interaction-standards--rules)
 
 ### **🔧 DEVELOPMENT & DEBUGGING**
 - [Critical Crash Prevention Knowledge](#-critical-crash-prevention-knowledge)
@@ -2848,6 +2849,100 @@ The logo provides consistent branding across the interface while maintaining the
 # ================================================================================
 
 ---
+
+# ================================================================================
+# 🎨 UI INTERACTION STANDARDS & RULES
+# ================================================================================
+# 
+# 📍 PURPOSE: Comprehensive UI interaction standards for Field interface
+# 🎯 SCOPE: Mouse wheel interactions, drag behaviors, visual feedback
+# 🔧 PATTERNS: Consistent interaction patterns across all UI components
+# 📚 KNOWLEDGE: Preserved UI interaction standards for consistent user experience
+# 
+# ================================================================================
+
+## 🎨 UI Interaction Standards & Rules
+
+### **Mouse Wheel Interaction Standards**
+- **Direction**: Scroll up increases values, scroll down decreases values (intuitive direction)
+- **Speed preferences**:
+  - Band width controls: 0.1 width units per wheel step (fine control for 0.0-2.0 range)
+  - SHUF level controls: 15.0 percentage points per wheel step (responsive for 0-200% range)
+  - Frequency controls: 10-50 Hz per wheel step (context-dependent on frequency range)
+  - dB controls: 0.5-1.0 dB per wheel step (fine control for audio precision)
+  - Time controls: 1-10 ms per wheel step (context-dependent on time range)
+- **Implementation**: Use negative wheel.deltaY multiplication for consistent direction
+- **Visual feedback**: All wheel interactions should update graphics and labels in real-time
+
+### **Core UI Principles**
+- **Consistency over cleverness**: Same label system and metrics across all knobs
+- **Single source of truth**: LNF draws captions from slider.setName(...)
+- **KnobCell owns value-label placement**: Managed. Avoid external placement for KnobCell controls
+- **Flattened grids**: Contiguous, gapless layout; fill space by design, not margins
+
+### **Controls: Captions and Value Labels**
+- **Captions (names)**:
+  - Set via slider.setName("CAP"). Short caps (2–6 chars): ER WID, TL WID, ER DEN, WET, SIZE, XO LO, XO HI, PUNCH, CNTR
+- **Value labels**:
+  - Use KnobCell::setValueLabelMode(Managed) and setValueLabelGap(...)
+  - KnobCell positions value label under the knob in resized()
+  - Initialize value label text once from current slider value
+- **Precision guidelines**:
+  - Frequency (HP/LP): 0 decimals (Hz). Percent: 0 decimals. dB: 1 decimal. Time: ms 0–2 decimals; seconds 2–3 sig figs
+
+### **KnobCell Metrics & Styling**
+- **Metrics**:
+  - Standard knob diameter = L; value band height = dp(14); label gap = dp(4)
+  - DUCK strip (Reverb): DUCK/ATT/REL/THR/RAT use same metrics as other Reverb knobs
+- **Minis & aux**:
+  - Use KnobCell mini strip for micro sliders/bars (BOOST mini, Q-Link) with explicit thickness; prefer right-side placement when appropriate
+- **LookAndFeel**:
+  - Blue ticks at 12/3/6/9 via FieldLNF rotary drawing
+  - Metallic backgrounds (Ocean-harmonized system):
+    - Motion: Indigo anodized (`motionPurpleBorder` + `theme.metal.motion`)
+    - Delay: Champagne nickel (`delayMetallic` + `theme.metal.delay`)
+    - Reverb: Copper/burnished (`reverbMetallic` + `theme.metal.reverb`)
+    - Band/Phase: Ocean anodized (`bandMetallic`/`phaseMetallic` + `theme.metal.band`/`theme.metal.phase`)
+    - XY blanks: Neutral steel (`metallic` + `theme.metal.neutral`) for empty cells
+    - Pro/Advanced: Dark titanium (`theme.metal.titanium`) for focused states
+  - Optional properties: panelBrighten, borderBrighten. Use sparingly
+  - Combo: tintedSelected to hide default label when custom captioning is used
+
+### **Tab System Standards**
+- **Tabs**: Active tab uses a static accent border (no animated glow). Any previous glow animation is removed
+- **Phase tab**: Standard accent border treatment with theme.accent color. Active state uses 2.0px border, inactive state uses 1.0px border with reduced opacity. Phase tab is the first tab in the UI and uses a sine wave icon
+- **Analysis/Tools tabs (Imager, Machine)**: Visual distinction with solid borders and reduced opacity (75%) to indicate they don't affect audio signal. Use theme colors: Imager uses theme.eq.hp (blue), Machine uses theme.eq.bass (green). Border growth: active = 2.0px, inactive = 1.0px
+- **Machine Learn button**: Uses Machine tab green color (theme.eq.bass) for active state to maintain visual consistency with Machine tab
+- **Standard tabs (XY, Band, Motion, Reverb, Delay, Dynamic EQ)**: Accent border treatment with theme.accent color. Active state uses 2.0px border, inactive state uses 1.0px border with reduced opacity
+- **Individual meters (CorrelationMeter, VerticalLRMeters, IOGainMeters)**: Standard accent border treatment with theme.accent color at 0.3f alpha (reduced brightness) for subtle visual consistency with other UI elements. All meters include a peak line (thicker bottom border) for visual consistency
+- **Menus (PopupMenu)**: Draw colours from LookAndFeel configured colourIds; do not hardcode whites/greys
+
+### **Panels, Grids, and Padding**
+- **Tabs**: Each tab owns a flattened 2×16 grid; close gaps; styled empty KnobCell fills blanks
+- **Phase tab**: 2×16 control grid with 32 phase parameters. Uses KnobCell for sliders and SimpleSwitchCell for ComboBox/ToggleButton controls. Integrated with ControlGridMetrics for responsive layout
+- **Band tab**: Imager Width visuals plus WIDTH (global) + W LO/W MID/W HI, and seven Designer controls (TLT S, PVT, A DEP, A THR, ATT, REL, MAX) migrated from the floating overlay into `BandControlsPane`
+- **XY tab**: 2×16 control grid with XY pad and frequency controls. Uses KnobCell for sliders and SimpleSwitchCell for ComboBox/ToggleButton controls
+- **Motion tab**: 2×16 control grid with motion controls. Uses KnobCell for sliders and SimpleSwitchCell for ComboBox/ToggleButton controls
+- **Reverb tab**: 2×16 control grid with reverb controls. Uses KnobCell for sliders and SimpleSwitchCell for ComboBox/ToggleButton controls
+- **Delay tab**: 2×16 control grid with delay controls. Uses KnobCell for sliders and SimpleSwitchCell for ComboBox/ToggleButton controls
+- **Dynamic EQ tab**: 2×16 control grid with dynamic EQ controls. Uses KnobCell for sliders and SimpleSwitchCell for ComboBox/ToggleButton controls
+
+### **Performance Standards**
+- **UI Updates**: Minimize parameter attachment overhead
+- **Real-time Processing**: Ensure all wheel interactions update graphics and labels in real-time
+- **Memory Management**: Use efficient destruction patterns for all UI components
+- **Visual Feedback**: All interactions should provide immediate visual feedback
+
+# ================================================================================
+# 🎨 END UI INTERACTION STANDARDS & RULES SECTION
+# ================================================================================
+# 
+# ✅ COMPLETE: UI interaction standards documented
+# 📚 COVERAGE: Mouse wheel interactions, drag behaviors, visual feedback
+# 🔧 PATTERNS: Consistent interaction patterns across all UI components
+# 🎯 KNOWLEDGE: Preserved UI interaction standards for consistent user experience
+# 
+# ================================================================================
 
 # ================================================================================
 # 🚀 FUTURE DEVELOPMENT GUIDELINES
