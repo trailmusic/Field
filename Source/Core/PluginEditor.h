@@ -2321,8 +2321,8 @@ private:
                 g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
                 g.drawText (label, b.reduced (4.0f), juce::Justification::centredBottom);
             };
-            drawOne (inB,  proc.getInRms(),  "In");
-            drawOne (outB, proc.getOutRms(), "Out");
+            drawOne (inB,  proc.getInRms(),  "I");
+            drawOne (outB, proc.getOutRms(), "O");
         }
         void timerCallback() override { if (isShowing()) repaint(); }
         void visibilityChanged() override { if (isVisible()) startTimerHz (20); else stopTimer(); }
