@@ -39,9 +39,10 @@ private:
         g.drawRoundedRectangle (r, 6.0f, 1.0f);
 
         // Account for SHUF strip area - bands should only use the area above it
-        const float shufStripHeight = 72.0f; // SHUF strip height
-        const float availableHeight = r.getHeight() - shufStripHeight;
-        const float bandAreaBottom = r.getBottom() - shufStripHeight;
+        const float shufStripHeight = 144.0f; // SHUF strip height
+        const float spacingBuffer = 12.0f; // Small gap between bands and SHUF
+        const float availableHeight = r.getHeight() - shufStripHeight - spacingBuffer;
+        const float bandAreaBottom = r.getBottom() - shufStripHeight - spacingBuffer;
 
         // Log freq mapping
         auto xAtHz = [&](float hz)
@@ -139,9 +140,10 @@ private:
         const auto& wp = engine.getWidthPerBandPost(); if ((int) wp.size() < B) return;
         // polyline across bands mapped to X by band center and Y by width
         auto xAtHz = [&](double hz){ const double minHz=20.0, maxHz=20000.0; double t=(std::log10 (juce::jlimit(minHz,maxHz,hz)/minHz)/std::log10(maxHz/minHz)); return juce::jmap ((float)t, 0.0f,1.0f, r.getX(), r.getRight()); };
-        const float shufStripHeight = 72.0f; // SHUF strip height
-        const float availableHeight = r.getHeight() - shufStripHeight;
-        const float bandAreaBottom = r.getBottom() - shufStripHeight;
+        const float shufStripHeight = 144.0f; // SHUF strip height
+        const float spacingBuffer = 12.0f; // Small gap between bands and SHUF
+        const float availableHeight = r.getHeight() - shufStripHeight - spacingBuffer;
+        const float bandAreaBottom = r.getBottom() - shufStripHeight - spacingBuffer;
         auto yAtW  = [&](float w){ 
             if (w <= 0.0f) return bandAreaBottom;
             const float h = juce::jmap (juce::jlimit (0.0f,2.0f,w), 0.0f, 2.0f, 0.0f, availableHeight); 
@@ -192,9 +194,10 @@ private:
         drawArrow (xLo); drawArrow (xHi);
 
         // Vertical drag hints for band value lines (up/down arrows at band centers)
-        const float shufStripHeight = 72.0f; // SHUF strip height
-        const float availableHeight = r.getHeight() - shufStripHeight;
-        const float bandAreaBottom = r.getBottom() - shufStripHeight;
+        const float shufStripHeight = 144.0f; // SHUF strip height
+        const float spacingBuffer = 12.0f; // Small gap between bands and SHUF
+        const float availableHeight = r.getHeight() - shufStripHeight - spacingBuffer;
+        const float bandAreaBottom = r.getBottom() - shufStripHeight - spacingBuffer;
         auto yAtW  = [&](float w){ 
             if (w <= 0.0f) return bandAreaBottom; // No white line at 0 width
             const float h = juce::jmap (juce::jlimit (0.0f,2.0f,w), 0.0f, 2.0f, 0.0f, availableHeight); 
@@ -223,8 +226,11 @@ private:
 
     void drawShufflerStrip (juce::Graphics& g, juce::Rectangle<float> r)
     {
-        // Shuffler width strip (bottom, 6x taller - doubled from 36px to 72px)
-        auto band = r.removeFromBottom (72.0f);
+        // Shuffler width strip (bottom, 12x taller - doubled from 72px to 144px)
+        // Add small spacing buffer between bands and SHUF
+        const float spacingBuffer = 12.0f;
+        auto band = r.removeFromBottom (144.0f + spacingBuffer);
+        band = band.withY (band.getY() + spacingBuffer); // Move SHUF strip down by spacing
         auto xAtHz = [&](float hz){ const float minHz=20.0f, maxHz=20000.0f; const float t=(float)(std::log10(juce::jlimit(minHz,maxHz,hz)/minHz)/std::log10(maxHz/minHz)); return juce::jmap(t,0.0f,1.0f,band.getX(),band.getRight()); };
         const float xX = xAtHz (juce::jlimit (150.0f, 2000.0f, shufXHz));
 
@@ -306,9 +312,11 @@ private:
         g.fillRect (rightBar);
 
         // Center lines drawn on top of segments (always visible)
-        // Center vertical line (always visible)
+        // Center vertical line (limited to value range, not full height)
         g.setColour (gridCol.withAlpha (0.6f));
-        g.drawVerticalLine (juce::roundToInt (xX), band.getY(), band.getBottom());
+        const float maxValueY = band.getBottom() - widthH (200.0f); // Limit to 200% max value
+        const float minValueY = band.getBottom() - widthH (0.0f);   // Start at 0% value
+        g.drawVerticalLine (juce::roundToInt (xX), maxValueY, minValueY);
         
         // Center horizontal line (always visible)
         const float centerY = band.getY() + band.getHeight() * 0.5f;
@@ -349,10 +357,47 @@ private:
                    juce::Rectangle<float> (band.getRight() - 34, centerY - 6, 30, 12), 
                    juce::Justification::centredRight);
         
-        // Crossover frequency
+        // Crossover frequency (moved upward)
         g.drawText (juce::String (shufXHz, 0) + " Hz", 
-                   juce::Rectangle<float> (xX - 30, band.getY() + 4, 60, 14), 
+                   juce::Rectangle<float> (xX - 30, maxValueY - 18, 60, 14), 
                    juce::Justification::centred);
+        
+        // SHUF Drag Indicators
+        // Horizontal arrows for crossover (left/right)
+        auto drawShufXoverArrow = [&](float x)
+        {
+            juce::Path a; 
+            const float yC = band.getY() + band.getHeight() * 0.5f; // Center of SHUF strip
+            const float sz = 8.0f; // Larger arrows for bigger SHUF strip
+            a.startNewSubPath (x - 12, yC); a.lineTo (x - 4, yC);
+            a.addTriangle (x - 4, yC - 6, x - 4, yC + 6, x - 12, yC);
+            a.startNewSubPath (x + 4, yC); a.lineTo (x + 12, yC);
+            a.addTriangle (x + 4, yC - 6, x + 4, yC + 6, x + 12, yC);
+            g.setColour (juce::Colours::white.withAlpha (0.4f)); 
+            g.strokePath (a, juce::PathStrokeType (1.5f));
+        };
+        drawShufXoverArrow (xX);
+        
+        // Vertical arrows for levels (up/down)
+        auto drawShufLevelArrow = [&](float x, float pct, bool isLeft)
+        {
+            const float y = band.getBottom() - widthH (pct);
+            juce::Path p;
+            // Up arrow
+            p.startNewSubPath (x, y - 16.0f); p.lineTo (x, y - 6.0f);
+            p.addTriangle (x - 6.0f, y - 12.0f, x + 6.0f, y - 12.0f, x, y - 6.0f);
+            // Down arrow  
+            p.startNewSubPath (x, y + 6.0f); p.lineTo (x, y + 16.0f);
+            p.addTriangle (x - 6.0f, y + 12.0f, x + 6.0f, y + 12.0f, x, y + 6.0f);
+            g.setColour (juce::Colours::white.withAlpha (0.4f)); 
+            g.strokePath (p, juce::PathStrokeType (1.5f));
+        };
+        
+        // Draw level arrows for both segments
+        const float leftCenterX = band.getX() + (xX - band.getX()) * 0.5f;
+        const float rightCenterX = xX + (band.getRight() - xX) * 0.5f;
+        drawShufLevelArrow (leftCenterX, shufLoPct, true);
+        drawShufLevelArrow (rightCenterX, shufHiPct, false);
     }
     
     // Draw center lines on top of everything
@@ -397,7 +442,7 @@ private:
     bool enginePrepared = false;
 
     // Interaction state for width editor
-    enum class DragKind { None, XLo, XHi, BandLo, BandMid, BandHi };
+    enum class DragKind { None, XLo, XHi, BandLo, BandMid, BandHi, ShufXover, ShufLo, ShufHi };
     DragKind drag { DragKind::None };
     float dragStartX = 0.0f;
     float dragStartVal = 0.0f;
@@ -410,7 +455,46 @@ private:
         const float xLo = xAtHz (xoverLoHz);
         const float xHi = xAtHz (xoverHiHz);
         const float px = e.position.x;
+        const float py = e.position.y;
         const float hit = 8.0f;
+        
+        // Check if click is in SHUF strip area (bottom 144px + spacing)
+        const float shufStripHeight = 144.0f;
+        const float spacingBuffer = 12.0f; // Small gap between bands and SHUF
+        const float shufStripTop = r.getBottom() - shufStripHeight - spacingBuffer;
+        if (py >= shufStripTop)
+        {
+            // SHUF strip area - check for crossover or level dragging
+            const float xX = xAtHz (juce::jlimit (150.0f, 2000.0f, shufXHz));
+            
+            // Check for SHUF crossover drag (vertical line)
+            if (std::abs (px - xX) < hit) 
+            { 
+                drag = DragKind::ShufXover; 
+                dragStartX = px; 
+                dragStartVal = shufXHz; 
+                setMouseCursor (juce::MouseCursor::DraggingHandCursor);
+                return; 
+            }
+            
+            // Check for SHUF level dragging (horizontal drag in respective segments)
+            if (px < xX) 
+            {
+                drag = DragKind::ShufLo; 
+                dragStartX = px; 
+                dragStartVal = shufLoPct; 
+            }
+            else 
+            {
+                drag = DragKind::ShufHi; 
+                dragStartX = px; 
+                dragStartVal = shufHiPct; 
+            }
+            setMouseCursor (juce::MouseCursor::DraggingHandCursor);
+            return;
+        }
+        
+        // Regular band area detection (existing logic)
         if (std::abs (px - xLo) < hit) { drag = DragKind::XLo; dragStartX = px; dragStartVal = xoverLoHz; return; }
         if (std::abs (px - xHi) < hit) { drag = DragKind::XHi; dragStartX = px; dragStartVal = xoverHiHz; return; }
         // Band region selection: prefer vertical drag cursor with higher hit radius near current value line
@@ -434,6 +518,23 @@ private:
         const float px = e.position.x;
         const float py = e.position.y;
         const float hitX = 8.0f;
+        
+        // Check if mouse is in SHUF strip area
+        const float shufStripHeight = 144.0f;
+        const float spacingBuffer = 12.0f; // Small gap between bands and SHUF
+        const float shufStripTop = r.getBottom() - shufStripHeight - spacingBuffer;
+        if (py >= shufStripTop)
+        {
+            // SHUF strip area - check for draggable elements
+            const float xX = xAtHz (juce::jlimit (150.0f, 2000.0f, shufXHz));
+            const bool nearShufX = (std::abs (px - xX) < hitX);
+            const bool overShufStrip = (px >= r.getX() && px <= r.getRight());
+            setMouseCursor ((nearShufX || overShufStrip) ? juce::MouseCursor::PointingHandCursor
+                                                        : juce::MouseCursor::NormalCursor);
+            return;
+        }
+        
+        // Regular band area detection
         const bool nearX = (std::abs (px - xLo) < hitX) || (std::abs (px - xHi) < hitX);
         // Treat entire band region as draggable area
         bool overBand = (px >= r.getX() && px < xLo) || (px >= xLo && px < xHi) || (px >= xHi && px <= r.getRight());
@@ -446,6 +547,42 @@ private:
         if (drag == DragKind::None) return;
         auto r = getLocalBounds().toFloat().reduced (8.0f);
         auto hzAtX = [&](float x){ const float minHz=20.0f, maxHz=20000.0f; const float t=juce::jlimit(0.0f,1.0f, juce::jmap(x, r.getX(), r.getRight(), 0.0f, 1.0f)); return minHz * std::pow (maxHz/minHz, t); };
+        
+        // SHUF dragging logic
+        if (drag == DragKind::ShufXover)
+        {
+            const float newHz = juce::jlimit (150.0f, 2000.0f, hzAtX (e.position.x));
+            shufXHz = newHz; 
+            if (onParamEdit) onParamEdit ("shuffler_xover_hz", shufXHz); 
+            repaint(); 
+            return;
+        }
+        if (drag == DragKind::ShufLo)
+        {
+            // Horizontal drag for SHUF LO level (0-200%)
+            const float dx = e.position.x - dragStartX;
+            const float sensitivity = 2.0f; // pixels per percentage point
+            const float delta = dx / sensitivity;
+            const float newPct = juce::jlimit (0.0f, 200.0f, dragStartVal + delta);
+            shufLoPct = newPct; 
+            if (onParamEdit) onParamEdit ("shuffler_lo_pct", shufLoPct); 
+            repaint(); 
+            return;
+        }
+        if (drag == DragKind::ShufHi)
+        {
+            // Horizontal drag for SHUF HI level (0-200%)
+            const float dx = e.position.x - dragStartX;
+            const float sensitivity = 2.0f; // pixels per percentage point
+            const float delta = dx / sensitivity;
+            const float newPct = juce::jlimit (0.0f, 200.0f, dragStartVal + delta);
+            shufHiPct = newPct; 
+            if (onParamEdit) onParamEdit ("shuffler_hi_pct", shufHiPct); 
+            repaint(); 
+            return;
+        }
+        
+        // Regular XO crossover dragging
         if (drag == DragKind::XLo)
         {
             const float newHz = juce::jlimit (40.0f, juce::jmin (xoverHiHz - 10.0f, 400.0f), hzAtX (e.position.x));
@@ -457,8 +594,9 @@ private:
             xoverHiHz = newHz; if (onParamEdit) onParamEdit ("xover_hi_hz", xoverHiHz); repaint(); return;
         }
         // Bands: map vertical drag to width 0..2, but limit drag area to avoid SHUF strip
-        const float shufStripHeight = 72.0f; // SHUF strip height
-        const float availableHeight = r.getHeight() - shufStripHeight;
+        const float shufStripHeight = 144.0f; // SHUF strip height
+        const float spacingBuffer = 12.0f; // Small gap between bands and SHUF
+        const float availableHeight = r.getHeight() - shufStripHeight - spacingBuffer;
         const float dy = (dragStartX - e.position.y) / juce::jmax (1.0f, availableHeight);
         const float delta = dy * 2.0f; // 1.0 height => +/-2.0 width
         float v = juce::jlimit (0.0f, 2.0f, dragStartVal + delta);
