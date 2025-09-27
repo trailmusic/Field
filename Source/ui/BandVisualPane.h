@@ -51,13 +51,7 @@ private:
         const float xLo = xAtHz (xoverLoHz);
         const float xHi = xAtHz (xoverHiHz);
 
-        // Draw crossovers (draggable)
-        auto drawX = [&](float x){ juce::Path p; p.startNewSubPath (x, r.getY()); p.lineTo (x, r.getBottom());
-                                   const float dashes[] = { 5.0f, 4.0f }; juce::Path dashed; juce::PathStrokeType (1.2f).createDashedStroke (dashed, p, dashes, 2);
-                                   g.setColour (grid.withAlpha (0.8f)); g.strokePath (dashed, juce::PathStrokeType (1.6f)); };
-        drawX (xLo); drawX (xHi);
-
-        // Bars per band
+        // Bars per band (drawn first, behind center lines)
         auto drawBand = [&](float x0, float x1, float width, juce::Colour c)
         {
             width = juce::jlimit (0.0f, 2.0f, width);
@@ -73,6 +67,12 @@ private:
         drawBand (r.getX(), xLo, widthLo, cLo);
         drawBand (xLo, xHi, widthMid, cMid);
         drawBand (xHi, r.getRight(), widthHi, cHi);
+
+        // Draw crossovers (draggable) - drawn on top of bands
+        auto drawX = [&](float x){ juce::Path p; p.startNewSubPath (x, r.getY()); p.lineTo (x, r.getBottom());
+                                   const float dashes[] = { 5.0f, 4.0f }; juce::Path dashed; juce::PathStrokeType (1.2f).createDashedStroke (dashed, p, dashes, 2);
+                                   g.setColour (grid.withAlpha (0.8f)); g.strokePath (dashed, juce::PathStrokeType (1.6f)); };
+        drawX (xLo); drawX (xHi);
 
         // LO MID HI labels at the top of the visual area
         auto loRect  = juce::Rectangle<float> (r.getX(), r.getY() + 4.0f, xLo - r.getX(), 16.0f);
@@ -204,10 +204,26 @@ private:
         auto hiColor = lf ? lf->theme.eq.air : juce::Colour (0xFF8B6FA1);  // Plum purple
         auto accentColor = lf ? lf->theme.accent : juce::Colour (0xFF5AA9E6);
 
-        // Background grid with center lines always visible
+        // Background grid
         g.setColour (gridCol.withAlpha (0.15f));
         g.fillRect (band);
+
+        // Left segment (Lo%) with sophisticated color
+        g.setColour (loColor.withAlpha (0.4f));
+        g.fillRect (juce::Rectangle<float> (band.getX(), band.getBottom() - widthH (shufLoPct), xX - band.getX(), widthH (shufLoPct)));
         
+        // Right segment (Hi%) with sophisticated color  
+        g.setColour (hiColor.withAlpha (0.4f));
+        g.fillRect (juce::Rectangle<float> (xX, band.getBottom() - widthH (shufHiPct), band.getRight() - xX, widthH (shufHiPct)));
+
+        // Border around segments
+        g.setColour (loColor.withAlpha (0.7f));
+        g.drawRect (juce::Rectangle<float> (band.getX(), band.getBottom() - widthH (shufLoPct), xX - band.getX(), widthH (shufLoPct)), 1.0f);
+        
+        g.setColour (hiColor.withAlpha (0.7f));
+        g.drawRect (juce::Rectangle<float> (xX, band.getBottom() - widthH (shufHiPct), band.getRight() - xX, widthH (shufHiPct)), 1.0f);
+
+        // Center lines drawn on top of segments (always visible)
         // Center vertical line (always visible)
         g.setColour (gridCol.withAlpha (0.6f));
         g.drawVerticalLine (juce::roundToInt (xX), band.getY(), band.getBottom());
@@ -224,21 +240,6 @@ private:
             const float y = band.getY() + i * (band.getHeight() / 3.0f);
             g.drawHorizontalLine (juce::roundToInt (y), band.getX(), band.getRight());
         }
-
-        // Left segment (Lo%) with sophisticated color
-        g.setColour (loColor.withAlpha (0.4f));
-        g.fillRect (juce::Rectangle<float> (band.getX(), band.getBottom() - widthH (shufLoPct), xX - band.getX(), widthH (shufLoPct)));
-        
-        // Right segment (Hi%) with sophisticated color  
-        g.setColour (hiColor.withAlpha (0.4f));
-        g.fillRect (juce::Rectangle<float> (xX, band.getBottom() - widthH (shufHiPct), band.getRight() - xX, widthH (shufHiPct)));
-
-        // Border around segments
-        g.setColour (loColor.withAlpha (0.7f));
-        g.drawRect (juce::Rectangle<float> (band.getX(), band.getBottom() - widthH (shufLoPct), xX - band.getX(), widthH (shufLoPct)), 1.0f);
-        
-        g.setColour (hiColor.withAlpha (0.7f));
-        g.drawRect (juce::Rectangle<float> (xX, band.getBottom() - widthH (shufHiPct), band.getRight() - xX, widthH (shufHiPct)), 1.0f);
 
         // Units and labels
         g.setColour (gridCol.withAlpha (0.8f));
