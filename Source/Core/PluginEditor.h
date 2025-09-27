@@ -2504,7 +2504,7 @@ private:
         void drawHandle (juce::Graphics& g, juce::Rectangle<float> tab) const
         {
             // Base handle background
-            g.setColour (lnf.theme.sh.withAlpha (0.85f));
+            g.setColour (lnf.theme.meters.trackBase.withAlpha (0.85f));
             g.fillRoundedRectangle (tab, 8.0f);
             
             // Hover effects with proper accent colors and outer glow
