@@ -226,13 +226,7 @@ private:
         g.setColour (gridCol.withAlpha (0.4f));
         g.drawHorizontalLine (juce::roundToInt (centerY), band.getX(), band.getRight());
         
-        // Additional horizontal grid lines
-        g.setColour (gridCol.withAlpha (0.2f));
-        for (int i = 1; i <= 2; ++i)
-        {
-            const float y = band.getY() + i * (band.getHeight() / 3.0f);
-            g.drawHorizontalLine (juce::roundToInt (y), band.getX(), band.getRight());
-        }
+        // Additional horizontal grid lines removed - were causing unwanted dividers
 
         // Units and labels
         g.setColour (gridCol.withAlpha (0.8f));
