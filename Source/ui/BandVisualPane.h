@@ -27,9 +27,7 @@ private:
         g.setColour (panel);
         auto inner = r.reduced (8.0f);
         g.drawRoundedRectangle (inner, 6.0f, 1.0f);
-        // mono line
-        g.drawLine (inner.getX(), inner.getCentreY(), inner.getRight(), inner.getCentreY(), 0.8f);
-        g.drawLine (inner.getCentreX(), inner.getY(), inner.getCentreX(), inner.getBottom(), 0.8f);
+        // Removed horizontal and vertical divider lines that were interfering with Band visuals
     }
 
     void drawWidthEditor (juce::Graphics& g, juce::Rectangle<float> r)
@@ -68,12 +66,6 @@ private:
         drawBand (xLo, xHi, widthMid, cMid);
         drawBand (xHi, r.getRight(), widthHi, cHi);
 
-        // Draw crossovers (draggable) - drawn on top of bands
-        auto drawX = [&](float x){ juce::Path p; p.startNewSubPath (x, r.getY()); p.lineTo (x, r.getBottom());
-                                   const float dashes[] = { 5.0f, 4.0f }; juce::Path dashed; juce::PathStrokeType (1.2f).createDashedStroke (dashed, p, dashes, 2);
-                                   g.setColour (grid.withAlpha (0.8f)); g.strokePath (dashed, juce::PathStrokeType (1.6f)); };
-        drawX (xLo); drawX (xHi);
-
         // LO MID HI labels at the top of the visual area
         auto loRect  = juce::Rectangle<float> (r.getX(), r.getY() + 4.0f, xLo - r.getX(), 16.0f);
         auto midRect = juce::Rectangle<float> (xLo,      r.getY() + 4.0f, xHi - xLo,      16.0f);
@@ -94,6 +86,12 @@ private:
         badge (loRect,  "LO");
         badge (midRect, "MID");
         badge (hiRect,  "HI");
+
+        // Draw crossovers (draggable) - drawn on top of everything
+        auto drawX = [&](float x){ juce::Path p; p.startNewSubPath (x, r.getY()); p.lineTo (x, r.getBottom());
+                                   const float dashes[] = { 5.0f, 4.0f }; juce::Path dashed; juce::PathStrokeType (1.2f).createDashedStroke (dashed, p, dashes, 2);
+                                   g.setColour (grid.withAlpha (0.8f)); g.strokePath (dashed, juce::PathStrokeType (1.6f)); };
+        drawX (xLo); drawX (xHi);
     }
 
     // Background waveform for Width view (mono Mid and Side envelopes)
