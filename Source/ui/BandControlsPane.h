@@ -101,28 +101,30 @@ private:
         makeCell (widthMid, widthMidV, "WIDTH MID", "width_mid");
         makeCell (widthHi,  widthHiV,  "WIDTH HI",  "width_hi");
 
-        // Designer controls (7): Side Tilt, Pivot, Auto Depth/Thr, Attack, Release, Max
+        // Crossover controls
+        makeCell (xoLo,     xoLoV,     "XO LO",     "xover_lo_hz");
+        makeCell (xoHi,     xoHiV,     "XO HI",     "xover_hi_hz");
+
+        // Designer controls (5): Side Tilt, Pivot, Auto Depth/Thr, Attack, Release, Max
         makeCell (sideTiltDbOct, valSideTilt, "TILT S",  "width_side_tilt_db_oct");
         makeCell (pivotHz,       valPivot,    "PIVOT",   "width_tilt_pivot_hz");
         makeCell (autoDepth,     valAutoDepth,"AUTO DEP","width_auto_depth");
         makeCell (autoThrDb,     valAutoThr,  "AUTO THR","width_auto_thr_db");
         makeCell (autoAtkMs,     valAtk,      "ATT",     "width_auto_atk_ms");
-        makeCell (autoRelMs,     valRel,      "REL",     "width_auto_rel_ms");
-        makeCell (maxWidth,      valMax,      "MAX",     "width_max");
 
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
-        // Row A: WIDTH cluster + Designer 7
+        // Row A: WIDTH cluster + XO controls + Designer 5
         push (ownedCells[0].get()); // WIDTH
         push (ownedCells[1].get()); // WIDTH LO
         push (ownedCells[2].get()); // WIDTH MID
         push (ownedCells[3].get()); // WIDTH HI
-        push (ownedCells[4].get()); // TILT S
-        push (ownedCells[5].get()); // PIVOT
-        push (ownedCells[6].get()); // AUTO DEP
-        push (ownedCells[7].get()); // AUTO THR
-        push (ownedCells[8].get()); // ATT
-        push (ownedCells[9].get()); // REL
-        push (ownedCells[10].get()); // MAX
+        push (ownedCells[4].get()); // XO LO
+        push (ownedCells[5].get()); // XO HI
+        push (ownedCells[6].get()); // TILT S
+        push (ownedCells[7].get()); // PIVOT
+        push (ownedCells[8].get()); // AUTO DEP
+        push (ownedCells[9].get()); // AUTO THR
+        push (ownedCells[10].get()); // ATT
         for (int i = 0; i < 5; ++i) gridOrder.push_back (nullptr);
         // Row B
         for (int i = 0; i < 16; ++i) gridOrder.push_back (nullptr);
@@ -168,6 +170,9 @@ private:
     // Sliders/labels
     juce::Slider width, widthLo, widthMid, widthHi;
     juce::Label  widthV, widthLoV, widthMidV, widthHiV;
+    // Crossover controls
+    juce::Slider xoLo, xoHi;
+    juce::Label  xoLoV, xoHiV;
     // Designer sliders
     juce::Slider sideTiltDbOct, pivotHz, autoDepth, autoThrDb, autoAtkMs, autoRelMs, maxWidth;
     juce::Label  valSideTilt, valPivot, valAutoDepth, valAutoThr, valAtk, valRel, valMax;

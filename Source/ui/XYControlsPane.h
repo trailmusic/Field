@@ -700,9 +700,9 @@ private:
 
     juce::AudioProcessorValueTreeState& apvts;
     // EQ row + imaging controls moved from Imager
-    juce::Slider bass, hp, lp, q, air, tilt, scoop, shelfS, mix, xoLo, xoHi;
+    juce::Slider bass, hp, lp, q, air, tilt, scoop, shelfS, mix;
     juce::Slider rotation, asym, shufLo, shufHi, shufX, monoHz, pan, satMix;
-    juce::Label  bassV, hpV, lpV, qV, airV, tiltV, scoopV, shelfSV, mixV, xoLoV, xoHiV;
+    juce::Label  bassV, hpV, lpV, qV, airV, tiltV, scoopV, shelfSV, mixV;
     juce::Label  rotationV, asymV, shufLoV, shufHiV, shufXV, monoV, panV, satMixV;
     juce::ToggleButton qLink;
     
