@@ -205,7 +205,7 @@ public:
     {
         auto b = getLocalBounds().toFloat();
         auto* lf = dynamic_cast<juce::LookAndFeel_V4*>(&getLookAndFeel());
-        g.setColour (juce::Colours::black.withAlpha (0.35f));
+        g.setColour (juce::Colours::black.withAlpha (1.0f)); // Fully opaque background
         g.fillRoundedRectangle (b.reduced (2.0f), 8.0f);
 
         const juce::SpinLock::ScopedTryLockType tl (dataLock);

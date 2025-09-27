@@ -44,7 +44,9 @@ set(SRC
     ui/ImagerTab.h
     ui/XYControlsPane.h
     ui/XYTab.h
-    ui/BandPane.h
+    ui/BandTab.h
+    ui/BandVisualPane.h
+    ui/BandVisualPane.cpp
     ui/StereoFieldEngine.h
     ui/StereoFieldEngine.cpp
     ui/PaneManager.h

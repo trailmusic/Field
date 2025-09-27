@@ -5,37 +5,41 @@ void PhaseTab::resized()
     auto r = getLocalBounds();
     auto m = ControlGridMetrics::compute (r.getWidth(), r.getHeight());
     
-        // Apply metrics to all controls
-        for (auto* c : knobCells)
-        {
-            if (!c) continue;
-            c->setMetrics (m.knobPx, m.valuePx, m.labelGapPx);
-            c->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            c->setValueLabelGap (m.labelGapPx);
-        }
-        
-        // SimpleSwitchCell doesn't need metrics, but we can set them if needed
-        for (auto* c : switchCells)
-        {
-            if (!c) continue;
-            // SimpleSwitchCell handles its own sizing
-        }
+    // Apply metrics to all controls
+    for (auto* c : knobCells)
+    {
+        if (!c) continue;
+        c->setMetrics (m.knobPx, m.valuePx, m.labelGapPx);
+        c->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+        c->setValueLabelGap (m.labelGapPx);
+    }
     
-    // Layout 2x16 grid
+    // SimpleSwitchCell doesn't need metrics, but we can set them if needed
+    for (auto* c : switchCells)
+    {
+        if (!c) continue;
+        // SimpleSwitchCell handles its own sizing
+    }
+
+    // Layout similar to Band tab: visual container on top, controls at bottom
+    auto controlsArea = r.removeFromBottom (m.controlsH);
+    if (phaseVisualContainer) phaseVisualContainer->setBounds (r);
+    
+    // Layout 2x16 grid in controls area
     const int cols = 16, rows = 2;
     const int cellW = m.colW;
     const int cellH = m.rowH;
     const int totalW = cellW * cols, totalH = cellH * rows;
-    const int xOffset = (r.getWidth()  > totalW ? (r.getWidth()  - totalW) / 2 : 0);
-    const int yOffset = (r.getHeight() > totalH ? (r.getHeight() - totalH) / 2 : 0);
+    const int xOffset = (controlsArea.getWidth()  > totalW ? (controlsArea.getWidth()  - totalW) / 2 : 0);
+    const int yOffset = (controlsArea.getHeight() > totalH ? (controlsArea.getHeight() - totalH) / 2 : 0);
     
     auto place = [&](int index, int row, int col)
     {
         if (index < 0 || index >= (int) gridOrder.size()) return;
         if (auto* c = gridOrder[(size_t) index])
         {
-            const int x = r.getX() + xOffset + (col - 1) * cellW;
-            const int y = r.getY() + yOffset + (row - 1) * cellH;
+            const int x = controlsArea.getX() + xOffset + (col - 1) * cellW;
+            const int y = controlsArea.getY() + yOffset + (row - 1) * cellH;
             c->setBounds (x, y, cellW, cellH);
         }
     };
@@ -125,6 +129,98 @@ void PhaseTab::makeComboCell (juce::ComboBox& c, const juce::String& cap, const 
     }
     
     c.setName (cap);
+    
+    // Add choices based on parameter ID
+    juce::String id (pid);
+    if (id == IDs::phase_ref_source)
+    {
+        c.addItem ("A→B", 1);
+        c.addItem ("B→A", 2);
+    }
+    else if (id == IDs::phase_channel_mode)
+    {
+        c.addItem ("Stereo", 1);
+        c.addItem ("M/S", 2);
+        c.addItem ("Dual-Mono", 3);
+    }
+    else if (id == IDs::phase_capture_len)
+    {
+        c.addItem ("2s", 1);
+        c.addItem ("5s", 2);
+    }
+    else if (id == IDs::phase_align_mode)
+    {
+        c.addItem ("Manual", 1);
+        c.addItem ("Semi", 2);
+        c.addItem ("Auto", 3);
+    }
+    else if (id == IDs::phase_align_goal)
+    {
+        c.addItem ("Mono Punch", 1);
+        c.addItem ("Bass Tight", 2);
+        c.addItem ("Stereo Focus", 3);
+    }
+    else if (id == IDs::phase_delay_units)
+    {
+        c.addItem ("ms", 1);
+        c.addItem ("samples", 2);
+    }
+    else if (id == IDs::phase_link_mode)
+    {
+        c.addItem ("Off", 1);
+        c.addItem ("Time Only", 2);
+        c.addItem ("All Bands", 3);
+    }
+    else if (id == IDs::phase_engine)
+    {
+        c.addItem ("Live", 1);
+        c.addItem ("Studio", 2);
+    }
+    else if (id == IDs::phase_reset_cmd)
+    {
+        c.addItem ("Time", 1);
+        c.addItem ("Phase", 2);
+        c.addItem ("All", 3);
+    }
+    else if (id == IDs::phase_fir_len)
+    {
+        c.addItem ("64", 1);
+        c.addItem ("128", 2);
+        c.addItem ("256", 3);
+        c.addItem ("512", 4);
+        c.addItem ("1024", 5);
+        c.addItem ("2048", 6);
+        c.addItem ("4096", 7);
+    }
+    else if (id == IDs::phase_dynamic_mode)
+    {
+        c.addItem ("Off", 1);
+        c.addItem ("Light", 2);
+        c.addItem ("Med", 3);
+        c.addItem ("Hard", 4);
+    }
+    else if (id == IDs::phase_monitor_mode)
+    {
+        c.addItem ("Stereo", 1);
+        c.addItem ("Mono −6", 2);
+        c.addItem ("Mid", 3);
+        c.addItem ("Side", 4);
+        c.addItem ("A", 5);
+        c.addItem ("B", 6);
+    }
+    else if (id == IDs::phase_metric_mode)
+    {
+        c.addItem ("Corr", 1);
+        c.addItem ("Coherence", 2);
+        c.addItem ("Δφ RMS", 3);
+        c.addItem ("Mono LF", 4);
+    }
+    else if (id == IDs::phase_audition_blend)
+    {
+        c.addItem ("Apply 100%", 1);
+        c.addItem ("Blend 50%", 2);
+    }
+    
     auto cell = std::make_unique<SimpleSwitchCell> (c);
     cell->setCaption (cap);
     cell->getProperties().set ("metallic", true);

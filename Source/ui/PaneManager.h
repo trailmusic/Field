@@ -3,7 +3,7 @@
 #include "DynEqTab.h"
 #include "XYTab.h"
 #include "ImagerTab.h"
-#include "BandPane.h"
+#include "BandTab.h"
 #include "machine/MachinePane.h"
 #include "../Core/IconSystem.h"
 #include "../motion/MotionTab.h"
@@ -57,7 +57,7 @@ public:
         dyneq = std::make_unique<DynEqTab> (p, lnf);
         xyTab= std::make_unique<XYTab>(p, *(juce::Component*) xy.get());
         imgr = std::make_unique<ImagerTab>(p, lnf);
-        band = std::make_unique<BandPane>(p);
+        band = std::make_unique<BandTab>(p);
         motion = std::make_unique<MotionTab>(p);
         mach = std::make_unique<MachinePane>(p, state, lnf);
         // Reverb/Delay composite tabs (controls grid hidden until migration completes)
@@ -119,7 +119,7 @@ public:
 
         // keep-warm option removed
         startTimerHz (20);
-        if (auto* bp = dynamic_cast<BandPane*>(band.get()))
+        if (auto* bp = dynamic_cast<BandTab*>(band.get()))
         {
             bp->setParamEditCallback ([this](const juce::String& id, float value){ setParamAutomated (id, value); });
         }
@@ -207,7 +207,7 @@ public:
         const bool wantBand = (active == PaneID::Band) && doHeavy;
         if (wantBand && band)
         {
-            if (auto* bp = dynamic_cast<BandPane*>(band.get()))
+            if (auto* bp = dynamic_cast<BandTab*>(band.get()))
             {
                 int nPost = proc.visPost.pull (tmpPost, maxPull);
                 if (nPost > 0)
@@ -242,7 +242,7 @@ public:
     void setSampleRate (double fs)
     {
         if (auto* ip = dynamic_cast<ImagerPane*>(imgr.get())) ip->setSampleRate (fs);
-        if (auto* bp = dynamic_cast<BandPane*>(band.get())) bp->setSampleRate (fs);
+        if (auto* bp = dynamic_cast<BandTab*>(band.get())) bp->setSampleRate (fs);
         if (auto* mp = mach.get()) mp->setSampleRate (fs);
     }
     
@@ -661,7 +661,7 @@ private:
     // Dynamic EQ tab (replaces Spectrum)
     std::unique_ptr<DynEqTab>              dyneq;
     std::unique_ptr<ImagerTab>             imgr;
-    std::unique_ptr<BandPane>              band;
+    std::unique_ptr<BandTab>               band;
     std::unique_ptr<MotionTab>             motion;
     std::unique_ptr<MachinePane>           mach;
     std::unique_ptr<ReverbTab>            reverb;

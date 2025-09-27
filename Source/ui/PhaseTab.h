@@ -6,6 +6,40 @@
 #include "Components/KnobCell.h"
 #include "SimpleSwitchCell.h"
 
+// Phase Visual Container - placeholder for phase alignment visuals
+class PhaseVisualContainer : public juce::Component
+{
+public:
+    PhaseVisualContainer() = default;
+    
+    void paint (juce::Graphics& g) override
+    {
+        auto r = getLocalBounds().toFloat();
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
+            // Fully opaque background (no see-through)
+            g.setColour (lf->theme.panel);
+            g.fillRoundedRectangle (r, 8.0f);
+            g.setColour (lf->theme.accent.withAlpha (0.3f));
+            g.drawRoundedRectangle (r, 8.0f, 1.0f);
+            
+            // Placeholder text
+            g.setColour (lf->theme.textMuted);
+            g.setFont (14.0f);
+            g.drawText ("Phase Alignment Visuals", r, juce::Justification::centred);
+        }
+        else
+        {
+            g.fillAll (juce::Colours::darkgrey);
+            g.setColour (juce::Colours::white.withAlpha (0.3f));
+            g.drawRoundedRectangle (r, 8.0f, 1.0f);
+            g.setColour (juce::Colours::white);
+            g.setFont (14.0f);
+            g.drawText ("Phase Alignment Visuals", r, juce::Justification::centred);
+        }
+    }
+};
+
 class PhaseTab : public juce::Component
 {
 public:
@@ -13,6 +47,11 @@ public:
         : proc (p)
     {
         setLookAndFeel (lnf);
+        
+        // Create phase visual container (placeholder for now)
+        phaseVisualContainer = std::make_unique<PhaseVisualContainer>();
+        addAndMakeVisible (*phaseVisualContainer);
+        
         buildControls();
         applyMetricsToAll();
     }
@@ -34,6 +73,9 @@ private:
     void applyMetricsToAll();
 
     MyPluginAudioProcessor& proc;
+    
+    // Visual container (same size as Band tab)
+    std::unique_ptr<PhaseVisualContainer> phaseVisualContainer;
     
     // Control components
     juce::ComboBox refSourceCombo, channelModeCombo, captureCombo, alignModeCombo, alignGoalCombo;

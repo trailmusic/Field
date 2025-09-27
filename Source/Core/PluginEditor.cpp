@@ -1760,7 +1760,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     linkButton.setVisible (false);
     // Multi-pane dock (XY, Dynamic EQ, Imager) + shade overlay
     panes = std::make_unique<PaneManager> (proc, proc.apvts.state, &getLookAndFeel(), pad);
-    addAndMakeVisible (*panes);
+    addAndMakeVisible (panes.get());
     panes->setSampleRate (proc.getSampleRate());
     // keep-warm removed; no pane warm-up needed
     // Default to XY view on startup
@@ -3363,7 +3363,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                            .reduced (Layout::dp (Layout::GAP, s), Layout::dp (Layout::GAP, sv));
         if (panes)
         {
-            if (panes->getParentComponent() != &MainContentContainer) MainContentContainer.addAndMakeVisible (*panes);
+            if (panes->getParentComponent() != &MainContentContainer) MainContentContainer.addAndMakeVisible (panes.get());
             panes->setBounds (padLocal);
         }
         if (xyShade)
