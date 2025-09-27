@@ -2152,18 +2152,12 @@ private:
             g.setColour (lnf.theme.accent.withAlpha (0.6f));
             g.fillRect (juce::Rectangle<float> (track.getX(), track.getBottom() - 1.0f, track.getWidth(), 2.0f));
             
-            // Vertical label on the right side: C O R R
+            // Single character label: C
             g.setColour (lnf.theme.textMuted);
             g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
             const float labelX = track.getRight() + 2.0f;
-            const float step   = 12.0f;
-            juce::String chars[] = { "C", "O", "R", "R" };
-            float y = r.getY() + pad;
-            for (auto& ch : chars)
-            {
-                g.drawText (ch, juce::Rectangle<int> ((int)labelX, (int)y, (int)(r.getRight()-labelX-1.0f), 12), juce::Justification::centredLeft);
-                y += step;
-            }
+            const float labelY = r.getY() + (r.getHeight() - 12.0f) * 0.5f; // Center vertically
+            g.drawText ("C", juce::Rectangle<int> ((int)labelX, (int)labelY, (int)(r.getRight()-labelX-1.0f), 12), juce::Justification::centredLeft);
         }
         void timerCallback() override { repaint(); }
         void visibilityChanged() override { if (isVisible()) startTimerHz (15); else stopTimer(); }
