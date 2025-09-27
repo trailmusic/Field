@@ -22,11 +22,14 @@
 - [Band Visual Integration](#-visual-integration)
 - [Dynamic EQ Visual System](#-visual-system)
 - [UI Interaction Standards & Rules](#-ui-interaction-standards--rules)
+- [UI Performance & Consistency Audit](#-ui-performance--consistency-audit)
+- [Ocean-Harmonized Metallic System](#-ocean-harmonized-metallic-system)
 
 ### **🔧 DEVELOPMENT & DEBUGGING**
 - [Critical Crash Prevention Knowledge](#-critical-crash-prevention-knowledge)
 - [Debugging Systems](#-debugging-systems)
 - [Common Pitfalls to Avoid](#-common-pitfalls-to-avoid)
+- [Field GUI + Code Rulebook](#-field-gui--code-rulebook)
 - [Development Checklist](#-development-checklist)
 
 ### **📊 TECHNICAL SPECIFICATIONS**
@@ -2941,6 +2944,884 @@ The logo provides consistent branding across the interface while maintaining the
 # 📚 COVERAGE: Mouse wheel interactions, drag behaviors, visual feedback
 # 🔧 PATTERNS: Consistent interaction patterns across all UI components
 # 🎯 KNOWLEDGE: Preserved UI interaction standards for consistent user experience
+# 
+# ================================================================================
+
+# ================================================================================
+# 🚀 UI PERFORMANCE & CONSISTENCY AUDIT
+# ================================================================================
+# 
+# 📍 PURPOSE: Comprehensive UI performance validation and consistency standards
+# 🎯 SCOPE: Responsiveness, consistency, theme-compliance, and lifecycle rules
+# 🔧 PATTERNS: Performance optimization, theme integration, component lifecycle
+# 📚 KNOWLEDGE: Preserved performance standards and optimization guidelines
+# 
+# ================================================================================
+
+## 🚀 UI Performance & Consistency Audit
+
+**Last updated**: 2025-09-22  
+**Scope**: Validate responsiveness, consistency, theme-compliance, and lifecycle rules across all UI.
+
+### **Initial Static-Scan Findings (Triage)**
+- **Hardcoded colours present** (hex and `Colours::`), notably in `PluginEditor.*`; replace with `FieldLNF::theme`
+- **Legacy caption/value-label placement** found (`placeLabelBelow` lambda and KnobCell comments); standardize on `slider.setName(...)` + `KnobCell::ValueLabelMode::Managed`
+- **Conditional add/remove in layout paths**; verify no creation/reparenting in timers/drag
+- **Excessive timer rates**: `startTimerHz(60)` in several components; target 15–30 Hz per rules
+- **Opaqueness**: defer changes to visuals. Identify candidates only (components that fully paint their backgrounds) and revisit later
+- **Remove legacy 4-row assumptions**; tabs now use per‑pane 2×16 grids with zero gaps
+- **Widespread `reduced(...)` use**; ensure no outer reductions on grid containers; grids remain gapless
+- **Ocean-harmonized metallic system** implemented via `FieldLNF::paintMetal()` with proper caching and performance optimization
+
+### **How to Verify Per Component**
+- **Captions/labels**: `setName(...)` used; Managed value-label mode; correct precision rules
+- **Attachments**: created once and owned long-term; none created in `resized/timer/drag`
+- **Paint**: no heavy per-pixel/random work; textures cached; Ocean-harmonized metallic rendering via `FieldLNF::paintMetal()`; repaint minimal region; `setOpaque(true)` when fully painting
+- **Timers**: 15–30 Hz; no layout or heavy work in callbacks
+- **Layout**: per‑tab flat 2×16 grids; zero gaps; no outer `reduced(...)`; DUCK strip metrics match
+- **Band**: verify Designer overlay removed from `ImagerPane`; seven Designer controls live in `BandControlsPane` with metallic blue; blanks filled
+- **Theme**: no hardcoded hex/`Colours::`; colours derived from `FieldLNF::theme`; Ocean-harmonized metallic system via `FieldLNF::paintMetal()` with `theme.metal.*` variants; correct metallic scope and border flags
+
+---
+
+### **Component Checklists**
+
+#### **Top-level and LNF**
+- `Source/PluginEditor.h`
+- `Source/PluginEditor.cpp`
+- `Source/FieldLookAndFeel.h`
+- `Source/FieldLookAndFeel.cpp`
+
+**Checklist:**
+- [ ] Captions via `setName(...)`; Managed value labels; precision per type
+- [ ] One long-lived attachment per control; not in `resized/timer/drag`
+- [ ] No hardcoded colours; all from `FieldLNF::theme`
+- [ ] No heavy/random allocations in `paint()`; cache textures; Ocean-harmonized metallic rendering via `FieldLNF::paintMetal()`; minimal repaints
+- [ ] Timers 15–30 Hz; no layout in timers
+- [ ] Per‑tab 2×16 grids; zero gaps; no outer `reduced(...)`
+- [ ] `setOpaque(true)` if fully painting background
+- [ ] Remove legacy `placeLabelBelow` usage
+
+#### **Core Cells**
+- `Source/KnobCell.h`
+- `Source/KnobCell.cpp`
+- `Source/KnobCellDual.*`
+- `Source/KnobCellQuad.*`
+- `Source/KnobCellMini.h`
+
+**Checklist:**
+- [ ] Default to `ValueLabelMode::Managed`; label gap set; metrics consistent
+- [ ] No allocations/randomization in `paint()`; cache any heavy assets; Ocean-harmonized metallic rendering via `FieldLNF::paintMetal()`
+- [ ] Minimal repaint regions; set opaque if fully painted
+
+#### **Reverb UI**
+- `Source/reverb/ui/ReverbPanel.*`
+- `Source/reverb/ui/ReverbControlsPanel.h`
+- `Source/reverb/ui/ReverbEQComponent.*`
+- `Source/reverb/ui/ReverbScopeComponent.*`
+- `Source/reverb/ui/DecayCurveComponent.*`
+
+**Checklist:**
+- [ ] Abbreviations per spec (ER WID, TL WID, ER DEN, ...)
+- [ ] DUCK strip metrics match main knobs
+- [ ] Managed value labels; captions and precision correct
+- [ ] Theme-only colours; Ocean-harmonized metallic system via `FieldLNF::paintMetal()` with `theme.metal.reverb`; no metallic tint on Group 2
+- [ ] Timers within 15–30 Hz; no layout in callbacks
+
+#### **Motion UI**
+- `Source/motion/MotionPanel.*`
+
+**Checklist:**
+- [ ] Lives in Group 1 only; flat grid; zero gaps
+- [ ] Theme: `motionPanelTop/motionPanelBot/motionBorder`; migrate to `motionPurpleBorder`; Ocean-harmonized metallic system via `FieldLNF::paintMetal()` with `theme.metal.motion`
+- [ ] Managed value labels; captions present for LNF rendering
+- [ ] No hardcoded colours; cache heavy paints
+
+#### **Delay/Imager/Band/XY/Stereo/Meters**
+- `Source/ui/delay/DelayVisuals.h`
+- `Source/ui/ImagerPane.h`
+- `Source/ui/BandControlsPane.h`
+- `Source/ui/StereoFieldEngine.*`
+- `Source/ui/SpectrumAnalyzer.*`
+- `Source/ui/ProcessedSpectrumPane.h`
+
+**Checklist:**
+- [ ] Managed labels where using KnobCell; captions set
+- [ ] Imager: visuals‑only tab; Band pane owns Width visuals + WIDTH + Designer controls; Imager tooling off in Band
+- [ ] Styled blanks present in Delay/Reverb/Band/XY with Ocean-harmonized metallic tints via `FieldLNF::paintMetal()` (`theme.metal.delay`, `theme.metal.reverb`, `theme.metal.band`, `theme.metal.neutral`)
+- [ ] Theme-only colours; no random per-paint
+- [ ] Timers 15–30 Hz (Spectrum/Scopes may justify higher; measure); minimal repaints
+
+#### **Machine Panes and Helpers**
+- `Source/ui/MachinePane.*`
+- `Source/ui/machine/MachinePane.*`
+- `Source/ui/machine/WidthDesignerPanel.*`
+- `Source/ui/machine/ProposalCard.*`
+- `Source/ui/machine/MachineEngine.*`
+- `Source/ui/machine/MachineHelpersJUCE.h`
+- `Source/ui/machine/ParamPatch.h`
+
+**Checklist:**
+- [ ] Flat layouts; no outer `reduced(...)` on Group 2 screens
+- [ ] No add/remove/reparent in timers/drag; toggle visibility instead
+- [ ] Theme-only colours; Ocean-harmonized metallic system via `FieldLNF::paintMetal()` where appropriate; set opaque where fully painted
+
+#### **Supporting UI**
+- `Source/PresetCommandPalette.*`
+- `Source/ui/PaneManager.h`
+
+**Checklist:**
+- [ ] Theme-only colours; timers 15–30 Hz; no layout in timers
+- [ ] No hardcoded hex; minimal repaint regions
+
+---
+
+### **Action Items Queue (Current)**
+- [ ] Replace hardcoded colours in `PluginEditor.*` with `FieldLNF::theme` lookups
+- [ ] Remove `placeLabelBelow` path; enforce Managed labels in all `KnobCell` usages
+- [x] Normalize timer rates to 15–30 Hz where feasible (Motion/Delay visuals at 60 Hz require profiling justification)
+- [ ] Audit and set `setOpaque(true)` where applicable
+- [ ] Verify Group 2 layouts have no outer `reduced(...)`; keep zero gaps
+- [ ] Ensure texture caching for Ocean-harmonized metallic/brush/noise where used via `FieldLNF::paintMetal()`
+- [ ] Confirm overlay children are built once and not re-parented during slide
+- [ ] Ensure overlay grids reflow only on size/scale change (dirty flag)
+- [ ] Timer is the sole animation driver for overlay; no easing in layout
+
+### **Runtime Verification Steps**
+- **Repaint highlighting on (Debug)**: verify child-only repaint during drags
+- **Interaction sweep**: fast drags; confirm no creation/reparenting in logs
+- **Timer sweep**: disable meters/animations → baseline; re-enable at 15–30 Hz; confirm stability
+- **Adaptive burst sweep**: begin dragging any control; confirm editor timer rises to ~60 Hz during interaction and returns to ~30 Hz within ~150 ms after release; ensure CPU drops back accordingly
+- **Group 2 overlay**: toggle repeatedly and verify smooth slide with minimal repaints; check logs show no add/remove/reparent during slide and no `performLayout()` calls from the timer
+
+---
+
+## **Component Findings: PluginEditor**
+
+**Evidence and initial actions for `Source/PluginEditor.*`.**
+
+### **Hardcoded Colours in Multiple Paint Paths**
+```cpp
+// Lines 318:320:Source/PluginEditor.h
+juce::Colour accent = juce::Colour(0xFF2196F3);
+juce::Colour textGrey = juce::Colour(0xFFB8BDC7);
+juce::Colour panel = juce::Colour(0xFF3A3D45);
+```
+
+```cpp
+// Lines 28:33:Source/PluginEditor.cpp
+g.setGradientFill (juce::ColourGradient (juce::Colour (0xFF2C2F35), r.getTopLeft(), juce::Colour (0xFF24272B), r.getBottomRight(), false));
+g.fillRect (r);
+g.setColour (juce::Colours::white.withAlpha (0.06f));
+g.drawRoundedRectangle (r.reduced (1.0f), 5.0f, 1.0f);
+```
+
+### **Legacy Label Placement Helper**
+```cpp
+// Lines 2429:2437:Source/PluginEditor.cpp
+auto placeLabelBelow = [&] (juce::Label& label, juce::Component& target, int yOffset)
+{
+    if (auto* parent = target.getParentComponent())
+    {
+        if (label.getParentComponent() != parent)
+        {
+            if (auto* oldParent = label.getParentComponent())
+                oldParent->removeChildComponent (&label);
+            parent->addAndMakeVisible (label);
+        }
+```
+
+**Action**: remove this pathway for `KnobCell`-managed controls; ensure all such labels are set to `ValueLabelMode::Managed` and positioned in `KnobCell::resized()`.
+
+### **Timer Frequencies Review**
+```cpp
+// Lines 293:296:Source/PluginEditor.h
+startTimerHz(20); // High refresh so blink is obvious
+```
+
+```cpp
+// Line 2241:Source/PluginEditor.h
+startTimerHz(60);
+```
+
+**Action**: keep 15–30 Hz unless profiling shows need; if 60 Hz required (e.g., animation), measure and confine repaint area.
+
+### **Conditional Add/Remove During Layout**
+```cpp
+// Lines 2490:2492:Source/PluginEditor.cpp
+if (headerLeftGroup.getParentComponent() != this) addAndMakeVisible (headerLeftGroup);
+if (bypassButton.getParentComponent() != &headerLeftGroup) headerLeftGroup.addAndMakeVisible (bypassButton);
+```
+
+**Action**: confirm `performLayout` is called only on size/layout changes, not during high-frequency interactions.
+
+### **Managed Value Labels Present**
+```cpp
+// Lines 3321:3326:Source/PluginEditor.cpp
+bassCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap); }
+```
+
+**Planned fixes for PluginEditor:**
+- [x] Replace hardcoded colours with `lf->theme.*` with fallbacks removed
+- [ ] Remove `placeLabelBelow` use; ensure all `KnobCell` use Managed labels
+- [x] Audit timers; reduce to 15–30 Hz where acceptable
+- [ ] Verify `performLayout` call sites; avoid during drag/timer paths
+- [ ] Consider `setOpaque(true)` for containers fully painting their background
+
+### **Completed Actions (2025-09-22)**
+
+#### **Theme Colours in Pan Overlay and Labels**
+- `Source/PluginEditor.h` → `PanSlider::paint`: overlay arcs now use `FieldLNF::theme.accent` with fallback to `Colours::lightblue`; label text uses `theme.text` with fallback
+- Removes dependency on hardcoded blue (`0xFF5AA9E6`) in paint path
+
+#### **Editor Heartbeat Timer Normalized**
+- `Source/PluginEditor.cpp` → editor ctor: added `startTimerHz(30)`. Existing `timerCallback` retains internal throttling (e.g., heavy work ~10 Hz; modal-aware skip). This balances smoothness and CPU
+
+#### **Paint-Path Allocation Reductions**
+- `Source/PluginEditor.cpp` → `XYPad::drawEQCurves`: preallocate `juce::Path` storage (`preallocateSpace`) based on sample count to prevent per-frame reallocations
+
+#### **Adaptive Site-Wide Refresh Burst (Interaction-Driven)**
+- `Source/PluginEditor.*`: editor runs at 30 Hz baseline and automatically bursts to 60 Hz while the user is interacting (mouse down/drag/wheel) and for ~150 ms after, then returns to 30 Hz
+- Implemented via a child-propagating MouseListener proxy and a timer Hz adjustment in `timerCallback`. This keeps idle cost low while making drags feel crisp
+
+#### **Component Timer Normalization and Visibility Gating**
+- `Source/motion/MotionPanel.*`: reduced to 30 Hz and added `visibilityChanged()` gating (start at 30 Hz when visible, stop when hidden)
+- `Source/PluginEditor.h` → `ShadeOverlay`: reduced to 30 Hz and added `visibilityChanged()` gating
+- Policy clarified in `FIELD_UI_RULES` and `FIELD_RULEBOOK.md`: editor may burst to 60 Hz; components stay ≤30 Hz unless profiled; timers off when hidden
+
+#### **Overlay Slide Refactor (2025-09-22)**
+- Unified overlay animation driver (timer only); removed in-layout easing
+- Cached `overlayLocalRect`/baselines; reflow happens only on size/scale changes
+- Slide is move-only; no per-frame `Grid::performLayout()`; no per-frame add/remove
+
+**Notes:**
+- Build succeeded for Standalone/AU/VST3. Several warnings remain (deprecated `Font`, unused vars). Track in Analyzer/Machine/Imager cleanup passes; visuals preserved
+
+# ================================================================================
+# 🚀 END UI PERFORMANCE & CONSISTENCY AUDIT SECTION
+# ================================================================================
+# 
+# ✅ COMPLETE: UI performance audit and consistency standards documented
+# 📚 COVERAGE: Performance optimization, theme integration, component lifecycle
+# 🔧 PATTERNS: Timer management, paint optimization, layout efficiency
+# 🎯 KNOWLEDGE: Preserved performance standards for optimal UI responsiveness
+# 
+# ================================================================================
+
+# ================================================================================
+# 🎨 OCEAN-HARMONIZED METALLIC SYSTEM
+# ================================================================================
+# 
+# 📍 PURPOSE: Sophisticated metallic rendering system for Field UI components
+# 🎯 SCOPE: Ocean-brand-harmonized material rendering with performance optimization
+# 🔧 PATTERNS: Centralized paint logic, texture caching, theme integration
+# 📚 KNOWLEDGE: Preserved metallic system standards and rendering guidelines
+# 
+# ================================================================================
+
+## 🎨 Ocean-Harmonized Metallic System
+
+**Last updated**: 2025-01-27  
+**Scope**: Ocean-harmonized metallic rendering system for Field audio plugin UI components.
+
+### **Overview**
+
+The Field metallic system provides sophisticated, Ocean-brand-harmonized material rendering for UI components. All metallic surfaces use the centralized `FieldLNF::paintMetal()` function with proper caching and performance optimization.
+
+---
+
+## **Core System**
+
+### **Metallic Theme Structure**
+
+```cpp
+struct MetalStops { 
+    juce::Colour top, bottom; 
+    juce::Colour tint; 
+    float tintAlpha; 
+};
+
+struct MetalTheme {
+    MetalStops neutral  { juce::Colour (0xFF9CA4AD), juce::Colour (0xFF6E747C), juce::Colour (0x003D7BB8), 0.06f };
+    MetalStops reverb   { juce::Colour (0xFFB87749), juce::Colour (0xFF7D4D2E), juce::Colour (0x00F2C39A), 0.10f };
+    MetalStops delay    { juce::Colour (0xFFC9CFB9), juce::Colour (0xFF8D927F), juce::Colour (0x004AA3FF), 0.05f };
+    MetalStops motion   { juce::Colour (0xFF6D76B2), juce::Colour (0xFF434A86), juce::Colour (0x00C2D8FF), 0.06f };
+    MetalStops band     { juce::Colour (0xFF6AA0D8), juce::Colour (0xFF3A6EA8), juce::Colour (0x000A0C0F), 0.12f };
+    MetalStops phase    { juce::Colour (0xFF5B93CF), juce::Colour (0xFF355F97), juce::Colour (0x000A0C0F), 0.12f };
+    MetalStops titanium { juce::Colour (0xFF7D858F), juce::Colour (0xFF3B4149), juce::Colour (0x003D7BB8), 0.08f };
+} metal;
+```
+
+### **Rendering Function**
+
+```cpp
+static void paintMetal (juce::Graphics& g, const juce::Rectangle<float>& r,
+                       const FieldTheme::MetalStops& m, float corner = 8.0f);
+```
+
+---
+
+## **Material Variants**
+
+### **1. Neutral Steel (Default)**
+- **Usage**: Global default, frames, non-module metal
+- **Colors**: `#9CA4AD → #6E747C`
+- **Tint**: Ocean primary `#3D7BB8` @ 6%
+- **Properties**: `metallic` + `theme.metal.neutral`
+
+### **2. Reverb Copper/Burnished**
+- **Usage**: Reverb controls, large knobs, mode switches
+- **Colors**: `#B87749 → #7D4D2E`
+- **Tint**: Hot spot `#F2C39A` @ 10% in sheen band
+- **Properties**: `reverbMetallic` + `theme.metal.reverb`
+
+### **3. Delay Champagne Nickel**
+- **Usage**: Delay panel body, time display bezel, feedback meter bed
+- **Colors**: `#C9CFB9 → #8D927F`
+- **Tint**: Ocean highlight `#4AA3FF` @ 5%
+- **Properties**: `delayMetallic` + `theme.metal.delay`
+
+### **4. Motion Indigo Anodized**
+- **Usage**: Motion panel ring, animation rails, depth bezel
+- **Colors**: `#6D76B2 → #434A86`
+- **Tint**: Airy lift `#C2D8FF` @ 6%
+- **Properties**: `motionPurpleBorder` + `theme.metal.motion`
+
+### **5. Band/Phase Ocean Anodized**
+- **Usage**: EQ container, phase widgets, band controls
+- **Colors**: `#6AA0D8 → #3A6EA8` (Band), `#5B93CF → #355F97` (Phase)
+- **Tint**: Depth multiply `#0A0C0F` @ 12% on bottom 25%
+- **Properties**: `bandMetallic`/`phaseMetallic` + `theme.metal.band`/`theme.metal.phase`
+
+### **6. Dark Titanium (Pro/Advanced)**
+- **Usage**: Pro pages, advanced panes, focused states
+- **Colors**: `#7D858F → #3B4149`
+- **Tint**: Ocean primary `#3D7BB8` @ 8%
+- **Properties**: `theme.metal.titanium`
+
+---
+
+## **Rendering Features**
+
+### **Base Gradient**
+- Sophisticated top-to-bottom lighting with proper material-specific colors
+- Consistent gradient direction across all materials
+
+### **Sheen Band**
+- 10% white highlight in upper third (y = 0.28 × height)
+- Height: 10-24px with 6-10px feather
+- Creates realistic specular reflection
+
+### **Brush Lines**
+- Vertical micro-lines for authenticity
+- Irregular brightness (4-5% alpha, varying every 12 lines)
+- 1-2px spacing with 0.5-1.0px thickness variation
+
+### **Grain Texture**
+- Fine monochrome noise for realism
+- 4-5% black alpha overlay
+- Consistent across all materials
+
+### **Vignette Effects**
+- Edge darkening for depth perception
+- 12-16% black alpha on edges
+- Radius follows corner radius
+
+---
+
+## **Performance Optimization**
+
+### **Caching Strategy**
+- All metallic textures cached per size/scale
+- Reuse instead of regenerating per paint
+- Minimal repaint regions
+
+### **Rendering Order**
+1. Base gradient
+2. Optional tint overlay
+3. Sheen band
+4. Brush lines
+5. Grain texture
+6. Vignette effects
+7. Borders
+
+### **Memory Management**
+- Pre-allocated geometry for hot paths
+- No per-frame allocations in paint
+- Efficient clip region management
+
+---
+
+## **Usage Guidelines**
+
+### **Component Integration**
+```cpp
+// In KnobCell or other components
+if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+{
+    if (reverbMetal)
+        FieldLNF::paintMetal(g, rr, lf->theme.metal.reverb, rad);
+    else if (delayMetal)
+        FieldLNF::paintMetal(g, rr, lf->theme.metal.delay, rad);
+    // ... other material variants
+}
+```
+
+### **Property Flags**
+- `metallic`: Neutral steel (default)
+- `reverbMetallic`: Copper/burnished
+- `delayMetallic`: Champagne nickel
+- `bandMetallic`: Ocean anodized
+- `phaseMetallic`: Ocean anodized (darker)
+- `motionPurpleBorder`: Indigo anodized
+
+### **Performance Best Practices**
+- Use `FieldLNF::paintMetal()` for all metallic rendering
+- Cache textures per size/scale
+- Minimize repaint regions
+- Set `setOpaque(true)` for fully painted components
+
+---
+
+## **Compliance**
+
+### **FIELD_UI_RULES Compliance**
+- ✅ Centralized paint logic in LNF helpers
+- ✅ Proper texture caching
+- ✅ Minimal repaint regions
+- ✅ Theme-derived colors only
+- ✅ Performance-optimized rendering
+
+### **ui_performance_audit.md Compliance**
+- ✅ No heavy per-pixel/random work
+- ✅ Textures cached and reused
+- ✅ Ocean-harmonized metallic rendering
+- ✅ Minimal repaint regions
+- ✅ Proper memory management
+
+---
+
+## **Migration Notes**
+
+### **From Legacy System**
+- Replace old metallic color definitions with `theme.metal.*` variants
+- Use `FieldLNF::paintMetal()` instead of custom metallic rendering
+- Update property flags to match new system
+- Ensure proper caching and performance optimization
+
+### **Backward Compatibility**
+- Legacy property flags still recognized
+- Graceful fallback to neutral steel
+- No breaking changes to existing components
+
+---
+
+## **Future Enhancements**
+
+### **Planned Features**
+- Dynamic material switching based on context
+- Advanced lighting models
+- Custom material definitions
+- Performance profiling integration
+
+### **Monitoring**
+- Track rendering performance across materials
+- Monitor memory usage for texture caching
+- Validate visual consistency across modules
+
+---
+
+## **Notes**
+- Keep this document updated when material variants change
+- Document any performance optimizations or new features
+- Maintain compliance with FIELD_UI_RULES and ui_performance_audit.md
+
+# ================================================================================
+# 🎨 END OCEAN-HARMONIZED METALLIC SYSTEM SECTION
+# ================================================================================
+# 
+# ✅ COMPLETE: Ocean-harmonized metallic system documented
+# 📚 COVERAGE: Material variants, rendering features, performance optimization
+# 🔧 PATTERNS: Centralized paint logic, texture caching, theme integration
+# 🎯 KNOWLEDGE: Preserved metallic system standards for consistent UI rendering
+# 
+# ================================================================================
+
+# ================================================================================
+# 📋 FIELD GUI + CODE RULEBOOK
+# ================================================================================
+# 
+# 📍 PURPOSE: Comprehensive development rules and standards for Field codebase
+# 🎯 SCOPE: GUI design, code structure, performance, safety, and quality gates
+# 🔧 PATTERNS: Single source of truth, layout discipline, parameter management
+# 📚 KNOWLEDGE: Preserved development rules and standards for consistent codebase
+# 
+# ================================================================================
+
+## 📋 FIELD GUI + CODE RULEBOOK (v1)
+
+### **0) Non-Negotiables (Musts)**
+
+#### **Single Sources of Truth**
+- **Theme/colors**: only from `FieldLNF::theme` (e.g., `theme.panel`, `theme.text`, `theme.accent`, `theme.hl`, `theme.sh`, `theme.shadowDark`, `theme.shadowLight`). No raw hex colours in components.
+- **Layout metrics**: only from tokens in `Source/Layout.h` (`Layout::*` and `Layout::Knob`, `Layout::knobPx`, helpers like `sizeKnob/sizeMicro`) and `Layout::dp(px, scaleFactor)`. No magic numbers in `resized()` or `paint()`.
+- **Angles & mapping**: use the control's own parameters (e.g., `slider.getRotaryParameters()` or `valueToProportionOfLength`). Do not hardcode π spans.
+
+#### **Sizing Only in `resized()`**
+- Never call `setBounds`/`setSize` in constructors (except the top-level editor's initial `setSize`).
+- `paint()` must not call layout/sizing functions.
+
+#### **No Global Mouse Hacks**
+- Hover/active visuals use `isMouseOverOrDragging()` and `isMouseButtonDown()` on the control itself.
+- If a custom draw function lacks the control reference, pass an `isHovered`/`isActive` flag; don't query `Desktop` for hit tests.
+
+#### **APVTS Discipline**
+- All parameter I/O goes through attachments or explicit `beginChangeGesture` / `setValueNotifyingHost` / `endChangeGesture`.
+- Never set parameters in `paint()` or `resized()`.
+
+#### **Green/Ocean Modes**
+- Mode drives only theme values and `setGreenMode(bool)` on components; no conditional hardcoded colors in components.
+
+---
+
+## **1) Project Structure & Naming**
+
+### **Files**
+- Look & feel: `FieldLookAndFeel.h/.cpp` (all drawing and palette).
+- Editor: `PluginEditor.h/.cpp` (layout, wiring, component ownership).
+- Processor: `PluginProcessor.h/.cpp` (audio, parameters).
+- Custom components each in their own files (e.g., `ToggleSwitch`, `XYPad`, `ControlContainer`, `PresetCombo`).
+
+### **Namespaces & Names**
+- Layout constants live in `namespace Layout { ... }`.
+- Class names: PascalCase; members: camelCase; constants: ALL_CAPS only inside `Layout`.
+- No `using namespace` in headers.
+
+---
+
+## **2) Layout & Scaling**
+
+### **Scale-Aware**
+- All pixel values pass through `Layout::dp(px, scaleFactor)`.
+- `scaleFactor` is computed from the smaller of width/height ratios: `min(getWidth()/baseWidth, getHeight()/baseHeight)` and clamped (current floor: 0.5; ceiling: 2.0).
+- Define rhythm in `Layout` (see `Source/Layout.h`): `PAD`, `GAP`, knob sizes via `Layout::Knob::{S,M,L,XL}`, micro sizes, and breakpoints.
+
+### **Where Layout Happens**
+- The editor owns grid/flow; containers arrange their children only (no sibling knowledge).
+- Use `juce::Grid` for rows/columns; don't manually sprinkle `setBounds` everywhere. Use layout tokens to size items prior to `performLayout()`.
+
+### **Breakpoints**
+- Use `getWidth()` vs `Layout::BP_WIDE` to switch grid templates (e.g., collapse "split pan" when narrow).
+- Minimum width floor uses `Layout::BP_WIDE` (wide breakpoint) or calculated content minimum, whichever is larger. Initial size prefers baseWidth/baseHeight over content min.
+
+### **Containers (Editor-Level)**
+- `leftContentContainer`: holds panes (top) and both control groups (rows) below. All Group 1/2 controls are parented here and use container-local coordinates starting at x=0.
+- `metersContainer`: sibling at right; meters are children here (no overlap with left content). Width is derived from grid metrics; heights are local to the container.
+- Stacking: panes at the top of the left container, then 4 uniform control rows directly below; no left padding beyond container border.
+
+---
+
+## **3) Drawing Rules (LNF-Only Visuals)**
+
+- All visual tokens originate in `FieldLNF::theme`. Components never invent colors.
+
+### **Shadows/Glows**
+- Use `juce::DropShadow` in LNF or a component's `paint()`; alpha in theme; radius minimal (<= 20).
+
+### **Rotary Sliders**
+- Angles: always from the slider's rotary params (`start`, `end`, `stopAtEnd`).
+- Progress ring: background ring in `theme.base.darker(0.2f)`, value ring in `theme.accent`.
+- Tick marks: compute as fractions of arcSpan (0, .25, .5, .75, 1.0); never assume ±π.
+- Hover "raise": expand the local draw bounds by a few dp if `isMouseOverOrDragging()`.
+
+### **Linear Sliders (Micro)**
+- Position with `slider.valueToProportionOfLength` (skew-safe).
+- Clamp thumb visuals into the track; progress fill uses `theme.accent` gradient.
+
+### **Text**
+- Fonts: use `juce::FontOptions(size).withStyle("Bold")` for titles/knob labels.
+- Colors: `theme.text` / `theme.textMuted`. No hardcoded whites.
+
+---
+
+## **4) Component Behavior**
+
+### **State → Visuals Only**
+- `paint()` must never mutate state or parameters.
+- Animations: use `juce::SmoothedValue` or a `Timer` updating a local visual property; call `repaint()`.
+
+### **Hover/Active**
+- Only via `isMouseOverOrDragging()` and `isMouseButtonDown()` of the component.
+- For helper draw fns that lack the component, add parameters (e.g., `drawGainSlider(..., bool isHovered, bool isActive)`).
+
+### **XYPad**
+- Public API: `setSplitMode(bool)`, `setLinked(bool)`, `setSnapEnabled(bool)`, `setPoint01(x, y)`, `getPoint01()`, `getBallPosition(i)`, `setBallPosition(i,x,y)`.
+- Events: `onChange(x,y)`, `onSplitChange(lx, rx, y)`, `onBallChange(index,x,y)`.
+- Hit tests use local bounds only; snap rounds to fixed divisions; all clamping via `jlimit`.
+
+### **ToggleSwitch**
+- Animation via `SmoothedValue`; no external `Desktop` querying; border/hover handled locally.
+
+### **Containers**
+- Draw borders/headers in `paint()`. No parameter logic inside containers.
+
+---
+
+## **5) Parameters & Attachments (APVTS)**
+
+### **Create Once, Attach Once**
+- Each parameter has at most one `SliderAttachment`/`ButtonAttachment` per control.
+- If a control is shown/hidden (e.g., split vs stereo), still attach statically; only toggle visibility.
+
+### **Host Sync**
+- Gestures wrap every manual change:
+
+```cpp
+if (auto* p = apvts.getParameter("pan")) { p->beginChangeGesture(); p->setValueNotifyingHost(v); p->endChangeGesture(); }
+```
+
+### **Listeners**
+- Use listeners only when you must react to host-driven changes (e.g., `space_algo` to UI switch).
+
+### **Preset Manager**
+- Parameter getter/setter are declared once and shared; no duplicates.
+- When adding a new parameter: update APVTS layout, presets getter/setter, and UI attachment in a single commit.
+
+---
+
+## **6) Performance & Safety**
+
+### **Paint Cost**
+- Avoid per-pixel loops in `paint()`; precompute paths where possible.
+- Heavy visuals (waveforms) gated by `hasWaveformData`; keep buffers bounded.
+
+### **No Allocations in Hot Paths**
+- Reserve vectors or keep them as members; do not allocate in high-frequency `paint()` unless trivial.
+
+### **Threading**
+- UI thread only touches components; audio thread never accesses UI. Data passed via atomics/copies.
+
+### **Timers**
+- Editor heartbeat (top-level editor): baseline ~30 Hz and may burst to ~60 Hz during interaction and for ~150 ms after.
+- Component timers (per-widget): 0 Hz when hidden; 15–30 Hz when visible. 60 Hz only with profiling and tiny repaint regions. Gate via `visibilityChanged()`.
+
+---
+
+## **7) Interaction & UX**
+
+### **Cursor Policy**
+- Interactive comps: `PointingHandCursor`; everything else default.
+
+### **Tooltips**
+- Use a shared `TooltipWindow`; short, actionable strings.
+
+### **Accessibility**
+- Provide labels/`setName` for controls (used for central knob labels and screen readers).
+
+---
+
+## **8) Code Quality Gates**
+
+### **Includes**
+- Add `<vector>`, `<cmath>` etc. where used; no hidden transitive reliance.
+
+### **C++ Hygiene**
+- `override` on all virtual overrides; no naked `new`; RAII for attachments.
+- No `static` state in components unless const/immutable.
+
+### **PR Checklist (Builder Must Confirm)**
+1. No raw colours or magic numbers outside `FieldLNF::theme` and `Layout`.
+2. No layout calls outside `resized()`; no param writes in `paint()`/`resized()`.
+3. Hover states use local component APIs; no `Desktop` hit tests.
+4. Rotary/linear mapping uses control params / `valueToProportionOfLength`.
+5. Attachments exist exactly once per control; listener usage justified.
+6. Build warnings = 0; files include what they use.
+7. Green/Ocean visuals switch via LNF theme only.
+8. New parameters added to APVTS, attachments, preset I/O, and UI in the same change.
+9. `resized()` deterministic (no temporaries that depend on repaint order).
+10. `paint()` pure (no side effects).
+
+---
+
+## **9) "Prompt Contract" for Codegen Tasks**
+
+When asking the builder (or LLM) for code, start your prompt with this contract:
+
+> Follow the FIELD RULEBOOK v1 strictly.
+>
+> - Use `FieldLNF::theme` for all colours; use `Layout::dp` and `Layout` constants for sizes.
+> - All sizing in `resized()`; no parameter writes in `paint()`/`resized()`.
+> - Hover via `isMouseOverOrDragging()`; no global `Desktop` queries.
+> - Rotary arcs use provided rotary params; linear mapping uses `valueToProportionOfLength`.
+> - Attach parameters using APVTS attachments; one attachment per control.
+> - If a draw helper needs hover/active, add boolean arguments (don't infer).
+> - Output complete, compilable `.h/.cpp` snippets with includes and no external magic.
+
+Also include in the prompt:
+
+- What you're adding/changing (component name & purpose).
+- Which parameters it binds to (names).
+- Where it lives (parent container & approximate grid cell).
+- Acceptance tests (what should visibly happen).
+
+---
+
+## **10) Acceptance Checklist Per Component**
+
+- Visuals match theme (no hexes), hover/active correct.
+- Resizes cleanly at 0.6×–2.0× scale; no overlaps/clipping at breakpoints.
+- Keyboard/mouse interaction works; cursor correct.
+- Parameter round-trip verified (UI → APVTS → UI).
+- No warnings; includes present.
+
+---
+
+## **11) Tiny Examples (Patterns to Copy)**
+
+### **Skew-Safe Micro Slider:**
+```cpp
+void FieldLNF::drawLinearSlider(..., juce::Slider& s) {
+  const float t = juce::jlimit(0.f, 1.f, (float) s.valueToProportionOfLength(s.getValue()));
+  // use t for progress + thumbX
+}
+```
+
+### **Rotary Using Provided Angles:**
+```cpp
+auto [start, end, stopAtEnd] = s.getRotaryParameters();
+const float angle = start + proportion * (end - start);
+```
+
+### **Hover in Helper Draw:**
+```cpp
+void drawKnob(Graphics& g, const Rectangle<float>& r, bool isHovered, bool isActive) {
+  auto bounds = isHovered || isActive ? r.expanded(Layout::dp(2, scale)) : r;
+  // ...
+}
+```
+
+### **Parameter Write (Gesture-Safe):**
+```cpp
+if (auto* p = apvts.getParameter("width")) {
+  p->beginChangeGesture(); p->setValueNotifyingHost(normalised); p->endChangeGesture();
+}
+```
+
+---
+
+## **12) Group 2 Panel System**
+
+### **Panel Architecture**
+- Group 2 panel (`bottomAltPanel`) is a sliding overlay above the four control rows (inside `leftContentContainer`).
+- Panel uses rounded corners (6px radius) via `g.fillRoundedRectangle()`.
+- Base bounds match the exact 4‑row rectangle of Group 1 (container‑local). The panel is mounted once as a child of `leftContentContainer`.
+- Panel slides in/out with smooth animation driven by a single timer; slide progress is `bottomAltSlide01`. During slide, the overlay moves only; children are not reflowed.
+
+### **Group Separation**
+- **Group 1**: Main flat grid (4×16) of controls; always visible below panes.
+- **Group 2**: Delay + Reverb flat grids (8 columns each) presented in the sliding panel; shares the same rows rectangle as Group 1.
+- Motion Engine lives only in Group 1's grid; it is not duplicated in Group 2.
+
+### **Grid Fit (Group 2)**
+- Cell width is derived from available width: `cellW = min(cellWTarget, availableWidth / 16)` so Delay (8) + Reverb (8) columns fit the panel without horizontal scroll.
+- Delay and Reverb grids use zero gaps; metrics mirror Group 1: `knobPx = Layout::knobPx(L)`, `valuePx`, `labelGap` via `Layout::dp`.
+
+### **Layout Rules**
+- Base bounds: `overlayLocalRect = leftContentContainer.getLocalBounds().removeFromBottom(totalRowsH)`; no extra padding. Delay group at `(x=0,y=0)`, Reverb immediately to the right.
+- The overlay children (Delay/Reverb cells) are created once and added to `bottomAltPanel` once. Reflow of their grids happens only when the editor size/scale changes.
+- All positioning uses `Layout::dp()`; rows are uniform height: `rowH = knobPx + labelGap + valuePx`.
+
+### **Z-Order Management**
+- Panel is a child of `leftContentContainer` (above row controls); meters live in `metersContainer`.
+- Panel intercepts mouse clicks when active: `setInterceptsMouseClicks(true, false)`; hidden when fully retracted.
+
+### **Animation & State**
+- Single animation driver: the editor timer advances `bottomAltSlide01` toward the target (`bottomAltTargetOn`). No slide advancement inside layout.
+- Cosine easing: `effSlide = 0.5f - 0.5f * cos(π * t0)` with a small appearance threshold to avoid flicker.
+- Move-only animation: during slide, only the `bottomAltPanel` Y is adjusted between cached `overlayHiddenBaseline` and `overlayActiveBaseline`. No per-frame `Grid::performLayout()`.
+- Overlay layout caching: recompute `overlayLocalRect` and grid layouts only when size/scale changes; mark dirty via a flag.
+
+---
+
+## **13) Control Rows (Uniform Metrics)**
+
+- Four uniform rows beneath panes, with row height:
+  - `rowH = knobPx(L) + labelGap + valuePx` (all via `Layout::dp(scaleFactor)`).
+- Zero column and row gaps inside all control grids (Group 1 and Group 2), consistent with UI rules.
+- Group 1 uses a flat 4×16 grid; Group 2 uses two 8‑column grids (Delay, Reverb) that fit the panel width. [Legacy - replaced by per‑tab 2×16 grids]
+
+---
+
+## **12b) Tabs‑Driven UI (Sep 2025 Update)**
+
+### **Ownership & Switching**
+- Tabs own visuals and controls; switching is visibility‑only (no create/destroy churn).
+- Legacy Group 1/2 rows are retired. Each tab standardizes on a 2×16 flat grid of controls.
+
+### **Per‑Tab Layout**
+- Delay, Reverb, Motion, Band, XY each host their own 2×16 grid (styled empty `KnobCell` for blanks).
+- Band: Imager Width visuals plus WIDTH (global) + W LO/W MID/W HI, and seven Designer controls (TLT S, PVT, A DEP, A THR, ATT, REL, MAX) migrated from the floating overlay into `BandControlsPane`.
+- Imager: visuals‑only (no controls grid); floating Designer overlay removed; Width button removed from tooling.
+- XY: XO LO/HI, ROT, ASYM, SHF L/SHF H/SHF X, MONO, PAN, SAT MIX, SCOOP.
+
+### **Metrics & Sizing**
+- All tabs use `ControlGridMetrics::compute(w,h)` → `colW, knobPx, valuePx, labelGapPx, rowH, controlsH`.
+- Controls strip height is exactly `controlsH = 2 * rowH` at the bottom; visuals fill the remainder above (no extra 25% trim).
+- Min‑height formula: `HEADER + max(XY_MIN_H, metersH) + GAP + controlsH + PAD + bottomReserve`.
+- Defaults: `XY_MIN_H = 420`, `baseWidth = 1500`, `baseHeight = 700` (initial size may clamp to min).
+
+### **Styling**
+- Metallic gradients by pane: Motion/Center; Delay (light yellow‑green); Reverb (burnt‑orange); Band (blue). XY uses metallic grey for blanks only. All colours via `FieldLNF::theme`.
+
+### **Tooling Policy**
+- Band: all Imager tooling disabled (no PRE/FPS/mode buttons). Imager: tooling kept, Width button removed.
+
+---
+
+## **14) Responsiveness & Min Sizes**
+
+- Minimum width uses a conservative floor (≥ `Layout::BP_WIDE`) combined with calculated content minimum.
+- Initial size prefers base sizes (current defaults: baseWidth/baseHeight set in `PluginEditor.h`).
+- Width shrinking reduces `scaleFactor` (via min of width/height ratios) and compresses grid cell width to avoid clipping.
+
+---
+
+## **13) Motion Dual‑Panner Rules (P1/P2/Link)**
+
+### **Default & Visuals**
+- Panner Combo defaults to **P1**. Use LNF properties `forceSelectedText` and `defaultTextWhenEmpty` so the control renders "P1" without a chevron.
+- Motion Panel dots (P1/P2/Link) must switch `motion.panner_select` via `setValueNotifyingHost` with proper gesture wrapping when user‑initiated.
+
+### **Independence & Defaults**
+- P1 and P2 are truly independent parameter sets (no hidden copy/seed). Both initialize from the same factory defaults.
+- Link mode writes to P1 and mirrors to P2 (policy A). UI binds to P1 while linked.
+
+### **Attachments (Critical)**
+- Maintain separate motion‑only attachment buckets: `motionSliderAttachments`, `motionButtonAttachments`, `motionComboAttachments`.
+- On panner change, **clear and rebuild** only these buckets. Do not erase from global vectors by count.
+- Rebind on the message thread using an `AsyncUpdater` (`motionBinding`) to avoid races.
+
+### **UI Freshness**
+- After rebind, call `refreshMotionControlValues()` to push current parameter values into labels/knobs immediately.
+- Pull fresh `motion::VisualState` and update the pane visuals in the same step; repaint.
+
+### **Events**
+- `parameterChanged(motion.panner_select)` triggers the async rebind; ComboBox `onChange` redundantly triggers to handle host timing quirks.
+- Motion Panel `mouseDown` hit‑tests P1/P2/Link dots and sets the selection parameter.
+
+### **Do Not**
+- Do not keep stale attachments around; do not rely on "erase last N attachments."
+- Do not let the Panner ComboBox show the default chevron; enforce the default text behavior via LNF.
+
+# ================================================================================
+# 📋 END FIELD GUI + CODE RULEBOOK SECTION
+# ================================================================================
+# 
+# ✅ COMPLETE: Field GUI + Code Rulebook documented
+# 📚 COVERAGE: Development rules, code structure, performance, safety, quality gates
+# 🔧 PATTERNS: Single source of truth, layout discipline, parameter management
+# 🎯 KNOWLEDGE: Preserved development rules for consistent and maintainable codebase
 # 
 # ================================================================================
 
