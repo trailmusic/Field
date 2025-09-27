@@ -20,11 +20,8 @@ inline MetallicKind metallicFromProps (const juce::NamedValueSet& p) {
     if ((bool)p.getWithDefault("reverbMetallic", false)) return MetallicKind::Reverb;
     if ((bool)p.getWithDefault("delayMetallic", false))  return MetallicKind::Delay;
     if ((bool)p.getWithDefault("bandMetallic", false))   return MetallicKind::Band;
-    if ((bool)p.getWithDefault("motionMetallic", false) 
-     || (bool)p.getWithDefault("motionPurpleBorder", false)
-     || (bool)p.getWithDefault("motionGreenBorder", false)) return MetallicKind::Motion;
-    if ((bool)p.getWithDefault("xyMetallic", false)
-     || (bool)p.getWithDefault("centerStyle", false))   return MetallicKind::XY;
+    if ((bool)p.getWithDefault("motionMetallic", false)) return MetallicKind::Motion;
+    if ((bool)p.getWithDefault("xyMetallic", false))     return MetallicKind::XY;
     if ((bool)p.getWithDefault("metallic", false))      return MetallicKind::Neutral;
     return MetallicKind::None;
 }

@@ -156,17 +156,7 @@ void KnobCellWithAux::paint (juce::Graphics& g)
                     case MetallicKind::Reverb:  FieldLNF::paintMetal(g, rr, lf->theme.metal.reverb,  rad); break;
                     case MetallicKind::Delay:   FieldLNF::paintMetal(g, rr, lf->theme.metal.delay,   rad); break;
                     case MetallicKind::Band:    FieldLNF::paintMetal(g, rr, lf->theme.metal.band,    rad); break;
-                    case MetallicKind::Phase:   
-                    {
-                        FieldLNF::PhaseMetal phaseMetalConfig {
-                            lf->theme.metal.phase.top, lf->theme.metal.phase.bottom,
-                            lf->theme.metal.phase.tint, lf->theme.metal.phase.tintAlpha,
-                            juce::Colour (0xFF0A0C0F), 0.14f,  // bottom multiply
-                            0.10f  // sheen alpha
-                        };
-                        FieldLNF::paintPhaseMetal(g, rr, phaseMetalConfig, rad);
-                        break;
-                    }
+                    case MetallicKind::Phase:   FieldLNF::paintMetal(g, rr, lf->theme.metal.phase, rad); break;
                     case MetallicKind::Motion:  FieldLNF::paintMetal(g, rr, lf->theme.metal.motion,  rad); break;
                     case MetallicKind::XY:      FieldLNF::paintMetal(g, rr, lf->theme.metal.xy,      rad); break;
                     case MetallicKind::Neutral: FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
