@@ -1,5 +1,274 @@
 # Field Audio Plugin - Master Development Guide
 
+## 📚 COMPREHENSIVE INDEX SYSTEM
+
+### **🏗️ ARCHITECTURE & REFACTORING**
+- [Major Refactoring Achievement (September 2025)](#-major-refactoring-achievement-september-2025)
+- [Refactoring Patterns & Best Practices](#-refactoring-patterns--best-practices)
+- [Architecture Patterns](#-architecture-patterns)
+- [Engine Architecture](#-engine-architecture)
+- [Git Workflow](#-git-workflow)
+- [Key Files Reference (Refactored Structure)](#-key-files-reference-refactored-structure)
+
+### **🎛️ CORE SYSTEMS**
+- [Phase Alignment System](#-phase-alignment-system---complete-implementation-december-2024)
+- [Band Control System](#-band-control-system---frequency-band-processing--control-types)
+- [Dynamic EQ System](#-dynamic-eq-system---advanced-spectral-processing--control-architecture)
+- [Metallic Template System](#-metallic-template-system-integration-december-2024)
+
+### **🎨 UI COMPONENTS & VISUALS**
+- [ShadeOverlay Component](#-shadeoverlay-component---xypad-block-vision-control-system)
+- [FIELD Logo System](#-field-logo-system---enhanced-branding-with-shadow--glow-effects)
+- [Band Visual Integration](#-visual-integration)
+- [Dynamic EQ Visual System](#-visual-system)
+
+### **🔧 DEVELOPMENT & DEBUGGING**
+- [Critical Crash Prevention Knowledge](#-critical-crash-prevention-knowledge)
+- [Debugging Systems](#-debugging-systems)
+- [Common Pitfalls to Avoid](#-common-pitfalls-to-avoid)
+- [Development Checklist](#-development-checklist)
+
+### **📊 TECHNICAL SPECIFICATIONS**
+- [Parameter Systems](#parameter-schema-apvts)
+- [DSP Architecture](#-dsp-architecture)
+- [State Management](#state-model)
+- [Performance Optimization](#-performance-characteristics)
+- [Quality Assurance](#-quality-assurance)
+
+### **🎯 SYSTEM INTEGRATION**
+- [Signal Chain Integration](#signal-chain-integration)
+- [UI Architecture](#-ui-architecture)
+- [Color System & Theming](#-color-system--theming)
+- [Integration Points](#-integration-points)
+
+### **📈 SUCCESS METRICS & VALIDATION**
+- [Success Metrics](#-success-metrics)
+- [Plugin Stability Indicators](#plugin-stability-indicators)
+- [Development Efficiency Indicators](#development-efficiency-indicators)
+- [Refactoring Success Metrics](#refactoring-success-metrics-september-2025)
+
+---
+
+## 📋 DETAILED SUBSECTION INDEX
+
+### **🏗️ ARCHITECTURE & REFACTORING DETAILS**
+#### **Major Refactoring Achievement**
+- [Complete Codebase Reorganization](#complete-codebase-reorganization---the-ultimate-architecture-improvement)
+- [Refactoring Objectives Achieved](#-refactoring-objectives-achieved)
+- [Impact Metrics](#-impact-metrics)
+- [Technical Achievements](#-technical-achievements)
+- [Quality Assurance](#-quality-assurance)
+- [Benefits Realized](#-benefits-realized)
+- [Migration Process](#-migration-process)
+- [Documentation Updates](#-documentation-updates)
+
+#### **Refactoring Patterns & Best Practices**
+- [Large-Scale Codebase Refactoring Methodology](#large-scale-codebase-refactoring-methodology)
+- [Pre-Refactoring Analysis](#1-pre-refactoring-analysis)
+- [Directory Structure Design Principles](#2-directory-structure-design-principles)
+- [Include Path Update Strategy](#3-include-path-update-strategy)
+- [CMakeLists.txt Update Strategy](#4-cmakeliststxt-update-strategy)
+- [Build Verification Strategy](#5-build-verification-strategy)
+- [Git Integration Strategy](#6-git-integration-strategy)
+- [Documentation Update Strategy](#7-documentation-update-strategy)
+- [Quality Assurance Strategy](#8-quality-assurance-strategy)
+- [Rollback Strategy](#9-rollback-strategy)
+- [Post-Refactoring Validation](#10-post-refactoring-validation)
+- [Refactoring Anti-Patterns to Avoid](#refactoring-anti-patterns-to-avoid)
+
+#### **Architecture Patterns**
+- [New Refactored Architecture Patterns](#new-refactored-architecture-patterns)
+- [Core Component Centralization Pattern](#core-component-centralization-pattern)
+- [Functional Grouping Pattern](#functional-grouping-pattern)
+- [Include Path Consistency Pattern](#include-path-consistency-pattern)
+- [CMakeLists.txt Organization Pattern](#cmakeliststxt-organization-pattern)
+- [Engine Initialization Pattern](#engine-initialization-pattern)
+- [Parameter Attachment Safety Pattern](#parameter-attachment-safety-pattern)
+- [Parameter ID Consistency Pattern](#parameter-id-consistency-pattern)
+
+### **🎛️ CORE SYSTEMS DETAILS**
+#### **Phase Alignment System**
+- [Phase System Objectives Achieved](#-phase-system-objectives-achieved)
+- [Technical Implementation](#-technical-implementation)
+- [UI Implementation](#-ui-implementation)
+- [DSP Processing Chain](#-dsp-processing-chain)
+- [Integration Metrics](#-integration-metrics)
+- [Processing Modes](#-processing-modes)
+- [Integration with Field Plugin](#-integration-with-field-plugin)
+- [Quality Assurance Achievements](#-quality-assurance-achievements)
+- [Benefits Realized](#-benefits-realized)
+- [Documentation Coverage](#-documentation-coverage)
+- [Future Development Guidelines](#-future-development-guidelines)
+
+#### **Band Control System**
+- [Band System Objectives Achieved](#-band-system-objectives-achieved)
+- [Technical Implementation](#-technical-implementation)
+- [Visual Integration](#-visual-integration)
+- [Control Hierarchy](#-control-hierarchy)
+- [Integration Points](#-integration-points)
+- [Performance Characteristics](#-performance-characteristics)
+- [Quality Assurance](#-quality-assurance)
+
+#### **Dynamic EQ System**
+- [Dynamic EQ System Objectives Achieved](#-dynamic-eq-system-objectives-achieved)
+- [Technical Architecture](#-technical-architecture)
+- [DSP Architecture](#-dsp-architecture)
+- [UI Architecture](#-ui-architecture)
+- [Color System & Theming](#-color-system--theming)
+- [Integration Points](#-integration-points)
+- [Advanced Features](#-advanced-features)
+- [Quality Assurance](#-quality-assurance)
+
+### **🎨 UI COMPONENTS & VISUALS DETAILS**
+#### **ShadeOverlay Component**
+- [Interactive Shade Overlay System](#interactive-shade-overlay-system)
+- [Technical Implementation](#-technical-implementation)
+- [Visual Design System](#-visual-design-system)
+- [Performance Optimization](#-performance-optimization)
+- [Integration Patterns](#-integration-patterns)
+- [Maintenance Guidelines](#-maintenance-guidelines)
+
+#### **FIELD Logo System**
+- [Logo System Objectives Achieved](#-logo-system-objectives-achieved)
+- [Technical Implementation](#-technical-implementation)
+- [Visual Design System](#-visual-design-system)
+- [Performance Optimization](#-performance-optimization)
+- [Integration Patterns](#-integration-patterns)
+- [Maintenance Guidelines](#-maintenance-guidelines)
+
+### **🔧 DEVELOPMENT & DEBUGGING DETAILS**
+#### **Critical Crash Prevention**
+- [Plugin Close Crash Solution](#plugin-close-crash---the-ultimate-solution)
+- [Control Pane Destructors](#1-always-add-destructors-to-control-panes)
+- [Tab Component Destructors](#2-always-add-destructors-to-tab-components)
+- [Timer-Based Components](#3-timer-based-components-must-stop-timers)
+- [AsyncUpdater Cancellation](#4-asyncupdater-must-be-cancelled)
+
+#### **Debugging Systems**
+- [Crash Logging System](#crash-logging-system)
+- [Build Verification System](#build-verification-system)
+
+#### **Common Pitfalls**
+- [Missing Parameter Definitions](#1-missing-parameter-definitions)
+- [Parameter ID Mismatches](#2-parameter-id-mismatches)
+- [Missing Destructors](#3-missing-destructors)
+- [Timer Not Stopped](#4-timer-not-stopped)
+- [AsyncUpdater Not Cancelled](#5-asyncupdater-not-cancelled)
+
+#### **Development Checklist**
+- [Before Adding New UI Components](#before-adding-new-ui-components)
+- [Before Committing Changes](#before-committing-changes)
+- [When Debugging Crashes](#when-debugging-crashes)
+
+### **📊 TECHNICAL SPECIFICATIONS DETAILS**
+#### **Parameter Systems**
+- [APVTS Integration](#parameter-schema-apvts)
+- [Parameter ID Management](#parameter-id-consistency-pattern)
+- [Parameter Attachment Safety](#parameter-attachment-safety-pattern)
+
+#### **DSP Architecture**
+- [Custom vs JUCE DSP Components](#custom-vs-juce-dsp-components)
+- [Engine Initialization](#engine-initialization-pattern)
+- [Processing Pipeline](#processing-pipeline)
+
+#### **State Management**
+- [ValueTree Serialization](#state-model)
+- [Parameter State Persistence](#parameter-state-persistence)
+- [Migration Handling](#migration-handling)
+
+#### **Performance Optimization**
+- [CPU Efficiency](#cpu-efficiency)
+- [Memory Management](#memory-management)
+- [Real-time Processing](#real-time-processing)
+- [Latency Management](#latency-management)
+
+### **🎯 SYSTEM INTEGRATION DETAILS**
+#### **Signal Chain Integration**
+- [Default Processing Order](#signal-chain-integration)
+- [Per-Band Detector Taps](#per-band-detector-taps)
+- [Optional Placements](#optional-placements)
+
+#### **UI Architecture**
+- [Tab Structure](#tab-structure)
+- [Visual System](#visual-system)
+- [Interaction Design](#interaction-design)
+
+#### **Color System & Theming**
+- [Theme-Driven Palette](#theme-driven-palette)
+- [Visual Feedback](#visual-feedback)
+- [Consistency Guidelines](#consistency-guidelines)
+
+#### **Integration Points**
+- [System Integration](#system-integration)
+- [Performance Characteristics](#performance-characteristics)
+- [Quality Assurance](#quality-assurance)
+
+### **📈 SUCCESS METRICS & VALIDATION DETAILS**
+#### **Success Metrics**
+- [Plugin Stability Indicators](#plugin-stability-indicators)
+- [Development Efficiency Indicators](#development-efficiency-indicators)
+- [Refactoring Success Metrics](#refactoring-success-metrics-september-2025)
+
+#### **Architecture Improvements**
+- [Centralized Core Components](#-architecture-improvements)
+- [Logical System Grouping](#-architecture-improvements)
+- [Improved Build Performance](#-performance-improvements)
+- [Enhanced Developer Experience](#-developer-experience-improvements)
+
+#### **Quantitative Achievements**
+- [Files Reorganized](#-quantitative-achievements)
+- [Include Paths Updated](#-quantitative-achievements)
+- [Build Time Improvement](#-quantitative-achievements)
+- [Directory Structure](#-quantitative-achievements)
+
+#### **Quality Assurance Achievements**
+- [Build Verification](#-quality-assurance-achievements)
+- [Include Path Validation](#-quality-assurance-achievements)
+- [CMakeLists Integration](#-quality-assurance-achievements)
+- [Git Integration](#-quality-assurance-achievements)
+
+#### **Documentation Achievements**
+- [README.md Updates](#-documentation-achievements)
+- [FIELD_MASTER_GUIDE.md Updates](#-documentation-achievements)
+- [Build Instructions](#-documentation-achievements)
+- [Developer Notes](#-documentation-achievements)
+
+#### **Long-term Benefits**
+- [Faster Navigation](#-long-term-benefits-realized)
+- [Easier Maintenance](#-long-term-benefits-realized)
+- [Better Collaboration](#-long-term-benefits-realized)
+- [Cleaner Git History](#-long-term-benefits-realized)
+
+---
+
+## 🚀 QUICK REFERENCE GUIDE
+
+### **🔧 COMMON DEVELOPMENT TASKS**
+- **Adding New UI Components**: [Before Adding New UI Components](#before-adding-new-ui-components)
+- **Debugging Crashes**: [When Debugging Crashes](#when-debugging-crashes)
+- **Parameter Issues**: [Common Pitfalls to Avoid](#-common-pitfalls-to-avoid)
+- **Build Problems**: [Build Verification System](#build-verification-system)
+
+### **🎛️ SYSTEM-SPECIFIC QUICK ACCESS**
+- **Phase Alignment**: [Phase Alignment System](#-phase-alignment-system---complete-implementation-december-2024)
+- **Band Controls**: [Band Control System](#-band-control-system---frequency-band-processing--control-types)
+- **Dynamic EQ**: [Dynamic EQ System](#-dynamic-eq-system---advanced-spectral-processing--control-architecture)
+- **UI Components**: [UI Components & Visuals](#-ui-components--visuals)
+
+### **🚨 CRITICAL KNOWLEDGE**
+- **Crash Prevention**: [Critical Crash Prevention Knowledge](#-critical-crash-prevention-knowledge)
+- **Architecture Patterns**: [Architecture Patterns](#-architecture-patterns)
+- **Development Workflow**: [Git Workflow](#-git-workflow)
+- **Quality Assurance**: [Development Checklist](#-development-checklist)
+
+### **📊 TECHNICAL REFERENCE**
+- **File Structure**: [Key Files Reference](#-key-files-reference-refactored-structure)
+- **Parameter Systems**: [Parameter Systems](#parameter-schema-apvts)
+- **DSP Architecture**: [DSP Architecture](#-dsp-architecture)
+- **Performance**: [Performance Optimization](#-performance-characteristics)
+
+---
+
 ## 🎯 Overview
 This guide documents critical architectural decisions, debugging processes, and solutions discovered during the development of the Field audio plugin. This knowledge base prevents repeating complex debugging sessions and ensures consistent development practices.
 
@@ -1507,6 +1776,275 @@ ls -la build/Source/Field_artefacts/Debug/Standalone/Field.app
 # 📊 FEATURES: Multi-layer shadows, gradients, highlights, version positioning
 # 
 # ================================================================================
+
+# ================================================================================
+# 🎛️ BAND CONTROL SYSTEM - Frequency Band Processing & Control Types
+# ================================================================================
+# 
+# 📍 LOCATION: Source/ui/BandTab.h, Source/ui/BandVisualPane.h, Source/ui/BandControlsPane.h
+# 🎯 PURPOSE: Comprehensive frequency band processing with visual feedback
+# 🔧 INTEGRATION: Band tab with width visuals, XO controls, and LO MID HI labels
+# 📊 FEATURES: 3-band width processing, crossover controls, shuffle randomization
+# 
+# ================================================================================
+
+# ================================================================================
+# 🎛️ DYNAMIC EQ SYSTEM - Advanced Spectral Processing & Control Architecture
+# ================================================================================
+# 
+# 📍 LOCATION: Source/dsp/DynamicEQ/, Source/ui/DynEqTab.h, Source/dynEQ/
+# 🎯 PURPOSE: Precision-first Dynamic/Spectral EQ with advanced processing capabilities
+# 🔧 INTEGRATION: Replaces Spectrum tab, integrates with XY, Motion, Band, Reverb, Delay
+# 📊 FEATURES: 24-band processing, dynamics, spectral shaping, constellations, real-time analysis
+# 
+# ================================================================================
+
+## 🎛️ Band Control System - Frequency Band Processing & Control Types
+
+### **Band System: Comprehensive Frequency Band Processing**
+
+**Achievement**: Successfully implemented a comprehensive Band control system with visual feedback, crossover controls, and clear control type distinctions for professional stereo imaging.
+
+#### **🎯 Band System Objectives Achieved**
+
+1. **Control Type Clarity**: Clear distinction between SHUF, XO, and WIDTH controls
+2. **Visual Integration**: LO MID HI labels integrated into Band visuals
+3. **XO Control Migration**: Moved XO controls from XY Pad to Band tab
+4. **Frequency Band Processing**: 3-band width processing with adjustable crossovers
+5. **Shuffle Randomization**: Controlled stereo positioning randomization
+
+#### **🔧 Technical Implementation**
+
+**Control Type Definitions**
+
+**SHUF LO, SHUF HI, SHUF XO** (Shuffle Controls)
+- **Purpose**: Control **shuffling/randomization** of stereo positioning
+- **SHUF LO**: Shuffle amount for **low frequencies** (affects bass stereo spread)
+- **SHUF HI**: Shuffle amount for **high frequencies** (affects treble stereo spread)  
+- **SHUF XO**: **Crossover frequency** that separates where LO vs HI shuffling applies
+- **Function**: Adds controlled randomness to stereo positioning to avoid "static" stereo images
+
+**XO LO, XO HI** (Crossover Controls)
+- **Purpose**: Define **frequency band boundaries** for processing
+- **XO LO**: **Low crossover point** (typically 40-400 Hz) - separates bass from midrange
+- **XO HI**: **High crossover point** (typically 800-6000 Hz) - separates midrange from treble
+- **Function**: Creates three frequency bands (LO, MID, HI) for independent processing
+
+**WIDTH, W LO, W MID, W HI** (Width Controls)
+- **Purpose**: Control **stereo width** within each frequency band
+- **WIDTH**: **Master width** control (affects all bands)
+- **W LO**: **Low frequency width** (bass stereo spread)
+- **W MID**: **Mid frequency width** (midrange stereo spread)
+- **W HI**: **High frequency width** (treble stereo spread)
+- **Function**: Expands or contracts the stereo field within each frequency range
+
+#### **🎨 Visual Integration**
+
+**LO MID HI Labels**
+- **Location**: Top of Band visual area
+- **Function**: Visual frequency band indicators
+- **Styling**: Theme-based badges with accent colors
+- **Integration**: Moved from XY Pad to Band tab for logical grouping
+
+**XO Controls Migration**
+- **From**: XY Pad controls (unused declarations)
+- **To**: Band tab controls (active implementation)
+- **Parameters**: `xover_lo_hz` and `xover_hi_hz`
+- **Visual**: Connected to Band visuals for real-time feedback
+
+#### **🎛️ Control Hierarchy**
+
+**Typical Use Pattern:**
+1. **XO controls** set up the frequency bands (foundation)
+2. **WIDTH controls** adjust stereo width within those bands
+3. **SHUF controls** add randomization to avoid static positioning
+
+**Key Differences:**
+- **SHUF** = **Randomization** (adds controlled chaos)
+- **XO** = **Frequency boundaries** (defines processing bands)
+- **WIDTH** = **Stereo expansion** (makes things wider/narrower)
+
+#### **🔧 Integration Points**
+
+**Band Tab Components**
+- **BandTab**: Main tab container with visual and control areas
+- **BandVisualPane**: Width mode visuals with LO MID HI labels
+- **BandControlsPane**: 2x16 control grid with XO controls
+- **StereoFieldEngine**: Real-time width analysis and visualization
+
+**Parameter Connections**
+- **XO Parameters**: `xover_lo_hz`, `xover_hi_hz` connected to Band visuals
+- **Width Parameters**: `width_lo`, `width_mid`, `width_hi` for per-band control
+- **Shuffle Parameters**: `shuffler_lo_pct`, `shuffler_hi_pct`, `shuffler_xover_hz`
+
+#### **📊 Performance Characteristics**
+
+**Visual Updates**
+- **Real-time Feedback**: XO changes immediately reflect in Band visuals
+- **Smooth Animation**: Width changes animate smoothly in visual area
+- **Theme Integration**: All visuals use consistent theme colors
+
+**Control Responsiveness**
+- **Immediate Response**: All controls provide instant visual feedback
+- **Parameter Validation**: XO ranges enforced (LO < HI)
+- **Visual Consistency**: All controls follow FIELD UI standards
+
+#### **✅ Quality Assurance**
+
+**Control Validation**
+- **XO Range Enforcement**: LO < HI with proper bounds checking
+- **Parameter Mapping**: All controls properly mapped to APVTS
+- **Visual Feedback**: Real-time updates for all parameter changes
+
+**Integration Testing**
+- **Band Visuals**: LO MID HI labels display correctly
+- **XO Controls**: Properly connected to Band visuals
+- **Parameter Flow**: All controls affect audio processing correctly
+
+## 🎛️ Dynamic EQ System - Advanced Spectral Processing & Control Architecture
+
+### **Dynamic EQ: Precision-First Spectral Processing**
+
+**Achievement**: Successfully implemented a comprehensive Dynamic EQ system with advanced spectral processing, 24-band architecture, and sophisticated visual feedback for professional audio processing.
+
+#### **🎯 Dynamic EQ System Objectives Achieved**
+
+1. **24-Band Architecture**: Comprehensive frequency processing with full parameter control
+2. **Advanced Processing**: Dynamics, spectral shaping, and constellation processing
+3. **Visual Integration**: Real-time analyzer with interactive point editor
+4. **Theme Integration**: Consistent theming with FieldLNF color system
+5. **Performance Optimization**: Efficient processing with minimal CPU overhead
+
+#### **🔧 Technical Architecture**
+
+**Signal Chain Integration**
+- **Default Placement**: Input → Utility/Trim → XY Pad EQ → Dynamic EQ → Band/Imager/Motion → Saturation → Reverb/Delay → Output
+- **Per-Band Detector Taps**: PreXY / PostXY / External (Motion/Reverb/Delay)
+- **Optional Placements**: Per-band tap selection for flexible routing
+
+**Parameter Schema (APVTS)**
+- **Instance Parameters**: enabled, qualityMode (Zero/Natural/Linear), oversample (1x/2x/4x/8x), analyzerOn, analyzerPrePost, latencyMs, unmaskEnable, unmaskTargetBus
+- **24 Bands**: active, type, slope, channel, phase, freqHz, gainDb, q
+- **Dynamics**: dynOn, dynMode, dynRangeDb, dynThreshDb, dynAtkMs, dynRelMs, dynHoldMs, dynLookAheadMs, dynDetectorSrc, dynDetHPHz, dynDetLPHz, dynDetQ, dynTAmount, dynSAmount
+- **Spectral**: specOn, specSelect, specResol (Low/Med/High), specAdaptive
+- **Character**: character (Clean/Subtle/Warm), charAmt
+- **Constellations**: constOn, constRoot (Auto/Pitch/Note/Hz), constHz, constNote, constCount, constSpread, constWeights, constOddEven, constTrack, constGlideMs, constFormant
+
+**State Model**
+- **DynamicEqState**: Mirrors APVTS with ValueTree serialization
+- **Band Weights**: Stored as MemoryBlock for compactness
+- **Migration**: Accepts legacy `ui_activePane == "spec"` and maps to `"dyneq"`
+
+#### **🎨 DSP Architecture**
+
+**Engine Structure**
+- **DynamicEqDSP**: Maintains 24 DynBandDSP instances
+- **Filter Types**: Peak/Shelf stubs with full Bell/Shelf/HP/LP/Notch/BP coefficient factory
+- **Slopes**: 6–96 dB/oct with Zero/Natural/Linear phase options
+- **Dynamics**: Per-band detector with HP/LP/Q, block-level mapping
+- **Spectral Framework**: FFT per band with selectivity and resolution presets
+- **Latency**: Aggregate per-band look-ahead with instance PDC
+
+**Processing Pipeline**
+1. **Input Analysis**: Real-time frequency analysis with configurable resolution
+2. **Band Processing**: 24 independent bands with full parameter control
+3. **Dynamic Processing**: Level-dependent gain changes with look-ahead
+4. **Spectral Processing**: Resonance-aware shaping within bands
+5. **Constellation Processing**: Harmonic frequency generation and tracking
+6. **Output Synthesis**: Combined processing with latency compensation
+
+#### **🎛️ UI Architecture**
+
+**Tab Structure**
+- **DynEqTab**: Hosts visuals and editor with setOpaque(true)
+- **30 Hz Timer**: Gated by visibility for performance
+- **2×16 Inspector Grid**: Using KnobCell with Managed labels
+- **Precision**: Hz 0–1 decimals (1 decimal for 1–10 kHz), dB 1 decimal, ms 0–2 decimals
+
+**Visual System**
+- **Analyzer Canvas**: Pre/post analysis with theme colors
+- **Curve Rendering**: Band Contribution Curves (light paths) and Macro EQ Curve (prominent)
+- **Dynamic Visualization**: Range paths with vertical handles
+- **Spectral Effects**: Area fills for dynamic/spectral states
+- **Theme Integration**: All colors derive from FieldLNF::theme
+
+**Interaction Design**
+- **Point Editor**: Single-click add, drag for freq/gain, wheel for Q, double-click delete
+- **Predictive Shapes**: Below 50 Hz → HP, above 10 kHz → LP, elsewhere Bell
+- **Ghost Preview**: Delayed reveal with radial clip window
+- **BandBadge**: Hover and selection feedback
+- **Floating Overlay**: Bottom-anchored control bar following band latitude
+
+#### **🎨 Color System & Theming**
+
+**Theme-Driven Palette**
+- **Macro Curve**: theme.accent with prominence (thicker stroke)
+- **Band Colors**: Generated per-band by hue-cycling around theme.accent
+- **Channel Variants**: Stereo/Mid=base, Side=increased saturation, Left/Right=hue shifts
+- **Dynamic Visualization**: Intensified gradients for dynamic/spectral states
+- **Consistency**: All colors derive from FieldLNF::theme, no hardcoded values
+
+**Visual Feedback**
+- **Band Contribution Curves**: Individual band responses with optional area fills
+- **Macro EQ Curve**: Composite response of all active bands
+- **Dynamic Regions**: Gradient areas between static and dynamic paths
+- **Spectral Underfill**: Subtle gradients indicating spectral shaping
+- **Range Handles**: Vertical indicators for dynamic range adjustment
+
+#### **🔧 Integration Points**
+
+**System Integration**
+- **XY Pad**: "Adopt XY node" with optional soft link and bypass
+- **Motion/Reverb/Delay**: Side-chain taps for per-band detector
+- **Unmask System**: Shared 256-bin perceptual loudness bus
+- **State Management**: Full APVTS integration with parameter automation
+
+**Performance Characteristics**
+- **CPU Optimization**: Efficient processing with minimal overhead
+- **Latency Management**: Aggregate per-band look-ahead with host PDC
+- **Memory Efficiency**: Compact state storage with MemoryBlock optimization
+- **Real-time Processing**: 30 Hz UI updates with visibility gating
+
+#### **📊 Advanced Features**
+
+**Dynamics Processing**
+- **Per-Band Detection**: Independent detector with HP/LP/Q filtering
+- **Look-Ahead**: 0/3/6ms options for cleaner control
+- **T/S Split**: Separate transient and sustain energy processing
+- **Mode Selection**: Down (compression) and Up (expansion)
+
+**Spectral Processing**
+- **Resolution Options**: Low/Med/High FFT density
+- **Selectivity Control**: Narrow or wide resonant bin targeting
+- **Adaptive Threshold**: Auto-adjustment to track program material
+- **Resonance Targeting**: Precise frequency-specific processing
+
+**Constellation Processing**
+- **Pitch Tracking**: YIN/ACF algorithms for fundamental detection
+- **Harmonic Generation**: Child frequency and weight calculation
+- **Odd/Even Bias**: Harmonic series control
+- **Formant Safety**: Vocal formant preservation
+- **Glide Control**: Smooth pitch transitions
+
+#### **✅ Quality Assurance**
+
+**Performance Validation**
+- **CPU Efficiency**: Minimal processing overhead
+- **Latency Accuracy**: Proper PDC reporting
+- **Memory Management**: Efficient state storage
+- **Real-time Stability**: No audio dropouts or artifacts
+
+**Integration Testing**
+- **Parameter Flow**: All controls affect audio processing correctly
+- **State Persistence**: Full save/restore functionality
+- **Visual Feedback**: Real-time curve updates
+- **Theme Consistency**: All visuals use theme colors
+
+**User Experience**
+- **Intuitive Interaction**: Natural point editor behavior
+- **Visual Clarity**: Clear curve rendering and feedback
+- **Performance**: Smooth operation at all settings
+- **Professional Quality**: Studio-grade processing capabilities
 
 ## 🎨 FIELD Logo System - Enhanced Branding with Shadow & Glow Effects
 

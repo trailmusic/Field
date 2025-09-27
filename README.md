@@ -67,6 +67,34 @@ We drew from tools like **Basslane/Basslane Pro** (low-end mono & width treatmen
 * **Rotation & Asymmetry:** S1-style field rotation and center offset
 * **Accurate Curves:** RBJ biquad-magnitude visualization (HP/LP/Shelves/Peak) with soft-knee pixel mapping
 
+#### Control Types Explained
+
+**SHUF LO, SHUF HI, SHUF XO** (Shuffle Controls)
+- **Purpose**: Control **shuffling/randomization** of stereo positioning
+- **SHUF LO**: Shuffle amount for **low frequencies** (affects bass stereo spread)
+- **SHUF HI**: Shuffle amount for **high frequencies** (affects treble stereo spread)  
+- **SHUF XO**: **Crossover frequency** that separates where LO vs HI shuffling applies
+- **Function**: Adds controlled randomness to stereo positioning to avoid "static" stereo images
+
+**XO LO, XO HI** (Crossover Controls)
+- **Purpose**: Define **frequency band boundaries** for processing
+- **XO LO**: **Low crossover point** (typically 40-400 Hz) - separates bass from midrange
+- **XO HI**: **High crossover point** (typically 800-6000 Hz) - separates midrange from treble
+- **Function**: Creates three frequency bands (LO, MID, HI) for independent processing
+
+**WIDTH, W LO, W MID, W HI** (Width Controls)
+- **Purpose**: Control **stereo width** within each frequency band
+- **WIDTH**: **Master width** control (affects all bands)
+- **W LO**: **Low frequency width** (bass stereo spread)
+- **W MID**: **Mid frequency width** (midrange stereo spread)
+- **W HI**: **High frequency width** (treble stereo spread)
+- **Function**: Expands or contracts the stereo field within each frequency range
+
+**Key Differences:**
+- **SHUF** = **Randomization** (adds controlled chaos)
+- **XO** = **Frequency boundaries** (defines processing bands)
+- **WIDTH** = **Stereo expansion** (makes things wider/narrower)
+
 ### Phase Alignment System (NEW)
 
 Professional-grade time and phase correction with advanced DSP algorithms.
