@@ -75,14 +75,14 @@ struct FieldTheme
         juce::Colour warning  { 0xFFFFC107 }; // Amber for warning levels
         juce::Colour error    { 0xFFE53935 }; // Red for error/risk levels
         
-        // Meter backgrounds and tracks
-        juce::Colour trackBase    { 0xFF4A4E54 }; // Rich dark grey for track background
-        juce::Colour trackActive  { 0xFF6A6E74 }; // Lighter grey for active track
-        juce::Colour trackBorder  { 0xFF3A3E44 }; // Darker border for track definition
+        // Meter backgrounds and tracks (darker greys)
+        juce::Colour trackBase    { 0xFF3A3E44 }; // Darker grey for track background
+        juce::Colour trackActive  { 0xFF4A4E54 }; // Medium grey for active track
+        juce::Colour trackBorder  { 0xFF2A2C30 }; // Darker border for track definition
         
-        // Meter panel colors (richer greys with more contrast)
-        juce::Colour panelLight   { 0xFF5A5E66 }; // Light grey panel
-        juce::Colour panelMedium  { 0xFF454951 }; // Medium grey panel  
+        // Meter panel colors (darker greys with more contrast)
+        juce::Colour panelLight   { 0xFF454951 }; // Darker light grey panel
+        juce::Colour panelMedium  { 0xFF3A3E44 }; // Darker medium grey panel  
         juce::Colour panelDark    { 0xFF2A2C30 }; // Dark grey panel
         juce::Colour panelBorder  { 0xFF1A1C20 }; // Darkest border
     } meters;
