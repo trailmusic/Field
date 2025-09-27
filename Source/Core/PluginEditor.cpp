@@ -289,7 +289,7 @@ void VerticalSlider3D::paint (juce::Graphics& g)
     
     // Get accent color from look and feel
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    auto accentColor = lf ? lf->theme.accent : juce::Colours::cyan;
+    auto accentColor = lf->theme.accent;
     
     // Add accent color back glow
     g.setColour (accentColor.withAlpha (0.3f));
@@ -347,9 +347,9 @@ void VerticalSlider3D::paint (juce::Graphics& g)
 void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> handleRect)
 {
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    const auto accent = lf ? lf->theme.accent : juce::Colour (0xFF5AA9E6);
-    const auto shadowDark = lf ? lf->theme.shadowDark : juce::Colour (0xFF1A1C20);
-    const auto shadowLight = lf ? lf->theme.shadowLight : juce::Colour (0xFF60646C);
+    const auto accent = lf->theme.accent;
+    const auto shadowDark = lf->theme.shadowDark;
+    const auto shadowLight = lf->theme.shadowLight;
     
     // Create gradient for 3D effect
     juce::ColourGradient gradient (accent.brighter (0.3f), 
@@ -401,8 +401,8 @@ void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> h
 void VerticalSlider3D::drawMarkers (juce::Graphics& g, juce::Rectangle<float> trackRect)
 {
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    const auto textColor = lf ? lf->theme.textMuted : juce::Colour (0xFF9A9DA5);
-    const auto accentColor = lf ? lf->theme.accent : juce::Colours::cyan;
+    const auto textColor = lf->theme.textMuted;
+    const auto accentColor = lf->theme.accent;
     
     g.setColour (textColor);
     g.setFont (juce::Font (9.0f, juce::Font::bold));
@@ -464,29 +464,26 @@ void VerticalSlider3D::drawMarkers (juce::Graphics& g, juce::Rectangle<float> tr
 void VerticalSlider3D::drawMetallicTrack (juce::Graphics& g, juce::Rectangle<float> trackRect)
 {
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    const auto panel = lf ? lf->theme.panel : juce::Colour (0xFF3A3D45);
-    const auto shadowDark = lf ? lf->theme.shadowDark : juce::Colour (0xFF1A1C20);
-    const auto shadowLight = lf ? lf->theme.shadowLight : juce::Colour (0xFF60646C);
     
-    // Track background
-    g.setColour (panel.darker (0.2f));
+    // Track background using meter colors
+    g.setColour (lf->theme.meters.trackBase);
     g.fillRoundedRectangle (trackRect, 4.0f);
     
     // Inner shadow
-    g.setColour (shadowDark.withAlpha (0.3f));
+    g.setColour (lf->theme.meters.trackBorder);
     g.drawRoundedRectangle (trackRect.reduced (0.5f), 4.0f, 1.0f);
     
     // Highlight
-    g.setColour (shadowLight.withAlpha (0.2f));
+    g.setColour (lf->theme.meters.trackActive.withAlpha (0.3f));
     g.drawRoundedRectangle (trackRect.reduced (1.0f), 4.0f, 0.5f);
 }
 
 void VerticalSlider3D::drawMetallicBackground (juce::Graphics& g, juce::Rectangle<float> backgroundRect)
 {
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    const auto panel = lf ? lf->theme.panel : juce::Colour (0xFF3A3D45);
-    const auto shadowDark = lf ? lf->theme.shadowDark : juce::Colour (0xFF1A1C20);
-    const auto shadowLight = lf ? lf->theme.shadowLight : juce::Colour (0xFF60646C);
+    const auto panel = lf->theme.meters.panelMedium;
+    const auto shadowDark = lf->theme.shadowDark;
+    const auto shadowLight = lf->theme.shadowLight;
     
     // Background fill
     g.setColour (panel);
@@ -1758,7 +1755,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     
     // Style labels with knobcell color background
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    auto sh = lf ? lf->theme.sh : juce::Colour (0xFF2A2C30);
+    auto sh = lf->theme.meters.panelDark;
     
     auto labelStyle = [&](juce::Label& label) {
         label.setColour (juce::Label::backgroundColourId, sh.withAlpha (0.15f));

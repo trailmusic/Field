@@ -63,6 +63,29 @@ struct FieldTheme
         juce::Colour scoop;
         juce::Colour monoShade;
     } eq;
+
+    // Meter colors - rich greys with high contrast
+    struct MeterColors {
+        // Correlation meter colors
+        juce::Colour positive { 0xFF66BB6A }; // Rich green for positive correlation
+        juce::Colour negative { 0xFFE57373 }; // Rich red for negative correlation
+        
+        // Level meter colors (warning/error states)
+        juce::Colour safe     { 0xFF5AA9E6 }; // Ocean blue for safe levels
+        juce::Colour warning  { 0xFFFFC107 }; // Amber for warning levels
+        juce::Colour error    { 0xFFE53935 }; // Red for error/risk levels
+        
+        // Meter backgrounds and tracks
+        juce::Colour trackBase    { 0xFF4A4E54 }; // Rich dark grey for track background
+        juce::Colour trackActive  { 0xFF6A6E74 }; // Lighter grey for active track
+        juce::Colour trackBorder  { 0xFF3A3E44 }; // Darker border for track definition
+        
+        // Meter panel colors (richer greys with more contrast)
+        juce::Colour panelLight   { 0xFF5A5E66 }; // Light grey panel
+        juce::Colour panelMedium  { 0xFF454951 }; // Medium grey panel  
+        juce::Colour panelDark    { 0xFF2A2C30 }; // Dark grey panel
+        juce::Colour panelBorder  { 0xFF1A1C20 }; // Darkest border
+    } meters;
 };
 
 class FieldLNF : public juce::LookAndFeel_V4

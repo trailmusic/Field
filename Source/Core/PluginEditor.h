@@ -2138,13 +2138,13 @@ private:
             if (corr >= 0.0f)
             {
                 const float h = (track.getHeight() * 0.5f) * corr;
-                g.setColour (juce::Colour (0xFF66BB6A));
+                g.setColour (lnf.theme.meters.positive);
                 g.fillRoundedRectangle (juce::Rectangle<float> (track.getX(), midY - h, track.getWidth(), h), 2.0f);
             }
             else
             {
                 const float h = (track.getHeight() * 0.5f) * (-corr);
-                g.setColour (juce::Colour (0xFFE57373));
+                g.setColour (lnf.theme.meters.negative);
                 g.fillRoundedRectangle (juce::Rectangle<float> (track.getX(), midY, track.getWidth(), h), 2.0f);
             }
 
@@ -2193,8 +2193,8 @@ private:
                 g.fillRoundedRectangle (b, 4.0f);
                 // Track
                 {
-                    juce::Colour base = lnf.theme.hl.withAlpha (0.30f);
-                    juce::Colour base2= base.overlaidWith (juce::Colours::black.withAlpha (0.15f));
+                    juce::Colour base = lnf.theme.meters.trackBase;
+                    juce::Colour base2 = lnf.theme.meters.trackActive;
                     juce::ColourGradient grad (base, b.getX(), b.getY(), base2, b.getX(), b.getBottom(), false);
                     juce::FillType ft (grad);
                     g.setFillType (ft);
@@ -2299,12 +2299,12 @@ private:
                 const float rmsDb = juce::Decibels::gainToDecibels (juce::jlimit (0.000001f, 1.0f, rms), -60.0f);
                 const bool risk = rmsDb >= -1.0f;
                 const bool warn = !risk && rmsDb >= -6.0f;
-                juce::Colour safe1 = lnf.theme.accent.withAlpha (0.55f);
-                juce::Colour safe2 = lnf.theme.accent.withAlpha (0.85f);
-                juce::Colour warn1 = juce::Colour (0xFFFFC107).withAlpha (0.70f);
-                juce::Colour warn2 = juce::Colour (0xFFFFA000).withAlpha (0.90f);
-                juce::Colour risk1 = juce::Colour (0xFFFF8A80).withAlpha (0.80f);
-                juce::Colour risk2 = juce::Colour (0xFFE53935).withAlpha (0.95f);
+                juce::Colour safe1 = lnf.theme.meters.safe.withAlpha (0.55f);
+                juce::Colour safe2 = lnf.theme.meters.safe.withAlpha (0.85f);
+                juce::Colour warn1 = lnf.theme.meters.warning.withAlpha (0.70f);
+                juce::Colour warn2 = lnf.theme.meters.warning.withAlpha (0.90f);
+                juce::Colour risk1 = lnf.theme.meters.error.withAlpha (0.80f);
+                juce::Colour risk2 = lnf.theme.meters.error.withAlpha (0.95f);
                 auto c1 = risk ? risk1 : (warn ? warn1 : safe1);
                 auto c2 = risk ? risk2 : (warn ? warn2 : safe2);
                 juce::ColourGradient grad (c1, b.getCentreX(), b.getBottom() - h,
