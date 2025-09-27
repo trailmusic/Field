@@ -95,9 +95,9 @@ private:
     {
         // Imaging widths for Band: Global + per-band
         makeCell (width,    widthV,    "WIDTH",     "width");
-        makeCell (widthLo,  widthLoV,  "WIDTH LO",  "width_lo");
-        makeCell (widthMid, widthMidV, "WIDTH MID", "width_mid");
-        makeCell (widthHi,  widthHiV,  "WIDTH HI",  "width_hi");
+        makeCell (widthLo,  widthLoV,  "W LO",  "width_lo");
+        makeCell (widthMid, widthMidV, "W MID", "width_mid");
+        makeCell (widthHi,  widthHiV,  "W HI",  "width_hi");
 
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
         // Row A: WIDTH, WIDTH LO, WIDTH MID, WIDTH HI, [12 empty]

@@ -97,18 +97,18 @@ private:
     {
         // WIDTH + band widths
         makeCell (width,    widthV,    "WIDTH",     "width");
-        makeCell (widthLo,  widthLoV,  "WIDTH LO",  "width_lo");
-        makeCell (widthMid, widthMidV, "WIDTH MID", "width_mid");
-        makeCell (widthHi,  widthHiV,  "WIDTH HI",  "width_hi");
+        makeCell (widthLo,  widthLoV,  "W LO",  "width_lo");
+        makeCell (widthMid, widthMidV, "W MID", "width_mid");
+        makeCell (widthHi,  widthHiV,  "W HI",  "width_hi");
 
         // Crossover controls
         makeCell (xoLo,     xoLoV,     "XO LO",     "xover_lo_hz");
         makeCell (xoHi,     xoHiV,     "XO HI",     "xover_hi_hz");
 
         // Shuffle controls
-        makeCell (shufLo,   shufLoV,   "SHUF LO",   "shuffler_lo_pct");
-        makeCell (shufHi,   shufHiV,   "SHUF HI",   "shuffler_hi_pct");
-        makeCell (shufX,    shufXV,    "SHUF XO",   "shuffler_xover_hz");
+        makeCell (shufLo,   shufLoV,   "SHF L",   "shuffler_lo_pct");
+        makeCell (shufHi,   shufHiV,   "SHF H",   "shuffler_hi_pct");
+        makeCell (shufX,    shufXV,    "SHF X",   "shuffler_xover_hz");
 
         // Designer controls (7): Side Tilt, Pivot, Auto Depth/Thr, Attack, Release, Max
         makeCell (sideTiltDbOct, valSideTilt, "TILT S",  "width_side_tilt_db_oct");
