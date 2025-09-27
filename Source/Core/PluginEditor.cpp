@@ -763,25 +763,7 @@ void XYPad::drawImagingOverlays (juce::Graphics& g, juce::Rectangle<float> b)
         drawDashed (xLo);
         drawDashed (xHi);
 
-        // band tags with accent-blue backgrounds at the top of the pad
-        auto loRect  = juce::Rectangle<float> (b.getX(), b.getY() + 4.0f, xLo - b.getX(), 16.0f);
-        auto midRect = juce::Rectangle<float> (xLo,      b.getY() + 4.0f, xHi - xLo,      16.0f);
-        auto hiRect  = juce::Rectangle<float> (xHi,      b.getY() + 4.0f, b.getRight()-xHi,16.0f);
-
-        auto badge = [&] (juce::Rectangle<float> r, const juce::String& txt)
-        {
-            auto bg = (lf ? lf->theme.accent : juce::Colours::cornflowerblue).withAlpha (0.35f);
-            g.setColour (bg);
-            g.fillRoundedRectangle (r.reduced (2.0f), 6.0f);
-            g.setColour (bg.darker (0.35f));
-            g.drawRoundedRectangle (r.reduced (2.0f), 6.0f, 1.0f);
-            g.setColour (lf ? lf->theme.text : juce::Colours::white);
-            g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
-            g.drawText (txt, r, juce::Justification::centred);
-        };
-        badge (loRect,  "LO");
-        badge (midRect, "MID");
-        badge (hiRect,  "HI");
+        // LO MID HI labels removed - now shown in Band tab
     }
 
     // 2) True M/S rotation renderer (energy circle + rotated basis + S-curve)

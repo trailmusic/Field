@@ -1,6 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "StereoFieldEngine.h"
+#include "../Core/FieldLookAndFeel.h"
 
 // Band Visual Pane: Width mode visuals for Band tab
 class BandVisualPane : public juce::Component, private juce::Timer
@@ -74,6 +75,27 @@ private:
         drawBand (r.getX(), xLo, widthLo, cLo);
         drawBand (xLo, xHi, widthMid, cMid);
         drawBand (xHi, r.getRight(), widthHi, cHi);
+
+        // LO MID HI labels at the top of the visual area
+        auto loRect  = juce::Rectangle<float> (r.getX(), r.getY() + 4.0f, xLo - r.getX(), 16.0f);
+        auto midRect = juce::Rectangle<float> (xLo,      r.getY() + 4.0f, xHi - xLo,      16.0f);
+        auto hiRect  = juce::Rectangle<float> (xHi,      r.getY() + 4.0f, r.getRight()-xHi,16.0f);
+
+        auto badge = [&] (juce::Rectangle<float> rect, const juce::String& txt)
+        {
+            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+            auto bg = (lf ? lf->theme.accent : juce::Colours::cornflowerblue).withAlpha (0.35f);
+            g.setColour (bg);
+            g.fillRoundedRectangle (rect.reduced (2.0f), 6.0f);
+            g.setColour (bg.darker (0.35f));
+            g.drawRoundedRectangle (rect.reduced (2.0f), 6.0f, 1.0f);
+            g.setColour (lf ? lf->theme.text : juce::Colours::white);
+            g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
+            g.drawText (txt, rect, juce::Justification::centred);
+        };
+        badge (loRect,  "LO");
+        badge (midRect, "MID");
+        badge (hiRect,  "HI");
     }
 
     // Background waveform for Width view (mono Mid and Side envelopes)
