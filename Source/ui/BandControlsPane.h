@@ -110,15 +110,17 @@ private:
         makeCell (shufHi,   shufHiV,   "SHUF HI",   "shuffler_hi_pct");
         makeCell (shufX,    shufXV,    "SHUF XO",   "shuffler_xover_hz");
 
-        // Designer controls (5): Side Tilt, Pivot, Auto Depth/Thr, Attack, Release, Max
+        // Designer controls (7): Side Tilt, Pivot, Auto Depth/Thr, Attack, Release, Max
         makeCell (sideTiltDbOct, valSideTilt, "TILT S",  "width_side_tilt_db_oct");
         makeCell (pivotHz,       valPivot,    "PIVOT",   "width_tilt_pivot_hz");
         makeCell (autoDepth,     valAutoDepth,"AUTO DEP","width_auto_depth");
         makeCell (autoThrDb,     valAutoThr,  "AUTO THR","width_auto_thr_db");
         makeCell (autoAtkMs,     valAtk,      "ATT",     "width_auto_atk_ms");
+        makeCell (autoRelMs,     valRel,      "REL",     "width_auto_rel_ms");
+        makeCell (maxWidth,      valMax,      "MAX",     "width_max");
 
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
-        // Row A: WIDTH cluster + XO controls + SHUF controls + Designer 3
+        // Row A: WIDTH cluster + XO controls + SHUF controls + Designer 5
         push (ownedCells[0].get()); // WIDTH
         push (ownedCells[1].get()); // WIDTH LO
         push (ownedCells[2].get()); // WIDTH MID
@@ -131,8 +133,11 @@ private:
         push (ownedCells[9].get()); // TILT S
         push (ownedCells[10].get()); // PIVOT
         push (ownedCells[11].get()); // AUTO DEP
-        for (int i = 0; i < 4; ++i) gridOrder.push_back (nullptr);
-        // Row B
+        push (ownedCells[12].get()); // AUTO THR
+        push (ownedCells[13].get()); // ATT
+        push (ownedCells[14].get()); // REL
+        push (ownedCells[15].get()); // MAX
+        // Row B: All null for now (can add more controls later)
         for (int i = 0; i < 16; ++i) gridOrder.push_back (nullptr);
 
         // Fill all null slots with styled metallic blue blanks

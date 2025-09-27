@@ -188,37 +188,89 @@ private:
 
     void drawShufflerStrip (juce::Graphics& g, juce::Rectangle<float> r)
     {
-        // Shuffler width strip (bottom, 3x taller)
-        auto band = r.removeFromBottom (36.0f);
-        auto xAtHz = [&](float hz){ const float minHz=20.0f, maxHz=20000.0f; const float t=(float)(std::log10(juce::jlimit(minHz,maxHz,hz)/minHz)/std::log10(maxHz/minHz)); return juce::jmap(t,0.0f,1.0f,r.getX(),r.getRight()); };
+        // Shuffler width strip (bottom, 6x taller - doubled from 36px to 72px)
+        auto band = r.removeFromBottom (72.0f);
+        auto xAtHz = [&](float hz){ const float minHz=20.0f, maxHz=20000.0f; const float t=(float)(std::log10(juce::jlimit(minHz,maxHz,hz)/minHz)/std::log10(maxHz/minHz)); return juce::jmap(t,0.0f,1.0f,band.getX(),band.getRight()); };
         const float xX = xAtHz (juce::jlimit (150.0f, 2000.0f, shufXHz));
 
         auto widthH = [&] (float pct)
         {
-            const float h = juce::jmap (juce::jlimit (0.0f, 200.0f, pct), 0.0f, 200.0f, 4.0f, band.getHeight() - 4.0f);
-            return juce::jmax (4.0f, h);
+            const float h = juce::jmap (juce::jlimit (0.0f, 200.0f, pct), 0.0f, 200.0f, 8.0f, band.getHeight() - 8.0f);
+            return juce::jmax (8.0f, h);
         };
 
         auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-        auto acc = lf ? lf->theme.accent : juce::Colours::aqua;
         auto gridCol = lf ? lf->theme.text : juce::Colours::white;
+        
+        // More sophisticated colors using theme palette
+        auto loColor = lf ? lf->theme.eq.bass : juce::Colour (0xFF7FB069); // Moss green
+        auto hiColor = lf ? lf->theme.eq.air : juce::Colour (0xFF8B6FA1);  // Plum purple
+        auto accentColor = lf ? lf->theme.accent : juce::Colour (0xFF5AA9E6);
 
-        // left segment (Lo%)
-        g.setColour (acc.withAlpha (0.25f));
-        g.fillRect (juce::Rectangle<float> (band.getX(), band.getBottom() - widthH (shufLoPct), xX - band.getX(), widthH (shufLoPct)));
-        // right segment (Hi%)
-        g.setColour (acc.withAlpha (0.35f));
-        g.fillRect (juce::Rectangle<float> (xX, band.getBottom() - widthH (shufHiPct), band.getRight() - xX, widthH (shufHiPct)));
-
-        // crossover tick and optional full-height dotted discovery guide
-        g.setColour (gridCol.withAlpha (0.8f));
+        // Background grid with center lines always visible
+        g.setColour (gridCol.withAlpha (0.15f));
+        g.fillRect (band);
+        
+        // Center vertical line (always visible)
+        g.setColour (gridCol.withAlpha (0.6f));
         g.drawVerticalLine (juce::roundToInt (xX), band.getY(), band.getBottom());
-        g.setColour (gridCol.withAlpha (0.3f));
-        for (int i = 0; i < 3; ++i)
+        
+        // Center horizontal line (always visible)
+        const float centerY = band.getY() + band.getHeight() * 0.5f;
+        g.setColour (gridCol.withAlpha (0.4f));
+        g.drawHorizontalLine (juce::roundToInt (centerY), band.getX(), band.getRight());
+        
+        // Additional horizontal grid lines
+        g.setColour (gridCol.withAlpha (0.2f));
+        for (int i = 1; i <= 2; ++i)
         {
             const float y = band.getY() + i * (band.getHeight() / 3.0f);
             g.drawHorizontalLine (juce::roundToInt (y), band.getX(), band.getRight());
         }
+
+        // Left segment (Lo%) with sophisticated color
+        g.setColour (loColor.withAlpha (0.4f));
+        g.fillRect (juce::Rectangle<float> (band.getX(), band.getBottom() - widthH (shufLoPct), xX - band.getX(), widthH (shufLoPct)));
+        
+        // Right segment (Hi%) with sophisticated color  
+        g.setColour (hiColor.withAlpha (0.4f));
+        g.fillRect (juce::Rectangle<float> (xX, band.getBottom() - widthH (shufHiPct), band.getRight() - xX, widthH (shufHiPct)));
+
+        // Border around segments
+        g.setColour (loColor.withAlpha (0.7f));
+        g.drawRect (juce::Rectangle<float> (band.getX(), band.getBottom() - widthH (shufLoPct), xX - band.getX(), widthH (shufLoPct)), 1.0f);
+        
+        g.setColour (hiColor.withAlpha (0.7f));
+        g.drawRect (juce::Rectangle<float> (xX, band.getBottom() - widthH (shufHiPct), band.getRight() - xX, widthH (shufHiPct)), 1.0f);
+
+        // Units and labels
+        g.setColour (gridCol.withAlpha (0.8f));
+        g.setFont (juce::Font (juce::FontOptions (10.0f).withStyle ("Bold")));
+        
+        // LO label
+        g.drawText ("LO", juce::Rectangle<float> (band.getX() + 4, band.getY() + 2, 20, 12), juce::Justification::centredLeft);
+        
+        // HI label  
+        g.drawText ("HI", juce::Rectangle<float> (band.getRight() - 24, band.getY() + 2, 20, 12), juce::Justification::centredRight);
+        
+        // Percentage values
+        g.setFont (juce::Font (juce::FontOptions (9.0f)));
+        g.setColour (gridCol.withAlpha (0.7f));
+        
+        // LO percentage
+        g.drawText (juce::String (shufLoPct, 0) + "%", 
+                   juce::Rectangle<float> (band.getX() + 4, centerY - 6, 30, 12), 
+                   juce::Justification::centredLeft);
+        
+        // HI percentage
+        g.drawText (juce::String (shufHiPct, 0) + "%", 
+                   juce::Rectangle<float> (band.getRight() - 34, centerY - 6, 30, 12), 
+                   juce::Justification::centredRight);
+        
+        // Crossover frequency
+        g.drawText (juce::String (shufXHz, 0) + " Hz", 
+                   juce::Rectangle<float> (xX - 25, band.getY() + 2, 50, 12), 
+                   juce::Justification::centred);
     }
 
     // Data members
