@@ -38,6 +38,11 @@ private:
         g.setColour (grid);
         g.drawRoundedRectangle (r, 6.0f, 1.0f);
 
+        // Account for SHUF strip area - bands should only use the area above it
+        const float shufStripHeight = 72.0f; // SHUF strip height
+        const float availableHeight = r.getHeight() - shufStripHeight;
+        const float bandAreaBottom = r.getBottom() - shufStripHeight;
+
         // Log freq mapping
         auto xAtHz = [&](float hz)
         {
@@ -53,15 +58,23 @@ private:
         auto drawBand = [&](float x0, float x1, float width, juce::Colour c)
         {
             width = juce::jlimit (0.0f, 2.0f, width);
-            const float h = juce::jmap (width, 0.0f, 2.0f, r.getHeight() * 0.08f, r.getHeight());
-            juce::Rectangle<float> bar (x0, r.getBottom() - h, juce::jmax (6.0f, x1 - x0), h);
-            g.setColour (c.withAlpha (0.30f)); g.fillRoundedRectangle (bar, 4.0f);
+            // Don't draw anything if width is 0 - no white line
+            if (width <= 0.0f) return;
+            
+            const float h = juce::jmap (width, 0.0f, 2.0f, 0.0f, availableHeight);
+            juce::Rectangle<float> bar (x0, bandAreaBottom - h, juce::jmax (6.0f, x1 - x0), h);
+            // New palette: more visible alpha values per band
+            float fillAlpha = 0.35f; // Default for LO - more visible
+            if (c == juce::Colour (0xFF6079D6)) fillAlpha = 0.32f; // MID
+            if (c == juce::Colour (0xFFB08ED6)) fillAlpha = 0.30f; // HI
+            g.setColour (c.withAlpha (fillAlpha)); g.fillRoundedRectangle (bar, 4.0f);
             g.setColour (c.withAlpha (0.95f)); g.drawRoundedRectangle (bar, 4.0f, 2.0f);
         };
 
-        const auto cLo  = juce::Colours::aqua;
-        const auto cMid = juce::Colours::yellow;
-        const auto cHi  = juce::Colours::orange;
+        // New sophisticated band color palette
+        const auto cLo  = juce::Colour (0xFF2AA88F);  // LO: Teal green
+        const auto cMid = juce::Colour (0xFF6079D6); // MID: Blue-purple  
+        const auto cHi  = juce::Colour (0xFFB08ED6); // HI: Light purple
         drawBand (r.getX(), xLo, widthLo, cLo);
         drawBand (xLo, xHi, widthMid, cMid);
         drawBand (xHi, r.getRight(), widthHi, cHi);
@@ -111,8 +124,12 @@ private:
             if (i == 0) { mPath.startNewSubPath (x, yM); sPath.startNewSubPath (x, yS); }
             else        { mPath.lineTo (x, yM);          sPath.lineTo (x, yS); }
         }
-        g.setColour (juce::Colours::white.withAlpha (0.10f)); g.strokePath (mPath, juce::PathStrokeType (1.0f));
-        g.setColour (juce::Colours::aqua .withAlpha (0.10f)); g.strokePath (sPath, juce::PathStrokeType (1.0f));
+        // Only draw waveform paths if there's actual audio data
+        if (rmsPost > 1.0e-6f)
+        {
+            g.setColour (juce::Colours::white.withAlpha (0.10f)); g.strokePath (mPath, juce::PathStrokeType (1.0f));
+            g.setColour (juce::Colours::aqua .withAlpha (0.10f)); g.strokePath (sPath, juce::PathStrokeType (1.0f));
+        }
     }
 
     // Live measured width overlay using engine (|S|/(|M|+eps) per band)
@@ -122,7 +139,28 @@ private:
         const auto& wp = engine.getWidthPerBandPost(); if ((int) wp.size() < B) return;
         // polyline across bands mapped to X by band center and Y by width
         auto xAtHz = [&](double hz){ const double minHz=20.0, maxHz=20000.0; double t=(std::log10 (juce::jlimit(minHz,maxHz,hz)/minHz)/std::log10(maxHz/minHz)); return juce::jmap ((float)t, 0.0f,1.0f, r.getX(), r.getRight()); };
-        auto yAtW  = [&](float w){ const float h = juce::jmap (juce::jlimit (0.0f,2.0f,w), 0.0f, 2.0f, r.getHeight()*0.08f, r.getHeight()); return r.getBottom() - h; };
+        const float shufStripHeight = 72.0f; // SHUF strip height
+        const float availableHeight = r.getHeight() - shufStripHeight;
+        const float bandAreaBottom = r.getBottom() - shufStripHeight;
+        auto yAtW  = [&](float w){ 
+            if (w <= 0.0f) return bandAreaBottom;
+            const float h = juce::jmap (juce::jlimit (0.0f,2.0f,w), 0.0f, 2.0f, 0.0f, availableHeight); 
+            return bandAreaBottom - h; 
+        };
+        
+        // Skip drawing if all width values are 0
+        bool allZero = true;
+        for (int bi = 0; bi < B; ++bi)
+        {
+            if (wp[(size_t) bi] > 0.0f)
+            {
+                allZero = false;
+                break;
+            }
+        }
+        
+        if (allZero) return;
+        
         juce::Path p; bool started=false;
         for (int bi = 0; bi < B; ++bi)
         {
@@ -154,7 +192,14 @@ private:
         drawArrow (xLo); drawArrow (xHi);
 
         // Vertical drag hints for band value lines (up/down arrows at band centers)
-        auto yAtW  = [&](float w){ const float h = juce::jmap (juce::jlimit (0.0f,2.0f,w), 0.0f, 2.0f, r.getHeight()*0.08f, r.getHeight()); return r.getBottom() - h; };
+        const float shufStripHeight = 72.0f; // SHUF strip height
+        const float availableHeight = r.getHeight() - shufStripHeight;
+        const float bandAreaBottom = r.getBottom() - shufStripHeight;
+        auto yAtW  = [&](float w){ 
+            if (w <= 0.0f) return bandAreaBottom; // No white line at 0 width
+            const float h = juce::jmap (juce::jlimit (0.0f,2.0f,w), 0.0f, 2.0f, 0.0f, availableHeight); 
+            return bandAreaBottom - h; 
+        };
         const float cxLo  = (r.getX() + xLo) * 0.5f;
         const float cxMid = (xLo + xHi) * 0.5f;
         const float cxHi  = (xHi + r.getRight()) * 0.5f;
@@ -192,9 +237,9 @@ private:
         auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
         auto gridCol = lf ? lf->theme.text : juce::Colours::white;
         
-        // More sophisticated colors using theme palette
-        auto loColor = lf ? lf->theme.eq.bass : juce::Colour (0xFF7FB069); // Moss green
-        auto hiColor = lf ? lf->theme.eq.air : juce::Colour (0xFF8B6FA1);  // Plum purple
+        // Updated colors using new sophisticated palette
+        auto loColor = juce::Colour (0xFF2AA88F); // LO: Teal green (matches band colors)
+        auto hiColor = juce::Colour (0xFFB08ED6); // HI: Light purple (matches band colors)
         auto accentColor = lf ? lf->theme.accent : juce::Colour (0xFF5AA9E6);
 
         // Background grid
@@ -226,7 +271,13 @@ private:
         g.setColour (gridCol.withAlpha (0.4f));
         g.drawHorizontalLine (juce::roundToInt (centerY), band.getX(), band.getRight());
         
-        // Additional horizontal grid lines removed - were causing unwanted dividers
+        // Additional horizontal grid lines at thirds
+        g.setColour (gridCol.withAlpha (0.3f));
+        for (int i = 1; i <= 2; ++i)
+        {
+            const float y = band.getY() + i * (band.getHeight() / 3.0f);
+            g.drawHorizontalLine (juce::roundToInt (y), band.getX(), band.getRight());
+        }
 
         // Units and labels
         g.setColour (gridCol.withAlpha (0.8f));
@@ -242,6 +293,8 @@ private:
         g.setFont (juce::Font (juce::FontOptions (9.0f)));
         g.setColour (gridCol.withAlpha (0.7f));
         
+        // Use the already calculated centerY from above
+        
         // LO percentage
         g.drawText (juce::String (shufLoPct, 0) + "%", 
                    juce::Rectangle<float> (band.getX() + 4, centerY - 6, 30, 12), 
@@ -254,7 +307,7 @@ private:
         
         // Crossover frequency
         g.drawText (juce::String (shufXHz, 0) + " Hz", 
-                   juce::Rectangle<float> (xX - 25, band.getY() + 2, 50, 12), 
+                   juce::Rectangle<float> (xX - 30, band.getY() + 4, 60, 14), 
                    juce::Justification::centred);
     }
     
@@ -298,13 +351,13 @@ private:
     // Engine integration
     StereoFieldEngine engine;
     bool enginePrepared = false;
-    
+
     // Interaction state for width editor
     enum class DragKind { None, XLo, XHi, BandLo, BandMid, BandHi };
     DragKind drag { DragKind::None };
     float dragStartX = 0.0f;
     float dragStartVal = 0.0f;
-    
+
     // Mouse interaction for draggable crossovers and width values
     void mouseDown (const juce::MouseEvent& e) override
     {
@@ -359,8 +412,10 @@ private:
             const float newHz = juce::jlimit (juce::jmax (xoverLoHz + 10.0f, 800.0f), 6000.0f, hzAtX (e.position.x));
             xoverHiHz = newHz; if (onParamEdit) onParamEdit ("xover_hi_hz", xoverHiHz); repaint(); return;
         }
-        // Bands: map vertical drag to width 0..2
-        const float dy = (dragStartX - e.position.y) / juce::jmax (1.0f, r.getHeight());
+        // Bands: map vertical drag to width 0..2, but limit drag area to avoid SHUF strip
+        const float shufStripHeight = 72.0f; // SHUF strip height
+        const float availableHeight = r.getHeight() - shufStripHeight;
+        const float dy = (dragStartX - e.position.y) / juce::jmax (1.0f, availableHeight);
         const float delta = dy * 2.0f; // 1.0 height => +/-2.0 width
         float v = juce::jlimit (0.0f, 2.0f, dragStartVal + delta);
         if (drag == DragKind::BandLo)  { widthLo = v;  if (onParamEdit) onParamEdit ("width_lo",  widthLo); }
@@ -370,7 +425,7 @@ private:
     }
     
     void mouseUp (const juce::MouseEvent&) override { drag = DragKind::None; setMouseCursor (juce::MouseCursor::NormalCursor); }
-    
+
 public:
     // Callbacks
     std::function<void(const juce::String&, const juce::var&)> onUiChange;

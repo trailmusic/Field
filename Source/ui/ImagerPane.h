@@ -421,7 +421,11 @@ private:
         const auto& wp = engine.getWidthPerBandPost(); if ((int) wp.size() < B) return;
         // polyline across bands mapped to X by band center and Y by width
         auto xAtHz = [&](double hz){ const double minHz=20.0, maxHz=20000.0; double t=(std::log10 (juce::jlimit(minHz,maxHz,hz)/minHz)/std::log10(maxHz/minHz)); return juce::jmap ((float)t, 0.0f,1.0f, r.getX(), r.getRight()); };
-        auto yAtW  = [&](float w){ const float h = juce::jmap (juce::jlimit (0.0f,2.0f,w), 0.0f, 2.0f, r.getHeight()*0.08f, r.getHeight()); return r.getBottom() - h; };
+        auto yAtW  = [&](float w){ 
+            if (w <= 0.0f) return r.getBottom(); // No white line at 0 width
+            const float h = juce::jmap (juce::jlimit (0.0f,2.0f,w), 0.0f, 2.0f, 0.0f, r.getHeight()); 
+            return r.getBottom() - h; 
+        };
         juce::Path p; bool started=false;
         for (int bi = 0; bi < B; ++bi)
         {
