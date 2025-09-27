@@ -65,9 +65,6 @@ private:
             juce::Rectangle<float> bar (x0, r.getBottom() - h, juce::jmax (6.0f, x1 - x0), h);
             g.setColour (c.withAlpha (0.30f)); g.fillRoundedRectangle (bar, 4.0f);
             g.setColour (c.withAlpha (0.95f)); g.drawRoundedRectangle (bar, 4.0f, 2.0f);
-            // Top region marker like XY Pad
-            auto top = juce::Rectangle<float> (bar.getX(), r.getY() + 2.0f, bar.getWidth(), juce::jlimit (4.0f, 8.0f, r.getHeight()*0.05f));
-            g.setColour (c.withAlpha (0.55f)); g.fillRoundedRectangle (top, 2.0f);
         };
 
         const auto cLo  = juce::Colours::aqua;
