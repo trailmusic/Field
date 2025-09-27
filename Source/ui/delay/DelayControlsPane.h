@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "../Components/KnobCell.h"
 #include "../../ui/Layout.h"
+#include "../../Core/FieldLookAndFeel.h"
 
 // DelayControlsPane: 2x16 flat grid container for Delay controls.
 // Scaffolding-only: initially populated with styled empty KnobCells.
@@ -90,10 +91,40 @@ private:
         addAndMakeVisible (delayFreeze);
         addAndMakeVisible (delayPingpong);
         addAndMakeVisible (delayDuckPost);
-        addAndMakeVisible (delayMode);
-        addAndMakeVisible (delayGridFlavor);
-        addAndMakeVisible (delayDuckSource);
-        addAndMakeVisible (delayFilterType);
+        
+        // Define makeDelayComboCell function first
+        auto makeDelayComboCell = [&](juce::ComboBox& c, const juce::String& cap, const char* pid)
+        {
+            if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr)
+            {
+                return;
+            }
+            
+            c.setName (cap);
+            // Apply Delay metallic styling to the actual combo, not the wrapper
+            setAreaMetallicForCell (c, MetallicKind::Delay);
+            auto cell = std::make_unique<SimpleSwitchCell> (c);
+            cell->setCaption (cap);
+            cell->setShowBorder (true);
+            addAndMakeVisible (*cell);
+            switchCells.emplace_back (cell.get());
+            ownedSwitches.emplace_back (std::move (cell));
+            cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, pid, c));
+        };
+        
+        // Wrap ComboBoxes in SimpleSwitchCell for consistent spacing
+        makeDelayComboCell (delayMode, "Mode", "delay_mode");
+        makeDelayComboCell (delayGridFlavor, "Grid", "delay_grid_flavor");
+        makeDelayComboCell (delayDuckSource, "Source", "delay_duck_source");
+        makeDelayComboCell (delayFilterType, "Filter", "delay_filter_type");
+
+        // Apply Delay metallic styling to ToggleButtons
+        for (juce::ToggleButton* button : { &delayEnabled, &delaySync, &delayKillDry, &delayFreeze, &delayPingpong, &delayDuckPost })
+        {
+            setAreaMetallicForCell (*button, MetallicKind::Delay);
+        }
+
+        // ComboBoxes are now wrapped in SimpleSwitchCell, so no direct styling needed
 
         btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, "delay_enabled",      delayEnabled));
         cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, "delay_mode",       delayMode));
@@ -121,10 +152,9 @@ private:
             auto cell = std::make_unique<KnobCell> (s, v, cap);
             cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             cell->setValueLabelGap (labelGapPx);
-            // Styling: Delay metallic (light yellowish-green) + border
+            // Styling: Delay metallic using new enum-based system
             cell->getProperties().set ("delayThemeBorderTextGrey", true);
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("delayMetallic", true);
+            setAreaMetallicForCell (*cell, MetallicKind::Delay);
             addAndMakeVisible (*cell);
             knobCells.emplace_back (cell.get());
             ownedCells.emplace_back (std::move (cell));
@@ -178,12 +208,12 @@ private:
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
         // Row A (switch/combos then knobs)
         push (&delayEnabled);
-        push (&delayMode);
+        push (switchCells[0]); // delayMode
         push (&delaySync);
-        push (&delayGridFlavor);
+        push (switchCells[1]); // delayGridFlavor
         push (&delayPingpong);
         push (&delayFreeze);
-        push (&delayFilterType);
+        push (switchCells[2]); // delayFilterType
         push (&delayKillDry);
         push (ownedCells[0].get()); // TIME
         push (ownedCells[1].get()); // FB
@@ -202,7 +232,7 @@ private:
         push (ownedCells[13].get()); // TILT
         push (ownedCells[14].get()); // WOW
         push (ownedCells[15].get()); // JITTER
-        push (&delayDuckSource);
+        push (switchCells[3]); // delayDuckSource
         push (&delayDuckPost);
         push (ownedCells[16].get()); // THR
         push (ownedCells[17].get()); // DEPTH
@@ -222,9 +252,8 @@ private:
             cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             cell->setValueLabelGap (labelGapPx);
             cell->setShowKnob (false);
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("delayMetallic", true);
             cell->getProperties().set ("delayThemeBorderTextGrey", true);
+            setAreaMetallicForCell (*cell, MetallicKind::Delay);
             addAndMakeVisible (*cell);
             knobCells.emplace_back (cell.get());
             blankSliders.emplace_back (std::move (sl));
@@ -268,6 +297,8 @@ private:
     // Knob cells
     std::vector<KnobCell*> knobCells;
     std::vector<std::unique_ptr<KnobCell>> ownedCells;
+    std::vector<SimpleSwitchCell*> switchCells;
+    std::vector<std::unique_ptr<SimpleSwitchCell>> ownedSwitches;
     std::vector<juce::Component*> gridOrder;
     std::vector<std::unique_ptr<juce::Slider>> blankSliders;
     std::vector<std::unique_ptr<juce::Label>>  blankLabels;

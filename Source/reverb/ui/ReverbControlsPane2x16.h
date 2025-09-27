@@ -4,6 +4,7 @@
 #include "../../ui/Components/KnobCell.h"
 #include "../../ui/Layout.h"
 #include "../ReverbParamIDs.h"
+#include "../../Core/FieldLookAndFeel.h"
 
 // ReverbControlsPane2x16: 2x16 flat grid container for Reverb controls.
 // Scaffolding-only: initially populated with styled empty KnobCells.
@@ -175,9 +176,8 @@ private:
             cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             cell->setValueLabelGap (labelGapPx);
             cell->setShowKnob (false);
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("reverbMetallic", true);
-            cell->getProperties().set ("reverbMaroonBorder", true);
+            // Use new enum-based metallic system
+            setAreaMetallicForCell (*cell, MetallicKind::Reverb);
             addAndMakeVisible (*cell);
             knobCells.emplace_back (cell.get());
             blankSliders.emplace_back (std::move (sl));

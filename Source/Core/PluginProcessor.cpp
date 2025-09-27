@@ -1072,7 +1072,7 @@ void MyPluginAudioProcessor::setStateInformation (const void* data, int sizeInBy
         // Notify editor (if open) to rebind on message thread
         if (auto* ed = dynamic_cast<MyPluginAudioProcessorEditor*>(getActiveEditor())) {
             juce::MessageManager::callAsync([ed] {
-                ed->updateMotionParameterAttachmentsOnMessageThread();
+                // Motion parameter updates removed - now handled by MotionControlsPane
             });
         }
     }

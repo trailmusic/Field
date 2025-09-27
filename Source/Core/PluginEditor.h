@@ -688,9 +688,7 @@ public:
     explicit MyPluginAudioProcessorEditor (MyPluginAudioProcessor&);
     ~MyPluginAudioProcessorEditor() override;
     
-    // Motion parameter management (public for state recall)
-    void updateMotionParameterAttachmentsOnMessageThread();
-    void refreshMotionControlValues();
+    // Motion parameter management removed - now handled by MotionControlsPane
 
     void paint (juce::Graphics&) override;
     void paintOverChildren(juce::Graphics&) override;
@@ -2677,27 +2675,17 @@ private:
 
     HorizontalDivider rowDivVol{lnf}, rowDivEQ{lnf};
 
-    // Motion cells - only in Group 2 (6x4 grid: 24 total)
-    std::array<std::unique_ptr<KnobCell>, 24> motionCellsGroup2;
-    std::array<juce::Slider, 24> motionDummiesGroup2;
+    // Motion controls removed - now handled by MotionControlsPane
     // Attachment containers (declared AFTER all sliders/buttons/combos they bind to)
     // Ensures attachments are destroyed BEFORE controls during teardown
     std::vector<std::unique_ptr<SliderAttachment>>  attachments;
     std::vector<std::unique_ptr<ButtonAttachment>>  buttonAttachments;
     std::vector<std::unique_ptr<ComboAttachment>>   comboAttachments;
-    // Motion-only attachments (cleared/rebuilt on panner switch)
-    std::vector<std::unique_ptr<SliderAttachment>>  motionSliderAttachments;
-    std::vector<std::unique_ptr<ButtonAttachment>>  motionButtonAttachments;
-    std::vector<std::unique_ptr<ComboAttachment>>   motionComboAttachments;
-    std::array<juce::Label,  24> motionValuesGroup2;
+    // Motion attachments removed - now handled by MotionControlsPane
     
-    // Motion ComboBoxes and Buttons
-    std::array<juce::ComboBox, 4> motionComboBoxes;
-    std::array<juce::ToggleButton, 4> motionButtons;
+    // Motion ComboBoxes and Buttons removed - now handled by MotionControlsPane
     
-    // Motion SwitchCell wrappers (like Delay group)
-    std::array<std::unique_ptr<SwitchCell>, 4> motionComboCells;
-    std::array<std::unique_ptr<SwitchCell>, 4> motionButtonCells;
+    // Motion SwitchCell wrappers removed - now handled by MotionControlsPane
 
     // Phase Mode center group
     class PhaseModeButton : public ThemedIconButton {
@@ -2715,17 +2703,9 @@ private:
     std::unique_ptr<juce::ParameterAttachment> osModeParamAttach;
     std::unique_ptr<juce::ParameterAttachment> qualityParamAttach;
 
-    // Motion parameter management
-    void updateMotionParameterAttachments(int pannerSelect);
-    motion::VisualState synthesizeVisualFromParams();
+    // Motion parameter management removed - now handled by MotionControlsPane
     
-    // AsyncUpdater for safe parameter attachment rebinding
-    struct MotionBinding : juce::AsyncUpdater {
-        MyPluginAudioProcessorEditor& editor;
-        MotionBinding(MyPluginAudioProcessorEditor& e) : editor(e) {}
-        void trigger() { triggerAsyncUpdate(); }
-        void handleAsyncUpdate() override { editor.updateMotionParameterAttachmentsOnMessageThread(); }
-    } motionBinding{*this};
+    // MotionBinding removed - now handled by MotionControlsPane
 
     // Delay visuals are managed by PaneManager's Delay tab
 

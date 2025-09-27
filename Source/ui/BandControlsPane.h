@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "Components/KnobCell.h"
 #include "../ui/Layout.h"
+#include "../Core/FieldLookAndFeel.h"
 
 // BandControlsPane: 2x16 grid for Band tab (Width visuals): WIDTH + WIDTH LO/MID/HI
 class BandControlsPane : public juce::Component
@@ -154,8 +155,8 @@ private:
                 cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
                 cell->setValueLabelGap (labelGapPx);
                 cell->setShowKnob (false);
-                cell->getProperties().set ("metallic", true);
-                cell->getProperties().set ("bandMetallic", true);
+                // Use new enum-based metallic system
+                setAreaMetallicForCell (*cell, MetallicKind::Band);
                 addAndMakeVisible (*cell);
                 knobCells.emplace_back (cell.get());
                 blankSliders.emplace_back (std::move (sl));

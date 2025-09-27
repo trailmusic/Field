@@ -30,13 +30,29 @@ public:
 
     void resized() override
     {
-        auto b = getLocalBounds().reduced (6);
+        auto b = getLocalBounds().reduced (3); // Reduced from 6 to 3 for better sizing
         const int capH = captionText.isNotEmpty() ? 14 : 0;
+        
+        // Check if child has metallic properties - if so, hide caption
+        auto metallicKind = metallicFromProps (child.getProperties());
+        if (metallicKind != MetallicKind::None)
+        {
+            // Hide caption for metallic components to avoid double labels
+            caption.setVisible (false);
+            child.setBounds (b);
+            return;
+        }
+        
         if (capH > 0)
         {
+            caption.setVisible (true);
             caption.setBounds (b.removeFromTop (capH));
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
                 caption.setColour (juce::Label::textColourId, lf->theme.textMuted);
+        }
+        else
+        {
+            caption.setVisible (false);
         }
         child.setBounds (b);
     }
@@ -53,31 +69,30 @@ public:
         auto metallicKind = metallicFromProps (child.getProperties());
         if (metallicKind != MetallicKind::None)
         {
-            // For metallic components, let the button handle its own rendering
-            // We need to call the button's drawButtonBackground method
+            // For metallic components, let them handle their own rendering
             if (auto* button = dynamic_cast<juce::Button*>(&child))
             {
-                // Get the LookAndFeel and call drawButtonBackground
-                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                {
-                    // Save the current graphics state
-                    juce::Graphics::ScopedSaveState saveState(g);
-                    
-                    // Adjust the graphics context to match the cell's bounds
-                    // The button should fill the cell's area (minus the reduced margin)
-                    auto cellBounds = getLocalBounds().reduced(3);
-                    g.setOrigin(cellBounds.getPosition());
-                    
-                    // Temporarily set the button's bounds to match the cell
-                    auto originalBounds = button->getBounds();
-                    button->setBounds(cellBounds);
-                    
-                    // Call the button's drawButtonBackground method
-                    lf->drawButtonBackground(g, *button, juce::Colour(), false, false);
-                    
-                    // Restore the button's original bounds
-                    button->setBounds(originalBounds);
-                }
+                // Handle metallic buttons - let JUCE handle the complete rendering
+                // We just need to ensure they have the right bounds
+                auto cellBounds = getLocalBounds().reduced(3);
+                button->setBounds(cellBounds);
+                
+                // Let JUCE handle the complete button rendering (background + text)
+                // The FieldLookAndFeel::drawButtonBackground will handle the metallic background
+                // and JUCE will automatically call drawButtonText for the text
+                return; // Don't draw our own background for metallic buttons
+            }
+            else if (auto* combo = dynamic_cast<juce::ComboBox*>(&child))
+            {
+                // Handle metallic ComboBoxes - let them render normally
+                // ComboBoxes have their own rendering in FieldLookAndFeel::drawComboBox
+                // We just need to ensure they have the right bounds
+                auto cellBounds = getLocalBounds().reduced(3);
+                combo->setBounds(cellBounds);
+                
+                // Let the ComboBox render itself with its metallic properties
+                // The FieldLookAndFeel::drawComboBox will handle the metallic rendering
+                return; // Don't draw our own background for ComboBoxes
             }
             return;
         }

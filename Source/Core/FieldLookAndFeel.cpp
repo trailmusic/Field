@@ -126,8 +126,45 @@ void FieldLNF::drawComboBox (juce::Graphics& g, int width, int height, bool isBu
     auto r = juce::Rectangle<float> (0, 0, (float) width, (float) height).reduced (2.0f);
     auto accent = theme.accent;
 
-    // Background: mimic SwitchCell panel (mode cell style)
-    drawNeoPanel (g, r, 5.0f);
+    // Check for metallic properties first
+    auto metallicKind = metallicFromProps (box.getProperties());
+    if (metallicKind != MetallicKind::None)
+    {
+        // Metallic ComboBoxes - use metallic rendering system
+        switch (metallicKind)
+        {
+            case MetallicKind::Phase:
+                paintMetal (g, r, theme.metal.phase, 5.0f);
+                break;
+            case MetallicKind::Reverb:
+                paintMetal (g, r, theme.metal.reverb, 5.0f);
+                break;
+            case MetallicKind::Delay:
+                paintMetal (g, r, theme.metal.delay, 5.0f);
+                break;
+            case MetallicKind::Band:
+                paintMetal (g, r, theme.metal.band, 5.0f);
+                break;
+            case MetallicKind::Motion:
+                paintMetal (g, r, theme.metal.motion, 5.0f);
+                break;
+            case MetallicKind::XY:
+                paintMetal (g, r, theme.metal.xy, 5.0f);
+                break;
+            case MetallicKind::Neutral:
+                paintMetal (g, r, theme.metal.neutral, 5.0f);
+                break;
+            default:
+                // Fallback to standard panel
+                drawNeoPanel (g, r, 5.0f);
+                break;
+        }
+    }
+    else
+    {
+        // Background: mimic SwitchCell panel (mode cell style)
+        drawNeoPanel (g, r, 5.0f);
+    }
 
     // Determine selected text and optional per-item tint
     const int selIdx = box.getSelectedItemIndex(); // 0-based
