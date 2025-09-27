@@ -48,6 +48,41 @@ public:
         const float rad = 8.0f;
         auto panel = lf ? lf->theme.panel : juce::Colour (0xFF3A3D45);
         auto border = lf ? lf->theme.sh    : juce::Colour (0xFF2A2A2A);
+        
+        // Check if the child component has metallic properties
+        auto metallicKind = metallicFromProps (child.getProperties());
+        if (metallicKind != MetallicKind::None)
+        {
+            // For metallic components, let the button handle its own rendering
+            // We need to call the button's drawButtonBackground method
+            if (auto* button = dynamic_cast<juce::Button*>(&child))
+            {
+                // Get the LookAndFeel and call drawButtonBackground
+                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                {
+                    // Save the current graphics state
+                    juce::Graphics::ScopedSaveState saveState(g);
+                    
+                    // Adjust the graphics context to match the cell's bounds
+                    // The button should fill the cell's area (minus the reduced margin)
+                    auto cellBounds = getLocalBounds().reduced(3);
+                    g.setOrigin(cellBounds.getPosition());
+                    
+                    // Temporarily set the button's bounds to match the cell
+                    auto originalBounds = button->getBounds();
+                    button->setBounds(cellBounds);
+                    
+                    // Call the button's drawButtonBackground method
+                    lf->drawButtonBackground(g, *button, juce::Colour(), false, false);
+                    
+                    // Restore the button's original bounds
+                    button->setBounds(originalBounds);
+                }
+            }
+            return;
+        }
+        
+        // Non-metallic components use the standard SimpleSwitchCell rendering
         if (delayTheme)
         {
             panel  = panel.brighter (0.10f);

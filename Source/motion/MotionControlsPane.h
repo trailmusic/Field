@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "MotionIDs.h"
 #include "../ui/Components/KnobCell.h"
+#include "../ui/SimpleSwitchCell.h"
 #include "../ui/Layout.h"
 
 // MotionControlsPane: 2x16 grid for Motion controls (24 + blanks)
@@ -67,9 +68,8 @@ private:
         auto cell = std::make_unique<KnobCell> (s, v, cap);
         cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
         cell->setValueLabelGap (labelGapPx);
-        // Motion metallic styling
-        cell->getProperties().set ("metallic", true);
-        cell->getProperties().set ("motionPurpleBorder", true);
+        // Motion metallic styling - use proper enum-based system
+        setAreaMetallicForCell (*cell, MetallicKind::Motion);
         cell->getProperties().set ("caption", cap);
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
@@ -81,19 +81,40 @@ private:
         v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification);
     }
 
+    void makeMotionButtonCell (juce::ToggleButton& t, const juce::String& cap, const char* pid)
+    {
+        if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr)
+        {
+            return;
+        }
+        
+        t.setName (cap);
+        // Apply Motion metallic styling to the actual button, not the wrapper
+        setAreaMetallicForCell (t, MetallicKind::Motion);
+        auto cell = std::make_unique<SimpleSwitchCell> (t);
+        cell->setCaption (cap);
+        cell->setShowBorder (true);
+        addAndMakeVisible (*cell);
+        switchCells.emplace_back (cell.get());
+        ownedSwitches.emplace_back (std::move (cell));
+        btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, pid, t));
+    }
+
     void buildControls()
     {
         using namespace motion;
         using namespace motion::id;
 
-        // Combos/buttons
+        // Combos/buttons - use new Motion button styling system
         addAndMakeVisible (panner);   panner.addItemList (choiceListPanner(), 1);  cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, panner_select, panner));
         addAndMakeVisible (path);     path.addItemList (choiceListPath(), 1);      cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, p1_path, path));
         addAndMakeVisible (mode);     mode.addItemList (choiceListMode(), 1);      cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, p1_mode, mode));
         addAndMakeVisible (quant);    quant.addItemList (choiceListQuant(), 1);    cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, p1_quantize_div, quant));
-        addAndMakeVisible (enableBtn); btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, enable, enableBtn));
-        addAndMakeVisible (retrigBtn); btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, p1_retrig, retrigBtn));
-        addAndMakeVisible (anchorBtn); btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, anchor_enable, anchorBtn));
+        
+        // Motion buttons with proper enum-based metallic styling
+        makeMotionButtonCell (enableBtn, "Enable", enable);
+        makeMotionButtonCell (retrigBtn, "Retrig", p1_retrig);
+        makeMotionButtonCell (anchorBtn, "Anchor", anchor_enable);
 
         // Knobs
         makeCell (rate,   rateV,   "RATE",   p1_rate_hz);
@@ -115,20 +136,36 @@ private:
 
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
         // Row A (16): Enable, Panner, Path, Rate, Depth, Phase, Spread, ELEV, Bounce, Jitter, Quant, Swing, Mode, Retrig, Hold, Sens
-        push (&enableBtn); push (&panner); push (&path);
-        push (ownedCells[0].get()); push (ownedCells[1].get()); push (ownedCells[2].get()); push (ownedCells[3].get());
-        push (ownedCells[4].get()); push (ownedCells[5].get()); push (ownedCells[6].get());
-        push (&quant); push (ownedCells[7].get()); push (&mode); push (&retrigBtn); push (ownedCells[8].get()); push (ownedCells[9].get());
+        push (switchCells[0]); push (&panner); push (&path); // Enable, Panner, Path
+        push (ownedCells[0].get()); push (ownedCells[1].get()); push (ownedCells[2].get()); push (ownedCells[3].get()); // Rate, Depth, Phase, Spread
+        push (ownedCells[4].get()); push (ownedCells[5].get()); push (ownedCells[6].get()); // ELEV, Bounce, Jitter
+        push (&quant); push (ownedCells[7].get()); push (&mode); push (switchCells[1]); push (ownedCells[8].get()); push (ownedCells[9].get()); // Quant, Swing, Mode, Retrig, Hold, Sens
         // Row B (next 16): Offset(not separate), Inertia, Front, Doppler, Send, Anchor, Bass, Occl + 8 blanks
         push (ownedCells[10].get()); // Inertia
         push (ownedCells[11].get()); // Front
         push (ownedCells[12].get()); // Doppler
         push (ownedCells[13].get()); // Send
-        push (&anchorBtn);
+        push (switchCells[2]); // Anchor
         push (ownedCells[14].get()); // Bass
         push (ownedCells[15].get()); // Occl
-        // Fill remaining with nullptrs (styled blanks can be added later if needed)
-        for (int i = 0; i < 9; ++i) gridOrder.push_back (nullptr);
+        // Fill remaining with styled placeholder components
+        for (int i = 0; i < 9; ++i) {
+            // Create dummy slider and label for placeholder
+            auto dummySlider = std::make_unique<juce::Slider>();
+            auto dummyLabel = std::make_unique<juce::Label>();
+            auto placeholder = std::make_unique<KnobCell>(*dummySlider, *dummyLabel, "---");
+            placeholder->setValueLabelMode(KnobCell::ValueLabelMode::Managed);
+            placeholder->setValueLabelGap(labelGapPx);
+            // Apply Motion metallic styling to placeholders
+            setAreaMetallicForCell(*placeholder, MetallicKind::Motion);
+            placeholder->setEnabled(false); // Disabled state for placeholders
+            addAndMakeVisible(*placeholder);
+            placeholderCells.emplace_back(placeholder.get());
+            ownedPlaceholders.emplace_back(std::move(placeholder));
+            ownedDummySliders.emplace_back(std::move(dummySlider));
+            ownedDummyLabels.emplace_back(std::move(dummyLabel));
+            gridOrder.push_back(ownedPlaceholders.back().get());
+        }
     }
 
     void applyMetricsToAll()
@@ -140,6 +177,14 @@ private:
             c->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             c->setValueLabelGap (labelGapPx);
         }
+        for (auto* c : placeholderCells)
+        {
+            if (!c) continue;
+            c->setMetrics (knobPx, valuePx, labelGapPx);
+            c->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            c->setValueLabelGap (labelGapPx);
+        }
+        // Switch cells don't need metrics - they handle their own layout
     }
 
     juce::AudioProcessorValueTreeState& apvts;
@@ -158,6 +203,12 @@ private:
 
     std::vector<KnobCell*> knobCells;
     std::vector<std::unique_ptr<KnobCell>> ownedCells;
+    std::vector<KnobCell*> placeholderCells;
+    std::vector<std::unique_ptr<KnobCell>> ownedPlaceholders;
+    std::vector<std::unique_ptr<juce::Slider>> ownedDummySliders;
+    std::vector<std::unique_ptr<juce::Label>> ownedDummyLabels;
+    std::vector<SimpleSwitchCell*> switchCells;
+    std::vector<std::unique_ptr<SimpleSwitchCell>> ownedSwitches;
     std::vector<juce::Component*> gridOrder;
 
     int knobPx = 48, valuePx = 14, labelGapPx = 4, colW = 56, rowH = 0;

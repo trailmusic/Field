@@ -3,10 +3,9 @@
 #include "../../Core/IconSystem.h"
 #include "../../Core/PluginProcessor.h"
 
-MachinePane::MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, juce::LookAndFeel* lnf)
-    : proc (p), vt (state), engine (p, p.apvts)
+MachinePane::MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, FieldLNF& lnf)
+    : proc (p), vt (state), engine (p, p.apvts), toneCard(lnf), spaceCard(lnf), clarityCard(lnf)
 {
-    juce::ignoreUnused (lnf);
     setOpaque (false);
 
     // wrapped in cells later

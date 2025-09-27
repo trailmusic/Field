@@ -111,13 +111,9 @@ private:
         cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
         cell->setValueLabelGap (labelGapPx);
         if (metallic) {
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("xyMetallic", true);
-            // Debug: Set a visual indicator that metallic property was set
-            cell->getProperties().set ("debugMetallicSet", true);
+            setAreaMetallicForCell (*cell, MetallicKind::XY);
         }
-        // Center/XY knobs: give a subtle metallic gradient hint
-        cell->getProperties().set ("centerStyle", true);
+        // XY knobs now use proper metallic system - no centerStyle needed
         // Ensure caption renders via KnobCell paint helper
         cell->getProperties().set ("caption", cap);
         addAndMakeVisible (*cell);
@@ -133,9 +129,12 @@ private:
     void makeSwitch (juce::Button& b, const juce::String& cap, const char* pid, bool metallic=false)
     {
         b.setButtonText (cap);
+        // Apply metallic properties to the actual button, not the wrapper
+        if (metallic) {
+            setAreaMetallicForCell (b, MetallicKind::XY);
+        }
         auto cell = std::make_unique<SimpleSwitchCell> (b);
         cell->setCaption (cap);
-        if (metallic) cell->getProperties().set ("metallic", true);
         addAndMakeVisible (*cell);
         switchCells.emplace_back (cell.get());
         ownedSwitches.emplace_back (std::move (cell));
@@ -143,9 +142,12 @@ private:
     }
     void makeCombo (juce::ComboBox& c, const juce::String& cap, const char* pid, bool metallic=false)
     {
+        // Apply metallic properties to the actual combo, not the wrapper
+        if (metallic) {
+            setAreaMetallicForCell (c, MetallicKind::XY);
+        }
         auto cell = std::make_unique<SimpleSwitchCell> (c);
         cell->setCaption (cap);
-        if (metallic) cell->getProperties().set ("metallic", true);
         addAndMakeVisible (*cell);
         switchCells.emplace_back (cell.get());
         ownedSwitches.emplace_back (std::move (cell));
@@ -174,8 +176,10 @@ private:
         auto cell = std::make_unique<KnobCell> (s, v, cap);
         cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
         cell->setValueLabelGap (labelGapPx);
-        if (metallic) cell->getProperties().set ("metallic", true);
-        cell->getProperties().set ("centerStyle", true);
+        if (metallic) {
+            setAreaMetallicForCell (*cell, MetallicKind::XY);
+        }
+        // XY knobs now use proper metallic system - no centerStyle needed
         cell->getProperties().set ("caption", cap);
         
         // Add mini slider with label - place on the right and center vertically
@@ -236,8 +240,10 @@ private:
         auto cell = std::make_unique<KnobCell> (qS, qV, qCap);
         cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
         cell->setValueLabelGap (labelGapPx);
-        if (metallic) cell->getProperties().set ("metallic", true);
-        cell->getProperties().set ("centerStyle", true);
+        if (metallic) {
+            setAreaMetallicForCell (*cell, MetallicKind::XY);
+        }
+        // XY knobs now use proper metallic system - no centerStyle needed
         cell->getProperties().set ("caption", qCap);
         
         // Add Q link toggle and HP/LP Q sliders as aux components
@@ -306,8 +312,13 @@ private:
         
         // Apply metallic styling like other cells
         if (metallic) {
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("xyMetallic", true);
+            setAreaMetallicForCell (*cell, MetallicKind::XY);
+            // For KnobCellWithAux, also apply metallic to aux components
+            for (auto* auxComp : cell->getAuxComponents()) {
+                if (auxComp) {
+                    setAreaMetallic (*auxComp, MetallicKind::XY);
+                }
+            }
         }
         
         addAndMakeVisible (*cell);
@@ -363,8 +374,13 @@ private:
         
         // Apply metallic styling like other cells
         if (metallic) {
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("xyMetallic", true);
+            setAreaMetallicForCell (*cell, MetallicKind::XY);
+            // For KnobCellWithAux, also apply metallic to aux components
+            for (auto* auxComp : cell->getAuxComponents()) {
+                if (auxComp) {
+                    setAreaMetallic (*auxComp, MetallicKind::XY);
+                }
+            }
         }
         
         addAndMakeVisible (*cell);
@@ -420,8 +436,13 @@ private:
         
         // Apply metallic styling like other cells
         if (metallic) {
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("xyMetallic", true);
+            setAreaMetallicForCell (*cell, MetallicKind::XY);
+            // For KnobCellWithAux, also apply metallic to aux components
+            for (auto* auxComp : cell->getAuxComponents()) {
+                if (auxComp) {
+                    setAreaMetallic (*auxComp, MetallicKind::XY);
+                }
+            }
         }
         
         addAndMakeVisible (*cell);
@@ -477,8 +498,13 @@ private:
         
         // Apply metallic styling like other cells
         if (metallic) {
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("xyMetallic", true);
+            setAreaMetallicForCell (*cell, MetallicKind::XY);
+            // For KnobCellWithAux, also apply metallic to aux components
+            for (auto* auxComp : cell->getAuxComponents()) {
+                if (auxComp) {
+                    setAreaMetallic (*auxComp, MetallicKind::XY);
+                }
+            }
         }
         
         addAndMakeVisible (*cell);
@@ -541,8 +567,13 @@ private:
         
         // Apply metallic styling like other cells
         if (metallic) {
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("xyMetallic", true);
+            setAreaMetallicForCell (*cell, MetallicKind::XY);
+            // For KnobCellWithAux, also apply metallic to aux components
+            for (auto* auxComp : cell->getAuxComponents()) {
+                if (auxComp) {
+                    setAreaMetallic (*auxComp, MetallicKind::XY);
+                }
+            }
         }
         
         addAndMakeVisible (*cell);
@@ -614,8 +645,13 @@ private:
         
         // Apply metallic styling like other cells
         if (metallic) {
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("xyMetallic", true);
+            setAreaMetallicForCell (*cell, MetallicKind::XY);
+            // For KnobCellWithAux, also apply metallic to aux components
+            for (auto* auxComp : cell->getAuxComponents()) {
+                if (auxComp) {
+                    setAreaMetallic (*auxComp, MetallicKind::XY);
+                }
+            }
         }
         
         addAndMakeVisible (*cell);
@@ -687,8 +723,7 @@ private:
             cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             cell->setValueLabelGap (labelGapPx);
             cell->setShowKnob (false);
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("xyMetallic", true);
+            setAreaMetallicForCell (*cell, MetallicKind::XY);
             addAndMakeVisible (*cell);
             knobCells.emplace_back (cell.get());
             blankSliders.emplace_back (std::move (sl));
@@ -717,8 +752,7 @@ private:
             cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             cell->setValueLabelGap (labelGapPx);
             cell->setShowKnob (false);
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("xyMetallic", true);
+            setAreaMetallicForCell (*cell, MetallicKind::XY);
             addAndMakeVisible (*cell);
             knobCells.emplace_back (cell.get());
             blankSliders.emplace_back (std::move (sl));

@@ -6,14 +6,8 @@
  * Core UI component for rendering knob controls with metallic backgrounds, 
  * auxiliary components, and sophisticated styling. Foundation of Field plugin's control system.
  * 
- * CRITICAL ISSUES:
- * - Orange border fallback (lines 357-360) - XY controls hit debug fallback
- * - Debug borders still present in production code
- * - Missing XY metallic support (no xyMetallic property detection)
- * 
  * METALLIC RENDERING SYSTEM:
- * - Debug borders: Red(Phase), Blue(Band), Green(Reverb), Yellow(Delay), Purple(Motion), Orange(Fallback)
- * - Properties: metallic, reverbMetallic, delayMetallic, bandMetallic, phaseMetallic, motionPurpleBorder
+ * - Properties: metallic, reverbMetallic, delayMetallic, bandMetallic, phaseMetallic, motionMetallic, xyMetallic
  * - Theme integration: FieldLNF::paintMetal(), FieldLNF::paintPhaseMetal()
  * 
  * LAYOUT SYSTEM:
@@ -39,15 +33,8 @@
  * - FieldLookAndFeel: Theme colors, metallic rendering, custom drawing
  * - Property system: Metallic types, border types, layout properties
  * 
- * DEVELOPMENT RECOMMENDATIONS:
- * 1. Remove debug borders (lines 338-360)
- * 2. Add XY metallic support (xyMetallic property)
- * 3. Clean fallbacks (replace orange with neutral metallic)
- * 4. Consolidate metallic logic
- * 5. Remove all debug code
- * 
  * TESTING CHECKLIST:
- * - Metallic rendering: Phase(red), Reverb(green), Delay(yellow), Motion(purple), Band(blue), XY(orange) ⚠️
+ * - Metallic rendering: All metallic types properly detected and rendered
  * - Layout: Right-strip mode, bottom mode, aux positioning
  * - Styling: Hover effects, badges, shadows, theme integration
  */
@@ -372,19 +359,18 @@ void KnobCell::paint (juce::Graphics& g)
     const float rad = 8.0f;
 
     // Panel fill (optional) with metallic mode
-    const bool metallic = (bool) getProperties().getWithDefault ("metallic", false);
+    const auto metallicKind = metallicFromProps (getProperties());
+    const bool metallic = (metallicKind != MetallicKind::None);
     if (showPanel)
     {
         auto rr = r.reduced (3.0f);
         
-        // Debug: Metallic detection (removed console output for simplicity)
         
         if (metallic)
         {
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
             {
-                const auto kind = metallicFromProps(getProperties());
-                switch (kind)
+                switch (metallicKind)
                 {
                     case MetallicKind::Reverb:  FieldLNF::paintMetal(g, rr, lf->theme.metal.reverb,  rad); break;
                     case MetallicKind::Delay:   FieldLNF::paintMetal(g, rr, lf->theme.metal.delay,   rad); break;
@@ -395,14 +381,6 @@ void KnobCell::paint (juce::Graphics& g)
                     case MetallicKind::Neutral: FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
                     default:                    FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
                 }
-            }
-            else
-            {
-                // simple neutral fallback
-                juce::ColourGradient grad (juce::Colour (0xFF9CA4AD), rr.getX(), rr.getY(),
-                                           juce::Colour (0xFF6E747C), rr.getX(), rr.getBottom(), false);
-                g.setGradientFill (grad);
-                g.fillRoundedRectangle (rr, rad);
             }
         }
         else

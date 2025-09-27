@@ -319,7 +319,7 @@ private:
 class BypassButton : public juce::TextButton, public juce::Timer
 {
 public:
-    BypassButton() : juce::TextButton("")
+    BypassButton(FieldLNF& mainLnf) : juce::TextButton(""), customLookAndFeel(mainLnf)
     {
         setLookAndFeel(&customLookAndFeel);
         setClickingTogglesState(true);
@@ -342,9 +342,21 @@ private:
     class CustomLookAndFeel : public juce::LookAndFeel_V4
     {
     public:
+        CustomLookAndFeel(FieldLNF& mainLnf) : mainFieldLNF(mainLnf) {}
+        
         void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour&,
                                 bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override
         {
+            // Check for metallic properties first - if found, delegate to FieldLNF
+            auto metallicKind = metallicFromProps (button.getProperties());
+            if (metallicKind != MetallicKind::None)
+            {
+                // Delegate to the main FieldLNF instance
+                mainFieldLNF.drawButtonBackground(g, button, juce::Colour(), shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
+                return;
+            }
+            
+            // Fall back to custom rendering for non-metallic buttons
             auto bounds = button.getLocalBounds().toFloat().reduced(0.5f, 0.5f);
             
             // Read current theme
@@ -416,6 +428,8 @@ private:
             auto pad = button.getToggleState() ? 6.0f : 4.0f;
             IconSystem::drawIcon(g, icon, bounds.reduced(pad), iconColour);
         }
+    private:
+        FieldLNF& mainFieldLNF;
     };
     
     CustomLookAndFeel customLookAndFeel;

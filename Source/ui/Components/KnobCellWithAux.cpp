@@ -139,19 +139,18 @@ void KnobCellWithAux::paint (juce::Graphics& g)
     const float rad = 8.0f;
 
     // Panel fill (optional) with metallic mode - same as KnobCell
-    const bool metallic = (bool) getProperties().getWithDefault ("metallic", false);
+    const auto metallicKind = metallicFromProps (getProperties());
+    const bool metallic = (metallicKind != MetallicKind::None);
     if (showPanel)
     {
         auto rr = r.reduced (3.0f);
         
-        // Debug: Metallic detection (removed console output for simplicity)
         
         if (metallic)
         {
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
             {
-                const auto kind = metallicFromProps(getProperties());
-                switch (kind)
+                switch (metallicKind)
                 {
                     case MetallicKind::Reverb:  FieldLNF::paintMetal(g, rr, lf->theme.metal.reverb,  rad); break;
                     case MetallicKind::Delay:   FieldLNF::paintMetal(g, rr, lf->theme.metal.delay,   rad); break;
@@ -162,14 +161,6 @@ void KnobCellWithAux::paint (juce::Graphics& g)
                     case MetallicKind::Neutral: FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
                     default:                    FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
                 }
-            }
-            else
-            {
-                // simple neutral fallback
-                juce::ColourGradient grad (juce::Colour (0xFF9CA4AD), rr.getX(), rr.getY(),
-                                           juce::Colour (0xFF6E747C), rr.getX(), rr.getBottom(), false);
-                g.setGradientFill (grad);
-                g.fillRoundedRectangle (rr, rad);
             }
         }
         else

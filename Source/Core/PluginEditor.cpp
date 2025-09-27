@@ -1247,7 +1247,7 @@ void XYPad::drawBalls (juce::Graphics& g, juce::Rectangle<float> b)
 // ------------------------------------------------
 /* ===================== Editor ===================== */
 MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcessor& p)
-: AudioProcessorEditor (&p), proc (p), presetManager (proc.apvts, nullptr)
+: AudioProcessorEditor (&p), proc (p), presetManager (proc.apvts, nullptr), bypassButton(lnf)
 {
     // Log: Editor constructor started
     // TEMPORARILY DISABLE file logging to test if this is causing the crash
@@ -1691,7 +1691,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     splitToggle.setToggleState (false, juce::dontSendNotification);
     linkButton.setVisible (false);
     // Multi-pane dock (XY, Dynamic EQ, Imager) + shade overlay
-    panes = std::make_unique<PaneManager> (proc, proc.apvts.state, &getLookAndFeel(), pad);
+    panes = std::make_unique<PaneManager> (proc, proc.apvts.state, &lnf, pad);
     addAndMakeVisible (panes.get());
     panes->setSampleRate (proc.getSampleRate());
     // keep-warm removed; no pane warm-up needed
@@ -2463,11 +2463,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                         motionButtons[2].getProperties().set ("iconType", (int) IconSystem::Anchor);
                         motionButtons[2].setComponentID ("motionAnchor");
                     }
+                    // Apply Motion metallic styling to the actual button first
+                    setAreaMetallicForCell (motionButtons[i], MetallicKind::Motion);
                     motionButtonCells[i] = std::make_unique<SwitchCell>(motionButtons[i]);
                     motionButtonCells[i]->setCaption(buttonLabels[i]);
-                    // Apply same green border treatment as other Motion items
-                    motionButtonCells[i]->getProperties().set ("motionPurpleBorder", true);
-                    motionButtonCells[i]->getProperties().set ("metallic", true);
                     motionButtonCells[i]->setShowBorder(true);
                 }
                 // Now lives only in Group 1 grid; do not add to bottomAltPanel

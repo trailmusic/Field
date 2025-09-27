@@ -11,7 +11,7 @@ class MyPluginAudioProcessor; // fwd
 class MachinePane : public juce::Component, private juce::Timer
 {
 public:
-    MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, juce::LookAndFeel* lnf);
+    MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, FieldLNF& lnf);
     ~MachinePane() override
     {
         // Stop timer before destruction to prevent use-after-free
@@ -88,7 +88,7 @@ private:
     class CardBypassButton : public juce::TextButton, public juce::Timer
     {
     public:
-        CardBypassButton() : juce::TextButton("")
+        CardBypassButton(FieldLNF& mainLnf) : juce::TextButton(""), customLookAndFeel(mainLnf)
         {
             setLookAndFeel(&customLookAndFeel);
             setClickingTogglesState(true);
@@ -107,9 +107,21 @@ private:
         class CustomLookAndFeel : public juce::LookAndFeel_V4
         {
         public:
+            CustomLookAndFeel(FieldLNF& mainLnf) : mainFieldLNF(mainLnf) {}
+            
             void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour&,
                                       bool shouldDrawButtonAsHighlighted, bool /*shouldDrawButtonAsDown*/) override
             {
+                // Check for metallic properties first - if found, delegate to FieldLNF
+                auto metallicKind = metallicFromProps (button.getProperties());
+                if (metallicKind != MetallicKind::None)
+                {
+                    // Delegate to the main FieldLNF instance
+                    mainFieldLNF.drawButtonBackground(g, button, juce::Colour(), shouldDrawButtonAsHighlighted, false);
+                    return;
+                }
+                
+                // Fall back to custom rendering for non-metallic buttons
                 auto bounds = button.getLocalBounds().toFloat().reduced(0.5f, 0.5f);
 
                 // Read current theme
@@ -183,6 +195,8 @@ private:
                 auto pad = button.getToggleState() ? 6.0f : 4.0f;
                 IconSystem::drawIcon(g, icon, bounds.reduced(pad), iconColour);
             }
+        private:
+            FieldLNF& mainFieldLNF;
         };
         CustomLookAndFeel customLookAndFeel;
     };
@@ -202,7 +216,7 @@ private:
 
         std::function<void(bool)> onBypass;
 
-        MachineCard()
+        MachineCard(FieldLNF& mainLnf) : tggByp(mainLnf)
         {
             addAndMakeVisible (tggByp);
             tggByp.onClick   = [this]{ bypassed = tggByp.getToggleState(); if (onBypass) onBypass (bypassed); };

@@ -651,6 +651,9 @@ void FieldLNF::drawButtonBackground (juce::Graphics& g, juce::Button& button,
     auto accent = theme.accent;
     auto panel  = theme.panel;
 
+    // Check for metallic properties first
+    auto metallicKind = metallicFromProps (button.getProperties());
+    
     // Identify special buttons by text; fallback to default look otherwise
     juce::String txt = button.getButtonText().trim();
 
@@ -706,6 +709,46 @@ void FieldLNF::drawButtonBackground (juce::Graphics& g, juce::Button& button,
             if (isButtonDown) fill = fill.darker (0.20f);
         }
     }
+    else if (metallicKind != MetallicKind::None)
+    {
+        // Metallic buttons - use metallic rendering system
+        if (button.getToggleState())
+        {
+            // Toggled state - use metallic colors
+            switch (metallicKind)
+            {
+                case MetallicKind::Phase:
+                    paintMetal (g, r, theme.metal.phase, 6.0f);
+                    return; // Early return for metallic rendering
+                case MetallicKind::Reverb:
+                    paintMetal (g, r, theme.metal.reverb, 6.0f);
+                    return;
+                case MetallicKind::Delay:
+                    paintMetal (g, r, theme.metal.delay, 6.0f);
+                    return;
+                case MetallicKind::Band:
+                    paintMetal (g, r, theme.metal.band, 6.0f);
+                    return;
+                case MetallicKind::Motion:
+                    paintMetal (g, r, theme.metal.motion, 6.0f);
+                    return;
+                case MetallicKind::XY:
+                    paintMetal (g, r, theme.metal.xy, 6.0f);
+                    return;
+                case MetallicKind::Neutral:
+                    paintMetal (g, r, theme.metal.neutral, 6.0f);
+                    return;
+                default:
+                    break;
+            }
+        }
+        else
+        {
+            // Untoggled state - use panel with metallic border
+            fill = isMouseOver ? panel.brighter (0.06f) : panel;
+            if (isButtonDown) fill = fill.darker (0.12f);
+        }
+    }
     else
     {
         // Default
@@ -717,8 +760,43 @@ void FieldLNF::drawButtonBackground (juce::Graphics& g, juce::Button& button,
     g.setColour (fill);
     g.fillRoundedRectangle (r, cr);
 
-    // Border
-    g.setColour (fill.darker (0.35f));
+    // Border - use metallic colors for metallic buttons
+    if (metallicKind != MetallicKind::None && !button.getToggleState())
+    {
+        // Metallic border for untoggled metallic buttons
+        switch (metallicKind)
+        {
+            case MetallicKind::Phase:
+                g.setColour (theme.metal.phase.top.withAlpha (0.8f));
+                break;
+            case MetallicKind::Reverb:
+                g.setColour (theme.metal.reverb.top.withAlpha (0.8f));
+                break;
+            case MetallicKind::Delay:
+                g.setColour (theme.metal.delay.top.withAlpha (0.8f));
+                break;
+            case MetallicKind::Band:
+                g.setColour (theme.metal.band.top.withAlpha (0.8f));
+                break;
+            case MetallicKind::Motion:
+                g.setColour (theme.metal.motion.top.withAlpha (0.8f));
+                break;
+            case MetallicKind::XY:
+                g.setColour (theme.metal.xy.top.withAlpha (0.8f));
+                break;
+            case MetallicKind::Neutral:
+                g.setColour (theme.metal.neutral.top.withAlpha (0.8f));
+                break;
+            default:
+                g.setColour (fill.darker (0.35f));
+                break;
+        }
+    }
+    else
+    {
+        // Default border
+        g.setColour (fill.darker (0.35f));
+    }
     g.drawRoundedRectangle (r, cr, 1.5f);
 
     // Extra: countdown indicator for Learn

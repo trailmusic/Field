@@ -26,6 +26,33 @@ inline MetallicKind metallicFromProps (const juce::NamedValueSet& p) {
     return MetallicKind::None;
 }
 
+// High-level area-based metallic system
+inline void setAreaMetallic (juce::Component& component, MetallicKind areaKind) {
+    auto& props = component.getProperties();
+    
+    // Always set base metallic property
+    props.set ("metallic", true);
+    
+    // Set specific area metallic property
+    switch (areaKind) {
+        case MetallicKind::Reverb:  props.set ("reverbMetallic", true); break;
+        case MetallicKind::Delay:  props.set ("delayMetallic", true); break;
+        case MetallicKind::Band:   props.set ("bandMetallic", true); break;
+        case MetallicKind::Phase:  props.set ("phaseMetallic", true); break;
+        case MetallicKind::Motion: props.set ("motionMetallic", true); break;
+        case MetallicKind::XY:     props.set ("xyMetallic", true); break;
+        case MetallicKind::Neutral: /* only metallic=true */ break;
+        case MetallicKind::None:   props.set ("metallic", false); break;
+    }
+    
+}
+
+// Unified metallic helper for any component type
+template<typename ComponentType>
+inline void setAreaMetallicForCell (ComponentType& cell, MetallicKind areaKind) {
+    setAreaMetallic (cell, areaKind);
+}
+
 // Theme palette (default "Ocean" accent). Other accents mentioned in comments.
 struct FieldTheme
 {

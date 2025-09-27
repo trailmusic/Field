@@ -59,7 +59,7 @@ public:
         imgr = std::make_unique<ImagerTab>(p, lnf);
         band = std::make_unique<BandTab>(p);
         motion = std::make_unique<MotionTab>(p);
-        mach = std::make_unique<MachinePane>(p, state, lnf);
+        mach = std::make_unique<MachinePane>(p, state, *dynamic_cast<FieldLNF*>(lnf));
         // Reverb/Delay composite tabs (controls grid hidden until migration completes)
         reverb = std::make_unique<ReverbTab>(p);
         delay  = std::make_unique<DelayTab>(p);

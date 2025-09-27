@@ -85,6 +85,9 @@ public:
     /// Show/hide the cell's panel background (true by default).
     void setShowPanel (bool shouldDrawPanel) { showPanel = shouldDrawPanel; repaint(); }
 
+    /// Get auxiliary components for metallic styling
+    const std::vector<juce::Component*>& getAuxComponents() const { return auxComponents; }
+
     // juce::Component
     void paint   (juce::Graphics& g) override;
     void resized() override;

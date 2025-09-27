@@ -219,10 +219,10 @@ void PhaseTab::makeSwitchCell (juce::ToggleButton& t, const juce::String& cap, c
     }
     
     t.setName (cap);
+    // Apply metallic properties to the actual button, not the wrapper
+    setAreaMetallicForCell (t, MetallicKind::Phase);
     auto cell = std::make_unique<SimpleSwitchCell> (t);
     cell->setCaption (cap);
-    cell->getProperties().set ("metallic", true);
-    cell->getProperties().set ("phaseMetallic", true);
     
     // Phase controls use metallic blue styling
     
