@@ -200,19 +200,15 @@ void KnobCellWithAux::paint (juce::Graphics& g)
                 }
                 else
                 {
-                    // Fallback to basic metallic rendering (Ocean-harmonized neutral steel)
-                    juce::ColourGradient grad (juce::Colour (0xFF9CA4AD), rr.getX(), rr.getY(), 
-                                               juce::Colour (0xFF6E747C), rr.getX(), rr.getBottom(), false);
-                    g.setGradientFill (grad);
+                    // Clean fallback - no metallic rendering
+                    g.setColour (juce::Colour (0xFF3A3D45));
                     g.fillRoundedRectangle (rr, rad);
                 }
             }
             else
             {
-                // Fallback to basic metallic rendering (Ocean-harmonized neutral steel)
-                juce::ColourGradient grad (juce::Colour (0xFF9CA4AD), rr.getX(), rr.getY(), 
-                                           juce::Colour (0xFF6E747C), rr.getX(), rr.getBottom(), false);
-                g.setGradientFill (grad);
+                // Clean fallback - no metallic rendering
+                g.setColour (juce::Colour (0xFF3A3D45));
                 g.fillRoundedRectangle (rr, rad);
             }
         }

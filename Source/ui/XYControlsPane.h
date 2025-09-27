@@ -28,61 +28,63 @@ public:
     void resized() override
     {
         auto r = getLocalBounds();
+        const int cols = 16;
         const int rows = 2;
-        const int minRowH = knobPx + labelGapPx + valuePx;
-        const int autoH   = juce::jmax (1, r.getHeight() / rows);
-        const int cellH   = juce::jmax (rowH > 0 ? rowH : autoH, minRowH);
-        
-        // Calculate cell width based on available space and grid layout
-        const int availableWidth = r.getWidth();
-        const int cellW = juce::jmax (colW, availableWidth / 16); // Base cell width
-        
-        // Ensure double-wide cells get proper width (minimum 120px for double-wide)
-        const int doubleWideWidth = juce::jmax (120, cellW * 2);
-        
-        // Define grid layout with double-wide cells
-        struct GridCell {
-            int col;
-            int width; // 1 = single, 2 = double
-            juce::Component* component;
-        };
-        
-        std::vector<GridCell> gridLayout;
-        
-        // Row A layout: MONO(1,2), HP(3), BASS(4,5), TILT(6,7), SCOOP(8,9), AIR(10,11), LP(12), Q+QLink(13,14), S(15), GAIN(16)
-        int col = 1;
-        if (ownedCells.size() > 0) gridLayout.push_back({col, 2, ownedCells[0].get()}); col += 2; // MONO
-        if (ownedCells.size() > 1) gridLayout.push_back({col, 1, ownedCells[1].get()}); col += 1; // HP
-        if (ownedCells.size() > 2) gridLayout.push_back({col, 2, ownedCells[2].get()}); col += 2; // BASS
-        if (ownedCells.size() > 3) gridLayout.push_back({col, 2, ownedCells[3].get()}); col += 2; // TILT
-        if (ownedCells.size() > 4) gridLayout.push_back({col, 2, ownedCells[4].get()}); col += 2; // SCOOP
-        if (ownedCells.size() > 5) gridLayout.push_back({col, 2, ownedCells[5].get()}); col += 2; // AIR
-        if (ownedCells.size() > 6) gridLayout.push_back({col, 1, ownedCells[6].get()}); col += 1; // LP
-        if (ownedCells.size() > 7) gridLayout.push_back({col, 2, ownedCells[7].get()}); col += 2; // Q+QLink
-        if (ownedCells.size() > 8) gridLayout.push_back({col, 1, ownedCells[8].get()}); col += 1; // S
-        
-        // Row B layout: Center tools + imaging controls
-        int rowBCol = 1;
-        for (int i = 10; i < (int)ownedCells.size() && rowBCol <= 16; ++i)
+        const int cellW = (colW > 0 ? colW : juce::jmax (1, r.getWidth() / cols));
+        const int cellH = (rowH > 0 ? rowH : juce::jmax (1, r.getHeight() / rows));
+        const int totalW = cellW * cols;
+        const int totalH = cellH * rows;
+        const int xOffset = (r.getWidth()  > totalW ? (r.getWidth()  - totalW) / 2 : 0);
+        const int yOffset = (r.getHeight() > totalH ? (r.getHeight() - totalH) / 2 : 0);
+
+        auto place = [&] (int index, int row, int col, int width = 1)
         {
-            gridLayout.push_back({rowBCol, 1, ownedCells[i].get()});
-            rowBCol++;
+            if (index < 0 || index >= ownedCells.size()) return;
+            if (auto* c = ownedCells[(size_t) index].get())
+            {
+                const int x = r.getX() + xOffset + (col - 1) * cellW;
+                const int y = r.getY() + yOffset + (row - 1) * cellH;
+                const int w = width * cellW;
+                c->setBounds (x, y, w, cellH);
+            }
+        };
+
+        // Row A layout: MONO(2), HP(1), BASS(2), TILT(2), SCOOP(2), AIR(2), LP(1), Q+QLink(2), S(1), BLANK(1)
+        int idx = 0;
+        place(idx++, 1, 1, 2);  // MONO (double-wide)
+        place(idx++, 1, 3, 1);  // HP
+        place(idx++, 1, 4, 2);  // BASS (double-wide)
+        place(idx++, 1, 6, 2);  // TILT (double-wide)
+        place(idx++, 1, 8, 2);  // SCOOP (double-wide)
+        place(idx++, 1, 10, 2); // AIR (double-wide)
+        place(idx++, 1, 12, 1); // LP
+        place(idx++, 1, 13, 2); // Q+QLink (double-wide)
+        place(idx++, 1, 15, 1); // S
+        // Slot 16 is intentionally left blank - no control placed there
+        
+        // Row B layout: Specific slot assignments for center processing controls
+        // Slots 17-20: ROT, ASYM, PAN, SAT MIX (imaging controls)
+        place(idx++, 2, 1, 1);  // ROT (slot 17)
+        place(idx++, 2, 2, 1);  // ASYM (slot 18)
+        place(idx++, 2, 3, 1);  // PAN (slot 19)
+        place(idx++, 2, 4, 1);  // SAT MIX (slot 20)
+        
+        // Slots 21-27: 7 blank placeholders (already created in buildControls)
+        for (int col = 5; col <= 11 && idx < (int)ownedCells.size(); ++col)
+        {
+            place(idx++, 2, col, 1);
         }
         
-        // Place components based on grid layout
-        for (const auto& cell : gridLayout)
+        // Slots 28-30: PUNCH, CNTR, LO, HI (center processing controls)
+        place(idx++, 2, 12, 1); // PUNCH (slot 28)
+        place(idx++, 2, 13, 1); // CNTR (slot 29)
+        place(idx++, 2, 14, 1); // LO (slot 30)
+        place(idx++, 2, 15, 1); // HI (slot 31)
+        
+        // Slot 32: Final blank placeholder
+        if (idx < (int)ownedCells.size())
         {
-            if (cell.component)
-            {
-                const int x = r.getX() + (cell.col - 1) * cellW;
-        const int y = r.getY() + (cell.component == ownedCells[0].get() || 
-                                cell.component == ownedCells[1].get() || cell.component == ownedCells[2].get() || 
-                                cell.component == ownedCells[3].get() || cell.component == ownedCells[4].get() || 
-                                cell.component == ownedCells[5].get() || cell.component == ownedCells[6].get() || 
-                                cell.component == ownedCells[7].get() || cell.component == ownedCells[8].get() ? 0 : 1) * cellH;
-                const int width = (cell.width == 2) ? doubleWideWidth : cell.width * cellW;
-                cell.component->setBounds(x, y, width, cellH);
-            }
+            place(idx++, 2, 16, 1); // BLANK (slot 32)
         }
     }
 
@@ -303,7 +305,10 @@ private:
         cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
         
         // Apply metallic styling like other cells
-        if (metallic) cell->getProperties().set ("metallic", true);
+        if (metallic) {
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("xyMetallic", true);
+        }
         
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
@@ -357,7 +362,10 @@ private:
         cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
         
         // Apply metallic styling like other cells
-        if (metallic) cell->getProperties().set ("metallic", true);
+        if (metallic) {
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("xyMetallic", true);
+        }
         
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
@@ -411,7 +419,10 @@ private:
         cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
         
         // Apply metallic styling like other cells
-        if (metallic) cell->getProperties().set ("metallic", true);
+        if (metallic) {
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("xyMetallic", true);
+        }
         
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
@@ -465,7 +476,10 @@ private:
         cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
         
         // Apply metallic styling like other cells
-        if (metallic) cell->getProperties().set ("metallic", true);
+        if (metallic) {
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("xyMetallic", true);
+        }
         
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
@@ -526,7 +540,10 @@ private:
         cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
         
         // Apply metallic styling like other cells
-        if (metallic) cell->getProperties().set ("metallic", true);
+        if (metallic) {
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("xyMetallic", true);
+        }
         
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
@@ -596,7 +613,10 @@ private:
         cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
         
         // Apply metallic styling like other cells
-        if (metallic) cell->getProperties().set ("metallic", true);
+        if (metallic) {
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("xyMetallic", true);
+        }
         
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
@@ -657,8 +677,24 @@ private:
         makeCell (asym,     asymV,     "ASYM",     "asymmetry",        Mgrey);
         makeCell (pan,      panV,      "PAN",      "pan",               Mgrey);
         makeCell (satMix,   satMixV,   "SAT MIX",  "sat_mix",           Mgrey);
-        makeCell (mix,      mixV,      "MIX",      "mix",               Mgrey);
-        for (int i = 0; i < 7; ++i) gridOrder.push_back (nullptr);
+        // Create blank placeholders for Row A (7 blanks)
+        for (int i = 0; i < 7; ++i) {
+            auto sl = std::make_unique<juce::Slider>();
+            auto lb = std::make_unique<juce::Label>(); 
+            lb->setVisible (false);
+            styleKnob (*sl);
+            auto cell = std::make_unique<KnobCell> (*sl, *lb, juce::String());
+            cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            cell->setValueLabelGap (labelGapPx);
+            cell->setShowKnob (false);
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("xyMetallic", true);
+            addAndMakeVisible (*cell);
+            knobCells.emplace_back (cell.get());
+            blankSliders.emplace_back (std::move (sl));
+            blankLabels.emplace_back (std::move (lb));
+            ownedCells.emplace_back (std::move (cell));
+        }
 
         // Row B: Center tools (metallic)
         const bool M = true;
@@ -670,7 +706,25 @@ private:
         makeCell (promDb,   promDbV,   "CNTR",     "center_prom_db", M);
         makeCell (focusLo,  focusLoV,  "LO",       "center_f_lo_hz", M);
         makeCell (focusHi,  focusHiV,  "HI",       "center_f_hi_hz", M);
-        for (int i = 0; i < 8; ++i) gridOrder.push_back (nullptr);
+        
+        // Create blank placeholders for Row B (8 blanks)
+        for (int i = 0; i < 8; ++i) {
+            auto sl = std::make_unique<juce::Slider>();
+            auto lb = std::make_unique<juce::Label>(); 
+            lb->setVisible (false);
+            styleKnob (*sl);
+            auto cell = std::make_unique<KnobCell> (*sl, *lb, juce::String());
+            cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            cell->setValueLabelGap (labelGapPx);
+            cell->setShowKnob (false);
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("xyMetallic", true);
+            addAndMakeVisible (*cell);
+            knobCells.emplace_back (cell.get());
+            blankSliders.emplace_back (std::move (sl));
+            blankLabels.emplace_back (std::move (lb));
+            ownedCells.emplace_back (std::move (cell));
+        }
 
         // Grid layout is now handled directly in resized() method
         // No need for the old gridOrder system since we use explicit component placement
