@@ -154,30 +154,9 @@ void KnobCellWithAux::paint (juce::Graphics& g)
             const bool delayMetal    = (bool) getProperties().getWithDefault ("delayMetallic", false);
             const bool bandMetal     = (bool) getProperties().getWithDefault ("bandMetallic",  false);
             const bool phaseMetal    = (bool) getProperties().getWithDefault ("phaseMetallic", false);
+            const bool xyMetal       = (bool) getProperties().getWithDefault ("xyMetallic", false);
             
-            // Debug: Draw different colored borders to see which metallic type is detected
-            if (phaseMetal) {
-                g.setColour(juce::Colours::red);
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            } else if (bandMetal) {
-                g.setColour(juce::Colours::blue);
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            } else if (reverbMetal) {
-                g.setColour(juce::Colours::green);
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            } else if (delayMetal) {
-                g.setColour(juce::Colours::yellow);
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            } else if (motionGreen) {
-                g.setColour(juce::Colours::purple);
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            } else if (metallic) {
-                g.setColour(juce::Colours::cyan); // Cyan for neutral metallic (XY controls)
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            } else {
-                g.setColour(juce::Colours::orange);
-                g.drawRoundedRectangle(rr, rad, 3.0f);
-            }
+            // Debug borders removed - metallic system working correctly
 
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
             {
@@ -197,10 +176,6 @@ void KnobCellWithAux::paint (juce::Graphics& g)
                 else if (phaseMetal)
                 {
                     // Phase-Specific Metallic System (Deep Cobalt Interference)
-                    // Debug: Draw a bright red border to verify Phase metallic is being called
-                    g.setColour(juce::Colours::red);
-                    g.drawRoundedRectangle(rr, rad, 3.0f);
-                    
                     FieldLNF::PhaseMetal phaseMetalConfig {
                         lf->theme.metal.phase.top, lf->theme.metal.phase.bottom,
                         lf->theme.metal.phase.tint, lf->theme.metal.phase.tintAlpha,
@@ -213,9 +188,14 @@ void KnobCellWithAux::paint (juce::Graphics& g)
                 {
                     FieldLNF::paintMetal(g, rr, lf->theme.metal.motion, rad);
                 }
+                else if (xyMetal)
+                {
+                    // XY controls: Neutral metallic (Ocean-harmonized steel)
+                    FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad);
+                }
                 else if (metallic)
                 {
-                    // Neutral metallic for XY controls (Ocean-harmonized steel)
+                    // Fallback neutral metallic for other controls
                     FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad);
                 }
                 else
@@ -263,16 +243,7 @@ void KnobCellWithAux::paint (juce::Graphics& g)
         g.drawRoundedRectangle (border, rad, 1.5f);
     }
 
-    // Draw recessed badge for main label
-    auto labelBounds = mainLabel.getBounds().toFloat();
-    if (!labelBounds.isEmpty())
-    {
-        auto badge = labelBounds.reduced (2.0f);
-        g.setColour (sh.withAlpha (0.15f));
-        g.fillRoundedRectangle (badge, 3.0f);
-        g.setColour (sh.withAlpha (0.25f));
-        g.drawRoundedRectangle (badge, 3.0f, 0.5f);
-    }
+    // Label background removed - use default styling to match KnobCell
 
     // Standard border treatment for XY controls (reduced brightness)
     const bool isXYControl = (bool) getProperties().getWithDefault ("centerStyle", false);

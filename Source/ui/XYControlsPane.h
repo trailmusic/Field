@@ -108,7 +108,12 @@ private:
         auto cell = std::make_unique<KnobCell> (s, v, cap);
         cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
         cell->setValueLabelGap (labelGapPx);
-        if (metallic) cell->getProperties().set ("metallic", true);
+        if (metallic) {
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("xyMetallic", true);
+            // Debug: Set a visual indicator that metallic property was set
+            cell->getProperties().set ("debugMetallicSet", true);
+        }
         // Center/XY knobs: give a subtle metallic gradient hint
         cell->getProperties().set ("centerStyle", true);
         // Ensure caption renders via KnobCell paint helper

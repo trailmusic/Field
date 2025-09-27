@@ -62,7 +62,6 @@ public:
     }
     
     void resized() override;
-    void paint (juce::Graphics& g) override;
 
 private:
     void styleKnob (juce::Slider& k);

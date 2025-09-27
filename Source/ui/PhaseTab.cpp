@@ -50,32 +50,7 @@ void PhaseTab::resized()
             place (idx++, row, col);
 }
 
-void PhaseTab::paint (juce::Graphics& g)
-{
-    auto bounds = getLocalBounds().toFloat();
-    
-    // Use theme colors like other components
-    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-    {
-        g.setColour(lf->theme.panel);
-        g.fillRoundedRectangle(bounds, 6.0f);
-        
-        // Standard accent border treatment
-        g.setColour(lf->theme.accent.withAlpha(0.3f));
-        g.drawRoundedRectangle(bounds, 6.0f, 1.0f);
-    }
-    else
-    {
-        // Fallback for non-theme look and feel
-        g.setColour(juce::Colours::darkgrey);
-        g.fillRoundedRectangle(bounds, 6.0f);
-    }
-    
-    // Draw title
-    g.setColour (juce::Colours::white);
-    g.setFont (juce::Font (24.0f, juce::Font::bold));
-    g.drawText ("Phase Alignment", getLocalBounds().removeFromTop (50), juce::Justification::centred);
-}
+// PhaseTab is transparent like other tabs - no custom paint method needed
 
 void PhaseTab::styleKnob (juce::Slider& k)
 {
@@ -102,15 +77,7 @@ void PhaseTab::makeCell (juce::Slider& s, juce::Label& v, const juce::String& ca
     cell->getProperties().set ("metallic", true);
     cell->getProperties().set ("phaseMetallic", true);
     
-    // Debug: Verify properties are set and component type
-    const bool hasMetallic = cell->getProperties().getWithDefault ("metallic", false);
-    const bool hasPhaseMetallic = cell->getProperties().getWithDefault ("phaseMetallic", false);
-    jassert (hasMetallic && hasPhaseMetallic); // This should not fail
-    
-    // Debug: Set a unique property to identify this as a Phase KnobCell
-    cell->getProperties().set ("debugPhaseKnobCell", true);
-    
-    // Debug: Properties are set (removed console output for simplicity)
+    // Phase controls use metallic blue styling
     addAndMakeVisible (*cell);
     knobCells.emplace_back (cell.get());
     ownedCells.emplace_back (std::move (cell));
@@ -236,10 +203,7 @@ void PhaseTab::makeComboCell (juce::ComboBox& c, const juce::String& cap, const 
     cell->getProperties().set ("metallic", true);
     cell->getProperties().set ("phaseMetallic", true);
     
-    // Debug: Verify properties are set
-    const bool hasMetallic = cell->getProperties().getWithDefault ("metallic", false);
-    const bool hasPhaseMetallic = cell->getProperties().getWithDefault ("phaseMetallic", false);
-    jassert (hasMetallic && hasPhaseMetallic); // This should not fail
+    // Phase controls use metallic blue styling
     
     addAndMakeVisible (*cell);
     switchCells.emplace_back (cell.get());
@@ -260,10 +224,7 @@ void PhaseTab::makeSwitchCell (juce::ToggleButton& t, const juce::String& cap, c
     cell->getProperties().set ("metallic", true);
     cell->getProperties().set ("phaseMetallic", true);
     
-    // Debug: Verify properties are set
-    const bool hasMetallic = cell->getProperties().getWithDefault ("metallic", false);
-    const bool hasPhaseMetallic = cell->getProperties().getWithDefault ("phaseMetallic", false);
-    jassert (hasMetallic && hasPhaseMetallic); // This should not fail
+    // Phase controls use metallic blue styling
     
     addAndMakeVisible (*cell);
     switchCells.emplace_back (cell.get());
