@@ -279,10 +279,10 @@ private:
         
         auto grid = juce::Colours::white.withAlpha (0.12f);
         
-        // Draw crossovers (draggable) - drawn on top of everything
+        // Draw crossovers (draggable) - drawn on top of everything with high opacity
         auto drawX = [&](float x){ juce::Path p; p.startNewSubPath (x, r.getY()); p.lineTo (x, r.getBottom());
                                    const float dashes[] = { 5.0f, 4.0f }; juce::Path dashed; juce::PathStrokeType (1.2f).createDashedStroke (dashed, p, dashes, 2);
-                                   g.setColour (grid.withAlpha (0.8f)); g.strokePath (dashed, juce::PathStrokeType (1.6f)); };
+                                   g.setColour (grid.withAlpha (1.0f)); g.strokePath (dashed, juce::PathStrokeType (2.0f)); };
         drawX (xLo); drawX (xHi);
     }
 

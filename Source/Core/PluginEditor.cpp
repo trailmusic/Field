@@ -743,28 +743,7 @@ void XYPad::drawImagingOverlays (juce::Graphics& g, juce::Rectangle<float> b)
         return juce::jmap (t, 0.0f, 1.0f, b.getX(), b.getRight());
     };
 
-    // 1) Three-band crossovers (clamped like DSP)
-    {
-        float lo = juce::jlimit (40.0f, 400.0f, xoverLoHz);
-        float hi = juce::jlimit (800.0f, 6000.0f, xoverHiHz);
-        if (hi <= lo) hi = juce::jlimit (lo + 10.0f, 6000.0f, hi);
-        const float xLo = xAtHz (lo);
-        const float xHi = xAtHz (hi);
-
-        auto drawDashed = [&] (float x)
-        {
-            juce::Path p; p.startNewSubPath (x, b.getY()); p.lineTo (x, b.getBottom());
-            const float dashes[] = { 5.0f, 4.0f };
-            juce::Path dashed; juce::PathStrokeType (1.2f).createDashedStroke (dashed, p, dashes, 2);
-            // Slightly brighter guides
-            g.setColour (gridCol.withAlpha (0.8f));
-            g.strokePath (dashed, juce::PathStrokeType (1.6f));
-        };
-        drawDashed (xLo);
-        drawDashed (xHi);
-
-        // LO MID HI labels removed - now shown in Band tab
-    }
+    // XO LO and XO HI lines moved to Band tab - no longer drawn in XY Pad
 
     // 2) True M/S rotation renderer (energy circle + rotated basis + S-curve)
     if (lf)
