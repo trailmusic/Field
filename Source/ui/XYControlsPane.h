@@ -650,13 +650,10 @@ private:
         // Additional imaging/placement controls moved from Imager to XY
         makeCell (rotation, rotationV, "ROT",      "rotation_deg",     Mgrey);
         makeCell (asym,     asymV,     "ASYM",     "asymmetry",        Mgrey);
-        makeCell (shufLo,   shufLoV,   "SHUF LO",  "shuffler_lo_pct",  Mgrey);
-        makeCell (shufHi,   shufHiV,   "SHUF HI",  "shuffler_hi_pct",  Mgrey);
-        makeCell (shufX,    shufXV,    "SHUF XO",  "shuffler_xover_hz",Mgrey);
         makeCell (pan,      panV,      "PAN",      "pan",               Mgrey);
         makeCell (satMix,   satMixV,   "SAT MIX",  "sat_mix",           Mgrey);
         makeCell (mix,      mixV,      "MIX",      "mix",               Mgrey);
-        for (int i = 0; i < 4; ++i) gridOrder.push_back (nullptr);
+        for (int i = 0; i < 7; ++i) gridOrder.push_back (nullptr);
 
         // Row B: Center tools (metallic)
         const bool M = true;
@@ -701,9 +698,9 @@ private:
     juce::AudioProcessorValueTreeState& apvts;
     // EQ row + imaging controls moved from Imager
     juce::Slider bass, hp, lp, q, air, tilt, scoop, shelfS, mix;
-    juce::Slider rotation, asym, shufLo, shufHi, shufX, monoHz, pan, satMix;
+    juce::Slider rotation, asym, monoHz, pan, satMix;
     juce::Label  bassV, hpV, lpV, qV, airV, tiltV, scoopV, shelfSV, mixV;
-    juce::Label  rotationV, asymV, shufLoV, shufHiV, shufXV, monoV, panV, satMixV;
+    juce::Label  rotationV, asymV, monoV, panV, satMixV;
     juce::ToggleButton qLink;
     
     // Frequency mini sliders for BASS, AIR, TILT, SCOOP

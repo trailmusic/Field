@@ -135,10 +135,7 @@ public:
     void setXoverHiHz   (float hz) { xoverHiHz = juce::jlimit (800.0f, 6000.0f, hz); if (xoverHiHz <= xoverLoHz) xoverHiHz = juce::jlimit (xoverLoHz + 10.0f, 6000.0f, xoverHiHz); repaint(); }
     void setRotationDeg (float d)  { rotationDeg = juce::jlimit (-45.0f, 45.0f, d); repaint(); }
     void setAsymmetry   (float a)  { asym = juce::jlimit (-1.0f, 1.0f, a); repaint(); }
-    void setShuffler    (float loPct, float hiPct, float xHz)
-    {
-        shufLoPct = loPct; shufHiPct = hiPct; shufXHz = juce::jlimit (150.0f, 2000.0f, xHz); repaint();
-    }
+    // SHUF methods moved to Band tab
     
     void pushWaveformSample (double sampleL, double sampleR); // for background waveform
     void setSampleRate (double fs) { vizSampleRate = fs > 0.0 ? fs : 48000.0; }
@@ -201,9 +198,7 @@ private:
     float xoverHiHz = 2000.0f;
     float rotationDeg = 0.0f;
     float asym = 0.0f; // -1..+1
-    float shufLoPct = 100.0f;
-    float shufHiPct = 100.0f;
-    float shufXHz   = 700.0f;
+    // SHUF parameters moved to Band tab
     
     // Waveform buffer
     static constexpr int waveformBufferSize = 512;
@@ -1496,7 +1491,7 @@ private:
     juce::Slider widthLo, widthMid, widthHi;
     juce::Slider xoverLoHz, xoverHiHz;
     juce::Slider rotationDeg, asymmetry;
-    juce::Slider shufLoPct, shufHiPct, shufXHz;
+    // SHUF sliders moved to Band tab
     PanSlider    panKnob;
     PanSlider    panKnobLeft, panKnobRight;  // split mode pan
     DuckingSlider duckingKnob;
@@ -1954,7 +1949,7 @@ private:
     juce::Label panValue, panValueLeft, panValueRight, spaceValue, duckingValue;
     juce::Label duckAttackValue, duckReleaseValue, duckThresholdValue, duckRatioValue;
     juce::Label tiltFreqValue, scoopFreqValue, bassFreqValue, airFreqValue;
-    juce::Label widthLoValue, widthMidValue, widthHiValue, xoverLoValue, xoverHiValue, rotationValue, asymValue, shufLoValue, shufHiValue, shufXValue;
+    juce::Label widthLoValue, widthMidValue, widthHiValue, xoverLoValue, xoverHiValue, rotationValue, asymValue;
     juce::Label delayTimeValue, delayFeedbackValue, delayWetValue, delaySpreadValue, delayWidthValue, delayModRateValue, delayModDepthValue, delayWowflutterValue, delayJitterValue, delayPreDelayValue;
     juce::Label delayHpValue, delayLpValue, delayTiltValue, delaySatValue, delayDiffusionValue, delayDiffuseSizeValue;
     juce::Label delayDuckDepthValue, delayDuckAttackValue, delayDuckReleaseValue, delayDuckThresholdValue, delayDuckRatioValue, delayDuckLookaheadValue;
@@ -1999,9 +1994,7 @@ private:
     std::unique_ptr<KnobCell> xoverHiCell;
     std::unique_ptr<KnobCell> rotationCell;
     std::unique_ptr<KnobCell> asymCell;
-    std::unique_ptr<KnobCell> shufLoCell;
-    std::unique_ptr<KnobCell> shufHiCell;
-    std::unique_ptr<KnobCell> shufXCell;
+    // SHUF cells moved to Band tab
     std::unique_ptr<KnobCell> shelfShapeCell;
     std::unique_ptr<KnobCell> filterQCell;
     std::unique_ptr<KnobCell> qClusterCell;

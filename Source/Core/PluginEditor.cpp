@@ -777,33 +777,7 @@ void XYPad::drawImagingOverlays (juce::Graphics& g, juce::Rectangle<float> b)
                              lf->theme.accent, lf->theme.text, lf->theme.panel);
     }
 
-    // 4) Shuffler width strip (bottom, 3x taller)
-    {
-        auto band = b.removeFromBottom (36.0f);
-        const float xX = xAtHz (juce::jlimit (150.0f, 2000.0f, shufXHz));
-
-        auto widthH = [&] (float pct)
-        {
-            pct = juce::jlimit (50.0f, 200.0f, pct);
-            return juce::jmap (pct, 50.0f, 200.0f, band.getHeight() * 0.2f, band.getHeight());
-        };
-
-        // baseline @100%
-        g.setColour (gridCol.withAlpha (0.9f));
-        const float yBase = band.getBottom() - widthH (100.0f);
-        g.drawLine (band.getX(), yBase, band.getRight(), yBase, 1.0f);
-
-        // left segment (Lo%)
-        g.setColour (acc.withAlpha (0.25f));
-        g.fillRect (juce::Rectangle<float> (band.getX(), band.getBottom() - widthH (shufLoPct), xX - band.getX(), widthH (shufLoPct)));
-        // right segment (Hi%)
-        g.setColour (acc.withAlpha (0.35f));
-        g.fillRect (juce::Rectangle<float> (xX, band.getBottom() - widthH (shufHiPct), band.getRight() - xX, widthH (shufHiPct)));
-
-        // crossover tick and optional full-height dotted discovery guide
-        g.setColour (gridCol.withAlpha (0.8f));
-        g.drawLine (xX, band.getY(), xX, band.getBottom(), 1.0f);
-    }
+    // SHUF visuals moved to Band tab
 }
 // ---- grid / frequency regions / EQ / balls ----
 // Minimal implementations to satisfy drawing helpers used by XYPad::paint
@@ -1878,7 +1852,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
 
     // main rotary
     for (juce::Slider* slider : { &width,&tilt,&monoHz,&hpHz,&lpHz,&satDrive,&satMix,&air,&bass,&scoop,
-                              &widthLo,&widthMid,&widthHi,&xoverLoHz,&xoverHiHz,&rotationDeg,&asymmetry,&shufLoPct,&shufHiPct,&shufXHz,
+                              &widthLo,&widthMid,&widthHi,&xoverLoHz,&xoverHiHz,&rotationDeg,&asymmetry,
                               &shelfShapeS,&filterQ })
     {
         addAndMakeVisible (*slider);
@@ -1947,7 +1921,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
                              &panValue,&panValueLeft,&panValueRight,&spaceValue,&duckingValue,&duckAttackValue,&duckReleaseValue,&duckThresholdValue,&duckRatioValue,
                              &tiltFreqValue,&scoopFreqValue,&bassFreqValue,&airFreqValue,
                              &widthLoValue,&widthMidValue,&widthHiValue,&xoverLoValue,&xoverHiValue,
-                             &rotationValue,&asymValue,&shufLoValue,&shufHiValue,&shufXValue,
+                             &rotationValue,&asymValue,
                              &delayTimeValue,&delayFeedbackValue,&delayWetValue,&delaySpreadValue,&delayWidthValue,&delayModRateValue,&delayModDepthValue,&delayWowflutterValue,&delayJitterValue,
                              &delayHpValue,&delayLpValue,&delayTiltValue,&delaySatValue,&delayDiffusionValue,&delayDiffuseSizeValue,
                              &delayDuckDepthValue,&delayDuckAttackValue,&delayDuckReleaseValue,&delayDuckThresholdValue,&delayDuckRatioValue,&delayDuckLookaheadValue })
@@ -1997,7 +1971,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     widthLo.setName ("W LO"); widthMid.setName ("W MID"); widthHi.setName ("W HI");
     xoverLoHz.setName ("XO LO"); xoverHiHz.setName ("XO HI");
     rotationDeg.setName ("ROT"); asymmetry.setName ("ASYM");
-    shufLoPct.setName ("SHUF LO"); shufHiPct.setName ("SHUF HI"); shufXHz.setName ("SHUF XO");
 
     // HP/LP value label precision: integer Hz
     hpHz.setNumDecimalPlacesToDisplay (0);
@@ -2219,9 +2192,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::xoverHiHz,      xoverHiHz));
     attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::rotationDeg,     rotationDeg));
     attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::asymmetry,        asymmetry));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::shufLoPct,  shufLoPct));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::shufHiPct,  shufHiPct));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::shufXHz, shufXHz));
 
     // All children created; allow layout from now on
     layoutReady = true;
@@ -2564,9 +2534,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     proc.apvts.addParameterListener ("xover_hi_hz",    this);
     proc.apvts.addParameterListener ("rotation_deg",   this);
     proc.apvts.addParameterListener ("asymmetry",      this);
-    proc.apvts.addParameterListener ("shuffler_lo_pct", this);
-    proc.apvts.addParameterListener ("shuffler_hi_pct", this);
-    proc.apvts.addParameterListener ("shuffler_xover_hz", this);
 
     // audio callbacks -> panes
     proc.onAudioSample   = [this](float L, float R) { if (panes) panes->onAudioSample (L, R); };
@@ -2655,9 +2622,7 @@ void MyPluginAudioProcessorEditor::buildCells()
     if (!xoverHiCell)  xoverHiCell  = std::make_unique<KnobCell>(xoverHiHz, xoverHiValue, "XO HI");
     if (!rotationCell) rotationCell = std::make_unique<KnobCell>(rotationDeg, rotationValue, "ROT");
     if (!asymCell)     asymCell     = std::make_unique<KnobCell>(asymmetry,   asymValue,     "ASYM");
-    if (!shufLoCell)   shufLoCell   = std::make_unique<KnobCell>(shufLoPct,   shufLoValue,   "SHUF LO");
-    if (!shufHiCell)   shufHiCell   = std::make_unique<KnobCell>(shufHiPct,   shufHiValue,   "SHUF HI");
-    if (!shufXCell)    shufXCell    = std::make_unique<KnobCell>(shufXHz,     shufXValue,    "SHUF XO");
+    // SHUF cells moved to Band tab
 
     if (!delayTimeCell)      delayTimeCell       = std::make_unique<KnobCell>(delayTime,      delayTimeValue,      "TIME");
     if (!delayFeedbackCell)  delayFeedbackCell   = std::make_unique<KnobCell>(delayFeedback,  delayFeedbackValue,  "FB");
@@ -2740,9 +2705,6 @@ MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
     proc.apvts.removeParameterListener ("xover_hi_hz",    this);
     proc.apvts.removeParameterListener ("rotation_deg",   this);
     proc.apvts.removeParameterListener ("asymmetry",      this);
-    proc.apvts.removeParameterListener ("shuffler_lo_pct", this);
-    proc.apvts.removeParameterListener ("shuffler_hi_pct", this);
-    proc.apvts.removeParameterListener ("shuffler_xover_hz", this);
     f.appendText("Editor Destructor: Parameter listeners removed\n", false, false, "\n");
 
     // Detach UI listeners from knobs
@@ -3956,7 +3918,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             tiltFreqSlider.getProperties().set ("micro", true);
             if (!xoverLoCell)  xoverLoCell  = std::make_unique<KnobCell>(xoverLoHz, xoverLoValue, "XO LO");
             if (!xoverHiCell)  xoverHiCell  = std::make_unique<KnobCell>(xoverHiHz, xoverHiValue, "XO HI");
-            for (auto* kc : { xoverLoCell.get(), xoverHiCell.get(), shufLoCell.get(), shufHiCell.get() })
+            for (auto* kc : { xoverLoCell.get(), xoverHiCell.get() })
                 if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap); }
 
             // Left Row4: SCOOP + imaging
@@ -3970,7 +3932,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             scoopCell->setMiniWithLabel (&scoopFreqSlider, &scoopFreqValue, scoopMiniW);
             scoopFreqSlider.getProperties().set ("micro", true);
             if (!shelfShapeCell) shelfShapeCell = std::make_unique<KnobCell>(shelfShapeS, shelfShapeValue, "Shape");
-            for (auto* kc : { rotationCell.get(), asymCell.get(), shufXCell.get(), shelfShapeCell.get() })
+            for (auto* kc : { rotationCell.get(), asymCell.get(), shelfShapeCell.get() })
                 if (kc) { kc->setMetrics (lPx, valuePx, 0); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (Layout::dp (6, s)); }
 
             // Center rows 1-4
@@ -4037,13 +3999,10 @@ void MyPluginAudioProcessorEditor::performLayout()
         addVis (widthHiCell.get());
         addVis (tiltCell.get());
         addVis (xoverLoCell.get());
-        addVis (shufLoCell.get());
-        addVis (shufHiCell.get());
         addVis (xoverHiCell.get());
         addVis (scoopCell.get());
         addVis (rotationCell.get());
         addVis (asymCell.get());
-        addVis (shufXCell.get());
         addVis (shelfShapeCell.get());
         addVis (gainCell.get());
         addVis (satMixCell.get());
@@ -4183,9 +4142,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         // Row 3: Left (1-6)
         items.add (juce::GridItem (*tiltCell)     .withArea (3, 1, 4, 3)); // spans 1-2
         items.add (juce::GridItem (*xoverLoCell)  .withArea (3, 3));
-        items.add (juce::GridItem (*shufLoCell)   .withArea (3, 4));
-        items.add (juce::GridItem (*shufHiCell)   .withArea (3, 5));
-        items.add (juce::GridItem (*xoverHiCell)  .withArea (3, 6));
+        items.add (juce::GridItem (*xoverHiCell)  .withArea (3, 4));
         // Row 3: Center (7-10)
         items.add (juce::GridItem (*centerPunchAmtCell).withArea (3, 7));
         items.add (juce::GridItem (*centerPromCell)    .withArea (3, 8));
@@ -4206,8 +4163,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         items.add (juce::GridItem (*scoopCell)    .withArea (4, 1, 5, 3)); // spans 1-2
         items.add (juce::GridItem (*rotationCell) .withArea (4, 3));
         items.add (juce::GridItem (*asymCell)     .withArea (4, 4));
-        items.add (juce::GridItem (*shufXCell)    .withArea (4, 5));
-        items.add (juce::GridItem (*shelfShapeCell).withArea (4, 6));
+        items.add (juce::GridItem (*shelfShapeCell).withArea (4, 5));
         // Row 4: Center (7-10)
         items.add (juce::GridItem (*centerPunchModeCell).withArea (4, 7));
         items.add (juce::GridItem (*centerPhaseRecCell) .withArea (4, 8));
@@ -4639,9 +4595,7 @@ void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
     else if (s == &xoverHiHz) set (xoverHiValue, juce::String ((int) xoverHiHz.getValue()) + " Hz");
     else if (s == &rotationDeg) set (rotationValue, juce::String (rotationDeg.getValue(), 1) + "°");
     else if (s == &asymmetry)   set (asymValue,     juce::String (juce::roundToInt (asymmetry.getValue() * 100.0)) + "%");
-    else if (s == &shufLoPct)   set (shufLoValue,   juce::String (juce::roundToInt (shufLoPct.getValue())) + "%");
-    else if (s == &shufHiPct)   set (shufHiValue,   juce::String (juce::roundToInt (shufHiPct.getValue())) + "%");
-    else if (s == &shufXHz)     set (shufXValue,    juce::String ((int) shufXHz.getValue()) + " Hz");
+    // SHUF value updates moved to Band tab
     
     // Delay controls
     else if (s == &delayTime) set (delayTimeValue, juce::String ((int) delayTime.getValue()) + " ms");
@@ -4781,8 +4735,7 @@ void MyPluginAudioProcessorEditor::parameterChanged (const juce::String& id, flo
             syncXYPadWithParameters();
         });
     }
-    else if (id == "xover_lo_hz" || id == "xover_hi_hz" || id == "rotation_deg" || id == "asymmetry"
-          || id == "shuffler_lo_pct" || id == "shuffler_hi_pct" || id == "shuffler_xover_hz")
+    else if (id == "xover_lo_hz" || id == "xover_hi_hz" || id == "rotation_deg" || id == "asymmetry")
     {
         juce::MessageManager::callAsync ([this]
         {
@@ -4913,7 +4866,7 @@ void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
     pad.setXoverHiHz   ((float) xoverHiHz.getValue());
     pad.setRotationDeg ((float) rotationDeg.getValue());
     pad.setAsymmetry   ((float) asymmetry.getValue());
-    pad.setShuffler    ((float) shufLoPct.getValue(), (float) shufHiPct.getValue(), (float) shufXHz.getValue());
+    // SHUF parameters moved to Band tab
     updateMutedKnobVisuals();
 }
 void MyPluginAudioProcessorEditor::updateMotionParameterAttachments(int pannerSelect)

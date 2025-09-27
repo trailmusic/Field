@@ -13,6 +13,7 @@ public:
     void setSampleRate (double sr);
     void setWidths (float lo, float mid, float hi);
     void setCrossovers (float loHz, float hiHz);
+    void setShuffler (float loPct, float hiPct, float xHz);
     void pushBlock (const float* L, const float* R, int n, bool isPre);
     void resized() override;
     void paint (juce::Graphics& g) override;
@@ -185,10 +186,47 @@ private:
         drawVert (cxHi,  widthHi);
     }
 
+    void drawShufflerStrip (juce::Graphics& g, juce::Rectangle<float> r)
+    {
+        // Shuffler width strip (bottom, 3x taller)
+        auto band = r.removeFromBottom (36.0f);
+        auto xAtHz = [&](float hz){ const float minHz=20.0f, maxHz=20000.0f; const float t=(float)(std::log10(juce::jlimit(minHz,maxHz,hz)/minHz)/std::log10(maxHz/minHz)); return juce::jmap(t,0.0f,1.0f,r.getX(),r.getRight()); };
+        const float xX = xAtHz (juce::jlimit (150.0f, 2000.0f, shufXHz));
+
+        auto widthH = [&] (float pct)
+        {
+            const float h = juce::jmap (juce::jlimit (0.0f, 200.0f, pct), 0.0f, 200.0f, 4.0f, band.getHeight() - 4.0f);
+            return juce::jmax (4.0f, h);
+        };
+
+        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+        auto acc = lf ? lf->theme.accent : juce::Colours::aqua;
+        auto gridCol = lf ? lf->theme.text : juce::Colours::white;
+
+        // left segment (Lo%)
+        g.setColour (acc.withAlpha (0.25f));
+        g.fillRect (juce::Rectangle<float> (band.getX(), band.getBottom() - widthH (shufLoPct), xX - band.getX(), widthH (shufLoPct)));
+        // right segment (Hi%)
+        g.setColour (acc.withAlpha (0.35f));
+        g.fillRect (juce::Rectangle<float> (xX, band.getBottom() - widthH (shufHiPct), band.getRight() - xX, widthH (shufHiPct)));
+
+        // crossover tick and optional full-height dotted discovery guide
+        g.setColour (gridCol.withAlpha (0.8f));
+        g.drawVerticalLine (juce::roundToInt (xX), band.getY(), band.getBottom());
+        g.setColour (gridCol.withAlpha (0.3f));
+        for (int i = 0; i < 3; ++i)
+        {
+            const float y = band.getY() + i * (band.getHeight() / 3.0f);
+            g.drawHorizontalLine (juce::roundToInt (y), band.getX(), band.getRight());
+        }
+    }
+
     // Data members
     double sampleRate = 48000.0;
     float widthLo = 1.0f, widthMid = 1.0f, widthHi = 1.0f;
     float xoverLoHz = 150.0f, xoverHiHz = 2000.0f;
+    // Shuffle parameters
+    float shufLoPct = 100.0f, shufHiPct = 100.0f, shufXHz = 700.0f;
     
     // Audio data
     std::vector<std::pair<float,float>> fifoPre, fifoPost;

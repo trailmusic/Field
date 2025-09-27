@@ -59,6 +59,12 @@ void BandVisualPane::setCrossovers (float loHz, float hiHz)
     repaint();
 }
 
+void BandVisualPane::setShuffler (float loPct, float hiPct, float xHz)
+{
+    shufLoPct = loPct; shufHiPct = hiPct; shufXHz = juce::jlimit (150.0f, 2000.0f, xHz);
+    repaint();
+}
+
 void BandVisualPane::pushBlock (const float* L, const float* R, int n, bool isPre)
 {
     if (n <= 0) return;
@@ -115,6 +121,9 @@ void BandVisualPane::paint (juce::Graphics& g)
     drawWidthEditor (g, b.reduced (8.0f));
     drawWidthOverlay (g, b.reduced (8.0f));
     drawWidthHints (g, b.reduced (8.0f));
+    
+    // Shuffler visual strip
+    drawShufflerStrip (g, b.reduced (8.0f));
 }
 
 void BandVisualPane::timerCallback()

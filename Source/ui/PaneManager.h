@@ -223,6 +223,10 @@ public:
                 if (auto* wMi = proc.apvts.getRawParameterValue ("width_mid"))
                 if (auto* wHi = proc.apvts.getRawParameterValue ("width_hi"))
                     bp->setWidths (*wLo, *wMi, *wHi);
+                if (auto* sLo = proc.apvts.getRawParameterValue ("shuffler_lo_pct"))
+                if (auto* sHi = proc.apvts.getRawParameterValue ("shuffler_hi_pct"))
+                if (auto* sX = proc.apvts.getRawParameterValue ("shuffler_xover_hz"))
+                    bp->setShuffler (*sLo, *sHi, *sX);
             }
         }
         const bool wantMach = (active == PaneID::Machine) && doHeavy;

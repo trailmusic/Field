@@ -105,6 +105,11 @@ private:
         makeCell (xoLo,     xoLoV,     "XO LO",     "xover_lo_hz");
         makeCell (xoHi,     xoHiV,     "XO HI",     "xover_hi_hz");
 
+        // Shuffle controls
+        makeCell (shufLo,   shufLoV,   "SHUF LO",   "shuffler_lo_pct");
+        makeCell (shufHi,   shufHiV,   "SHUF HI",   "shuffler_hi_pct");
+        makeCell (shufX,    shufXV,    "SHUF XO",   "shuffler_xover_hz");
+
         // Designer controls (5): Side Tilt, Pivot, Auto Depth/Thr, Attack, Release, Max
         makeCell (sideTiltDbOct, valSideTilt, "TILT S",  "width_side_tilt_db_oct");
         makeCell (pivotHz,       valPivot,    "PIVOT",   "width_tilt_pivot_hz");
@@ -113,19 +118,20 @@ private:
         makeCell (autoAtkMs,     valAtk,      "ATT",     "width_auto_atk_ms");
 
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
-        // Row A: WIDTH cluster + XO controls + Designer 5
+        // Row A: WIDTH cluster + XO controls + SHUF controls + Designer 3
         push (ownedCells[0].get()); // WIDTH
         push (ownedCells[1].get()); // WIDTH LO
         push (ownedCells[2].get()); // WIDTH MID
         push (ownedCells[3].get()); // WIDTH HI
         push (ownedCells[4].get()); // XO LO
         push (ownedCells[5].get()); // XO HI
-        push (ownedCells[6].get()); // TILT S
-        push (ownedCells[7].get()); // PIVOT
-        push (ownedCells[8].get()); // AUTO DEP
-        push (ownedCells[9].get()); // AUTO THR
-        push (ownedCells[10].get()); // ATT
-        for (int i = 0; i < 5; ++i) gridOrder.push_back (nullptr);
+        push (ownedCells[6].get()); // SHUF LO
+        push (ownedCells[7].get()); // SHUF HI
+        push (ownedCells[8].get()); // SHUF XO
+        push (ownedCells[9].get()); // TILT S
+        push (ownedCells[10].get()); // PIVOT
+        push (ownedCells[11].get()); // AUTO DEP
+        for (int i = 0; i < 4; ++i) gridOrder.push_back (nullptr);
         // Row B
         for (int i = 0; i < 16; ++i) gridOrder.push_back (nullptr);
 
@@ -173,6 +179,9 @@ private:
     // Crossover controls
     juce::Slider xoLo, xoHi;
     juce::Label  xoLoV, xoHiV;
+    // Shuffle controls
+    juce::Slider shufLo, shufHi, shufX;
+    juce::Label  shufLoV, shufHiV, shufXV;
     // Designer sliders
     juce::Slider sideTiltDbOct, pivotHz, autoDepth, autoThrDb, autoAtkMs, autoRelMs, maxWidth;
     juce::Label  valSideTilt, valPivot, valAutoDepth, valAutoThr, valAtk, valRel, valMax;

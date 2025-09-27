@@ -35,6 +35,7 @@ public:
     }
     void setCrossovers (float loHz, float hiHz)     { if (visuals) visuals->setCrossovers (loHz, hiHz); }
     void setWidths (float lo, float mid, float hi)  { if (visuals) visuals->setWidths (lo, mid, hi); }
+    void setShuffler (float loPct, float hiPct, float xHz) { if (visuals) visuals->setShuffler (loPct, hiPct, xHz); }
 
     // Allow PaneManager to route parameter edits to the processor
     void setParamEditCallback (std::function<void(const juce::String&, float)> cb)
