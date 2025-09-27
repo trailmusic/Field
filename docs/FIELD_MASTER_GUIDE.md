@@ -199,6 +199,7 @@
 
 #### **Color System & Theming**
 - [Theme-Driven Palette](#theme-driven-palette)
+- [Meter Color System](#-meter-color-system)
 - [Visual Feedback](#visual-feedback)
 - [Consistency Guidelines](#consistency-guidelines)
 
@@ -2511,12 +2512,12 @@ void paint (juce::Graphics& g) override
 }
 ```
 
-**Interactive Handle Design with Darker Theme & Proper Outer Glow**
+**Interactive Handle Design with Track Base Color & Proper Outer Glow**
 ```cpp
 void drawHandle (juce::Graphics& g, juce::Rectangle<float> tab) const
 {
-    // Base handle background with darker theme
-    g.setColour (lnf.theme.sh.withAlpha (0.85f));
+    // Base handle background using track base color for consistency
+    g.setColour (lnf.theme.meters.trackBase.withAlpha (0.85f));
     g.fillRoundedRectangle (tab, 8.0f);
     
     // Hover effects with proper accent colors and outer glow
@@ -3219,6 +3220,103 @@ if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->setValueLabelMode (KnobCe
 # 📚 KNOWLEDGE: Preserved metallic system standards and rendering guidelines
 # 
 # ================================================================================
+
+## 🎨 Meter Color System
+
+**Last updated**: 2025-01-27  
+**Scope**: Unified meter color system for consistent visual hierarchy across all UI components.
+
+### **Overview**
+
+The Field meter color system provides rich, high-contrast greys and specialized colors for meters, sliders, tabs, and interactive components. All meter-related colors are centralized in the `FieldTheme::MeterColors` struct for consistent visual hierarchy.
+
+---
+
+## **Core System**
+
+### **Meter Color Structure**
+
+```cpp
+struct MeterColors {
+    // Correlation meter colors
+    juce::Colour positive { 0xFF66BB6A }; // Rich green for positive correlation
+    juce::Colour negative { 0xFFE57373 }; // Rich red for negative correlation
+
+    // Level meter colors (warning/error states)
+    juce::Colour safe     { 0xFF5AA9E6 }; // Ocean blue for safe levels
+    juce::Colour warning  { 0xFFFFC107 }; // Amber for warning levels
+    juce::Colour error    { 0xFFE53935 }; // Red for error/risk levels
+
+    // Meter backgrounds and tracks (darker greys)
+    juce::Colour trackBase    { 0xFF3A3E44 }; // Darker grey for track background
+    juce::Colour trackActive  { 0xFF4A4E54 }; // Medium grey for active track
+    juce::Colour trackBorder  { 0xFF2A2C30 }; // Darker border for track definition
+
+    // Meter panel colors (darker greys with more contrast)
+    juce::Colour panelLight   { 0xFF454951 }; // Darker light grey panel
+    juce::Colour panelMedium  { 0xFF3A3E44 }; // Darker medium grey panel
+    juce::Colour panelDark    { 0xFF2A2C30 }; // Dark grey panel
+    juce::Colour panelBorder  { 0xFF1A1C20 }; // Darkest border
+} meters;
+```
+
+---
+
+## **Color Usage Guidelines**
+
+### **Track Colors**
+- **`trackBase`** (`#3A3E44`): Primary background for meters, sliders, tabs, and ShadeOverlay handle
+- **`trackActive`** (`#4A4E54`): Active track highlights and gradients
+- **`trackBorder`** (`#2A2C30`): Border definition and inner shadows
+
+### **Panel Colors**
+- **`panelLight`** (`#454951`): Light panel backgrounds
+- **`panelMedium`** (`#3A3E44`): Medium panel backgrounds (matches trackBase)
+- **`panelDark`** (`#2A2C30`): Dark panel backgrounds (matches trackBorder)
+- **`panelBorder`** (`#1A1C20`): Darkest borders and shadows
+
+### **Meter State Colors**
+- **`positive`** (`#66BB6A`): Positive correlation indicators
+- **`negative`** (`#E57373`): Negative correlation indicators
+- **`safe`** (`#5AA9E6`): Safe level indicators (ocean blue)
+- **`warning`** (`#FFC107`): Warning level indicators (amber)
+- **`error`** (`#E53935`): Error/risk level indicators (red)
+
+---
+
+## **Component Integration**
+
+### **Meters**
+- **CorrelationMeter**: Uses `positive`/`negative` for correlation indicators, `trackBase` for background
+- **VerticalLRMeters**: Uses `trackBase`/`trackActive` for track gradients, `trackBase` for background
+- **IOGainMeters**: Uses `safe`/`warning`/`error` for level zones, `trackBase` for background
+
+### **Sliders**
+- **VerticalSlider3D**: Uses `trackBase` for track background, `trackBorder` for inner shadows
+- **All Sliders**: Use `trackBase` for consistent background color
+
+### **Tabs**
+- **Active/Inactive**: Use `trackBase` for background consistency
+- **Borders**: Use `trackBorder` for definition
+
+### **ShadeOverlay Handle**
+- **Background**: Uses `trackBase` for consistency with other UI components
+- **Effects**: Maintains all hover effects, outer glow, and accent borders
+
+---
+
+## **Visual Hierarchy**
+
+The meter color system creates a unified visual hierarchy:
+
+1. **Primary Background**: `trackBase` (`#3A3E44`) - Used across meters, sliders, tabs, handles
+2. **Active Elements**: `trackActive` (`#4A4E54`) - Highlights and active states
+3. **Borders/Shadows**: `trackBorder` (`#2A2C30`) - Definition and depth
+4. **State Indicators**: `positive`/`negative`/`safe`/`warning`/`error` - Clear visual feedback
+
+This system ensures consistent visual language across all UI components while maintaining clear functional distinctions.
+
+---
 
 ## 🎨 Ocean-Harmonized Metallic System
 
