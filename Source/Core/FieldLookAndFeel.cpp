@@ -399,9 +399,9 @@ void FieldLNF::drawTabPill (juce::Graphics& g, juce::Rectangle<float> r, bool ac
     // Base similar to combo/pane pull-down; static border when active
     if (active)
     {
-        // Active pill uses a slightly lifted fill and static accent border
-        juce::Colour top = theme.panel.brighter (0.10f);
-        juce::Colour bot = theme.panel.darker   (0.08f);
+        // Active pill uses a slightly lifted fill based on track border and static accent border
+        juce::Colour top = theme.meters.trackBorder.brighter (0.10f);
+        juce::Colour bot = theme.meters.trackBorder.darker   (0.08f);
         juce::ColourGradient fill (top, rr.getX(), rr.getY(), bot, rr.getX(), rr.getBottom(), false);
         g.setGradientFill (fill);
         g.fillRoundedRectangle (rr, rad);
@@ -414,8 +414,8 @@ void FieldLNF::drawTabPill (juce::Graphics& g, juce::Rectangle<float> r, bool ac
     }
     else
     {
-        // Inactive: solid panel and faint border
-        g.setColour (theme.panel);
+        // Inactive: solid panel using track border color and faint border
+        g.setColour (theme.meters.trackBorder);
         g.fillRoundedRectangle (rr, rad);
         g.setColour (juce::Colours::white.withAlpha (0.08f));
         g.drawRoundedRectangle (rr, rad, 1.0f);
