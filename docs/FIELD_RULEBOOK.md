@@ -280,9 +280,9 @@ if (auto* p = apvts.getParameter("width")) {
   - Legacy Group 1/2 rows are retired. Each tab standardizes on a 2×16 flat grid of controls.
 - Per‑tab layout
   - Delay, Reverb, Motion, Band, XY each host their own 2×16 grid (styled empty `KnobCell` for blanks).
-  - Band: Imager Width visuals plus WIDTH (global) + WIDTH LO/MID/HI, and seven Designer controls (TILT S, PIVOT, AUTO DEP, AUTO THR, ATT, REL, MAX) migrated from the floating overlay into `BandControlsPane`.
+  - Band: Imager Width visuals plus WIDTH (global) + W LO/W MID/W HI, and seven Designer controls (TLT S, PVT, A DEP, A THR, ATT, REL, MAX) migrated from the floating overlay into `BandControlsPane`.
   - Imager: visuals‑only (no controls grid); floating Designer overlay removed; Width button removed from tooling.
-  - XY: XO LO/HI, ROT, ASYM, SHUF LO/HI/XO, MONO, PAN, SAT MIX, SCOOP.
+  - XY: XO LO/HI, ROT, ASYM, SHF L/SHF H/SHF X, MONO, PAN, SAT MIX, SCOOP.
 - Metrics & sizing
   - All tabs use `ControlGridMetrics::compute(w,h)` → `colW, knobPx, valuePx, labelGapPx, rowH, controlsH`.
   - Controls strip height is exactly `controlsH = 2 * rowH` at the bottom; visuals fill the remainder above (no extra 25% trim).

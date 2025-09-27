@@ -52,7 +52,7 @@ KnobCell Metrics & Styling
 Panels, Grids, and Padding
 - Tabs: each tab owns a flattened 2×16 grid; close gaps; styled empty KnobCell fills blanks.
 - Phase tab: 2×16 control grid with 32 phase parameters. Uses KnobCell for sliders and SimpleSwitchCell for ComboBox/ToggleButton controls. Integrated with ControlGridMetrics for responsive layout.
-- Band pane: Imager Width visuals + WIDTH (global) + WIDTH LO/MID/HI controls; no Imager tooling (no PRE/FPS/mode buttons). Seven Designer controls (TILT S, PIVOT, AUTO DEP, AUTO THR, ATT, REL, MAX) live here as full KnobCells.
+- Band pane: Imager Width visuals + WIDTH (global) + W LO/W MID/W HI controls; no Imager tooling (no PRE/FPS/mode buttons). Seven Designer controls (TLT S, PVT, A DEP, A THR, ATT, REL, MAX) live here as full KnobCells.
 - Imager tab: visuals‑only; tooling present but Width button removed.
 - Gaps
   - rowGap = 0, columnGap = 0.

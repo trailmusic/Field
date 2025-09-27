@@ -1828,11 +1828,11 @@ ls -la build/Source/Field_artefacts/Debug/Standalone/Field.app
 
 **Control Type Definitions**
 
-**SHUF LO, SHUF HI, SHUF XO** (Shuffle Controls)
+**SHF L, SHF H, SHF X** (Shuffle Controls)
 - **Purpose**: Control **shuffling/randomization** of stereo positioning
-- **SHUF LO**: Shuffle amount for **low frequencies** (affects bass stereo spread)
-- **SHUF HI**: Shuffle amount for **high frequencies** (affects treble stereo spread)  
-- **SHUF XO**: **Crossover frequency** that separates where LO vs HI shuffling applies
+- **SHF L**: Shuffle amount for **low frequencies** (affects bass stereo spread)
+- **SHF H**: Shuffle amount for **high frequencies** (affects treble stereo spread)  
+- **SHF X**: **Crossover frequency** that separates where LO vs HI shuffling applies
 - **Function**: Adds controlled randomness to stereo positioning to avoid "static" stereo images
 
 **XO LO, XO HI** (Crossover Controls)
@@ -1902,7 +1902,7 @@ ls -la build/Source/Field_artefacts/Debug/Standalone/Field.app
   - Proper frequency-to-pixel mapping for accurate positioning
 
 **SHUF Control Integration**
-- **Controls**: `SHUF LO`, `SHUF HI`, `SHUF XO` moved to `BandControlsPane`
+- **Controls**: `SHF L`, `SHF H`, `SHF X` moved to `BandControlsPane`
 - **Grid Layout**: Integrated into Band tab's 2x16 control grid
 - **Parameter Flow**: APVTS → PaneManager → BandTab → BandVisualPane
 - **Live Updates**: Real-time parameter updates with visual feedback

@@ -14,21 +14,21 @@
 
 #### **SHUF Controls (Shuffle Randomization)**
 
-**SHUF LO** (Shuffle Low)
+**SHF L** (Shuffle Low)
 - **Tooltip**: "Shuffle amount for low frequencies (affects bass stereo spread)"
 - **Range**: 0-200%
 - **Default**: 100%
 - **Purpose**: Adds controlled randomness to low-frequency stereo positioning
 - **Use Case**: Prevents static bass imaging, adds subtle movement to kick/bass
 
-**SHUF HI** (Shuffle High)  
+**SHF H** (Shuffle High)  
 - **Tooltip**: "Shuffle amount for high frequencies (affects treble stereo spread)"
 - **Range**: 0-200%
 - **Default**: 100%
 - **Purpose**: Adds controlled randomness to high-frequency stereo positioning
 - **Use Case**: Prevents static treble imaging, adds airy movement to cymbals/highs
 
-**SHUF XO** (Shuffle Crossover)
+**SHF X** (Shuffle Crossover)
 - **Tooltip**: "Crossover frequency separating low vs high shuffle processing"
 - **Range**: 150-2000 Hz
 - **Default**: 700 Hz
@@ -101,9 +101,9 @@
 - **"Use Mono Maker"** - "Collapse lows to mono below cutoff for safety"
 
 #### **Creative Applications**
-- **"Wide chorus effect"** - "W HI > 1.2 + SHUF HI for airy movement"
+- **"Wide chorus effect"** - "W HI > 1.2 + SHF H for airy movement"
 - **"Tight bass, wide top"** - "W LO 0.9, W HI 1.3 for modern sound"
-- **"Subtle shuffle"** - "SHUF 90-110% for gentle movement without chaos"
+- **"Subtle shuffle"** - "SHF 90-110% for gentle movement without chaos"
 
 #### **Troubleshooting**
 - **"Static stereo"** - "Add SHUF for movement, check XO placement"
@@ -136,8 +136,8 @@
 - **"Sum to mono"** - "All width changes affect final stereo image"
 
 #### **Shuffle Behavior**
-- **"Frequency dependent"** - "SHUF LO affects bass, SHUF HI affects treble"
-- **"XO determines split"** - "SHUF XO sets where LO vs HI shuffling applies"
+- **"Frequency dependent"** - "SHF L affects bass, SHF H affects treble"
+- **"XO determines split"** - "SHF X sets where LO vs HI shuffling applies"
 - **"Additive effect"** - "Shuffle adds to existing width, doesn't replace it"
 
 ### **Visual Feedback Tooltips**

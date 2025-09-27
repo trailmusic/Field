@@ -111,10 +111,10 @@ private:
         makeCell (shufX,    shufXV,    "SHF X",   "shuffler_xover_hz");
 
         // Designer controls (7): Side Tilt, Pivot, Auto Depth/Thr, Attack, Release, Max
-        makeCell (sideTiltDbOct, valSideTilt, "TILT S",  "width_side_tilt_db_oct");
-        makeCell (pivotHz,       valPivot,    "PIVOT",   "width_tilt_pivot_hz");
-        makeCell (autoDepth,     valAutoDepth,"AUTO DEP","width_auto_depth");
-        makeCell (autoThrDb,     valAutoThr,  "AUTO THR","width_auto_thr_db");
+        makeCell (sideTiltDbOct, valSideTilt, "TLT S",  "width_side_tilt_db_oct");
+        makeCell (pivotHz,       valPivot,    "PVT",   "width_tilt_pivot_hz");
+        makeCell (autoDepth,     valAutoDepth,"A DEP","width_auto_depth");
+        makeCell (autoThrDb,     valAutoThr,  "A THR","width_auto_thr_db");
         makeCell (autoAtkMs,     valAtk,      "ATT",     "width_auto_atk_ms");
         makeCell (autoRelMs,     valRel,      "REL",     "width_auto_rel_ms");
         makeCell (maxWidth,      valMax,      "MAX",     "width_max");
