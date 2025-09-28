@@ -36,6 +36,9 @@ public:
             addAndMakeVisible (on); addAndMakeVisible (mode);
             addAndMakeVisible (f); addAndMakeVisible (g); addAndMakeVisible (q);
             addAndMakeVisible (thr); addAndMakeVisible (ratio); addAndMakeVisible (att); addAndMakeVisible (rel); addAndMakeVisible (range);
+            // CRITICAL: Assign FieldLNF LookAndFeel to the button
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                on.setLookAndFeel(lf);
             styleKnob (f); styleKnob (g); styleKnob (q); styleKnob (thr); styleKnob (ratio); styleKnob (att); styleKnob (rel); styleKnob (range);
             mode.addItemList (juce::StringArray { "Bell", "Low\nShelf", "High\nShelf" }, 1);
             onA   = std::make_unique<BA> (state, onId, on);

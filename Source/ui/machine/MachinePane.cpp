@@ -16,6 +16,12 @@ MachinePane::MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, Fie
     addAndMakeVisible (strength);
     addAndMakeVisible (showPreBtn);
     addAndMakeVisible (previewBtn);
+    // CRITICAL: Assign FieldLNF LookAndFeel to the buttons
+    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+    {
+        showPreBtn.setLookAndFeel(lf);
+        previewBtn.setLookAndFeel(lf);
+    }
     addAndMakeVisible (ABtn);
     addAndMakeVisible (BBtn);
     addAndMakeVisible (CBtn);
@@ -28,6 +34,9 @@ MachinePane::MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, Fie
     listenBtn.setClickingTogglesState (true);
     listenBtn.setButtonText ("");
     listenBtn.getProperties().set ("iconType", (int) IconSystem::Delta);
+    // CRITICAL: Assign FieldLNF LookAndFeel to the button
+    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        listenBtn.setLookAndFeel(lf);
 
     genreBox.addItem ("EDM/House", 1); genreBox.addItem ("Hip-Hop/Trap", 2); genreBox.addItem ("Pop", 3); genreBox.addItem ("Rock/Indie", 4); genreBox.addItem ("Acoustic/Jazz", 5); genreBox.addItem ("Voice/Podcast", 6);
     venueBox.addItem ("Streaming", 1); venueBox.addItem ("Club/PA", 2); venueBox.addItem ("Theater/Cinema", 3); venueBox.addItem ("Mobile", 4);

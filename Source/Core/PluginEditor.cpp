@@ -2816,6 +2816,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             }
         }
         phaseModeButton.setBounds (optionsButton.getRight() + Layout::dp (8, s), leftY, btnW, btnH);
+        phaseModeButton.setLookAndFeel (&lnf);
         addAndMakeVisible (phaseModeButton);
         // Shade per mode (Zero keeps inactive visual; menu shows selection)
         auto applyPhaseTint = [this]

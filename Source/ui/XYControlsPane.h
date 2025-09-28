@@ -289,7 +289,9 @@ private:
         
         // Set up Q link toggle
         linkB.setButtonText (linkCap);
-        linkB.setLookAndFeel (&getLookAndFeel());
+        // CRITICAL: Assign FieldLNF LookAndFeel to the button
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            linkB.setLookAndFeel(lf);
     }
     
     // Helper for creating BASS cell with frequency mini slider using KnobCellWithAux
@@ -634,7 +636,9 @@ private:
         
         // Set up Q link toggle
         linkB.setButtonText (linkCap);
-        linkB.setLookAndFeel (&getLookAndFeel());
+        // CRITICAL: Assign FieldLNF LookAndFeel to the button
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            linkB.setLookAndFeel(lf);
     }
     
     
@@ -662,6 +666,9 @@ private:
         
         auditionButton.setButtonText ("");
         auditionButton.setToggleState (false, juce::dontSendNotification);
+        // CRITICAL: Assign FieldLNF LookAndFeel to the button
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            auditionButton.setLookAndFeel(lf);
         
         // Create KnobCellWithAux template for double-wide with auxiliary components
         std::vector<juce::Component*> auxComponents = { &slopeSwitch, &auditionButton };
