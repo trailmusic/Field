@@ -66,7 +66,17 @@ public:
                     caption.setVisible (false);
                 }
                 // Give ComboBox the remaining space after caption
-                child.setBounds (b);
+                // Apply same constraint logic as KnobCell - constrain to fit available space
+                auto comboBounds = b;
+                const int maxSize = juce::jmin(comboBounds.getWidth(), comboBounds.getHeight());
+                const int constrainedSize = juce::jmin(K, maxSize); // Use K as max size like KnobCell
+                if (constrainedSize < maxSize)
+                {
+                    // Center the ComboBox in the available space
+                    auto center = comboBounds.getCentre();
+                    comboBounds = comboBounds.withSize(constrainedSize, constrainedSize).withCentre(center);
+                }
+                child.setBounds (comboBounds);
                 return;
             }
             else
