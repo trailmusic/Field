@@ -315,6 +315,9 @@ private:
         cell->setMetrics (knobPx, valuePx, labelGapPx);
         cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
         
+        // Set caption property for knob name rendering
+        cell->getProperties().set ("caption", cap);
+        
         // Apply metallic styling like other cells
         if (metallic) {
             setAreaMetallicForCell (*cell, MetallicKind::XY);
@@ -376,6 +379,9 @@ private:
         // Set metrics to match other cells
         cell->setMetrics (knobPx, valuePx, labelGapPx);
         cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
+        
+        // Set caption property for knob name rendering
+        cell->getProperties().set ("caption", cap);
         
         // Apply metallic styling like other cells
         if (metallic) {
@@ -439,6 +445,9 @@ private:
         cell->setMetrics (knobPx, valuePx, labelGapPx);
         cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
         
+        // Set caption property for knob name rendering
+        cell->getProperties().set ("caption", cap);
+        
         // Apply metallic styling like other cells
         if (metallic) {
             setAreaMetallicForCell (*cell, MetallicKind::XY);
@@ -500,6 +509,9 @@ private:
         // Set metrics to match other cells
         cell->setMetrics (knobPx, valuePx, labelGapPx);
         cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
+        
+        // Set caption property for knob name rendering
+        cell->getProperties().set ("caption", cap);
         
         // Apply metallic styling like other cells
         if (metallic) {
@@ -569,6 +581,9 @@ private:
         // Set metrics to match other cells
         cell->setMetrics (knobPx, valuePx, labelGapPx);
         cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
+        
+        // Set caption property for knob name rendering
+        cell->getProperties().set ("caption", qCap);
         
         // Apply metallic styling like other cells
         if (metallic) {
@@ -647,6 +662,9 @@ private:
         // Set metrics to match other cells
         cell->setMetrics (knobPx, valuePx, labelGapPx);
         cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
+        
+        // Set caption property for knob name rendering
+        cell->getProperties().set ("caption", monoCap);
         
         // Apply metallic styling like other cells
         if (metallic) {
