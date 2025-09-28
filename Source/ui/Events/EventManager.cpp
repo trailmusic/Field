@@ -166,11 +166,163 @@ void EventManager::handleButtonClicked(juce::Button* button)
 {
     if (!button) return;
     
-    // Route button events to appropriate handlers
-    routeButtonEvent(button, [this, button]() {
-        // Handle specific button logic
-        // This will be implemented based on specific button types
-    });
+    // Handle specific button types
+    if (button == &editor.bypassButton)
+    {
+        // Bypass button - attach to parameter
+        if (auto* p = editor.proc.apvts.getParameter("bypass"))
+            p->setValueNotifyingHost(button->getToggleState() ? 1.0f : 0.0f);
+    }
+    else if (button == &editor.colorModeButton)
+    {
+        // Color mode cycle (Ocean → Green → Pink → Yellow → Grey)
+        using TV = ThemeVariant;
+        static ThemeVariant order[] = { ThemeVariant::Ocean, ThemeVariant::Green, ThemeVariant::Pink, ThemeVariant::Yellow, ThemeVariant::Grey };
+        auto currentAccent = editor.lnf.theme.accent.getARGB();
+        int idx = 0;
+        if (currentAccent == juce::Colour(0xFF5AA9E6).getARGB()) idx = 0; // Ocean
+        else if (currentAccent == juce::Colour(0xFF5AA95A).getARGB()) idx = 1; // Green
+        else if (currentAccent == juce::Colour(0xFFE91E63).getARGB()) idx = 2; // Pink
+        else if (currentAccent == juce::Colour(0xFFFFC107).getARGB()) idx = 3; // Yellow
+        else if (currentAccent == juce::Colour(0xFF9EA3AA).getARGB()) idx = 4; // Grey
+        idx = (idx + 1) % 5;
+        editor.lnf.setTheme(order[idx]);
+        button->setTooltip(ThemeManager::getThemeName(order[idx]));
+        // Propagate to components that cache green flag
+        const bool greenNow = (order[idx] == ThemeVariant::Green);
+        editor.spaceKnob.setGreenMode(greenNow);
+        if (auto* xyTab = editor.panes->getXYTab()) {
+            xyTab->setGreenMode(greenNow);
+        }
+        editor.repaint();
+    }
+    else if (button == &editor.tooltipsButton)
+    {
+        // Tooltip assistant toggle
+        editor.tooltipAssistantOn_ = button->getToggleState();
+        button->repaint();
+        editor.tooltipBubble.setVisible(false);
+    }
+    else if (button == &editor.fullScreenButton)
+    {
+        // Full screen toggle
+        const bool on = button->getToggleState();
+        if (auto* tlw = editor.getTopLevelComponent())
+        {
+            if (auto* rw = dynamic_cast<juce::ResizableWindow*>(tlw))
+            {
+                if (on)
+                {
+                    // Save current window bounds to restore later
+                    editor.savedBounds = rw->getBounds();
+                    rw->setFullScreen(true);
+                }
+                else
+                {
+                    rw->setFullScreen(false);
+                    if (!editor.savedBounds.isEmpty())
+                        rw->setBounds(editor.savedBounds);
+                }
+                return;
+            }
+        }
+        // Fallback: if no top-level resizable window is accessible, do nothing to avoid bad states
+        // Reset the toggle to off if we couldn't enter fullscreen safely
+        if (on)
+            button->setToggleState(false, juce::dontSendNotification);
+    }
+    else if (button == &editor.linkButton)
+    {
+        // Link button toggle
+        button->setToggleState(!button->getToggleState(), juce::dontSendNotification);
+        if (auto* xyTab = editor.panes->getXYTab()) {
+            xyTab->setLinked(button->getToggleState());
+        }
+    }
+    else if (button == &editor.snapButton)
+    {
+        // Snap button toggle
+        const bool on = !button->getToggleState();
+        button->setToggleState(on, juce::dontSendNotification);
+        if (auto* xyTab = editor.panes->getXYTab()) {
+            xyTab->setSnapEnabled(on);
+        }
+    }
+    else if (button == &editor.presetField)
+    {
+        // Preset command palette
+        static PresetRegistry presetRegistry; // lifetime across openings
+        presetRegistry.reloadAll();
+        PresetCommandPalette::show(
+            presetRegistry, *button,
+            // Apply
+            [this](const PresetEntry& e){
+                // Convert NamedValueSet to APVTS via PresetManager
+                LibraryPreset tmp; tmp.meta.id = e.id; tmp.meta.name = e.name; tmp.params = e.params;
+                editor.presetManager.applyPresetAtomic(tmp);
+                editor.presetNameLabel.setText(e.name, juce::dontSendNotification);
+            },
+            // Load to slot
+            [this](const PresetEntry& e, bool toA){ LibraryPreset tmp; tmp.params = e.params; editor.presetManager.loadToSlot(tmp, toA); },
+            // Star (persist favorite)
+            [reg=&presetRegistry](const PresetEntry& e, bool fav){ reg->setFavorite(e.id, fav); },
+            // Save As
+            [this](juce::String name, juce::StringArray tags, juce::String cat){ auto pr = editor.presetManager.currentAsPreset(name, cat, tags, "User preset", "", "You"); editor.presetStore.saveUserPreset(pr); editor.presetStore.scan(); },
+            button->getButtonText()
+        );
+    }
+    else if (button == &editor.abButtonA)
+    {
+        // A/B button A
+        if (!button->getToggleState()) editor.toggleABState();
+    }
+    else if (button == &editor.abButtonB)
+    {
+        // A/B button B
+        if (!button->getToggleState()) editor.toggleABState();
+    }
+    else if (button == &editor.copyButton)
+    {
+        // Copy button - show popup menu
+        juce::PopupMenu m; m.addItem(1, "Copy A to B"); m.addItem(2, "Copy B to A");
+        m.showMenuAsync(juce::PopupMenu::Options(), [this](int r)
+        {
+            if (r == 1) { editor.copyState(true);  editor.pasteState(false); }
+            if (r == 2) { editor.copyState(false); editor.pasteState(true);  }
+        });
+    }
+    else if (button == &editor.helpButton)
+    {
+        // Help button - show FAQ dialog
+        struct HelpFAQComponent : public juce::Component
+        {
+            HelpFAQComponent(FieldLNF& l) : lnf(l)
+            {
+                setSize(400, 300);
+                addAndMakeVisible(closeButton);
+                closeButton.setButtonText("Close");
+                closeButton.onClick = [this] { getParentComponent()->exitModalState(0); };
+            }
+            void paint(juce::Graphics& g) override
+            {
+                g.fillAll(lnf.theme.base);
+                g.setColour(lnf.theme.text);
+                g.setFont(16.0f);
+                g.drawText("Field Plugin - Help & FAQ", getLocalBounds().removeFromTop(40), juce::Justification::centred);
+                g.setFont(14.0f);
+                g.drawText("This is the Field plugin help system.\n\nFor detailed documentation, please visit the project repository.", 
+                          getLocalBounds().reduced(20).removeFromTop(200), juce::Justification::topLeft);
+            }
+            void resized() override
+            {
+                closeButton.setBounds(getLocalBounds().removeFromBottom(40).reduced(20));
+            }
+            FieldLNF& lnf;
+            juce::TextButton closeButton;
+        };
+        auto* helpDialog = new HelpFAQComponent(editor.lnf);
+        juce::DialogWindow::showDialog("Help & FAQ", helpDialog, nullptr, juce::Colours::transparentBlack, true);
+    }
 }
 
 void EventManager::handleButtonStateChanged(juce::Button* button)
@@ -265,11 +417,33 @@ void EventManager::handleComboBoxChanged(juce::ComboBox* comboBox)
 {
     if (!comboBox) return;
     
-    // Route combo box events to appropriate handlers
-    routeComboBoxEvent(comboBox, [this, comboBox]() {
-        // Handle combo box changes
-        // This will be implemented based on specific combo box types
-    });
+    // Handle specific combo box types
+    if (comboBox == &editor.osSelect)
+    {
+        // OS mode selection - apply options tint
+        auto applyOptionsTint = [this]() {
+            if (auto* p = editor.proc.apvts.getParameter("os_mode"))
+            {
+                if (auto* cp = dynamic_cast<juce::AudioParameterChoice*>(p))
+                {
+                    const int idx = cp->getIndex();
+                    const bool isOn = (idx > 0);
+                    editor.optionsButton.setToggleState(isOn, juce::dontSendNotification);
+                    editor.optionsButton.repaint();
+                }
+            }
+        };
+        applyOptionsTint();
+    }
+    else if (comboBox == &editor.monoSlopeChoice)
+    {
+        // Mono slope choice - update mono slope switch
+        if (editor.monoSlopeSwitch)
+        {
+            const int idx = comboBox->getSelectedItemIndex();
+            editor.monoSlopeSwitch->setIndex(juce::jlimit(0, 2, idx));
+        }
+    }
 }
 
 void EventManager::handleKeyPressed(const juce::KeyPress& key)

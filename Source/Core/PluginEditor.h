@@ -1152,7 +1152,7 @@ private:
     };
 public:
     SpaceKnob spaceKnob;
-private:
+public:
     // Placeholder for mono slope switch definition (defined after SpaceAlgorithmSwitch)
     class MonoSlopeSwitch;
     std::unique_ptr<MonoSlopeSwitch> monoSlopeSwitch;
@@ -1251,6 +1251,7 @@ private:
     juce::Component panSplitContainer;
     
     // Preset system
+public:
     PresetStore presetStore;
     NewPresetManager presetManager;
     
@@ -1410,6 +1411,7 @@ private:
     juce::Rectangle<int> originalBounds;
     
     // Full screen
+public:
     juce::Rectangle<int> savedBounds;
 
     // Bottom area toggle and alternate overlay panel
@@ -1688,6 +1690,7 @@ private:
     // A/B logic
     void saveCurrentState();
     void loadState(bool loadStateA);
+public:
     void toggleABState();
     void copyState(bool copyFromA);
     void pasteState(bool pasteToA);
