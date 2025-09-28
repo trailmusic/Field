@@ -20,6 +20,22 @@ set(SRC
     ui/Components/ThemedIconButton.h
     ui/Components/AuditionButton.h
     ui/Components/ABButton.h
+    ui/Components/PhaseModeButton.h
+    ui/Components/QualityButton.h
+    ui/Components/TooltipsButton.h
+    ui/Components/HelpButton.h
+    ui/Components/TooltipBubble.h
+    ui/Components/VerticalDivider.h
+    ui/Components/HorizontalDivider.h
+    ui/Components/XYPad.h
+    ui/Components/GainSlider.h
+    ui/Components/PanSlider.h
+    ui/Components/ControlContainer.h
+    ui/Components/UIHelpers.h
+    ui/Layout/LayoutManager.h
+    ui/Layout/LayoutManager.cpp
+    ui/Events/EventManager.h
+    ui/Events/EventManager.cpp
     Core/IconSystem.h
     Core/IconSystem.cpp
     reverb/ReverbParamIDs.h
@@ -34,31 +50,31 @@ set(SRC
     reverb/ui/ReverbDynEQPane.h
     reverb/ui/ReverbControlsPane.h
     reverb/ui/ReverbTab.h
-    ui/SpectrumAnalyzer.h
-    ui/SpectrumAnalyzer.cpp
+    ui/Engines/SpectrumAnalyzer.h
+    ui/Engines/SpectrumAnalyzer.cpp
     ui/delay/DelayUiBridge.h
     ui/delay/DelayVisuals.h
     ui/delay/DelayControlsPane.h
     ui/delay/DelayTab.h
-    ui/DynEqTab.h
+    ui/Tabs/DynEqTab.h
     dynEQ/DynamicEqParamIDs.h
     dynEQ/DynamicEqState.h
     dynEQ/DynamicEqState.cpp
-    ui/ImagerPane.h
-    ui/ImagerControlsPane.h
-    ui/BandControlsPane.h
-    ui/ImagerTab.h
-    ui/XYControlsPane.h
-    ui/XYTab.h
-    ui/BandTab.h
-    ui/BandVisualPane.h
-    ui/BandVisualPane.cpp
-    ui/StereoFieldEngine.h
-    ui/StereoFieldEngine.cpp
-    ui/PaneManager.h
-    ui/PhaseTab.h
-    ui/PhaseTab.cpp
-    ui/SimpleSwitchCell.h
+    ui/Panes/ImagerPane.h
+    ui/Panes/ImagerControlsPane.h
+    ui/Panes/BandControlsPane.h
+    ui/Tabs/ImagerTab.h
+    ui/Panes/XYControlsPane.h
+    ui/Tabs/XYTab.h
+    ui/Tabs/BandTab.h
+    ui/Panes/BandVisualPane.h
+    ui/Panes/BandVisualPane.cpp
+    ui/Engines/StereoFieldEngine.h
+    ui/Engines/StereoFieldEngine.cpp
+    ui/Managers/PaneManager.h
+    ui/Tabs/PhaseTab.h
+    ui/Tabs/PhaseTab.cpp
+    ui/Controls/SimpleSwitchCell.h
     ui/machine/ParamPatch.h
     ui/machine/ProposalCard.h
     ui/machine/ProposalCard.cpp

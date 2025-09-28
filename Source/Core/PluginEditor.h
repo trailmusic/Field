@@ -10,10 +10,23 @@
 #include "ui/Components/ThemedIconButton.h"
 #include "ui/Components/AuditionButton.h"
 #include "ui/Components/ABButton.h"
+#include "ui/Components/PhaseModeButton.h"
+#include "ui/Components/QualityButton.h"
+#include "ui/Components/TooltipsButton.h"
+#include "ui/Components/HelpButton.h"
+#include "ui/Components/TooltipBubble.h"
+#include "ui/Components/VerticalDivider.h"
+#include "ui/Components/HorizontalDivider.h"
+#include "ui/Components/XYPad.h"
+#include "ui/Components/GainSlider.h"
+#include "ui/Components/PanSlider.h"
+#include "ui/Components/ControlContainer.h"
+#include "ui/Components/UIHelpers.h"
+#include "ui/Layout/LayoutManager.h"
+#include "ui/Events/EventManager.h"
 #include "Presets/PresetRegistry.h"
 #include "Presets/PresetCommandPalette.h"
 #include "Presets/PresetManager.h"
-// History system removed
 #include "ui/StereoFieldEngine.h"
 #include "ui/ImagerPane.h"
 #include "ui/PaneManager.h"
@@ -33,28 +46,6 @@
 //------------------------------------------------------------------------------
 // Shared UI helpers
 //------------------------------------------------------------------------------
-namespace ui
-{
-    // DEV NOTE: One-line helper so all rotaries render identically through FieldLNF.
-    inline void paintRotaryWithLNF (juce::Graphics& g, juce::Slider& s, juce::Rectangle<float> bounds)
-    {
-        // Guard: avoid degenerate drawing when bounds are tiny/invalid
-        if (bounds.getWidth() <= 2.0f || bounds.getHeight() <= 2.0f)
-            return;
-        if (auto* lf = dynamic_cast<FieldLNF*>(&s.getLookAndFeel()))
-        {
-            const double minV = s.getMinimum();
-            const double maxV = s.getMaximum();
-            const float  pos01 = (maxV > minV) ? (float) ((s.getValue() - minV) / (maxV - minV)) : 0.0f;
-
-            lf->drawRotarySlider(g, bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(),
-                                 pos01,
-                                 juce::MathConstants<float>::pi,
-                                 juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
-                                 s);
-        }
-    }
-}
 
 //------------------------------------------------------------------------------
 // Attachment aliases (cuts down type verbosity)
@@ -70,189 +61,10 @@ using ComboAttachment  = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 // DEV NOTE: Hover timer retained; if you want instant hover, remove Timer and
 //   update mouseEnter/Exit to just repaint immediately.
 //==============================================================================
-class XYPad : public juce::Component, public juce::Timer
-{
-public:
-    ~XYPad() override { stopTimer(); }
-    
-    std::function<void (float x01, float y01)> onChange; // x=pan, y=depth
-    std::function<void (float leftX01, float rightX01, float y01)> onSplitChange; // for split mode
-    std::function<void (int ballIndex, float x01, float y01)> onBallChange; // individual ball control
-    
-    void setPoint01 (float x, float y) { pt = { juce::jlimit(0.f,1.f,x), juce::jlimit(0.f,1.f,y) }; repaint(); }
-    void setSplitPoints (float leftX, float rightX, float y) { leftPt = leftX; rightPt = rightX; pt.second = y; repaint(); }
-    void setBallPosition (int ballIndex, float x, float y); // optional: only keep if used in .cpp
-    std::pair<float,float> getPoint01() const { return pt; }
-    std::pair<float,float> getSplitPoints() const { return {leftPt, rightPt}; }
-    std::pair<float,float> getBallPosition (int ballIndex) const; // optional: only keep if used
-    
-    void setSplitMode (bool split)
-    { 
-        isSplitMode = split; 
-        if (split && isLinked) { leftPt = 0.5f; rightPt = 0.5f; }
-        repaint(); 
-    }
-    bool getSplitMode() const { return isSplitMode; }
-    
-    void setLinked (bool linked)
-    { 
-        isLinked = linked; 
-        if (linked && isSplitMode) { leftPt = 0.5f; rightPt = 0.5f; }
-        repaint(); 
-    }
-    bool getLinked() const { return isLinked; }
-    
-    // Visual links (XYPad paints reactively; these are "hints" from parameters)
-    void setGainValue (float gainDb)       { gainValue  = gainDb; repaint(); }
-    void setWidthValue (float widthPercent){ widthValue = widthPercent; repaint(); }
-    void setTiltValue (float tiltDegrees)  { tiltValue  = tiltDegrees; repaint(); }
-    void setMixValue (float mix01)         { mixValue   = mix01; repaint(); }
-    void setDriveValue (float driveDb)     { driveValue = driveDb; repaint(); }
-    void setAirValue (float airDb)         { airValue   = airDb; repaint(); }
-    void setBassValue (float bassDb)       { bassValue  = bassDb; repaint(); }
-    void setScoopValue (float scoopDb)     { scoopValue = scoopDb; repaint(); } // scoop EQ
-    void setHPValue (float hpHz)           { hpValue    = hpHz; repaint(); }
-    void setLPValue (float lpHz)           { lpValue    = lpHz; repaint(); }
-    void setPanValue (float pan)           { panValue   = pan; repaint(); }
-    void setMonoValue (float monoHz)       { monoHzValue= monoHz; repaint(); }
-    void setMonoSlopeDbPerOct (int slope)  { monoSlopeDbPerOct = slope; repaint(); }
-    void setSpaceValue (float depth)       { spaceValue = depth; repaint(); }
-    void setSpaceAlgorithm (int algorithm) { spaceAlgorithm = algorithm; repaint(); }
-    void setGreenMode (bool enabled)       { isGreenMode = enabled; repaint(); } // kept for .cpp compatibility
-    
-    // Frequency controls for EQ viz
-    void setTiltFreqValue (float f)  { tiltFreqValue  = f; repaint(); }
-    void setScoopFreqValue (float f) { scoopFreqValue = f; repaint(); }
-    void setBassFreqValue (float f)  { bassFreqValue  = f; repaint(); }
-    void setAirFreqValue (float f)   { airFreqValue   = f; repaint(); }
-    
-    // EQ S/Q shaping and links for visualization
-    void setShelfShapeS (float s)     { shelfShapeS = juce::jlimit (0.25f, 1.50f, s); repaint(); }
-    void setQLink       (bool on)     { qLink = on; repaint(); }
-    void setFilterQ     (float q)     { filterQGlobal = juce::jlimit (0.5f, 1.2f, q); repaint(); }
-    void setHPQ         (float q)     { hpQ = juce::jlimit (0.5f, 1.2f, q); if (!qLink) repaint(); }
-    void setLPQ         (float q)     { lpQ = juce::jlimit (0.5f, 1.2f, q); if (!qLink) repaint(); }
-    void setTiltUseS    (bool on)     { tiltUsesShelfS = on; repaint(); }
-
-    // Imaging/shuffler overlays state
-    void setXoverLoHz   (float hz) { xoverLoHz = juce::jlimit (40.0f, 400.0f, hz); repaint(); }
-    void setXoverHiHz   (float hz) { xoverHiHz = juce::jlimit (800.0f, 6000.0f, hz); if (xoverHiHz <= xoverLoHz) xoverHiHz = juce::jlimit (xoverLoHz + 10.0f, 6000.0f, xoverHiHz); repaint(); }
-    void setRotationDeg (float d)  { rotationDeg = juce::jlimit (-45.0f, 45.0f, d); repaint(); }
-    void setAsymmetry   (float a)  { asym = juce::jlimit (-1.0f, 1.0f, a); repaint(); }
-    // SHUF methods moved to Band tab
-    
-    void pushWaveformSample (double sampleL, double sampleR); // for background waveform
-    void setSampleRate (double fs) { vizSampleRate = fs > 0.0 ? fs : 48000.0; }
-
-    void paint (juce::Graphics& g) override;
-    void mouseDown (const juce::MouseEvent& e) override { drag(e); }
-    void mouseDrag (const juce::MouseEvent& e)  override { drag(e); }
-    void mouseUp (const juce::MouseEvent&) override { activeBall = 0; }
-    void mouseEnter (const juce::MouseEvent&) override { hoverActive = true; stopTimer(); repaint(); }
-    void mouseExit  (const juce::MouseEvent&) override { startTimer (hoverOffDelayMs); }
-    void timerCallback() override { hoverActive = false; stopTimer(); repaint(); }
-    
-    void setSnapEnabled (bool shouldSnap) { snapEnabled = shouldSnap; }
-    bool getSnapEnabled () const { return snapEnabled; }
-
-private:
-    std::pair<float,float> pt { 0.5f, 0.2f };
-    float leftPt = 0.5f, rightPt = 0.5f; // Start both balls centered
-    bool isSplitMode = false;            // single ball by default
-    bool isLinked = true;                // default linked mode
-    int  activeBall = 0;                 // 0=center, 1=left, 2=right
-    bool snapEnabled = false;
-    bool hoverActive = false;
-    const int hoverOffDelayMs = 160;
-
-    // Visual state mirrors of params
-    float gainValue = 0.0f;
-    float widthValue = 50.0f;
-    float tiltValue = 0.0f;
-    float mixValue = 0.5f;
-    float driveValue = 0.0f;
-    float airValue = 0.0f;
-    float bassValue = 0.0f;
-    float scoopValue = 0.0f;
-    float hpValue = 20.0f;
-    float lpValue = 20000.0f;
-    float panValue = 0.0f;
-    float monoHzValue = 0.0f;
-    int   monoSlopeDbPerOct = 12;
-    float spaceValue = 0.0f;
-    int   spaceAlgorithm = 0; // 0=Room, 1=Plate, 2=Hall
-    bool  isGreenMode = false; // kept for compatibility (XYPad paint may read this)
-    
-    // EQ frequency positions (for drawing only)
-    float tiltFreqValue = 500.0f;
-    float scoopFreqValue = 800.0f;
-    float bassFreqValue = 150.0f;
-    float airFreqValue = 8000.0f;
-    
-    // EQ S/Q state for drawing (mirrors APVTS)
-    float shelfShapeS    = 0.90f;
-    bool  qLink          = true;
-    float filterQGlobal  = 0.7071f;
-    float hpQ            = 0.7071f;
-    float lpQ            = 0.7071f;
-    bool  tiltUsesShelfS = true;
-
-    // Imaging/shuffler overlay state (mirrors APVTS)
-    float xoverLoHz = 150.0f;
-    float xoverHiHz = 2000.0f;
-    float rotationDeg = 0.0f;
-    float asym = 0.0f; // -1..+1
-    // SHUF parameters moved to Band tab
-    
-    // Waveform buffer
-    static constexpr int waveformBufferSize = 512;
-    std::array<double, waveformBufferSize> waveformL{}, waveformR{};
-    int  waveformWriteIndex = 0;
-    bool hasWaveformData = false;
-    double vizSampleRate = 48000.0; // for EQ magnitude rendering
-    
-    // internals
-    void drag (const juce::MouseEvent& e);
-    void drawGrid (juce::Graphics& g, juce::Rectangle<float> bounds);
-    void drawBalls (juce::Graphics& g, juce::Rectangle<float> bounds);
-    void drawWaveformBackground (juce::Graphics& g, juce::Rectangle<float> bounds);
-    void drawEQCurves (juce::Graphics& g, juce::Rectangle<float> bounds);
-    void drawFrequencyRegions (juce::Graphics& g, juce::Rectangle<float> bounds);
-    void drawImagingOverlays (juce::Graphics& g, juce::Rectangle<float> bounds);
-    void analyzeSpectralResponse (std::vector<float>& response, float width); // optional; keep if used
-    int  getBallAtPosition (juce::Point<float> pos, juce::Rectangle<float> bounds);
-};
 
 //==============================================================================
 // ControlContainer (kept hover timer; purely cosmetic "soft fade" on hover)
 //==============================================================================
-class ControlContainer : public juce::Component, public juce::Timer
-{
-public:
-    ~ControlContainer() override { stopTimer(); }
-    
-    ControlContainer();
-    
-    void setTitle (const juce::String& title);
-    void setShowBorder (bool show) { showBorder = show; }
-    void setBorderColour (juce::Colour colour) { borderColour = colour; useCustomBorderColour = true; }
-    void setBackgroundColour (juce::Colour colour) { backgroundColour = colour; useCustomBackgroundColour = true; }
-    void paint (juce::Graphics& g) override;
-    void mouseEnter (const juce::MouseEvent&) override { hovered = true;  hoverActive = true; stopTimer(); repaint(); }
-    void mouseExit  (const juce::MouseEvent&) override { hovered = false; startTimer (hoverOffDelayMs); }
-    void timerCallback() override { hoverActive = false; stopTimer(); repaint(); }
-    
-private:
-    juce::String containerTitle;
-    bool hovered = false;
-    bool hoverActive = false;
-    bool showBorder = true;
-    bool useCustomBorderColour = false;
-    juce::Colour borderColour = juce::Colours::transparentBlack;
-    bool useCustomBackgroundColour = false;
-    juce::Colour backgroundColour = juce::Colours::transparentBlack;
-    const int hoverOffDelayMs = 160;
-};
 
 //==============================================================================
 // VerticalSlider3D - Beautiful 3D vertical slider with metallic treatment
@@ -557,24 +369,6 @@ public:
     bool layoutReady { false };
     
     //--- custom sliders --------------------------------------------------------
-    class GainSlider : public juce::Slider
-    {
-    public:
-        GainSlider() : Slider(RotaryHorizontalVerticalDrag, NoTextBox) {}
-        void mouseEnter (const juce::MouseEvent&) override { hovered = true; repaint(); }
-        void mouseExit  (const juce::MouseEvent&) override { hovered = false; repaint(); }
-        void mouseDown  (const juce::MouseEvent& e) override { active = true;  Slider::mouseDown(e); repaint(); }
-        void mouseUp    (const juce::MouseEvent& e) override { active = false; Slider::mouseUp(e);   repaint(); }
-
-        void paint(juce::Graphics& g) override
-        {
-            auto b = getLocalBounds().toFloat().reduced(2.0f);
-            if (hovered || active) b = b.expanded(2.0f);
-            ui::paintRotaryWithLNF(g, *this, b);
-        }
-    private:
-        bool hovered = false, active = false;
-    };
     
     class PanSlider : public juce::Slider
     {
@@ -1242,6 +1036,10 @@ private:
     std::unique_ptr<class PaneManager> panes;
     std::unique_ptr<juce::KeyListener> keyListener;
     
+    // Layout and Event Management
+    std::unique_ptr<LayoutManager> layoutManager;
+    std::unique_ptr<EventManager> eventManager;
+    
     // Resize constraints
     int minWidth = 0;
     int minHeight = 0;
@@ -1326,12 +1124,8 @@ private:
     SnapButton       snapButton;
     FullScreenButton fullScreenButton;
     ColorModeButton  colorModeButton;
-    class TooltipsButton : public ThemedIconButton { public: TooltipsButton()
-    : ThemedIconButton(Options{ IconSystem::CogWheel, true, ThemedIconButton::Style::SolidAccentWhenOn, 3.0f, 4.0f, false }) {} };
     TooltipsButton   tooltipsButton; // Wrench icon (Options) toggles tooltip assistant
     // History and undo/redo removed
-    class HelpButton : public ThemedIconButton { public: HelpButton()
-    : ThemedIconButton(Options{ IconSystem::Help, false, ThemedIconButton::Style::GradientPanel, 3.0f, 4.0f, false }) {} };
     HelpButton       helpButton;
     CopyButton       copyButton;
     LockButton       lockButton;
@@ -1339,50 +1133,6 @@ private:
     bool tooltipAssistantOn_ { false }; // Header wrench toggle state
 
     // Lightweight tooltip bubble shown when tooltip assistant is ON
-    class TooltipBubble : public juce::Component
-    {
-    public:
-        std::function<void(juce::Point<int>)> onMenu;
-        void setText (juce::String t) { text = std::move (t); repaint(); }
-        void setAnchor (juce::Rectangle<int> target)
-        {
-            const int w = juce::jlimit (160, 300, (int) juce::jlimit (160.0f, 300.0f, (float) text.length() * 6.5f));
-            const int h = 54; // compact height
-            const int x = target.getRight() + 8;
-            const int y = juce::jmax (target.getY() - 8, 6);
-            setBounds (x, y, w, h);
-            infoRect = juce::Rectangle<int> (getWidth() - 20, 6, 14, 14);
-        }
-        void paint (juce::Graphics& g) override
-        {
-            auto r = getLocalBounds().toFloat();
-            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-            auto panel = lf ? lf->theme.panel : juce::Colour (0xFF2F3136);
-            auto border = lf ? lf->theme.hl : juce::Colour (0xFF45484D);
-            auto textCol = lf ? lf->theme.text : juce::Colours::white;
-            // Panel
-            juce::ColourGradient grad (panel.brighter (0.06f), r.getX(), r.getY(), panel.darker (0.10f), r.getX(), r.getBottom(), false);
-            g.setGradientFill (grad); g.fillRoundedRectangle (r, 6.0f);
-            g.setColour (border.withAlpha (0.9f)); g.drawRoundedRectangle (r, 6.0f, 1.0f);
-            // Text
-            g.setColour (textCol.withAlpha (0.92f));
-            g.setFont (juce::Font (juce::FontOptions (11.0f)));
-            auto textArea = getLocalBounds().reduced (8, 8).withTrimmedRight (22);
-            g.drawFittedText (text, textArea, juce::Justification::topLeft, 3);
-            // Small info/menu glyph (three dots)
-            juce::Rectangle<float> dotArea = infoRect.toFloat();
-            g.setColour (textCol.withAlpha (0.8f));
-            const float cx = dotArea.getCentreX(), cy = dotArea.getCentreY();
-            for (int i = -1; i <= 1; ++i) g.fillEllipse (cx + i * 4.0f - 1.25f, cy - 1.25f, 2.5f, 2.5f);
-        }
-        void mouseUp (const juce::MouseEvent& e) override
-        {
-            if (infoRect.contains (e.getPosition()) && onMenu) onMenu (localPointToGlobal (e.getPosition()));
-        }
-    private:
-        juce::String text;
-        juce::Rectangle<int> infoRect;
-    };
     TooltipBubble tooltipBubble;
     juce::Component* lastTooltipTarget { nullptr };
 
@@ -2399,41 +2149,10 @@ private:
     std::unique_ptr<ShadeOverlay> xyShade;
 
     // Mini vertical divider near split toggle
-    class VerticalDivider : public juce::Component {
-    public:
-        VerticalDivider(FieldLNF& l) : lnf(l) {}
-        void paint(juce::Graphics& g) override {
-            g.fillAll(juce::Colours::transparentBlack);
-            auto b = getLocalBounds().toFloat();
-            // Thicker divider with subtle insets for spacing
-            const float w = juce::jmax (2.0f, b.getWidth());
-            const float x = b.getX();
-            // Outer soft lines
-            g.setColour(lnf.theme.sh.withAlpha(0.25f));
-            g.fillRect (juce::Rectangle<float> (x, b.getY(), w, b.getHeight()));
-            // Inner highlight
-            g.setColour(lnf.theme.hl.withAlpha(0.65f));
-            g.fillRect (juce::Rectangle<float> (x + w * 0.5f - 0.5f, b.getY(), 1.0f, b.getHeight()));
-        }
-    private:
-        FieldLNF& lnf;
-    };
 
     VerticalDivider splitDivider{lnf}, eqDivLpMono{lnf}, eqDivScoopHp{lnf};
     VerticalDivider volDivPanSpace{lnf}, volDivDuckRight{lnf}, delayDivider{lnf}, motionDivider{lnf};
     // Horizontal dividers between rows
-    class HorizontalDivider : public juce::Component {
-    public:
-        HorizontalDivider(FieldLNF& l) : lnf(l) {}
-        void paint(juce::Graphics& g) override {
-            g.fillAll(juce::Colours::transparentBlack);
-            g.setColour(lnf.theme.sh.withAlpha(0.4f));
-            auto b = getLocalBounds().toFloat();
-            g.fillRect(juce::Rectangle<float>(b.getX(), b.getCentreY()-0.5f, b.getWidth(), 1.0f));
-        }
-    private:
-        FieldLNF& lnf;
-    };
 
     HorizontalDivider rowDivVol{lnf}, rowDivEQ{lnf};
 
@@ -2450,14 +2169,6 @@ private:
     // Motion SwitchCell wrappers removed - now handled by MotionControlsPane
 
     // Phase Mode center group
-    class PhaseModeButton : public ThemedIconButton {
-    public:
-        PhaseModeButton() : ThemedIconButton(Options{ IconSystem::ColorPalette, true, ThemedIconButton::Style::SolidAccentWhenOn, 4.0f, 4.0f, true }) {}
-    };
-    class QualityButton : public ThemedIconButton {
-    public:
-        QualityButton() : ThemedIconButton(Options{ IconSystem::Options, true, ThemedIconButton::Style::SolidAccentWhenOn, 4.0f, 4.0f, true }) {}
-    };
     ControlContainer phaseCenterContainer;
     PhaseModeButton  phaseModeButton;
     QualityButton    qualityButton;
