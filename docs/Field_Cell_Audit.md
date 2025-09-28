@@ -182,31 +182,43 @@ PhaseTab.cpp / ReverbControlsPane.h / BandControlsPane.h / DelayControlsPane.h:
 5. **Text/Icon** - Render content via `drawButtonText()` or `drawIcon()`
 6. **Wrapper Rendering** - SimpleSwitchCell handles cell background
 
-### **🚨 ComboBox-Specific Issues** 🚨 **NEEDS IMMEDIATE ATTENTION**
+### **✅ ComboBox-Specific Issues** ✅ **ALL RESOLVED**
 
-#### **Issue 1: ComboBox Item Population**
+#### **✅ Issue 1: ComboBox Item Population - RESOLVED**
 - **Problem**: ComboBoxes may not have proper item lists populated
 - **Impact**: Empty or incorrect dropdown options
 - **Areas Affected**: Motion (Panner, Path, Quant, Mode), Delay, Phase, XY
-- **Solution**: Verify all ComboBoxes have correct `addItemList()` calls
+- **Solution**: ✅ **COMPLETED** - All ComboBoxes now have proper item lists
+  - **Phase**: ✅ Already had comprehensive `addItem()` calls
+  - **Motion**: ✅ Uses `motion::choiceList*()` functions with proper items
+  - **Delay**: ✅ **FIXED** - Added proper `addItem()` calls for all 4 ComboBoxes
+  - **XY**: ✅ No ComboBoxes (as expected)
 
-#### **Issue 2: ComboBox Metallic Rendering**
+#### **✅ Issue 2: ComboBox Metallic Rendering - RESOLVED**
 - **Problem**: ComboBoxes may not render metallic styling consistently
 - **Impact**: Visual inconsistency with other controls
 - **Areas Affected**: All control areas with ComboBoxes
-- **Solution**: Ensure `FieldLNF::drawComboBox` is called correctly for metallic ComboBoxes
+- **Solution**: ✅ **COMPLETED** - All ComboBoxes use `FieldLNF::drawComboBox` with metallic support
+  - **Phase**: ✅ Uses `setAreaMetallicForCell(c, MetallicKind::Phase)`
+  - **Motion**: ✅ Uses `setAreaMetallicForCell(*combo, MetallicKind::Motion)`
+  - **Delay**: ✅ Uses `setAreaMetallicForCell(c, MetallicKind::Delay)`
+  - **Rendering**: ✅ `FieldRendering::drawComboBox` handles metallic rendering via `MetallicRenderer::paintMetal`
 
-#### **Issue 3: ComboBox Sizing Inconsistency**
+#### **✅ Issue 3: ComboBox Sizing Inconsistency - RESOLVED**
 - **Problem**: ComboBoxes may have different sizes across control areas
 - **Impact**: Visual grid misalignment
 - **Areas Affected**: All control areas
-- **Solution**: Standardize ComboBox sizing via `ControlGridMetrics` or consistent bounds
+- **Solution**: ✅ **COMPLETED** - All ComboBoxes use `SimpleSwitchCell` wrapper for consistent sizing
 
-#### **Issue 4: ComboBox Wrapper Inconsistency**
+#### **✅ Issue 4: ComboBox Wrapper Inconsistency - RESOLVED**
 - **Problem**: Some ComboBoxes wrapped in `SimpleSwitchCell`, others not
 - **Impact**: Inconsistent styling and behavior
 - **Areas Affected**: Motion, Delay, XY, Phase
-- **Solution**: Standardize all ComboBoxes to use `SimpleSwitchCell` wrapper
+- **Solution**: ✅ **COMPLETED** - All ComboBoxes now use `SimpleSwitchCell` wrapper consistently
+  - **Phase**: ✅ Uses `SimpleSwitchCell` wrapper
+  - **Motion**: ✅ Uses `SimpleSwitchCell` wrapper
+  - **Delay**: ✅ Uses `SimpleSwitchCell` wrapper
+  - **XY**: ✅ No ComboBoxes (as expected)
 
 ### **🎉 All Critical Issues Resolved**
 
