@@ -156,6 +156,10 @@ private:
         // Apply Delay metallic styling to ToggleButtons
         for (juce::ToggleButton* button : { &delayEnabled, &delaySync, &delayKillDry, &delayFreeze, &delayPingpong, &delayDuckPost })
         {
+            // CRITICAL: Assign FieldLNF LookAndFeel to the button BEFORE setting metallic properties
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                button->setLookAndFeel(lf);
+                
             setAreaMetallicForCell (*button, MetallicKind::Delay);
         }
 

@@ -95,6 +95,11 @@ private:
         }
         
         t.setName (cap);
+        
+        // CRITICAL: Assign FieldLNF LookAndFeel to the button BEFORE setting metallic properties
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            t.setLookAndFeel(lf);
+        
         // Apply Motion metallic styling to the actual button, not the wrapper
         setAreaMetallicForCell (t, MetallicKind::Motion);
         auto cell = std::make_unique<SimpleSwitchCell> (t);
