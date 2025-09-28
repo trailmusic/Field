@@ -406,6 +406,15 @@ namespace FieldRendering
         juce::String text = label.getText();
         if (text.contains(" "))
         {
+            // Split text into two words and create two-line display
+            juce::StringArray words = juce::StringArray::fromTokens(text, " ", "");
+            if (words.size() >= 2)
+            {
+                // Create two-line text with line break
+                juce::String twoLineText = words[0] + "\n" + words[1];
+                label.setText(twoLineText, juce::dontSendNotification);
+            }
+            
             // Enable multi-line text for two-word labels
             label.setJustificationType(juce::Justification::centred);
             // Set font size to accommodate two lines
