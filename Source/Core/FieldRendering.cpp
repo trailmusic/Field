@@ -432,8 +432,20 @@ namespace FieldRendering
 
     void positionComboBoxText(juce::ComboBox& box, juce::Label& label)
     {
-        // Simplified ComboBox text positioning
-        label.setBounds(box.getLocalBounds().reduced(4));
+        // Check if this ComboBox is in a SimpleSwitchCell with metallic properties
+        auto* parent = box.getParentComponent();
+        auto metallicKind = metallicFromProps(box.getProperties());
+        
+        if (parent && dynamic_cast<SimpleSwitchCell*>(parent) && metallicKind != MetallicKind::None)
+        {
+            // For metallic ComboBoxes in SimpleSwitchCell, use full bounds to match KnobCell
+            label.setBounds(box.getLocalBounds());
+        }
+        else
+        {
+            // Standard ComboBox text positioning with padding
+            label.setBounds(box.getLocalBounds().reduced(4));
+        }
         
         // Enable text wrapping for two-word labels
         label.setJustificationType(juce::Justification::centred);
