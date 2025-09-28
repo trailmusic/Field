@@ -28,11 +28,19 @@ FieldLookAndFeel System:
 - **MetallicKind Enum**: None, Neutral, Reverb, Delay, Band, Phase, Motion, XY
 - **Helper Functions**: `metallicFromProps()`, `setAreaMetallic()`, `setAreaMetallicForCell()`
 - **MetallicRenderer**: Static methods for `paintMetal()` and `paintPhaseMetal()`
+- **ComboBox Integration**: Full metallic styling support with KnobCell visual consistency
 
 ### **Rendering System**
 - **FieldRendering**: Component-specific drawing methods
 - **Delegation Pattern**: Core LNF delegates to specialized renderers
 - **Consistent API**: All drawing methods take `FieldTheme const&` parameter
+
+### **ComboBox Styling System (NEW - January 2025)**
+- **Metallic ComboBoxes**: Full integration with metallic rendering system
+- **Visual Consistency**: Matches KnobCell styling (corner radius, shadows, borders)
+- **Text Wrapping**: Automatic two-line text for two-word labels
+- **Interior Windows**: Recessed button windows with proper spacing
+- **Border System**: Uses `theme.accentSecondary` for consistent visual weight
 
 ---
 
@@ -42,12 +50,32 @@ FieldLookAndFeel System:
 
 | Control Area | KnobCells | Buttons/Switches | ComboBoxes | Metallic Application | Status |
 |--------------|-----------|------------------|------------|---------------------|---------|
-| **Delay** | ✅ Pane-level | ✅ Pane-level | ✅ Pane-level | Pane-only | 🟢 Consistent |
-| **Motion** | ✅ Registry-based | ✅ Registry-based | ✅ Registry-based | Canonical 32-slot | 🟢 **NEW SYSTEM** |
+| **Delay** | ✅ Pane-level | ✅ Pane-level | ✅ **KnobCell Visual** | Pane-only | 🟢 **ENHANCED** |
+| **Motion** | ✅ Registry-based | ✅ Registry-based | ✅ **KnobCell Visual** | Canonical 32-slot | 🟢 **ENHANCED** |
 | **XY** | ✅ Pane-level | ✅ Pane-level | ✅ Pane-level | Pane-only | 🟢 Consistent |
-| **Phase** | ✅ Pane-level | ✅ Pane-level | ✅ Pane-level | Pane-only | 🟢 Consistent |
+| **Phase** | ✅ Pane-level | ✅ Pane-level | ✅ **KnobCell Visual** | Pane-only | 🟢 **ENHANCED** |
 | **Reverb** | ✅ Pane-level | ✅ Pane-level | ✅ Pane-level | Pane-only | 🟢 Consistent |
 | **Band** | ✅ Pane-level | ✅ Pane-level | ✅ Pane-level | Pane-only | 🟢 Consistent |
+
+### **🎨 ComboBox Visual Enhancements (NEW - January 2025)**
+
+#### **KnobCell Visual Consistency**
+- **Corner Radius**: Updated from 5.0f to 8.0f to match KnobCell
+- **Shadows**: Two-layer drop shadows (dark + light) matching KnobCell
+- **Inner Rim**: 0.8f thickness with 0.16f alpha for depth
+- **Border System**: Uses `theme.accentSecondary` with 1.5f thickness
+- **Interior Windows**: Recessed button windows with proper spacing compensation
+
+#### **Text Wrapping System**
+- **Automatic Detection**: Two-word labels automatically split into two lines
+- **Manual Override**: Direct `\n` embedding in item lists for precise control
+- **Font Optimization**: 10.0f font size for optimal two-line display
+- **No Flash**: Embedded line breaks prevent selection flickering
+
+#### **Sizing System**
+- **setMetrics() Integration**: ComboBoxes use same sizing system as KnobCell
+- **Visual Weight Matching**: Interior window sizing compensates for styling changes
+- **Consistent Padding**: 4px padding matching KnobCell behavior
 
 ### **🏗️ Architecture Patterns**
 
