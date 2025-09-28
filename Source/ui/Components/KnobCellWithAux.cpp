@@ -99,9 +99,8 @@ void KnobCellWithAux::resized()
     auto b = getLocalBounds().reduced (4);
     const int rimR = 6;
 
-    // Split into left (knob) and right (aux) areas
-    // The left area should behave exactly like a standard KnobCell
-    auto leftArea = b.removeFromLeft ((b.getWidth() - G) * 2 / 3); // Knob gets 2/3 of space
+    // Split into left (knob) and right (aux) areas - 50/50 with compensated middle gap
+    auto leftArea = b.removeFromLeft ((b.getWidth() - G) / 2); // Knob gets 50% of space
     b.removeFromLeft (G); // Remove the gap between knob and aux areas
     auto rightArea = b;
 
@@ -111,9 +110,14 @@ void KnobCellWithAux::resized()
         leftArea.removeFromBottom (V + G);
 
     // Fit the knob at the top-center with requested diameter K (like standard KnobCell)
+    // Position the knob as if it's in a standard KnobCell that takes up the full width
     const int k = juce::jmin (K, juce::jmin (leftArea.getWidth(), leftArea.getHeight()));
     juce::Rectangle<int> knobBox (k, k);
-    knobBox = knobBox.withCentre ({ leftArea.getCentreX(), leftArea.getY() + k / 2 });
+    // Center horizontally in the full width (like standard KnobCell), position vertically from top
+    auto fullWidth = getLocalBounds().reduced(4);
+    // Compensate for the 50/50 split: knob should be centered in the left half of the full width
+    auto leftHalfCenter = fullWidth.getX() + (fullWidth.getWidth() / 4); // Center of left 50%
+    knobBox = knobBox.withCentre ({ leftHalfCenter, leftArea.getY() + k / 2 });
     mainKnob.setBounds (knobBox);
 
     // Layout main label (like standard KnobCell)

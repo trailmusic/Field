@@ -81,6 +81,15 @@ XYControlsPane.h:
 └── ComboBoxes: setAreaMetallicForCell(combo, MetallicKind::XY) → SimpleSwitchCell
 ```
 
+#### **KnobCellWithAux Layout System - UPDATED**
+```
+KnobCellWithAux.cpp:
+├── Layout: 50/50 split with compensated middle gap
+├── Knob Positioning: leftHalfCenter = fullWidth.getX() + (fullWidth.getWidth() / 4)
+├── Label Centering: 60% of knob size, centered within knob bounds
+└── Aux Components: Right 50% area with proper spacing
+```
+
 #### **Pattern D: Consistent (Phase, Reverb, Band, Delay) - CORRECT**
 ```
 PhaseTab.cpp / ReverbControlsPane.h / BandControlsPane.h / DelayControlsPane.h:
@@ -209,6 +218,13 @@ PhaseTab.cpp / ReverbControlsPane.h / BandControlsPane.h / DelayControlsPane.h:
 #### **✅ Issue 2: KnobCellWithAux Aux Styling - RESOLVED**
 - **Problem**: XY controls use KnobCellWithAux but aux components may not get proper metallic
 - **Solution**: ✅ Aux components properly styled with `setAreaMetallic(*auxComp, MetallicKind::XY)`
+- **Status**: **COMPLETED**
+
+#### **✅ Issue 2.1: KnobCellWithAux Layout & Positioning - RESOLVED**
+- **Problem**: KnobCellWithAux used 2/3 split causing knob positioning issues
+- **Solution**: ✅ Updated to 50/50 split with compensated middle gap
+- **Knob Positioning**: ✅ Added compensation math to center knob in left half of full width
+- **Label Centering**: ✅ Fixed label positioning to center within knob area (not full cell)
 - **Status**: **COMPLETED**
 
 #### **✅ Issue 3: Custom LookAndFeel Conflicts - RESOLVED**
@@ -386,5 +402,5 @@ PhaseTab.cpp / ReverbControlsPane.h / BandControlsPane.h / DelayControlsPane.h:
 
 ---
 
-**Last Updated**: December 2024
-**Status**: 🎉 **ALL PHASES COMPLETE - METALLIC STYLING SYSTEM FULLY UNIFIED + CANONICAL MOTION REGISTRY**
+**Last Updated**: January 2025
+**Status**: 🎉 **ALL PHASES COMPLETE - METALLIC STYLING SYSTEM FULLY UNIFIED + CANONICAL MOTION REGISTRY + KNOBCELLWITHAUX LAYOUT OPTIMIZED**
