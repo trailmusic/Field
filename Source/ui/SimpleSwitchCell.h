@@ -34,14 +34,34 @@ public:
         auto b = getLocalBounds().reduced (3); // Reduced from 6 to 3 for better sizing
         const int capH = captionText.isNotEmpty() ? 14 : 0;
         
-        // Check if child has metallic properties - if so, hide caption
+        // Check if child has metallic properties - show caption for ComboBoxes
         auto metallicKind = metallicFromProps (child.getProperties());
         if (metallicKind != MetallicKind::None)
         {
-            // Hide caption for metallic components to avoid double labels
-            caption.setVisible (false);
-            child.setBounds (b);
-            return;
+            // For ComboBoxes, show caption to maintain title and button window format
+            if (auto* combo = dynamic_cast<juce::ComboBox*>(&child))
+            {
+                if (capH > 0)
+                {
+                    caption.setVisible (true);
+                    caption.setBounds (b.removeFromTop (capH));
+                    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                        caption.setColour (juce::Label::textColourId, lf->theme.textMuted);
+                }
+                else
+                {
+                    caption.setVisible (false);
+                }
+                child.setBounds (b);
+                return;
+            }
+            else
+            {
+                // Hide caption for other metallic components (buttons) to avoid double labels
+                caption.setVisible (false);
+                child.setBounds (b);
+                return;
+            }
         }
         
         if (capH > 0)
@@ -85,15 +105,21 @@ public:
             }
             else if (auto* combo = dynamic_cast<juce::ComboBox*>(&child))
             {
-                // Handle metallic ComboBoxes - let them render normally
+                // Handle metallic ComboBoxes - show title and button window
                 // ComboBoxes have their own rendering in FieldLookAndFeel::drawComboBox
-                // We just need to ensure they have the right bounds
+                // We need to draw the cell background and let ComboBox handle its own rendering
                 auto cellBounds = getLocalBounds().reduced(3);
                 combo->setBounds(cellBounds);
                 
-                // Let the ComboBox render itself with its metallic properties
-                // The FieldLookAndFeel::drawComboBox will handle the metallic rendering
-                return; // Don't draw our own background for ComboBoxes
+                // Draw the cell background for ComboBoxes to maintain title/button window
+                g.setColour (panel);
+                g.fillRoundedRectangle (r, rad);
+                if (showBorder)
+                {
+                    g.setColour (reverbMaroon ? juce::Colour (0xFF8E3A2F) : border);
+                    g.drawRoundedRectangle (r, rad, 1.5f);
+                }
+                return; // Let ComboBox handle its own metallic rendering
             }
             return;
         }
