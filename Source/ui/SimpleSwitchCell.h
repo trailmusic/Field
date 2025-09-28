@@ -77,14 +77,7 @@ public:
                 caption.setVisible (false);
                 child.setBounds (getLocalBounds()); // Use full cell area for metallic buttons too
                 
-                // CRITICAL: Assign FieldLNF LookAndFeel to metallic buttons so they use our custom rendering
-                if (auto* button = dynamic_cast<juce::Button*>(&child))
-                {
-                    if (auto* fieldLnf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                    {
-                        button->setLookAndFeel(fieldLnf);
-                    }
-                }
+                // LookAndFeel assignment is now handled at the source (in control panes)
                 return;
             }
         }

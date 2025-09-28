@@ -151,6 +151,11 @@ private:
     {
         auto button = std::make_unique<juce::ToggleButton>();
         button->setName(param.name);
+        
+        // CRITICAL: Assign FieldLNF LookAndFeel to the button BEFORE setting metallic properties
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            button->setLookAndFeel(lf);
+            
         setAreaMetallicForCell(*button, MetallicKind::Motion);
         
         auto cell = std::make_unique<SimpleSwitchCell>(*button);

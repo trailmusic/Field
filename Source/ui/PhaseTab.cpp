@@ -229,6 +229,11 @@ void PhaseTab::makeSwitchCell (juce::ToggleButton& t, const juce::String& cap, c
     }
     
     t.setName (cap);
+    
+    // CRITICAL: Assign FieldLNF LookAndFeel to the button BEFORE setting metallic properties
+    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        t.setLookAndFeel(lf);
+    
     // Apply metallic properties to the actual button, not the wrapper
     setAreaMetallicForCell (t, MetallicKind::Phase);
     auto cell = std::make_unique<SimpleSwitchCell> (t);

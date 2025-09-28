@@ -134,6 +134,11 @@ private:
     void makeSwitch (juce::Button& b, const juce::String& cap, const char* pid, bool metallic=false)
     {
         b.setButtonText (cap);
+        
+        // CRITICAL: Assign FieldLNF LookAndFeel to the button BEFORE setting metallic properties
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            b.setLookAndFeel(lf);
+        
         // Apply metallic properties to the actual button, not the wrapper
         if (metallic) {
             setAreaMetallicForCell (b, MetallicKind::XY);
