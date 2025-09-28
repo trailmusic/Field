@@ -42,7 +42,7 @@ public:
 
     void resized() override
     {
-        auto b = getLocalBounds(); // No reduction - match KnobCell behavior
+        auto b = getLocalBounds().reduced(4); // Match KnobCell padding exactly (4px on all sides)
         const int capH = captionText.isNotEmpty() ? V : 0; // Use V (value label height) for caption
         
         // Check if child has metallic properties - show caption for ComboBoxes
