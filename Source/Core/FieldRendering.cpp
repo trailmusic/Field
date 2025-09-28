@@ -141,47 +141,82 @@ namespace FieldRendering
         }
         else if (metallicKind != MetallicKind::None)
         {
-            // Metallic buttons - use metallic rendering system
+            // Metallic buttons - use metallic rendering system with KnobCell styling
             auto metalColors = MetallicRenderer::getMetallicColors(theme, metallicKind);
             
             if (button.getToggleState())
             {
-                // Toggled state - use full metallic colors
-                MetallicRenderer::paintMetal(g, r, metalColors, 6.0f);
+                // Toggled state - use full metallic colors with KnobCell styling
+                MetallicRenderer::paintMetal(g, r, metalColors, 8.0f); // Match KnobCell corner radius
+                
+                // Add KnobCell-style shadows for metallic buttons
+                auto ri = r.reduced(3.0f).getSmallestIntegerContainer();
+                juce::DropShadow ds1(juce::Colours::black.withAlpha(0.28f), 10, {-1, -1});
+                juce::DropShadow ds2(juce::Colours::white.withAlpha(0.18f), 5, {-1, -1});
+                ds1.drawForRectangle(g, ri);
+                ds2.drawForRectangle(g, ri);
+                
+                // Add inner rim like KnobCell
+                g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
+                g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
+                
+                // Add KnobCell-style border
+                g.setColour(theme.accentSecondary.withAlpha(0.85f));
+                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
+                
                 return; // Early return for metallic rendering
             }
             else
             {
-                // Untoggled state - use metallic colors with reduced intensity
+                // Untoggled state - use metallic colors with reduced intensity and KnobCell styling
                 auto reducedMetal = metalColors;
                 reducedMetal.top = reducedMetal.top.withAlpha(0.6f);
                 reducedMetal.bottom = reducedMetal.bottom.withAlpha(0.6f);
-                MetallicRenderer::paintMetal(g, r, reducedMetal, 6.0f);
+                MetallicRenderer::paintMetal(g, r, reducedMetal, 8.0f); // Match KnobCell corner radius
+                
+                // Add KnobCell-style shadows for metallic buttons
+                auto ri = r.reduced(3.0f).getSmallestIntegerContainer();
+                juce::DropShadow ds1(juce::Colours::black.withAlpha(0.28f), 10, {-1, -1});
+                juce::DropShadow ds2(juce::Colours::white.withAlpha(0.18f), 5, {-1, -1});
+                ds1.drawForRectangle(g, ri);
+                ds2.drawForRectangle(g, ri);
+                
+                // Add inner rim like KnobCell
+                g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
+                g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
+                
+                // Add KnobCell-style border
+                g.setColour(theme.accentSecondary.withAlpha(0.85f));
+                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
+                
                 return; // Early return for metallic rendering
             }
         }
         else
         {
-            // Default
+            // Default - use KnobCell styling for consistency
             fill = isMouseOver ? panel.brighter(0.06f) : panel;
             if (isButtonDown) fill = fill.darker(0.12f);
         }
 
-        const float cr = 6.0f;
+        const float cr = 8.0f; // Match KnobCell corner radius
         g.setColour(fill);
         g.fillRoundedRectangle(r, cr);
 
-        // Border - use metallic colors for metallic buttons
-        if (metallicKind != MetallicKind::None && !button.getToggleState())
-        {
-            auto metalColors = MetallicRenderer::getMetallicColors(theme, metallicKind);
-            g.setColour(metalColors.bottom.darker(0.2f));
-        }
-        else
-        {
-            g.setColour(fill.darker(0.3f));
-        }
-        g.drawRoundedRectangle(r, cr, 1.0f);
+        // Add KnobCell-style shadows for all buttons
+        auto ri = r.reduced(3.0f).getSmallestIntegerContainer();
+        juce::DropShadow ds1(juce::Colours::black.withAlpha(0.28f), 10, {-1, -1});
+        juce::DropShadow ds2(juce::Colours::white.withAlpha(0.18f), 5, {-1, -1});
+        ds1.drawForRectangle(g, ri);
+        ds2.drawForRectangle(g, ri);
+
+        // Add inner rim like KnobCell
+        g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
+        g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
+
+        // Border - use KnobCell styling for all buttons
+        g.setColour(theme.accentSecondary.withAlpha(0.85f)); // Match KnobCell border color
+        g.drawRoundedRectangle(r.reduced(2.0f), cr, 1.5f); // Match KnobCell border thickness
     }
 
     // Sophisticated rotary slider rendering with tick system and tracks
