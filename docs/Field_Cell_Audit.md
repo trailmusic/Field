@@ -451,3 +451,192 @@ PhaseTab.cpp / ReverbControlsPane.h / BandControlsPane.h / DelayControlsPane.h:
 - **Gap Optimization**: Reduced gap between knob and data label to 1px minimum
 - **Data Label Padding**: Added 3px bottom padding for better visual spacing
 - **Gap Calculation**: `G - 8` (accounts for all padding and tightest possible spacing)
+
+---
+
+## 🔘 **Button Switches System (NEW - January 2025)**
+
+### **Button Switches Overview**
+Button Switches are toggle buttons that control various plugin functions across all control areas. They require consistent LookAndFeel assignment and metallic styling to match the overall Field design system.
+
+### **Button Switch Types**
+1. **Control Buttons**: Primary function buttons (Learn, Stop, Apply, etc.)
+2. **Mode Buttons**: Sub-tab selection buttons (XY, Polar, Heat, etc.)
+3. **Toggle Buttons**: State control buttons (Enable, Sync, etc.)
+4. **Icon Buttons**: Buttons with custom icons instead of text
+
+### **Button Switch Architecture**
+
+#### **LookAndFeel Assignment Pattern**
+```
+PluginEditor (FieldLNF) 
+    ↓
+PaneManager (passes FieldLNF to panes)
+    ↓
+Control Pane (setLookAndFeel(&lnf) in constructor)
+    ↓
+Individual Buttons (setLookAndFeel(lf) in constructor/factory)
+```
+
+#### **Metallic Styling Pattern**
+```cpp
+// 1. Assign LookAndFeel first
+if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+    button.setLookAndFeel(lf);
+
+// 2. Apply metallic properties
+setAreaMetallicForCell(button, MetallicKind::X);
+
+// 3. Set icons if needed
+button.getProperties().set("iconType", (int) IconSystem::IconType);
+```
+
+### **Button Switch Status by Control Area**
+
+| Control Area | Button Types | LookAndFeel Status | Metallic Status | Icon Status | Notes |
+|--------------|--------------|-------------------|-----------------|-------------|-------|
+| **Phase** | ToggleButtons | ✅ Factory Methods | ✅ Phase Metallic | ✅ Icons | Factory pattern working |
+| **Motion** | ToggleButtons | ✅ Factory Methods | ✅ Motion Metallic | ✅ Icons | Registry-based creation |
+| **Delay** | ToggleButtons | ✅ Member Variables | ✅ Delay Metallic | ✅ Icons | Loop assignment working |
+| **XY** | ToggleButtons | ✅ Mixed | ✅ XY Metallic | ✅ Icons | Some member variables |
+| **Imager** | Mode Buttons | 🚨 **ISSUE** | ✅ XY Metallic | ✅ Icons | Member variables not getting LNF |
+| **Machine** | Control Buttons | 🚨 **ISSUE** | ✅ None Metallic | ✅ Icons | Member variables not getting LNF |
+| **Reverb** | ToggleButtons | 🚨 **ISSUE** | ✅ Reverb Metallic | ✅ Icons | Member variables not getting LNF |
+
+### **Button Switch Issues Identified**
+
+#### **🚨 Issue 1: Member Variable Buttons Not Getting LookAndFeel**
+- **Problem**: Buttons declared as member variables bypass factory methods
+- **Affected Areas**: Imager, Machine, Reverb, XY (some)
+- **Root Cause**: LookAndFeel assignment happens in constructor, but parent LookAndFeel not set
+- **Solution**: Ensure parent control pane sets LookAndFeel before child assignments
+
+#### **🚨 Issue 2: PluginEditor Override Conflict**
+- **Problem**: `BypassButton` has custom LookAndFeel that overrides FieldLNF
+- **Affected**: All buttons without metallic properties
+- **Root Cause**: Custom LookAndFeel doesn't delegate to FieldLNF for non-metallic buttons
+- **Solution**: Apply metallic properties to force FieldLNF rendering
+
+#### **🚨 Issue 3: Icon System Integration**
+- **Problem**: Button Switches need icons but IconSystem integration incomplete
+- **Affected**: All Button Switches
+- **Root Cause**: Icon properties set but rendering not confirmed
+- **Solution**: Verify IconSystem integration in FieldRendering
+
+### **Button Switch Implementation Patterns**
+
+#### **Pattern A: Factory Method (Phase, Motion) - WORKING**
+```cpp
+void makeSwitchCell(juce::ToggleButton& t, const juce::String& cap, const char* pid)
+{
+    // Assign LookAndFeel during creation
+    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        t.setLookAndFeel(lf);
+    
+    // Apply metallic properties
+    setAreaMetallicForCell(t, MetallicKind::Phase);
+    
+    // Create wrapper cell
+    auto cell = std::make_unique<SimpleSwitchCell>(t);
+    // ...
+}
+```
+
+#### **Pattern B: Member Variable Loop (Delay) - WORKING**
+```cpp
+// DelayControlsPane.h constructor
+for (juce::ToggleButton* button : { &delayEnabled, &delaySync, &delayKillDry, &delayFreeze, &delayPingpong, &delayDuckPost })
+{
+    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        button->setLookAndFeel(lf);
+    setAreaMetallicForCell(*button, MetallicKind::Delay);
+}
+```
+
+#### **Pattern C: Individual Assignment (Imager, Machine, Reverb) - NEEDS FIX**
+```cpp
+// Control pane constructor
+setLookAndFeel(&lnf);  // Set parent LookAndFeel first
+
+// Then assign to individual buttons
+if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+{
+    modeXY.setLookAndFeel(lf);
+    modePolar.setLookAndFeel(lf);
+    modeHeat.setLookAndFeel(lf);
+}
+```
+
+### **Button Switch Visual Components**
+
+#### **Core Visual Elements**
+- **Background**: Panel color with metallic variants
+- **Border**: Accent color with 1.5f thickness
+- **Corner Radius**: 8.0f to match KnobCell
+- **Shadows**: Two-layer drop shadows (dark + light)
+- **Inner Rim**: 0.8f thickness with 0.16f alpha
+- **Text/Icon**: White text or custom icon rendering
+
+#### **State-Based Visual Elements**
+- **Active State**: Full metallic rendering with accent colors
+- **Inactive State**: Reduced metallic intensity
+- **Hover State**: Brighter panel color
+- **Down State**: Darker panel color
+- **Metallic State**: Full metallic rendering with theme colors
+
+### **Button Switch Action Plan**
+
+#### **Phase 1: Fix LookAndFeel Assignment** 🚨 **IN PROGRESS**
+- [x] Identify all member variable buttons across control panes
+- [x] Ensure parent control panes set LookAndFeel in constructor
+- [x] Add LookAndFeel assignment to member variable buttons
+- [ ] Test that all Button Switches show custom styling
+
+#### **Phase 2: Verify Metallic Properties** 🚨 **IN PROGRESS**
+- [x] Apply metallic properties to all Button Switches
+- [x] Ensure metallic properties force FieldLNF rendering
+- [ ] Test that metallic rendering works for all button types
+
+#### **Phase 3: Icon System Integration** 🚨 **IN PROGRESS**
+- [x] Add new IconType enum values for Button Switches
+- [x] Implement create...Icon methods in IconSystem
+- [x] Set icon properties on Button Switches
+- [ ] Verify icon rendering in FieldRendering
+
+#### **Phase 4: Testing & Validation** 📋 **PENDING**
+- [ ] Test all Button Switches show custom styling
+- [ ] Verify icons render correctly
+- [ ] Ensure consistent visual appearance across all control areas
+- [ ] Validate no regressions in existing functionality
+
+### **Button Switch Success Criteria**
+- [x] All Button Switches receive FieldLNF LookAndFeel assignment
+- [x] All Button Switches have metallic properties applied
+- [x] All Button Switches have appropriate icons set
+- [ ] All Button Switches show custom styling (corner radius, shadows, borders)
+- [ ] All Button Switches show icons correctly
+- [ ] No Button Switches show default JUCE styling
+- [ ] Consistent visual appearance across all control areas
+
+### **Button Switch Files Modified**
+- `Source/Core/IconSystem.h` - Added new IconType enum values
+- `Source/Core/IconSystem.cpp` - Added create...Icon method implementations
+- `Source/ui/ImagerPane.h` - Added LookAndFeel assignment and metallic properties
+- `Source/ui/machine/MachinePane.cpp` - Added LookAndFeel assignment and metallic properties
+- `Source/reverb/ui/ReverbDynEQPane.h` - Added LookAndFeel assignment
+- `Source/ui/XYControlsPane.h` - Added LookAndFeel assignment to member variables
+- `Source/Core/FieldRendering.cpp` - Added drawButtonText method
+- `Source/Core/FieldLookAndFeel.h` - Added drawButtonText override
+
+### **Button Switch Debugging Status**
+- **Red Border Test**: Confirmed FieldLNF rendering is active for some components
+- **Yellow Background Test**: Confirmed drawButtonBackground is being called
+- **Console Logging**: Added debug output to track LookAndFeel assignment
+- **Current Issue**: Member variable buttons not getting LookAndFeel despite assignments
+
+### **🔧 Latest Updates (January 2025)**
+- **Knob Size**: Increased from 48px to 52px across all control areas
+- **Top Padding**: Increased to 12px for better vertical breathing room
+- **Gap Optimization**: Reduced gap between knob and data label to 1px minimum
+- **Data Label Padding**: Added 3px bottom padding for better visual spacing
+- **Gap Calculation**: `G - 8` (accounts for all padding and tightest possible spacing)
