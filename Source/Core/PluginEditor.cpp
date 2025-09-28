@@ -1553,12 +1553,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
 
     tooltipsButton.setTooltip ("Tooltip Assistant");
     tooltipsButton.setToggleState (tooltipAssistantOn_, juce::dontSendNotification);
-    tooltipsButton.onClick = [this]
-    {
-        tooltipAssistantOn_ = tooltipsButton.getToggleState();
-        tooltipsButton.repaint();
-        tooltipBubble.setVisible (false);
-    };
+    // Tooltip button logic delegated to EventManager
+    tooltipsButton.onClick = [this] { /* Delegated to EventManager */ };
 
     // Full screen (top-level window kiosk toggle; restore original bounds)
     addAndMakeVisible (fullScreenButton);
@@ -2731,19 +2727,10 @@ void MyPluginAudioProcessorEditor::performLayout()
                              .withTrimmedTop (Layout::dp (2, s));
     header.performLayout (headerArea);
 
-    // Tooltip bubble menu callback
-    tooltipBubble.onMenu = [this](juce::Point<int> where)
-    {
-        juce::PopupMenu m; m.setLookAndFeel (&lnf);
-        m.addSectionHeader ("Tooltip Options");
-        m.addItem (1, "Open DYN_EQ Tooltips Doc");
-        m.addItem (2, "Turn Assistant Off", tooltipAssistantOn_);
-        m.showMenuAsync (juce::PopupMenu::Options().withTargetScreenArea (juce::Rectangle<int> (where.x, where.y, 1, 1)),
-            [this](int r){ if (r == 1) { juce::URL::createWithoutParsing ("file://docs/notes/DYN_EQ_TOOLTIPS.md").launchInDefaultBrowser(); }
-                           if (r == 2) { tooltipAssistantOn_ = false; tooltipsButton.setToggleState (false, juce::dontSendNotification); tooltipBubble.setVisible (false); repaint(); } });
-    };
-
-    if (! tooltipBubble.isOnDesktop()) addChildComponent (tooltipBubble);
+    // Tooltip bubble setup delegated to EventManager
+    if (eventManager) {
+        eventManager->setupTooltipBubble();
+    }
 
     // history panel removed
 

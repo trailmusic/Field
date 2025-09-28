@@ -596,8 +596,44 @@ void EventManager::hideTooltip()
 
 void EventManager::showTooltip(juce::Component* target, const juce::String& text)
 {
-    // Show tooltip
-    // This will be implemented based on tooltip system
+    if (target && !text.isEmpty())
+    {
+        editor.tooltipBubble.setText(text);
+        auto anchor = target->getBounds();
+        anchor.setPosition(target->getParentComponent()->getBounds().getPosition() + anchor.getPosition());
+        editor.tooltipBubble.setAnchor(anchor);
+        editor.tooltipBubble.setVisible(true);
+        editor.tooltipBubble.toFront(false);
+    }
+}
+
+void EventManager::setupTooltipBubble()
+{
+    // Setup tooltip bubble menu callback
+    editor.tooltipBubble.onMenu = [this](juce::Point<int> where)
+    {
+        juce::PopupMenu m; 
+        m.setLookAndFeel(&editor.lnf);
+        m.addSectionHeader("Tooltip Options");
+        m.addItem(1, "Open DYN_EQ Tooltips Doc");
+        m.addItem(2, "Turn Assistant Off", editor.tooltipAssistantOn_);
+        m.showMenuAsync(juce::PopupMenu::Options().withTargetScreenArea(juce::Rectangle<int>(where.x, where.y, 1, 1)),
+            [this](int r){ 
+                if (r == 1) { 
+                    juce::URL::createWithoutParsing("file://docs/notes/DYN_EQ_TOOLTIPS.md").launchInDefaultBrowser(); 
+                }
+                if (r == 2) { 
+                    editor.tooltipAssistantOn_ = false; 
+                    editor.tooltipsButton.setToggleState(false, juce::dontSendNotification); 
+                    editor.tooltipBubble.setVisible(false); 
+                    editor.repaint(); 
+                } 
+            });
+    };
+    
+    // Add tooltip bubble to desktop if not already there
+    if (!editor.tooltipBubble.isOnDesktop()) 
+        editor.addChildComponent(editor.tooltipBubble);
 }
 
 void EventManager::bindParameterToControl(juce::Component* control, const juce::String& parameterID)

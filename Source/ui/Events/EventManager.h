@@ -45,6 +45,7 @@ public:
     // Tooltip events
     void handleTooltipShow(juce::Component* target, const juce::String& text);
     void handleTooltipHide();
+    void setupTooltipBubble();
     
     // Preset events
     void handlePresetLoad(const juce::String& presetName);
