@@ -8,7 +8,6 @@ void XYPaneAdapter::pushWaveformSample (double L, double R) { pad.pushWaveformSa
 #include "reverb/ReverbParamIDs.h"
 #include "ui/Layout.h"
 #include "dsp/DelayPresetLibrary.h"
-#include "reverb/ui/ReverbControlsPanel.h"
 #include "reverb/ui/ReverbPanel.h"
 #include "reverb/ui/ReverbDynEQPane.h"
 #include "ui/ControlGridMetrics.h"
@@ -3488,22 +3487,13 @@ void MyPluginAudioProcessorEditor::performLayout()
             const int reverbGroupW = juce::jmin (availableW, targetReverbW);
             const int reverbGroupH = delayGroupH;
 
-            static std::unique_ptr<class ReverbControlsPanel> rvPanel;
-            if (!rvPanel)
-                rvPanel = std::make_unique<ReverbControlsPanel> (proc.apvts);
-
-            // DynEQ sub-pane is created but not laid out here; wiring is deferred
+            // Reverb controls are now handled by ReverbTab
 
             // Mirror Delay metrics for Reverb grid so KnobCells match exactly
             const int valuePx2 = Layout::dp (14, s);
             const int labelGap2 = Layout::dp (4, s);
             const int delayCellW = cellW;
-            rvPanel->setCellMetrics (lPx, valuePx2, labelGap2, delayCellW);
-            rvPanel->setRowHeightPx (containerHeight);
-
-            // Add cells directly to Group 2 (no container)
-            juce::Array<KnobCell*> rvCells;
-            rvPanel->collectCells (rvCells);
+            // Reverb controls are now handled by ReverbTab
             auto ensureAdd = [this](juce::Component* c)
             {
                 if (!c) return;
@@ -3616,35 +3606,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             };
             // Explicit placement into 4x8 grid per spec
             juce::Array<juce::GridItem> items;
-            // Row 1: Enable, PRE, ER LVL, Algo, ER DENS, ER WIDTH, WET ONLY, SIZE
-            ensureAdd (reverbEnableCell.get()); items.add (juce::GridItem (*reverbEnableCell)  .withArea (1, 1));
-            if (rvCells.size() > 0 && rvCells[0]) { ensureAdd (rvCells[0]); items.add (juce::GridItem (*rvCells[0]).withArea (1, 2)); } // PRE
-            if (rvCells.size() > 1 && rvCells[1]) { ensureAdd (rvCells[1]); items.add (juce::GridItem (*rvCells[1]).withArea (1, 3)); } // ER LVL
-            ensureAdd (reverbAlgoCell.get());    items.add (juce::GridItem (*reverbAlgoCell)    .withArea (1, 4));
-            if (rvCells.size() > 3 && rvCells[3]) { ensureAdd (rvCells[3]); items.add (juce::GridItem (*rvCells[3]).withArea (1, 5)); } // ER DENS
-            if (rvCells.size() > 4 && rvCells[4]) { ensureAdd (rvCells[4]); items.add (juce::GridItem (*rvCells[4]).withArea (1, 6)); } // ER WIDTH
-            ensureAdd (reverbWetOnlyCell.get()); items.add (juce::GridItem (*reverbWetOnlyCell) .withArea (1, 7));
-            if (sizeCell) { ensureAdd (sizeCell.get()); items.add (juce::GridItem (*sizeCell)      .withArea (1, 8)); }
-
-            // Row 2: DIF, MOD DEP, MOD RATE, HP, LP, TILT, EQ MIX, DECAY XOVER LO
-            if (rvCells.size() > 7  && rvCells[7])  { ensureAdd (rvCells[7]);  items.add (juce::GridItem (*rvCells[7]) .withArea (2, 1)); } // DIF
-            if (rvCells.size() > 8  && rvCells[8])  { ensureAdd (rvCells[8]);  items.add (juce::GridItem (*rvCells[8]) .withArea (2, 2)); } // MOD DEP
-            if (rvCells.size() > 9  && rvCells[9])  { ensureAdd (rvCells[9]);  items.add (juce::GridItem (*rvCells[9]) .withArea (2, 3)); } // MOD RATE
-            if (rvCells.size() > 10 && rvCells[10]) { ensureAdd (rvCells[10]); items.add (juce::GridItem (*rvCells[10]).withArea (2, 4)); } // HP
-            if (rvCells.size() > 11 && rvCells[11]) { ensureAdd (rvCells[11]); items.add (juce::GridItem (*rvCells[11]).withArea (2, 5)); } // LP
-            if (rvCells.size() > 12 && rvCells[12]) { ensureAdd (rvCells[12]); items.add (juce::GridItem (*rvCells[12]).withArea (2, 6)); } // TILT
-            if (rvCells.size() > 13 && rvCells[13]) { ensureAdd (rvCells[13]); items.add (juce::GridItem (*rvCells[13]).withArea (2, 7)); } // EQ MIX
-            if (dreqXLoCell) { ensureAdd (dreqXLoCell.get()); items.add (juce::GridItem (*dreqXLoCell).withArea (2, 8)); }
-
-            // Row 3: ER→TAIL, LOW×, MID×, HIGH×, WIDTH, WET, DECAY (RT60), BLOOM
-            if (rvCells.size() > 14 && rvCells[14]) { ensureAdd (rvCells[14]); items.add (juce::GridItem (*rvCells[14]).withArea (3, 1)); } // ER→TAIL
-            if (rvCells.size() > 15 && rvCells[15]) { ensureAdd (rvCells[15]); items.add (juce::GridItem (*rvCells[15]).withArea (3, 2)); } // LOW×
-            if (rvCells.size() > 16 && rvCells[16]) { ensureAdd (rvCells[16]); items.add (juce::GridItem (*rvCells[16]).withArea (3, 3)); } // MID×
-            if (rvCells.size() > 17 && rvCells[17]) { ensureAdd (rvCells[17]); items.add (juce::GridItem (*rvCells[17]).withArea (3, 4)); } // HIGH×
-            if (rvCells.size() > 18 && rvCells[18]) { ensureAdd (rvCells[18]); items.add (juce::GridItem (*rvCells[18]).withArea (3, 5)); } // WIDTH
-            if (rvCells.size() > 19 && rvCells[19]) { ensureAdd (rvCells[19]); items.add (juce::GridItem (*rvCells[19]).withArea (3, 6)); } // WET
-            if (rvCells.size() > 5  && rvCells[5])  { ensureAdd (rvCells[5]);  items.add (juce::GridItem (*rvCells[5]) .withArea (3, 7)); } // DECAY
-            if (bloomCell) { ensureAdd (bloomCell.get()); items.add (juce::GridItem (*bloomCell)    .withArea (3, 8)); }
+            // Reverb controls are now handled by ReverbTab
 
             // Row 4: DISTANCE, FREEZE, DUCK, ATT, REL, THR, RAT, DECAY XOVER HI
             auto setDuckMetrics = [&](KnobCell* kc)

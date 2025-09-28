@@ -2,7 +2,7 @@
 
 #include <JuceHeader.h>
 #include "ReverbPanel.h"
-#include "ReverbControlsPane2x16.h"
+#include "ReverbControlsPane.h"
 #include "../../ui/ControlGridMetrics.h"
 
 class MyPluginAudioProcessor; // fwd
@@ -24,7 +24,7 @@ public:
         addAndMakeVisible (*reverbPanel);
 
         // Controls (2x16 grid)
-        controls = std::make_unique<ReverbControlsPane2x16>(p.apvts);
+        controls = std::make_unique<ReverbControlsPane>(p.apvts);
         controls->setVisible (true);
         addAndMakeVisible (*controls);
     }
@@ -66,7 +66,7 @@ public:
 private:
     MyPluginAudioProcessor& proc;
     std::unique_ptr<ReverbPanel> reverbPanel;
-    std::unique_ptr<ReverbControlsPane2x16> controls;
+    std::unique_ptr<ReverbControlsPane> controls;
 };
 
 

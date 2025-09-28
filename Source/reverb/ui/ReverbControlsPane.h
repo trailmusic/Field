@@ -7,19 +7,19 @@
 #include "../../Core/FieldLookAndFeel.h"
 #include "../../Core/FieldMetallic.h"
 
-// ReverbControlsPane2x16: 2x16 flat grid container for Reverb controls.
+// ReverbControlsPane: 2x16 flat grid container for Reverb controls.
 // Scaffolding-only: initially populated with styled empty KnobCells.
-class ReverbControlsPane2x16 : public juce::Component
+class ReverbControlsPane : public juce::Component
 {
 public:
-    explicit ReverbControlsPane2x16 (juce::AudioProcessorValueTreeState& s)
+    explicit ReverbControlsPane (juce::AudioProcessorValueTreeState& s)
         : apvts (s)
     {
         buildControls();
         applyMetricsToAll();
     }
     
-    ~ReverbControlsPane2x16() override
+    ~ReverbControlsPane() override
     {
         // Clear parameter attachments before destruction to prevent crashes
         sAtts.clear();

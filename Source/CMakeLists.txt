@@ -31,7 +31,7 @@ set(SRC
     reverb/ui/ReverbPanel.h
     reverb/ui/ReverbPanel.cpp
     reverb/ui/ReverbDynEQPane.h
-    reverb/ui/ReverbControlsPane2x16.h
+    reverb/ui/ReverbControlsPane.h
     reverb/ui/ReverbTab.h
     ui/SpectrumAnalyzer.h
     ui/SpectrumAnalyzer.cpp

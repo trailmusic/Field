@@ -3199,7 +3199,7 @@ The logo provides consistent branding across the interface while maintaining the
 
 #### **Reverb UI**
 - `Source/reverb/ui/ReverbPanel.*`
-- `Source/reverb/ui/ReverbControlsPanel.h`
+- `Source/reverb/ui/ReverbControlsPane.h`
 - `Source/reverb/ui/ReverbEQComponent.*`
 - `Source/reverb/ui/ReverbScopeComponent.*`
 - `Source/reverb/ui/DecayCurveComponent.*`
