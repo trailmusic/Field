@@ -291,7 +291,14 @@ private:
         linkB.setButtonText (linkCap);
         // CRITICAL: Assign FieldLNF LookAndFeel to the button
         if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
             linkB.setLookAndFeel(lf);
+            juce::Logger::writeToLog("*** XYControlsPane: Assigned FieldLNF to linkB button ***");
+        }
+        else
+        {
+            juce::Logger::writeToLog("*** XYControlsPane: FieldLNF not found for linkB button ***");
+        }
     }
     
     // Helper for creating BASS cell with frequency mini slider using KnobCellWithAux
@@ -638,7 +645,14 @@ private:
         linkB.setButtonText (linkCap);
         // CRITICAL: Assign FieldLNF LookAndFeel to the button
         if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
             linkB.setLookAndFeel(lf);
+            juce::Logger::writeToLog("*** XYControlsPane: Assigned FieldLNF to linkB button ***");
+        }
+        else
+        {
+            juce::Logger::writeToLog("*** XYControlsPane: FieldLNF not found for linkB button ***");
+        }
     }
     
     
@@ -668,7 +682,14 @@ private:
         auditionButton.setToggleState (false, juce::dontSendNotification);
         // CRITICAL: Assign FieldLNF LookAndFeel to the button
         if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
             auditionButton.setLookAndFeel(lf);
+            juce::Logger::writeToLog("*** XYControlsPane: Assigned FieldLNF to auditionButton ***");
+        }
+        else
+        {
+            juce::Logger::writeToLog("*** XYControlsPane: FieldLNF not found for auditionButton ***");
+        }
         
         // Create KnobCellWithAux template for double-wide with auxiliary components
         std::vector<juce::Component*> auxComponents = { &slopeSwitch, &auditionButton };

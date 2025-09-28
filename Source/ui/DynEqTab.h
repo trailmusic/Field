@@ -19,6 +19,9 @@ public:
         : proc (p), lookAndFeelPtr (lnf), zoomState (), zoomRail (zoomState)
     {
         setOpaque (true);
+        
+        setLookAndFeel(lnf);
+        
         startTimerHz (30);
         
         // Initialize zoom state
@@ -676,6 +679,15 @@ private:
             specToggle.setButtonText ("SPEC");
             specToggle.onClick = [this]{ if (!updating && onSpecChanged) onSpecChanged (specToggle.getToggleState()); };
             addAndMakeVisible (specToggle);
+            
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            {
+                dynToggle.setLookAndFeel(lf);
+                specToggle.setLookAndFeel(lf);
+            }
+            
+            setAreaMetallicForCell (dynToggle, MetallicKind::Band); // Use Band metallic for DynEQ buttons
+            setAreaMetallicForCell (specToggle, MetallicKind::Band);
         }
         void paint (juce::Graphics& g) override
         {

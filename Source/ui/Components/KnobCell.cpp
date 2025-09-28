@@ -187,6 +187,10 @@ void KnobCell::resized()
     ensureChildrenAreHere();
 
     auto b = getLocalBounds().reduced (4);
+    
+    // Add extra top padding to create more space above the knob (fine-tuned)
+    const int extraTopPadding = 12; // Increased from 10 to 12
+    b.removeFromTop(extraTopPadding);
     const int rimR = 6;
 
     // Mini/aux placement: bottom or right
@@ -322,8 +326,11 @@ void KnobCell::resized()
     }
 
     // Reserve space for the value label (caller will position it relative to the knob)
+    // Fine-tune the gap to bring data label closer to knob
+    // Account for data label background padding (2px above text) to maintain visual gap
+    const int reducedGap = juce::jmax(1, G - 8); // Reduce gap by 8px (6px + 2px more), minimum 1px
     if (V > 0)
-        content.removeFromBottom (V + G);
+        content.removeFromBottom (V + reducedGap);
 
     // Fit the knob at the top-center with requested diameter K
     if (showKnob)
@@ -346,7 +353,7 @@ void KnobCell::resized()
             const int k = juce::jmin (K, juce::jmin (content.getWidth(), content.getHeight()));
             juce::Rectangle<int> kb (k, k);
             kb = kb.withCentre ({ content.getCentreX(), content.getY() + k / 2 });
-            lx = kb.getX(); lw = kb.getWidth(); ly = kb.getBottom() + valueLabelGap;
+            lx = kb.getX(); lw = kb.getWidth(); ly = kb.getBottom() + reducedGap;
         }
         juce::Rectangle<int> lb (lx, ly, lw, h);
         if (valueLabel.getParentComponent() != this)
@@ -522,13 +529,14 @@ void KnobCell::paint (juce::Graphics& g)
         const float th = std::ceil (f.getHeight());
         const float tw = f.getStringWidthFloat (txt);
 
-        // Slightly larger than text bounds
+        // Slightly larger than text bounds with extra bottom padding
         const float padX = 4.0f;
         const float padY = 2.0f;
+        const float padBottom = 3.0f; // Extra bottom padding
 
         const float x = lb.getCentreX() - tw * 0.5f - padX;
         const float y = lb.getY() + (lb.getHeight() - th) * 0.5f - padY * 0.5f;
-        juce::Rectangle<float> badge (x, y, tw + padX * 2.0f, th + padY);
+        juce::Rectangle<float> badge (x, y, tw + padX * 2.0f, th + padY + padBottom);
 
         const float cr = 4.0f;
 

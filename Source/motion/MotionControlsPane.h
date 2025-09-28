@@ -159,7 +159,14 @@ private:
         
         // CRITICAL: Assign FieldLNF LookAndFeel to the button BEFORE setting metallic properties
         if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
             button->setLookAndFeel(lf);
+            juce::Logger::writeToLog("*** MotionControlsPane::createButton: Assigned FieldLNF to button: " + juce::String(param.name) + " ***");
+        }
+        else
+        {
+            juce::Logger::writeToLog("*** MotionControlsPane::createButton: FieldLNF NOT FOUND for button: " + juce::String(param.name) + " ***");
+        }
             
         setAreaMetallicForCell(*button, MetallicKind::Motion);
         

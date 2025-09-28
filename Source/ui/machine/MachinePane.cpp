@@ -8,6 +8,8 @@ MachinePane::MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, Fie
     : proc (p), vt (state), engine (p, p.apvts), toneCard(lnf), spaceCard(lnf), clarityCard(lnf)
 {
     setOpaque (false);
+    
+    setLookAndFeel(&lnf);
 
     // wrapped in cells later
     addAndMakeVisible (genreBox);
@@ -16,7 +18,6 @@ MachinePane::MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, Fie
     addAndMakeVisible (strength);
     addAndMakeVisible (showPreBtn);
     addAndMakeVisible (previewBtn);
-    // CRITICAL: Assign FieldLNF LookAndFeel to the buttons
     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
     {
         showPreBtn.setLookAndFeel(lf);
@@ -34,9 +35,10 @@ MachinePane::MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, Fie
     listenBtn.setClickingTogglesState (true);
     listenBtn.setButtonText ("");
     listenBtn.getProperties().set ("iconType", (int) IconSystem::Delta);
-    // CRITICAL: Assign FieldLNF LookAndFeel to the button
     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+    {
         listenBtn.setLookAndFeel(lf);
+    }
 
     genreBox.addItem ("EDM/House", 1); genreBox.addItem ("Hip-Hop/Trap", 2); genreBox.addItem ("Pop", 3); genreBox.addItem ("Rock/Indie", 4); genreBox.addItem ("Acoustic/Jazz", 5); genreBox.addItem ("Voice/Podcast", 6);
     venueBox.addItem ("Streaming", 1); venueBox.addItem ("Club/PA", 2); venueBox.addItem ("Theater/Cinema", 3); venueBox.addItem ("Mobile", 4);
@@ -82,13 +84,26 @@ MachinePane::MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, Fie
         b.setColour (juce::TextButton::textColourOffId, juce::Colours::white.withAlpha (0.92f));
         b.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
         b.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
+        
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
+            b.setLookAndFeel(lf);
+        }
     };
     styleCell (analyzeBtn);
     styleCell (stopBtn);
+    
+    setAreaMetallicForCell (analyzeBtn, MetallicKind::Band); // Use Band metallic for Machine buttons
+    setAreaMetallicForCell (stopBtn, MetallicKind::Band);
+    
     analyzeBtn.setTriggeredOnMouseDown (false);
     stopBtn.setTriggeredOnMouseDown (false);
-    stopBtn.setButtonText (juce::String::fromUTF8 ("\u25A0")); // square icon
-    analyzeBtn.setButtonText ("Learn");
+    stopBtn.setButtonText (""); // Use icon instead
+    analyzeBtn.setButtonText (""); // Use icon instead
+    
+    // Set icons for the buttons
+    analyzeBtn.getProperties().set ("iconType", (int) IconSystem::Learn);
+    stopBtn.getProperties().set ("iconType", (int) IconSystem::Stop);
 
     // Wrap Learn/Stop into small cells to match delay-style cells
     learnCell = std::make_unique<SmallSwitchCell> (analyzeBtn);

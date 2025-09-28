@@ -1,7 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
 #include "StereoFieldEngine.h"
-#include "Components/KnobCellMini.h"
 
 // Minimal Imager pane: goniometer (Lissajous) with optional PRE overlay
 class ImagerPane : public juce::Component, private juce::Timer
@@ -56,10 +55,31 @@ public:
         // Mode buttons (simple sub-tabs)
         if (opts.toolingEnabled)
         {
-            addAndMakeVisible (modeXY);   modeXY  .setButtonText ("XY");
-            addAndMakeVisible (modePolar);modePolar.setButtonText ("Polar");
+            addAndMakeVisible (modeXY);   modeXY  .setButtonText ("");
+            addAndMakeVisible (modePolar);modePolar.setButtonText ("");
             // Width button removed from Imager
-            addAndMakeVisible (modeHeat); modeHeat .setButtonText ("Heat");
+            addAndMakeVisible (modeHeat); modeHeat .setButtonText ("");
+            
+            // Set icons for the buttons
+            modeXY.getProperties().set ("iconType", (int) IconSystem::XY);
+            modePolar.getProperties().set ("iconType", (int) IconSystem::Polar);
+            modeHeat.getProperties().set ("iconType", (int) IconSystem::Heat);
+            
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            {
+                modeXY.setLookAndFeel(lf);
+                modePolar.setLookAndFeel(lf);
+                modeHeat.setLookAndFeel(lf);
+                juce::Logger::writeToLog("*** ImagerPane: Assigned FieldLNF to mode buttons ***");
+            }
+            else
+            {
+                juce::Logger::writeToLog("*** ImagerPane: FieldLNF not found for mode buttons ***");
+            }
+            
+            setAreaMetallicForCell (modeXY, MetallicKind::XY);
+            setAreaMetallicForCell (modePolar, MetallicKind::XY);
+            setAreaMetallicForCell (modeHeat, MetallicKind::XY);
         }
         auto setMode = [this](Options::Mode m, const juce::String& v){ opts.mode = m; if (onUiChange) onUiChange ("ui_imager_mode", v); repaint(); resized(); };
         modeXY  .onClick = [=]{ setMode (Options::Mode::XY,   "xy");   };
@@ -188,6 +208,7 @@ public:
         modePolar.setClickingTogglesState (true);
         // modeWidth removed from UI
         modeHeat .setClickingTogglesState (true);
+        
         if (opts.toolingEnabled)
         {
             modeXY  .setBounds (modes.removeFromLeft (mW)); modes.removeFromLeft (gap);

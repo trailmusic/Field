@@ -22,6 +22,25 @@ struct FieldTheme
     // Primary accent (Ocean blue by default)
     juce::Colour accent     { 0xFF5AA9E6 };
     juce::Colour accentSecondary { 0xFF202226 };
+    
+    // Animation system colors and effects
+    struct AnimationTheme {
+        // Bypass button blink animation
+        juce::Colour bypassBlinkDark    { 0xFF8A8F96 }; // Darker phase of blink
+        juce::Colour bypassBlinkBright  { 0xFFB8BDC7 }; // Brighter phase of blink
+        float blinkAlphaDark            { 0.35f };      // Alpha for dark phase
+        float blinkAlphaBright          { 0.18f };      // Alpha for bright phase
+        int blinkIntervalMs             { 250 };        // Blink interval in milliseconds
+        
+        // Glow effects
+        juce::Colour glowColor          { 0xFF5AA9E6 }; // Glow color (matches accent)
+        float glowIntensity             { 0.8f };       // Glow intensity (0.0-1.0)
+        float glowRadius                { 8.0f };       // Glow radius in pixels
+        
+        // Performance settings
+        int animationFps                { 20 };         // Animation refresh rate
+        bool enableAnimations           { true };       // Master animation toggle
+    } animation;
 
     // Motion (purple-metal) system colours (used by Motion Engine UI)
     juce::Colour motionPanelTop { 0xFF7B81C1 }; // bluish-purple top

@@ -6,6 +6,7 @@ class IconSystem
 public:
     enum IconType
     {
+        None,
         Lock,
         Unlock,
         CogWheel,
@@ -50,7 +51,17 @@ public:
         Manual,
         Reset,
         ZoomIn,
-        ZoomOut
+        ZoomOut,
+        // Button Switch Icons
+        Learn,
+        Stop,
+        XY,
+        Polar,
+        Heat,
+        Show,
+        Audition,
+        Dynamic,
+        Spectral
     };
 
     static juce::Path createIcon (IconType type, float size = 16.0f);
@@ -103,4 +114,14 @@ private:
     static juce::Path createResetIcon (float size);
     static juce::Path createZoomInIcon (float size);
     static juce::Path createZoomOutIcon (float size);
+    // Button Switch Icon Methods
+    static juce::Path createLearnIcon (float size);
+    static juce::Path createStopIcon (float size);
+    static juce::Path createXYIcon (float size);
+    static juce::Path createPolarIcon (float size);
+    static juce::Path createHeatIcon (float size);
+    static juce::Path createShowIcon (float size);
+    static juce::Path createAuditionIcon (float size);
+    static juce::Path createDynamicIcon (float size);
+    static juce::Path createSpectralIcon (float size);
 };

@@ -2,7 +2,6 @@
 #include <JuceHeader.h>
 #include "MachineEngine.h"
 #include "ProposalCard.h"
-#include "WidthDesignerPanel.h"
 #include "../../Core/FieldLookAndFeel.h"
 #include "../../Core/FieldMetallic.h"
 #include "../../Core/IconSystem.h"
@@ -37,6 +36,19 @@ private:
             caption.setJustificationType (juce::Justification::centred);
             caption.setInterceptsMouseClicks (false, false);
             addAndMakeVisible (caption);
+            
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            {
+                if (auto* button = dynamic_cast<juce::Button*>(&child))
+                {
+                    button->setLookAndFeel(lf);
+                    juce::Logger::writeToLog("*** SmallSwitchCell: Assigned FieldLNF to child button ***");
+                }
+            }
+            else
+            {
+                juce::Logger::writeToLog("*** SmallSwitchCell: FieldLNF not found for child button ***");
+            }
         }
         void setCaption (const juce::String& text)
         {
@@ -83,7 +95,6 @@ private:
     std::unique_ptr<SmallSwitchCell> preCell;
     juce::ToggleButton listenBtn { "Listen" };
     juce::Rectangle<int> barArea;
-    std::unique_ptr<WidthDesignerPanel> widthPanel;
 
     // Header-style bypass button for machine cards (mirrors header BypassButton)
     class CardBypassButton : public juce::TextButton, public juce::Timer
@@ -93,7 +104,8 @@ private:
         {
             setLookAndFeel(&customLookAndFeel);
             setClickingTogglesState(true);
-            startTimerHz(20);
+            // Use theme animation FPS for consistent performance
+            startTimerHz(mainLnf.theme.animation.animationFps);
         }
         ~CardBypassButton() override
         {
@@ -147,12 +159,20 @@ private:
                 juce::Colour baseColour;
                 if (button.getToggleState())
                 {
-                    // Bypassed: grey body + subtle blink
-                    baseColour = textGrey;
-                    auto now = juce::Time::getMillisecondCounter();
-                    const bool phase = ((now / 250) % 2) == 0;
-                    baseColour = phase ? baseColour.darker(0.35f) : baseColour.brighter(0.05f);
-                    g.setColour(baseColour.withAlpha(phase ? 0.35f : 0.18f));
+                    // Bypassed: use theme animation colors and timing
+                    if (mainFieldLNF.theme.animation.enableAnimations)
+                    {
+                        auto now = juce::Time::getMillisecondCounter();
+                        const bool phase = ((now / mainFieldLNF.theme.animation.blinkIntervalMs) % 2) == 0;
+                        baseColour = phase ? mainFieldLNF.theme.animation.bypassBlinkDark : mainFieldLNF.theme.animation.bypassBlinkBright;
+                        g.setColour(baseColour.withAlpha(phase ? mainFieldLNF.theme.animation.blinkAlphaDark : mainFieldLNF.theme.animation.blinkAlphaBright));
+                    }
+                    else
+                    {
+                        // Fallback to static grey when animations disabled
+                        baseColour = textGrey;
+                        g.setColour(baseColour.withAlpha(0.20f));
+                    }
                     g.fillRoundedRectangle(bounds.expanded(4.0f), 6.0f);
                 }
                 else

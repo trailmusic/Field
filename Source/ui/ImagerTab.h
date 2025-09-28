@@ -14,8 +14,14 @@ public:
     explicit ImagerTab (MyPluginAudioProcessor& p, juce::LookAndFeel* lnf)
         : proc (p)
     {
+        // CRITICAL: Set our own LookAndFeel first
+        setLookAndFeel(lnf);
+        
         visuals = std::make_unique<ImagerPane>();
         addAndMakeVisible (*visuals);
+        
+        // CRITICAL: Pass the LookAndFeel to the ImagerPane
+        visuals->setLookAndFeel(lnf);
     }
     // Mirror legacy callbacks so PaneManager integrations continue to work
 public:

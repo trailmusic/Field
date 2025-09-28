@@ -11,6 +11,7 @@ juce::Path IconSystem::createIcon (IconType type, float size)
 {
     switch (type)
     {
+        case None:           return juce::Path(); // Empty path for no icon
         case Lock:           return createLockIcon (size);
         case Unlock:         return createUnlockIcon (size);
         case CogWheel:       return createCogWheelIcon (size);
@@ -60,6 +61,16 @@ juce::Path IconSystem::createIcon (IconType type, float size)
         case Reset:          return createResetIcon (size);
         case ZoomIn:         return createZoomInIcon (size);
         case ZoomOut:        return createZoomOutIcon (size);
+        // Button Switch Icons
+        case Learn:          return createLearnIcon (size);
+        case Stop:           return createStopIcon (size);
+        case XY:             return createXYIcon (size);
+        case Polar:          return createPolarIcon (size);
+        case Heat:           return createHeatIcon (size);
+        case Show:           return createShowIcon (size);
+        case Audition:       return createAuditionIcon (size);
+        case Dynamic:        return createDynamicIcon (size);
+        case Spectral:       return createSpectralIcon (size);
         default:             return {};
     }
 }
@@ -741,6 +752,149 @@ juce::Path IconSystem::createZoomOutIcon (float size)
     // Minus sign inside
     path.startNewSubPath (cx - 2 * s, cy);
     path.lineTo (cx + 2 * s, cy);
+    
+    return path;
+}
+
+// --- Button Switch Icons ---
+
+juce::Path IconSystem::createLearnIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    
+    // Brain/learning icon - simplified head with neural network
+    path.addEllipse (6 * s, 4 * s, 4 * s, 4 * s); // head
+    path.addEllipse (7 * s, 5 * s, 2 * s, 2 * s); // brain
+    // Neural connections
+    path.startNewSubPath (7 * s, 6 * s);
+    path.lineTo (5 * s, 8 * s);
+    path.startNewSubPath (9 * s, 6 * s);
+    path.lineTo (11 * s, 8 * s);
+    path.startNewSubPath (7 * s, 7 * s);
+    path.lineTo (7 * s, 9 * s);
+    
+    return path;
+}
+
+juce::Path IconSystem::createStopIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    
+    // Square stop icon
+    path.addRectangle (4 * s, 4 * s, 8 * s, 8 * s);
+    
+    return path;
+}
+
+juce::Path IconSystem::createXYIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    
+    // X and Y axes with origin
+    path.startNewSubPath (2 * s, 8 * s);
+    path.lineTo (14 * s, 8 * s); // X axis
+    path.startNewSubPath (8 * s, 2 * s);
+    path.lineTo (8 * s, 14 * s); // Y axis
+    // Origin dot
+    path.addEllipse (7.5f * s, 7.5f * s, 1 * s, 1 * s);
+    
+    return path;
+}
+
+juce::Path IconSystem::createPolarIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    
+    // Polar coordinate system - circle with radius lines
+    path.addEllipse (2 * s, 2 * s, 12 * s, 12 * s); // outer circle
+    path.addEllipse (6 * s, 6 * s, 4 * s, 4 * s); // inner circle
+    // Radius lines
+    path.startNewSubPath (8 * s, 8 * s);
+    path.lineTo (14 * s, 8 * s);
+    path.startNewSubPath (8 * s, 8 * s);
+    path.lineTo (8 * s, 2 * s);
+    path.startNewSubPath (8 * s, 8 * s);
+    path.lineTo (12 * s, 4 * s);
+    
+    return path;
+}
+
+juce::Path IconSystem::createHeatIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    
+    // Heat/fire icon - flame shape
+    path.startNewSubPath (8 * s, 14 * s);
+    path.quadraticTo (4 * s, 10 * s, 6 * s, 6 * s);
+    path.quadraticTo (8 * s, 4 * s, 10 * s, 6 * s);
+    path.quadraticTo (12 * s, 10 * s, 8 * s, 14 * s);
+    path.closeSubPath();
+    
+    return path;
+}
+
+juce::Path IconSystem::createShowIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    
+    // Eye icon
+    path.addEllipse (4 * s, 6 * s, 8 * s, 4 * s); // eye outline
+    path.addEllipse (6 * s, 7 * s, 4 * s, 2 * s); // pupil
+    path.addEllipse (7 * s, 7.5f * s, 1 * s, 1 * s); // highlight
+    
+    return path;
+}
+
+juce::Path IconSystem::createAuditionIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    
+    // Headphones icon
+    path.addEllipse (3 * s, 6 * s, 4 * s, 4 * s); // left earcup
+    path.addEllipse (9 * s, 6 * s, 4 * s, 4 * s); // right earcup
+    path.startNewSubPath (7 * s, 8 * s);
+    path.lineTo (7 * s, 4 * s);
+    path.lineTo (9 * s, 4 * s); // headband
+    
+    return path;
+}
+
+juce::Path IconSystem::createDynamicIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    
+    // Dynamic range icon - waveform with compression
+    path.startNewSubPath (2 * s, 8 * s);
+    path.lineTo (4 * s, 4 * s);
+    path.lineTo (6 * s, 12 * s);
+    path.lineTo (8 * s, 6 * s);
+    path.lineTo (10 * s, 10 * s);
+    path.lineTo (12 * s, 3 * s);
+    path.lineTo (14 * s, 8 * s);
+    
+    return path;
+}
+
+juce::Path IconSystem::createSpectralIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    
+    // Spectral analysis icon - frequency bars
+    for (int i = 0; i < 8; ++i)
+    {
+        float x = 2 * s + i * 1.5f * s;
+        float height = (i % 3 + 1) * 2 * s;
+        path.addRectangle (x, 8 * s - height, 1 * s, height);
+    }
     
     return path;
 }

@@ -1663,6 +1663,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     abButtonB.setToggleState (false, juce::dontSendNotification);
     abButtonA.onClick = [this]{ if (!abButtonA.getToggleState()) toggleABState(); };
     abButtonB.onClick = [this]{ if (!abButtonB.getToggleState()) toggleABState(); };
+    
+    // Set metallic properties for A/B buttons to enable Button Switch styling
+    setAreaMetallicForCell (abButtonA, MetallicKind::Band);
+    setAreaMetallicForCell (abButtonB, MetallicKind::Band);
     copyButton.onClick = [this]
     {
         juce::PopupMenu m; m.addItem (1, "Copy A to B"); m.addItem (2, "Copy B to A");
@@ -2816,7 +2820,6 @@ void MyPluginAudioProcessorEditor::performLayout()
             }
         }
         phaseModeButton.setBounds (optionsButton.getRight() + Layout::dp (8, s), leftY, btnW, btnH);
-        phaseModeButton.setLookAndFeel (&lnf);
         addAndMakeVisible (phaseModeButton);
         // Shade per mode (Zero keeps inactive visual; menu shows selection)
         auto applyPhaseTint = [this]

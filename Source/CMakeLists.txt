@@ -14,7 +14,12 @@ set(SRC
     ui/Components/KnobCell.cpp
     ui/Components/KnobCellWithAux.h
     ui/Components/KnobCellWithAux.cpp
-    ui/Components/KnobCellMini.h
+    ui/Components/BypassButton.h
+    ui/Components/ButtonSwitch.h
+    ui/Components/ButtonSwitchFactory.h
+    ui/Components/ThemedIconButton.h
+    ui/Components/AuditionButton.h
+    ui/Components/ABButton.h
     Core/IconSystem.h
     Core/IconSystem.cpp
     reverb/ReverbParamIDs.h
@@ -57,8 +62,6 @@ set(SRC
     ui/machine/ParamPatch.h
     ui/machine/ProposalCard.h
     ui/machine/ProposalCard.cpp
-    ui/machine/WidthDesignerPanel.h
-    ui/machine/WidthDesignerPanel.cpp
     ui/machine/MachineEngine.h
     ui/machine/MachineEngine.cpp
     ui/machine/MachinePane.h

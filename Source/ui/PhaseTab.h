@@ -5,6 +5,7 @@
 #include "../Core/FieldMetallic.h"
 #include "ControlGridMetrics.h"
 #include "Components/KnobCell.h"
+#include "Components/ButtonSwitch.h"
 #include "SimpleSwitchCell.h"
 
 // Phase Visual Container - placeholder for phase alignment visuals
@@ -68,7 +69,7 @@ private:
     void styleKnob (juce::Slider& k);
     void makeCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid);
     void makeComboCell (juce::ComboBox& c, const juce::String& cap, const char* pid);
-    void makeSwitchCell (juce::ToggleButton& t, const juce::String& cap, const char* pid);
+    void makeSwitchCell (ButtonSwitch& t, const juce::String& cap, const char* pid);
     void buildControls();
     void applyMetricsToAll();
 
@@ -81,8 +82,8 @@ private:
     juce::ComboBox refSourceCombo, channelModeCombo, captureCombo, alignModeCombo, alignGoalCombo;
     juce::ComboBox unitsCombo, linkCombo, engineCombo, resetCombo;
     juce::ComboBox firLengthCombo, dynamicPhaseCombo, monitorCombo, metricCombo, auditionBlendCombo;
-    juce::ToggleButton followXOSwitch, polarityASwitch, polarityBSwitch, commitSwitch;
-    juce::ToggleButton phaseRecSwitch, applyOnLoadSwitch;
+    ButtonSwitch followXOSwitch, polarityASwitch, polarityBSwitch, commitSwitch;
+    ButtonSwitch phaseRecSwitch, applyOnLoadSwitch;
     juce::Slider delayCoarseKnob, delayFineKnob, latencyKnob;
     juce::Slider xoLowKnob, xoHighKnob, lowAPKnob, lowQKnob, midAPKnob, midQKnob;
     juce::Slider highAPKnob, highQKnob, trimKnob;

@@ -221,7 +221,7 @@ void PhaseTab::makeComboCell (juce::ComboBox& c, const juce::String& cap, const 
     comboAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, pid, c));
 }
 
-void PhaseTab::makeSwitchCell (juce::ToggleButton& t, const juce::String& cap, const char* pid)
+void PhaseTab::makeSwitchCell (ButtonSwitch& t, const juce::String& cap, const char* pid)
 {
     if (pid == nullptr || proc.apvts.getParameter(juce::String(pid)) == nullptr)
     {
@@ -230,12 +230,15 @@ void PhaseTab::makeSwitchCell (juce::ToggleButton& t, const juce::String& cap, c
     
     t.setName (cap);
     
-    // CRITICAL: Assign FieldLNF LookAndFeel to the button BEFORE setting metallic properties
+    // ButtonSwitch already handles LookAndFeel and metallic properties in constructor
+    // Just ensure it has the correct LookAndFeel from parent
     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+    {
         t.setLookAndFeel(lf);
+    }
     
-    // Apply metallic properties to the actual button, not the wrapper
-    setAreaMetallicForCell (t, MetallicKind::Phase);
+    // Set metallic properties for Phase controls
+    t.setMetallicKind(MetallicKind::Phase);
     auto cell = std::make_unique<SimpleSwitchCell> (t);
     cell->setCaption (cap);
     

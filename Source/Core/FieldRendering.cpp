@@ -105,12 +105,12 @@ namespace FieldRendering
         }
     }
 
-    void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
-                             bool isMouseOver, bool isButtonDown, const FieldTheme& theme)
-    {
-        auto r = button.getLocalBounds().toFloat().reduced(2.0f);
-        auto accent = theme.accent;
-        auto panel = theme.panel;
+void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
+                         bool isMouseOver, bool isButtonDown, const FieldTheme& theme)
+{
+    auto r = button.getLocalBounds().toFloat().reduced(2.0f);
+    auto accent = theme.accent;
+    auto panel = theme.panel;
 
         // Check for metallic properties first
         auto metallicKind = metallicFromProps(button.getProperties());

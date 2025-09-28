@@ -6,6 +6,10 @@
 #include "Core/FieldMetallic.h"
 #include "ui/Components/KnobCell.h"
 #include "Core/IconSystem.h"
+#include "ui/Components/BypassButton.h"
+#include "ui/Components/ThemedIconButton.h"
+#include "ui/Components/AuditionButton.h"
+#include "ui/Components/ABButton.h"
 #include "Presets/PresetRegistry.h"
 #include "Presets/PresetCommandPalette.h"
 #include "Presets/PresetManager.h"
@@ -313,240 +317,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ToggleSwitch)
 };
 
-//==============================================================================
-// BypassButton (kept blink behavior, reads theme accent automatically)
-//==============================================================================
-class BypassButton : public juce::TextButton, public juce::Timer
-{
-public:
-    BypassButton(FieldLNF& mainLnf) : juce::TextButton(""), customLookAndFeel(mainLnf)
-    {
-        setLookAndFeel(&customLookAndFeel);
-        setClickingTogglesState(true);
-        startTimerHz(20); // High refresh so blink is obvious
-    }
-    
-    ~BypassButton() override
-    {
-        stopTimer();
-        setLookAndFeel(nullptr);
-    }
-    
-    void timerCallback() override
-    {
-        // Always repaint when visible to drive blink smoothly when toggled
-        if (isShowing()) repaint();
-    }
-    
-private:
-    class CustomLookAndFeel : public juce::LookAndFeel_V4
-    {
-    public:
-        CustomLookAndFeel(FieldLNF& mainLnf) : mainFieldLNF(mainLnf) {}
-        
-        void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour&,
-                                bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override
-        {
-            // Check for metallic properties first - if found, delegate to FieldLNF
-            auto metallicKind = metallicFromProps (button.getProperties());
-            if (metallicKind != MetallicKind::None)
-            {
-                // Delegate to the main FieldLNF instance
-                mainFieldLNF.drawButtonBackground(g, button, juce::Colour(), shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
-                return;
-            }
-            
-            // Fall back to custom rendering for non-metallic buttons
-            auto bounds = button.getLocalBounds().toFloat().reduced(0.5f, 0.5f);
-            
-            // Read current theme
-            juce::Colour accent = juce::Colour(0xFF2196F3);
-            juce::Colour textGrey = juce::Colour(0xFFB8BDC7);
-            juce::Colour panel = juce::Colour(0xFF3A3D45);
-            FieldLNF* lnf = nullptr;
-            {
-                const juce::Component* c = &button;
-                while (c)
-                {
-                    if (auto* lf = dynamic_cast<FieldLNF*>(&c->getLookAndFeel()))
-                    {
-                        lnf = lf;
-                        accent = lf->theme.accent;
-                        textGrey = lf->theme.textMuted; // theme font grey
-                        panel = lf->theme.panel;
-                        break;
-                    }
-                    c = c->getParentComponent();
-                }
-            }
 
-            juce::Colour baseColour;
-            if (button.getToggleState())
-            {
-                // When bypassed: use theme font grey for the button body
-                baseColour = textGrey;
-                g.setColour(baseColour.withAlpha(0.20f));
-                g.fillRoundedRectangle(bounds.expanded(4.0f), 6.0f);
-            }
-            else
-            {
-                baseColour = accent;
-            }
-
-            if (shouldDrawButtonAsDown || shouldDrawButtonAsHighlighted)
-                baseColour = baseColour.brighter(0.1f);
-            
-            // shadow
-            g.setColour(lnf ? lnf->theme.shadowDark.withAlpha (0.25f) : juce::Colour(0x40000000));
-            g.fillRoundedRectangle(bounds.translated(2.0f, 2.0f), 4.0f);
-            
-            // bg + border
-            g.setColour(baseColour);
-            g.fillRoundedRectangle(bounds, 4.0f);
-            g.setColour(baseColour.darker(0.45f));
-            g.drawRoundedRectangle(bounds, 4.0f, 1.0f);
-        }
-        
-        void drawButtonText(juce::Graphics& g, juce::TextButton& button,
-                            bool, bool) override
-        {
-            auto bounds = button.getLocalBounds().toFloat();
-            FieldLNF* lf = nullptr;
-            {
-                const juce::Component* c = &button;
-                while (c)
-                {
-                    if (auto* l = dynamic_cast<FieldLNF*>(&c->getLookAndFeel())) { lf = l; break; }
-                    c = c->getParentComponent();
-                }
-            }
-            juce::Colour textGrey = lf ? lf->theme.textMuted : juce::Colour(0xFFB8BDC7);
-            // Ensure the bypassed X is very visible against grey background
-            juce::Colour iconColour = button.getToggleState() ? juce::Colours::black : textGrey;
-
-            auto icon = button.getToggleState() ? IconSystem::X : IconSystem::Power;
-            auto pad = button.getToggleState() ? 6.0f : 4.0f;
-            IconSystem::drawIcon(g, icon, bounds.reduced(pad), iconColour);
-        }
-    private:
-        FieldLNF& mainFieldLNF;
-    };
-    
-    CustomLookAndFeel customLookAndFeel;
-};
-
-//==============================================================================
-// ThemedIconButton – base for all small icon buttons (Options/Link/Snap/etc.)
-// DEV NOTE: This consolidates shared drawing (panel gradient, accent-on, borders).
-//==============================================================================
-class ThemedIconButton : public juce::TextButton
-{
-public:
-    enum class Style { SolidAccentWhenOn, GradientPanel };
-    struct Options
-    {
-        IconSystem::IconType icon = IconSystem::CogWheel;
-        bool toggleable = false;
-        Style style = Style::GradientPanel;
-        float corner = 4.0f;
-        float pad = 4.0f;
-        bool glowWhenOn = false;
-    };
-
-    explicit ThemedIconButton (Options o) : options(std::move(o))
-    {
-        setClickingTogglesState(options.toggleable);
-        setButtonText(juce::String());
-        setMouseCursor(juce::MouseCursor::PointingHandCursor);
-    }
-
-    void paintButton(juce::Graphics& g, bool over, bool down) override
-    {
-        auto r = getLocalBounds().toFloat().reduced(2.0f);
-        drawBackground(g, r, over, down);
-        drawIcon(g, r.reduced(options.pad));
-    }
-
-protected:
-    Options options;
-
-    void drawBackground (juce::Graphics& g, juce::Rectangle<float> r, bool over, bool down)
-    {
-        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-        auto panel = lf ? lf->theme.panel : juce::Colour(0xFF3A3D45);
-        auto accent = lf ? lf->theme.accent : juce::Colour(0xFF2196F3);
-        // Optional per-button accent override (stored as ARGB int)
-        if (getProperties().contains("accentOverrideARGB"))
-        {
-            auto v = (uint32) (int) getProperties()["accentOverrideARGB"];
-            accent = juce::Colour (v);
-        }
-        auto sh = lf ? lf->theme.sh : juce::Colour(0xFF2A2A2A);
-        auto hl = lf ? lf->theme.hl : juce::Colour(0xFF4A4A4A);
-
-        const bool invert = (bool) getProperties().getWithDefault ("invertActive", false);
-        const bool on = invert ? (! getToggleState()) : getToggleState();
-
-        auto drawGradient = [&] {
-            juce::Colour top = panel.brighter(0.10f), bot = panel.darker(0.10f);
-            juce::ColourGradient grad(top, r.getX(), r.getY(), bot, r.getX(), r.getBottom(), false);
-            g.setGradientFill(grad);
-            g.fillRoundedRectangle(r, options.corner);
-            g.setColour(down ? sh : (over ? hl : sh));
-            g.drawRoundedRectangle(r, options.corner, 1.0f);
-        };
-
-        if (options.style == Style::SolidAccentWhenOn && on)
-        {
-            auto bg = down ? accent.darker(0.30f) : (over ? accent.brighter(0.10f) : accent);
-            g.setColour(bg);
-            g.fillRoundedRectangle(r, options.corner);
-            g.setColour(bg.darker(0.30f));
-            g.drawRoundedRectangle(r, options.corner, 1.0f);
-            if (options.glowWhenOn)
-                g.setColour(bg.withAlpha(0.30f)), g.drawRoundedRectangle(r.expanded(1.0f), options.corner+1.0f, 2.0f);
-        }
-        else
-        {
-            drawGradient();
-        }
-
-        // subtle elevation shadow
-        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) g.setColour(lf->theme.shadowDark.withAlpha (0.25f)); else g.setColour(juce::Colour(0x40000000));
-        g.fillRoundedRectangle(r.translated(1.5f, 1.5f), options.corner);
-    }
-
-    void drawIcon (juce::Graphics& g, juce::Rectangle<float> r)
-    {
-        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-        auto textMuted = lf ? lf->theme.textMuted : juce::Colour(0xFF888888);
-        auto onCol = juce::Colours::white;
-        // Optional per-button icon colour override (stored as ARGB int)
-        if (getProperties().contains("iconOverrideARGB"))
-        {
-            auto v = (uint32) (int) getProperties()["iconOverrideARGB"];
-            textMuted = juce::Colour (v);
-            onCol = juce::Colour (v);
-        }
-        const bool invert = (bool) getProperties().getWithDefault ("invertActive", false);
-        const bool on = invert ? (! getToggleState()) : getToggleState();
-
-        // Custom label rendering if provided
-        if (getProperties().contains ("labelText"))
-        {
-            juce::String label = getProperties()["labelText"].toString();
-            auto col = on ? onCol : textMuted;
-            g.setColour (col);
-            // Fit text nicely inside button
-            auto bounds = r; bounds.reduce (2.0f, 2.0f);
-            g.setFont (juce::Font (juce::FontOptions (14.0f)).boldened());
-            g.drawFittedText (label, bounds.toNearestInt(), juce::Justification::centred, 1);
-            return;
-        }
-
-        IconSystem::drawIcon(g, options.icon, r, on ? onCol : textMuted);
-    }
-};
 
 //------------------------------------------------------------------------------
 // Concrete icon buttons (tiny classes = tiny maintenance)
@@ -566,6 +337,19 @@ public:
     FullScreenButton() : ThemedIconButton(Options{ IconSystem::FullScreen, true, ThemedIconButton::Style::GradientPanel, 3.0f, 4.0f, false }) {}
     void paintButton(juce::Graphics& g, bool over, bool down) override
     {
+        // Check for metallic properties first - if found, delegate to FieldLNF
+        auto metallicKind = metallicFromProps(getProperties());
+        if (metallicKind != MetallicKind::None)
+        {
+            // Delegate to FieldLNF for metallic buttons
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            {
+                lf->drawButtonBackground(g, *this, juce::Colour(), over, down);
+                return;
+            }
+        }
+        
+        // Fall back to custom rendering for non-metallic buttons
         auto r = getLocalBounds().toFloat().reduced(2.0f);
         drawBackground(g, r, over, down);
         auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
@@ -581,6 +365,19 @@ public:
     ColorModeButton() : ThemedIconButton(Options{ IconSystem::ColorPalette, true, ThemedIconButton::Style::GradientPanel, 4.0f, 4.0f, false }) {}
     void paintButton(juce::Graphics& g, bool over, bool down) override
     {
+        // Check for metallic properties first - if found, delegate to FieldLNF
+        auto metallicKind = metallicFromProps(getProperties());
+        if (metallicKind != MetallicKind::None)
+        {
+            // Delegate to FieldLNF for metallic buttons
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            {
+                lf->drawButtonBackground(g, *this, juce::Colour(), over, down);
+                return;
+            }
+        }
+        
+        // Fall back to custom rendering for non-metallic buttons
         auto r = getLocalBounds().toFloat().reduced(2.0f);
         drawBackground(g, r, over, down);
         if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
@@ -603,6 +400,19 @@ public:
     LockButton() : ThemedIconButton(Options{ IconSystem::Lock, true, ThemedIconButton::Style::GradientPanel, 4.0f, 4.0f, false }) {}
     void paintButton(juce::Graphics& g, bool over, bool down) override
     {
+        // Check for metallic properties first - if found, delegate to FieldLNF
+        auto metallicKind = metallicFromProps(getProperties());
+        if (metallicKind != MetallicKind::None)
+        {
+            // Delegate to FieldLNF for metallic buttons
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            {
+                lf->drawButtonBackground(g, *this, juce::Colour(), over, down);
+                return;
+            }
+        }
+        
+        // Fall back to custom rendering for non-metallic buttons
         auto r = getLocalBounds().toFloat().reduced(2.0f);
         drawBackground(g, r, over, down);
         auto icon = getToggleState() ? IconSystem::Lock : IconSystem::Unlock;
@@ -621,6 +431,19 @@ public:
 
     void paintButton(juce::Graphics& g, bool isMouseOver, bool isButtonDown) override
     {
+        // Check for metallic properties first - if found, delegate to FieldLNF
+        auto metallicKind = metallicFromProps(getProperties());
+        if (metallicKind != MetallicKind::None)
+        {
+            // Delegate to FieldLNF for metallic buttons
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            {
+                lf->drawButtonBackground(g, *this, juce::Colour(), isMouseOver, isButtonDown);
+                return;
+            }
+        }
+        
+        // Fall back to custom rendering for non-metallic buttons
         auto bounds = getLocalBounds().toFloat().reduced(2.0f);
 
         // shadow
@@ -1356,6 +1179,19 @@ public:
             std::function<void(juce::Graphics&, juce::Rectangle<float>, bool, bool)> painter;
             void paintButton (juce::Graphics& g, bool over, bool down) override
             {
+                // Check for metallic properties first - if found, delegate to FieldLNF
+                auto metallicKind = metallicFromProps(getProperties());
+                if (metallicKind != MetallicKind::None)
+                {
+                    // Delegate to FieldLNF for metallic buttons
+                    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                    {
+                        lf->drawButtonBackground(g, *this, juce::Colour(), over, down);
+                        return;
+                    }
+                }
+                
+                // Fall back to custom rendering for non-metallic buttons
                 auto r = getLocalBounds().toFloat();
                 auto rr = r.reduced (1.0f);
                 float cr = 4.0f;
@@ -1444,60 +1280,6 @@ private:
     std::unique_ptr<SwitchCell> centerLockOnCell;
     std::unique_ptr<KnobCell>   centerLockDbCell;
     // AUD audition: custom-styled toggle button (non-checkbox)
-    class AuditionButton : public ThemedIconButton, public juce::Timer
-    {
-    public:
-        AuditionButton() : ThemedIconButton(Options{ IconSystem::Mono, true, ThemedIconButton::Style::SolidAccentWhenOn, 4.0f, 4.0f, true })
-        {
-            setButtonText("AUD");
-            startTimerHz (6); // ~6 Hz repaint; blink phase derived from time
-        }
-        ~AuditionButton() override { stopTimer(); }
-        void timerCallback() override { if (isShowing()) repaint(); }
-        void paintButton(juce::Graphics& g, bool over, bool down) override
-        {
-            auto r = getLocalBounds().toFloat().reduced (2.0f);
-            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-            auto panel  = lf ? lf->theme.panel  : juce::Colour (0xFF3A3D45);
-            auto accent = lf ? lf->theme.accent : juce::Colour (0xFF2196F3);
-            auto sh     = lf ? lf->theme.sh     : juce::Colour (0xFF2A2A2A);
-            auto hl     = lf ? lf->theme.hl     : juce::Colour (0xFF4A4A4A);
-
-            // Elevation shadow first
-            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) g.setColour (lf->theme.shadowDark.withAlpha (0.25f)); else g.setColour (juce::Colour (0x40000000));
-            g.fillRoundedRectangle (r.translated (1.5f, 1.5f), 4.0f);
-
-            const bool on = getToggleState();
-            if (on)
-            {
-                // Blink between two blue tones
-                auto now = juce::Time::getMillisecondCounter();
-                const bool phase = ((now / 280) % 2) == 0; // ~3.6 Hz blink
-                auto bg = phase ? accent : accent.darker (0.35f);
-                if (down || over) bg = bg.brighter (0.10f);
-                g.setColour (bg);
-                g.fillRoundedRectangle (r, 4.0f);
-                g.setColour (bg.darker (0.30f));
-                g.drawRoundedRectangle (r, 4.0f, 1.0f);
-            }
-            else
-            {
-                // Dark when not engaged (gradient panel)
-                juce::Colour top = panel.brighter (0.10f), bot = panel.darker (0.10f);
-                juce::ColourGradient grad (top, r.getX(), r.getY(), bot, r.getX(), r.getBottom(), false);
-                g.setGradientFill (grad);
-                g.fillRoundedRectangle (r, 4.0f);
-                g.setColour (down ? sh : (over ? hl : sh));
-                g.drawRoundedRectangle (r, 4.0f, 1.0f);
-            }
-
-            // Text
-            auto textCol = on ? juce::Colours::white : (lf ? lf->theme.textMuted : juce::Colour (0xFF888888));
-            g.setColour (textCol);
-            g.setFont (juce::Font (juce::FontOptions (12.0f).withStyle ("Bold")));
-            g.drawText ("AUD", r, juce::Justification::centred);
-        }
-    };
     AuditionButton monoAuditionButton;
     // Imaging controls
     juce::Slider widthLo, widthMid, widthHi;
@@ -1886,24 +1668,6 @@ private:
     };
     
     // A/B & presets
-    class ABButton : public ThemedIconButton
-    {
-    public:
-        explicit ABButton (bool isAButton)
-        : ThemedIconButton({ IconSystem::ColorPalette /*unused*/, true, ThemedIconButton::Style::SolidAccentWhenOn, 4.0f, 4.0f, true })
-        , isA(isAButton) { setButtonText(isA ? "A" : "B"); }
-
-        void paintButton(juce::Graphics& g, bool over, bool down) override
-        {
-            auto r = getLocalBounds().toFloat().reduced(2.0f);
-            drawBackground(g, r, over, down);
-            g.setColour(getToggleState() ? juce::Colours::white : juce::Colour(0xFF888888));
-                    g.setFont(juce::Font(juce::FontOptions(14.0f).withStyle("Bold")));
-            g.drawText(isA ? "A" : "B", r, juce::Justification::centred);
-        }
-    private:
-        bool isA;
-    };
     
     ABButton abButtonA{true}, abButtonB{false};
     PresetArrowButton prevPresetButton{true}, nextPresetButton{false};
