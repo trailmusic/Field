@@ -28,6 +28,12 @@ set(SRC
     ui/Components/VerticalDivider.h
     ui/Components/HorizontalDivider.h
     ui/Components/XYPad.h
+    ui/Components/VerticalSlider3D.h
+    ui/Components/VerticalSlider3D.cpp
+    ui/Components/ToggleSwitch.h
+    ui/Components/ToggleSwitch.cpp
+    ui/Components/CorrelationMeter.h
+    ui/Components/CorrelationMeter.cpp
     ui/Components/GainSlider.h
     ui/Components/PanSlider.h
     ui/Components/ControlContainer.h
