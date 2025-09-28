@@ -403,4 +403,11 @@ PhaseTab.cpp / ReverbControlsPane.h / BandControlsPane.h / DelayControlsPane.h:
 ---
 
 **Last Updated**: January 2025
-**Status**: 🎉 **ALL PHASES COMPLETE - METALLIC STYLING SYSTEM FULLY UNIFIED + CANONICAL MOTION REGISTRY + KNOBCELLWITHAUX LAYOUT OPTIMIZED**
+**Status**: 🎉 **ALL PHASES COMPLETE - METALLIC STYLING SYSTEM FULLY UNIFIED + CANONICAL MOTION REGISTRY + KNOBCELLWITHAUX LAYOUT OPTIMIZED + KNOB LAYOUT REFINED**
+
+### **🔧 Latest Updates (January 2025)**
+- **Knob Size**: Increased from 48px to 52px across all control areas
+- **Top Padding**: Increased to 12px for better vertical breathing room
+- **Gap Optimization**: Reduced gap between knob and data label to 1px minimum
+- **Data Label Padding**: Added 3px bottom padding for better visual spacing
+- **Gap Calculation**: `G - 8` (accounts for all padding and tightest possible spacing)
