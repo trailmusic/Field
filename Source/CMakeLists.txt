@@ -83,6 +83,7 @@ set(SRC
     ui/machine/MachineEngine.h
     ui/machine/MachineEngine.cpp
     ui/Tabs/MachineTab.h
+    ui/Tabs/MachineTab.cpp
     
     motion/MotionEngine.h
     motion/MotionGraphics.h
