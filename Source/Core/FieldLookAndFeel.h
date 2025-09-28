@@ -80,6 +80,12 @@ public:
         FieldRendering::drawButtonBackground(g, button, backgroundColour, isMouseOverButton, isButtonDown, theme);
     }
 
+    void drawButtonText(juce::Graphics& g, juce::TextButton& button,
+                       bool isMouseOverButton, bool isButtonDown) override
+    {
+        FieldRendering::drawButtonText(g, button, isMouseOverButton, isButtonDown, theme);
+    }
+
     // Slider overrides
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional,
                          float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider) override

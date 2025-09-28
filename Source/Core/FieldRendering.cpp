@@ -219,6 +219,14 @@ namespace FieldRendering
         g.drawRoundedRectangle(r.reduced(2.0f), cr, 1.5f); // Match KnobCell border thickness
     }
 
+    void drawButtonText(juce::Graphics& g, juce::TextButton& button, bool isMouseOver, bool isButtonDown, const FieldTheme& theme)
+    {
+        // Let JUCE handle the default button text rendering
+        // This ensures text labels are properly displayed
+        juce::LookAndFeel_V4 lf;
+        lf.drawButtonText(g, button, isMouseOver, isButtonDown);
+    }
+
     // Sophisticated rotary slider rendering with tick system and tracks
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional,
                          float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider, const FieldTheme& theme)

@@ -16,6 +16,7 @@ namespace FieldRendering
     void drawToggleButton(juce::Graphics& g, juce::ToggleButton& button, bool isMouseOver, bool isButtonDown, const FieldTheme& theme);
     void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour, 
                              bool isMouseOver, bool isButtonDown, const FieldTheme& theme);
+    void drawButtonText(juce::Graphics& g, juce::TextButton& button, bool isMouseOver, bool isButtonDown, const FieldTheme& theme);
 
     // Slider rendering methods
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional,
