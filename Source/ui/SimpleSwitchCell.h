@@ -42,7 +42,7 @@ public:
 
     void resized() override
     {
-        auto b = getLocalBounds().reduced (3); // Reduced from 6 to 3 for better sizing
+        auto b = getLocalBounds(); // No reduction - match KnobCell behavior
         const int capH = captionText.isNotEmpty() ? V : 0; // Use V (value label height) for caption
         
         // Check if child has metallic properties - show caption for ComboBoxes
@@ -63,6 +63,7 @@ public:
                 {
                     caption.setVisible (false);
                 }
+                // Give ComboBox the remaining space after caption
                 child.setBounds (b);
                 return;
             }
@@ -149,6 +150,12 @@ public:
             {
                 g.setColour (reverbMaroon ? juce::Colour (0xFF8E3A2F) : border);
                 g.drawRoundedRectangle (r, rad, 1.5f);
+            }
+            
+            // Ensure caption is visible on top of metallic background
+            if (captionText.isNotEmpty() && caption.isVisible())
+            {
+                caption.toFront(false);
             }
         }
     }
