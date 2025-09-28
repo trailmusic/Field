@@ -42,7 +42,6 @@ public:
 
     void resized() override
     {
-        auto b = getLocalBounds().reduced(4); // Match KnobCell padding exactly (4px on all sides)
         const int capH = captionText.isNotEmpty() ? V : 0; // Use V (value label height) for caption
         
         // Check if child has metallic properties - show caption for ComboBoxes
@@ -52,6 +51,9 @@ public:
             // For ComboBoxes, show caption to maintain title and button window format
             if (auto* combo = dynamic_cast<juce::ComboBox*>(&child))
             {
+                // Use full cell area for metallic ComboBoxes (no padding)
+                auto b = getLocalBounds(); // Use full cell area, no padding
+                
                 if (capH > 0)
                 {
                     caption.setVisible (true);
@@ -65,20 +67,21 @@ public:
                 {
                     caption.setVisible (false);
                 }
-                // Give ComboBox the full cell area like KnobCell does
-                // Remove the 4px padding to match KnobCell's visual weight
-                auto fullBounds = getLocalBounds(); // Use full cell area, no padding
-                child.setBounds (fullBounds);
+                // Give ComboBox the remaining space after caption
+                child.setBounds (b);
                 return;
             }
             else
             {
                 // Hide caption for other metallic components (buttons) to avoid double labels
                 caption.setVisible (false);
-                child.setBounds (b);
+                child.setBounds (getLocalBounds()); // Use full cell area for metallic buttons too
                 return;
             }
         }
+        
+        // Non-metallic components use standard padding
+        auto b = getLocalBounds().reduced(4); // Match KnobCell padding exactly (4px on all sides)
         
         if (capH > 0)
         {
