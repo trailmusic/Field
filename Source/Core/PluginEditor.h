@@ -1051,33 +1051,7 @@ private:
     GainSlider   gain;
     juce::Slider width, tilt, monoHz, hpHz, lpHz, satDrive, satMix, air, bass, scoop; // includes Scoop
     juce::ComboBox  monoSlopeChoice;
-    // Center group (Rows 3-4) controls
-    juce::Slider centerPromDb;
-    juce::Label  centerPromVal;
-    juce::Slider centerFocusLoHz;
-    juce::Label  centerFocusLoVal;
-    juce::Slider centerFocusHiHz;
-    juce::Label  centerFocusHiVal;
-    juce::Slider centerPunchAmt01;
-    juce::Label  centerPunchAmtVal;
-    juce::ComboBox centerPunchMode;
-    juce::ToggleButton centerPhaseRecOn;
-    juce::Slider centerPhaseAmt01;
-    juce::Label  centerPhaseAmtVal;
-    juce::ToggleButton centerLockOn;
-    juce::Slider centerLockDb;
-    juce::Label  centerLockDbVal;
-
-    // Center group cells
-    std::unique_ptr<KnobCell>   centerPromCell;
-    std::unique_ptr<KnobCell>   centerFocusLoCell;
-    std::unique_ptr<KnobCell>   centerFocusHiCell;
-    std::unique_ptr<KnobCell>   centerPunchAmtCell;
-    std::unique_ptr<SwitchCell> centerPunchModeCell;
-    std::unique_ptr<SwitchCell> centerPhaseRecCell;
-    std::unique_ptr<KnobCell>   centerPhaseAmtCell;
-    std::unique_ptr<SwitchCell> centerLockOnCell;
-    std::unique_ptr<KnobCell>   centerLockDbCell;
+    // Center group controls moved to XYControlsPane (complete implementation there)
     // AUD audition: custom-styled toggle button (non-checkbox)
     AuditionButton monoAuditionButton;
     // Imaging controls

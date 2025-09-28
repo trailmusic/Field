@@ -220,9 +220,8 @@ void LayoutManager::layoutMainControls()
 
 void LayoutManager::layoutCenterGroup()
 {
-    // PLACEHOLDER: Center group layout logic
-    // This will be implemented by extracting from PluginEditor::performLayout()
-    // without changing any visual behavior
+    // Center group controls moved to XYControlsPane (complete implementation there)
+    // No layout needed in PluginEditor as center group is handled by XY tab
 }
 
 void LayoutManager::layoutPhaseControls()

@@ -2120,35 +2120,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     monoSlopeChoice.addItem ("12", 2);
     monoSlopeChoice.addItem ("24", 3);
 
-    // Center group: init punch mode choices
-    centerPunchMode.addItem ("toSides",  1);
-    centerPunchMode.addItem ("toCenter", 2);
-    centerPunchMode.getProperties().set ("tintedSelected", true);
-
-    // Center group: ensure rotary knobs and no text boxes (avoid duplicate labels)
-    auto initCenterKnob = [this] (juce::Slider& s)
-    {
-        s.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-        s.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-        // Match standard tick system (12/3/6/9 o'clock): π to π + 2π and our LNF
-        constexpr float kStart = juce::MathConstants<float>::pi;
-        constexpr float kEnd   = juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi;
-        s.setRotaryParameters (kStart, kEnd, true);
-        s.setLookAndFeel (&lnf);
-    };
-    initCenterKnob (centerPromDb);
-    initCenterKnob (centerFocusLoHz);
-    initCenterKnob (centerFocusHiHz);
-    initCenterKnob (centerPunchAmt01);
-    initCenterKnob (centerPhaseAmt01);
-    initCenterKnob (centerLockDb);
-    // Provide names for LNF to draw knob-centered labels (match left-group behavior)
-    centerPromDb.setName    ("CNTR");
-    centerFocusLoHz.setName ("LO");
-    centerFocusHiHz.setName ("HI");
-    centerPunchAmt01.setName("PUNCH");
-    centerPhaseAmt01.setName("PHASE");
-    centerLockDb.setName    ("LOCK dB");
+    // Center group controls moved to XYControlsPane (complete implementation there)
     if (!monoSlopeSwitch)
         monoSlopeSwitch = std::make_unique<MonoSlopeSwitch>();
     addAndMakeVisible (*monoSlopeSwitch);
@@ -2250,14 +2222,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>   (proc.apvts, "mono_audition",      monoAuditionButton));
 
     // Center group attachments
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerPromDb,        centerPromDb));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerFocusLoHz,       centerFocusLoHz));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerFocusHiHz,       centerFocusHiHz));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerPunchAmt01,     centerPunchAmt01));
-    comboAttachments .push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, IDs::centerPunchMode,   centerPunchMode));
-    // Legacy Phase Recovery parameters removed - using new Phase Alignment system
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>   (proc.apvts, IDs::centerLockOn,      centerLockOn));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::centerLockDb,       centerLockDb));
+    // Center group parameter attachments moved to XYControlsPane (complete implementation there)
 
     attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::tiltFreq,     tiltFreqSlider));
     attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::scoopFreq,    scoopFreqSlider));
@@ -3737,20 +3702,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                 monoCell->getProperties().set ("metallic", true);
             }
 
-            // Center R3/R4 cells
-            if (!centerPromCell)     centerPromCell     = std::make_unique<KnobCell>(centerPromDb,     centerPromVal,     "");
-            if (!centerFocusLoCell)  centerFocusLoCell  = std::make_unique<KnobCell>(centerFocusLoHz,  centerFocusLoVal,  "");
-            if (!centerFocusHiCell)  centerFocusHiCell  = std::make_unique<KnobCell>(centerFocusHiHz,  centerFocusHiVal,  "");
-            if (!centerPunchAmtCell) centerPunchAmtCell = std::make_unique<KnobCell>(centerPunchAmt01, centerPunchAmtVal, "");
-            if (!centerPunchModeCell) { centerPunchModeCell = std::make_unique<SwitchCell>(centerPunchMode); centerPunchModeCell->setCaption ("PUNCH MODE"); }
-            if (!centerPhaseRecCell)  { centerPhaseRecCell  = std::make_unique<SwitchCell>(centerPhaseRecOn); centerPhaseRecCell->setCaption ("PHASE REC"); }
-            if (!centerPhaseAmtCell)  centerPhaseAmtCell  = std::make_unique<KnobCell>(centerPhaseAmt01, centerPhaseAmtVal, "");
-            if (!centerLockOnCell)    { centerLockOnCell    = std::make_unique<SwitchCell>(centerLockOn); centerLockOnCell->setCaption ("CNTR LOCK"); }
-            if (!centerLockDbCell)    centerLockDbCell    = std::make_unique<KnobCell>(centerLockDb, centerLockDbVal, "");
-            for (auto* kc : { centerPromCell.get(), centerFocusLoCell.get(), centerFocusHiCell.get(), centerPunchAmtCell.get(), centerPhaseAmtCell.get(), centerLockDbCell.get() })
-                if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->getProperties().set ("metallic", true); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap); }
-            for (auto* sc : { centerPunchModeCell.get(), centerPhaseRecCell.get(), centerLockOnCell.get() })
-                if (sc) { sc->getProperties().set ("metallic", true); }
+            // Center group cells moved to XYControlsPane (complete implementation there)
         }
 
         // Make visible (Group 1 into group1Container)
@@ -3783,14 +3735,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         addVis (panCell.get());
         addVis (wetOnlyCell ? wetOnlyCell.get() : nullptr);
         addVis (monoCell ? monoCell.get() : nullptr);
-        addVis (centerPunchAmtCell.get());
-        addVis (centerPromCell.get());
-        addVis (centerFocusLoCell.get());
-        addVis (centerFocusHiCell.get());
-        addVis (centerPunchModeCell.get());
-        addVis (centerPhaseRecCell.get());
-        addVis (centerPhaseAmtCell.get());
-        addVis (centerLockOnCell.get());
+        // Center group visibility moved to XYControlsPane (complete implementation there)
 
         // Prepare Motion controls (reparent from Group 2 container if needed)
         auto reparent = [this](juce::Component* c)
@@ -3861,10 +3806,7 @@ void MyPluginAudioProcessorEditor::performLayout()
         items.add (juce::GridItem (*xoverLoCell)  .withArea (3, 3));
         items.add (juce::GridItem (*xoverHiCell)  .withArea (3, 4));
         // Row 3: Center (7-10)
-        items.add (juce::GridItem (*centerPunchAmtCell).withArea (3, 7));
-        items.add (juce::GridItem (*centerPromCell)    .withArea (3, 8));
-        items.add (juce::GridItem (*centerFocusLoCell) .withArea (3, 9));
-        items.add (juce::GridItem (*centerFocusHiCell) .withArea (3,10));
+        // Center group controls moved to XYControlsPane (complete implementation there)
         // Row 3: Motion controls removed - now handled by MotionControlsPane
 
         // Row 4: Left (1-6)
@@ -3873,28 +3815,13 @@ void MyPluginAudioProcessorEditor::performLayout()
         items.add (juce::GridItem (*asymCell)     .withArea (4, 4));
         items.add (juce::GridItem (*shelfShapeCell).withArea (4, 5));
         // Row 4: Center (7-10)
-        items.add (juce::GridItem (*centerPunchModeCell).withArea (4, 7));
-        items.add (juce::GridItem (*centerPhaseRecCell) .withArea (4, 8));
-        items.add (juce::GridItem (*centerPhaseAmtCell) .withArea (4, 9));
-        items.add (juce::GridItem (*centerLockOnCell)   .withArea (4,10));
+        // Center group controls moved to XYControlsPane (complete implementation there)
         // Row 4: Motion controls removed - now handled by MotionControlsPane
 
         g.items = std::move (items);
         g.performLayout (group1BoundsLocal);
 
-        // UX: disable Phase Amt when Phase Rec is off; clamp label precision
-        const bool phaseOn = centerPhaseRecOn.getToggleState();
-        centerPhaseAmt01.setEnabled (phaseOn);
-        auto setValText = [] (juce::Label& lbl, double v, int digits)
-        {
-            lbl.setText (juce::String (v, digits), juce::dontSendNotification);
-        };
-        setValText (centerPromVal,      centerPromDb.getValue(), 1);
-        setValText (centerFocusLoVal,   centerFocusLoHz.getValue(), 0);
-        setValText (centerFocusHiVal,   centerFocusHiHz.getValue(), 0);
-        setValText (centerPunchAmtVal,  centerPunchAmt01.getValue() * 100.0, 0);
-        setValText (centerPhaseAmtVal,  centerPhaseAmt01.getValue() * 100.0, 0);
-        setValText (centerLockDbVal,    centerLockDb.getValue(), 1);
+        // Center group value label updates moved to XYControlsPane (complete implementation there)
 
         // Motion controls removed - now handled by MotionControlsPane
     }
