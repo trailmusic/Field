@@ -1,5 +1,6 @@
 #include "FieldRendering.h"
 #include "IconSystem.h"
+#include "../ui/SimpleSwitchCell.h"
 
 // Field Rendering System implementation
 // Separated from FieldLookAndFeel for better organization
@@ -359,9 +360,14 @@ namespace FieldRendering
             g.fillRoundedRectangle(r, 5.0f);
         }
 
-        // Border
-        g.setColour(theme.sh);
-        g.drawRoundedRectangle(r, 5.0f, 1.0f);
+        // Border - only draw if not in SimpleSwitchCell (which handles its own border)
+        // Check if this ComboBox is wrapped in a SimpleSwitchCell
+        auto* parent = box.getParentComponent();
+        if (!parent || !dynamic_cast<SimpleSwitchCell*>(parent))
+        {
+            g.setColour(theme.sh);
+            g.drawRoundedRectangle(r, 5.0f, 1.0f);
+        }
 
         // Arrow
         juce::Path p;
