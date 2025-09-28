@@ -195,15 +195,6 @@ namespace FieldRendering
         auto trackRadius = radius * 0.80f;  // Reduced from 0.85f to 0.80f
         auto trackThickness = 4.0f;  // Reduced from 6.0f to 4.0f (thinner slider)
         
-        // Add top-down gradient background for the knob (full knob area)
-        auto gradientRadius = trackRadius + 4.0f;  // Full knob area including track
-        auto knobBounds = juce::Rectangle<float>(centre.x - gradientRadius, centre.y - gradientRadius, 
-                                                gradientRadius * 2, gradientRadius * 2);
-        juce::ColourGradient knobGradient(theme.panel.brighter(0.2f), knobBounds.getX(), knobBounds.getY(),
-                                         theme.panel.darker(0.1f), knobBounds.getX(), knobBounds.getBottom(), false);
-        g.setGradientFill(knobGradient);
-        g.fillEllipse(knobBounds);
-        
         // Track background
         g.setColour(theme.panel.darker(0.1f));
         g.drawEllipse(centre.x - trackRadius, centre.y - trackRadius, 

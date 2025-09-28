@@ -451,6 +451,28 @@ void KnobCell::paint (juce::Graphics& g)
 
     // XY controls use the main border system above - no additional border needed
 
+    // Draw gradient background BEFORE slider rendering to avoid covering labels
+    if (showKnob && knob.isVisible())
+    {
+        auto knobBounds = knob.getBounds().toFloat();
+        auto centre = knobBounds.getCentre();
+        auto radius = juce::jmin(knobBounds.getWidth(), knobBounds.getHeight()) * 0.5f;
+        auto trackRadius = radius * 0.80f;
+        
+        // Add top-down gradient background for the knob (full knob area)
+        auto gradientRadius = trackRadius + 4.0f;  // Full knob area including track
+        auto gradientBounds = juce::Rectangle<float>(centre.x - gradientRadius, centre.y - gradientRadius, 
+                                                    gradientRadius * 2, gradientRadius * 2);
+        
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
+            juce::ColourGradient knobGradient(lf->theme.panel.brighter(0.2f), gradientBounds.getX(), gradientBounds.getY(),
+                                             lf->theme.panel.darker(0.1f), gradientBounds.getX(), gradientBounds.getBottom(), false);
+            g.setGradientFill(knobGradient);
+            g.fillEllipse(gradientBounds);
+        }
+    }
+
     // Render the slider with our custom LookAndFeel to get tick marks
     if (showKnob && knob.isVisible())
     {
