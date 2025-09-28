@@ -352,6 +352,15 @@ namespace FieldRendering
             // Metallic ComboBox - use metallic rendering system
             auto metalColors = MetallicRenderer::getMetallicColors(theme, metallicKind);
             MetallicRenderer::paintMetal(g, r, metalColors, 5.0f);
+            
+            // Create recessed button window effect for metallic ComboBoxes
+            auto buttonWindow = r.reduced(4.0f);
+            g.setColour(theme.panel.darker(0.3f));
+            g.fillRoundedRectangle(buttonWindow, 3.0f);
+            
+            // Add subtle highlight to top edge of button window
+            g.setColour(theme.panel.brighter(0.1f));
+            g.drawHorizontalLine(buttonWindow.getY() + 1, buttonWindow.getX(), buttonWindow.getRight());
         }
         else
         {
@@ -369,19 +378,33 @@ namespace FieldRendering
             g.drawRoundedRectangle(r, 5.0f, 1.0f);
         }
 
-        // Arrow
-        juce::Path p;
-        p.addTriangle(r.getCentreX() - 4, r.getCentreY() - 2,
-                     r.getCentreX() + 4, r.getCentreY() - 2,
-                     r.getCentreX(), r.getCentreY() + 2);
-        g.setColour(accent);
-        g.fillPath(p);
+        // Arrow - only show if no item is selected or if ComboBox is focused
+        bool hasSelection = box.getSelectedId() > 0;
+        bool shouldShowArrow = !hasSelection || box.hasKeyboardFocus(true);
+        
+        if (shouldShowArrow)
+        {
+            juce::Path p;
+            p.addTriangle(r.getCentreX() - 4, r.getCentreY() - 2,
+                         r.getCentreX() + 4, r.getCentreY() - 2,
+                         r.getCentreX(), r.getCentreY() + 2);
+            g.setColour(accent);
+            g.fillPath(p);
+        }
     }
 
     void positionComboBoxText(juce::ComboBox& box, juce::Label& label)
     {
         // Simplified ComboBox text positioning
         label.setBounds(box.getLocalBounds().reduced(4));
+        
+        // For metallic ComboBoxes, ensure text color is visible over metallic background
+        auto metallicKind = metallicFromProps(box.getProperties());
+        if (metallicKind != MetallicKind::None)
+        {
+            // Set text color to be visible over metallic background
+            label.setColour(juce::Label::textColourId, juce::Colours::white);
+        }
     }
 
     // PopupMenu rendering methods (simplified)
