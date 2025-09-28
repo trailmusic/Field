@@ -354,7 +354,8 @@ namespace FieldRendering
             MetallicRenderer::paintMetal(g, r, metalColors, 5.0f);
             
             // Create recessed button window effect for metallic ComboBoxes
-            auto buttonWindow = r.reduced(4.0f);
+            // Make it shorter to avoid blocking the title
+            auto buttonWindow = r.reduced(4.0f, 8.0f); // More reduction on top to avoid title
             g.setColour(theme.panel.darker(0.3f));
             g.fillRoundedRectangle(buttonWindow, 3.0f);
             
