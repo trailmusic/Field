@@ -83,7 +83,7 @@ inline juce::StringArray choiceListPath() {
     return { "Circle", "Figure-8", "Bounce", "Arc", "Spiral", "Polygon", "Random Walk", "User Shape…" };
 }
 inline juce::StringArray choiceListMode() {
-    return { "Free", "Sync", "Input Env", "Sidechain", "One-Shot" };
+    return { "Free", "Sync", "Input Env", "Sidechain", "One Shot" };
 }
 inline juce::StringArray choiceListPanner() {
     return { "P1", "P2", "Link" };

@@ -126,7 +126,7 @@ void PhaseTab::makeComboCell (juce::ComboBox& c, const juce::String& cap, const 
     {
         c.addItem ("Stereo", 1);
         c.addItem ("M/S", 2);
-        c.addItem ("Dual-Mono", 3);
+        c.addItem ("Dual Mono", 3);
     }
     else if (id == IDs::phase_capture_len)
     {
