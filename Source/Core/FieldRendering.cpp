@@ -394,19 +394,19 @@ namespace FieldRendering
         }
     }
 
-    void positionComboBoxText(juce::ComboBox& box, juce::Label& label)
+    void applyTextWrapping(juce::ComboBox& box, juce::Label& label)
     {
-        // Simplified ComboBox text positioning
-        label.setBounds(box.getLocalBounds().reduced(4));
-        
-        // Enable text wrapping for two-word labels
-        label.setJustificationType(juce::Justification::centred);
-        
-        // Check if text contains spaces (two words) and enable wrapping
+        // Check if text contains line breaks (already formatted for two lines)
         juce::String text = label.getText();
-        if (text.contains(" "))
+        if (text.contains("\n"))
         {
-            // Split text into two words using spaces as separators
+            // Text already has line breaks, just set up formatting
+            label.setJustificationType(juce::Justification::centred);
+            label.setFont(juce::Font(10.0f)); // Slightly smaller font for two lines
+        }
+        else if (text.contains(" "))
+        {
+            // Fallback: split text into two words using spaces as separators
             juce::StringArray words = juce::StringArray::fromTokens(text, " ", "");
             if (words.size() >= 2)
             {
@@ -428,6 +428,18 @@ namespace FieldRendering
             // Set text color to be visible over metallic background
             label.setColour(juce::Label::textColourId, juce::Colours::white);
         }
+    }
+
+    void positionComboBoxText(juce::ComboBox& box, juce::Label& label)
+    {
+        // Simplified ComboBox text positioning
+        label.setBounds(box.getLocalBounds().reduced(4));
+        
+        // Enable text wrapping for two-word labels
+        label.setJustificationType(juce::Justification::centred);
+        
+        // Apply text wrapping logic immediately to prevent flashing
+        applyTextWrapping(box, label);
     }
 
     // PopupMenu rendering methods (simplified)

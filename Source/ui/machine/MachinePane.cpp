@@ -37,7 +37,7 @@ MachinePane::MachinePane (MyPluginAudioProcessor& p, juce::ValueTree& state, Fie
     trackTypeBox.addItem ("Guitar/Synth", 4);
     trackTypeBox.addItem ("Keys/Piano", 5);
     trackTypeBox.addItem ("FX/Ambience", 6);
-    trackTypeBox.addItem ("Mix Bus", 7);
+    trackTypeBox.addItem ("Mix\nBus", 7);
     trackTypeBox.addItem ("Master", 8);
     genreBox.setSelectedId (3, juce::dontSendNotification);
     venueBox.setSelectedId (1, juce::dontSendNotification);

@@ -30,6 +30,7 @@ namespace FieldRendering
     void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown,
                      int buttonX, int buttonY, int buttonW, int buttonH, juce::ComboBox& box, const FieldTheme& theme);
     void positionComboBoxText(juce::ComboBox& box, juce::Label& label);
+    void applyTextWrapping(juce::ComboBox& box, juce::Label& label);
 
     // PopupMenu rendering methods
     void drawPopupMenuBackground(juce::Graphics& g, int width, int height, const FieldTheme& theme);

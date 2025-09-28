@@ -185,16 +185,6 @@ private:
         combo->getProperties().set("metallic", true);
         combo->getProperties().set("motionMetallic", true);
         
-        // Add change listener to re-apply text wrapping when selection changes
-        auto* comboPtr = combo.get();
-        combo->onChange = [comboPtr]() {
-            // Re-apply text wrapping when ComboBox selection changes
-            if (auto* lf = dynamic_cast<FieldLNF*>(&comboPtr->getLookAndFeel())) {
-                // Force re-positioning of ComboBox text to apply wrapping
-                comboPtr->repaint();
-            }
-        };
-        
         auto cell = std::make_unique<SimpleSwitchCell>(*combo);
         cell->setCaption(param.name);
         cell->setShowBorder(true);

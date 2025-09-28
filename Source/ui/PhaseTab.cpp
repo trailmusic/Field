@@ -126,7 +126,7 @@ void PhaseTab::makeComboCell (juce::ComboBox& c, const juce::String& cap, const 
     {
         c.addItem ("Stereo", 1);
         c.addItem ("M/S", 2);
-        c.addItem ("Dual Mono", 3);
+        c.addItem ("Dual\nMono", 3);
     }
     else if (id == IDs::phase_capture_len)
     {
@@ -141,9 +141,9 @@ void PhaseTab::makeComboCell (juce::ComboBox& c, const juce::String& cap, const 
     }
     else if (id == IDs::phase_align_goal)
     {
-        c.addItem ("Mono Punch", 1);
-        c.addItem ("Bass Tight", 2);
-        c.addItem ("Stereo Focus", 3);
+        c.addItem ("Mono\nPunch", 1);
+        c.addItem ("Bass\nTight", 2);
+        c.addItem ("Stereo\nFocus", 3);
     }
     else if (id == IDs::phase_delay_units)
     {
@@ -153,8 +153,8 @@ void PhaseTab::makeComboCell (juce::ComboBox& c, const juce::String& cap, const 
     else if (id == IDs::phase_link_mode)
     {
         c.addItem ("Off", 1);
-        c.addItem ("Time Only", 2);
-        c.addItem ("All Bands", 3);
+        c.addItem ("Time\nOnly", 2);
+        c.addItem ("All\nBands", 3);
     }
     else if (id == IDs::phase_engine)
     {
@@ -187,7 +187,7 @@ void PhaseTab::makeComboCell (juce::ComboBox& c, const juce::String& cap, const 
     else if (id == IDs::phase_monitor_mode)
     {
         c.addItem ("Stereo", 1);
-        c.addItem ("Mono −6", 2);
+        c.addItem ("Mono\n−6", 2);
         c.addItem ("Mid", 3);
         c.addItem ("Side", 4);
         c.addItem ("A", 5);
@@ -198,26 +198,17 @@ void PhaseTab::makeComboCell (juce::ComboBox& c, const juce::String& cap, const 
         c.addItem ("Corr", 1);
         c.addItem ("Coherence", 2);
         c.addItem ("Δφ RMS", 3);
-        c.addItem ("Mono LF", 4);
+        c.addItem ("Mono\nLF", 4);
     }
     else if (id == IDs::phase_audition_blend)
     {
-        c.addItem ("Apply 100%", 1);
-        c.addItem ("Blend 50%", 2);
+        c.addItem ("Apply\n100%", 1);
+        c.addItem ("Blend\n50%", 2);
     }
     
     // Apply metallic properties to the ComboBox itself, not the wrapper
     c.getProperties().set ("metallic", true);
     c.getProperties().set ("phaseMetallic", true);
-    
-    // Add change listener to re-apply text wrapping when selection changes
-    c.onChange = [&c]() {
-        // Re-apply text wrapping when ComboBox selection changes
-        if (auto* lf = dynamic_cast<FieldLNF*>(&c.getLookAndFeel())) {
-            // Force re-positioning of ComboBox text to apply wrapping
-            c.repaint();
-        }
-    };
     
     auto cell = std::make_unique<SimpleSwitchCell> (c);
     cell->setCaption (cap);
