@@ -1028,13 +1028,13 @@ public:
 
 private:
     // Forward declaration for nested divider type used earlier in members
-    MyPluginAudioProcessor& proc;
 public:
+    MyPluginAudioProcessor& proc;
     FieldLNF lnf;
-private:
     // XYPad moved into XYTab - no longer direct member
     // Multi-pane visual dock (XY, Spectrum, Imager)
     std::unique_ptr<class PaneManager> panes;
+private:
     std::unique_ptr<juce::KeyListener> keyListener;
     
     // Layout and Event Management
@@ -1042,12 +1042,22 @@ private:
     std::unique_ptr<EventManager> eventManager;
     
     // Resize constraints
+public:
     int minWidth = 0;
     int minHeight = 0;
     int maxWidth = 3000;
     int maxHeight = 2000;
+    int baseWidth = 1500; // 75% of 2000 to try a smaller default
+    int baseHeight = 1000; // increased for Dynamic EQ controls and better layout
+    float scaleFactor = 1.0f;
+    bool tooltipAssistantOn_ = false;
+    juce::Component* lastTooltipTarget = nullptr;
+    juce::uint32 lastUserInteractionMs = 0;
+    int uiTimerHzCurrent = 30;
+private:
     
     // UI Components
+public:
     GainSlider   gain;
     juce::Slider width, tilt, monoHz, hpHz, lpHz, satDrive, satMix, air, bass, scoop; // includes Scoop
     juce::ComboBox  monoSlopeChoice;
@@ -1118,14 +1128,12 @@ private:
     LockButton       lockButton;
 
 public:
-    bool tooltipAssistantOn_ { false }; // Header wrench toggle state
 private:
 
     // Lightweight tooltip bubble shown when tooltip assistant is ON
 public:
     TooltipBubble tooltipBubble;
 private:
-    juce::Component* lastTooltipTarget { nullptr };
 
     // Global Wet Only (Kill Dry) UI toggle (no param binding per instructions)
     juce::ToggleButton wetOnlyToggle;
@@ -1142,7 +1150,9 @@ private:
             ui::paintRotaryWithLNF(g, *this, bounds);
         }
     };
+public:
     SpaceKnob spaceKnob;
+private:
     // Placeholder for mono slope switch definition (defined after SpaceAlgorithmSwitch)
     class MonoSlopeSwitch;
     std::unique_ptr<MonoSlopeSwitch> monoSlopeSwitch;
@@ -1279,6 +1289,7 @@ private:
     
 
     // Value indicators (if you keep them)
+public:
     juce::Label leftIndicator, rightIndicator;
     juce::Label gainValue, widthValue, tiltValue, monoValue, hpValue, lpValue, satDriveValue, satMixValue, airValue, bassValue, scoopValue;
     juce::Label shelfShapeValue, filterQValue;
@@ -1382,9 +1393,6 @@ private:
     
     // Scaling
 public:
-    float scaleFactor = 1.0f;
-    const int baseWidth  = 1500; // 75% of 2000 to try a smaller default
-    const int baseHeight = 1000; // increased for Dynamic EQ controls and better layout
 private:
     const int standardKnobSize = 80;
     bool resizingRowGuard = false;
@@ -1691,8 +1699,6 @@ private:
     const int headerHoverOffDelayMs = 160;
 
     // Adaptive UI refresh (burst to 60 Hz during user interaction)
-    juce::uint32 lastUserInteractionMs { 0 };
-    int          uiTimerHzCurrent { 30 };
     void noteUserInteraction() { lastUserInteractionMs = juce::Time::getMillisecondCounter(); }
 
     struct BurstMouseProxy : public juce::MouseListener

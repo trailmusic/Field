@@ -14,6 +14,7 @@ public:
     void handleMouseDown(const juce::MouseEvent& e);
     void handleMouseDrag(const juce::MouseEvent& e);
     void handleMouseUp(const juce::MouseEvent& e);
+    void handleMouseMove(const juce::MouseEvent& e);
     
     // Button events
     void handleButtonClicked(juce::Button* button);

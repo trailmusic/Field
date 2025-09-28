@@ -3833,84 +3833,28 @@ void MyPluginAudioProcessorEditor::performLayout()
 void MyPluginAudioProcessorEditor::mouseDown (const juce::MouseEvent& e)
 {
     noteUserInteraction();
-    const int grip = 16;
-    if (e.position.x > getWidth() - grip && e.position.y > getHeight() - grip)
+    if (eventManager)
     {
-        isResizing = true;
-        resizeStart = e.getPosition();
-        originalBounds = getBounds();
+        eventManager->handleMouseDown(e);
     }
 }
 
 void MyPluginAudioProcessorEditor::mouseDrag (const juce::MouseEvent& e)
 {
     noteUserInteraction();
-    if (!isResizing) return;
-    auto d = e.getPosition() - resizeStart;
-    
-    // Calculate new size
-    int newWidth = originalBounds.getWidth() + d.x;
-    int newHeight = originalBounds.getHeight() + d.y;
-    
-    // Apply minimum size constraints
-    newWidth = juce::jmax (newWidth, minWidth);
-    newHeight = juce::jmax (newHeight, minHeight);
-    
-    // Apply maximum size constraints
-    newWidth = juce::jmin (newWidth, maxWidth);
-    newHeight = juce::jmin (newHeight, maxHeight);
-    
-    // Do not maintain aspect ratio by default; hold Shift to lock aspect
-    const bool maintainAspectRatio = e.mods.isShiftDown();
-    
-    if (maintainAspectRatio)
+    if (eventManager)
     {
-        const float aspectRatio = (float)baseWidth / (float)baseHeight;
-        if (std::abs(d.x) > std::abs(d.y))
-        {
-            // Width changed more, adjust height to maintain ratio
-            newHeight = (int)(newWidth / aspectRatio);
-        }
-        else
-        {
-            // Height changed more, adjust width to maintain ratio
-            newWidth = (int)(newHeight * aspectRatio);
-        }
-        
-        // Re-apply constraints after aspect ratio adjustment
-        newWidth = juce::jlimit (minWidth, maxWidth, newWidth);
-        newHeight = juce::jlimit (minHeight, maxHeight, newHeight);
-        
-        // If constraints broke the aspect ratio, adjust the other dimension
-        const float currentRatio = (float)newWidth / (float)newHeight;
-        const float targetRatio = aspectRatio;
-        const float ratioError = std::abs(currentRatio - targetRatio);
-        
-        if (ratioError > 0.01f) // Allow small tolerance
-        {
-            if (currentRatio > targetRatio)
-            {
-                // Too wide, reduce width
-                newWidth = (int)(newHeight * aspectRatio);
-                newWidth = juce::jlimit (minWidth, maxWidth, newWidth);
-            }
-            else
-            {
-                // Too tall, reduce height  
-                newHeight = (int)(newWidth / aspectRatio);
-                newHeight = juce::jlimit (minHeight, maxHeight, newHeight);
-            }
-        }
+        eventManager->handleMouseDrag(e);
     }
-    
-    setBounds (originalBounds.withSize (newWidth, newHeight));
 }
 
 void MyPluginAudioProcessorEditor::mouseUp (const juce::MouseEvent& e)
 {
     noteUserInteraction();
-    juce::ignoreUnused (e);
-    isResizing = false;
+    if (eventManager)
+    {
+        eventManager->handleMouseUp(e);
+    }
 }
 
 void MyPluginAudioProcessorEditor::resized()
@@ -3930,57 +3874,22 @@ void MyPluginAudioProcessorEditor::resized()
 
 void MyPluginAudioProcessorEditor::mouseMove (const juce::MouseEvent& e)
 {
-    if (! tooltipAssistantOn_) { tooltipBubble.setVisible (false); return; }
-    auto withinHeader = getLocalBounds().removeFromTop (static_cast<int> (60 * scaleFactor));
-    if (! withinHeader.contains (e.position.toInt())) { tooltipBubble.setVisible (false); lastTooltipTarget = nullptr; return; }
-
-    // Consider a few primary header controls
-    juce::Component* targets[] { &colorModeButton, &tooltipsButton, &fullScreenButton };
-    juce::String tip; juce::Component* hit = nullptr;
-    for (auto* c : targets)
+    if (eventManager)
     {
-        auto rel = e.getEventRelativeTo (c);
-        if (c->isVisible() && c->getBounds().contains (rel.getPosition().toInt())) { hit = c; break; }
-    }
-    if (hit == nullptr) { tooltipBubble.setVisible (false); lastTooltipTarget = nullptr; return; }
-
-    if (hit != lastTooltipTarget)
-    {
-        lastTooltipTarget = hit;
-        if (hit == &colorModeButton) tip = "Cycle colour theme";
-        else if (hit == &tooltipsButton) tip = "Tooltip Assistant – compact, contextual hints";
-        else if (hit == &fullScreenButton) tip = "Toggle fullscreen";
-
-        tooltipBubble.setText (tip);
-        auto anchor = hit->getBounds();
-        anchor.setPosition (hit->getParentComponent()->getBounds().getPosition() + anchor.getPosition());
-        tooltipBubble.setAnchor (anchor);
-        tooltipBubble.setVisible (true);
-        tooltipBubble.toFront (false);
+        eventManager->handleMouseMove(e);
     }
 }
 
 // Repaint waveform from UI thread at ~30 Hz
 void MyPluginAudioProcessorEditor::timerCallback()
 {
+    if (eventManager)
+    {
+        eventManager->handleTimerCallback();
+    }
+    
+    // Additional timer logic that needs to stay in PluginEditor
     if (! isShowing()) return;
-    // Adaptive timer: burst to 60 Hz for ~150 ms after any user interaction, then 30 Hz
-    const auto now = juce::Time::getMillisecondCounter();
-    const bool burst = (now - lastUserInteractionMs) <= 150;
-    const int targetHz = burst ? 60 : 30;
-    if (targetHz != uiTimerHzCurrent)
-    {
-        uiTimerHzCurrent = targetHz;
-        startTimerHz (uiTimerHzCurrent);
-    }
-    // Throttle heavy UI work to reduce message-thread contention (combobox/popup lag)
-    static int uiTick = 0; ++uiTick;
-    const bool doHeavyUi = (uiTick % 3) == 0; // ~6-7 Hz when timer is 20 Hz
-    // If a modal component (PopupMenu/ComboBox list) is open, skip most UI work to keep interaction snappy
-    if (juce::ModalComponentManager::getInstance()->getNumModalComponents() > 0)
-    {
-        if ((uiTick % 6) != 0) return; // ~3 Hz minimal maintenance
-    }
     // history removed
     // Update ducking meter overlay on knob; idle when Reverb wet is zero (Reverb Engine)
     float grDb = proc.getReverbDuckGrDb();
@@ -4029,17 +3938,14 @@ void MyPluginAudioProcessorEditor::timerCallback()
     duckRatio.setMuted(!duckActive);
     // DUCK knob follows overall duckActive (grey when depth=0 or reverb=0)
     duckingKnob.setMuted (!duckActive);
-    if (doHeavyUi)
-    {
-        // OLD REVERB SYSTEM REMOVED
-        duckingKnob.repaint();
-        duckAttack.repaint();
-        duckRelease.repaint();
-        duckThreshold.repaint();
-        duckRatio.repaint();
-        if (auto* xyTab = panes->getXYTab()) {
-            xyTab->repaint();
-        }
+    // OLD REVERB SYSTEM REMOVED
+    duckingKnob.repaint();
+    duckAttack.repaint();
+    duckRelease.repaint();
+    duckThreshold.repaint();
+    duckRatio.repaint();
+    if (auto* xyTab = panes->getXYTab()) {
+        xyTab->repaint();
     }
 
     // Update transport clock label (host/standalone song time)
@@ -4058,7 +3964,6 @@ void MyPluginAudioProcessorEditor::timerCallback()
             return juce::String::formatted ("%02d:%02d.%03d", min, sec, ms);
         };
         // Only update text when host transport supplies a position; otherwise hold last
-    if (doHeavyUi)
         transportClockLabel.setText (formatTime (tSec), juce::dontSendNotification);
         // Dim when stopped
         if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
@@ -4069,7 +3974,6 @@ void MyPluginAudioProcessorEditor::timerCallback()
     }
 
     // Drive bottom panel slide animation (move-only; no full relayout)
-    if (doHeavyUi)
     {
         bool changed = false;
         if (bottomAltTargetOn && bottomAltSlide01 < 1.0f) { bottomAltSlide01 = juce::jmin (1.0f, bottomAltSlide01 + 0.06f); changed = true; }
@@ -4123,120 +4027,28 @@ void MyPluginAudioProcessorEditor::setScaleFactor (float newScale)
 }
 void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
 {
-    auto set = [](juce::Label& l, const juce::String& t){ l.setText (t, juce::dontSendNotification); };
-    auto Hz  = [](double v){ return juce::String (v, 1) + " Hz"; };
-    auto dB  = [](double v){ return juce::String (v, 1) + " dB"; };
-    auto pct = [](double v){ return juce::String (v, 0) + "%"; };
-
-    if (s == &gain) {
-        set (gainValue, dB (gain.getValue()));
-        if (auto* xyTab = panes->getXYTab()) {
-            xyTab->setGainValue ((float) gain.getValue()); // feed XY for split-ball hit radius
-        }
-    }
-    else if (s == &width) {
-        const double pctVal = juce::jlimit (0.0, 1000.0, width.getValue() * 100.0); // 1.0 -> 100%
-        set (widthValue, juce::String (pctVal, 0) + "%");
-    }
-    else if (s == &tilt)   set (tiltValue, juce::String (tilt.getValue(), 1));
-    else if (s == &monoHz) set (monoValue, Hz (monoHz.getValue()));
-    else if (s == &hpHz)   set (hpValue,   Hz (hpHz.getValue()));
-    else if (s == &lpHz)   set (lpValue,   Hz (lpHz.getValue()));
-    else if (s == &satDrive) set (satDriveValue, dB (satDrive.getValue()));
-    else if (s == &satMix)   set (satMixValue, pct (juce::jmap (satMix.getValue(), satMix.getMinimum(), satMix.getMaximum(), 0.0, 100.0)));
-    else if (s == &air)    set (airValue, dB (air.getValue()));
-    else if (s == &bass)   set (bassValue, dB (bass.getValue()));
-    else if (s == &scoop)  {
-        set (scoopValue, juce::String (scoop.getValue(), 1));
-        // Dynamic label: Boost for >0, Scoop for <0, 0 shows Scoop
-        scoop.setName (scoop.getValue() > 0.0 ? "BOOST" : "SCOOP");
-    }
-    else if (s == &panKnob){ set (panValue, juce::String (panKnob.getValue(), 2)); 
-        if (auto* xyTab = panes->getXYTab()) {
-            xyTab->setPanValue ((float) panKnob.getValue());
-        }
-    }
-    else if (s == &panKnobLeft || s == &panKnobRight)
+    if (eventManager)
     {
-        set (panValueLeft,  juce::String (panKnobLeft.getValue(), 2));
-        set (panValueRight, juce::String (panKnobRight.getValue(), 2));
-        panKnob.setSplitPercentage ((float) juce::jmap (panKnobLeft.getValue(),  -1.0, 1.0, 0.0, 100.0),
-                                    (float) juce::jmap (panKnobRight.getValue(), -1.0, 1.0, 0.0, 100.0));
-        panKnob.repaint();
+        eventManager->handleSliderValueChanged(s);
     }
-    else if (s == &spaceKnob)   { set (spaceValue, juce::String (spaceKnob.getValue(), 2)); 
-        if (auto* xyTab = panes->getXYTab()) {
-            xyTab->setSpaceValue ((float) spaceKnob.getValue());
-        }
-    }
-    else if (s == &duckingKnob) {
-        // Display 0–100% depth
-        const double pctVal = juce::jmap (duckingKnob.getValue(), duckingKnob.getMinimum(), duckingKnob.getMaximum(), 0.0, 100.0);
-        set (duckingValue, juce::String (pctVal, 0) + "%");
-    }
-    else if (s == &duckAttack)  set (duckAttackValue, juce::String (duckAttack.getValue(), 0) + " ms");
-    else if (s == &duckRelease) set (duckReleaseValue, juce::String (duckRelease.getValue(), 0) + " ms");
-    else if (s == &duckThreshold) set (duckThresholdValue, juce::String (duckThreshold.getValue(), 0) + " dB");
-    else if (s == &duckRatio)     set (duckRatioValue, juce::String (duckRatio.getValue(), 1) + ":1");
-    else if (s == &duckAttack)  set (duckAttackValue, juce::String (duckAttack.getValue(), 0) + " ms");
-    else if (s == &duckRelease) set (duckReleaseValue, juce::String (duckRelease.getValue(), 0) + " ms");
-    else if (s == &duckThreshold) set (duckThresholdValue, juce::String (duckThreshold.getValue(), 0) + " dB");
-
-    else if (s == &tiltFreqSlider)  set (tiltFreqValue,  Hz (tiltFreqSlider.getValue()));
-    else if (s == &scoopFreqSlider) set (scoopFreqValue, Hz (scoopFreqSlider.getValue()));
-    else if (s == &bassFreqSlider)  set (bassFreqValue,  Hz (bassFreqSlider.getValue()));
-    else if (s == &airFreqSlider)   set (airFreqValue,   Hz (airFreqSlider.getValue()));
-    else if (s == &shelfShapeS)     { set (shelfShapeValue, juce::String (shelfShapeS.getValue(), 2)); shelfShapeS.getProperties().set ("S_value", (double) shelfShapeS.getValue()); shelfShapeS.repaint(); }
-    else if (s == &filterQ)         set (filterQValue,    juce::String (filterQ.getValue(), 2));
-    // Q minis update their own badges; do not overwrite HP/LP knob value labels
-
-    // Imaging value labels with units
-    else if (s == &widthLo)  set (widthLoValue,  juce::String (juce::roundToInt (widthLo.getValue()  * 100.0))  + "%");
-    else if (s == &widthMid) set (widthMidValue, juce::String (juce::roundToInt (widthMid.getValue() * 100.0)) + "%");
-    else if (s == &widthHi)  set (widthHiValue,  juce::String (juce::roundToInt (widthHi.getValue()  * 100.0))  + "%");
-    else if (s == &xoverLoHz) set (xoverLoValue, juce::String ((int) xoverLoHz.getValue()) + " Hz");
-    else if (s == &xoverHiHz) set (xoverHiValue, juce::String ((int) xoverHiHz.getValue()) + " Hz");
-    else if (s == &rotationDeg) set (rotationValue, juce::String (rotationDeg.getValue(), 1) + "°");
-    else if (s == &asymmetry)   set (asymValue,     juce::String (juce::roundToInt (asymmetry.getValue() * 100.0)) + "%");
-    // SHUF value updates moved to Band tab
     
-    // Delay controls
-    else if (s == &delayTime) set (delayTimeValue, juce::String ((int) delayTime.getValue()) + " ms");
-    else if (s == &delayFeedback) set (delayFeedbackValue, juce::String ((int) delayFeedback.getValue()) + "%");
-    else if (s == &delayWet) set (delayWetValue, pct (juce::jmap (delayWet.getValue(), delayWet.getMinimum(), delayWet.getMaximum(), 0.0, 100.0)));
-    else if (s == &delaySpread) set (delaySpreadValue, juce::String ((int) delaySpread.getValue()) + "%");
-    else if (s == &delayWidth) set (delayWidthValue, juce::String (juce::roundToInt (delayWidth.getValue() * 100.0)) + "%");
-    else if (s == &delayModRate) set (delayModRateValue, Hz (delayModRate.getValue()));
-    else if (s == &delayModDepth) set (delayModDepthValue, juce::String (delayModDepth.getValue(), 1) + " ms");
-    else if (s == &delayWowflutter) set (delayWowflutterValue, pct (juce::jmap (delayWowflutter.getValue(), delayWowflutter.getMinimum(), delayWowflutter.getMaximum(), 0.0, 100.0)));
-    else if (s == &delayJitter) set (delayJitterValue, juce::String (delayJitter.getValue(), 1) + "%");
-    else if (s == &delayHp) set (delayHpValue, Hz (delayHp.getValue()));
-    else if (s == &delayLp) set (delayLpValue, Hz (delayLp.getValue()));
-    else if (s == &delayTilt) set (delayTiltValue, dB (delayTilt.getValue()));
-    else if (s == &delaySat) set (delaySatValue, pct (juce::jmap (delaySat.getValue(), delaySat.getMinimum(), delaySat.getMaximum(), 0.0, 100.0)));
-    else if (s == &delayDiffusion) set (delayDiffusionValue, pct (juce::jmap (delayDiffusion.getValue(), delayDiffusion.getMinimum(), delayDiffusion.getMaximum(), 0.0, 100.0)));
-    else if (s == &delayDiffuseSize) set (delayDiffuseSizeValue, juce::String ((int) delayDiffuseSize.getValue()) + " ms");
-    else if (s == &delayDuckDepth) set (delayDuckDepthValue, pct (juce::jmap (delayDuckDepth.getValue(), delayDuckDepth.getMinimum(), delayDuckDepth.getMaximum(), 0.0, 100.0)));
-    else if (s == &delayDuckAttack) set (delayDuckAttackValue, juce::String ((int) delayDuckAttack.getValue()) + " ms");
-    else if (s == &delayDuckRelease) set (delayDuckReleaseValue, juce::String ((int) delayDuckRelease.getValue()) + " ms");
-    else if (s == &delayDuckThreshold) set (delayDuckThresholdValue, juce::String ((int) delayDuckThreshold.getValue()) + " dB");
-    else if (s == &delayDuckRatio) set (delayDuckRatioValue, juce::String (delayDuckRatio.getValue(), 1) + ":1");
-    else if (s == &delayDuckLookahead) set (delayDuckLookaheadValue, juce::String ((int) delayDuckLookahead.getValue()) + " ms");
-    else if (s == &delayPreDelay) set (delayPreDelayValue, juce::String ((int) delayPreDelay.getValue()) + " ms");
-
-    // Motion slider value changes removed - now handled by MotionControlsPane
-
     // Refresh muted visuals when any control changes
     updateMutedKnobVisuals();
 }
 void MyPluginAudioProcessorEditor::comboBoxChanged(juce::ComboBox* comboBox)
 {
-    // Motion ComboBox changes removed - now handled by MotionControlsPane
+    if (eventManager)
+    {
+        eventManager->handleComboBoxChanged(comboBox);
+    }
 }
 
 void MyPluginAudioProcessorEditor::buttonClicked(juce::Button* button)
 {
-    // Handle button clicks if needed
+    if (eventManager)
+    {
+        eventManager->handleButtonClicked(button);
+    }
 }
 
 void MyPluginAudioProcessorEditor::applyGlobalCursorPolicy()
