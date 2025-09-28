@@ -41,12 +41,16 @@
 
 #include "KnobCell.h"
 #include "../../Core/FieldLookAndFeel.h"
+#include "../../Core/FieldMetallic.h"
 
 KnobCell::KnobCell(juce::Slider& knobToHost, juce::Label& valueLabelToHost, const juce::String&)
     : knob(knobToHost), valueLabel(valueLabelToHost)
 {
     // Let the children handle interactions
     setWantsKeyboardFocus (false);
+    
+    // Enable hover effects
+    setMouseCursor(juce::MouseCursor::PointingHandCursor);
     setInterceptsMouseClicks (false, true);
 }
 
@@ -440,15 +444,35 @@ void KnobCell::paint (juce::Graphics& g)
             (bool) getProperties().getWithDefault ("motionMetallic", false) && lf ? lf->theme.motionBorder :
             getAccentColour();
 
+        
         g.setColour (c.withAlpha (engaged ? 1.0f : 0.85f));
         g.drawRoundedRectangle (border, rad, 1.5f);
     }
 
     // XY controls use the main border system above - no additional border needed
 
+    // Render the slider with our custom LookAndFeel to get tick marks
+    if (showKnob && knob.isVisible())
+    {
+        auto knobBounds = knob.getBounds().toFloat();
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+        {
+            const double minV = knob.getMinimum();
+            const double maxV = knob.getMaximum();
+            const float pos01 = (maxV > minV) ? (float) ((knob.getValue() - minV) / (maxV - minV)) : 0.0f;
+            
+            
+            lf->drawRotarySlider(g, knobBounds.getX(), knobBounds.getY(), knobBounds.getWidth(), knobBounds.getHeight(),
+                                 pos01,
+                                 juce::MathConstants<float>::pi,
+                                 juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
+                                 knob);
+        }
+    }
+
 // Title: draw caption inside the cell using LookAndFeel helper when present
 
-    // Draw caption/name above knob using LNF helper if available
+    // Draw caption/name above knob using LNF helper if available (AFTER slider to be on top)
     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
     {
         juce::String caption;
@@ -611,5 +635,6 @@ void KnobCell::paint (juce::Graphics& g)
         }
     }
 }
+
 
 
