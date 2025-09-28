@@ -28,21 +28,194 @@ void LayoutManager::performLayout()
 
 void LayoutManager::layoutHeader()
 {
-    // PLACEHOLDER: Header layout logic
-    // This method will be implemented by carefully extracting the exact
-    // header layout logic from PluginEditor::performLayout() without
-    // changing any visual behavior or component positioning
+    // Extract header layout logic from PluginEditor::performLayout()
+    // This method handles the wood bar controls (reduced height) section
     
-    // For now, this is a safe placeholder that doesn't affect existing UI
-    // The actual implementation will be done in a separate step to ensure
-    // no UI changes occur during the extraction process
+    const float s = juce::jmax(0.5f, editor.scaleFactor);
+    const float sv = juce::jlimit(0.5f, 2.0f, (float)editor.getHeight() / (float)editor.baseHeight);
+    const int bottomReserve = Layout::dp(6, sv) + Layout::dp(22, sv);
+    auto r = editor.getLocalBounds().reduced(Layout::dp(Layout::PAD, s)).withTrimmedBottom(bottomReserve);
+    
+    // 1) wood bar controls (reduced height)
+    auto woodBar = r.removeFromTop(Layout::dp(50, s));
+    juce::Grid header;
+    header.rowGap = juce::Grid::Px(Layout::dp(4, s));
+    header.columnGap = juce::Grid::Px(0);
+    header.alignContent = juce::Grid::AlignContent::center;
+    header.justifyContent = juce::Grid::JustifyContent::center;
+    header.alignItems = juce::Grid::AlignItems::center;
+    header.justifyItems = juce::Grid::JustifyItems::center;
+    header.templateRows = { juce::Grid::TrackInfo(juce::Grid::Fr(1)) };
+
+    // Compute dynamic left header width based on painted logo size
+    juce::Font logoFont(juce::FontOptions(26.0f * s).withStyle("Bold"));
+    const int logoTextW = (int)logoFont.getStringWidthFloat("FIELD");
+    const int leftInset = Layout::dp(20, s);
+    const int bypassW = Layout::dp(56, s);
+    const int leftPaddingAfterLogo = Layout::dp(120, s); // increased gap between logo and bypass
+    const int leftHeaderW = juce::jmax(Layout::dp(240, s), leftInset + logoTextW + leftPaddingAfterLogo + bypassW);
+
+    header.templateColumns = {
+        juce::Grid::TrackInfo(juce::Grid::Px(leftHeaderW)),         // left: reserve for painted logo + bypass
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(60, s))),  // spacer between left and center controls
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(360, s))), // center: preset field
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))),  // prev
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))),  // next
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))),  // A
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))),  // B
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))),  // copy
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(16, s))),  // spacer
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))),  // snap (moved left of split)
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(16, s))),  // spacer left of split
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(120, s))), // split
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))),  // link (center group)
+        juce::Grid::TrackInfo(juce::Grid::Fr(1)),                   // spacer before right utilities
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(176, s))), // transport clock (right group)
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))),  // color mode (right)
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s))),  // tooltips (right)
+        juce::Grid::TrackInfo(juce::Grid::Px(Layout::dp(40, s)))   // fullscreen (right)
+    };
+
+    const int h = Layout::dp(24, s);
+    auto sizeBtn = [&](juce::Component& c, int w){ c.setSize(w, h); };
+
+    sizeBtn(editor.bypassButton, Layout::dp(56, s));
+    // Build left header group (bypass only)
+    if (editor.headerLeftGroup.getParentComponent() != &editor) editor.addAndMakeVisible(editor.headerLeftGroup);
+    if (editor.bypassButton.getParentComponent() != &editor.headerLeftGroup) editor.headerLeftGroup.addAndMakeVisible(editor.bypassButton);
+    editor.headerLeftGroup.setBounds(0, 0, leftHeaderW, h);
+    // Place bypass just after the painted logo text + padding
+    editor.bypassButton.setTopLeftPosition(leftInset + logoTextW + leftPaddingAfterLogo, 0);
+    
+    sizeBtn(editor.abButtonA, Layout::dp(40, s));
+    sizeBtn(editor.abButtonB, Layout::dp(40, s));
+    sizeBtn(editor.copyButton, Layout::dp(40, s));
+    sizeBtn(editor.prevPresetButton, Layout::dp(40, s));
+    sizeBtn(editor.nextPresetButton, Layout::dp(40, s));
+    editor.presetNameLabel.setMinimumHorizontalScale(0.8f);
+    editor.presetNameLabel.setText("Presets", juce::dontSendNotification);
+    editor.presetNameLabel.setJustificationType(juce::Justification::centredLeft);
+    editor.splitToggle.setSize(Layout::dp(120, s), Layout::dp(28, s));
+    sizeBtn(editor.linkButton, Layout::dp(40, s));
+    sizeBtn(editor.snapButton, Layout::dp(40, s));
+    
+    // Transport clock label styling and sizing (larger, right-aligned)
+    {
+        if (editor.transportClockLabel.getParentComponent() != &editor) editor.addAndMakeVisible(editor.transportClockLabel);
+        editor.transportClockLabel.setJustificationType(juce::Justification::centredRight);
+        editor.transportClockLabel.setInterceptsMouseClicks(false, false);
+        editor.transportClockLabel.setText("00:00.000", juce::dontSendNotification);
+        if (auto* lf = dynamic_cast<FieldLNF*>(&editor.getLookAndFeel()))
+        {
+            editor.transportClockLabel.setColour(juce::Label::textColourId, lf->theme.text);
+        }
+        // Larger font
+        editor.transportClockLabel.setFont(juce::Font(juce::FontOptions(18.0f * s).withStyle("Bold")));
+        const int clockW = Layout::dp(176, s);
+        editor.transportClockLabel.setSize(clockW, h);
+    }
+    
+    sizeBtn(editor.colorModeButton, Layout::dp(40, s));
+    sizeBtn(editor.tooltipsButton, Layout::dp(40, s));
+    sizeBtn(editor.fullScreenButton, Layout::dp(40, s));
+    sizeBtn(editor.optionsButton, Layout::dp(40, s));
+
+    header.items = {
+        juce::GridItem(editor.headerLeftGroup),
+        juce::GridItem(), // spacer after bypass
+        juce::GridItem(editor.presetField),
+        juce::GridItem(editor.prevPresetButton),
+        juce::GridItem(editor.nextPresetButton),
+        juce::GridItem(editor.abButtonA),
+        juce::GridItem(editor.abButtonB),
+        juce::GridItem(editor.copyButton),
+        juce::GridItem(), // spacer left of divider
+        juce::GridItem(editor.snapButton),
+        juce::GridItem(), // spacer left of split
+        juce::GridItem(editor.splitToggle),
+        juce::GridItem(editor.linkButton),
+        juce::GridItem(), // spacer before right utilities
+        juce::GridItem(editor.transportClockLabel),
+        juce::GridItem(editor.colorModeButton),
+        juce::GridItem(editor.tooltipsButton),
+        juce::GridItem(editor.fullScreenButton),
+    };
+
+    auto headerArea = woodBar.reduced(Layout::dp(Layout::GAP, s), Layout::dp(6, s))
+                             .withTrimmedBottom(Layout::dp(8, s))
+                             .withTrimmedTop(Layout::dp(2, s));
+    header.performLayout(headerArea);
+
+    // Tooltip bubble menu callback
+    editor.tooltipBubble.onMenu = [this](juce::Point<int> where)
+    {
+        juce::PopupMenu m; m.setLookAndFeel(&editor.lnf);
+        m.addSectionHeader("Tooltip Options");
+        m.addItem(1, "Open DYN_EQ Tooltips Doc");
+        m.addItem(2, "Turn Assistant Off", editor.tooltipAssistantOn_);
+        m.showMenuAsync(juce::PopupMenu::Options().withTargetScreenArea(juce::Rectangle<int>(where.x, where.y, 1, 1)),
+            [this](int r){ if (r == 1) { juce::URL::createWithoutParsing("file://docs/notes/DYN_EQ_TOOLTIPS.md").launchInDefaultBrowser(); }
+                           if (r == 2) { editor.tooltipAssistantOn_ = false; editor.tooltipsButton.setToggleState(false, juce::dontSendNotification); editor.tooltipBubble.setVisible(false); editor.repaint(); } });
+    };
+
+    if (!editor.tooltipBubble.isOnDesktop()) editor.addChildComponent(editor.tooltipBubble);
+
+    // options + phase mode at bottom-left; help to bottom-right; bottom-center panel toggle
+    {
+        auto bounds = editor.getLocalBounds();
+        const int padding = Layout::dp(8, s);
+        const int btnW = Layout::dp(40, s);
+        const int btnH = h;
+        const int leftY = bounds.getBottom() - btnH - padding;
+        editor.optionsButton.setBounds(bounds.getX() + padding, leftY, btnW, btnH);
+        editor.phaseModeButton.setBounds(editor.optionsButton.getRight() + Layout::dp(8, s), leftY, btnW, btnH);
+        editor.qualityButton.setBounds(editor.phaseModeButton.getRight() + Layout::dp(8, s), leftY, btnW, btnH);
+        editor.helpButton.setBounds(bounds.getRight() - btnW - padding, leftY, btnW, btnH);
+    }
 }
 
 void LayoutManager::layoutMainControls()
 {
-    // PLACEHOLDER: Main controls layout logic
-    // This will be implemented by extracting from PluginEditor::performLayout()
-    // without changing any visual behavior
+    // Extract main controls layout logic from PluginEditor::performLayout()
+    // This method handles the main XY area + vertical meters on right side
+    
+    const float s = juce::jmax(0.5f, editor.scaleFactor);
+    const float sv = juce::jlimit(0.5f, 2.0f, (float)editor.getHeight() / (float)editor.baseHeight);
+    const int bottomReserve = Layout::dp(6, sv) + Layout::dp(22, sv);
+    auto r = editor.getLocalBounds().reduced(Layout::dp(Layout::PAD, s)).withTrimmedBottom(bottomReserve);
+    
+    // Remove the header area that was already processed
+    r.removeFromTop(Layout::dp(50, s));
+    
+    // 2) main XY area + vertical meters on right side
+    {
+        // Pre-compute row heights to reserve exact space for rows below, so XY/meters respond consistently
+        const int lPx_rsv = Layout::dp((float)Layout::knobPx(Layout::Knob::L), sv);
+        const int labelBand_rsv = Layout::dp(Layout::LABEL_BAND_EXTRA, sv);
+        const int containerH_rsv = lPx_rsv + labelBand_rsv + Layout::dp(Layout::LABEL_BAND_EXTRA, sv);
+        const int rowsTotalH_rsv = containerH_rsv * 4; // four uniform rows
+
+        // Meters take the full right side strip (carve from full remaining area first)
+        // Use grid-derived width so meters do not get too wide on large windows
+        const int lPx_rs = Layout::dp((float)Layout::knobPx(Layout::Knob::L), s);
+        const int cellW_rs = lPx_rs + Layout::dp(8, s);
+        const int colW_m = juce::jlimit(Layout::dp(24, s), Layout::dp(56, s), juce::roundToInt(cellW_rs * 0.75f));
+        const int corrW_m = juce::jmax(Layout::dp(10, s), juce::roundToInt(colW_m * 0.5f)); // CORR is half width of others
+        const int inter_m = juce::jmax(1, Layout::dp(Layout::GAP_S, s) / 2); // tighter spacing between columns
+        const int outerPadM_X = juce::jmax(1, Layout::dp(Layout::GAP_S, s)); // small side padding
+        const int outerPadM_Y = Layout::dp(Layout::GAP, sv); // match left container vertical pad for bottom align
+        const int targetStripW = colW_m * 2 + corrW_m + inter_m * 2 + outerPadM_X * 2; // IO | LR | CORR(half)
+        const int metersStripW = juce::jlimit(Layout::dp(96, s), Layout::dp(240, s), targetStripW);
+        
+        // Split the remaining area: left meters container, main content container, and right sliders container
+        auto metersArea = r.removeFromLeft(metersStripW);
+        
+        // Layout the meters in the right strip
+        editor.layoutMeters(metersArea, s, sv);
+        
+        // The main content area (r) is now ready for center group layout
+        // This will be handled by layoutCenterGroup()
+    }
 }
 
 void LayoutManager::layoutCenterGroup()

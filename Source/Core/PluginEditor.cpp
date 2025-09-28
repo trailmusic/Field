@@ -4,13 +4,13 @@
 XYPaneAdapter::XYPaneAdapter (XYPad& padRef) : pad (padRef) { addAndMakeVisible ((juce::Component&) pad); }
 void XYPaneAdapter::resized() { pad.setBounds (getLocalBounds()); }
 void XYPaneAdapter::pushWaveformSample (double L, double R) { pad.pushWaveformSample (L, R); }
-#include "ui/PaneManager.h"
+#include "ui/Managers/PaneManager.h"
 #include "reverb/ReverbParamIDs.h"
-#include "ui/Layout.h"
+#include "ui/Design/Layout.h"
 #include "dsp/DelayPresetLibrary.h"
 #include "reverb/ui/ReverbPanel.h"
 #include "reverb/ui/ReverbDynEQPane.h"
-#include "ui/ControlGridMetrics.h"
+#include "ui/Controls/ControlGridMetrics.h"
 
 //==============================================================
 

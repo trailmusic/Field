@@ -27,9 +27,9 @@
 #include "Presets/PresetRegistry.h"
 #include "Presets/PresetCommandPalette.h"
 #include "Presets/PresetManager.h"
-#include "ui/StereoFieldEngine.h"
-#include "ui/ImagerPane.h"
-#include "ui/PaneManager.h"
+#include "ui/Engines/StereoFieldEngine.h"
+#include "ui/Panes/ImagerPane.h"
+#include "ui/Managers/PaneManager.h"
 #include "ui/delay/DelayVisuals.h"
 // MegaMenu and old preset system removed
 

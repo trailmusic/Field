@@ -3,7 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "MotionIDs.h"
 #include "MotionVisual.h"
-#include "../ui/Design.h"
+#include "../ui/Design/Design.h"
 namespace motion {
 
 // Legacy visual state structure for backward compatibility

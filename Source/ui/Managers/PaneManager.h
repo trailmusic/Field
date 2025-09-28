@@ -1,16 +1,16 @@
 #pragma once
 #include <JuceHeader.h>
-#include "DynEqTab.h"
-#include "XYTab.h"
-#include "ImagerTab.h"
-#include "BandTab.h"
+#include "../Tabs/DynEqTab.h"
+#include "../Tabs/XYTab.h"
+#include "../Tabs/ImagerTab.h"
+#include "../Tabs/BandTab.h"
 #include "machine/MachinePane.h"
 #include "../Core/IconSystem.h"
 #include "../motion/MotionTab.h"
 #include "../motion/MotionVisual.h"
-#include "../reverb/ui/ReverbTab.h"
-#include "delay/DelayTab.h"
-#include "PhaseTab.h"
+#include "../../reverb/ui/ReverbTab.h"
+#include "../delay/DelayTab.h"
+#include "../Tabs/PhaseTab.h"
 
 class XYPad; // forward (lives in PluginEditor.h/cpp)
 

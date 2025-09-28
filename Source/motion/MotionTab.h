@@ -3,7 +3,7 @@
 #include <JuceHeader.h>
 #include "MotionPanel.h"
 #include "MotionControlsPane.h"
-#include "../ui/ControlGridMetrics.h"
+#include "../ui/Controls/ControlGridMetrics.h"
 
 class MyPluginAudioProcessor; // fwd
 

@@ -2,7 +2,7 @@
 
 #include <JuceHeader.h>
 #include "Components/KnobCell.h"
-#include "../ui/Layout.h"
+#include "../Design/Layout.h"
 #include "../Core/FieldLookAndFeel.h"
 #include "../Core/FieldMetallic.h"
 

@@ -1,6 +1,6 @@
 #include "FieldRendering.h"
 #include "IconSystem.h"
-#include "../ui/SimpleSwitchCell.h"
+#include "../ui/Controls/SimpleSwitchCell.h"
 
 // Field Rendering System implementation
 // Separated from FieldLookAndFeel for better organization

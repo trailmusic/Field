@@ -3,7 +3,7 @@
 #include <JuceHeader.h>
 #include "ReverbPanel.h"
 #include "ReverbControlsPane.h"
-#include "../../ui/ControlGridMetrics.h"
+#include "../../ui/Controls/ControlGridMetrics.h"
 
 class MyPluginAudioProcessor; // fwd
 

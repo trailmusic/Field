@@ -4,8 +4,8 @@
 #include "MotionIDs.h"
 #include "MotionSlot.h"
 #include "../ui/Components/KnobCell.h"
-#include "../ui/SimpleSwitchCell.h"
-#include "../ui/Layout.h"
+#include "../ui/Controls/SimpleSwitchCell.h"
+#include "../ui/Design/Layout.h"
 #include "../Core/FieldLookAndFeel.h"
 #include "../Core/FieldMetallic.h"
 

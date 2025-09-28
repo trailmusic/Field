@@ -3,8 +3,8 @@
 #include <JuceHeader.h>
 #include "Components/KnobCell.h"
 #include "Components/KnobCellWithAux.h"
-#include "SimpleSwitchCell.h"
-#include "../ui/Layout.h"
+#include "../Controls/SimpleSwitchCell.h"
+#include "../Design/Layout.h"
 #include "../Core/FieldLookAndFeel.h"
 #include "../Core/FieldMetallic.h"
 #include "../Core/IconSystem.h"
