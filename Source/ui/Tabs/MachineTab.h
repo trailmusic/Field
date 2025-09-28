@@ -58,32 +58,23 @@ private:
         }
         void resized() override
         {
-            auto r = getLocalBounds();
-            auto captionArea = r.removeFromBottom (16);
-            child.setBounds (r);
-            caption.setBounds (captionArea);
+            auto b = getLocalBounds().reduced (6);
+            const int capH = captionText.isNotEmpty() ? 14 : 0;
+            if (capH > 0)
+            {
+                caption.setBounds (b.removeFromTop (capH));
+                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                    caption.setColour (juce::Label::textColourId, lf->theme.textMuted);
+            }
+            child.setBounds (b);
         }
         void paint (juce::Graphics& g) override
         {
-            auto r = getLocalBounds().toFloat();
-            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-            if (lf)
-            {
-                // Draw cell background with metallic styling
-                auto base = lf->theme.base;
-                auto border = lf->theme.sh; // Use shadow color for border
-                auto text = lf->theme.text;
-                
-                g.setColour (base);
-                g.fillRoundedRectangle (r, 4.0f);
-                
-                g.setColour (border);
-                g.drawRoundedRectangle (r, 4.0f, 1.0f);
-                
-                g.setColour (text.withAlpha (0.8f));
-                g.setFont (10.0f);
-                g.drawText (captionText, r, juce::Justification::centredBottom);
-            }
+            auto r = getLocalBounds().toFloat().reduced (3.0f);
+            g.setColour (juce::Colour (0xFF3A3E45));
+            g.fillRoundedRectangle (r, 8.0f);
+            g.setColour (juce::Colours::white.withAlpha (0.12f));
+            g.drawRoundedRectangle (r, 8.0f, 1.5f);
         }
     private:
         juce::Component& child;
@@ -91,170 +82,138 @@ private:
         juce::String captionText;
     };
 
-    // Top bar with learn controls
-    class TopBar : public juce::Component
+    // UI widgets
+    juce::TextButton analyzeBtn { "Learn" }, stopBtn { "" };
+    juce::ComboBox   genreBox, venueBox, trackTypeBox;
+    // Quality/time controls removed per spec
+    juce::Slider     strength; // 0..1
+    juce::ToggleButton showPreBtn { "" }; // Pre toggle
+    juce::TextButton previewBtn { "Preview 10s" };
+    juce::TextButton ABtn { "A" }, BBtn { "B" }, CBtn { "C" };
+    juce::Component  proposalsContent; // holds ProposalCard children (no scrolling)
+    std::unique_ptr<SmallSwitchCell> learnCell, stopCell;
+    std::unique_ptr<SmallSwitchCell> preCell;
+    juce::ToggleButton listenBtn { "Listen" };
+    juce::Rectangle<int> barArea;
+
+    // Header-style bypass button for machine cards (mirrors header BypassButton)
+    class CardBypassButton : public juce::TextButton, public juce::Timer
     {
     public:
-        TopBar (MachineTab& parent) : owner (parent)
+        CardBypassButton()
         {
-            addAndMakeVisible (learnBtn);
-            addAndMakeVisible (stopBtn);
-            addAndMakeVisible (tggByp);
-            
-            learnBtn.setButtonText ("Learn");
-            stopBtn.setButtonText ("Stop");
-            tggByp.setButtonText ("Bypass");
-            
-            learnBtn.onClick = [this] { owner.startLearn(); };
-            stopBtn.onClick = [this] { owner.stopLearn (true); };
-            tggByp.onClick = [this] { owner.toggleBypass(); };
+            setButtonText ("");
+            setClickingTogglesState (true);
+            setTriggeredOnMouseDown (false);
+            getProperties().set ("iconType", (int) IconSystem::Bypass);
+            startTimerHz (20); // Match header bypass button animation rate
         }
         
         void paint (juce::Graphics& g) override
         {
-            owner.paintTopBarBackground (g, getLocalBounds());
+            auto r = getLocalBounds().toFloat();
+            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+            
+            if (lf)
+            {
+                // Use theme-based animation colors
+                auto darkColor = lf->theme.animation.bypassBlinkDark;
+                auto brightColor = lf->theme.animation.bypassBlinkBright;
+                auto darkAlpha = lf->theme.animation.blinkAlphaDark;
+                auto brightAlpha = lf->theme.animation.blinkAlphaBright;
+                
+                // Animated blink effect
+                const double t = juce::Time::getMillisecondCounterHiRes() * 0.001;
+                const float phase = (float) std::fmod (t * 4.0, 1.0); // 4Hz blink
+                const float alpha = phase < 0.5f ? 
+                    juce::jmap (phase * 2.0f, 0.0f, 1.0f, darkAlpha, brightAlpha) :
+                    juce::jmap ((phase - 0.5f) * 2.0f, 0.0f, 1.0f, brightAlpha, darkAlpha);
+                
+                auto color = darkColor.interpolatedWith (brightColor, phase);
+                g.setColour (color.withAlpha (alpha));
+                g.fillRoundedRectangle (r, 4.0f);
+                
+                // Draw icon
+                IconSystem::drawIcon (g, IconSystem::Bypass, r, lf->theme.text);
+            }
+        }
+        
+        void timerCallback() override
+        {
+            repaint();
+        }
+    };
+
+    // Machine learning proposal cards
+    class MachineCard : public juce::Component
+    {
+    public:
+        MachineCard (FieldLNF& lnf) : bypassBtn(), lnfRef(lnf)
+        {
+            setOpaque (false);
+            addAndMakeVisible (bypassBtn);
+            bypassBtn.onClick = [this] { onBypass (bypassBtn.getToggleState()); };
+        }
+        
+        juce::String title, hint;
+        bool bypassed { false };
+        std::function<void(bool)> onBypass;
+        
+        void setMetrics (const juce::NamedValueSet& m) { metrics = m; }
+        void setParams (const std::vector<ParamDelta>& p) { params = p; }
+        
+        void paint (juce::Graphics& g) override
+        {
+            auto r = getLocalBounds().toFloat();
+            
+            // Card background
+            g.setColour (lnfRef.theme.panel);
+            g.fillRoundedRectangle (r, 8.0f);
+            
+            // Border
+            g.setColour (lnfRef.theme.sh);
+            g.drawRoundedRectangle (r, 8.0f, 1.0f);
+            
+            // Title
+            g.setColour (lnfRef.theme.text);
+            g.setFont (juce::FontOptions (14.0f).withStyle ("Bold"));
+            g.drawText (title, r.removeFromTop (20), juce::Justification::centred);
+            
+            // Hint
+            g.setColour (lnfRef.theme.textMuted);
+            g.setFont (12.0f);
+            g.drawText (hint, r.removeFromTop (16), juce::Justification::centred);
+            
+            // Display visualization
+            if (! displayA.isEmpty())
+            {
+                auto displayArea = r.reduced (8.0f);
+                g.setColour (lnfRef.theme.accent.withAlpha (0.3f));
+                for (int i = 0; i < displayArea.getWidth(); ++i)
+                {
+                    float t = (float) i / (displayArea.getWidth() - 1);
+                    int idx = juce::jlimit (0, displayA.size() - 1, (int) (t * (displayA.size() - 1)));
+                    float val = displayA[idx];
+                    float h = displayArea.getHeight() * val;
+                    float y = displayArea.getBottom() - h;
+                    g.fillRect (displayArea.getX() + i, y, 1.0f, h);
+                }
+            }
         }
         
         void resized() override
         {
             auto r = getLocalBounds();
-            auto left = r.removeFromLeft (120);
-            learnBtn.setBounds (left.removeFromLeft (50));
-            stopBtn.setBounds (left.removeFromLeft (50));
-            tggByp.setBounds (r.removeFromRight (60));
+            bypassBtn.setBounds (r.removeFromTop (20).removeFromRight (20));
         }
+        
+        juce::Array<float> displayA, displayB;
         
     private:
-        MachineTab& owner;
-        juce::TextButton learnBtn, stopBtn;
-        juce::ToggleButton tggByp;
-    };
-
-    // Proposal card for displaying machine learning results
-    class MachineCard : public juce::Component
-    {
-    public:
-        MachineCard (const juce::String& title, const juce::String& subtitle)
-            : cardTitle (title), cardSubtitle (subtitle)
-        {
-            setOpaque (false);
-        }
-        
-        void setProposal (const Proposal& p)
-        {
-            proposal = p;
-            repaint();
-        }
-        
-        void paint (juce::Graphics& g) override
-        {
-            auto r = getLocalBounds().toFloat();
-            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-            
-            if (lf)
-            {
-                // Draw card background
-                auto base = lf->theme.base;
-                auto border = lf->theme.sh; // Use shadow color for border
-                auto text = lf->theme.text;
-                auto accent = lf->theme.accent;
-                
-                g.setColour (base);
-                g.fillRoundedRectangle (r, 8.0f);
-                
-                g.setColour (border);
-                g.drawRoundedRectangle (r, 8.0f, 1.0f);
-                
-                // Draw title
-                g.setColour (text);
-                g.setFont (juce::FontOptions (14.0f).withStyle ("Bold"));
-                g.drawText (cardTitle, r.removeFromTop (20), juce::Justification::centred);
-                
-                // Draw subtitle
-                g.setColour (text.withAlpha (0.8f));
-                g.setFont (12.0f);
-                g.drawText (cardSubtitle, r.removeFromTop (16), juce::Justification::centred);
-                
-                // Draw proposal content if available
-                if (proposal.id.isNotEmpty())
-                {
-                    g.setColour (accent);
-                    g.setFont (10.0f);
-                    g.drawText (proposal.summary, r, juce::Justification::centred);
-                }
-            }
-        }
-        
-    private:
-        juce::String cardTitle, cardSubtitle;
-        Proposal proposal;
-    };
-
-    // Status display for learning progress
-    class StatusDisplay : public juce::Component
-    {
-    public:
-        StatusDisplay() { setOpaque (false); }
-        
-        void setStatus (const juce::String& status, const juce::String& info)
-        {
-            statusText = status;
-            infoText = info;
-            repaint();
-        }
-        
-        void paint (juce::Graphics& g) override
-        {
-            auto r = getLocalBounds().toFloat();
-            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-            
-            if (lf)
-            {
-                auto text = lf->theme.text;
-                auto muted = lf->theme.textMuted;
-                
-                g.setColour (text);
-                g.setFont (juce::FontOptions (12.0f).withStyle ("Bold"));
-                g.drawText (statusText, r.removeFromTop (16), juce::Justification::centred);
-                
-                g.setColour (muted);
-                g.setFont (10.0f);
-                g.drawText (infoText, r, juce::Justification::centred);
-            }
-        }
-        
-    private:
-        juce::String statusText, infoText;
-    };
-
-    // Hint text for user guidance
-    class HintText : public juce::Component
-    {
-    public:
-        HintText() { setOpaque (false); }
-        
-        void setHint (const juce::String& hint)
-        {
-            hintText = hint;
-            repaint();
-        }
-        
-        void paint (juce::Graphics& g) override
-        {
-            auto r = getLocalBounds().toFloat();
-            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-            
-            if (lf)
-            {
-                auto muted = lf->theme.textMuted;
-                g.setColour (muted);
-                g.setFont (10.0f);
-                g.drawFittedText (hintText, r.toNearestInt(), juce::Justification::centredLeft, 3);
-            }
-        }
-        
-    private:
-        juce::String hintText;
+        CardBypassButton bypassBtn;
+        FieldLNF& lnfRef;
+        juce::NamedValueSet metrics;
+        std::vector<ParamDelta> params;
     };
 
     MachineCard toneCard, spaceCard, clarityCard;
@@ -302,12 +261,9 @@ private:
     void stopLearn (bool finalize);
     void beginPreview();
     void endPreview();
-    void toggleBypass();
 
     void timerCallback() override;
     void rebuildProposalCards();
     void applyPatches (float strength01);
     void paintTopBarBackground (juce::Graphics& g, juce::Rectangle<int> area);
 };
-
-
