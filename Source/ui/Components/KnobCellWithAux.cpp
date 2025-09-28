@@ -11,6 +11,9 @@ KnobCellWithAux::KnobCellWithAux(juce::Slider& mainKnob,
     // Let the children handle interactions
     setWantsKeyboardFocus (false);
     setInterceptsMouseClicks (false, true);
+    
+    // Enable hover effects and pointer cursor
+    setMouseCursor(juce::MouseCursor::PointingHandCursor);
 }
 
 void KnobCellWithAux::setMetrics (int knobPx, int valuePx, int gapPx)

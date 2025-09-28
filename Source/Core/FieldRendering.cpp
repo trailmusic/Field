@@ -187,6 +187,18 @@ namespace FieldRendering
         auto centre = bounds.getCentre();
         auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f;
         
+        // Check for hover state and apply raise effect
+        bool isHovered = slider.isMouseOver();
+        float hoverOffset = isHovered ? 2.0f : 0.0f;
+        float shadowIntensity = isHovered ? 0.8f : 0.4f;
+        
+        // Apply hover raise effect
+        if (isHovered)
+        {
+            bounds = bounds.translated(0, -hoverOffset);
+            centre = bounds.getCentre();
+        }
+        
         // Calculate the actual angle range (typically π to π + 2π for full rotation)
         auto angleRange = rotaryEndAngle - rotaryStartAngle;
         auto currentAngle = rotaryStartAngle + sliderPosProportional * angleRange;
@@ -194,6 +206,18 @@ namespace FieldRendering
         // Draw the track background (outer ring) - slightly smaller knob
         auto trackRadius = radius * 0.80f;  // Reduced from 0.85f to 0.80f
         auto trackThickness = 4.0f;  // Reduced from 6.0f to 4.0f (thinner slider)
+        
+        // Heavy drop shadow for hover effect
+        if (isHovered)
+        {
+            juce::DropShadow heavyShadow(theme.shadowDark.withAlpha(shadowIntensity), 16, {0, 4});
+            juce::DropShadow lightShadow(theme.shadowLight.withAlpha(shadowIntensity * 0.5f), 8, {0, 2});
+            
+            auto shadowBounds = juce::Rectangle<float>(centre.x - trackRadius, centre.y - trackRadius, 
+                                                    trackRadius * 2, trackRadius * 2);
+            heavyShadow.drawForRectangle(g, shadowBounds.getSmallestIntegerContainer());
+            lightShadow.drawForRectangle(g, shadowBounds.getSmallestIntegerContainer());
+        }
         
         // Track background
         g.setColour(theme.panel.darker(0.1f));
