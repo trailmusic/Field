@@ -4112,6 +4112,39 @@ if (auto* p = apvts.getParameter("width")) {
 # 
 # ================================================================================
 
+## 🎯 **RECENT SYSTEM UPDATES (January 2025)**
+
+### **PluginEditor Cleanup Initiative** 🔄 **IN PROGRESS**
+- **Audit Document**: Created comprehensive `PluginEditor_Audit.md` guide
+- **Component Extraction**: BypassButton, ButtonSwitch system moved to separate files
+- **Target Goals**: 70% size reduction, clean architecture, maintainable code
+- **Progress**: Phase 1 complete, Phase 2 in progress
+- **Files Created**: `BypassButton.h`, `ButtonSwitch.h`, `ButtonSwitchFactory.h`
+
+### **Button Switch System Completion** ✅ **COMPLETED**
+- **LookAndFeel Assignment**: All Button Switches now receive proper FieldLNF assignment
+- **Metallic Properties**: Changed from `MetallicKind::None` to proper metallic types (Band, XY, etc.)
+- **Icon System**: Complete icon integration for all Button Switch types
+- **Visual Consistency**: All Button Switches now match KnobCell styling (corner radius, shadows, borders)
+- **Code Cleanup**: Removed all debug logging and old comments
+
+### **Animation System Enhancement** ✅ **COMPLETED**
+- **Theme Integration**: Added comprehensive `AnimationTheme` to `FieldTheme.h`
+- **Bypass Button Animation**: Restored helpful blinking animation from Machine pane
+- **Performance Control**: Theme-controlled FPS and master animation toggle
+- **Consistent Timing**: Both main and Machine bypass buttons use same animation system
+
+### **File Cleanup** ✅ **COMPLETED**
+- **Removed Unused Files**: `WidthDesignerPanel.h/cpp`, `KnobCellMini.h`
+- **CMakeLists Cleanup**: Removed references to deleted files
+- **Code Cleanup**: Removed all debug logging, old comments, and empty blocks
+
+### **Theme System Expansion** ✅ **COMPLETED**
+- **Animation Colors**: Centralized blink colors and timing in theme
+- **Glow Effects**: Added glow color and intensity controls
+- **Performance Settings**: Master animation toggle and FPS control
+- **Reusability**: Theme system ready for future animation effects
+
 ## 🚀 Future Development Guidelines
 
 ### **Adding New Features**
@@ -4120,6 +4153,7 @@ if (auto* p = apvts.getParameter("width")) {
 3. Use `IDs::` namespace for all parameter IDs
 4. Test thoroughly in DAW environment
 5. Document any new architectural patterns
+6. **NEW**: Use the expanded theme system for animations and visual effects
 
 ### **Performance Optimization**
 1. Profile audio processing performance
