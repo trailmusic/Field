@@ -1203,7 +1203,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         colorModeButton.setTooltip (ThemeManager::getThemeName (order[idx]));
         // Propagate to components that cache green flag
         const bool greenNow = (order[idx] == ThemeVariant::Green);
-        spaceKnob.setGreenMode (greenNow);
         // OLD REVERB SYSTEM REMOVED
         if (auto* xyTab = panes->getXYTab()) {
             xyTab->setGreenMode(greenNow);
@@ -1374,7 +1373,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // Containers
     addAndMakeVisible (mainControlsContainer); mainControlsContainer.setTitle (""); mainControlsContainer.setShowBorder (false);
     addAndMakeVisible (panKnobContainer);      panKnobContainer.setTitle ("");     panKnobContainer.setShowBorder (true);
-    addAndMakeVisible (spaceKnobContainer);    spaceKnobContainer.setTitle (""); spaceKnobContainer.setShowBorder (true);
     addAndMakeVisible (volumeContainer);       volumeContainer.setTitle ("");   volumeContainer.setShowBorder (true);
     // Delay container will be removed; lay out directly on right side
     // addAndMakeVisible (delayContainer);        delayContainer.setTitle ("");     delayContainer.setShowBorder (true);
@@ -1522,22 +1520,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     tiltLinkSButton.setButtonText ("Tilt uses S");
     qLinkButton.setButtonText (""); // visual icon-only; state-driven paint
 
-    // Ducking advanced knobs (3 generics + custom ratio)
-    for (juce::Slider* slider : { &duckAttack, &duckRelease, &duckThreshold })
-    {
-        addAndMakeVisible (*slider);
-        slider->setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-        slider->setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-        constexpr float kStart = juce::MathConstants<float>::pi;
-        constexpr float kEnd   = juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi;
-        slider->setRotaryParameters (kStart, kEnd, true);
-        slider->setLookAndFeel (&lnf);
-        slider->addListener (this);
-    }
-    addAndMakeVisible (duckRatio);
-    duckRatio.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-    duckRatio.setLookAndFeel (&lnf);
-    duckRatio.addListener (this);
 
     // pan + reverb + ducking
     addAndMakeVisible (panKnob);      style (panKnob, true);     panKnob.setRange (-1.0, 1.0, 0.01); panKnob.setOverlayEnabled (false); panKnob.addListener (this);
@@ -1549,12 +1531,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     panKnobRight.setVisible (false);
 
     // Legacy Group 1 reverb depth knob is no longer used; keep hidden
-    style (spaceKnob, true); spaceKnob.addListener (this); spaceKnob.setVisible (false);
-    addAndMakeVisible (duckingKnob); style (duckingKnob);   duckingKnob.addListener (this);
 
     // values
     for (juce::Label* l : { &gainValue,&widthValue,&tiltValue,&monoValue,&hpValue,&lpValue,&satDriveValue,&satMixValue,&airValue,&bassValue,&scoopValue,&shelfShapeValue,&filterQValue,
-                             &panValue,&panValueLeft,&panValueRight,&spaceValue,&duckingValue,&duckAttackValue,&duckReleaseValue,&duckThresholdValue,&duckRatioValue,
+                             &panValue,&panValueLeft,&panValueRight,
                              &tiltFreqValue,&scoopFreqValue,&bassFreqValue,&airFreqValue,
                              &widthLoValue,&widthMidValue,&widthHiValue,&xoverLoValue,&xoverHiValue,
                              &rotationValue,&asymValue,
@@ -1604,10 +1584,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // slider names (for LNF knob labels)
     gain.setName ("GAIN"); width.setName ("WIDTH"); tilt.setName ("TILT"); monoHz.setName ("MONO");
     hpHz.setName ("HP Hz"); lpHz.setName ("LP Hz"); satDrive.setName ("DRIVE"); satMix.setName ("MIX");
-    air.setName ("AIR"); bass.setName ("BASS"); scoop.setName ("SCOOP"); spaceKnob.setName ("REVERB");
+    air.setName ("AIR"); bass.setName ("BASS"); scoop.setName ("SCOOP");
     shelfShapeS.setName ("Shape"); filterQ.setName ("Q");
-    duckingKnob.setName ("DUCK"); panKnob.setName ("PAN"); panKnobLeft.setName ("PAN L"); panKnobRight.setName ("PAN R");
-    duckAttack.setName ("ATT"); duckRelease.setName ("REL"); duckThreshold.setName ("THR"); duckRatio.setName ("RAT");
+    panKnob.setName ("PAN"); panKnobLeft.setName ("PAN L"); panKnobRight.setName ("PAN R");
     tiltFreqSlider.setName ("TILT F"); scoopFreqSlider.setName ("SCOOP F"); bassFreqSlider.setName ("BASS F"); airFreqSlider.setName ("AIR F");
     // Imaging knob labels
     widthLo.setName ("W LO"); widthMid.setName ("W MID"); widthHi.setName ("W HI");
@@ -1760,8 +1739,6 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     sliderValueChanged (&panKnob);
     sliderValueChanged (&panKnobLeft);
     sliderValueChanged (&panKnobRight);
-    sliderValueChanged (&spaceKnob);
-    sliderValueChanged (&duckingKnob);
     sliderValueChanged (&tiltFreqSlider);
     sliderValueChanged (&scoopFreqSlider);
     sliderValueChanged (&bassFreqSlider);
@@ -1951,12 +1928,6 @@ void MyPluginAudioProcessorEditor::buildCells()
     if (!satMixCell)  satMixCell  = std::make_unique<KnobCell>(satMix,   satMixValue,   "MIX");
     if (!monoCell)    monoCell    = std::make_unique<KnobCell>(monoHz,   monoValue,     "MONO");
     // Legacy spaceCell (REVERB) removed from Group 1 row; Reverb amount lives in Group 2 as WET
-    if (!spaceCell)    spaceCell    = std::make_unique<KnobCell>(spaceKnob,    spaceValue,    "REVERB");
-    if (!duckCell)     duckCell     = std::make_unique<KnobCell>(duckingKnob,  duckingValue,  "DUCK");
-    if (!duckAttCell)  duckAttCell  = std::make_unique<KnobCell>(duckAttack,   duckAttackValue,   "ATT");
-    if (!duckRelCell)  duckRelCell  = std::make_unique<KnobCell>(duckRelease,  duckReleaseValue,  "REL");
-    if (!duckThrCell)  duckThrCell  = std::make_unique<KnobCell>(duckThreshold,duckThresholdValue,"THR");
-    if (!duckRatCell)  duckRatCell  = std::make_unique<KnobCell>(duckRatio,    duckRatioValue,    "RAT");
 
     if (!bassCell)     bassCell     = std::make_unique<KnobCell>(bass,  bassValue,  "BASS");
     if (!airCell)      airCell      = std::make_unique<KnobCell>(air,   airValue,   "AIR");
@@ -3128,18 +3099,8 @@ void MyPluginAudioProcessorEditor::performLayout()
                 kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
                 kc->setValueLabelGap (labelGap2);
             };
-            setDuckMetrics (duckCell.get());
-            setDuckMetrics (duckAttCell.get());
-            setDuckMetrics (duckRelCell.get());
-            setDuckMetrics (duckThrCell.get());
-            setDuckMetrics (duckRatCell.get());
             if (distanceCell) { ensureAdd (distanceCell.get()); items.add (juce::GridItem (*distanceCell).withArea (4, 1)); }
             ensureAdd (reverbFreezeCell.get()); items.add (juce::GridItem (*reverbFreezeCell).withArea (4, 2));
-            if (duckCell)    { ensureAdd (duckCell.get());    items.add (juce::GridItem (*duckCell)   .withArea (4, 3)); }
-            if (duckAttCell) { ensureAdd (duckAttCell.get()); items.add (juce::GridItem (*duckAttCell).withArea (4, 4)); }
-            if (duckRelCell) { ensureAdd (duckRelCell.get()); items.add (juce::GridItem (*duckRelCell).withArea (4, 5)); }
-            if (duckThrCell) { ensureAdd (duckThrCell.get()); items.add (juce::GridItem (*duckThrCell).withArea (4, 6)); }
-            if (duckRatCell) { ensureAdd (duckRatCell.get()); items.add (juce::GridItem (*duckRatCell).withArea (4, 7)); }
             if (dreqXHiCell) { ensureAdd (dreqXHiCell.get()); items.add (juce::GridItem (*dreqXHiCell).withArea (4, 8)); }
             reverbGrid.items = std::move (items);
 
@@ -3449,21 +3410,7 @@ void MyPluginAudioProcessorEditor::timerCallback()
     // Additional timer logic that needs to stay in PluginEditor
     if (! isShowing()) return;
     // history removed
-    // Update ducking meter overlay on knob; idle when Reverb wet is zero (Reverb Engine)
-    float grDb = proc.getReverbDuckGrDb();
-    bool reverbEnabled = false;
-    float reverbWet = 0.0f;
-    if (auto* pOn  = proc.apvts.getRawParameterValue (ReverbIDs::enabled))    reverbEnabled = pOn->load() > 0.5f;
-    if (auto* pWet = proc.apvts.getRawParameterValue (ReverbIDs::wetMix01))   reverbWet     = pWet->load();
-    if (!reverbEnabled || reverbWet <= 0.0001f) grDb = 0.0f;
-    duckingKnob.setCurrentGrDb (grDb);
-
-    // Grey-out ATT/REL/THR/RAT when DuckDepthDb=0 or Reverb inactive; also grey the Algo switch
-    const bool reverbActive = reverbEnabled && (reverbWet > 0.0001f);
-    float duckDepthDb = 0.0f;
-    if (auto* pDepth = proc.apvts.getRawParameterValue (ReverbIDs::duckDepthDb)) duckDepthDb = pDepth->load();
-    const bool duckActive = (duckDepthDb > 0.0001f) && reverbActive;
-    // OLD REVERB SYSTEM REMOVED
+    // OLD REVERB SYSTEM REMOVED - Ducking now handled by new Reverb system
     
     // Update motion panel visual state with sequence tracking and idle fallback
     if (panes) {
@@ -3490,18 +3437,7 @@ void MyPluginAudioProcessorEditor::timerCallback()
             panes->setMotionVisualState(visualState);
         }
     }
-    duckAttack.setMuted (!duckActive);
-    duckRelease.setMuted(!duckActive);
-    duckThreshold.setMuted(!duckActive);
-    duckRatio.setMuted(!duckActive);
-    // DUCK knob follows overall duckActive (grey when depth=0 or reverb=0)
-    duckingKnob.setMuted (!duckActive);
-    // OLD REVERB SYSTEM REMOVED
-    duckingKnob.repaint();
-    duckAttack.repaint();
-    duckRelease.repaint();
-    duckThreshold.repaint();
-    duckRatio.repaint();
+    // OLD REVERB SYSTEM REMOVED - Ducking now handled by new Reverb system
     if (auto* xyTab = panes->getXYTab()) {
         xyTab->repaint();
     }
@@ -3642,7 +3578,6 @@ void MyPluginAudioProcessorEditor::updateMutedKnobVisuals()
     setMutedIf (air,     std::abs ((float) air.getValue()) < 0.0001f);
     setMutedIf (bass,    std::abs ((float) bass.getValue()) < 0.0001f);
     setMutedIf (scoop,   std::abs ((float) scoop.getValue()) < 0.0001f);
-    setMutedIf (spaceKnob, std::abs ((float) spaceKnob.getValue()) < 0.0001f);
     setMutedIf (panKnob,  std::abs ((float) panKnob.getValue())  < 0.0001f);
     setMutedIf (satDrive, std::abs ((float) satDrive.getValue()) < 0.0001f);
     // Mix: only greyed when 0% (default is 100% but should NOT be greyed)
@@ -3732,8 +3667,6 @@ void MyPluginAudioProcessorEditor::saveCurrentState()
     s["bass_db"]  = (float) bass.getValue();
     s["scoop"]    = (float) scoop.getValue();
     s["pan"]      = (float) panKnob.getValue();
-    s["depth"]    = (float) spaceKnob.getValue();
-    s["ducking"]  = (float) duckingKnob.getValue();
     if (isStateA) stateA = std::move (s); else stateB = std::move (s);
 }
 
@@ -3756,8 +3689,6 @@ void MyPluginAudioProcessorEditor::loadState (bool A)
     if (auto it = s.find ("bass_db");  it != s.end()) applyStateToSlider (bass, it->second);
     if (auto it = s.find ("scoop");    it != s.end()) applyStateToSlider (scoop, it->second);
     if (auto it = s.find ("pan");      it != s.end()) applyStateToSlider (panKnob, it->second);
-    if (auto it = s.find ("depth");    it != s.end()) applyStateToSlider (spaceKnob, it->second);
-    if (auto it = s.find ("ducking");  it != s.end()) applyStateToSlider (duckingKnob, it->second);
 }
 
 void MyPluginAudioProcessorEditor::toggleABState()
@@ -3782,7 +3713,6 @@ void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
             if (auto* xyPad = xyTab->getXYPad())
             {
                 xyPad->setPanValue   ((float) panKnob.getValue());
-                xyPad->setSpaceValue ((float) spaceKnob.getValue());
                 xyPad->setWidthValue ((float) width.getValue());
                 xyPad->setTiltValue  ((float) tilt .getValue());
                 xyPad->setHPValue    ((float) hpHz .getValue());

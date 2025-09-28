@@ -397,135 +397,8 @@ public:
         juce::String knobLabel;
     };
     
-    class DuckingSlider : public juce::Slider
-    {
-    public:
-        DuckingSlider() : Slider(RotaryHorizontalVerticalDrag, NoTextBox) {}
-        void mouseEnter (const juce::MouseEvent&) override { hovered = true; repaint(); }
-        void mouseExit  (const juce::MouseEvent&) override { hovered = false; repaint(); }
-        void mouseDown  (const juce::MouseEvent& e) override { active = true;  Slider::mouseDown(e); repaint(); }
-        void mouseUp    (const juce::MouseEvent& e) override { active = false; Slider::mouseUp(e);   repaint(); }
 
-        void paint(juce::Graphics& g) override
-        {
-            auto b = getLocalBounds().toFloat().reduced(2.0f);
-            if (hovered || active) b = b.expanded(1.5f);
-            // base rotary
-            ui::paintRotaryWithLNF(g, *this, b);
 
-            // Secondary arc for current ducking amount (gain reduction)
-            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-            {
-                const float grDb = currentGrDb;                 // 0..~24
-                const float maxDb = 24.0f;                      // visualize up to 24 dB
-                const float t = juce::jlimit (0.0f, 1.0f, grDb / maxDb);
-                if (t > 0.001f)
-                {
-                    const float start = juce::MathConstants<float>::pi;
-                    const float end   = start + juce::MathConstants<float>::twoPi * t;
-                    juce::Path arc;
-                    auto ring = b.reduced (b.getWidth() * 0.06f);
-                    arc.addArc (ring.getX(), ring.getY(), ring.getWidth(), ring.getHeight(), start, end, true);
-                    // use a secondary accent (textMuted) for contrast
-                    g.setColour (lf->theme.textMuted.withAlpha (0.85f));
-                    g.strokePath (arc, juce::PathStrokeType (3.0f));
-                }
-
-                // Muted overlay ring to indicate parent (Reverb) off state controlling this knob
-                if (muted)
-                {
-                    auto inner = b.reduced (6.0f); // match rotary painter's reduced bounds for tight ring
-                    g.setColour (lf->theme.panel.withAlpha (0.35f));
-                    g.fillEllipse (inner);
-                    g.setColour (lf->theme.textMuted.withAlpha (0.85f));
-                    g.drawEllipse (inner, 1.5f);
-                }
-            }
-        }
-        void setCurrentGrDb (float db) { currentGrDb = db; }
-        void setMuted (bool m) { muted = m; repaint(); }
-    private:
-        bool hovered = false, active = false;
-        float currentGrDb = 0.0f;
-        bool muted = false;
-    };
-
-    // Generic duck parameter slider that supports a muted overlay state
-    class DuckParamSlider : public juce::Slider
-    {
-    public:
-        DuckParamSlider() : juce::Slider(RotaryHorizontalVerticalDrag, NoTextBox) {}
-        void setMuted (bool m) { muted = m; repaint(); }
-        bool isMuted() const { return muted; }
-
-        void paint (juce::Graphics& g) override
-        {
-            auto r = getLocalBounds().toFloat().reduced(2.0f);
-            ui::paintRotaryWithLNF(g, *this, r);
-            if (muted)
-            {
-                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                {
-                    auto inner = r.reduced (6.0f); // align with LNF rotary bounds for no-gap ring
-                    // Soft wash to grey-out arcs
-                    g.setColour (lf->theme.panel.withAlpha (0.35f));
-                    g.fillEllipse (inner);
-                    // Thin muted ring on top for clarity
-                    g.setColour (lf->theme.textMuted.withAlpha (0.85f));
-                    g.drawEllipse (inner, 1.5f);
-                }
-            }
-        }
-    private:
-        bool muted { false };
-    };
-
-    // Duck ratio slider with stepped snapping and custom tick dots for allowed ratios only
-    class DuckRatioSlider : public juce::Slider
-    {
-    public:
-        DuckRatioSlider() : juce::Slider(RotaryHorizontalVerticalDrag, NoTextBox)
-        {
-            setMouseDragSensitivity(100);
-        }
-        void setMuted (bool m) { muted = m; repaint(); }
-        bool isMuted() const { return muted; }
-
-        double snapValue (double attemptedValue, DragMode) override
-        {
-            // Nearest value from allowed ratios
-            double best = allowed[0];
-            double bestErr = std::abs(attemptedValue - best);
-            for (double v : allowed)
-            {
-                const double err = std::abs(attemptedValue - v);
-                if (err < bestErr) { bestErr = err; best = v; }
-            }
-            return best;
-        }
-
-        void paint (juce::Graphics& g) override
-        {
-            auto r = getLocalBounds().toFloat().reduced(2.0f);
-            // Use FieldLNF rotary rendering (single source of truth for quarter ticks)
-            ui::paintRotaryWithLNF(g, *this, r);
-            if (muted)
-            {
-                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                {
-                    auto inner = r.reduced (6.0f); // align with LNF rotary bounds for no-gap ring
-                    g.setColour (lf->theme.panel.withAlpha (0.35f));
-                    g.fillEllipse (inner);
-                    g.setColour (lf->theme.textMuted.withAlpha (0.85f));
-                    g.drawEllipse (inner, 1.5f);
-                }
-            }
-        }
-
-    private:
-        std::array<double,5> allowed { 2.0, 4.0, 8.0, 12.0, 20.0 };
-        bool muted { false };
-    };
     
     // Lightweight container cell for non-knob components (e.g., switches)
     class SwitchCell : public juce::Component
@@ -1016,9 +889,6 @@ public:
     // SHUF sliders moved to Band tab
     PanSlider    panKnob;
     PanSlider    panKnobLeft, panKnobRight;  // split mode pan
-    DuckingSlider duckingKnob;
-    DuckParamSlider duckAttack, duckRelease, duckThreshold; // Ducking advanced (UI knobs)
-    DuckRatioSlider duckRatio;
     juce::ComboBox osSelect;
 
     // Old preset combo & save button removed
@@ -1087,20 +957,7 @@ private:
     // Global Wet Only (Kill Dry) UI toggle (no param binding per instructions)
     juce::ToggleButton wetOnlyToggle;
 
-    // Reverb controls
-    class SpaceKnob : public juce::Slider
-    {
-    public:
-        SpaceKnob() : juce::Slider(RotaryHorizontalVerticalDrag, NoTextBox) {}
-        void setGreenMode (bool) {}
-        void paint(juce::Graphics& g) override
-        {
-            auto bounds = getLocalBounds().toFloat().reduced(2.0f);
-            ui::paintRotaryWithLNF(g, *this, bounds);
-        }
-    };
 public:
-    SpaceKnob spaceKnob;
 public:
     // Placeholder for mono slope switch definition (defined after SpaceAlgorithmSwitch)
     class MonoSlopeSwitch;
@@ -1213,7 +1070,7 @@ public:
     
     // 3D Vertical Sliders for Input, Output, Mix
     VerticalSlider3D inputSlider, outputSlider, mixSlider;
-    ControlContainer spaceKnobContainer, panKnobContainer;
+    ControlContainer panKnobContainer;
     
     // Width grouping (Image row): large WIDTH + small W LO/MID/HI
     ControlContainer widthGroupContainer;
@@ -1244,8 +1101,7 @@ public:
     juce::Label gainValue, widthValue, tiltValue, monoValue, hpValue, lpValue, satDriveValue, satMixValue, airValue, bassValue, scoopValue;
     juce::Label shelfShapeValue, filterQValue;
     juce::Label monoSlopeName, monoAudName;
-    juce::Label panValue, panValueLeft, panValueRight, spaceValue, duckingValue;
-    juce::Label duckAttackValue, duckReleaseValue, duckThresholdValue, duckRatioValue;
+    juce::Label panValue, panValueLeft, panValueRight;
     juce::Label tiltFreqValue, scoopFreqValue, bassFreqValue, airFreqValue;
     juce::Label widthLoValue, widthMidValue, widthHiValue, xoverLoValue, xoverHiValue, rotationValue, asymValue;
     juce::Label delayTimeValue, delayFeedbackValue, delayWetValue, delaySpreadValue, delayWidthValue, delayModRateValue, delayModDepthValue, delayWowflutterValue, delayJitterValue, delayPreDelayValue;
@@ -1264,7 +1120,7 @@ public:
     
     // Text labels
     juce::Label gainL, widthL, tiltL, monoL, hpL, lpL, satDriveL, satMixL;
-    juce::Label panL, spaceL, duckingL;
+    juce::Label panL;
 
     // Row 1 cells
     std::unique_ptr<KnobCell> panCell;
@@ -1280,12 +1136,6 @@ public:
     std::unique_ptr<KnobCell> lpCell;
 
     // Reverb/Duck cells
-    std::unique_ptr<KnobCell> spaceCell;
-    std::unique_ptr<KnobCell> duckCell;
-    std::unique_ptr<KnobCell> duckAttCell;
-    std::unique_ptr<KnobCell> duckRelCell;
-    std::unique_ptr<KnobCell> duckThrCell;
-    std::unique_ptr<KnobCell> duckRatCell;
 
     // Imaging (row 4) cells
     std::unique_ptr<KnobCell> xoverLoCell;

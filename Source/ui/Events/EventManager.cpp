@@ -190,7 +190,6 @@ void EventManager::handleButtonClicked(juce::Button* button)
         button->setTooltip(ThemeManager::getThemeName(order[idx]));
         // Propagate to components that cache green flag
         const bool greenNow = (order[idx] == ThemeVariant::Green);
-        editor.spaceKnob.setGreenMode(greenNow);
         if (auto* xyTab = editor.panes->getXYTab()) {
             xyTab->setGreenMode(greenNow);
         }
@@ -378,17 +377,6 @@ void EventManager::handleSliderValueChanged(juce::Slider* slider)
                                           (float)juce::jmap(editor.panKnobRight.getValue(), -1.0, 1.0, 0.0, 100.0));
         editor.panKnob.repaint();
     }
-    else if (slider == &editor.spaceKnob)   { 
-        set(editor.spaceValue, juce::String(editor.spaceKnob.getValue(), 2)); 
-        if (auto* xyTab = editor.panes->getXYTab()) {
-            xyTab->setSpaceValue((float)editor.spaceKnob.getValue());
-        }
-    }
-    else if (slider == &editor.duckingKnob) set(editor.duckingValue, juce::String(editor.duckingKnob.getValue(), 1));
-    else if (slider == &editor.duckAttack)  set(editor.duckAttackValue, juce::String(editor.duckAttack.getValue(), 1));
-    else if (slider == &editor.duckRelease) set(editor.duckReleaseValue, juce::String(editor.duckRelease.getValue(), 1));
-    else if (slider == &editor.duckThreshold) set(editor.duckThresholdValue, juce::String(editor.duckThreshold.getValue(), 1));
-    else if (slider == &editor.duckRatio)  set(editor.duckRatioValue, juce::String(editor.duckRatio.getValue(), 1));
     // duckKnee doesn't exist - removed from old reverb system
     else if (slider == &editor.widthLo)     set(editor.widthLoValue, juce::String(editor.widthLo.getValue(), 1));
     else if (slider == &editor.widthMid)    set(editor.widthMidValue, juce::String(editor.widthMid.getValue(), 1));

@@ -135,26 +135,8 @@ void AttachmentManager::attachMainControlsParameters()
         sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::scoop, editor.scoop));
     });
     
-    // Reverb parameters
-    attachParameterSafely(ParameterIDs::duckDepthDb, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::duckDepthDb, editor.duckingKnob));
-    });
-    
-    attachParameterSafely(ParameterIDs::duckAtkMs, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::duckAtkMs, editor.duckAttack));
-    });
-    
-    attachParameterSafely(ParameterIDs::duckRelMs, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::duckRelMs, editor.duckRelease));
-    });
-    
-    attachParameterSafely(ParameterIDs::duckThrDb, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::duckThrDb, editor.duckThreshold));
-    });
-    
-    attachParameterSafely(ParameterIDs::duckRatio, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::duckRatio, editor.duckRatio));
-    });
+    // Reverb parameters (old system removed)
+    // Ducking and space parameters were part of the old reverb system and have been removed
     
     // Panning
     attachParameterSafely(ParameterIDs::pan, [&]() {
@@ -169,9 +151,8 @@ void AttachmentManager::attachMainControlsParameters()
         sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::panR, editor.panKnobRight));
     });
     
-    attachParameterSafely(ParameterIDs::depth, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::depth, editor.spaceKnob));
-    });
+    // Space parameter (old system removed)
+    // The space parameter was part of the old reverb system and has been removed
 }
 
 void AttachmentManager::attachEQParameters()
