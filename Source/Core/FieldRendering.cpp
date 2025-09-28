@@ -179,28 +179,87 @@ namespace FieldRendering
         g.drawRoundedRectangle(r, cr, 1.0f);
     }
 
-    // Slider rendering methods (simplified - full implementation would be much longer)
+    // Sophisticated rotary slider rendering with tick system and tracks
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional,
                          float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider, const FieldTheme& theme)
     {
-        // Simplified implementation - full version would include all the complex rotary rendering
         auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat();
+        auto centre = bounds.getCentre();
+        auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f;
         
-        // Basic rotary slider rendering
+        // Calculate the actual angle range (typically π to π + 2π for full rotation)
+        auto angleRange = rotaryEndAngle - rotaryStartAngle;
+        auto currentAngle = rotaryStartAngle + sliderPosProportional * angleRange;
+        
+        // Draw the track background (outer ring)
+        auto trackRadius = radius * 0.85f;
+        auto trackThickness = 6.0f;
+        
+        // Track background
+        g.setColour(theme.panel.darker(0.1f));
+        g.drawEllipse(centre.x - trackRadius, centre.y - trackRadius, 
+                     trackRadius * 2, trackRadius * 2, trackThickness);
+        
+        // Track highlight
+        g.setColour(theme.hl);
+        g.drawEllipse(centre.x - trackRadius, centre.y - trackRadius, 
+                     trackRadius * 2, trackRadius * 2, 1.0f);
+        
+        // Draw quarter marks (12, 3, 6, 9 o'clock positions)
+        // Starting at 6 o'clock (π), then 9 (3π/2), 12 (2π), 3 (π/2)
+        std::vector<float> quarterAngles = {
+            juce::MathConstants<float>::pi,                    // 6 o'clock
+            juce::MathConstants<float>::pi * 1.5f,            // 9 o'clock  
+            juce::MathConstants<float>::twoPi,                // 12 o'clock
+            juce::MathConstants<float>::halfPi                // 3 o'clock
+        };
+        
+        
+        for (auto angle : quarterAngles)
+        {
+            // Place ticks just outside the track, but within the knob bounds
+            auto tickRadius = trackRadius + 4.0f;  // Reduced from +8.0f to +4.0f
+            auto tickX = centre.x + tickRadius * std::cos(angle - juce::MathConstants<float>::halfPi);
+            auto tickY = centre.y + tickRadius * std::sin(angle - juce::MathConstants<float>::halfPi);
+            
+            // Quarter tick dots - accent color dots on the knob arc
+            g.setColour(theme.accent);
+            g.fillEllipse(tickX - 2, tickY - 2, 4, 4);  // Smaller size: 4x4 instead of 16x16
+        }
+        
+        // Draw the value arc (filled portion)
+        auto valueAngle = rotaryStartAngle + sliderPosProportional * angleRange;
+        juce::Path valueArc;
+        valueArc.addCentredArc(centre.x, centre.y, trackRadius, trackRadius,
+                             0.0f, rotaryStartAngle, valueAngle, true);
+        
+        // Value arc with gradient
+        juce::ColourGradient gradient(theme.accent, centre.x, centre.y,
+                                     theme.accent.brighter(0.3f), 
+                                     centre.x + trackRadius * 0.5f, centre.y + trackRadius * 0.5f, true);
+        g.setGradientFill(gradient);
+        g.strokePath(valueArc, juce::PathStrokeType(trackThickness));
+        
+        // Draw the thumb (current position indicator)
+        auto thumbRadius = trackRadius;
+        auto thumbX = centre.x + thumbRadius * std::cos(currentAngle - juce::MathConstants<float>::halfPi);
+        auto thumbY = centre.y + thumbRadius * std::sin(currentAngle - juce::MathConstants<float>::halfPi);
+        
+        // Thumb shadow
+        g.setColour(theme.shadowDark.withAlpha(0.3f));
+        g.fillEllipse(thumbX - 6, thumbY - 6, 12, 12);
+        
+        // Thumb body
+        g.setColour(theme.accent);
+        g.fillEllipse(thumbX - 5, thumbY - 5, 10, 10);
+        
+        // Thumb highlight
+        g.setColour(theme.accent.brighter(0.4f));
+        g.fillEllipse(thumbX - 3, thumbY - 3, 6, 6);
+        
+        // Center dot
         g.setColour(theme.panel);
-        g.fillEllipse(bounds.reduced(4.0f));
-        
-        g.setColour(theme.accent);
-        g.drawEllipse(bounds.reduced(4.0f), 2.0f);
-        
-        // Draw thumb
-        auto thumbAngle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
-        auto thumbRadius = bounds.getWidth() * 0.3f;
-        auto thumbX = bounds.getCentreX() + thumbRadius * std::cos(thumbAngle - juce::MathConstants<float>::halfPi);
-        auto thumbY = bounds.getCentreY() + thumbRadius * std::sin(thumbAngle - juce::MathConstants<float>::halfPi);
-        
-        g.setColour(theme.accent);
-        g.fillEllipse(thumbX - 4, thumbY - 4, 8, 8);
+        g.fillEllipse(centre.x - 2, centre.y - 2, 4, 4);
     }
 
     void drawLinearSlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional,
@@ -367,8 +426,11 @@ namespace FieldRendering
 
     void drawKnobLabel(juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& text, const FieldTheme& theme)
     {
-        g.setColour(theme.textMuted);
-        g.setFont(12.0f);
+        if (text.isEmpty()) return;
+        
+        // Simple text without background gradient
+        g.setColour(theme.text);
+        g.setFont(juce::Font(juce::FontOptions(11.0f).withStyle("Bold")));
         g.drawText(text, bounds, juce::Justification::centred);
     }
 

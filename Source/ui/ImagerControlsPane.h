@@ -54,6 +54,9 @@ private:
         k.setRotaryParameters (juce::MathConstants<float>::pi,
                                juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
                                true);
+        // Assign FieldLookAndFeel to get custom tick rendering
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            k.setLookAndFeel(lf);
     }
     void makeCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid)
     {
@@ -71,6 +74,7 @@ private:
         // Band pane styling: metallic blue
         cell->getProperties().set ("metallic", true);
         cell->getProperties().set ("bandMetallic", true);
+        cell->getProperties().set ("caption", cap);
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
         ownedCells.emplace_back (std::move (cell));

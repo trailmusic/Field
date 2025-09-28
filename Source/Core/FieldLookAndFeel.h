@@ -115,8 +115,8 @@ public:
     }
 
     void drawPopupMenuItem(juce::Graphics& g, const juce::Rectangle<int>& area,
-                          bool isSeparator, bool isActive, bool isHighlighted, bool isTicked,
-                          bool hasSubMenu, const juce::String& text, const juce::String& shortcutKeyText,
+                             bool isSeparator, bool isActive, bool isHighlighted, bool isTicked,
+                             bool hasSubMenu, const juce::String& text, const juce::String& shortcutKeyText,
                           const juce::Drawable* icon, const juce::Colour* textColour) override
     {
         FieldRendering::drawPopupMenuItem(g, area, isSeparator, isActive, isHighlighted, isTicked,

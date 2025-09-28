@@ -59,6 +59,13 @@ void PhaseTab::styleKnob (juce::Slider& k)
     k.setRotaryParameters (juce::MathConstants<float>::pi,
                            juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
                            true);
+    // Assign FieldLookAndFeel to get custom tick rendering
+    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+    {
+        k.setLookAndFeel(lf);
+        // DEBUG: Force a repaint to see if LookAndFeel is working
+        k.repaint();
+    }
 }
 
 void PhaseTab::makeCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid)
@@ -76,6 +83,7 @@ void PhaseTab::makeCell (juce::Slider& s, juce::Label& v, const juce::String& ca
     // Phase tab styling: metallic blue
     cell->getProperties().set ("metallic", true);
     cell->getProperties().set ("phaseMetallic", true);
+    cell->getProperties().set ("caption", cap);
     
     // Phase controls use metallic blue styling
     addAndMakeVisible (*cell);

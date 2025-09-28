@@ -76,13 +76,16 @@ public:
 private:
     void buildControls()
     {
-        auto styleKnob = [] (juce::Slider& k)
+        auto styleKnob = [this] (juce::Slider& k)
         {
             k.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
             k.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
             k.setRotaryParameters (juce::MathConstants<float>::pi,
                                    juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
                                    true);
+            // Assign FieldLookAndFeel to get custom tick rendering
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                k.setLookAndFeel(lf);
         };
 
         // Create switches and combos first
@@ -156,6 +159,7 @@ private:
             // Styling: Delay metallic using new enum-based system
             cell->getProperties().set ("delayThemeBorderTextGrey", true);
             setAreaMetallicForCell (*cell, MetallicKind::Delay);
+            cell->getProperties().set ("caption", cap);
             addAndMakeVisible (*cell);
             knobCells.emplace_back (cell.get());
             ownedCells.emplace_back (std::move (cell));
