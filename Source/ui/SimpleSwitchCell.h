@@ -117,10 +117,17 @@ public:
                 auto cellBounds = getLocalBounds().reduced(3);
                 button->setBounds(cellBounds);
                 
+                // CRITICAL: Assign FieldLNF LookAndFeel to the button so it uses our custom rendering
+                if (auto* fieldLnf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                {
+                    button->setLookAndFeel(fieldLnf);
+                }
+                
                 // Let JUCE handle the complete button rendering (background + text)
                 // The FieldLookAndFeel::drawButtonBackground will handle the metallic background
                 // and JUCE will automatically call drawButtonText for the text
-                return; // Don't draw our own background for metallic buttons
+                // Don't draw our own background - let the button render itself
+                return; // Let the button handle its own rendering
             }
             else if (auto* combo = dynamic_cast<juce::ComboBox*>(&child))
             {
