@@ -355,7 +355,7 @@ namespace FieldRendering
             
             // Create recessed button window effect for metallic ComboBoxes
             // Make it shorter to avoid blocking the title
-            auto buttonWindow = r.reduced(4.0f, 8.0f); // More reduction on top to avoid title
+            auto buttonWindow = r.reduced(4.0f, 12.0f); // More reduction on top and bottom to avoid title
             g.setColour(theme.panel.darker(0.3f));
             g.fillRoundedRectangle(buttonWindow, 3.0f);
             
