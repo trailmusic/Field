@@ -566,6 +566,10 @@ private:
         
         styleKnob (qS); qS.setName (qCap);
         
+        // CRITICAL: Assign FieldLNF LookAndFeel to the link button BEFORE setting metallic properties
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            linkB.setLookAndFeel(lf);
+        
         // Style HP/LP Q sliders as linear horizontal
         for (auto* slider : { &hpQS, &lpQS })
         {
