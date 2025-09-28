@@ -191,9 +191,18 @@ namespace FieldRendering
         auto angleRange = rotaryEndAngle - rotaryStartAngle;
         auto currentAngle = rotaryStartAngle + sliderPosProportional * angleRange;
         
-        // Draw the track background (outer ring)
-        auto trackRadius = radius * 0.85f;
-        auto trackThickness = 6.0f;
+        // Draw the track background (outer ring) - slightly smaller knob
+        auto trackRadius = radius * 0.80f;  // Reduced from 0.85f to 0.80f
+        auto trackThickness = 4.0f;  // Reduced from 6.0f to 4.0f (thinner slider)
+        
+        // Add top-down gradient background for the knob (smaller to not cover names)
+        auto gradientRadius = trackRadius - 8.0f;  // Smaller gradient area
+        auto knobBounds = juce::Rectangle<float>(centre.x - gradientRadius, centre.y - gradientRadius, 
+                                                gradientRadius * 2, gradientRadius * 2);
+        juce::ColourGradient knobGradient(theme.panel.brighter(0.2f), knobBounds.getX(), knobBounds.getY(),
+                                         theme.panel.darker(0.1f), knobBounds.getX(), knobBounds.getBottom(), false);
+        g.setGradientFill(knobGradient);
+        g.fillEllipse(knobBounds);
         
         // Track background
         g.setColour(theme.panel.darker(0.1f));
@@ -217,8 +226,8 @@ namespace FieldRendering
         
         for (auto angle : quarterAngles)
         {
-            // Place ticks just outside the track, but within the knob bounds
-            auto tickRadius = trackRadius + 4.0f;  // Reduced from +8.0f to +4.0f
+            // Place ticks in the center of the track
+            auto tickRadius = trackRadius;  // Center of the track
             auto tickX = centre.x + tickRadius * std::cos(angle - juce::MathConstants<float>::halfPi);
             auto tickY = centre.y + tickRadius * std::sin(angle - juce::MathConstants<float>::halfPi);
             
@@ -247,19 +256,15 @@ namespace FieldRendering
         
         // Thumb shadow
         g.setColour(theme.shadowDark.withAlpha(0.3f));
-        g.fillEllipse(thumbX - 6, thumbY - 6, 12, 12);
+        g.fillEllipse(thumbX - 4, thumbY - 4, 8, 8);  // Reduced from 12x12 to 8x8
         
         // Thumb body
         g.setColour(theme.accent);
-        g.fillEllipse(thumbX - 5, thumbY - 5, 10, 10);
+        g.fillEllipse(thumbX - 3, thumbY - 3, 6, 6);  // Reduced from 10x10 to 6x6
         
         // Thumb highlight
         g.setColour(theme.accent.brighter(0.4f));
-        g.fillEllipse(thumbX - 3, thumbY - 3, 6, 6);
-        
-        // Center dot
-        g.setColour(theme.panel);
-        g.fillEllipse(centre.x - 2, centre.y - 2, 4, 4);
+        g.fillEllipse(thumbX - 2, thumbY - 2, 4, 4);  // Reduced from 6x6 to 4x4
     }
 
     void drawLinearSlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional,
