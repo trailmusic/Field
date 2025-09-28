@@ -209,6 +209,16 @@ void PhaseTab::makeComboCell (juce::ComboBox& c, const juce::String& cap, const 
     // Apply metallic properties to the ComboBox itself, not the wrapper
     c.getProperties().set ("metallic", true);
     c.getProperties().set ("phaseMetallic", true);
+    
+    // Add change listener to re-apply text wrapping when selection changes
+    c.onChange = [&c]() {
+        // Re-apply text wrapping when ComboBox selection changes
+        if (auto* lf = dynamic_cast<FieldLNF*>(&c.getLookAndFeel())) {
+            // Force re-positioning of ComboBox text to apply wrapping
+            c.repaint();
+        }
+    };
+    
     auto cell = std::make_unique<SimpleSwitchCell> (c);
     cell->setCaption (cap);
     
