@@ -402,12 +402,12 @@ namespace FieldRendering
         // Enable text wrapping for two-word labels
         label.setJustificationType(juce::Justification::centred);
         
-        // Check if text contains spaces or hyphens (two words) and enable wrapping
+        // Check if text contains spaces (two words) and enable wrapping
         juce::String text = label.getText();
-        if (text.contains(" ") || text.contains("-"))
+        if (text.contains(" "))
         {
-            // Split text into two words using both spaces and hyphens as separators
-            juce::StringArray words = juce::StringArray::fromTokens(text, " -", "");
+            // Split text into two words using spaces as separators
+            juce::StringArray words = juce::StringArray::fromTokens(text, " ", "");
             if (words.size() >= 2)
             {
                 // Create two-line text with line break
