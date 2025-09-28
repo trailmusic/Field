@@ -342,11 +342,25 @@ namespace FieldRendering
     void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown,
                      int buttonX, int buttonY, int buttonW, int buttonH, juce::ComboBox& box, const FieldTheme& theme)
     {
-        auto r = juce::Rectangle<float>(0, 0, (float)width, (float)height).reduced(2.0f);
+        // Check if this ComboBox is in a SimpleSwitchCell with metallic properties
+        auto* parent = box.getParentComponent();
+        auto metallicKind = metallicFromProps(box.getProperties());
+        
+        juce::Rectangle<float> r;
+        if (parent && dynamic_cast<SimpleSwitchCell*>(parent) && metallicKind != MetallicKind::None)
+        {
+            // For metallic ComboBoxes in SimpleSwitchCell, use full bounds to match KnobCell
+            r = juce::Rectangle<float>(0, 0, (float)width, (float)height);
+        }
+        else
+        {
+            // Standard ComboBox with padding
+            r = juce::Rectangle<float>(0, 0, (float)width, (float)height).reduced(2.0f);
+        }
+        
         auto accent = theme.accent;
 
         // Check for metallic properties first
-        auto metallicKind = metallicFromProps(box.getProperties());
         if (metallicKind != MetallicKind::None)
         {
             // Metallic ComboBox - use metallic rendering system
@@ -372,7 +386,6 @@ namespace FieldRendering
 
         // Border - only draw if not in SimpleSwitchCell (which handles its own border)
         // Check if this ComboBox is wrapped in a SimpleSwitchCell
-        auto* parent = box.getParentComponent();
         if (!parent || !dynamic_cast<SimpleSwitchCell*>(parent))
         {
             g.setColour(theme.sh);
