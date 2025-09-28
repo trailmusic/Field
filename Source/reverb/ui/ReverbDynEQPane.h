@@ -37,7 +37,7 @@ public:
             addAndMakeVisible (f); addAndMakeVisible (g); addAndMakeVisible (q);
             addAndMakeVisible (thr); addAndMakeVisible (ratio); addAndMakeVisible (att); addAndMakeVisible (rel); addAndMakeVisible (range);
             styleKnob (f); styleKnob (g); styleKnob (q); styleKnob (thr); styleKnob (ratio); styleKnob (att); styleKnob (rel); styleKnob (range);
-            mode.addItemList (juce::StringArray { "Bell", "LowShelf", "HighShelf" }, 1);
+            mode.addItemList (juce::StringArray { "Bell", "Low\nShelf", "High\nShelf" }, 1);
             onA   = std::make_unique<BA> (state, onId, on);
             modeA = std::make_unique<CA> (state, modeId, mode);
             fA    = std::make_unique<SA> (state, fId, f);

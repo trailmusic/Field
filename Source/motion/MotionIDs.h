@@ -80,7 +80,7 @@ namespace id {
     static constexpr const char* anchor_enable   = "motion.p1.anchor_enable";
 }
 inline juce::StringArray choiceListPath() {
-    return { "Circle", "Figure-8", "Bounce", "Arc", "Spiral", "Polygon", "Random Walk", "User Shape…" };
+    return { "Circle", "Figure-8", "Bounce", "Arc", "Spiral", "Polygon", "Random\nWalk", "User\nShape…" };
 }
 inline juce::StringArray choiceListMode() {
     return { "Free", "Sync", "Input Env", "Sidechain", "One\nShot" };

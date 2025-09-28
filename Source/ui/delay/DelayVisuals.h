@@ -57,14 +57,14 @@ public:
         {
             juce::PopupMenu m;
             m.addSectionHeader ("Modulation");
-            m.addItem (1, "Tape wobble");
-            m.addItem (2, "Chorus swirl");
+            m.addItem (1, "Tape\nwobble");
+            m.addItem (2, "Chorus\nswirl");
             m.addSectionHeader ("Tone");
-            m.addItem (3, "Tighten lows");
-            m.addItem (4, "Darken highs");
+            m.addItem (3, "Tighten\nlows");
+            m.addItem (4, "Darken\nhighs");
             m.addSectionHeader ("Stereo/Space");
-            m.addItem (5, "Enable Ping-Pong");
-            m.addItem (6, "Smear tails");
+            m.addItem (5, "Enable\nPing-Pong");
+            m.addItem (6, "Smear\ntails");
             m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this),
                              [this](int r)
                              {
