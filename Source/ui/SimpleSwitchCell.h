@@ -65,10 +65,10 @@ public:
                 {
                     caption.setVisible (false);
                 }
-                // Give ComboBox the remaining space after caption
-                // Make ComboBox larger to test if size is the issue
-                auto expandedBounds = b.expanded(8, 8); // Add 8px padding on all sides
-                child.setBounds (expandedBounds);
+                // Give ComboBox the full cell area like KnobCell does
+                // Remove the 4px padding to match KnobCell's visual weight
+                auto fullBounds = getLocalBounds(); // Use full cell area, no padding
+                child.setBounds (fullBounds);
                 return;
             }
             else
