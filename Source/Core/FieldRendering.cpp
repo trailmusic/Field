@@ -355,7 +355,7 @@ namespace FieldRendering
             
             // Create recessed button window effect for metallic ComboBoxes
             // Make it shorter to avoid blocking the title
-            auto buttonWindow = r.reduced(4.0f, 12.0f); // More reduction on top and bottom to avoid title
+            auto buttonWindow = r.reduced(6.0f, 12.0f); // More reduction on sides and top/bottom to avoid title
             g.setColour(theme.panel.darker(0.3f));
             g.fillRoundedRectangle(buttonWindow, 3.0f);
             
@@ -398,6 +398,19 @@ namespace FieldRendering
     {
         // Simplified ComboBox text positioning
         label.setBounds(box.getLocalBounds().reduced(4));
+        
+        // Enable text wrapping for two-word labels
+        label.setJustificationType(juce::Justification::centred);
+        
+        // Check if text contains spaces (two words) and enable wrapping
+        juce::String text = label.getText();
+        if (text.contains(" "))
+        {
+            // Enable multi-line text for two-word labels
+            label.setJustificationType(juce::Justification::centred);
+            // Set font size to accommodate two lines
+            label.setFont(juce::Font(10.0f)); // Slightly smaller font for two lines
+        }
         
         // For metallic ComboBoxes, ensure text color is visible over metallic background
         auto metallicKind = metallicFromProps(box.getProperties());
