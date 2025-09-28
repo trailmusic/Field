@@ -1207,8 +1207,6 @@ Source/
     Presets.*              // searchable UI, A/B, save
     Components/            // 🆕 Reusable UI components
       KnobCell.*           // Standard knob controls
-      KnobCellDual.*       // Dual parameter knobs
-      KnobCellQuad.*       // Quad parameter knobs
       KnobCellMini.*       // Miniature knobs
     delay/                 // 🆕 Delay-specific UI components
     machine/               // 🆕 Machine learning UI components

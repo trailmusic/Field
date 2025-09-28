@@ -1848,8 +1848,6 @@ ls -la build/Source/Field_artefacts/Debug/Standalone/Field.app
 - `Source/ui/Layout.h` - UI-specific layout definitions
 - `Source/ui/Design.h` - UI design constants and styling
 - `Source/ui/Components/KnobCell.h` - Standard knob controls
-- `Source/ui/Components/KnobCellDual.h` - Dual parameter knobs
-- `Source/ui/Components/KnobCellQuad.h` - Quad parameter knobs
 - `Source/ui/delay/DelayTab.h` - Delay tab implementation
 - `Source/ui/delay/DelayControlsPane.h` - Delay controls
 - `Source/ui/machine/MachinePane.h` - Machine learning UI
@@ -3188,8 +3186,6 @@ The logo provides consistent branding across the interface while maintaining the
 #### **Core Cells**
 - `Source/KnobCell.h`
 - `Source/KnobCell.cpp`
-- `Source/KnobCellDual.*`
-- `Source/KnobCellQuad.*`
 - `Source/KnobCellMini.h`
 
 **Checklist:**

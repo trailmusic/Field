@@ -14,10 +14,6 @@ set(SRC
     ui/Components/KnobCell.cpp
     ui/Components/KnobCellWithAux.h
     ui/Components/KnobCellWithAux.cpp
-    ui/Components/KnobCellDual.h
-    ui/Components/KnobCellDual.cpp
-    ui/Components/KnobCellQuad.h
-    ui/Components/KnobCellQuad.cpp
     ui/Components/KnobCellMini.h
     Core/IconSystem.h
     Core/IconSystem.cpp

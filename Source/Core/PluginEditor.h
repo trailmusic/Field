@@ -5,8 +5,6 @@
 #include "Core/FieldTheme.h"
 #include "Core/FieldMetallic.h"
 #include "ui/Components/KnobCell.h"
-#include "ui/Components/KnobCellDual.h"
-#include "ui/Components/KnobCellQuad.h"
 #include "Core/IconSystem.h"
 #include "Presets/PresetRegistry.h"
 #include "Presets/PresetCommandPalette.h"
@@ -2053,8 +2051,6 @@ private:
 
     std::unique_ptr<Segmented3Control> delayGridFlavorSegments;
 
-    std::unique_ptr<class DoubleKnobCell> hpLpCell;
-    std::unique_ptr<class QuadKnobCell> hpLpQClusterCell;
     void buildCells();
 
     // [moved] Attachment containers declared after all bound controls (see below)
