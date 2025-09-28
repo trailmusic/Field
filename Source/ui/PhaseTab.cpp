@@ -206,10 +206,11 @@ void PhaseTab::makeComboCell (juce::ComboBox& c, const juce::String& cap, const 
         c.addItem ("Blend 50%", 2);
     }
     
+    // Apply metallic properties to the ComboBox itself, not the wrapper
+    c.getProperties().set ("metallic", true);
+    c.getProperties().set ("phaseMetallic", true);
     auto cell = std::make_unique<SimpleSwitchCell> (c);
     cell->setCaption (cap);
-    cell->getProperties().set ("metallic", true);
-    cell->getProperties().set ("phaseMetallic", true);
     
     // Phase controls use metallic blue styling
     

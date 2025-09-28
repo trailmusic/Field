@@ -181,10 +181,11 @@ private:
             combo->addItemList(motion::choiceListQuant(), 1);
         }
         
+        // Apply metallic properties to the ComboBox itself, not the wrapper
+        combo->getProperties().set("metallic", true);
+        combo->getProperties().set("motionMetallic", true);
         auto cell = std::make_unique<SimpleSwitchCell>(*combo);
         cell->setCaption(param.name);
-        cell->getProperties().set("metallic", true);
-        cell->getProperties().set("motionMetallic", true);
         cell->setShowBorder(true);
         addAndMakeVisible(*cell);
         

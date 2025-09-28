@@ -134,10 +134,11 @@ private:
                 c.addItem ("BP", 4);
             }
             
+            // Apply metallic properties to the ComboBox itself, not the wrapper
+            c.getProperties().set ("metallic", true);
+            c.getProperties().set ("delayMetallic", true);
             auto cell = std::make_unique<SimpleSwitchCell> (c);
             cell->setCaption (cap);
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("delayMetallic", true);
             cell->setShowBorder (true);
             addAndMakeVisible (*cell);
             switchCells.emplace_back (cell.get());
