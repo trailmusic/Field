@@ -1461,7 +1461,7 @@ private:
     // Fast-path overlay movement during slide (no child reflow)
     void updateGroup2OverlayDuringSlide();
     // New Reverb panel mounted in Group 2
-    std::unique_ptr<class ReverbPanel> reverbPanel;
+    std::unique_ptr<class ReverbGraphics> reverbPanel;
     int controlRowsHeightPx { 0 };
 
     // Correlation meter mini component

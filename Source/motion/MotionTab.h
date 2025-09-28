@@ -1,7 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "MotionPanel.h"
+#include "MotionGraphics.h"
 #include "MotionControlsPane.h"
 #include "../ui/Controls/ControlGridMetrics.h"
 
@@ -14,7 +14,7 @@ public:
     explicit MotionTab (MyPluginAudioProcessor& p)
         : proc (p)
     {
-        visuals = std::make_unique<motion::MotionPanel>(p.apvts, nullptr);
+        visuals = std::make_unique<motion::MotionGraphics>(p.apvts, nullptr);
         addAndMakeVisible (*visuals);
 
         controls = std::make_unique<MotionControlsPane>(p.apvts);
@@ -33,7 +33,7 @@ public:
 
 private:
     MyPluginAudioProcessor& proc;
-    std::unique_ptr<motion::MotionPanel> visuals;
+    std::unique_ptr<motion::MotionGraphics> visuals;
     std::unique_ptr<MotionControlsPane> controls;
 };
 

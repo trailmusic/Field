@@ -4,11 +4,11 @@
 #include "Core/FieldLookAndFeel.h"
 
 // Band Visual Pane: Width mode visuals for Band tab
-class BandVisualPane : public juce::Component, private juce::Timer
+class BandGraphics : public juce::Component, private juce::Timer
 {
 public:
-    BandVisualPane();
-    ~BandVisualPane() override;
+    BandGraphics();
+    ~BandGraphics() override;
 
     void setSampleRate (double sr);
     void setWidths (float lo, float mid, float hi);

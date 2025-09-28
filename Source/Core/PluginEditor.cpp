@@ -5,7 +5,7 @@
 #include "reverb/ReverbParamIDs.h"
 #include "ui/Design/Layout.h"
 #include "dsp/DelayPresetLibrary.h"
-#include "reverb/ui/ReverbPanel.h"
+#include "reverb/ui/ReverbGraphics.h"
 #include "reverb/ui/ReverbDynEQPane.h"
 #include "ui/Controls/ControlGridMetrics.h"
 

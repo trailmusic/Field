@@ -1,6 +1,6 @@
-#include "BandVisualPane.h"
+#include "BandGraphics.h"
 
-BandVisualPane::BandVisualPane()
+BandGraphics::BandGraphics()
 {
     setOpaque (false);
     startTimerHz (30); // Fixed 30fps for Band visuals
@@ -25,12 +25,12 @@ BandVisualPane::BandVisualPane()
     enginePrepared = true;
 }
 
-BandVisualPane::~BandVisualPane()
+BandGraphics::~BandGraphics()
 {
     stopTimer();
 }
 
-void BandVisualPane::setSampleRate (double sr)
+void BandGraphics::setSampleRate (double sr)
 {
     sampleRate = (sr > 0 ? sr : 48000.0);
     if (enginePrepared)
@@ -43,7 +43,7 @@ void BandVisualPane::setSampleRate (double sr)
     }
 }
 
-void BandVisualPane::setWidths (float lo, float mid, float hi)
+void BandGraphics::setWidths (float lo, float mid, float hi)
 {
     widthLo = juce::jlimit (0.0f, 2.0f, lo);
     widthMid= juce::jlimit (0.0f, 2.0f, mid);
@@ -51,7 +51,7 @@ void BandVisualPane::setWidths (float lo, float mid, float hi)
     repaint();
 }
 
-void BandVisualPane::setCrossovers (float loHz, float hiHz)
+void BandGraphics::setCrossovers (float loHz, float hiHz)
 {
     xoverLoHz = juce::jlimit (40.0f, 400.0f, loHz);
     xoverHiHz = juce::jlimit (800.0f, 6000.0f, hiHz);
@@ -59,13 +59,13 @@ void BandVisualPane::setCrossovers (float loHz, float hiHz)
     repaint();
 }
 
-void BandVisualPane::setShuffler (float loPct, float hiPct, float xHz)
+void BandGraphics::setShuffler (float loPct, float hiPct, float xHz)
 {
     shufLoPct = loPct; shufHiPct = hiPct; shufXHz = juce::jlimit (150.0f, 2000.0f, xHz);
     repaint();
 }
 
-void BandVisualPane::pushBlock (const float* L, const float* R, int n, bool isPre)
+void BandGraphics::pushBlock (const float* L, const float* R, int n, bool isPre)
 {
     if (n <= 0) return;
     const juce::SpinLock::ScopedLockType sl (dataLock);
@@ -101,12 +101,12 @@ void BandVisualPane::pushBlock (const float* L, const float* R, int n, bool isPr
     }
 }
 
-void BandVisualPane::resized()
+void BandGraphics::resized()
 {
     // Band visuals take full area - no tooling UI
 }
 
-void BandVisualPane::paint (juce::Graphics& g)
+void BandGraphics::paint (juce::Graphics& g)
 {
     auto b = getLocalBounds().toFloat();
     g.setColour (juce::Colours::black.withAlpha (1.0f)); // Fully opaque background
@@ -129,7 +129,7 @@ void BandVisualPane::paint (juce::Graphics& g)
     drawCenterLines (g, b.reduced (8.0f));
 }
 
-void BandVisualPane::timerCallback()
+void BandGraphics::timerCallback()
 {
     repaint();
 }

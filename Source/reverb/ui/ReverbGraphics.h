@@ -4,10 +4,10 @@
 #include "ReverbCanvasComponent.h"
 #include "ReverbDynEQPane.h"
 
-class ReverbPanel : public juce::Component
+class ReverbGraphics : public juce::Component
 {
 public:
-    ReverbPanel (juce::AudioProcessorValueTreeState& s,
+    ReverbGraphics (juce::AudioProcessorValueTreeState& s,
                  std::function<float()> getEr,
                  std::function<float()> getTail,
                  std::function<float()> getDuckDb,

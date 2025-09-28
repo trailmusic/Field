@@ -1,4 +1,4 @@
-#include "ReverbPanel.h"
+#include "ReverbGraphics.h"
 #include "DecayCurveComponent.h"
 #include "ReverbEQComponent.h"
 #include "ReverbScopeComponent.h"
@@ -9,7 +9,7 @@ using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
 using BA = juce::AudioProcessorValueTreeState::ButtonAttachment;
 using CA = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
-ReverbPanel::ReverbPanel (juce::AudioProcessorValueTreeState& s,
+ReverbGraphics::ReverbGraphics (juce::AudioProcessorValueTreeState& s,
                           std::function<float()> getEr,
                           std::function<float()> getTail,
                           std::function<float()> getDuckDb,
@@ -49,7 +49,7 @@ ReverbPanel::ReverbPanel (juce::AudioProcessorValueTreeState& s,
     addDuck (ReverbIDs::duckBandQ,   duckBandQ);
 }
 
-void ReverbPanel::resized()
+void ReverbGraphics::resized()
 {
     auto r = getLocalBounds().reduced (6);
     // No header controls

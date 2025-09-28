@@ -4,7 +4,7 @@
 #include "../Tabs/XYTab.h"
 #include "../Tabs/ImagerTab.h"
 #include "../Tabs/BandTab.h"
-#include "../Panes/MachinePane.h"
+#include "../Tabs/MachineTab.h"
 #include "Core/IconSystem.h"
 #include "../../motion/MotionTab.h"
 #include "../../motion/MotionVisual.h"
@@ -46,7 +46,7 @@ public:
         imgr = std::make_unique<ImagerTab>(p, lnf);
         band = std::make_unique<BandTab>(p);
         motion = std::make_unique<MotionTab>(p);
-        mach = std::make_unique<MachinePane>(p, state, lnf);
+        mach = std::make_unique<MachineTab>(p, state, lnf);
         // Reverb/Delay composite tabs (controls grid hidden until migration completes)
         reverb = std::make_unique<ReverbTab>(p);
         delay  = std::make_unique<DelayTab>(p);
@@ -241,8 +241,9 @@ public:
     void setMotionVisualState(const motion::VisualState& visualState)
     {
         if (motion) {
-            if (auto* motionPanel = dynamic_cast<motion::MotionPanel*>(motion.get())) {
-                motionPanel->setVisualState(visualState);
+            if (auto* motionTab = dynamic_cast<MotionTab*>(motion.get())) {
+                // MotionTab now contains MotionGraphics internally
+                // TODO: Add method to forward setVisualState to internal MotionGraphics
             }
         }
     }
@@ -654,7 +655,7 @@ private:
     std::unique_ptr<ImagerTab>             imgr;
     std::unique_ptr<BandTab>               band;
     std::unique_ptr<MotionTab>             motion;
-    std::unique_ptr<MachinePane>           mach;
+    std::unique_ptr<MachineTab>           mach;
     std::unique_ptr<ReverbTab>            reverb;
     std::unique_ptr<DelayTab>             delay;
 

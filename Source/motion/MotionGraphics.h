@@ -24,11 +24,11 @@ struct LegacyVisualState {
     float motionSend = 0.0f;
 };
 
-class MotionPanel : public juce::Component, private juce::Timer {
+class MotionGraphics : public juce::Component, private juce::Timer {
 public:
-    MotionPanel(juce::AudioProcessorValueTreeState& s, juce::UndoManager* um = nullptr);
+    MotionGraphics(juce::AudioProcessorValueTreeState& s, juce::UndoManager* um = nullptr);
     
-    ~MotionPanel() override
+    ~MotionGraphics() override
     {
         // Stop timer before destruction to prevent use-after-free
         stopTimer();
@@ -74,6 +74,6 @@ private:
     juce::Array<juce::Point<float>> pathPoints;
     int pathPointIndex = 0;
     
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MotionPanel)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MotionGraphics)
 };
 }

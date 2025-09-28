@@ -1,9 +1,9 @@
-#include "MotionPanel.h"
+#include "MotionGraphics.h"
 #include "../ui/Design/Layout.h"
 using namespace UI;
 namespace motion {
 
-MotionPanel::MotionPanel(juce::AudioProcessorValueTreeState& s, juce::UndoManager*)
+MotionGraphics::MotionGraphics(juce::AudioProcessorValueTreeState& s, juce::UndoManager*)
 : state(s)
 {
     // Start timer for real-time visual updates (normalized to 30 Hz per UI rules)
@@ -14,18 +14,18 @@ MotionPanel::MotionPanel(juce::AudioProcessorValueTreeState& s, juce::UndoManage
     pathPoints.ensureStorageAllocated(64);
 }
 
-void MotionPanel::setVisualState(const VisualState& newState)
+void MotionGraphics::setVisualState(const VisualState& newState)
 {
     visualState = newState;
     repaint(); // Trigger immediate repaint when visual state changes
 }
 
-void MotionPanel::visibilityChanged()
+void MotionGraphics::visibilityChanged()
 {
     if (isVisible()) startTimerHz(30); else stopTimer();
 }
 
-void MotionPanel::paint(juce::Graphics& g)
+void MotionGraphics::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colour(0xff121317));
     
@@ -114,7 +114,7 @@ void MotionPanel::paint(juce::Graphics& g)
     }
 }
 
-void MotionPanel::mouseDown (const juce::MouseEvent& e)
+void MotionGraphics::mouseDown (const juce::MouseEvent& e)
 {
     if (orbBounds.isEmpty()) return;
     auto orb = orbBounds.toFloat();
@@ -155,7 +155,7 @@ void MotionPanel::mouseDown (const juce::MouseEvent& e)
     }
 }
 
-void MotionPanel::drawOrbBackground(juce::Graphics& g, const juce::Rectangle<float>& orb)
+void MotionGraphics::drawOrbBackground(juce::Graphics& g, const juce::Rectangle<float>& orb)
 {
     // Main orb background
     g.setColour(juce::Colours::white.withAlpha(0.07f));
@@ -170,7 +170,7 @@ void MotionPanel::drawOrbBackground(juce::Graphics& g, const juce::Rectangle<flo
     }
 }
 
-void MotionPanel::drawPathPreview(juce::Graphics& g, const juce::Rectangle<float>& orb)
+void MotionGraphics::drawPathPreview(juce::Graphics& g, const juce::Rectangle<float>& orb)
 {
     if (legacyState.pathType < 0 || legacyState.pathType > 7) return;
     
@@ -241,7 +241,7 @@ void MotionPanel::drawPathPreview(juce::Graphics& g, const juce::Rectangle<float
     }
 }
 
-void MotionPanel::drawPannerDots(juce::Graphics& g, const juce::Rectangle<float>& orb)
+void MotionGraphics::drawPannerDots(juce::Graphics& g, const juce::Rectangle<float>& orb)
 {
     // P1 dot
     auto p1Pos = polarToCartesian(visualState.p1.azimuth, visualState.p1.radius, orb);
@@ -264,7 +264,7 @@ void MotionPanel::drawPannerDots(juce::Graphics& g, const juce::Rectangle<float>
     }
 }
 
-void MotionPanel::drawElevationRings(juce::Graphics& g, const juce::Rectangle<float>& orb)
+void MotionGraphics::drawElevationRings(juce::Graphics& g, const juce::Rectangle<float>& orb)
 {
     if (std::abs(legacyState.elevationBias) < 0.01f) return;
     
@@ -281,7 +281,7 @@ void MotionPanel::drawElevationRings(juce::Graphics& g, const juce::Rectangle<fl
     }
 }
 
-void MotionPanel::drawBassFloorRing(juce::Graphics& g, const juce::Rectangle<float>& orb)
+void MotionGraphics::drawBassFloorRing(juce::Graphics& g, const juce::Rectangle<float>& orb)
 {
     // Draw small inner ring showing bass floor zone
     float bassFloorRadius = 0.15f; // Relative to orb size
@@ -296,7 +296,7 @@ void MotionPanel::drawBassFloorRing(juce::Graphics& g, const juce::Rectangle<flo
     g.drawText("SUBS", bassRing, juce::Justification::centred);
 }
 
-void MotionPanel::drawAnchorCircle(juce::Graphics& g, const juce::Rectangle<float>& orb)
+void MotionGraphics::drawAnchorCircle(juce::Graphics& g, const juce::Rectangle<float>& orb)
 {
     if (!legacyState.anchor) return;
     
@@ -312,7 +312,7 @@ void MotionPanel::drawAnchorCircle(juce::Graphics& g, const juce::Rectangle<floa
     g.strokePath(anchorPath, juce::PathStrokeType(1.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 }
 
-void MotionPanel::drawStatusIndicators(juce::Graphics& g, const juce::Rectangle<float>&)
+void MotionGraphics::drawStatusIndicators(juce::Graphics& g, const juce::Rectangle<float>&)
 {
     auto statusArea = orbBounds.withTrimmedTop(0).removeFromBottom(60); // don't mutate orbBounds
     
@@ -340,7 +340,7 @@ void MotionPanel::drawStatusIndicators(juce::Graphics& g, const juce::Rectangle<
     }
 }
 
-void MotionPanel::drawQuantizeGrid(juce::Graphics& g, const juce::Rectangle<float>& orb)
+void MotionGraphics::drawQuantizeGrid(juce::Graphics& g, const juce::Rectangle<float>& orb)
 {
     if (legacyState.quantizeDiv == 0) return;
     
@@ -366,14 +366,14 @@ void MotionPanel::drawQuantizeGrid(juce::Graphics& g, const juce::Rectangle<floa
     }
 }
 
-juce::Point<float> MotionPanel::polarToCartesian(float azimuth, float radius, const juce::Rectangle<float>& orb)
+juce::Point<float> MotionGraphics::polarToCartesian(float azimuth, float radius, const juce::Rectangle<float>& orb)
 {
     float x = orb.getCentreX() + azimuth * radius * orb.getWidth() * 0.4f;
     float y = orb.getCentreY() + radius * orb.getHeight() * 0.4f;
     return {x, y};
 }
 
-juce::Colour MotionPanel::getElevationColor(float elevation)
+juce::Colour MotionGraphics::getElevationColor(float elevation)
 {
     if (elevation > 0) {
         return juce::Colours::lightblue.withAlpha(0.6f); // Up
@@ -382,7 +382,7 @@ juce::Colour MotionPanel::getElevationColor(float elevation)
     }
 }
 
-juce::Colour MotionPanel::getPathColor(int pathType)
+juce::Colour MotionGraphics::getPathColor(int pathType)
 {
     switch (pathType) {
         case 0: return juce::Colours::aqua;      // Circle
@@ -397,14 +397,14 @@ juce::Colour MotionPanel::getPathColor(int pathType)
     }
 }
 
-void MotionPanel::resized()
+void MotionGraphics::resized()
 {
     auto area = getLocalBounds().reduced(pad);
     int orbSize = juce::jmin(area.getWidth(), area.getHeight() - pad);
     orbBounds = area.withSizeKeepingCentre(orbSize, orbSize);
 }
 
-void MotionPanel::drawInertiaTrail(juce::Graphics& g, const juce::Rectangle<float>& orb)
+void MotionGraphics::drawInertiaTrail(juce::Graphics& g, const juce::Rectangle<float>& orb)
 {
     if (legacyState.inertia < 0.001f) return;
     
@@ -426,7 +426,7 @@ void MotionPanel::drawInertiaTrail(juce::Graphics& g, const juce::Rectangle<floa
     }
 }
 
-void MotionPanel::drawSwingGrid(juce::Graphics& g, const juce::Rectangle<float>& orb)
+void MotionGraphics::drawSwingGrid(juce::Graphics& g, const juce::Rectangle<float>& orb)
 {
     if (legacyState.swing < 0.001f || legacyState.mode != 1) return; // Only in Sync mode
     
@@ -451,7 +451,7 @@ void MotionPanel::drawSwingGrid(juce::Graphics& g, const juce::Rectangle<float>&
     }
 }
 
-void MotionPanel::drawOcclusionEffect(juce::Graphics& g, const juce::Rectangle<float>& orb)
+void MotionGraphics::drawOcclusionEffect(juce::Graphics& g, const juce::Rectangle<float>& orb)
 {
     if (visualState.occlusion < 0.001f) return;
     
@@ -476,7 +476,7 @@ void MotionPanel::drawOcclusionEffect(juce::Graphics& g, const juce::Rectangle<f
     g.drawEllipse(orb.reduced(orb.getWidth() * cutoffRadius), 2.0f);
 }
 
-void MotionPanel::drawEnableIndicator(juce::Graphics& g, const juce::Rectangle<float>& orb)
+void MotionGraphics::drawEnableIndicator(juce::Graphics& g, const juce::Rectangle<float>& orb)
 {
     if (!visualState.enable) {
         // Draw disabled state - desaturated and dimmed

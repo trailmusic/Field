@@ -45,8 +45,8 @@ set(SRC
     # legacy visuals removed: DecayCurve/ReverbEQ/ReverbScope
     reverb/ui/ReverbCanvasComponent.h
     reverb/ui/ReverbCanvasComponent.cpp
-    reverb/ui/ReverbPanel.h
-    reverb/ui/ReverbPanel.cpp
+    reverb/ui/ReverbGraphics.h
+    reverb/ui/ReverbGraphics.cpp
     reverb/ui/ReverbDynEQPane.h
     reverb/ui/ReverbControlsPane.h
     reverb/ui/ReverbTab.h
@@ -67,8 +67,8 @@ set(SRC
     ui/Panes/XYControlsPane.h
     ui/Tabs/XYTab.h
     ui/Tabs/BandTab.h
-    ui/Panes/BandVisualPane.h
-    ui/Panes/BandVisualPane.cpp
+    ui/Panes/BandGraphics.h
+    ui/Panes/BandGraphics.cpp
     ui/Engines/StereoFieldEngine.h
     ui/Engines/StereoFieldEngine.cpp
     ui/Managers/PaneManager.h
@@ -80,12 +80,11 @@ set(SRC
     ui/machine/ProposalCard.cpp
     ui/machine/MachineEngine.h
     ui/machine/MachineEngine.cpp
-    ui/machine/MachinePane.h
-    ui/machine/MachinePane.cpp
+    ui/Tabs/MachineTab.h
     
     motion/MotionEngine.h
-    motion/MotionPanel.h
-    motion/MotionPanel.cpp
+    motion/MotionGraphics.h
+    motion/MotionGraphics.cpp
     motion/MotionParams.h
     motion/MotionPath.h
     motion/MotionIDs.h

@@ -1,6 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
-#include "../Panes/BandVisualPane.h"
+#include "../Panes/BandGraphics.h"
 #include "../Controls/ControlGridMetrics.h"
 #include "../Panes/BandControlsPane.h"
 
@@ -10,7 +10,7 @@ class BandTab : public juce::Component
 public:
     BandTab (MyPluginAudioProcessor& p)
     {
-        visuals = std::make_unique<BandVisualPane>();
+        visuals = std::make_unique<BandGraphics>();
         addAndMakeVisible (*visuals);
         // Band-specific controls pane (WIDTH + band widths)
         controls = std::make_unique<BandControlsPane>(p.apvts);
@@ -45,7 +45,7 @@ public:
     }
 
 private:
-    std::unique_ptr<BandVisualPane> visuals;
+    std::unique_ptr<BandGraphics> visuals;
     std::unique_ptr<BandControlsPane> controls;
 };
 

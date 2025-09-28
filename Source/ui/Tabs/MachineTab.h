@@ -2,10 +2,10 @@
 #include <JuceHeader.h>
 
 // Minimal skeleton for the Machine pane (analyze → propose → apply)
-class MachinePane : public juce::Component
+class MachineTab : public juce::Component
 {
 public:
-    MachinePane (juce::AudioProcessor& p, juce::ValueTree& state, juce::LookAndFeel* lnf)
+    MachineTab (juce::AudioProcessor& p, juce::ValueTree& state, juce::LookAndFeel* lnf)
         : proc (p), vt (state)
     {
         juce::ignoreUnused (lnf);

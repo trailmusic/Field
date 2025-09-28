@@ -1,7 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "ReverbPanel.h"
+#include "ReverbGraphics.h"
 #include "ReverbControlsPane.h"
 #include "../../ui/Controls/ControlGridMetrics.h"
 
@@ -15,7 +15,7 @@ public:
         : proc (p)
     {
         // Visuals-only Reverb pane (existing component)
-        reverbPanel = std::make_unique<ReverbPanel>(p.apvts,
+        reverbPanel = std::make_unique<ReverbGraphics>(p.apvts,
             [&p]{ return p.getReverbErRms(); },
             [&p]{ return p.getReverbTailRms(); },
             [&p]{ return p.getReverbDuckGrDb(); },
@@ -65,7 +65,7 @@ public:
 
 private:
     MyPluginAudioProcessor& proc;
-    std::unique_ptr<ReverbPanel> reverbPanel;
+    std::unique_ptr<ReverbGraphics> reverbPanel;
     std::unique_ptr<ReverbControlsPane> controls;
 };
 
