@@ -105,6 +105,35 @@ private:
             }
             
             c.setName (cap);
+            
+            // Add items based on parameter ID
+            juce::String id (pid);
+            if (id == "delay_mode")
+            {
+                c.addItem ("Digital", 1);
+                c.addItem ("Analog", 2);
+                c.addItem ("Tape", 3);
+            }
+            else if (id == "delay_grid_flavor")
+            {
+                c.addItem ("Straight", 1);
+                c.addItem ("Dotted", 2);
+                c.addItem ("Triplet", 3);
+            }
+            else if (id == "delay_duck_source")
+            {
+                c.addItem ("Pre", 1);
+                c.addItem ("Post", 2);
+                c.addItem ("External", 3);
+            }
+            else if (id == "delay_filter_type")
+            {
+                c.addItem ("Off", 1);
+                c.addItem ("HP", 2);
+                c.addItem ("LP", 3);
+                c.addItem ("BP", 4);
+            }
+            
             // Apply Delay metallic styling to the actual combo, not the wrapper
             setAreaMetallicForCell (c, MetallicKind::Delay);
             auto cell = std::make_unique<SimpleSwitchCell> (c);
