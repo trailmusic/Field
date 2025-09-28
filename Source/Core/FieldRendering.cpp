@@ -363,9 +363,20 @@ namespace FieldRendering
         // Check for metallic properties first
         if (metallicKind != MetallicKind::None)
         {
-            // Metallic ComboBox - use metallic rendering system
+            // Metallic ComboBox - use metallic rendering system with KnobCell styling
             auto metalColors = MetallicRenderer::getMetallicColors(theme, metallicKind);
-            MetallicRenderer::paintMetal(g, r, metalColors, 5.0f);
+            MetallicRenderer::paintMetal(g, r, metalColors, 8.0f); // Match KnobCell corner radius
+            
+            // Add KnobCell-style shadows for metallic ComboBoxes
+            auto ri = r.reduced(3.0f).getSmallestIntegerContainer();
+            juce::DropShadow ds1(juce::Colours::black.withAlpha(0.28f), 10, {-1, -1});
+            juce::DropShadow ds2(juce::Colours::white.withAlpha(0.18f), 5, {-1, -1});
+            ds1.drawForRectangle(g, ri);
+            ds2.drawForRectangle(g, ri);
+            
+            // Add inner rim like KnobCell
+            g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
+            g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
             
             // Create recessed button window effect for metallic ComboBoxes
             // Make it shorter to avoid blocking the title
@@ -390,6 +401,13 @@ namespace FieldRendering
         {
             g.setColour(theme.sh);
             g.drawRoundedRectangle(r, 5.0f, 1.0f);
+        }
+        else if (parent && dynamic_cast<SimpleSwitchCell*>(parent) && metallicKind != MetallicKind::None)
+        {
+            // For metallic ComboBoxes in SimpleSwitchCell, draw KnobCell-style border
+            auto border = r.reduced(2.0f);
+            g.setColour(theme.accentSecondary.withAlpha(0.85f)); // Match KnobCell accent color
+            g.drawRoundedRectangle(border, 8.0f, 1.5f); // Match KnobCell border thickness
         }
 
         // Arrow - only show if no item is selected or if ComboBox is focused
