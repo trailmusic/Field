@@ -379,8 +379,8 @@ namespace FieldRendering
             g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
             
             // Create recessed button window effect for metallic ComboBoxes
-            // Make it shorter to avoid blocking the title
-            auto buttonWindow = r.reduced(6.0f, 12.0f); // More reduction on sides and top/bottom to avoid title
+            // Reduce top/bottom padding to compensate for styling changes
+            auto buttonWindow = r.reduced(6.0f, 8.0f); // Less reduction on top/bottom to regain size
             g.setColour(theme.panel.darker(0.3f));
             g.fillRoundedRectangle(buttonWindow, 3.0f);
             
