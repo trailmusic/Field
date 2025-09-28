@@ -254,6 +254,13 @@ Source/
 - `applySpaceAlgorithm()` and `renderSpaceWet()` methods
 - All `spaceAlgo` references in parameter structures
 
+### **Recent Major Achievements** 🎉
+- **Center Group Removal**: Successfully removed duplicate center group from PluginEditor
+- **Parameter Conflict Resolution**: Eliminated duplicate controls trying to attach to same parameters
+- **Architecture Cleanup**: Center group now handled exclusively by XYControlsPane
+- **Code Reduction**: Removed ~110 lines of duplicate code from PluginEditor
+- **Build System**: All compilation and linking successful
+
 ### **Next Up** 📋
 - [ ] Event handling separation
 - [ ] State management extraction
@@ -310,6 +317,42 @@ XYTab contains XYPad internally (no circular dependencies)
 - **Easier Maintenance**: No confusion about responsibilities
 - **Better Organization**: Logical file structure
 - **Reduced Cognitive Load**: Developers know what to expect
+
+## 🧹 **NEW: Center Group Duplication Removal (January 2025)**
+
+### **Problem Identified:**
+Center group controls were duplicated between PluginEditor and XYControlsPane:
+```
+BEFORE (DUPLICATE ARCHITECTURE):
+PluginEditor → centerPromDb, centerFocusLoHz, centerFocusHiHz, etc.
+XYControlsPane → center_prom_db, center_f_lo_hz, center_f_hi_hz, etc.
+```
+
+### **Issues Found:**
+- **Parameter Conflicts**: Both trying to attach to same parameters
+- **Incomplete Implementation**: PluginEditor missing some parameter attachments
+- **State Synchronization**: Changes in one location wouldn't reflect in the other
+- **Code Duplication**: ~110 lines of duplicate logic
+
+### **Solution Implemented:** ✅ **COMPLETED**
+```
+AFTER (CLEAN ARCHITECTURE):
+XYControlsPane → Complete center group implementation (all parameters)
+PluginEditor → No center group (removed duplicates)
+```
+
+### **Components Removed from PluginEditor:**
+- `centerPromDb`, `centerFocusLoHz`, `centerFocusHiHz`
+- `centerPunchAmt01`, `centerPunchMode`, `centerPhaseRecOn`
+- `centerPhaseAmt01`, `centerLockOn`, `centerLockDb`
+- All associated cells, labels, and parameter attachments
+
+### **Benefits Achieved:**
+- **Eliminated Parameter Conflicts**: No more duplicate controls
+- **Reduced PluginEditor Bloat**: Removed ~110 lines of duplicate code
+- **Simplified Architecture**: Center group handled exclusively by XYControlsPane
+- **No Functional Loss**: XYControlsPane provides complete functionality
+- **Cleaner Code**: No more duplicate logic to maintain
 
 ## 🎯 **Final Vision**
 
