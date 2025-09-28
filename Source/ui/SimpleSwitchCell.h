@@ -58,6 +58,8 @@ public:
                     caption.setBounds (b.removeFromTop (capH));
                     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
                         caption.setColour (juce::Label::textColourId, lf->theme.textMuted);
+                    // Ensure caption is always on top for metallic ComboBoxes
+                    caption.toFront (false);
                 }
                 else
                 {
@@ -152,11 +154,7 @@ public:
                 g.drawRoundedRectangle (r, rad, 1.5f);
             }
             
-            // Ensure caption is visible on top of metallic background
-            if (captionText.isNotEmpty() && caption.isVisible())
-            {
-                caption.toFront(false);
-            }
+            // Caption positioning is handled in resized() method
         }
     }
 
