@@ -102,6 +102,7 @@ private:
             cell->getProperties().set ("reverbMaroonBorder", true);
             cell->getProperties().set ("metallic", true);
             cell->getProperties().set ("reverbMetallic", true);
+            cell->getProperties().set ("caption", cap);
             addAndMakeVisible (*cell);
             knobCells.emplace_back (cell.get());
             ownedCells.emplace_back (std::move (cell));
