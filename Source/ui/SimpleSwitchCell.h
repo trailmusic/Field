@@ -28,11 +28,22 @@ public:
     void setShowBorder (bool on) { showBorder = on; repaint(); }
     void setReverbMaroon (bool on) { reverbMaroon = on; repaint(); }
     void setDelayTheme (bool on) { delayTheme = on; repaint(); }
+    
+    /// Set sizing metrics to match KnobCell interface
+    void setMetrics (int knobPx, int valuePx, int gapPx)
+    {
+        // Store metrics for consistent sizing with KnobCell
+        K = juce::jmax (16, knobPx);
+        V = juce::jmax (0,  valuePx);
+        G = juce::jmax (0,  gapPx);
+        resized();
+        repaint();
+    }
 
     void resized() override
     {
         auto b = getLocalBounds().reduced (3); // Reduced from 6 to 3 for better sizing
-        const int capH = captionText.isNotEmpty() ? 14 : 0;
+        const int capH = captionText.isNotEmpty() ? V : 0; // Use V (value label height) for caption
         
         // Check if child has metallic properties - show caption for ComboBoxes
         auto metallicKind = metallicFromProps (child.getProperties());
@@ -149,6 +160,11 @@ private:
     bool showBorder { true };
     bool reverbMaroon { false };
     bool delayTheme { false };
+    
+    // Layout metrics to match KnobCell sizing system
+    int K = 88;   // knob diameter (matches KnobCell default)
+    int V = 14;   // value label band height
+    int G = 4;    // gap between elements
 };
 
 

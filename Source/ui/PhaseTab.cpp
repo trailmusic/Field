@@ -14,11 +14,11 @@ void PhaseTab::resized()
         c->setValueLabelGap (m.labelGapPx);
     }
     
-    // SimpleSwitchCell doesn't need metrics, but we can set them if needed
+    // Apply metrics to SimpleSwitchCell components for consistent sizing
     for (auto* c : switchCells)
     {
         if (!c) continue;
-        // SimpleSwitchCell handles its own sizing
+        c->setMetrics (knobPx, valuePx, labelGapPx);
     }
 
     // Layout similar to Band tab: visual container on top, controls at bottom
@@ -330,10 +330,10 @@ void PhaseTab::applyMetricsToAll()
         c->setValueLabelGap (labelGapPx);
     }
     
-    // SimpleSwitchCell doesn't need metrics
+    // Apply metrics to SimpleSwitchCell components for consistent sizing
     for (auto* c : switchCells)
     {
         if (!c) continue;
-        // SimpleSwitchCell handles its own sizing
+        c->setMetrics (knobPx, valuePx, labelGapPx);
     }
 }

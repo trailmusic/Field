@@ -256,7 +256,12 @@ private:
             c->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             c->setValueLabelGap (labelGapPx);
         }
-        // Switch cells don't need metrics - they handle their own layout
+        // Apply metrics to SimpleSwitchCell components for consistent sizing
+        for (auto* c : switchCells)
+        {
+            if (!c) continue;
+            c->setMetrics (knobPx, valuePx, labelGapPx);
+        }
     }
 
     juce::AudioProcessorValueTreeState& apvts;

@@ -808,7 +808,13 @@ private:
             }
         }
         for (auto* s : switchCells)
-            if (s) s->setShowBorder (true);
+        {
+            if (s) 
+            {
+                s->setMetrics (knobPx, valuePx, labelGapPx);
+                s->setShowBorder (true);
+            }
+        }
     }
 
     juce::AudioProcessorValueTreeState& apvts;
