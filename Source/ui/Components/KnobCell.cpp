@@ -52,6 +52,9 @@ KnobCell::KnobCell(juce::Slider& knobToHost, juce::Label& valueLabelToHost, cons
     // Enable hover effects
     setMouseCursor(juce::MouseCursor::PointingHandCursor);
     setInterceptsMouseClicks (false, true);
+    
+    // Add double-click handler for flash effect
+    knob.addMouseListener(this, false);
 }
 
 void KnobCell::setMetrics (int knobPx, int valuePx, int gapPx, int miniPx)
@@ -656,6 +659,20 @@ void KnobCell::paint (juce::Graphics& g)
             }
         }
     }
+}
+
+void KnobCell::mouseDoubleClick (const juce::MouseEvent& event)
+{
+    // Trigger flash effect on double-click
+    knob.getProperties().set("flash", true);
+    repaint();
+    
+    // Reset flash after animation
+    juce::MessageManager::callAsync([this]()
+    {
+        knob.getProperties().set("flash", false);
+        repaint();
+    });
 }
 
 

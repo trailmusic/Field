@@ -85,6 +85,10 @@ public:
     // juce::Component
     void paint   (juce::Graphics& g) override;
     void resized() override;
+    
+    // Mouse event handling for double-click flash effect
+    void mouseDoubleClick (const juce::MouseEvent& event);
+    
 
 private:
     // Adopt children if they're not already our children

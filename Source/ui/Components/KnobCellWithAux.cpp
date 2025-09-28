@@ -14,6 +14,9 @@ KnobCellWithAux::KnobCellWithAux(juce::Slider& mainKnob,
     
     // Enable hover effects and pointer cursor
     setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    
+    // Add double-click handler for flash effect
+    mainKnob.addMouseListener(this, false);
 }
 
 void KnobCellWithAux::setMetrics (int knobPx, int valuePx, int gapPx)
@@ -305,4 +308,18 @@ void KnobCellWithAux::paint (juce::Graphics& g)
     }
 
     // XY controls use the main border system above - no additional border needed
+}
+
+void KnobCellWithAux::mouseDoubleClick (const juce::MouseEvent& event)
+{
+    // Trigger flash effect on double-click
+    mainKnob.getProperties().set("flash", true);
+    repaint();
+    
+    // Reset flash after animation
+    juce::MessageManager::callAsync([this]()
+    {
+        mainKnob.getProperties().set("flash", false);
+        repaint();
+    });
 }

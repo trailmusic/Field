@@ -309,7 +309,7 @@ private:
     std::vector<std::unique_ptr<juce::Label>>  blankLabels;
 
     // Metrics
-    int knobPx     = 48;
+    int knobPx     = 52; // Increased knob size from 50 to 52
     int valuePx    = 14;
     int labelGapPx = 4;
     int colW       = 56;

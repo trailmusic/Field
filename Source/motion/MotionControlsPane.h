@@ -278,7 +278,7 @@ private:
     std::vector<std::unique_ptr<juce::Label>> ownedLabels;
     std::vector<juce::Component*> gridOrder;
 
-    int knobPx = 48, valuePx = 14, labelGapPx = 4, colW = 56, rowH = 0;
+    int knobPx = 52, valuePx = 14, labelGapPx = 4, colW = 56, rowH = 0; // Increased knob size from 50 to 52
 };
 
 

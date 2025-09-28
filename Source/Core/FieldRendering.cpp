@@ -190,7 +190,10 @@ namespace FieldRendering
         // Check for hover state and apply raise effect
         bool isHovered = slider.isMouseOver();
         float hoverOffset = isHovered ? 2.0f : 0.0f;
-        float shadowIntensity = isHovered ? 0.8f : 0.4f;
+        
+        // Check for double-click flash effect
+        bool isFlashing = slider.getProperties().getWithDefault("flash", false);
+        float flashIntensity = isFlashing ? 1.0f : 0.0f;
         
         // Apply hover raise effect
         if (isHovered)
@@ -207,16 +210,33 @@ namespace FieldRendering
         auto trackRadius = radius * 0.80f;  // Reduced from 0.85f to 0.80f
         auto trackThickness = 4.0f;  // Reduced from 6.0f to 4.0f (thinner slider)
         
-        // Heavy drop shadow for hover effect
-        if (isHovered)
+        // Draw shadow first, before any other knob elements
+        // Create ring shadow that only affects the outer track area, not the center
+        // This prevents darkening the center where the knob name appears
+        auto shadowRadius = trackRadius + trackThickness * 0.5f; // Slightly larger than track
+        auto innerShadowRadius = trackRadius - trackThickness * 0.5f; // Inner edge of track
+        
+        juce::Path shadowRing;
+        shadowRing.addEllipse(centre.x - shadowRadius, centre.y - shadowRadius, 
+                             shadowRadius * 2, shadowRadius * 2);
+        shadowRing.addEllipse(centre.x - innerShadowRadius, centre.y - innerShadowRadius, 
+                             innerShadowRadius * 2, innerShadowRadius * 2);
+        
+        // Heavy shadow - only around the track ring (reduced intensity)
+        g.setColour(theme.shadowDark.withAlpha(isHovered ? 0.2f : 0.1f));
+        g.fillPath(shadowRing);
+        
+        // Light shadow overlay - only around the track ring (reduced intensity)
+        g.setColour(theme.shadowLight.withAlpha(isHovered ? 0.1f : 0.05f));
+        g.fillPath(shadowRing);
+        
+        // Flash effect overlay (if double-clicked)
+        if (isFlashing)
         {
-            juce::DropShadow heavyShadow(theme.shadowDark.withAlpha(shadowIntensity), 16, {0, 4});
-            juce::DropShadow lightShadow(theme.shadowLight.withAlpha(shadowIntensity * 0.5f), 8, {0, 2});
-            
-            auto shadowBounds = juce::Rectangle<float>(centre.x - trackRadius, centre.y - trackRadius, 
-                                                    trackRadius * 2, trackRadius * 2);
-            heavyShadow.drawForRectangle(g, shadowBounds.getSmallestIntegerContainer());
-            lightShadow.drawForRectangle(g, shadowBounds.getSmallestIntegerContainer());
+            juce::Colour flashColor = theme.accent.brighter(0.8f).withAlpha(flashIntensity * 0.6f);
+            g.setColour(flashColor);
+            g.fillEllipse(centre.x - trackRadius, centre.y - trackRadius, 
+                         trackRadius * 2, trackRadius * 2);
         }
         
         // Track background
