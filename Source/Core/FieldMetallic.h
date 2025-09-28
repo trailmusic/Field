@@ -13,6 +13,14 @@ enum class MetallicKind : int {
 // Helper function to detect metallic properties from component properties
 inline MetallicKind metallicFromProps(const juce::NamedValueSet& props) 
 {
+    // Debug: Print all properties to see what's being set
+    DBG("metallicFromProps: Checking properties:");
+    for (int i = 0; i < props.size(); ++i) {
+        auto key = props.getName(i);
+        auto value = props.getValueAt(i);
+        DBG("  " << key << " = " << value.toString());
+    }
+    
     if ((bool)props.getWithDefault("phaseMetallic", false))  return MetallicKind::Phase;
     if ((bool)props.getWithDefault("reverbMetallic", false)) return MetallicKind::Reverb;
     if ((bool)props.getWithDefault("delayMetallic", false))  return MetallicKind::Delay;

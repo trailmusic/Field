@@ -134,10 +134,10 @@ private:
                 c.addItem ("BP", 4);
             }
             
-            // Apply Delay metallic styling to the actual combo, not the wrapper
-            setAreaMetallicForCell (c, MetallicKind::Delay);
             auto cell = std::make_unique<SimpleSwitchCell> (c);
             cell->setCaption (cap);
+            cell->getProperties().set ("metallic", true);
+            cell->getProperties().set ("delayMetallic", true);
             cell->setShowBorder (true);
             addAndMakeVisible (*cell);
             switchCells.emplace_back (cell.get());

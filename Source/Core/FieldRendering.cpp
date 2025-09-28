@@ -141,18 +141,22 @@ namespace FieldRendering
         else if (metallicKind != MetallicKind::None)
         {
             // Metallic buttons - use metallic rendering system
+            auto metalColors = MetallicRenderer::getMetallicColors(theme, metallicKind);
+            
             if (button.getToggleState())
             {
-                // Toggled state - use metallic colors
-                auto metalColors = MetallicRenderer::getMetallicColors(theme, metallicKind);
+                // Toggled state - use full metallic colors
                 MetallicRenderer::paintMetal(g, r, metalColors, 6.0f);
                 return; // Early return for metallic rendering
             }
             else
             {
-                // Untoggled state - use panel with metallic border
-                fill = isMouseOver ? panel.brighter(0.06f) : panel;
-                if (isButtonDown) fill = fill.darker(0.12f);
+                // Untoggled state - use metallic colors with reduced intensity
+                auto reducedMetal = metalColors;
+                reducedMetal.top = reducedMetal.top.withAlpha(0.6f);
+                reducedMetal.bottom = reducedMetal.bottom.withAlpha(0.6f);
+                MetallicRenderer::paintMetal(g, r, reducedMetal, 6.0f);
+                return; // Early return for metallic rendering
             }
         }
         else

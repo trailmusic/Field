@@ -51,6 +51,19 @@ public:
         popupItemTints = tints;
     }
 
+    // Centralized knob styling function to eliminate redundancy
+    static void styleKnob(juce::Slider& k, juce::LookAndFeel* lf = nullptr)
+    {
+        k.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+        k.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        k.setRotaryParameters(juce::MathConstants<float>::pi,
+                             juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
+                             true);
+        // Assign FieldLookAndFeel to get custom tick rendering
+        if (auto* fieldLnf = dynamic_cast<FieldLNF*>(lf))
+            k.setLookAndFeel(fieldLnf);
+    }
+
     // --- JUCE LookAndFeel overrides (delegate to FieldRendering) ---
     
     // Button overrides

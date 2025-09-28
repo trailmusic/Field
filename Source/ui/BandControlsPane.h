@@ -51,14 +51,8 @@ public:
 private:
     void styleKnob (juce::Slider& k)
     {
-        k.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-        k.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-        k.setRotaryParameters (juce::MathConstants<float>::pi,
-                               juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
-                               true);
-        // Assign FieldLookAndFeel to get custom tick rendering
-        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-            k.setLookAndFeel(lf);
+        // Use centralized styling function to eliminate redundancy
+        FieldLNF::styleKnob(k, &getLookAndFeel());
     }
     void makeCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid)
     {

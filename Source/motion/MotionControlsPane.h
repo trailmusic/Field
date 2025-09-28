@@ -169,7 +169,6 @@ private:
     {
         auto combo = std::make_unique<juce::ComboBox>();
         combo->setName(param.name);
-        setAreaMetallicForCell(*combo, MetallicKind::Motion);
         
         // Add items based on parameter type
         if (slot == MotionSlot::kPanner) {
@@ -184,6 +183,8 @@ private:
         
         auto cell = std::make_unique<SimpleSwitchCell>(*combo);
         cell->setCaption(param.name);
+        cell->getProperties().set("metallic", true);
+        cell->getProperties().set("motionMetallic", true);
         cell->setShowBorder(true);
         addAndMakeVisible(*cell);
         
