@@ -1,11 +1,11 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "SpectrumAnalyzer.h"
-#include "../dynEQ/DynamicEqParamIDs.h"
-#include "../Core/FieldLookAndFeel.h"
-#include "ZoomState.h"
-#include "DynEqZoomSideRail.h"
+#include "../Engines/SpectrumAnalyzer.h"
+#include "dynEQ/DynamicEqParamIDs.h"
+#include "Core/FieldLookAndFeel.h"
+#include "../Controls/ZoomState.h"
+#include "../Controls/DynEqZoomSideRail.h"
 
 class MyPluginAudioProcessor; // fwd
 class MyPluginAudioProcessorEditor; // fwd

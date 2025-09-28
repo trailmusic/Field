@@ -4,27 +4,15 @@
 #include "../Tabs/XYTab.h"
 #include "../Tabs/ImagerTab.h"
 #include "../Tabs/BandTab.h"
-#include "machine/MachinePane.h"
-#include "../Core/IconSystem.h"
-#include "../motion/MotionTab.h"
-#include "../motion/MotionVisual.h"
+#include "../Panes/MachinePane.h"
+#include "Core/IconSystem.h"
+#include "../../motion/MotionTab.h"
+#include "../../motion/MotionVisual.h"
 #include "../../reverb/ui/ReverbTab.h"
 #include "../delay/DelayTab.h"
 #include "../Tabs/PhaseTab.h"
 
-class XYPad; // forward (lives in PluginEditor.h/cpp)
-
-// Lightweight XY wrapper so we can compile without including PluginEditor.h here
-class XYPaneAdapter : public juce::Component
-{
-public:
-    XYPaneAdapter (XYPad& padRef);
-    void resized() override;
-    // Forward realtime-safe oscilloscope samples to the XYPad
-    void pushWaveformSample (double L, double R);
-private:
-    XYPad& pad;
-};
+// XYPaneAdapter removed - XYTab now contains XYPad directly
 
 enum class PaneID { Phase=0, XY=1, Band=2, Motion=3, Reverb=4, Delay=5, DynEQ=6, Imager=7, Machine=8 };
 
@@ -49,17 +37,16 @@ class PaneManager : public juce::Component, private juce::Timer
 public:
     // Keep-warm option removed
 
-    PaneManager (MyPluginAudioProcessor& p, juce::ValueTree& state, juce::LookAndFeel* lnf, XYPad& xyPadRef)
+    PaneManager (MyPluginAudioProcessor& p, juce::ValueTree& state, juce::LookAndFeel* lnf)
         : proc(p), vt(state)
     {
         phase = std::make_unique<PhaseTab>(p, lnf);
-        xy   = std::make_unique<XYPaneAdapter> (xyPadRef);
         dyneq = std::make_unique<DynEqTab> (p, lnf);
-        xyTab= std::make_unique<XYTab>(p, *(juce::Component*) xy.get());
+        xyTab = std::make_unique<XYTab>(p);
         imgr = std::make_unique<ImagerTab>(p, lnf);
         band = std::make_unique<BandTab>(p);
         motion = std::make_unique<MotionTab>(p);
-        mach = std::make_unique<MachinePane>(p, state, *dynamic_cast<FieldLNF*>(lnf));
+        mach = std::make_unique<MachinePane>(p, state, lnf);
         // Reverb/Delay composite tabs (controls grid hidden until migration completes)
         reverb = std::make_unique<ReverbTab>(p);
         delay  = std::make_unique<DelayTab>(p);
@@ -171,7 +158,7 @@ public:
         const int maxPull = 2048;
         // No spectrum push; Dynamic EQ will manage its own feeds
         const bool wantXY = (active == PaneID::XY) && doHeavy;
-        if (wantXY && xy)
+        if (wantXY && xyTab)
         {
             int nXY = proc.visPost.pull (tmpXY, 1024);
             if (nXY > 0)
@@ -179,7 +166,7 @@ public:
                 auto* L = tmpXY.getReadPointer(0);
                 auto* R = tmpXY.getNumChannels()>1 ? tmpXY.getReadPointer(1) : nullptr;
                 for (int i = 0; i < nXY; i += 64)
-                    xy->pushWaveformSample (L[i], R ? R[i] : L[i]);
+                    xyTab->pushWaveformSample (L[i], R ? R[i] : L[i]);
             }
         }
         const bool wantImgr = (active == PaneID::Imager) && doHeavy;
@@ -245,6 +232,7 @@ public:
 
     void setSampleRate (double fs)
     {
+        if (xyTab) xyTab->setSampleRate (fs);
         if (auto* ip = dynamic_cast<ImagerPane*>(imgr.get())) ip->setSampleRate (fs);
         if (auto* bp = dynamic_cast<BandTab*>(band.get())) bp->setSampleRate (fs);
         if (auto* mp = mach.get()) mp->setSampleRate (fs);
@@ -274,7 +262,7 @@ public:
 
     void onAudioSample (double L, double R)
     {
-        if (xy) xy->pushWaveformSample (L, R);
+        if (xyTab) xyTab->pushWaveformSample (L, R);
     }
     void onAudioBlock (const float* L, const float* R, int n)
     {
@@ -357,9 +345,6 @@ public:
         xyTab.reset();
         f.appendText("PaneManager Destructor: XYTab destroyed\n", false, false, "\n");
         
-        xy.reset();
-        f.appendText("PaneManager Destructor: XY adapter destroyed\n", false, false, "\n");
-        
         f.appendText("PaneManager Destructor: COMPLETE\n", false, false, "\n");
     }
 
@@ -369,6 +354,9 @@ public:
         switch (active) { case PaneID::Phase: return (juce::Component*) phase.get(); case PaneID::XY: return (juce::Component*) xyTab.get(); case PaneID::Band: return band.get(); case PaneID::Motion: return (juce::Component*) motion.get(); case PaneID::Reverb: return reverb.get(); case PaneID::Delay: return delay.get(); case PaneID::DynEQ: return (juce::Component*) dyneq.get(); case PaneID::Imager: return (juce::Component*) imgr.get(); case PaneID::Machine: return mach.get(); }
         return (juce::Component*) phase.get();
     }
+    
+    // Get specific tab instances
+    XYTab* getXYTab() { return xyTab.get(); }
 
     // spectrumPane removed; Dynamic EQ tab owns its visuals
 
@@ -660,7 +648,6 @@ private:
     std::atomic<int> activeAtomic { (int) PaneID::Phase };
 
     std::unique_ptr<PhaseTab>              phase;
-    std::unique_ptr<XYPaneAdapter>         xy;
     std::unique_ptr<XYTab>                 xyTab;
     // Dynamic EQ tab (replaces Spectrum)
     std::unique_ptr<DynEqTab>              dyneq;

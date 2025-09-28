@@ -1,7 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
-#include "StereoFieldEngine.h"
-#include "../Core/FieldLookAndFeel.h"
+#include "../Engines/StereoFieldEngine.h"
+#include "Core/FieldLookAndFeel.h"
 
 // Band Visual Pane: Width mode visuals for Band tab
 class BandVisualPane : public juce::Component, private juce::Timer

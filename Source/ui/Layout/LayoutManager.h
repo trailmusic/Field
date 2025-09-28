@@ -2,7 +2,7 @@
 
 #include <JuceHeader.h>
 #include "../Components/KnobCell.h"
-#include "../ControlGridMetrics.h"
+#include "../Controls/ControlGridMetrics.h"
 
 class MyPluginAudioProcessorEditor;
 

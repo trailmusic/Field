@@ -1,12 +1,12 @@
 #pragma once
 #include <JuceHeader.h>
-#include "../Core/PluginProcessor.h"
-#include "../Core/FieldLookAndFeel.h"
-#include "../Core/FieldMetallic.h"
-#include "ControlGridMetrics.h"
-#include "Components/KnobCell.h"
-#include "Components/ButtonSwitch.h"
-#include "SimpleSwitchCell.h"
+#include "Core/PluginProcessor.h"
+#include "Core/FieldLookAndFeel.h"
+#include "Core/FieldMetallic.h"
+#include "../Controls/ControlGridMetrics.h"
+#include "../Components/KnobCell.h"
+#include "../Components/ButtonSwitch.h"
+#include "../Controls/SimpleSwitchCell.h"
 
 // Phase Visual Container - placeholder for phase alignment visuals
 class PhaseVisualContainer : public juce::Component

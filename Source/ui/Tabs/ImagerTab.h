@@ -1,9 +1,9 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "ImagerPane.h"
-#include "ImagerControlsPane.h"
-#include "ControlGridMetrics.h"
+#include "../Panes/ImagerPane.h"
+#include "../Panes/ImagerControlsPane.h"
+#include "../Controls/ControlGridMetrics.h"
 
 class MyPluginAudioProcessor; // fwd
 

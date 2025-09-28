@@ -31,7 +31,6 @@
 #include "ui/Panes/ImagerPane.h"
 #include "ui/Managers/PaneManager.h"
 #include "ui/delay/DelayVisuals.h"
-// MegaMenu and old preset system removed
 
 /*==============================================================================
     DEV NOTES – OVERVIEW
@@ -1025,13 +1024,15 @@ public:
 
     // Layout management
     void performLayout();
+    void layoutMeters(juce::Rectangle<int> metersArea, float s, float sv);
 
 private:
     // Forward declaration for nested divider type used earlier in members
-    class VerticalDivider;
     MyPluginAudioProcessor& proc;
+public:
     FieldLNF lnf;
-    XYPad pad;
+private:
+    // XYPad moved into XYTab - no longer direct member
     // Multi-pane visual dock (XY, Spectrum, Imager)
     std::unique_ptr<class PaneManager> panes;
     std::unique_ptr<juce::KeyListener> keyListener;
@@ -1092,8 +1093,12 @@ private:
     juce::ComboBox osSelect;
 
     // Old preset combo & save button removed
+public:
     BypassButton     bypassButton;
+private:
+public:
     ToggleSwitch     splitToggle;
+private:
     
     // Unified controls viewport (stacks Group 1 and Group 2 vertically)
     juce::Viewport controlsViewport;
@@ -1119,21 +1124,33 @@ private:
     juce::ToggleButton delayEnabled, delaySync, delayKillDry, delayFreeze, delayPingpong, delayDuckPost, delayDuckLinkGlobal;
     
     // Icon buttons (shared base)
+public:
     OptionsButton    optionsButton;
+private:
+public:
     LinkButton       linkButton;
     SnapButton       snapButton;
+private:
+public:
     FullScreenButton fullScreenButton;
     ColorModeButton  colorModeButton;
     TooltipsButton   tooltipsButton; // Wrench icon (Options) toggles tooltip assistant
     // History and undo/redo removed
     HelpButton       helpButton;
+private:
+public:
     CopyButton       copyButton;
+private:
     LockButton       lockButton;
 
+public:
     bool tooltipAssistantOn_ { false }; // Header wrench toggle state
+private:
 
     // Lightweight tooltip bubble shown when tooltip assistant is ON
+public:
     TooltipBubble tooltipBubble;
+private:
     juce::Component* lastTooltipTarget { nullptr };
 
     // Global Wet Only (Kill Dry) UI toggle (no param binding per instructions)
@@ -1156,194 +1173,8 @@ private:
     class MonoSlopeSwitch;
     std::unique_ptr<MonoSlopeSwitch> monoSlopeSwitch;
     
-    // 3-way segmented switch (Room / Plate / Hall) with horizontal or vertical layout.
-    class SpaceAlgorithmSwitch : public juce::Component
-    {
-    public:
-        enum class Orientation { Horizontal, Vertical };
+    // OLD REVERB SYSTEM REMOVED - Now using new reverb system in Source/reverb/
 
-        SpaceAlgorithmSwitch()
-        {
-            items.add ("Room");
-            items.add ("Plate");
-            items.add ("Hall");
-        }
-
-        void setGreenMode (bool) {}
-
-        // Orientation / labels
-        void setOrientation (Orientation o)          { orientation = o; repaint(); }
-        void setLabels (const juce::StringArray& ls) { items = ls; currentIndex = juce::jlimit (0, items.size() - 1, currentIndex); repaint(); }
-
-        // State
-        void setAlgorithm (int i)              { currentIndex = juce::jlimit (0, items.size() - 1, i); repaint(); }
-        void setAlgorithmFromParameter (int i) { setAlgorithm (i); }
-        int  getAlgorithm () const             { return currentIndex; }
-        void setMuted (bool m)                 { muted = m; repaint(); }
-
-        std::function<void (int)> onAlgorithmChange;
-
-        void setSpacing (float px) { spacing = juce::jmax (0.0f, px); repaint(); }
-        void setDrawOwnPanel (bool on) { drawOwnPanel = on; repaint(); }
-
-        void paint (juce::Graphics& g) override
-        {
-            const int n = items.size();
-            if (n == 0) return;
-
-            auto b = getLocalBounds().toFloat();
-
-            // Draw own panel only when not hosted in SwitchCell
-            if (drawOwnPanel)
-            {
-                if (auto* lfPanel = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                {
-                    const float rad = 8.0f;
-                    auto panel = b.reduced (3.0f);
-                    g.setColour (lfPanel->theme.panel);
-                    g.fillRoundedRectangle (panel, rad);
-                    g.setColour (lfPanel->theme.sh.withAlpha (0.18f));
-                    g.drawRoundedRectangle (panel.reduced (1.0f), rad - 1.0f, 0.8f);
-                }
-            }
-            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-            const auto outline = juce::Colour (0xFF1A1C20);
-            const float corner = 6.0f;
-
-            if (orientation == Orientation::Horizontal)
-            {
-                const float s = spacing;
-                // DEV NOTE: 4x larger feel – rely on wider column and use most of height/width
-                const float side = juce::jmin (b.getHeight() - 8.0f, (b.getWidth() - (n - 1) * s - 8.0f) / (float) n);
-                const float totalW = side * n + s * (n - 1);
-                juce::Rectangle<float> r (b.getX() + (b.getWidth() - totalW) * 0.5f,
-                                          b.getY() + (b.getHeight() - side) * 0.5f,
-                                          side, side);
-
-                for (int i = 0; i < n; ++i)
-                {
-                    const bool on = (currentIndex == i);
-                    drawButton (g, r, i, on, items[i], lf, outline, corner, muted);
-                    r.setX (r.getX() + side + s);
-                }
-            }
-            else
-            {
-                const float s = spacing;
-                const float availableH = juce::jmax (0.0f, b.getHeight() - (n - 1) * s - 8.0f);
-                const float h = availableH / (float) n;
-
-                juce::Rectangle<float> r (b.getX(), b.getY() + 4.0f, b.getWidth(), h);
-                for (int i = n - 1; i >= 0; --i)
-                {
-                    const bool on = (currentIndex == i);
-                    drawButton (g, r, i, on, items[i], lf, outline, corner, muted);
-                    r.setY (r.getY() + h + s);
-                }
-            }
-        }
-
-        void mouseDown (const juce::MouseEvent& e) override
-        {
-            if (e.mods.isPopupMenu())
-            {
-                juce::PopupMenu m;
-                for (int i = 0; i < items.size(); ++i)
-                    m.addItem (i + 1, items[i], true, currentIndex == i);
-
-                m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this),
-                                 [this](int r){ if (r > 0) { currentIndex = r - 1; repaint(); if (onAlgorithmChange) onAlgorithmChange (currentIndex); }});
-                return;
-            }
-
-            const int n = items.size();
-            if (n == 0) return;
-
-            auto b = getLocalBounds().toFloat();
-            const float s = spacing;
-
-            if (orientation == Orientation::Horizontal)
-            {
-                const float side = juce::jmin (b.getHeight(), (b.getWidth() - (n - 1) * s) / (float) n);
-                const float totalW = side * n + s * (n - 1);
-                juce::Rectangle<float> r (b.getX() + (b.getWidth() - totalW) * 0.5f,
-                                          b.getY() + (b.getHeight() - side) * 0.5f,
-                                          side, side);
-
-                for (int i = 0; i < n; ++i)
-                {
-                    if (r.contains ((float) e.x, (float) e.y))
-                    {
-                        if (currentIndex != i) { currentIndex = i; repaint(); if (onAlgorithmChange) onAlgorithmChange (currentIndex); }
-                        return;
-                    }
-                    r.setX (r.getX() + side + s);
-                }
-            }
-            else
-            {
-                const float availableH = juce::jmax (0.0f, b.getHeight() - (n - 1) * s);
-                const float h = availableH / (float) n;
-                juce::Rectangle<float> r (b.getX(), b.getY(), b.getWidth(), h);
-
-                for (int i = n - 1; i >= 0; --i)
-                {
-                    if (r.contains ((float) e.x, (float) e.y))
-                    {
-                        if (currentIndex != i) { currentIndex = i; repaint(); if (onAlgorithmChange) onAlgorithmChange (currentIndex); }
-                        return;
-                    }
-                    r.setY (r.getY() + h + s);
-                }
-            }
-        }
-
-    private:
-        int currentIndex { 0 };
-        juce::StringArray items;
-        Orientation orientation { Orientation::Vertical };
-        float spacing { 6.0f };
-        bool  drawOwnPanel { true };
-        bool  muted { false };
-
-        static juce::Colour activeColour (int idx, FieldLNF* lf)
-        {
-            if (lf != nullptr)
-            {
-                auto a = lf->theme.accent;
-                switch (idx) {
-                    case 0: return a;                 // Room
-                    case 1: return a.brighter (0.35f);// Plate
-                    case 2: return a.darker   (0.35f);// Hall
-                }
-            }
-            switch (idx) { case 0: return juce::Colour (0xFF5AA9E6); case 1: return juce::Colour (0xFF2EC4B6); case 2: return juce::Colour (0xFF2A1B3D); }
-            return juce::Colour (0xFF5AA9E6);
-        }
-
-        static void drawButton (juce::Graphics& g, juce::Rectangle<float> r, int idx, bool on, const juce::String& label,
-                                FieldLNF* lf, juce::Colour outline, float corner, bool muted)
-        {
-            juce::Colour base = juce::Colour (0xFF2A2C30);
-            juce::Colour fill = on ? activeColour (idx, lf) : base;
-
-            g.setColour (fill);
-            g.fillRoundedRectangle (r, corner);
-
-            g.setColour (outline);
-            g.drawRoundedRectangle (r, corner, 1.0f);
-
-            juce::Colour textCol = lf ? lf->theme.text : juce::Colour (0xFFF0F2F5);
-            if (muted) textCol = textCol.withAlpha (0.45f);
-            g.setColour (textCol);
-            g.setFont (juce::Font (juce::FontOptions (12.0f).withStyle ("Bold")));
-            g.drawText (label, r, juce::Justification::centred);
-        }
-    };
-    
-    SpaceAlgorithmSwitch spaceAlgorithmSwitch;
-    std::unique_ptr<SpaceAlgorithmSwitch> monoSlopeSegmentSwitch;
-    std::unique_ptr<SwitchCell> spaceSwitchCell;
     std::unique_ptr<SwitchCell> wetOnlyCell;
 
     // Dedicated Mono Slope Switch (6/12/24) with independent drawing but same visual language
@@ -1419,12 +1250,18 @@ private:
     
     // A/B & presets
     
+public:
     ABButton abButtonA{true}, abButtonB{false};
     PresetArrowButton prevPresetButton{true}, nextPresetButton{false};
     juce::TextButton presetField; // clickable field to open palette and display current preset
     juce::Label presetNameLabel;
+private:
+public:
     juce::Label transportClockLabel;
+private:
+public:
     juce::Component headerLeftGroup; // container for bypass (no logo)
+private:
 
     // Split-pan container placeholder for grid cell (no painting, no mouse)
     juce::Component panSplitContainer;
@@ -1570,9 +1407,11 @@ private:
     // [moved] Attachment containers declared after all bound controls (see below)
     
     // Scaling
+public:
     float scaleFactor = 1.0f;
     const int baseWidth  = 1500; // 75% of 2000 to try a smaller default
     const int baseHeight = 1000; // increased for Dynamic EQ controls and better layout
+private:
     const int standardKnobSize = 80;
     bool resizingRowGuard = false;
     
@@ -2170,8 +2009,10 @@ private:
 
     // Phase Mode center group
     ControlContainer phaseCenterContainer;
+public:
     PhaseModeButton  phaseModeButton;
     QualityButton    qualityButton;
+private:
     std::unique_ptr<juce::ParameterAttachment> phaseModeParamAttach;
     std::unique_ptr<juce::ParameterAttachment> osModeParamAttach;
     std::unique_ptr<juce::ParameterAttachment> qualityParamAttach;

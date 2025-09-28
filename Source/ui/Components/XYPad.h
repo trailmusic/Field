@@ -141,4 +141,8 @@ private:
     void drawParameterLabels (juce::Graphics& g, juce::Rectangle<float> bounds);
     void drawSnapGrid (juce::Graphics& g, juce::Rectangle<float> bounds);
     void drawHoverEffects (juce::Graphics& g, juce::Rectangle<float> bounds);
+    
+    // Methods called from PluginEditor.cpp
+    int getBallAtPosition (juce::Point<float> pos, juce::Rectangle<float> b);
+    void drawFrequencyRegions (juce::Graphics& g, juce::Rectangle<float> b);
 };

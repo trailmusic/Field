@@ -1,10 +1,10 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "Components/KnobCell.h"
+#include "../Components/KnobCell.h"
 #include "../Design/Layout.h"
-#include "../Core/FieldLookAndFeel.h"
-#include "../Core/FieldMetallic.h"
+#include "Core/FieldLookAndFeel.h"
+#include "Core/FieldMetallic.h"
 
 // BandControlsPane: 2x16 grid for Band tab (Width visuals): WIDTH + WIDTH LO/MID/HI
 class BandControlsPane : public juce::Component

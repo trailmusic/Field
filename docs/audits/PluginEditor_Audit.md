@@ -222,17 +222,94 @@ Source/
 - [x] ButtonSwitch system creation
 - [x] Build system updates
 - [x] Initial architecture planning
+- [x] **11 Components Extracted**: All major embedded classes moved to dedicated files
+- [x] **PluginEditor.h Reduction**: From 2,476 lines to 2,187 lines (289 lines removed)
+- [x] **Layout Logic Extraction**: Header and main controls layout moved to LayoutManager
+- [x] **UI Directory Organization**: All unorganized files moved to proper subdirectories
+- [x] **XY Architecture Fix**: XYPad moved from PluginEditor to XYTab, circular dependency resolved
+- [x] **Include Path Updates**: All include paths updated for new directory structure
+- [x] **Compilation Error Fixes**: Major compilation errors resolved, XYPad references updated
 
 ### **In Progress** 🔄
-- [ ] ThemedIconButton extraction
-- [ ] ToggleSwitch extraction
-- [ ] Layout logic separation
+- [ ] **Naming Convention Refactor**: Standardizing Tab/Pane/Panel/Pad naming
+- [ ] **Center Group Layout Extraction**: Moving center group layout to LayoutManager
+
+### **Recently Completed** ✅
+- [x] **XY Architecture Fix**: XYPad moved from PluginEditor to XYTab, circular dependency resolved
+- [x] **Old Reverb System Removal**: Successfully removed legacy reverb system (space_algo, SpaceAlgorithmSwitch, computeReverbVoicing)
+- [x] **LayoutManager Access Issues**: Fixed private member access issues, made necessary members public
+- [x] **Build System Success**: All compilation and linker errors resolved, build now successful
+- [x] **PluginEditor.h Reduction**: From 2,187 lines to 2,029 lines (158 additional lines removed)
+
+### **Old Reverb System Analysis** 🔍
+**Problem Identified**: There are TWO reverb systems in the codebase:
+1. **OLD SYSTEM** (Legacy): `space_algo` parameter, `SpaceAlgorithmSwitch` component, `computeReverbVoicing()` function
+2. **NEW SYSTEM** (Current): Complete reverb engine in `Source/reverb/` with `ReverbIDs`, `ReverbEngine`, `ReverbTab`
+
+**Old System Components to Remove**:
+- `SpaceAlgorithmSwitch` class (lines 1159-1307 in PluginEditor.h)
+- `spaceAlgorithmSwitch` member variable
+- `space_algo` parameter and all references
+- `computeReverbVoicing()` function in PluginProcessor.cpp
+- `applySpaceAlgorithm()` and `renderSpaceWet()` methods
+- All `spaceAlgo` references in parameter structures
 
 ### **Next Up** 📋
 - [ ] Event handling separation
 - [ ] State management extraction
 - [ ] Massive code cleanup
 - [ ] Interface simplification
+
+## 🏗️ **NEW: Naming Convention Refactor (January 2025)**
+
+### **Problem Identified:**
+Current naming convention is inconsistent and confusing:
+```
+Current (Inconsistent):
+├── XYPad          → Should be XYTab (main functionality)
+├── ImagerPane     → Should be ImagerTab (main functionality)  
+├── MotionPanel    → Should be MotionTab (main functionality)
+├── MachinePane    → Should be MachineTab (main functionality)
+├── BandVisualPane → Should be BandGraphics (visualization)
+└── ReverbPanel    → Should be ReverbGraphics (visualization)
+```
+
+### **Naming Convention Rules:**
+- **Tab**: Main functionality containers (PhaseTab, XYTab, ImagerTab, MotionTab, MachineTab)
+- **Graphics**: Visualization components (BandGraphics, ReverbGraphics)
+- **Controls**: Control knobs/sliders (PhaseControls, XYControls, etc.)
+
+### **Components to Rename:**
+
+| Current Name | Proposed Name | Type | Status |
+|--------------|---------------|------|--------|
+| `XYPad` | `XYTab` | Main functionality | 🔄 Pending |
+| `ImagerPane` | `ImagerTab` | Main functionality | 🔄 Pending |
+| `MotionPanel` | `MotionTab` | Main functionality | 🔄 Pending |
+| `MachinePane` | `MachineTab` | Main functionality | 🔄 Pending |
+| `BandVisualPane` | `BandGraphics` | Graphics component | 🔄 Pending |
+| `ReverbPanel` | `ReverbGraphics` | Graphics component | 🔄 Pending |
+
+### **XY Architecture Problem:**
+```
+BROKEN ARCHITECTURE:
+PluginEditor → XYPad (direct member)
+PluginEditor → PaneManager → XYPaneAdapter → XYPad (circular reference)
+PluginEditor → PaneManager → XYTab → XYPaneAdapter → XYPad (triple wrapper!)
+```
+
+### **Proposed XY Solution:**
+```
+CLEAN ARCHITECTURE:
+PluginEditor → PaneManager → XYTab (self-contained, like other tabs)
+```
+
+### **Benefits of Naming Convention Fix:**
+- **Clear Hierarchy**: Tab → Graphics → Controls
+- **Predictable Naming**: Always know what each component does
+- **Easier Maintenance**: No confusion about responsibilities
+- **Better Organization**: Logical file structure
+- **Reduced Cognitive Load**: Developers know what to expect
 
 ## 🎯 **Final Vision**
 

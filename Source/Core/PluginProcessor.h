@@ -63,7 +63,7 @@ namespace IDs {
     static constexpr const char* satDriveDb = "sat_drive_db";
     static constexpr const char* satMix     = "sat_mix";
     static constexpr const char* bypass     = "bypass";
-    static constexpr const char* spaceAlgo  = "space_algo";   // 0=Room 1=Plate 2=Hall
+    // OLD REVERB SYSTEM REMOVED - Now using new reverb system in Source/reverb/
     static constexpr const char* airDb      = "air_db";
     static constexpr const char* bassDb     = "bass_db";
     static constexpr const char* ducking    = "ducking";
@@ -677,7 +677,7 @@ private:
         Sample lpQ{};             // per-filter Q
         bool   tiltLinkS{};       // use shelfShapeS for tilt shelves
         bool   eqQLink{};         // link HP/LP Q to filterQ
-        Sample satDriveLin{}, satMix{}; bool bypass{}; int spaceAlgo{};
+        Sample satDriveLin{}, satMix{}; bool bypass{};
         Sample airDb{}, bassDb{}, ducking{}; int osMode{}; bool splitMode{};
         // Ducking advanced params
         Sample duckThresholdDb{};
@@ -830,7 +830,7 @@ struct HostParams
     double lpQ{};           // per-filter
     bool   tiltLinkS{};
     bool   eqQLink{};
-    double satDriveDb{}, satMix{}; bool bypass{}; int spaceAlgo{};
+    double satDriveDb{}, satMix{}; bool bypass{};
     double airDb{}, bassDb{}, ducking{}; int osMode{}; bool splitMode{};
     // Ducking advanced
     double duckThresholdDb{};

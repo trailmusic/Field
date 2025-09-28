@@ -1,13 +1,13 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "Components/KnobCell.h"
-#include "Components/KnobCellWithAux.h"
+#include "../Components/KnobCell.h"
+#include "../Components/KnobCellWithAux.h"
 #include "../Controls/SimpleSwitchCell.h"
 #include "../Design/Layout.h"
-#include "../Core/FieldLookAndFeel.h"
-#include "../Core/FieldMetallic.h"
-#include "../Core/IconSystem.h"
+#include "Core/FieldLookAndFeel.h"
+#include "Core/FieldMetallic.h"
+#include "Core/IconSystem.h"
 
 // XYControlsPane: 2x16 grid for EQ/Center controls shown with the XY visuals
 class XYControlsPane : public juce::Component

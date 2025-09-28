@@ -20,7 +20,7 @@ public:
         }) 
     {
         // Set LookAndFeel for metallic styling
-        setLookAndFeel(&FieldLNF::getInstance());
+        // LookAndFeel will be set by parent component
     }
     
     ~TooltipsButton() override

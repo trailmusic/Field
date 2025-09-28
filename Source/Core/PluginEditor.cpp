@@ -1,9 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-// Implement XYPaneAdapter methods now that XYPad is fully defined here
-XYPaneAdapter::XYPaneAdapter (XYPad& padRef) : pad (padRef) { addAndMakeVisible ((juce::Component&) pad); }
-void XYPaneAdapter::resized() { pad.setBounds (getLocalBounds()); }
-void XYPaneAdapter::pushWaveformSample (double L, double R) { pad.pushWaveformSample (L, R); }
+// XYPaneAdapter removed - XYTab now contains XYPad directly
 #include "ui/Managers/PaneManager.h"
 #include "reverb/ReverbParamIDs.h"
 #include "ui/Design/Layout.h"
@@ -1349,12 +1346,8 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // Defer one tick to ensure LookAndFeel and attachments settle, then repaint
     juce::MessageManager::callAsync ([this]
     {
-        if (spaceSwitchCell)
-        {
-            spaceSwitchCell->resized();
-            spaceSwitchCell->repaint();
-        }
-        spaceAlgorithmSwitch.repaint();
+        // OLD REVERB SYSTEM REMOVED
+        // OLD REVERB SYSTEM REMOVED
         repaint();
     });
     lnf.theme.accent = juce::Colour (0xFF5AA9E6); // ocean default
@@ -1551,8 +1544,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         // Propagate to components that cache green flag
         const bool greenNow = (order[idx] == ThemeVariant::Green);
         spaceKnob.setGreenMode (greenNow);
-        spaceAlgorithmSwitch.setGreenMode (greenNow);
-        pad.setGreenMode (greenNow);
+        // OLD REVERB SYSTEM REMOVED
+        if (auto* xyTab = panes->getXYTab()) {
+            xyTab->setGreenMode(greenNow);
+        }
         repaint();
     };
 
@@ -1602,7 +1597,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     linkButton.onClick = [this]
     {
         linkButton.setToggleState (!linkButton.getToggleState(), juce::dontSendNotification);
-        pad.setLinked (linkButton.getToggleState());
+        if (auto* xyTab = panes->getXYTab()) {
+            xyTab->setLinked(linkButton.getToggleState());
+        }
     };
     addAndMakeVisible (snapButton);
     snapButton.setToggleState (false, juce::dontSendNotification); // default OFF per your note
@@ -1610,7 +1607,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     {
         const bool on = !snapButton.getToggleState();
         snapButton.setToggleState (on, juce::dontSendNotification);
-        pad.setSnapEnabled (on);
+        if (auto* xyTab = panes->getXYTab()) {
+            xyTab->setSnapEnabled(on);
+        }
     };
 
     // Presets UI
@@ -1681,7 +1680,9 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     addAndMakeVisible (splitToggle);
     splitToggle.onToggleChange = [this] (bool split)
     {
-        pad.setSplitMode (split);
+        if (auto* xyTab = panes->getXYTab()) {
+            xyTab->setSplitMode(split);
+        }
         linkButton.setVisible (split);
         panKnob.setVisible (!split);
         panValue.setVisible (!split);
@@ -1694,7 +1695,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     splitToggle.setToggleState (false, juce::dontSendNotification);
     linkButton.setVisible (false);
     // Multi-pane dock (XY, Dynamic EQ, Imager) + shade overlay
-    panes = std::make_unique<PaneManager> (proc, proc.apvts.state, &lnf, pad);
+    panes = std::make_unique<PaneManager> (proc, proc.apvts.state, &lnf);
     addAndMakeVisible (panes.get());
     panes->setSampleRate (proc.getSampleRate());
     // keep-warm removed; no pane warm-up needed
@@ -1917,18 +1918,24 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     {
         s.onValueChange = [this]
         {
-            pad.setTiltValue  ((float) tilt .getValue());
-            pad.setHPValue    ((float) hpHz .getValue());
-            pad.setLPValue    ((float) lpHz .getValue());
-            pad.setAirValue   ((float) air  .getValue());
-            pad.setBassValue  ((float) bass .getValue());
-            pad.setScoopValue ((float) scoop.getValue());
-            pad.setTiltFreqValue  ((float) tiltFreqSlider.getValue());
-            pad.setScoopFreqValue ((float) scoopFreqSlider.getValue());
-            pad.setBassFreqValue  ((float) bassFreqSlider.getValue());
-            pad.setAirFreqValue   ((float) airFreqSlider.getValue());
-            pad.setMonoValue      ((float) monoHz.getValue());
-            pad.repaint();
+            if (auto* xyTab = panes->getXYTab()) {
+                xyTab->setTiltValue((float) tilt.getValue());
+                xyTab->setHPValue((float) hpHz.getValue());
+                xyTab->setLPValue((float) lpHz.getValue());
+                xyTab->setAirValue((float) air.getValue());
+            }
+            if (auto* xyTab = panes->getXYTab()) {
+                xyTab->setBassValue((float) bass.getValue());
+                xyTab->setScoopValue((float) scoop.getValue());
+                xyTab->setTiltFreqValue((float) tiltFreqSlider.getValue());
+                xyTab->setScoopFreqValue((float) scoopFreqSlider.getValue());
+                xyTab->setBassFreqValue((float) bassFreqSlider.getValue());
+            }
+            if (auto* xyTab = panes->getXYTab()) {
+                xyTab->setAirFreqValue((float) airFreqSlider.getValue());
+                xyTab->setMonoValue((float) monoHz.getValue());
+                xyTab->repaint();
+            }
         };
     };
     for (juce::Slider* slider : { &tilt,&hpHz,&lpHz,&air,&bass,&scoop,&tiltFreqSlider,&scoopFreqSlider,&bassFreqSlider,&airFreqSlider,&monoHz,&shelfShapeS,&filterQ,&hpQSlider,&lpQSlider })
@@ -2164,33 +2171,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // All children created; allow layout from now on
     layoutReady = true;
 
-    // reverb algo switch
-    addAndMakeVisible (spaceAlgorithmSwitch);
-    spaceAlgorithmSwitch.setGreenMode (isGreenMode);
-    if (auto* c = dynamic_cast<juce::AudioParameterChoice*>(proc.apvts.getParameter ("space_algo")))
-    {
-        const int maxIdx = juce::jmax (0, c->choices.size() - 1);
-        const int idx = juce::jlimit (0, maxIdx, (int) c->getIndex());
-        spaceAlgorithmSwitch.setOrientation (SpaceAlgorithmSwitch::Orientation::Vertical);
-        spaceAlgorithmSwitch.setSpacing (4.0f);
-        spaceAlgorithmSwitch.setAlgorithmFromParameter (idx);
-        // Ensure labels show Room/Plate/Hall regardless of saved state
-        spaceAlgorithmSwitch.setLabels (juce::StringArray { "Room", "Plate", "Hall" });
-        currentAlgorithm = idx;
-        pad.setSpaceAlgorithm (idx);
-    }
-    spaceAlgorithmSwitch.onAlgorithmChange = [this](int a)
-    {
-        if (auto* c = dynamic_cast<juce::AudioParameterChoice*>(proc.apvts.getParameter ("space_algo")))
-        {
-            const int maxIdx = juce::jmax (0, c->choices.size() - 1);
-            const int idx = juce::jlimit (0, maxIdx, a);
-            const float norm = c->convertTo0to1 ((float) idx);
-            c->beginChangeGesture(); c->setValueNotifyingHost (norm); c->endChangeGesture();
-            currentAlgorithm = idx;
-            pad.setSpaceAlgorithm (idx);
-        }
-    };
+    // OLD REVERB SYSTEM REMOVED - Now using new reverb system in Source/reverb/
 
     // header divider
     addAndMakeVisible (splitDivider);
@@ -2199,31 +2180,34 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // XY callbacks -> AVTS
     auto refreshXYOverlays = [this]
     {
-        pad.setMixValue   (proc.apvts.getRawParameterValue ("sat_mix")->load());
-        pad.setDriveValue (proc.apvts.getRawParameterValue ("sat_drive_db")->load());
-        pad.setTiltValue  (proc.apvts.getRawParameterValue ("tilt")->load());
-        pad.setHPValue    (proc.apvts.getRawParameterValue ("hp_hz")->load());
-        pad.setLPValue    (proc.apvts.getRawParameterValue ("lp_hz")->load());
-        pad.setAirValue   (proc.apvts.getRawParameterValue ("air_db")->load());
-        pad.setBassValue  (proc.apvts.getRawParameterValue ("bass_db")->load());
-        pad.setScoopValue (proc.apvts.getRawParameterValue ("scoop")->load());
-        pad.setTiltFreqValue  (proc.apvts.getRawParameterValue ("tilt_freq")->load());
-        pad.setScoopFreqValue (proc.apvts.getRawParameterValue ("scoop_freq")->load());
-        pad.setBassFreqValue  (proc.apvts.getRawParameterValue ("bass_freq")->load());
-        pad.setAirFreqValue   (proc.apvts.getRawParameterValue ("air_freq")->load());
-        pad.setWidthValue (proc.apvts.getRawParameterValue ("width")->load());
-        pad.setPanValue   (proc.apvts.getRawParameterValue ("pan")->load());
-        pad.setGainValue  (proc.apvts.getRawParameterValue ("gain_db")->load());
+        if (auto* xyTab = panes->getXYTab()) {
+            xyTab->setMixValue   (proc.apvts.getRawParameterValue ("sat_mix")->load());
+            xyTab->setDriveValue (proc.apvts.getRawParameterValue ("sat_drive_db")->load());
+            xyTab->setTiltValue  (proc.apvts.getRawParameterValue ("tilt")->load());
+            xyTab->setHPValue    (proc.apvts.getRawParameterValue ("hp_hz")->load());
+            xyTab->setLPValue    (proc.apvts.getRawParameterValue ("lp_hz")->load());
+            xyTab->setAirValue   (proc.apvts.getRawParameterValue ("air_db")->load());
+            xyTab->setBassValue  (proc.apvts.getRawParameterValue ("bass_db")->load());
+            xyTab->setScoopValue (proc.apvts.getRawParameterValue ("scoop")->load());
+            xyTab->setTiltFreqValue  (proc.apvts.getRawParameterValue ("tilt_freq")->load());
+            xyTab->setScoopFreqValue (proc.apvts.getRawParameterValue ("scoop_freq")->load());
+            xyTab->setBassFreqValue  (proc.apvts.getRawParameterValue ("bass_freq")->load());
+            xyTab->setAirFreqValue   (proc.apvts.getRawParameterValue ("air_freq")->load());
+            xyTab->setWidthValue (proc.apvts.getRawParameterValue ("width")->load());
+            xyTab->setPanValue   (proc.apvts.getRawParameterValue ("pan")->load());
+            xyTab->setGainValue  (proc.apvts.getRawParameterValue ("gain_db")->load());
+        }
     };
 
-    pad.onChange = [this, refreshXYOverlays](float x01, float y01)
+    if (auto* xyTab = panes->getXYTab()) {
+        xyTab->onChange = [this, refreshXYOverlays](float x01, float y01)
     {
         if (auto* split = proc.apvts.getParameter ("split_mode")) { split->beginChangeGesture(); split->setValueNotifyingHost (0.0f); split->endChangeGesture(); }
         if (auto* pan   = proc.apvts.getParameter ("pan"))        { pan  ->beginChangeGesture(); pan  ->setValueNotifyingHost (x01);  pan  ->endChangeGesture(); }
         if (auto* dep   = proc.apvts.getParameter ("depth"))      { dep  ->beginChangeGesture(); dep  ->setValueNotifyingHost (y01);  dep  ->endChangeGesture(); }
         refreshXYOverlays();
     };
-    pad.onSplitChange = [this, refreshXYOverlays](float l01, float r01, float y01)
+        xyTab->onSplitChange = [this, refreshXYOverlays](float l01, float r01, float y01)
     {
         if (auto* split = proc.apvts.getParameter ("split_mode")) { split->beginChangeGesture(); split->setValueNotifyingHost (1.0f); split->endChangeGesture(); }
         if (auto* pL = proc.apvts.getParameter ("pan_l")) { pL->beginChangeGesture(); pL->setValueNotifyingHost (l01); pL->endChangeGesture(); }
@@ -2231,6 +2215,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
         if (auto* dep= proc.apvts.getParameter ("depth")) { dep->beginChangeGesture(); dep->setValueNotifyingHost (y01); dep->endChangeGesture(); }
         refreshXYOverlays();
     };
+    }
     // listeners for split overlay % etc.
     panKnobLeft.addListener (this);
     panKnobRight.addListener (this);
@@ -2343,7 +2328,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
             // Motion parameter attachments removed - now handled by MotionControlsPane
 
     // parameter listeners (host→UI)
-    proc.apvts.addParameterListener ("space_algo", this);
+    // OLD REVERB SYSTEM REMOVED
     proc.apvts.addParameterListener ("split_mode", this);
     proc.apvts.addParameterListener ("pan",        this);
     proc.apvts.addParameterListener ("depth",      this);
@@ -2366,7 +2351,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     proc.onAudioSample   = [this](float L, float R) { if (panes) panes->onAudioSample (L, R); };
     proc.onAudioBlock    = [this](const float* L, const float* R, int n) { if (panes) panes->onAudioBlock (L, R, n); };
     proc.onAudioBlockPre = [this](const float* L, const float* R, int n) { if (panes) panes->onAudioBlockPre (L, R, n); };
-    pad.setSampleRate (proc.getSampleRate());
+    // XYPad sample rate now handled by XYTab
 
     // Keybindings for panes and keep-warm
     struct LocalKeyListener : public juce::KeyListener {
@@ -2514,7 +2499,7 @@ MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
     f.appendText("Editor Destructor: Audio callbacks cleared\n", false, false, "\n");
 
     // Remove all parameter listeners that were added in the ctor
-    proc.apvts.removeParameterListener ("space_algo", this);
+    // OLD REVERB SYSTEM REMOVED
     proc.apvts.removeParameterListener ("split_mode", this);
     proc.apvts.removeParameterListener ("pan",        this);
     proc.apvts.removeParameterListener ("depth",      this);
@@ -4084,9 +4069,7 @@ void MyPluginAudioProcessorEditor::timerCallback()
     float duckDepthDb = 0.0f;
     if (auto* pDepth = proc.apvts.getRawParameterValue (ReverbIDs::duckDepthDb)) duckDepthDb = pDepth->load();
     const bool duckActive = (duckDepthDb > 0.0001f) && reverbActive;
-    // spaceAlgorithmSwitch greying now follows Reverb Engine state
-    spaceAlgorithmSwitch.setAlpha (reverbActive ? 1.0f : 0.35f);
-    spaceAlgorithmSwitch.setMuted (!reverbActive);
+    // OLD REVERB SYSTEM REMOVED
     
     // Update motion panel visual state with sequence tracking and idle fallback
     if (panes) {
@@ -4121,13 +4104,15 @@ void MyPluginAudioProcessorEditor::timerCallback()
     duckingKnob.setMuted (!duckActive);
     if (doHeavyUi)
     {
-        spaceAlgorithmSwitch.repaint();
+        // OLD REVERB SYSTEM REMOVED
         duckingKnob.repaint();
         duckAttack.repaint();
         duckRelease.repaint();
         duckThreshold.repaint();
         duckRatio.repaint();
-        pad.repaint();
+        if (auto* xyTab = panes->getXYTab()) {
+            xyTab->repaint();
+        }
     }
 
     // Update transport clock label (host/standalone song time)
@@ -4218,7 +4203,9 @@ void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
 
     if (s == &gain) {
         set (gainValue, dB (gain.getValue()));
-        pad.setGainValue ((float) gain.getValue()); // feed XY for split-ball hit radius
+        if (auto* xyTab = panes->getXYTab()) {
+            xyTab->setGainValue ((float) gain.getValue()); // feed XY for split-ball hit radius
+        }
     }
     else if (s == &width) {
         const double pctVal = juce::jlimit (0.0, 1000.0, width.getValue() * 100.0); // 1.0 -> 100%
@@ -4237,7 +4224,11 @@ void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
         // Dynamic label: Boost for >0, Scoop for <0, 0 shows Scoop
         scoop.setName (scoop.getValue() > 0.0 ? "BOOST" : "SCOOP");
     }
-    else if (s == &panKnob){ set (panValue, juce::String (panKnob.getValue(), 2)); pad.setPanValue ((float) panKnob.getValue()); }
+    else if (s == &panKnob){ set (panValue, juce::String (panKnob.getValue(), 2)); 
+        if (auto* xyTab = panes->getXYTab()) {
+            xyTab->setPanValue ((float) panKnob.getValue());
+        }
+    }
     else if (s == &panKnobLeft || s == &panKnobRight)
     {
         set (panValueLeft,  juce::String (panKnobLeft.getValue(), 2));
@@ -4246,7 +4237,11 @@ void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
                                     (float) juce::jmap (panKnobRight.getValue(), -1.0, 1.0, 0.0, 100.0));
         panKnob.repaint();
     }
-    else if (s == &spaceKnob)   { set (spaceValue, juce::String (spaceKnob.getValue(), 2)); pad.setSpaceValue ((float) spaceKnob.getValue()); }
+    else if (s == &spaceKnob)   { set (spaceValue, juce::String (spaceKnob.getValue(), 2)); 
+        if (auto* xyTab = panes->getXYTab()) {
+            xyTab->setSpaceValue ((float) spaceKnob.getValue());
+        }
+    }
     else if (s == &duckingKnob) {
         // Display 0–100% depth
         const double pctVal = juce::jmap (duckingKnob.getValue(), duckingKnob.getMinimum(), duckingKnob.getMaximum(), 0.0, 100.0);
@@ -4371,9 +4366,22 @@ void MyPluginAudioProcessorEditor::parameterChanged (const juce::String& id, flo
         const float v = nv;
         juce::MessageManager::callAsync ([this, id, v]
         {
-            if      (id == "pan")        { pad.setPanValue   (v); }
-            else if (id == "depth")      { pad.setSpaceValue (v); }
-            else if (id == "split_mode") { pad.setSplitMode  (v >= 0.5f); resized(); }
+            if      (id == "pan")        { 
+                if (auto* xyTab = panes->getXYTab()) {
+                    xyTab->setPanValue   (v);
+                }
+            }
+            else if (id == "depth")      { 
+                if (auto* xyTab = panes->getXYTab()) {
+                    xyTab->setSpaceValue (v);
+                }
+            }
+            else if (id == "split_mode") { 
+                if (auto* xyTab = panes->getXYTab()) {
+                    xyTab->setSplitMode  (v >= 0.5f);
+                }
+                resized(); 
+            }
         });
     }
     else if (id == "mono_slope_db_oct")
@@ -4382,7 +4390,9 @@ void MyPluginAudioProcessorEditor::parameterChanged (const juce::String& id, flo
         const int slope = (idx == 0 ? 6 : idx == 1 ? 12 : 24);
         juce::MessageManager::callAsync ([this, slope]
         {
-            pad.setMonoSlopeDbPerOct (slope);
+            if (auto* xyTab = panes->getXYTab()) {
+                xyTab->setMonoSlopeDbPerOct (slope);
+            }
         });
     }
     else if (id == "eq_shelf_shape" || id == "eq_q_link" || id == "eq_filter_q"
@@ -4467,65 +4477,75 @@ void MyPluginAudioProcessorEditor::pasteState (bool toA)  { if (!clipboardState.
 
 void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
 {
-    pad.setPanValue   ((float) panKnob.getValue());
-    pad.setSpaceValue ((float) spaceKnob.getValue());
-    pad.setWidthValue ((float) width.getValue());
-    pad.setTiltValue  ((float) tilt .getValue());
-    pad.setHPValue    ((float) hpHz .getValue());
-    pad.setLPValue    ((float) lpHz .getValue());
-    // initialize mono slope for XY visualization
+    // Get XYPad from XYTab through PaneManager
+    if (panes && panes->getActiveID() == PaneID::XY)
     {
-        int slopeGuess = 12;
-        auto txt = monoSlopeChoice.getText();
-        if      (txt == "6")  slopeGuess = 6;
-        else if (txt == "12") slopeGuess = 12;
-        else if (txt == "24") slopeGuess = 24;
-        pad.setMonoSlopeDbPerOct (slopeGuess);
-    }
-    pad.setAirValue   ((float) air  .getValue());
-    pad.setBassValue  ((float) bass .getValue());
-    pad.setScoopValue ((float) scoop.getValue());
-    pad.setGainValue  ((float) gain .getValue());
+        if (auto* xyTab = dynamic_cast<XYTab*>(panes->getActive()))
+        {
+            if (auto* xyPad = xyTab->getXYPad())
+            {
+                xyPad->setPanValue   ((float) panKnob.getValue());
+                xyPad->setSpaceValue ((float) spaceKnob.getValue());
+                xyPad->setWidthValue ((float) width.getValue());
+                xyPad->setTiltValue  ((float) tilt .getValue());
+                xyPad->setHPValue    ((float) hpHz .getValue());
+                xyPad->setLPValue    ((float) lpHz .getValue());
+                // initialize mono slope for XY visualization
+                {
+                    int slopeGuess = 12;
+                    auto txt = monoSlopeChoice.getText();
+                    if      (txt == "6")  slopeGuess = 6;
+                    else if (txt == "12") slopeGuess = 12;
+                    else if (txt == "24") slopeGuess = 24;
+                    xyPad->setMonoSlopeDbPerOct (slopeGuess);
+                }
+                xyPad->setAirValue   ((float) air  .getValue());
+                xyPad->setBassValue  ((float) bass .getValue());
+                xyPad->setScoopValue ((float) scoop.getValue());
+                xyPad->setGainValue  ((float) gain .getValue());
 
-    // Push EQ S/Q and link states from APVTS to XYPad and UI
-    if (auto* pS = proc.apvts.getRawParameterValue ("eq_shelf_shape"))
-        {
-            const float S = (float) pS->load();
-            pad.setShelfShapeS (S);
-            shelfShapeS.getProperties().set ("S_value", (double) S); // expose to LNF for warning segment
-            shelfShapeS.repaint();
-        }
-    if (auto* pLink = proc.apvts.getRawParameterValue ("eq_q_link"))
-    {
-        const bool link = pLink->load() >= 0.5f;
-        pad.setQLink (link);
-        // Reflect minis enabled state + muted visuals
-        hpQSlider.setEnabled (!link);
-        lpQSlider.setEnabled (!link);
-        hpQSlider.getProperties().set ("muted", link);
-        lpQSlider.getProperties().set ("muted", link);
-        filterQ.getProperties().set ("muted", !link); // unlinked => grey ring on global Q
-        if (link)
-        {
-            if (auto* pQ = proc.apvts.getRawParameterValue ("eq_filter_q"))
-                pad.setFilterQ ((float) pQ->load());
-        }
-        else
-        {
-            if (auto* pHP = proc.apvts.getRawParameterValue ("hp_q")) pad.setHPQ ((float) pHP->load());
-            if (auto* pLP = proc.apvts.getRawParameterValue ("lp_q")) pad.setLPQ ((float) pLP->load());
+                // Push EQ S/Q and link states from APVTS to XYPad and UI
+                if (auto* pS = proc.apvts.getRawParameterValue ("eq_shelf_shape"))
+                    {
+                        const float S = (float) pS->load();
+                        xyPad->setShelfShapeS (S);
+                        shelfShapeS.getProperties().set ("S_value", (double) S); // expose to LNF for warning segment
+                        shelfShapeS.repaint();
+                    }
+                if (auto* pLink = proc.apvts.getRawParameterValue ("eq_q_link"))
+                {
+                    const bool link = pLink->load() >= 0.5f;
+                    xyPad->setQLink (link);
+                    // Reflect minis enabled state + muted visuals
+                    hpQSlider.setEnabled (!link);
+                    lpQSlider.setEnabled (!link);
+                    hpQSlider.getProperties().set ("muted", link);
+                    lpQSlider.getProperties().set ("muted", link);
+                    filterQ.getProperties().set ("muted", !link); // unlinked => grey ring on global Q
+                    if (link)
+                    {
+                        if (auto* pQ = proc.apvts.getRawParameterValue ("eq_filter_q"))
+                            xyPad->setFilterQ ((float) pQ->load());
+                    }
+                    else
+                    {
+                        if (auto* pHP = proc.apvts.getRawParameterValue ("hp_q")) xyPad->setHPQ ((float) pHP->load());
+                        if (auto* pLP = proc.apvts.getRawParameterValue ("lp_q")) xyPad->setLPQ ((float) pLP->load());
+                    }
+                }
+                if (auto* pTiltS = proc.apvts.getRawParameterValue ("tilt_link_s"))
+                    xyPad->setTiltUseS (pTiltS->load() >= 0.5f);
+
+                // Imaging/shuffler overlays
+                xyPad->setXoverLoHz   ((float) xoverLoHz.getValue());
+                xyPad->setXoverHiHz   ((float) xoverHiHz.getValue());
+                xyPad->setRotationDeg ((float) rotationDeg.getValue());
+                xyPad->setAsymmetry   ((float) asymmetry.getValue());
+                // SHUF parameters moved to Band tab
+                updateMutedKnobVisuals();
+            }
         }
     }
-    if (auto* pTiltS = proc.apvts.getRawParameterValue ("tilt_link_s"))
-        pad.setTiltUseS (pTiltS->load() >= 0.5f);
-
-    // Imaging/shuffler overlays
-    pad.setXoverLoHz   ((float) xoverLoHz.getValue());
-    pad.setXoverHiHz   ((float) xoverHiHz.getValue());
-    pad.setRotationDeg ((float) rotationDeg.getValue());
-    pad.setAsymmetry   ((float) asymmetry.getValue());
-    // SHUF parameters moved to Band tab
-    updateMutedKnobVisuals();
 }
 // Motion parameter attachment methods removed - now handled by MotionControlsPane
 
@@ -4534,5 +4554,11 @@ void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
 // Motion visual state synthesis removed - now handled by MotionControlsPane
 
 // Motion control value refresh removed - now handled by MotionControlsPane
+
+void MyPluginAudioProcessorEditor::layoutMeters(juce::Rectangle<int> metersArea, float s, float sv)
+{
+    // Placeholder implementation for meters layout
+    // This will be implemented when we extract the meters layout logic
+}
 
 // end
