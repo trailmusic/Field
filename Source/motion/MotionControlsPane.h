@@ -208,6 +208,7 @@ private:
         cell->setValueLabelMode(KnobCell::ValueLabelMode::Managed);
         cell->setValueLabelGap(labelGapPx);
         setAreaMetallicForCell(*cell, MetallicKind::Motion);
+        cell->getProperties().set ("caption", param.name);
         addAndMakeVisible(*cell);
         
         knobCells.emplace_back(cell.get());

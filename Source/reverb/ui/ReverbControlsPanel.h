@@ -24,6 +24,7 @@ public:
             slider.setName (caption); // FieldLNF draws knob name from Slider::getName()
             auto cell = std::make_unique<KnobCell> (slider, value, caption);
             cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
+            cell->getProperties().set ("caption", caption);
             cells.add (cell.get());
             addAndMakeVisible (*cell);
             cellPtrs.emplace_back (std::move (cell));
