@@ -66,8 +66,9 @@ public:
                     caption.setVisible (false);
                 }
                 // Give ComboBox the remaining space after caption
-                // Don't constrain - let ComboBox fill available space like other components
-                child.setBounds (b);
+                // Make ComboBox larger to test if size is the issue
+                auto expandedBounds = b.expanded(8, 8); // Add 8px padding on all sides
+                child.setBounds (expandedBounds);
                 return;
             }
             else
