@@ -76,6 +76,15 @@ public:
                 // Hide caption for other metallic components (buttons) to avoid double labels
                 caption.setVisible (false);
                 child.setBounds (getLocalBounds()); // Use full cell area for metallic buttons too
+                
+                // CRITICAL: Assign FieldLNF LookAndFeel to metallic buttons so they use our custom rendering
+                if (auto* button = dynamic_cast<juce::Button*>(&child))
+                {
+                    if (auto* fieldLnf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                    {
+                        button->setLookAndFeel(fieldLnf);
+                    }
+                }
                 return;
             }
         }
@@ -117,11 +126,7 @@ public:
                 auto cellBounds = getLocalBounds().reduced(3);
                 button->setBounds(cellBounds);
                 
-                // CRITICAL: Assign FieldLNF LookAndFeel to the button so it uses our custom rendering
-                if (auto* fieldLnf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                {
-                    button->setLookAndFeel(fieldLnf);
-                }
+                // LookAndFeel assignment is now handled in resized() method
                 
                 // Let JUCE handle the complete button rendering (background + text)
                 // The FieldLookAndFeel::drawButtonBackground will handle the metallic background
