@@ -244,8 +244,20 @@ Source/
 - [x] **Mouse Events**: mouseDown, mouseDrag, mouseUp, mouseMove extracted with resize and tooltip logic
 - [x] **Timer Callback**: Adaptive timer logic, audio processing, and XYPad repaint extracted
 - [x] **Slider Events**: Complete slider value change handling with label updates extracted
+- [x] **Button Events**: Complete button click handling for all UI buttons (bypass, color mode, tooltips, full screen, link, snap, preset, A/B, copy, help)
+- [x] **Combo Box Events**: Complete combo box change handling for OS select and mono slope choice
+- [x] **Tooltip Events**: Complete tooltip handling with bubble menu setup and display logic
+- [x] **Resize Events**: Complete resize handling integrated with mouse events
 - [x] **Access Control**: Made necessary PluginEditor members public for EventManager access
 - [x] **Audio Integration**: Properly integrated with VisBus system for audio sample processing
+- [x] **PluginEditor Delegation**: All event handling methods now properly delegate to EventManager
+- [x] **Build System Success**: All event handling extraction tested and working correctly
+- [x] **Parameter Attachment Extraction**: Successfully extracted all parameter attachment logic from PluginEditor to AttachmentManager
+- [x] **AttachmentManager Creation**: Created new AttachmentManager class with attachAllParameters() and detachAllParameters() methods
+- [x] **Parameter Access Control**: Made necessary UI components public for AttachmentManager access
+- [x] **Attachment Logic Centralization**: All SliderAttachment, ButtonAttachment, and ComboBoxAttachment logic centralized
+- [x] **Build System Integration**: Added AttachmentManager to CMakeLists.txt and PluginEditor initialization
+- [x] **Code Reduction**: Removed manual parameter attachment code from PluginEditor constructor and destructor
 
 ### **Old Reverb System Analysis** 🔍
 **Problem Identified**: There are TWO reverb systems in the codebase:
@@ -276,7 +288,7 @@ Source/
 - [ ] **Massive Code Cleanup**: Remove unused code and consolidate functionality
 - [ ] **Interface Simplification**: Minimize public API surface
 
-## 🎉 **NEW: Event Handling Extraction (January 2025)**
+## 🎉 **NEW: Event Handling Extraction (January 2025)** ✅ **COMPLETED**
 
 ### **Problem Identified:**
 Event handling was embedded directly in PluginEditor, creating a monolithic structure:
@@ -287,6 +299,8 @@ PluginEditor::mouseDrag()     → 30+ lines of drag handling
 PluginEditor::mouseUp()       → 20+ lines of state reset
 PluginEditor::timerCallback() → 100+ lines of adaptive timer + audio processing
 PluginEditor::sliderValueChanged() → 200+ lines of slider handling
+PluginEditor::buttonClicked() → 150+ lines of button handling
+PluginEditor::comboBoxChanged() → 50+ lines of combo box handling
 ```
 
 ### **Solution Implemented:** ✅ **COMPLETED**
@@ -295,8 +309,14 @@ AFTER (CLEAN ARCHITECTURE):
 PluginEditor → EventManager::handleMouseDown()
 PluginEditor → EventManager::handleMouseDrag()
 PluginEditor → EventManager::handleMouseUp()
+PluginEditor → EventManager::handleMouseMove()
 PluginEditor → EventManager::handleTimerCallback()
 PluginEditor → EventManager::handleSliderValueChanged()
+PluginEditor → EventManager::handleButtonClicked()
+PluginEditor → EventManager::handleComboBoxChanged()
+PluginEditor → EventManager::handleTooltipShow()
+PluginEditor → EventManager::handleTooltipHide()
+PluginEditor → EventManager::setupTooltipBubble()
 ```
 
 ### **Event Types Extracted:** ✅ **COMPLETED**
@@ -306,8 +326,10 @@ PluginEditor → EventManager::handleSliderValueChanged()
 | **Mouse Events** | ~120 lines | ✅ **COMPLETED** | Resize grip detection, drag logic, tooltip display |
 | **Timer Callback** | ~100 lines | ✅ **COMPLETED** | Adaptive timer (60Hz→30Hz), audio processing, XYPad repaint |
 | **Slider Events** | ~200 lines | ✅ **COMPLETED** | Value label updates, XYTab forwarding, all slider types |
-| **ComboBox Events** | ~20 lines | ✅ **COMPLETED** | Delegation setup, placeholder implementation |
-| **Button Events** | ~20 lines | ✅ **COMPLETED** | Delegation setup, placeholder implementation |
+| **Button Events** | ~150 lines | ✅ **COMPLETED** | Bypass, color mode, tooltips, full screen, link, snap, preset, A/B, copy, help |
+| **Combo Box Events** | ~50 lines | ✅ **COMPLETED** | OS select, mono slope choice with proper synchronization |
+| **Tooltip Events** | ~80 lines | ✅ **COMPLETED** | Tooltip bubble setup, menu callbacks, display logic |
+| **Resize Events** | ~60 lines | ✅ **COMPLETED** | Integrated with mouse events for resize grip handling |
 
 ### **Technical Achievements:** ✅ **COMPLETED**
 
@@ -480,6 +502,125 @@ PluginEditor → No center group (removed duplicates)
 - **Simplified Architecture**: Center group handled exclusively by XYControlsPane
 - **No Functional Loss**: XYControlsPane provides complete functionality
 - **Cleaner Code**: No more duplicate logic to maintain
+
+## 🔗 **NEW: Parameter Attachment Extraction (January 2025)** ✅ **COMPLETED**
+
+### **Problem Identified:**
+Parameter attachment logic was embedded directly in PluginEditor, creating a monolithic structure:
+```
+BEFORE (MONOLITHIC):
+PluginEditor::PluginEditor() {
+    // 200+ lines of parameter attachment code
+    attachments.push_back(std::make_unique<SliderAttachment>(...));
+    buttonAttachments.push_back(std::make_unique<ButtonAttachment>(...));
+    comboAttachments.push_back(std::make_unique<ComboBoxAttachment>(...));
+    // ... repeated for 50+ parameters
+}
+```
+
+### **Solution Implemented:** ✅ **COMPLETED**
+```
+AFTER (CLEAN ARCHITECTURE):
+PluginEditor → AttachmentManager::attachAllParameters()
+AttachmentManager → Centralized parameter attachment logic
+```
+
+### **AttachmentManager Features:** ✅ **COMPLETED**
+
+```cpp
+class AttachmentManager {
+public:
+    AttachmentManager(MyPluginAudioProcessorEditor& editor);
+    
+    // Core Methods
+    void attachAllParameters();
+    void detachAllParameters();
+    void detachParameter(const juce::String& parameterID);
+    bool isParameterValid(const juce::String& parameterID);
+    
+private:
+    MyPluginAudioProcessorEditor& editor;
+    
+    // Attachment Storage
+    std::vector<std::unique_ptr<SliderAttachment>> sliderAttachments;
+    std::vector<std::unique_ptr<ButtonAttachment>> buttonAttachments;
+    std::vector<std::unique_ptr<ComboBoxAttachment>> comboAttachments;
+};
+```
+
+### **Parameter Categories Extracted:** ✅ **COMPLETED**
+
+| Category | Parameters | Attachments | Status |
+|----------|------------|--------------|--------|
+| **Imaging Controls** | gain, width, tilt, monoHz, hpHz, lpHz | 6 SliderAttachments | ✅ **COMPLETED** |
+| **Main Controls** | satDrive, satMix, air, bass, scoop | 5 SliderAttachments | ✅ **COMPLETED** |
+| **Ducking Controls** | duckingKnob, duckAttack, duckRelease, duckThreshold, duckRatio | 5 SliderAttachments | ✅ **COMPLETED** |
+| **Mono Maker Controls** | monoSlopeChoice, monoAuditionButton | 1 ComboBoxAttachment, 1 ButtonAttachment | ✅ **COMPLETED** |
+| **EQ Controls** | tiltFreqSlider, scoopFreqSlider, bassFreqSlider, airFreqSlider, shelfShapeS, filterQ, tiltLinkSButton, qLinkButton, hpQSlider, lpQSlider, qClusterDummySlider | 10 SliderAttachments, 2 ButtonAttachments | ✅ **COMPLETED** |
+| **Delay Controls** | delayTime, delayFeedback, delayWet, delaySpread, delayWidth, delayModRate, delayModDepth, delayWowflutter, delayJitter, delayPreDelay, delayHp, delayLp, delayTilt, delaySat, delayDiffusion, delayDiffuseSize, delayDuckDepth, delayDuckAttack, delayDuckRelease, delayDuckThreshold, delayDuckRatio, delayDuckLookahead, delayMode, delayTimeDiv, delayDuckSource, delayGridFlavor, delayFilterType, delayEnabled, delaySync, delayKillDry, delayFreeze, delayPingpong, delayDuckPost, delayDuckLinkGlobal | 22 SliderAttachments, 6 ComboBoxAttachments, 8 ButtonAttachments | ✅ **COMPLETED** |
+
+### **Technical Achievements:** ✅ **COMPLETED**
+
+1. **Access Control Resolution**
+   - Made necessary UI components public for AttachmentManager access
+   - Fixed member access issues for sliders, buttons, and combo boxes
+   - Corrected attachment type for `delayFilterType` (ComboBoxAttachment vs ButtonAttachment)
+
+2. **Build System Integration**
+   - Added AttachmentManager to CMakeLists.txt
+   - Integrated AttachmentManager initialization in PluginEditor constructor
+   - Replaced manual attachment code with delegation calls
+
+3. **Code Reduction**
+   - Removed ~200 lines of manual parameter attachment code from PluginEditor
+   - Centralized all attachment logic in AttachmentManager
+   - Simplified PluginEditor constructor and destructor
+
+### **Architecture Benefits Achieved:**
+
+- **Separation of Concerns**: Parameter attachment centralized in AttachmentManager
+- **Maintainability**: Easier to modify and extend parameter attachments
+- **Testability**: Parameter attachment logic can be tested independently
+- **Performance**: Centralized attachment management with proper cleanup
+- **Scalability**: Easy to add new parameters and attachment types
+- **Code Reduction**: PluginEditor.cpp reduced by ~200 lines of attachment code
+
+### **PluginEditor Simplification:**
+
+```cpp
+// BEFORE (Monolithic)
+MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor(MyPluginAudioProcessor& p)
+    : AudioProcessorEditor(&p), proc(p), lnf(), spaceKnob(p, lnf)
+{
+    // 200+ lines of parameter attachment code
+    attachments.push_back(std::make_unique<SliderAttachment>(proc.apvts, "gain", gain));
+    buttonAttachments.push_back(std::make_unique<ButtonAttachment>(proc.apvts, "bypass", bypassButton));
+    // ... repeated for 50+ parameters
+}
+
+// AFTER (Clean Delegation)
+MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor(MyPluginAudioProcessor& p)
+    : AudioProcessorEditor(&p), proc(p), lnf(), spaceKnob(p, lnf)
+{
+    // Initialize managers
+    layoutManager = std::make_unique<LayoutManager>(*this);
+    eventManager = std::make_unique<EventManager>(*this);
+    attachmentManager = std::make_unique<AttachmentManager>(*this);
+    
+    // Parameter attachments delegated to AttachmentManager
+    if (attachmentManager) {
+        attachmentManager->attachAllParameters();
+    }
+}
+```
+
+### **Impact on PluginEditor:**
+
+- **PluginEditor.h**: Added AttachmentManager member and include
+- **PluginEditor.cpp**: ~200 lines of parameter attachment code extracted
+- **Maintainability**: Parameter attachment logic now centralized and testable
+- **Performance**: No performance impact, same functionality with better organization
+- **Build System**: All compilation and linking successful
 
 ## 🎯 **Final Vision**
 

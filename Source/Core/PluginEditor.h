@@ -24,6 +24,7 @@
 #include "ui/Components/UIHelpers.h"
 #include "ui/Layout/LayoutManager.h"
 #include "ui/Events/EventManager.h"
+#include "ui/Managers/AttachmentManager.h"
 #include "Presets/PresetRegistry.h"
 #include "Presets/PresetCommandPalette.h"
 #include "Presets/PresetManager.h"
@@ -1040,6 +1041,7 @@ private:
     // Layout and Event Management
     std::unique_ptr<LayoutManager> layoutManager;
     std::unique_ptr<EventManager> eventManager;
+    std::unique_ptr<AttachmentManager> attachmentManager;
     
     // Resize constraints
 public:
@@ -1091,21 +1093,25 @@ private:
     juce::Component group2Container;     // holds Group 2 controls (Delay/Reverb grids)
     
     // Frequency control sliders
+public:
     juce::Slider tiltFreqSlider, scoopFreqSlider, bassFreqSlider, airFreqSlider;
     // EQ shape/Q controls
     juce::Slider shelfShapeS, filterQ;
     juce::ToggleButton tiltLinkSButton, qLinkButton;
     juce::Slider hpQSlider, lpQSlider;
+private:
     // Q-cluster dummy hosts (no visible knob in cluster)
     juce::Slider qClusterDummySlider;
     juce::Label  qClusterDummyValue;
     
     // Delay controls
+public:
     juce::Slider delayTime, delayFeedback, delayWet, delaySpread, delayWidth, delayModRate, delayModDepth, delayWowflutter, delayJitter, delayPreDelay;
     juce::Slider delayHp, delayLp, delayTilt, delaySat, delayDiffusion, delayDiffuseSize;
     juce::Slider delayDuckDepth, delayDuckAttack, delayDuckRelease, delayDuckThreshold, delayDuckRatio, delayDuckLookahead;
     juce::ComboBox delayMode, delayTimeDiv, delayDuckSource, delayGridFlavor, delayFilterType;
     juce::ToggleButton delayEnabled, delaySync, delayKillDry, delayFreeze, delayPingpong, delayDuckPost, delayDuckLinkGlobal;
+private:
     
     // Icon buttons (shared base)
 public:
@@ -1979,12 +1985,7 @@ public:
     HorizontalDivider rowDivVol{lnf}, rowDivEQ{lnf};
 
     // Motion controls removed - now handled by MotionControlsPane
-    // Attachment containers (declared AFTER all sliders/buttons/combos they bind to)
-    // Ensures attachments are destroyed BEFORE controls during teardown
-    std::vector<std::unique_ptr<SliderAttachment>>  attachments;
-    std::vector<std::unique_ptr<ButtonAttachment>>  buttonAttachments;
-    std::vector<std::unique_ptr<ComboAttachment>>   comboAttachments;
-    // Motion attachments removed - now handled by MotionControlsPane
+    // Parameter attachments now handled by AttachmentManager
     
     // Motion ComboBoxes and Buttons removed - now handled by MotionControlsPane
     

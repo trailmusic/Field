@@ -1290,6 +1290,12 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     }
     presetStore.scan();
     DBG("[PresetStore] after add+scan: " << presetStore.getAll().size() << " presets");
+    
+    // Initialize managers
+    layoutManager = std::make_unique<LayoutManager>(*this);
+    eventManager = std::make_unique<EventManager>(*this);
+    attachmentManager = std::make_unique<AttachmentManager>(*this);
+    
     // Build knob cells once after all sliders/labels are created
     buildCells();
     // Calculate minimum size based on layout requirements
@@ -2127,14 +2133,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     addAndMakeVisible (monoAuditionButton);
     monoAuditionButton.setButtonText ("AUD");
 
-    // Imaging attachments
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::widthLo,         widthLo));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::widthMid,        widthMid));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::widthHi,         widthHi));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::xoverLoHz,      xoverLoHz));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::xoverHiHz,      xoverHiHz));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::rotationDeg,     rotationDeg));
-    attachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (proc.apvts, IDs::asymmetry,        asymmetry));
+    // Parameter attachments delegated to AttachmentManager
+    if (attachmentManager) {
+        attachmentManager->attachAllParameters();
+    }
 
     // All children created; allow layout from now on
     layoutReady = true;
@@ -2187,96 +2189,14 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // listeners for split overlay % etc.
     panKnobLeft.addListener (this);
     panKnobRight.addListener (this);
-    // attachments (deduped; removed accidental duplicates you had for bass/scoop/depth)
-    using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::gain,       gain));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::inputGain,  inputSlider));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::outputGain, outputSlider));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::mix,       mixSlider));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::width,         width));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::tilt,          tilt));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::monoHz,       monoHz));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::hpHz,         hpHz));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::lpHz,         lpHz));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::satDriveDb,  satDrive));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::satMix,       satMix));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::airDb,        air));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::bassDb,       bass));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::scoop,         scoop));
-    // Rebind ducking controls to Reverb Engine parameters
-    attachments.push_back (std::make_unique<SA> (proc.apvts, ReverbIDs::duckDepthDb, duckingKnob));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, ReverbIDs::duckAtkMs,   duckAttack));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, ReverbIDs::duckRelMs,   duckRelease));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, ReverbIDs::duckThrDb,   duckThreshold));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, ReverbIDs::duckRatio,   duckRatio));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "pan",           panKnob));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "pan_l",         panKnobLeft));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "pan_r",         panKnobRight));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, "depth",         spaceKnob));
-    // Mono maker APVTS attachments
-    comboAttachments .push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "mono_slope_db_oct", monoSlopeChoice));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>   (proc.apvts, "mono_audition",      monoAuditionButton));
+    // Parameter attachments now handled by AttachmentManager
 
     // Center group attachments
     // Center group parameter attachments moved to XYControlsPane (complete implementation there)
 
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::tiltFreq,     tiltFreqSlider));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::scoopFreq,    scoopFreqSlider));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::bassFreq,     bassFreqSlider));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::airFreq,      airFreqSlider));
-    // New EQ params
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::eqShelfShape, shelfShapeS));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::eqFilterQ,    filterQ));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, IDs::tiltLinkS, tiltLinkSButton));
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, IDs::eqQLink,   qLinkButton));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::hpQ, hpQSlider));
-    attachments.push_back (std::make_unique<SA> (proc.apvts, IDs::lpQ, lpQSlider));
-
-    buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "bypass", bypassButton));
-    comboAttachments .push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "os_mode", osSelect));
+    // EQ and bypass parameter attachments now handled by AttachmentManager
     
-    // Delay parameter attachments - with safety checks
-    auto safeDelayAttachment = [&](const char* paramId, auto&& attachment) {
-        if (proc.apvts.getParameter(paramId) != nullptr) {
-            attachment();
-        }
-    };
-    
-    safeDelayAttachment("delay_enabled", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_enabled", delayEnabled)); });
-    safeDelayAttachment("delay_mode", [&]() { comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_mode", delayMode)); });
-    safeDelayAttachment("delay_sync", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_sync", delaySync)); });
-    safeDelayAttachment("delay_grid_flavor", [&]() { comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_grid_flavor", delayGridFlavor)); });
-    safeDelayAttachment("delay_time_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_time_ms", delayTime)); });
-    safeDelayAttachment("delay_time_div", [&]() { comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_time_div", delayTimeDiv)); });
-    safeDelayAttachment("delay_feedback_pct", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_feedback_pct", delayFeedback)); });
-    safeDelayAttachment("delay_wet", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_wet", delayWet)); });
-    safeDelayAttachment("delay_kill_dry", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_kill_dry", delayKillDry)); });
-    safeDelayAttachment("delay_freeze", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_freeze", delayFreeze)); });
-    safeDelayAttachment("delay_pingpong", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_pingpong", delayPingpong)); });
-    safeDelayAttachment("delay_crossfeed_pct", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_crossfeed_pct", delaySpread)); });
-    safeDelayAttachment("delay_stereo_spread_pct", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_stereo_spread_pct", delaySpread)); });
-    safeDelayAttachment("delay_width", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_width", delayWidth)); });
-    safeDelayAttachment("delay_mod_rate_hz", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_mod_rate_hz", delayModRate)); });
-    safeDelayAttachment("delay_mod_depth_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_mod_depth_ms", delayModDepth)); });
-    safeDelayAttachment("delay_wowflutter", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_wowflutter", delayWowflutter)); });
-    safeDelayAttachment("delay_jitter_pct", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_jitter_pct", delayJitter)); });
-    safeDelayAttachment("delay_hp_hz", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_hp_hz", delayHp)); });
-    safeDelayAttachment("delay_lp_hz", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_lp_hz", delayLp)); });
-    safeDelayAttachment("delay_tilt_db", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_tilt_db", delayTilt)); });
-    safeDelayAttachment("delay_sat", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_sat", delaySat)); });
-    safeDelayAttachment("delay_diffusion", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_diffusion", delayDiffusion)); });
-    safeDelayAttachment("delay_diffuse_size_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_diffuse_size_ms", delayDiffuseSize)); });
-    safeDelayAttachment("delay_duck_source", [&]() { comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_duck_source", delayDuckSource)); });
-    safeDelayAttachment("delay_duck_post", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_duck_post", delayDuckPost)); });
-    safeDelayAttachment("delay_duck_depth", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_depth", delayDuckDepth)); });
-    safeDelayAttachment("delay_duck_attack_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_attack_ms", delayDuckAttack)); });
-    safeDelayAttachment("delay_duck_release_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_release_ms", delayDuckRelease)); });
-    safeDelayAttachment("delay_duck_threshold_db", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_threshold_db", delayDuckThreshold)); });
-    safeDelayAttachment("delay_duck_ratio", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_ratio", delayDuckRatio)); });
-    safeDelayAttachment("delay_duck_lookahead_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_duck_lookahead_ms", delayDuckLookahead)); });
-    safeDelayAttachment("delay_pre_delay_ms", [&]() { attachments.push_back (std::make_unique<SA> (proc.apvts, "delay_pre_delay_ms", delayPreDelay)); });
-    safeDelayAttachment("delay_filter_type", [&]() { comboAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delay_filter_type", delayFilterType)); });
-    safeDelayAttachment("delay_duck_link_global", [&]() { buttonAttachments.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (proc.apvts, "delay_duck_link_global", delayDuckLinkGlobal)); });
+    // Delay parameter attachments now handled by AttachmentManager
 
             // Motion includes removed - now handled by MotionControlsPane
             
@@ -2435,9 +2355,10 @@ MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
     f.appendText("Editor Destructor: AsyncUpdater cancelled\n", false, false, "\n");
     
     // Detach APVTS attachments BEFORE any controls are destroyed
-    attachments.clear();
-    buttonAttachments.clear();
-    comboAttachments.clear();
+    // Parameter attachments now handled by AttachmentManager
+    if (attachmentManager) {
+        attachmentManager->detachAllParameters();
+    }
     // Motion attachments removed - now handled by MotionControlsPane
     f.appendText("Editor Destructor: APVTS attachments cleared\n", false, false, "\n");
 
@@ -3460,7 +3381,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                 reverbEnableCell = std::make_unique<SwitchCell> (reverbEnable);
                 reverbEnableCell->setCaption ("Enable");
                 reverbEnableCell->setDelayTheme (false);
-                buttonAttachments.push_back (std::make_unique<ButtonAttachment> (proc.apvts, ReverbIDs::enabled, reverbEnable));
+                // Reverb parameter attachments now handled by AttachmentManager
             }
 
             static juce::ComboBox reverbAlgo;
@@ -3469,7 +3390,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                 if (auto* ch = dynamic_cast<juce::AudioParameterChoice*>(proc.apvts.getParameter(ReverbIDs::algo))) {
                     reverbAlgo.clear(); for (int i = 0; i < ch->choices.size(); ++i) reverbAlgo.addItem (ch->choices[i], i + 1);
                     reverbAlgo.setSelectedId (ch->getIndex() + 1, juce::dontSendNotification);
-                    comboAttachments.push_back (std::make_unique<ComboAttachment> (proc.apvts, ReverbIDs::algo, reverbAlgo));
+                    // Reverb parameter attachments now handled by AttachmentManager
                 }
                 reverbAlgo.getProperties().set ("iconOnly", true);
                 reverbAlgoCell = std::make_unique<SwitchCell> (reverbAlgo);
@@ -3485,7 +3406,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                 reverbWetOnlyCell = std::make_unique<SwitchCell> (reverbWetOnly);
                 reverbWetOnlyCell->setCaption ("Wet Only");
                 reverbWetOnlyCell->setDelayTheme (false);
-                buttonAttachments.push_back (std::make_unique<ButtonAttachment> (proc.apvts, ReverbIDs::killDry, reverbWetOnly));
+                // Reverb parameter attachments now handled by AttachmentManager
             }
 
             group2Container.addAndMakeVisible (*reverbEnableCell);
@@ -3517,11 +3438,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                     aStore.push_back (std::make_unique<SliderAttachment> (proc.apvts, id, sl));
                 }
             };
-            attachSlider (attachments, ReverbIDs::sizePct,       sizeS,     sizeV,     "SIZE",      sizeCell);
-            attachSlider (attachments, ReverbIDs::dreqXoverLoHz, dreqXLoS,  dreqXLoV,  "DEC XO LO", dreqXLoCell);
-            attachSlider (attachments, ReverbIDs::dreqXoverHiHz, dreqXHiS,  dreqXHiV,  "DEC XO HI", dreqXHiCell);
-            attachSlider (attachments, ReverbIDs::bloomPct,      bloomS,    bloomV,    "BLOOM",     bloomCell);
-            attachSlider (attachments, ReverbIDs::distancePct,   distanceS, distanceV, "DIST",      distanceCell);
+            // Reverb parameter attachments now handled by AttachmentManager
 
             // Freeze switch (Row 4, Col 2)
             static juce::ToggleButton reverbFreeze;
@@ -3533,7 +3450,7 @@ void MyPluginAudioProcessorEditor::performLayout()
                 reverbFreezeCell = std::make_unique<SwitchCell> (reverbFreeze);
                 reverbFreezeCell->setCaption ("Freeze");
                 group2Container.addAndMakeVisible (*reverbFreezeCell);
-                buttonAttachments.push_back (std::make_unique<ButtonAttachment> (proc.apvts, ReverbIDs::freeze, reverbFreeze));
+                // Reverb parameter attachments now handled by AttachmentManager
             }
 
             juce::Grid reverbGrid;
