@@ -106,20 +106,13 @@ public:
             else if (auto* combo = dynamic_cast<juce::ComboBox*>(&child))
             {
                 // Handle metallic ComboBoxes - show title and button window
-                // ComboBoxes have their own rendering in FieldLookAndFeel::drawComboBox
-                // We need to draw the cell background and let ComboBox handle its own rendering
+                // For ComboBoxes, we need to draw the frame on top after the ComboBox renders
                 auto cellBounds = getLocalBounds().reduced(3);
                 combo->setBounds(cellBounds);
                 
-                // Draw the cell background for ComboBoxes to maintain title/button window
-                g.setColour (panel);
-                g.fillRoundedRectangle (r, rad);
-                if (showBorder)
-                {
-                    g.setColour (reverbMaroon ? juce::Colour (0xFF8E3A2F) : border);
-                    g.drawRoundedRectangle (r, rad, 1.5f);
-                }
-                return; // Let ComboBox handle its own metallic rendering
+                // Let ComboBox handle its own metallic rendering and background first
+                // Then draw the frame on top to ensure it's visible
+                return; // ComboBox will render first, then we'll draw frame on top
             }
             return;
         }
@@ -136,6 +129,16 @@ public:
         {
             g.setColour (reverbMaroon ? juce::Colour (0xFF8E3A2F) : border);
             g.drawRoundedRectangle (r, rad, 1.5f);
+        }
+        
+        // For metallic ComboBoxes, draw the frame on top after ComboBox renders
+        if (metallicKind != MetallicKind::None && dynamic_cast<juce::ComboBox*>(&child))
+        {
+            if (showBorder)
+            {
+                g.setColour (reverbMaroon ? juce::Colour (0xFF8E3A2F) : border);
+                g.drawRoundedRectangle (r, rad, 1.5f);
+            }
         }
     }
 
