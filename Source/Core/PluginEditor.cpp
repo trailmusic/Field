@@ -903,6 +903,22 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     // TEMPORARILY DISABLE file logging to test if this is causing the crash
     // juce::File f = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("Field_CrashLog.txt");
     // f.appendText("Editor Ctor: STARTED\n", false, false, "\n");
+    
+    // Initialize components using dedicated methods
+    initializePresetSystem();
+    initializeManagers();
+    initializeSizeConstraints();
+    initializeUIComponents();
+    initializeButtonCallbacks();
+    initializeParameterAttachments();
+    finalizeInitialization();
+
+    // Constructor now uses dedicated initialization methods
+}
+
+// Initialization Methods
+void MyPluginAudioProcessorEditor::initializePresetSystem()
+{
     // Populate factory presets directly from app-data JSON (single source of truth)
     {
         const auto presetsFile = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
@@ -944,14 +960,21 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     }
     presetStore.scan();
     DBG("[PresetStore] after add+scan: " << presetStore.getAll().size() << " presets");
-    
+}
+
+void MyPluginAudioProcessorEditor::initializeManagers()
+{
     // Initialize managers
     layoutManager = std::make_unique<LayoutManager>(*this);
     eventManager = std::make_unique<EventManager>(*this);
     attachmentManager = std::make_unique<AttachmentManager>(*this);
-    
+}
+
+void MyPluginAudioProcessorEditor::initializeSizeConstraints()
+{
     // Build knob cells once after all sliders/labels are created
     buildCells();
+    
     // Calculate minimum size based on layout requirements
     const float s = 1.0f;
     const int lPx  = Layout::dp ((float) Layout::knobPx (Layout::Knob::L),  s);
@@ -1002,6 +1025,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     const int initialWidth = juce::jmax (baseWidth, minWidth);
     const int initialHeight = juce::jmax (baseHeight, calculatedMinHeight);
     setSize (initialWidth, initialHeight);
+}
+
+void MyPluginAudioProcessorEditor::initializeUIComponents()
+{
     // Initial layout deferred until layoutReady is true
     // Defer one tick to ensure LookAndFeel and attachments settle, then repaint
     juce::MessageManager::callAsync ([this]
@@ -1018,11 +1045,10 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     startTimerHz (30);
     uiTimerHzCurrent = 30;
     addMouseListener (this, true); // receive events from all children
+}
 
-    // History removed
-
-    // History group dividers removed
-
+void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
+{
     // Options menu (oversampling) with per-mode tint
     addAndMakeVisible (optionsButton);
     optionsButton.onClick = [this]
@@ -1968,6 +1994,7 @@ void MyPluginAudioProcessorEditor::buildCells()
     // juce::File f = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("Field_CrashLog.txt");
     // f.appendText("Editor Ctor: COMPLETE\n", false, false, "\n");
 }
+
 
 MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
 {
@@ -3786,6 +3813,24 @@ void MyPluginAudioProcessorEditor::layoutMeters(juce::Rectangle<int> metersArea,
 {
     // Placeholder implementation for meters layout
     // This will be implemented when we extract the meters layout logic
+}
+
+void MyPluginAudioProcessorEditor::initializeParameterAttachments()
+{
+    // Initialize parameter attachments using AttachmentManager
+    if (attachmentManager)
+    {
+        attachmentManager->attachAllParameters();
+    }
+}
+
+void MyPluginAudioProcessorEditor::finalizeInitialization()
+{
+    // History removed
+    // History group dividers removed
+    
+    // Re-enable resized() call since crash is happening after constructor
+    resized();
 }
 
 // end

@@ -450,6 +450,15 @@ public:
 private:
     const int standardKnobSize = 80;
     
+    // Initialization Methods
+    void initializePresetSystem();
+    void initializeManagers();
+    void initializeSizeConstraints();
+    void initializeUIComponents();
+    void initializeButtonCallbacks();
+    void initializeParameterAttachments();
+    void finalizeInitialization();
+    
     // Helpers
     void styleSlider (juce::Slider& s);
     void styleMainSlider (juce::Slider& s);
