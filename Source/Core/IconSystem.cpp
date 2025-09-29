@@ -43,6 +43,8 @@ juce::Path IconSystem::createIcon (IconType type, float size)
         case ExitFullScreen: return createExitFullScreenIcon (size);
         case ColorPalette:   return createColorPaletteIcon (size);
         case Help:           return createHelpIcon (size);
+        case QuestionMark:   return createQuestionMarkIcon (size);
+        case Lightbulb:      return createLightbulbIcon (size);
         case X:              return createXIcon (size);
         case Snowflake:      return createSnowflakeIcon (size);
         case Note:           return createNoteIcon (size);
@@ -532,6 +534,49 @@ juce::Path IconSystem::createHelpIcon (float size)
     return path;
 }
 
+juce::Path IconSystem::createQuestionMarkIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    
+    // Simple question mark without circle
+    // Dot at bottom
+    path.addEllipse (7 * s, 12 * s, 2 * s, 2 * s);
+    
+    // Stem
+    path.addRectangle (7 * s, 9 * s, 2 * s, 3 * s);
+    
+    // Hook (curved part)
+    path.addRectangle (7 * s, 8 * s, 3 * s, 1 * s);
+    path.addRectangle (9 * s, 7 * s, 1 * s, 1 * s);
+    path.addRectangle (6 * s, 6 * s, 4 * s, 1 * s);
+    
+    return path;
+}
+
+juce::Path IconSystem::createLightbulbIcon (float size)
+{
+    juce::Path path;
+    const float s = size / 16.0f;
+    
+    // Lightbulb body (oval shape)
+    path.addEllipse (4 * s, 3 * s, 8 * s, 10 * s);
+    
+    // Lightbulb base (screw threads)
+    path.addRectangle (6 * s, 13 * s, 4 * s, 2 * s);
+    
+    // Filament (zigzag pattern inside bulb)
+    path.startNewSubPath (6 * s, 6 * s);
+    path.lineTo (7 * s, 7 * s);
+    path.lineTo (6 * s, 8 * s);
+    path.lineTo (7 * s, 9 * s);
+    path.lineTo (6 * s, 10 * s);
+    path.lineTo (7 * s, 11 * s);
+    path.lineTo (6 * s, 12 * s);
+    
+    return path;
+}
+
 juce::Path IconSystem::createSnowflakeIcon (float size)
 {
     juce::Path path;
@@ -760,21 +805,8 @@ juce::Path IconSystem::createZoomOutIcon (float size)
 
 juce::Path IconSystem::createLearnIcon (float size)
 {
-    juce::Path path;
-    const float s = size / 16.0f;
-    
-    // Brain/learning icon - simplified head with neural network
-    path.addEllipse (6 * s, 4 * s, 4 * s, 4 * s); // head
-    path.addEllipse (7 * s, 5 * s, 2 * s, 2 * s); // brain
-    // Neural connections
-    path.startNewSubPath (7 * s, 6 * s);
-    path.lineTo (5 * s, 8 * s);
-    path.startNewSubPath (9 * s, 6 * s);
-    path.lineTo (11 * s, 8 * s);
-    path.startNewSubPath (7 * s, 7 * s);
-    path.lineTo (7 * s, 9 * s);
-    
-    return path;
+    // Use the cog wheel icon for Learn
+    return createCogWheelIcon (size);
 }
 
 juce::Path IconSystem::createStopIcon (float size)

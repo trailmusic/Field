@@ -70,6 +70,14 @@ inline void setButtonStyling(ButtonType& button, MetallicKind metallicKind, Icon
     setButtonIcon(button, iconType);
 }
 
+// Special function for Learn button styling
+template<typename ButtonType>
+inline void setLearnButtonStyling(ButtonType& button, IconSystem::IconType iconType = IconSystem::Learn)
+{
+    setButtonIcon(button, iconType);
+    button.getProperties().set("learnButton", true);
+}
+
 // Metallic rendering system
 class MetallicRenderer
 {

@@ -38,6 +38,8 @@ public:
         ExitFullScreen,
         ColorPalette,
         Help,
+        QuestionMark,
+        Lightbulb,
         X,
         Snowflake,
         Note,
@@ -101,6 +103,8 @@ private:
     static juce::Path createExitFullScreenIcon (float size);
     static juce::Path createColorPaletteIcon (float size);
     static juce::Path createHelpIcon (float size);
+    static juce::Path createQuestionMarkIcon (float size);
+    static juce::Path createLightbulbIcon (float size);
     static juce::Path createXIcon (float size);
     static juce::Path createSnowflakeIcon (float size);
     static juce::Path createNoteIcon (float size);

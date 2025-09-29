@@ -48,19 +48,19 @@ namespace FieldRendering
         if (showBorder)
         {
             auto border = r.reduced(2.0f);
-            g.setColour(theme.accentSecondary);
+            g.setColour(theme.accent);
             if (hover)
             {
                 for (int i = 1; i <= 6; ++i)
                 {
                     const float t = (float)i / 6.0f;
                     const float expand = 2.0f + t * 8.0f;
-                    g.setColour(theme.accentSecondary.withAlpha((1.0f - t) * 0.22f));
+                    g.setColour(theme.accent.withAlpha((1.0f - t) * 0.22f));
                     g.drawRoundedRectangle(border.expanded(expand), rad + expand * 0.35f, 2.0f);
                 }
             }
-            g.setColour(theme.accentSecondary);
-            g.drawRoundedRectangle(border, rad, 1.5f);
+            g.setColour(theme.accent);
+            g.drawRoundedRectangle(border, rad, 1.0f);
         }
     }
 
@@ -85,6 +85,13 @@ namespace FieldRendering
             // Metallic buttons - use metallic rendering system with KnobCell styling
             auto metalColors = MetallicRenderer::getMetallicColors(theme, metallicKind);
             
+            // Enhance metallic colors on hover
+            if (isMouseOver)
+            {
+                metalColors.top = metalColors.top.withAlpha(0.8f);
+                metalColors.bottom = metalColors.bottom.withAlpha(0.8f);
+            }
+            
             if (button.getToggleState())
             {
                 // Toggled state - use full metallic colors with KnobCell styling
@@ -101,9 +108,17 @@ namespace FieldRendering
                 g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
                 g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
                 
-                // Add KnobCell-style border
-                g.setColour(theme.accentSecondary.withAlpha(0.85f));
-                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
+                // Add KnobCell-style border with hover enhancement
+                auto borderAlpha = isMouseOver ? 0.8f : 0.6f;
+                g.setColour(theme.accent.withAlpha(borderAlpha));
+                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.0f);
+                
+                // Add hover glow effect
+                if (isMouseOver)
+                {
+                    g.setColour(theme.accent.withAlpha(0.15f));
+                    g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 1.5f);
+                }
             }
             else
             {
@@ -111,6 +126,14 @@ namespace FieldRendering
                 auto reducedMetal = metalColors;
                 reducedMetal.top = reducedMetal.top.withAlpha(0.6f);
                 reducedMetal.bottom = reducedMetal.bottom.withAlpha(0.6f);
+                
+                // Enhance metallic colors on hover
+                if (isMouseOver)
+                {
+                    reducedMetal.top = reducedMetal.top.withAlpha(0.8f);
+                    reducedMetal.bottom = reducedMetal.bottom.withAlpha(0.8f);
+                }
+                
                 MetallicRenderer::paintMetal(g, r, reducedMetal, 8.0f); // Match KnobCell corner radius
                 
                 // Add KnobCell-style shadows for metallic buttons
@@ -124,9 +147,17 @@ namespace FieldRendering
                 g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
                 g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
                 
-                // Add KnobCell-style border
-                g.setColour(theme.accentSecondary.withAlpha(0.85f));
-                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
+                // Add KnobCell-style border with hover enhancement
+                auto borderAlpha = isMouseOver ? 0.8f : 0.6f;
+                g.setColour(theme.accent.withAlpha(borderAlpha));
+                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.0f);
+                
+                // Add hover glow effect
+                if (isMouseOver)
+                {
+                    g.setColour(theme.accent.withAlpha(0.15f));
+                    g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 1.5f);
+                }
             }
             
             // Render text/icon on top of metallic background
@@ -211,20 +242,16 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         // Check for metallic properties first
         auto metallicKind = metallicFromProps(button.getProperties());
         
-        // Identify special buttons by text; fallback to default look otherwise
+        // Identify special buttons by text or properties; fallback to default look otherwise
         juce::String txt = button.getButtonText().trim();
+        bool isLearnButton = (bool)button.getProperties().getWithDefault("learnButton", false);
 
-        bool isLearn = txt.equalsIgnoreCase("Learn");
+        bool isLearn = txt.equalsIgnoreCase("Learn") || isLearnButton;
         bool isApply = txt.equalsIgnoreCase("Apply");
 
         juce::Colour fill = panel;
 
-        if (isLearn)
-        {
-            fill = juce::Colour(0xFF4CAF50); // Green for Learn
-            if (isButtonDown) fill = fill.darker(0.20f);
-        }
-        else if (isApply)
+        if (isApply)
         {
             fill = juce::Colour(0xFF2196F3); // Blue for Apply
             if (isButtonDown) fill = fill.darker(0.20f);
@@ -250,9 +277,17 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
                 g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
                 g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
                 
-                // Add KnobCell-style border
-                g.setColour(theme.accentSecondary.withAlpha(0.85f));
-                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
+                // Add KnobCell-style border with hover enhancement
+                auto borderAlpha = isMouseOver ? 0.8f : 0.6f;
+                g.setColour(theme.accent.withAlpha(borderAlpha));
+                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.0f);
+                
+                // Add hover glow effect
+                if (isMouseOver)
+                {
+                    g.setColour(theme.accent.withAlpha(0.15f));
+                    g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 1.5f);
+                }
                 
                 // Render icon on top of metallic background
                 int iconInt = (int)button.getProperties().getWithDefault("iconType", -1);
@@ -272,10 +307,43 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             }
             else
             {
-                // Untoggled state - use metallic colors with reduced intensity and KnobCell styling
+                // Untoggled state - check if this is a Learn button for special green handling
+                if (isLearn)
+                {
+                    // Learn button inactive state - green background
+                    fill = juce::Colour(0xFF4CAF50); // Green for Learn
+                    if (isButtonDown) fill = fill.darker(0.20f);
+                    if (isMouseOver) fill = fill.brighter(0.10f);
+                    
+                    // Render icon for Learn button
+                    int iconInt = (int)button.getProperties().getWithDefault("iconType", -1);
+                    if (iconInt >= 0)
+                    {
+                        auto inner = r.reduced(4.0f);
+                        juce::Colour iconCol = theme.text.withAlpha(0.75f);
+                        // Shadow pass for weight
+                        g.setColour(juce::Colours::black.withAlpha(0.18f));
+                        IconSystem::drawIcon(g, (IconSystem::IconType)iconInt, inner.translated(0.7f, 1.0f), iconCol);
+                        // Main icon
+                        g.setColour(iconCol);
+                        IconSystem::drawIcon(g, (IconSystem::IconType)iconInt, inner, iconCol);
+                    }
+                    
+                    return; // Early return for Learn button inactive state
+                }
+                
+                // Regular metallic buttons - use metallic colors with reduced intensity and KnobCell styling
                 auto reducedMetal = metalColors;
                 reducedMetal.top = reducedMetal.top.withAlpha(0.6f);
                 reducedMetal.bottom = reducedMetal.bottom.withAlpha(0.6f);
+                
+                // Enhance metallic colors on hover
+                if (isMouseOver)
+                {
+                    reducedMetal.top = reducedMetal.top.withAlpha(0.8f);
+                    reducedMetal.bottom = reducedMetal.bottom.withAlpha(0.8f);
+                }
+                
                 MetallicRenderer::paintMetal(g, r, reducedMetal, 8.0f); // Match KnobCell corner radius
                 
                 // Add KnobCell-style shadows for metallic buttons
@@ -289,9 +357,17 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
                 g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
                 g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
                 
-                // Add KnobCell-style border
-                g.setColour(theme.accentSecondary.withAlpha(0.85f));
-                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
+                // Add KnobCell-style border with hover enhancement
+                auto borderAlpha = isMouseOver ? 0.8f : 0.6f;
+                g.setColour(theme.accent.withAlpha(borderAlpha));
+                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.0f);
+                
+                // Add hover glow effect
+                if (isMouseOver)
+                {
+                    g.setColour(theme.accent.withAlpha(0.15f));
+                    g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 1.5f);
+                }
                 
                 // Render icon on top of metallic background
                 int iconInt = (int)button.getProperties().getWithDefault("iconType", -1);
@@ -343,8 +419,8 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             g.drawRoundedRectangle(r.reduced(3.0f), cr - 1.0f, 1.0f);
             
             // Enhanced border with accent color
-            g.setColour(theme.accentSecondary.withAlpha(0.95f));
-            g.drawRoundedRectangle(r.reduced(1.5f), cr, 2.0f);
+            g.setColour(theme.accent.withAlpha(0.7f));
+            g.drawRoundedRectangle(r.reduced(1.5f), cr, 1.5f);
             
             // Additional accent glow for active state
             if (button.getToggleState())
@@ -367,8 +443,8 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
 
             // Border - use KnobCell styling for all buttons
-            g.setColour(theme.accentSecondary.withAlpha(0.85f)); // Match KnobCell border color
-            g.drawRoundedRectangle(r.reduced(2.0f), cr, 1.5f); // Match KnobCell border thickness
+            g.setColour(theme.accent.withAlpha(0.6f)); // Match KnobCell border color
+            g.drawRoundedRectangle(r.reduced(2.0f), cr, 1.0f); // Match KnobCell border thickness
         }
     }
 
@@ -512,8 +588,8 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         g.setColour(theme.panel);
         g.fillRoundedRectangle(bounds, 2.0f);
         
-        g.setColour(theme.accent);
-        g.drawRoundedRectangle(bounds, 2.0f, 1.0f);
+        g.setColour(theme.accent.withAlpha(0.6f));
+        g.drawRoundedRectangle(bounds, 2.0f, 0.8f);
     }
 
     void drawGainSlider(juce::Graphics& g, int x, int y, int w, int h, float sliderPosProportional,
@@ -542,6 +618,9 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         auto* parent = box.getParentComponent();
         auto metallicKind = metallicFromProps(box.getProperties());
         
+        // Check for hover state
+        bool isMouseOver = box.isMouseOver();
+        
         juce::Rectangle<float> r;
         if (parent && dynamic_cast<SimpleSwitchCell*>(parent) && metallicKind != MetallicKind::None)
         {
@@ -561,6 +640,14 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         {
             // Metallic ComboBox - use metallic rendering system with KnobCell styling
             auto metalColors = MetallicRenderer::getMetallicColors(theme, metallicKind);
+            
+            // Enhance metallic colors on hover
+            if (isMouseOver)
+            {
+                metalColors.top = metalColors.top.withAlpha(0.8f);
+                metalColors.bottom = metalColors.bottom.withAlpha(0.8f);
+            }
+            
             MetallicRenderer::paintMetal(g, r, metalColors, 8.0f); // Match KnobCell corner radius
             
             // Add KnobCell-style shadows for metallic ComboBoxes
@@ -573,6 +660,18 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             // Add inner rim like KnobCell
             g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
             g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
+            
+            // Add KnobCell-style border with hover enhancement
+            auto borderAlpha = isMouseOver ? 0.8f : 0.6f;
+            g.setColour(theme.accent.withAlpha(borderAlpha));
+            g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.0f);
+            
+            // Add hover glow effect
+            if (isMouseOver)
+            {
+                g.setColour(theme.accent.withAlpha(0.15f));
+                g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 1.5f);
+            }
             
             // Create recessed button window effect for metallic ComboBoxes
             // Increase top/bottom padding to compensate for styling changes
@@ -595,15 +694,32 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         // Check if this ComboBox is wrapped in a SimpleSwitchCell
         if (!parent || !dynamic_cast<SimpleSwitchCell*>(parent))
         {
-            g.setColour(theme.sh);
-            g.drawRoundedRectangle(r, 5.0f, 1.0f);
+            // Add hover effects to standard ComboBox
+            if (isMouseOver)
+            {
+                g.setColour(theme.sh.brighter(0.2f));
+                g.drawRoundedRectangle(r, 5.0f, 1.2f);
+            }
+            else
+            {
+                g.setColour(theme.sh);
+                g.drawRoundedRectangle(r, 5.0f, 1.0f);
+            }
         }
         else if (parent && dynamic_cast<SimpleSwitchCell*>(parent) && metallicKind != MetallicKind::None)
         {
-            // For metallic ComboBoxes in SimpleSwitchCell, draw KnobCell-style border
+            // For metallic ComboBoxes in SimpleSwitchCell, draw KnobCell-style border with hover effects
             auto border = r.reduced(2.0f);
-            g.setColour(theme.accentSecondary.withAlpha(0.85f)); // Match KnobCell accent color
-            g.drawRoundedRectangle(border, 8.0f, 1.5f); // Match KnobCell border thickness
+            auto borderAlpha = isMouseOver ? 0.8f : 0.6f;
+            g.setColour(theme.accent.withAlpha(borderAlpha)); // Match KnobCell accent color
+            g.drawRoundedRectangle(border, 8.0f, 1.0f); // Match KnobCell border thickness
+            
+            // Add hover glow effect
+            if (isMouseOver)
+            {
+                g.setColour(theme.accent.withAlpha(0.15f));
+                g.drawRoundedRectangle(border.reduced(1.0f), 8.0f, 1.5f);
+            }
         }
 
         // Arrow - only show if no item is selected or if ComboBox is focused

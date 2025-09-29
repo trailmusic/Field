@@ -11,7 +11,7 @@ class TooltipsButton : public ThemedIconButton
 public:
     TooltipsButton() 
         : ThemedIconButton(Options{ 
-            IconSystem::CogWheel, 
+            IconSystem::Lightbulb, 
             true, 
             ThemedIconButton::Style::SolidAccentWhenOn, 
             3.0f, 

@@ -137,6 +137,11 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     venueBox.getProperties().set("enhancedStyling", true);
     trackTypeBox.getProperties().set("enhancedStyling", true);
     
+    // Add cursor changes for dropdowns
+    genreBox.setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    venueBox.setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    trackTypeBox.setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    
     // Style strength slider with theme
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
     if (lf)
@@ -162,9 +167,23 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     listenBtn.getProperties().set("enhancedStyling", true);
     
     analyzeBtn.setTriggeredOnMouseDown (false);
+    analyzeBtn.setClickingTogglesState (true); // Make Learn button toggleable
     stopBtn.setTriggeredOnMouseDown (false);
     showPreBtn.setTriggeredOnMouseDown (false);
     listenBtn.setTriggeredOnMouseDown (false);
+    
+    // Add cursor changes for better UX
+    analyzeBtn.setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    stopBtn.setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    showPreBtn.setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    listenBtn.setMouseCursor(juce::MouseCursor::PointingHandCursor);
+    
+    // Set LookAndFeel for Pre and Listen buttons
+    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+    {
+        showPreBtn.setLookAndFeel(lf);
+        listenBtn.setLookAndFeel(lf);
+    }
     
     // Button text will be handled by cell captions
 
@@ -173,7 +192,7 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     stopCell  = std::make_unique<SmallSwitchCell> (stopBtn);
     
     // Set captions to show button text
-    learnCell->setCaption("Learn");
+    // learnCell->setCaption("Learn"); // Removed - Learn button uses icon only
     stopCell->setCaption("Stop");
     
     addAndMakeVisible (*learnCell);

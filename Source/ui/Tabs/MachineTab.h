@@ -116,7 +116,7 @@ private:
     };
 
     // UI widgets
-    juce::TextButton analyzeBtn { "Learn" }, stopBtn { "" };
+    juce::TextButton analyzeBtn { "" }, stopBtn { "" };
     juce::ComboBox   genreBox, venueBox, trackTypeBox;
     // Quality/time controls removed per spec
     juce::Slider     strength; // 0..1

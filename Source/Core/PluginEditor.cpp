@@ -250,6 +250,7 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
                 *p, [applyOptionsTint] (float) { applyOptionsTint(); }, nullptr);
 
     addAndMakeVisible (helpButton);
+    helpButton.setLookAndFeel (&lnf);
     helpButton.onClick = [this]
     {
         struct HelpFAQComponent : public juce::Component
