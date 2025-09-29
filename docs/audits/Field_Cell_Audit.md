@@ -51,6 +51,22 @@ FieldLookAndFeel System:
   - Need active state visual indicators
   - May need top captions and interior button windows similar to other ComboBox switches
 
+### **Universal Icon Support (NEW - January 2025)**
+- **Icon System Integration**: All buttons can now take icons using the IconSystem
+- **Helper Functions**: Added `setButtonIcon()` and `setButtonStyling()` helper functions
+- **Icon Types Available**: 65+ icons including Learn, Stop, Speaker, LeftArrow, XY, Polar, Heat, etc.
+- **Rendering Support**: Icons render on both metallic and non-metallic buttons
+- **Usage Pattern**:
+  ```cpp
+  // Individual icon assignment
+  setButtonIcon(button, IconSystem::Learn);
+  
+  // Combined metallic + icon styling
+  setButtonStyling(button, MetallicKind::Band, IconSystem::Speaker);
+  ```
+- **Machine Tab Icons**: Learn, Stop, Speaker, LeftArrow icons applied to all buttons
+- **Icon Rendering**: Icons display on metallic backgrounds with proper color theming
+
 ---
 
 ## 📊 **Current Status: FULLY UNIFIED** ✅

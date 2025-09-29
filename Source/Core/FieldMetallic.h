@@ -1,6 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "FieldTheme.h"
+#include "IconSystem.h"
 
 // Field Metallic System - Centralized metallic rendering
 // Separated from FieldLookAndFeel for better organization
@@ -49,6 +50,24 @@ template<typename ComponentType>
 inline void setAreaMetallicForCell(ComponentType& cell, MetallicKind areaKind) 
 {
     setAreaMetallic(cell, areaKind);
+}
+
+// Icon assignment helper for any button type
+template<typename ButtonType>
+inline void setButtonIcon(ButtonType& button, IconSystem::IconType iconType)
+{
+    if (iconType != IconSystem::None)
+    {
+        button.getProperties().set("iconType", (int)iconType);
+    }
+}
+
+// Combined metallic and icon helper for buttons
+template<typename ButtonType>
+inline void setButtonStyling(ButtonType& button, MetallicKind metallicKind, IconSystem::IconType iconType = IconSystem::None)
+{
+    setAreaMetallicForCell(button, metallicKind);
+    setButtonIcon(button, iconType);
 }
 
 // Metallic rendering system

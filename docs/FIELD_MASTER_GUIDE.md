@@ -675,6 +675,67 @@ void drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
 - ✅ **Active/inactive state visual differentiation**
 - ✅ **ComboBox ButtonSwitches now have metallic support**
 
+### **Universal Icon Support System (January 2025)**
+
+#### **Icon System Integration**
+All buttons in the Field system can now take icons using the comprehensive IconSystem. This provides visual consistency and improved user experience across all control areas.
+
+#### **Helper Functions Added**
+```cpp
+// FieldMetallic.h - Icon assignment helpers
+template<typename ButtonType>
+inline void setButtonIcon(ButtonType& button, IconSystem::IconType iconType);
+
+template<typename ButtonType>
+inline void setButtonStyling(ButtonType& button, MetallicKind metallicKind, 
+                           IconSystem::IconType iconType = IconSystem::None);
+```
+
+#### **Available Icon Types**
+- **Control Icons**: Learn, Stop, Speaker, LeftArrow, RightArrow
+- **Mode Icons**: XY, Polar, Heat, Show, Audition
+- **System Icons**: Power, Lock, Unlock, CogWheel, Options
+- **Audio Icons**: Pan, Space, Width, Tilt, Mono, Stereo
+- **EQ Icons**: HP, LP, Drive, Mix, Air, Duck
+- **Navigation Icons**: Save, FullScreen, ExitFullScreen, Help
+- **And 40+ more specialized icons**
+
+#### **Usage Patterns**
+```cpp
+// Individual icon assignment
+setButtonIcon(button, IconSystem::Learn);
+
+// Combined metallic + icon styling
+setButtonStyling(button, MetallicKind::Band, IconSystem::Speaker);
+
+// Machine tab example
+setButtonStyling(analyzeBtn, MetallicKind::Band, IconSystem::Learn);
+setButtonStyling(stopBtn, MetallicKind::Band, IconSystem::Stop);
+setButtonStyling(listenBtn, MetallicKind::Band, IconSystem::Speaker);
+setButtonStyling(showPreBtn, MetallicKind::Band, IconSystem::LeftArrow);
+```
+
+#### **Rendering Support**
+- **Metallic Buttons**: Icons render on metallic backgrounds with proper theming
+- **Non-Metallic Buttons**: Icons render with standard button styling
+- **Color Theming**: Icons automatically use theme colors (accent, text, etc.)
+- **State Support**: Icons change color based on button state (active/inactive)
+- **Size Scaling**: Icons automatically scale to button size
+
+#### **Machine Tab Implementation**
+All Machine tab buttons now have appropriate icons:
+- **Learn Button**: `IconSystem::Learn` icon
+- **Stop Button**: `IconSystem::Stop` icon  
+- **Listen Button**: `IconSystem::Speaker` icon
+- **Pre Button**: `IconSystem::LeftArrow` icon
+
+#### **Benefits**
+- ✅ **Visual Consistency**: All buttons can have meaningful icons
+- ✅ **Improved UX**: Icons provide immediate visual feedback
+- ✅ **Easy Implementation**: Simple helper functions for icon assignment
+- ✅ **Theme Integration**: Icons automatically use theme colors
+- ✅ **Metallic Support**: Icons work with metallic rendering system
+
 ### **Implementation Details**
 
 #### **Theme System**

@@ -149,11 +149,11 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
         strength.setColour (juce::Slider::textBoxOutlineColourId, lf->theme.sh);
     }
     
-    // Enhanced metallic rendering with AB button-style effects
-    setAreaMetallicForCell (analyzeBtn, MetallicKind::Band); // Use Band metallic for Machine buttons
-    setAreaMetallicForCell (stopBtn, MetallicKind::Band);
-    setAreaMetallicForCell (showPreBtn, MetallicKind::Band);
-    setAreaMetallicForCell (listenBtn, MetallicKind::Band);
+    // Enhanced metallic rendering with AB button-style effects and icons
+    setButtonStyling(analyzeBtn, MetallicKind::Band, IconSystem::Learn);
+    setButtonStyling(stopBtn, MetallicKind::Band, IconSystem::Stop);
+    setButtonStyling(showPreBtn, MetallicKind::Band, IconSystem::LeftArrow);
+    setButtonStyling(listenBtn, MetallicKind::Band, IconSystem::Speaker);
     
     // Add enhanced styling properties for raised effect and borders
     analyzeBtn.getProperties().set("enhancedStyling", true);
@@ -166,7 +166,7 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     showPreBtn.setTriggeredOnMouseDown (false);
     listenBtn.setTriggeredOnMouseDown (false);
     
-    // Set button text (use text instead of icons for better clarity)
+    // Set button text
     stopBtn.setButtonText ("Stop");
     analyzeBtn.setButtonText ("Learn");
     listenBtn.setButtonText ("Listen");
