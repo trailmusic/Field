@@ -30,14 +30,37 @@ public:
     // Safety checks
     bool isParameterValid(const juce::String& parameterID);
     void attachParameterSafely(const juce::String& parameterID, std::function<void()> attachmentFunction);
+    void attachSliderParameterSafely(const juce::String& parameterID, juce::Slider& slider);
+    void attachButtonParameterSafely(const juce::String& parameterID, juce::Button& button);
+    void attachComboBoxParameterSafely(const juce::String& parameterID, juce::ComboBox& comboBox);
+    
+    // Utility methods
+    bool isParameterAttached(const juce::String& parameterID) const;
+    int getAttachmentCount() const;
+    void logAttachmentStatus() const;
     
 private:
     MyPluginAudioProcessorEditor& editor;
     
-    // Attachment storage
-    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>> sliderAttachments;
-    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment>> buttonAttachments;
-    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment>> comboBoxAttachments;
+    // Attachment storage with parameter ID tracking
+    struct SliderAttachmentInfo {
+        std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> attachment;
+        juce::String parameterID;
+    };
+    
+    struct ButtonAttachmentInfo {
+        std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> attachment;
+        juce::String parameterID;
+    };
+    
+    struct ComboBoxAttachmentInfo {
+        std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> attachment;
+        juce::String parameterID;
+    };
+    
+    std::vector<SliderAttachmentInfo> sliderAttachments;
+    std::vector<ButtonAttachmentInfo> buttonAttachments;
+    std::vector<ComboBoxAttachmentInfo> comboBoxAttachments;
     
     // Helper methods
     void createSliderAttachment(const juce::String& parameterID, juce::Slider& slider);

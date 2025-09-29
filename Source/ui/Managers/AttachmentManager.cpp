@@ -2,6 +2,7 @@
 #include "../../Core/PluginEditor.h"
 #include "../../Core/PluginProcessor.h"
 #include "../../Core/FieldTheme.h"
+#include <algorithm>
 
 AttachmentManager::AttachmentManager(MyPluginAudioProcessorEditor& editor)
     : editor(editor)
@@ -42,190 +43,68 @@ void AttachmentManager::attachAllParameters()
 
 void AttachmentManager::attachImagingParameters()
 {
-    using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
-    
-    attachParameterSafely(ParameterIDs::widthLo, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::widthLo, editor.widthLo));
-    });
-    
-    attachParameterSafely(ParameterIDs::widthMid, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::widthMid, editor.widthMid));
-    });
-    
-    attachParameterSafely(ParameterIDs::widthHi, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::widthHi, editor.widthHi));
-    });
-    
-    attachParameterSafely(ParameterIDs::xoverLoHz, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::xoverLoHz, editor.xoverLoHz));
-    });
-    
-    attachParameterSafely(ParameterIDs::xoverHiHz, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::xoverHiHz, editor.xoverHiHz));
-    });
-    
-    attachParameterSafely(ParameterIDs::rotationDeg, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::rotationDeg, editor.rotationDeg));
-    });
-    
-    attachParameterSafely(ParameterIDs::asymmetry, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::asymmetry, editor.asymmetry));
-    });
+    attachSliderParameterSafely(ParameterIDs::widthLo, editor.widthLo);
+    attachSliderParameterSafely(ParameterIDs::widthMid, editor.widthMid);
+    attachSliderParameterSafely(ParameterIDs::widthHi, editor.widthHi);
+    attachSliderParameterSafely(ParameterIDs::xoverLoHz, editor.xoverLoHz);
+    attachSliderParameterSafely(ParameterIDs::xoverHiHz, editor.xoverHiHz);
+    attachSliderParameterSafely(ParameterIDs::rotationDeg, editor.rotationDeg);
+    attachSliderParameterSafely(ParameterIDs::asymmetry, editor.asymmetry);
 }
 
 void AttachmentManager::attachMainControlsParameters()
 {
-    using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
-    
     // Main controls
-    attachParameterSafely(ParameterIDs::gain, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::gain, editor.gain));
-    });
-    
-    attachParameterSafely(ParameterIDs::inputGain, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::inputGain, editor.inputSlider));
-    });
-    
-    attachParameterSafely(ParameterIDs::outputGain, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::outputGain, editor.outputSlider));
-    });
-    
-    attachParameterSafely(ParameterIDs::mix, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::mix, editor.mixSlider));
-    });
-    
-    attachParameterSafely(ParameterIDs::width, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::width, editor.width));
-    });
-    
-    attachParameterSafely(ParameterIDs::tilt, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::tilt, editor.tilt));
-    });
-    
-    attachParameterSafely(ParameterIDs::monoHz, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::monoHz, editor.monoHz));
-    });
-    
-    attachParameterSafely(ParameterIDs::hpHz, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::hpHz, editor.hpHz));
-    });
-    
-    attachParameterSafely(ParameterIDs::lpHz, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::lpHz, editor.lpHz));
-    });
-    
-    attachParameterSafely(ParameterIDs::satDriveDb, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::satDriveDb, editor.satDrive));
-    });
-    
-    attachParameterSafely(ParameterIDs::satMix, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::satMix, editor.satMix));
-    });
-    
-    attachParameterSafely(ParameterIDs::airDb, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::airDb, editor.air));
-    });
-    
-    attachParameterSafely(ParameterIDs::bassDb, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::bassDb, editor.bass));
-    });
-    
-    attachParameterSafely(ParameterIDs::scoop, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::scoop, editor.scoop));
-    });
-    
-    // Reverb parameters (old system removed)
-    // Ducking and space parameters were part of the old reverb system and have been removed
+    attachSliderParameterSafely(ParameterIDs::gain, editor.gain);
+    attachSliderParameterSafely(ParameterIDs::inputGain, editor.inputSlider);
+    attachSliderParameterSafely(ParameterIDs::outputGain, editor.outputSlider);
+    attachSliderParameterSafely(ParameterIDs::mix, editor.mixSlider);
+    attachSliderParameterSafely(ParameterIDs::width, editor.width);
+    attachSliderParameterSafely(ParameterIDs::tilt, editor.tilt);
+    attachSliderParameterSafely(ParameterIDs::monoHz, editor.monoHz);
+    attachSliderParameterSafely(ParameterIDs::hpHz, editor.hpHz);
+    attachSliderParameterSafely(ParameterIDs::lpHz, editor.lpHz);
+    attachSliderParameterSafely(ParameterIDs::satDriveDb, editor.satDrive);
+    attachSliderParameterSafely(ParameterIDs::satMix, editor.satMix);
+    attachSliderParameterSafely(ParameterIDs::airDb, editor.air);
+    attachSliderParameterSafely(ParameterIDs::bassDb, editor.bass);
+    attachSliderParameterSafely(ParameterIDs::scoop, editor.scoop);
     
     // Panning
-    attachParameterSafely(ParameterIDs::pan, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::pan, editor.panKnob));
-    });
-    
-    attachParameterSafely(ParameterIDs::panL, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::panL, editor.panKnobLeft));
-    });
-    
-    attachParameterSafely(ParameterIDs::panR, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::panR, editor.panKnobRight));
-    });
-    
-    // Space parameter (old system removed)
-    // The space parameter was part of the old reverb system and has been removed
+    attachSliderParameterSafely(ParameterIDs::pan, editor.panKnob);
+    attachSliderParameterSafely(ParameterIDs::panL, editor.panKnobLeft);
+    attachSliderParameterSafely(ParameterIDs::panR, editor.panKnobRight);
 }
 
 void AttachmentManager::attachEQParameters()
 {
-    using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
-    using BA = juce::AudioProcessorValueTreeState::ButtonAttachment;
-    
     // EQ sliders
-    attachParameterSafely(ParameterIDs::tiltFreq, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::tiltFreq, editor.tiltFreqSlider));
-    });
-    
-    attachParameterSafely(ParameterIDs::scoopFreq, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::scoopFreq, editor.scoopFreqSlider));
-    });
-    
-    attachParameterSafely(ParameterIDs::bassFreq, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::bassFreq, editor.bassFreqSlider));
-    });
-    
-    attachParameterSafely(ParameterIDs::airFreq, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::airFreq, editor.airFreqSlider));
-    });
-    
-    attachParameterSafely(ParameterIDs::eqShelfShape, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::eqShelfShape, editor.shelfShapeS));
-    });
-    
-    attachParameterSafely(ParameterIDs::eqFilterQ, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::eqFilterQ, editor.filterQ));
-    });
-    
-    attachParameterSafely(ParameterIDs::hpQ, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::hpQ, editor.hpQSlider));
-    });
-    
-    attachParameterSafely(ParameterIDs::lpQ, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::lpQ, editor.lpQSlider));
-    });
+    attachSliderParameterSafely(ParameterIDs::tiltFreq, editor.tiltFreqSlider);
+    attachSliderParameterSafely(ParameterIDs::scoopFreq, editor.scoopFreqSlider);
+    attachSliderParameterSafely(ParameterIDs::bassFreq, editor.bassFreqSlider);
+    attachSliderParameterSafely(ParameterIDs::airFreq, editor.airFreqSlider);
+    attachSliderParameterSafely(ParameterIDs::eqShelfShape, editor.shelfShapeS);
+    attachSliderParameterSafely(ParameterIDs::eqFilterQ, editor.filterQ);
+    attachSliderParameterSafely(ParameterIDs::hpQ, editor.hpQSlider);
+    attachSliderParameterSafely(ParameterIDs::lpQ, editor.lpQSlider);
     
     // EQ buttons
-    attachParameterSafely(ParameterIDs::tiltLinkS, [&]() {
-        buttonAttachments.push_back(std::make_unique<BA>(editor.proc.apvts, ParameterIDs::tiltLinkS, editor.tiltLinkSButton));
-    });
-    
-    attachParameterSafely(ParameterIDs::eqQLink, [&]() {
-        buttonAttachments.push_back(std::make_unique<BA>(editor.proc.apvts, ParameterIDs::eqQLink, editor.qLinkButton));
-    });
+    attachButtonParameterSafely(ParameterIDs::tiltLinkS, editor.tiltLinkSButton);
+    attachButtonParameterSafely(ParameterIDs::eqQLink, editor.qLinkButton);
 }
 
 
 void AttachmentManager::attachBypassParameters()
 {
-    using BA = juce::AudioProcessorValueTreeState::ButtonAttachment;
-    using CA = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
-    
     // Bypass button
-    attachParameterSafely(ParameterIDs::bypass, [&]() {
-        buttonAttachments.push_back(std::make_unique<BA>(editor.proc.apvts, ParameterIDs::bypass, editor.bypassButton));
-    });
+    attachButtonParameterSafely(ParameterIDs::bypass, editor.bypassButton);
     
     // OS mode
-    attachParameterSafely(ParameterIDs::osMode, [&]() {
-        comboBoxAttachments.push_back(std::make_unique<CA>(editor.proc.apvts, ParameterIDs::osMode, editor.osSelect));
-    });
+    attachComboBoxParameterSafely(ParameterIDs::osMode, editor.osSelect);
     
     // Mono maker
-    attachParameterSafely(ParameterIDs::monoSlopeDbOct, [&]() {
-        comboBoxAttachments.push_back(std::make_unique<CA>(editor.proc.apvts, ParameterIDs::monoSlopeDbOct, editor.monoSlopeChoice));
-    });
-    
-    attachParameterSafely(ParameterIDs::monoAudition, [&]() {
-        buttonAttachments.push_back(std::make_unique<BA>(editor.proc.apvts, ParameterIDs::monoAudition, editor.monoAuditionButton));
-    });
+    attachComboBoxParameterSafely(ParameterIDs::monoSlopeDbOct, editor.monoSlopeChoice);
+    attachButtonParameterSafely(ParameterIDs::monoAudition, editor.monoAuditionButton);
 }
 
 void AttachmentManager::detachAllParameters()
@@ -237,10 +116,29 @@ void AttachmentManager::detachAllParameters()
 
 void AttachmentManager::detachParameter(const juce::String& parameterID)
 {
-    // Note: JUCE attachment classes don't expose parameter ID, so we can't selectively detach
-    // For now, we'll just clear all attachments when detaching a specific parameter
-    // This is a limitation of the current JUCE API
-    detachAllParameters();
+    // Remove slider attachments for this parameter
+    sliderAttachments.erase(
+        std::remove_if(sliderAttachments.begin(), sliderAttachments.end(),
+            [&parameterID](const SliderAttachmentInfo& info) {
+                return info.parameterID == parameterID;
+            }),
+        sliderAttachments.end());
+    
+    // Remove button attachments for this parameter
+    buttonAttachments.erase(
+        std::remove_if(buttonAttachments.begin(), buttonAttachments.end(),
+            [&parameterID](const ButtonAttachmentInfo& info) {
+                return info.parameterID == parameterID;
+            }),
+        buttonAttachments.end());
+    
+    // Remove combo box attachments for this parameter
+    comboBoxAttachments.erase(
+        std::remove_if(comboBoxAttachments.begin(), comboBoxAttachments.end(),
+            [&parameterID](const ComboBoxAttachmentInfo& info) {
+                return info.parameterID == parameterID;
+            }),
+        comboBoxAttachments.end());
 }
 
 bool AttachmentManager::isParameterValid(const juce::String& parameterID)
@@ -256,20 +154,113 @@ void AttachmentManager::attachParameterSafely(const juce::String& parameterID, s
     }
 }
 
+void AttachmentManager::attachSliderParameterSafely(const juce::String& parameterID, juce::Slider& slider)
+{
+    if (isParameterValid(parameterID))
+    {
+        SliderAttachmentInfo info;
+        info.attachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+            editor.proc.apvts, parameterID, slider);
+        info.parameterID = parameterID;
+        sliderAttachments.push_back(std::move(info));
+    }
+}
+
+void AttachmentManager::attachButtonParameterSafely(const juce::String& parameterID, juce::Button& button)
+{
+    if (isParameterValid(parameterID))
+    {
+        ButtonAttachmentInfo info;
+        info.attachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+            editor.proc.apvts, parameterID, button);
+        info.parameterID = parameterID;
+        buttonAttachments.push_back(std::move(info));
+    }
+}
+
+void AttachmentManager::attachComboBoxParameterSafely(const juce::String& parameterID, juce::ComboBox& comboBox)
+{
+    if (isParameterValid(parameterID))
+    {
+        ComboBoxAttachmentInfo info;
+        info.attachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
+            editor.proc.apvts, parameterID, comboBox);
+        info.parameterID = parameterID;
+        comboBoxAttachments.push_back(std::move(info));
+    }
+}
+
 void AttachmentManager::createSliderAttachment(const juce::String& parameterID, juce::Slider& slider)
 {
-    sliderAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        editor.proc.apvts, parameterID, slider));
+    SliderAttachmentInfo info;
+    info.attachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        editor.proc.apvts, parameterID, slider);
+    info.parameterID = parameterID;
+    sliderAttachments.push_back(std::move(info));
 }
 
 void AttachmentManager::createButtonAttachment(const juce::String& parameterID, juce::Button& button)
 {
-    buttonAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
-        editor.proc.apvts, parameterID, button));
+    ButtonAttachmentInfo info;
+    info.attachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        editor.proc.apvts, parameterID, button);
+    info.parameterID = parameterID;
+    buttonAttachments.push_back(std::move(info));
 }
 
 void AttachmentManager::createComboBoxAttachment(const juce::String& parameterID, juce::ComboBox& comboBox)
 {
-    comboBoxAttachments.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
-        editor.proc.apvts, parameterID, comboBox));
+    ComboBoxAttachmentInfo info;
+    info.attachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
+        editor.proc.apvts, parameterID, comboBox);
+    info.parameterID = parameterID;
+    comboBoxAttachments.push_back(std::move(info));
+}
+
+bool AttachmentManager::isParameterAttached(const juce::String& parameterID) const
+{
+    // Check if parameter is attached to any component
+    auto sliderIt = std::find_if(sliderAttachments.begin(), sliderAttachments.end(),
+        [&parameterID](const SliderAttachmentInfo& info) {
+            return info.parameterID == parameterID;
+        });
+    
+    auto buttonIt = std::find_if(buttonAttachments.begin(), buttonAttachments.end(),
+        [&parameterID](const ButtonAttachmentInfo& info) {
+            return info.parameterID == parameterID;
+        });
+    
+    auto comboIt = std::find_if(comboBoxAttachments.begin(), comboBoxAttachments.end(),
+        [&parameterID](const ComboBoxAttachmentInfo& info) {
+            return info.parameterID == parameterID;
+        });
+    
+    return sliderIt != sliderAttachments.end() || 
+           buttonIt != buttonAttachments.end() || 
+           comboIt != comboBoxAttachments.end();
+}
+
+int AttachmentManager::getAttachmentCount() const
+{
+    return static_cast<int>(sliderAttachments.size() + buttonAttachments.size() + comboBoxAttachments.size());
+}
+
+void AttachmentManager::logAttachmentStatus() const
+{
+    DBG("AttachmentManager Status:");
+    DBG("  Slider attachments: " << sliderAttachments.size());
+    DBG("  Button attachments: " << buttonAttachments.size());
+    DBG("  ComboBox attachments: " << comboBoxAttachments.size());
+    DBG("  Total attachments: " << getAttachmentCount());
+    
+    // Log parameter IDs for debugging
+    for (const auto& info : sliderAttachments) {
+        DBG("  Slider: " << info.parameterID);
+    }
+    for (const auto& info : buttonAttachments) {
+        DBG("  Button: " << info.parameterID);
+    }
+    for (const auto& info : comboBoxAttachments) {
+        DBG("  ComboBox: " << info.parameterID);
+    }
 }
