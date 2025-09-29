@@ -613,7 +613,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         }
         else
         {
-            g.setColour(theme.panel);
+            g.setColour(theme.meters.panelDark);
             g.fillRoundedRectangle(r, r.getHeight() * 0.5f);
         }
     }

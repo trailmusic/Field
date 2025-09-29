@@ -186,6 +186,30 @@ void LayoutManager::layoutMainControls()
     // Remove the header area that was already processed
     r.removeFromTop(Layout::dp(50, s));
     
+    // Layout ShadeOverlay container - just the height of the handle (26px)
+    const int shadeContainerHeight = Layout::dp(26, s);
+    auto shadeContainerArea = r.removeFromTop(shadeContainerHeight);
+    editor.shadeOverlayContainer.setBounds(shadeContainerArea);
+    
+    // Position ShadeOverlay to extend beyond container to cover main content
+    // The ShadeOverlay needs to be able to cover the entire main content area
+    // But we need to position it so the handle appears in the container area
+    auto shadeOverlayArea = juce::Rectangle<int>(
+        shadeContainerArea.getX(), 
+        shadeContainerArea.getY(), 
+        shadeContainerArea.getWidth(), 
+        shadeContainerArea.getHeight() + r.getHeight() // Extend to cover remaining content
+    );
+    editor.shadeOverlay.setBounds(shadeOverlayArea);
+    
+    // The ShadeOverlay handle should appear in the container area (first 26px)
+    // We need to modify the ShadeOverlay's internal coordinate system
+    // The handle should be positioned relative to the container, not the extended area
+    
+    // Set the ShadeOverlay's internal offset so it thinks the container is at (0,0)
+    // This way the handle will appear in the container area
+    editor.shadeOverlay.setTopLeftPosition(0, 0);
+    
     // Clean layout: meters (left) → center content → sliders (right)
     
     // 1) Calculate meters width (smaller than half)
@@ -196,25 +220,27 @@ void LayoutManager::layoutMainControls()
     const int slidersWidth = juce::jlimit(Layout::dp(40, s), Layout::dp(60, s), 
                                          juce::roundToInt(r.getWidth() * 0.08f));
     
-    // 3) Layout meters container on the left - delegate to MeterManager
-    auto metersArea = r.removeFromLeft(metersWidth);
-    // Remove the left padding from meters area to position them at the edge
+    // 3) Layout meters container on the left with padding
+    const int metersPadding = Layout::dp(Layout::GAP, s); // Add gap between meters and content
+    auto metersArea = r.removeFromLeft(metersWidth + metersPadding);
+    // Keep meters at the left edge but add padding to the right
     metersArea = metersArea.withX(0).withWidth(metersWidth);
     editor.meterManager->setMetersContainerBounds(metersArea);
     
     // Layout individual meters within the container
     editor.layoutMeters(metersArea, s, sv);
     
-    // 4) Layout sliders on the right - delegate to SliderManager
-    auto slidersArea = r.removeFromRight(slidersWidth);
-    // Position sliders at the right edge
+    // 4) Layout sliders on the right with padding
+    const int slidersPadding = Layout::dp(Layout::GAP, s); // Add gap between content and sliders
+    auto slidersArea = r.removeFromRight(slidersWidth + slidersPadding);
+    // Keep sliders at the right edge but add padding to the left
     slidersArea = slidersArea.withX(editor.getWidth() - slidersWidth).withWidth(slidersWidth);
     editor.sliderManager->setSlidersContainerBounds(slidersArea);
     
     // Layout the individual sliders horizontally within the container
     editor.sliderManager->layoutSliders(slidersArea);
     
-    // 5) Layout main content in the center (remaining area)
+    // 5) Layout main content in the center (remaining area with proper padding)
     if (editor.panes) {
         editor.panes->setBounds(r);
         editor.panes->resized();

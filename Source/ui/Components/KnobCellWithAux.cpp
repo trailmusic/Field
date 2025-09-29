@@ -216,8 +216,8 @@ void KnobCellWithAux::paint (juce::Graphics& g)
         
         if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
         {
-            juce::ColourGradient knobGradient(lf->theme.panel.brighter(0.2f), gradientBounds.getX(), gradientBounds.getY(),
-                                             lf->theme.panel.darker(0.1f), gradientBounds.getX(), gradientBounds.getBottom(), false);
+            juce::ColourGradient knobGradient(lf->theme.meters.panelDark.brighter(0.2f), gradientBounds.getX(), gradientBounds.getY(),
+                                             lf->theme.meters.panelDark.darker(0.1f), gradientBounds.getX(), gradientBounds.getBottom(), false);
             g.setGradientFill(knobGradient);
             g.fillEllipse(gradientBounds);
         }

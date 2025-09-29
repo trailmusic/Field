@@ -8,7 +8,7 @@ void ControlContainer::setTitle (const juce::String& t) { containerTitle = t; re
 void ControlContainer::paint (juce::Graphics& g)
 {
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    const auto panel = lf ? lf->theme.panel : juce::Colour (0xFF3A3D45);
+    const auto panel = lf ? lf->theme.meters.panelDark : juce::Colour (0xFF2A2C30);
     const auto text  = lf ? lf->theme.text  : juce::Colour (0xFFF0F2F5);
     const auto accent= lf ? lf->theme.accent: juce::Colour (0xFF5AA9E6);
 
