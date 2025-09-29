@@ -32,6 +32,9 @@ public:
     {
         if (visuals) visuals->setOptions (o);
     }
+    
+    // Public getter for graphics container
+    ImagerPane* getImagerPane() const { return visuals.get(); }
 
 
     void paint(juce::Graphics& g) override

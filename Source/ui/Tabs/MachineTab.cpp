@@ -25,22 +25,33 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
         listenBtn.setLookAndFeel(lf);
     }
 
-    genreBox.addItem ("EDM/House", 1); genreBox.addItem ("Hip-Hop/Trap", 2); genreBox.addItem ("Pop", 3); genreBox.addItem ("Rock/Indie", 4); genreBox.addItem ("Acoustic/Jazz", 5); genreBox.addItem ("Voice/Podcast", 6);
-    venueBox.addItem ("Streaming", 1); venueBox.addItem ("Club/PA", 2); venueBox.addItem ("Theater/Cinema", 3); venueBox.addItem ("Mobile", 4);
-    trackTypeBox.addItem ("Vocal", 1);
-    trackTypeBox.addItem ("Drums", 2);
-    trackTypeBox.addItem ("Bass", 3);
-    trackTypeBox.addItem ("Guitar/Synth", 4);
-    trackTypeBox.addItem ("Keys/Piano", 5);
-    trackTypeBox.addItem ("FX/Ambience", 6);
-    trackTypeBox.addItem ("Mix\nBus", 7);
-    trackTypeBox.addItem ("Master", 8);
-    genreBox.setSelectedId (3, juce::dontSendNotification);
+    // Add placeholder items as first options (these will show as "labels")
+    genreBox.addItem ("Genre", 1);
+    genreBox.addItem ("EDM/House", 2); genreBox.addItem ("Hip-Hop/Trap", 3); genreBox.addItem ("Pop", 4); genreBox.addItem ("Rock/Indie", 5); genreBox.addItem ("Acoustic/Jazz", 6); genreBox.addItem ("Voice/Podcast", 7);
+    
+    venueBox.addItem ("Venue", 1);
+    venueBox.addItem ("Streaming", 2); venueBox.addItem ("Club/PA", 3); venueBox.addItem ("Theater/Cinema", 4); venueBox.addItem ("Mobile", 5);
+    
+    trackTypeBox.addItem ("Track Type", 1);
+    trackTypeBox.addItem ("Vocal", 2);
+    trackTypeBox.addItem ("Drums", 3);
+    trackTypeBox.addItem ("Bass", 4);
+    trackTypeBox.addItem ("Guitar/Synth", 5);
+    trackTypeBox.addItem ("Keys/Piano", 6);
+    trackTypeBox.addItem ("FX/Ambience", 7);
+    trackTypeBox.addItem ("Mix\nBus", 8);
+    trackTypeBox.addItem ("Master", 9);
+    
+    // Set to show placeholder items initially
+    genreBox.setSelectedId (1, juce::dontSendNotification);
     venueBox.setSelectedId (1, juce::dontSendNotification);
-    trackTypeBox.setSelectedId (7, juce::dontSendNotification);
+    trackTypeBox.setSelectedId (1, juce::dontSendNotification);
     // Ensure these use tintedSelected rendering (hide default label, use accent text)
     for (juce::ComboBox* cb : { &genreBox, &venueBox, &trackTypeBox })
+    {
         cb->getProperties().set ("tintedSelected", true);
+        cb->getProperties().set ("disableTextWrapping", true); // Override site-wide two-word wrapping
+    }
     // no quality/capture combos
     strength.setRange (0.0, 1.0, 0.01);
     strength.setNumDecimalPlacesToDisplay (0);
@@ -96,7 +107,6 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     styleCell (analyzeBtn);
     styleCell (stopBtn);
     styleCell (showPreBtn);
-    styleCell (previewBtn);
     styleCell (listenBtn);
     
     // Style dropdown controls with theme
@@ -143,26 +153,22 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     setAreaMetallicForCell (analyzeBtn, MetallicKind::Band); // Use Band metallic for Machine buttons
     setAreaMetallicForCell (stopBtn, MetallicKind::Band);
     setAreaMetallicForCell (showPreBtn, MetallicKind::Band);
-    setAreaMetallicForCell (previewBtn, MetallicKind::Band);
     setAreaMetallicForCell (listenBtn, MetallicKind::Band);
     
     // Add enhanced styling properties for raised effect and borders
     analyzeBtn.getProperties().set("enhancedStyling", true);
     stopBtn.getProperties().set("enhancedStyling", true);
     showPreBtn.getProperties().set("enhancedStyling", true);
-    previewBtn.getProperties().set("enhancedStyling", true);
     listenBtn.getProperties().set("enhancedStyling", true);
     
     analyzeBtn.setTriggeredOnMouseDown (false);
     stopBtn.setTriggeredOnMouseDown (false);
     showPreBtn.setTriggeredOnMouseDown (false);
-    previewBtn.setTriggeredOnMouseDown (false);
     listenBtn.setTriggeredOnMouseDown (false);
     
     // Set button text (use text instead of icons for better clarity)
     stopBtn.setButtonText ("Stop");
     analyzeBtn.setButtonText ("Learn");
-    previewBtn.setButtonText ("Preview");
     listenBtn.setButtonText ("Listen");
 
     // Wrap Learn/Stop into small cells to match delay-style cells
@@ -176,28 +182,27 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
 
     showPreBtn.setToggleState (false, juce::dontSendNotification); // default to Post
     showPreBtn.setClickingTogglesState (true);
-    showPreBtn.setButtonText ("Pre");
+    showPreBtn.setButtonText ("Pre"); // Set the text label
+    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+    {
+        showPreBtn.setLookAndFeel(lf);
+    }
     preCell = std::make_unique<SmallSwitchCell> (showPreBtn);
     addAndMakeVisible (*preCell);
 
     // Wrap remaining buttons in cells
-    previewCell = std::make_unique<SmallSwitchCell> (previewBtn);
-    addAndMakeVisible (*previewCell);
 
     listenCell = std::make_unique<SmallSwitchCell> (listenBtn);
     addAndMakeVisible (*listenCell);
 
-    // Wrap dropdowns in cells
+    // Wrap dropdowns in cells (no captions - text is inside dropdowns)
     genreCell = std::make_unique<SmallSwitchCell> (genreBox);
-    genreCell->setCaption("Genre");
     addAndMakeVisible (*genreCell);
 
     venueCell = std::make_unique<SmallSwitchCell> (venueBox);
-    venueCell->setCaption("Venue");
     addAndMakeVisible (*venueCell);
 
     trackTypeCell = std::make_unique<SmallSwitchCell> (trackTypeBox);
-    trackTypeCell->setCaption("Track Type");
     addAndMakeVisible (*trackTypeCell);
 
     // Handlers
@@ -451,31 +456,31 @@ void MachineTab::resized()
     auto r = getLocalBounds();
     // Recompute tight bar area (keep layout independent of paint)
     auto bar = r.removeFromTop (56);
-    const int learnW = 180, stopW = 56, strW = 220, preW=90, lisW=90, previewW=100;
-    auto ba = bar.reduced (8, 4);
+    auto ba = bar.reduced (4, 2); // Reduced padding for more control height
     // add padding inside the container
-    auto ia = ba.reduced (10, 6);
+    auto ia = ba.reduced (6, 3); // Reduced internal padding
+    // Responsive layout - calculate available space
+    const int totalWidth = ia.getWidth();
+    const int minControlWidth = 80; // Minimum width for any control
+    const int dropdownWidth = juce::jmax(minControlWidth, (totalWidth - 100) / 8); // 8 controls total
     auto place = [&](juce::Component& c, int w){ c.setBounds (ia.removeFromLeft (w)); ia.removeFromLeft (6); };
-    if (learnCell) place (*learnCell, learnW);
-    if (stopCell)  place (*stopCell,  stopW);
-    if (previewCell) place (*previewCell, previewW);
+    // Responsive layout - all controls get equal space
+    if (learnCell) place (*learnCell, dropdownWidth);
+    if (stopCell)  place (*stopCell, dropdownWidth);
+    if (preCell)   place (*preCell, dropdownWidth); // Moved Pre to where preview was
     ia.removeFromLeft (10);
-    // Compute responsive widths for Venue/Genre/Track type combos
-    {
-        const int reserved = strW + 6 + preW + 6 + lisW + 10; // widths + gaps for trailing controls
-        int rem = juce::jmax (0, ia.getWidth() - reserved);
-        int ctxW = juce::jmax (110, rem / 3 - 8); // split remaining area
-        if (venueCell) place (*venueCell, ctxW);
-        ia.removeFromLeft (8);
-        if (genreCell) place (*genreCell, ctxW);
-        ia.removeFromLeft (8);
-        if (trackTypeCell) place (*trackTypeCell, ctxW);
-    }
+    
+    // Dropdowns get responsive width
+    if (venueCell) place (*venueCell, dropdownWidth);
+    ia.removeFromLeft (8);
+    if (genreCell) place (*genreCell, dropdownWidth);
+    ia.removeFromLeft (8);
+    if (trackTypeCell) place (*trackTypeCell, dropdownWidth);
     ia.removeFromLeft (10);
-    place (strength,   strW);
-    if (preCell)    place (*preCell,    preW);
-    ia.removeFromLeft (10);
-    if (listenCell) place (*listenCell, lisW);
+    
+    // Strength slider and Listen button
+    place (strength, dropdownWidth);
+    if (listenCell) place (*listenCell, dropdownWidth);
     // content occupies the rest without scroll; place cards
     // Add 10px top and bottom padding for content
     auto content = r.withTrimmedTop (2).reduced (8, 8).reduced (0, 10);

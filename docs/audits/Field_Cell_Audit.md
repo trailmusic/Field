@@ -42,6 +42,15 @@ FieldLookAndFeel System:
 - **Interior Windows**: Recessed button windows with proper spacing
 - **Border System**: Uses `theme.accentSecondary` for consistent visual weight
 
+### **ComboBox ButtonSwitches (NEW - January 2025)**
+- **Metallic Integration**: ComboBox ButtonSwitches now have full metallic rendering support
+- **Toggle Button Fix**: `drawToggleButton` function updated with metallic rendering logic
+- **Visual Consistency**: ComboBox switches now match other metallic components
+- **Pending Issues**: 
+  - Labels not yet visible on ComboBox switches
+  - Need active state visual indicators
+  - May need top captions and interior button windows similar to other ComboBox switches
+
 ---
 
 ## 📊 **Current Status: FULLY UNIFIED** ✅

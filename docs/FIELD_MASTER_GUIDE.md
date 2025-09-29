@@ -612,6 +612,69 @@ FieldLookAndFeel System (Modular):
 - **New Components**: Add rendering methods in `FieldRendering.h`
 - **Backward Compatibility**: All existing code continues to work
 
+### **Toggle Button Metallic Rendering Fix (January 2025)**
+
+#### **Issue Identified**
+Toggle buttons in the Field system were not receiving metallic rendering treatment. The `drawToggleButton` function in `FieldRendering.cpp` only handled basic button rendering but lacked metallic rendering logic.
+
+#### **Solution Implemented**
+Enhanced the `drawToggleButton` function with complete metallic rendering support:
+
+```cpp
+// FieldRendering.cpp - Enhanced drawToggleButton function
+void drawToggleButton(juce::Graphics& g, juce::ToggleButton& button, 
+                     bool isMouseOver, bool isButtonDown, const FieldTheme& theme)
+{
+    // Check for metallic properties first
+    auto metallicKind = metallicFromProps(button.getProperties());
+    
+    if (metallicKind != MetallicKind::None)
+    {
+        // Metallic rendering with KnobCell styling
+        auto metalColors = MetallicRenderer::getMetallicColors(theme, metallicKind);
+        
+        if (button.getToggleState())
+        {
+            // Active state - full metallic rendering
+            MetallicRenderer::paintMetal(g, r, metalColors, 8.0f);
+            // Add KnobCell-style shadows, rims, and borders
+        }
+        else
+        {
+            // Inactive state - reduced metallic intensity
+            auto reducedMetal = metalColors;
+            reducedMetal.top = reducedMetal.top.withAlpha(0.6f);
+            reducedMetal.bottom = reducedMetal.bottom.withAlpha(0.6f);
+            MetallicRenderer::paintMetal(g, r, reducedMetal, 8.0f);
+            // Add KnobCell-style shadows, rims, and borders
+        }
+        
+        // Render text/icon on top of metallic background
+        // ... text and icon rendering logic
+        
+        return; // Early return for metallic rendering
+    }
+    
+    // Fallback to non-metallic rendering
+    // ... basic button rendering logic
+}
+```
+
+#### **Key Features Added**
+- **Metallic Detection**: Checks for metallic properties using `metallicFromProps()`
+- **Toggle State Support**: Different metallic intensity for active/inactive states
+- **KnobCell Styling**: Drop shadows, inner rims, and borders matching KnobCell
+- **Text Rendering**: Text labels rendered on metallic background
+- **Icon Support**: Icon rendering on metallic background
+- **Early Return**: Prevents fallback to basic rendering when metallic
+
+#### **Impact**
+- ✅ **Toggle buttons now receive full metallic rendering**
+- ✅ **Consistent styling with other metallic components**
+- ✅ **Proper text and icon rendering on metallic backgrounds**
+- ✅ **Active/inactive state visual differentiation**
+- ✅ **ComboBox ButtonSwitches now have metallic support**
+
 ### **Implementation Details**
 
 #### **Theme System**
@@ -660,6 +723,10 @@ class FieldRendering {
     static void drawButtonBackground(juce::Graphics& g, juce::Button& button, 
                                     const juce::Colour& backgroundColour, bool shouldDrawButtonAsHighlighted, 
                                     bool shouldDrawButtonAsDown, const FieldTheme& theme);
+    
+    // Toggle button rendering with metallic support
+    static void drawToggleButton(juce::Graphics& g, juce::ToggleButton& button, 
+                                bool isMouseOver, bool isButtonDown, const FieldTheme& theme);
     
     // ComboBox rendering
     static void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown,

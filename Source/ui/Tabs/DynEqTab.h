@@ -575,6 +575,9 @@ public:
     void resume() { analyzer.resumeAudio(); }
     void pushBlock (const float* L, const float* R, int n)    { analyzer.pushBlock (L, R, n); }
     void pushBlockPre (const float* L, const float* R, int n) { analyzer.pushBlockPre (L, R, n); }
+    
+    // Public getter for graphics container
+    SpectrumAnalyzer* getAnalyzer() const { return const_cast<SpectrumAnalyzer*>(&analyzer); }
 
 private:
     // Auto-zoom logic for when bands exceed current range

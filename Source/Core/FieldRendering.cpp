@@ -77,6 +77,89 @@ namespace FieldRendering
         const bool invert = (bool)button.getProperties().getWithDefault("invertActive", false);
         const bool active = invert ? (!button.getToggleState()) : button.getToggleState();
 
+        // Check for metallic properties first
+        auto metallicKind = metallicFromProps(button.getProperties());
+        
+        if (metallicKind != MetallicKind::None)
+        {
+            // Metallic buttons - use metallic rendering system with KnobCell styling
+            auto metalColors = MetallicRenderer::getMetallicColors(theme, metallicKind);
+            
+            if (button.getToggleState())
+            {
+                // Toggled state - use full metallic colors with KnobCell styling
+                MetallicRenderer::paintMetal(g, r, metalColors, 8.0f); // Match KnobCell corner radius
+                
+                // Add KnobCell-style shadows for metallic buttons
+                auto ri = r.reduced(3.0f).getSmallestIntegerContainer();
+                juce::DropShadow ds1(juce::Colours::black.withAlpha(0.28f), 10, {-1, -1});
+                juce::DropShadow ds2(juce::Colours::white.withAlpha(0.18f), 5, {-1, -1});
+                ds1.drawForRectangle(g, ri);
+                ds2.drawForRectangle(g, ri);
+                
+                // Add inner rim like KnobCell
+                g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
+                g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
+                
+                // Add KnobCell-style border
+                g.setColour(theme.accentSecondary.withAlpha(0.85f));
+                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
+            }
+            else
+            {
+                // Untoggled state - use metallic colors with reduced intensity and KnobCell styling
+                auto reducedMetal = metalColors;
+                reducedMetal.top = reducedMetal.top.withAlpha(0.6f);
+                reducedMetal.bottom = reducedMetal.bottom.withAlpha(0.6f);
+                MetallicRenderer::paintMetal(g, r, reducedMetal, 8.0f); // Match KnobCell corner radius
+                
+                // Add KnobCell-style shadows for metallic buttons
+                auto ri = r.reduced(3.0f).getSmallestIntegerContainer();
+                juce::DropShadow ds1(juce::Colours::black.withAlpha(0.28f), 10, {-1, -1});
+                juce::DropShadow ds2(juce::Colours::white.withAlpha(0.18f), 5, {-1, -1});
+                ds1.drawForRectangle(g, ri);
+                ds2.drawForRectangle(g, ri);
+                
+                // Add inner rim like KnobCell
+                g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
+                g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
+                
+                // Add KnobCell-style border
+                g.setColour(theme.accentSecondary.withAlpha(0.85f));
+                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
+            }
+            
+            // Render text/icon on top of metallic background
+            int iconInt = (int)button.getProperties().getWithDefault("iconType", -1);
+            if (iconInt >= 0)
+            {
+                auto inner = r.reduced(4.0f);
+                juce::Colour iconCol = active ? accent : theme.text.withAlpha(0.75f);
+                // Shadow pass for weight
+                g.setColour(juce::Colours::black.withAlpha(0.18f));
+                IconSystem::drawIcon(g, (IconSystem::IconType)iconInt, inner.translated(0.7f, 1.0f), iconCol);
+                // Main icon
+                g.setColour(iconCol);
+                IconSystem::drawIcon(g, (IconSystem::IconType)iconInt, inner, iconCol);
+            }
+            else
+            {
+                // Text rendering when no icon is set
+                juce::String buttonText = button.getButtonText();
+                if (buttonText.isNotEmpty())
+                {
+                    auto inner = r.reduced(4.0f);
+                    juce::Colour textCol = active ? accent : theme.text.withAlpha(0.75f);
+                    g.setColour(textCol);
+                    g.setFont(juce::Font(juce::FontOptions(14.0f).withStyle("Bold")));
+                    g.drawFittedText(buttonText, inner.toNearestInt(), juce::Justification::centred, 1);
+                }
+            }
+            
+            return; // Early return for metallic rendering
+        }
+
+        // Non-metallic rendering
         juce::Colour fill = active ? accent : grey;
         if (isButtonDown) fill = fill.darker(0.25f);
         else if (isMouseOver) fill = fill.brighter(0.10f);
@@ -102,6 +185,19 @@ namespace FieldRendering
             // Main icon
             g.setColour(iconCol);
             IconSystem::drawIcon(g, (IconSystem::IconType)iconInt, inner, iconCol);
+        }
+        else
+        {
+            // Text rendering when no icon is set
+            juce::String buttonText = button.getButtonText();
+            if (buttonText.isNotEmpty())
+            {
+                auto inner = r.reduced(4.0f);
+                juce::Colour textCol = active ? accent : theme.text.withAlpha(0.75f);
+                g.setColour(textCol);
+                g.setFont(juce::Font(juce::FontOptions(14.0f).withStyle("Bold")));
+                g.drawFittedText(buttonText, inner.toNearestInt(), juce::Justification::centred, 1);
+            }
         }
     }
 
@@ -505,6 +601,15 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
 
     void applyTextWrapping(juce::ComboBox& box, juce::Label& label)
     {
+        // Check if text wrapping is disabled for this ComboBox
+        if (box.getProperties().getWithDefault("disableTextWrapping", false))
+        {
+            // Keep single-line text, no wrapping
+            label.setJustificationType(juce::Justification::centred);
+            label.setFont(juce::Font(12.0f)); // Normal font size for single line
+            return;
+        }
+        
         // Check if text contains line breaks (already formatted for two lines)
         juce::String text = label.getText();
         if (text.contains("\n"))

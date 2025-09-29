@@ -91,11 +91,9 @@ private:
     // Quality/time controls removed per spec
     juce::Slider     strength; // 0..1
     juce::ToggleButton showPreBtn { "" }; // Pre toggle
-    juce::TextButton previewBtn { "Preview 10s" };
     juce::Component  proposalsContent; // holds ProposalCard children (no scrolling)
     std::unique_ptr<SmallSwitchCell> learnCell, stopCell;
     std::unique_ptr<SmallSwitchCell> preCell;
-    std::unique_ptr<SmallSwitchCell> previewCell;
     std::unique_ptr<SmallSwitchCell> listenCell;
     std::unique_ptr<SmallSwitchCell> genreCell, venueCell, trackTypeCell;
     juce::ToggleButton listenBtn { "Listen" };

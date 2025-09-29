@@ -45,38 +45,51 @@ public:
     {
         const auto r = getLocalBounds().toFloat();
         
-        // Get the shade area respecting the active graphics container bounds
-        juce::Rectangle<float> shadeArea = r;
+        // Only show shade for tabs that have ShadeOverlay
+        bool hasShadeOverlay = true;
         if (paneManager)
         {
-            auto activeContainerBounds = paneManager->getActiveGraphicsContainerBounds();
-            if (!activeContainerBounds.isEmpty())
-            {
-                // Convert the graphics container bounds to ShadeOverlay local coordinates
-                auto localContainerBounds = activeContainerBounds - r.getPosition().toInt();
-                shadeArea = localContainerBounds.toFloat();
-            }
+            auto activePane = paneManager->getActiveID();
+            hasShadeOverlay = (activePane == PaneID::Phase || activePane == PaneID::XY || 
+                              activePane == PaneID::Band || activePane == PaneID::Motion || 
+                              activePane == PaneID::Reverb || activePane == PaneID::Delay);
         }
         
-        const float coveredH = shadeArea.getHeight() * getAmount();
-        const auto cover = shadeArea.withHeight(coveredH);
-
-        if (coveredH > 0.001f)
+        if (hasShadeOverlay)
         {
-            g.setColour(lnf.theme.panel.withAlpha(0.92f));
-            g.fillRect(cover);
+            // Get the shade area respecting the active graphics container bounds
+            juce::Rectangle<float> shadeArea = r;
+            if (paneManager)
+            {
+                auto activeContainerBounds = paneManager->getActiveGraphicsContainerBounds();
+                if (!activeContainerBounds.isEmpty())
+                {
+                    // Convert the graphics container bounds to ShadeOverlay local coordinates
+                    auto localContainerBounds = activeContainerBounds - r.getPosition().toInt();
+                    shadeArea = localContainerBounds.toFloat();
+                }
+            }
+            
+            const float coveredH = shadeArea.getHeight() * getAmount();
+            const auto cover = shadeArea.withHeight(coveredH);
 
-            g.setColour(lnf.theme.sh.withAlpha(0.07f));
-            for (int yy = 0; yy < (int)coveredH; yy += 3)
-                g.drawHorizontalLine(yy, cover.getX(), cover.getRight());
+            if (coveredH > 0.001f)
+            {
+                g.setColour(lnf.theme.panel.withAlpha(0.92f));
+                g.fillRect(cover);
 
-            g.setColour(lnf.theme.sh.withAlpha(0.85f));
-            g.fillRect(juce::Rectangle<float>(cover.getX(), cover.getBottom()-1.0f, cover.getWidth(), 1.0f));
+                g.setColour(lnf.theme.sh.withAlpha(0.07f));
+                for (int yy = 0; yy < (int)coveredH; yy += 3)
+                    g.drawHorizontalLine(yy, cover.getX(), cover.getRight());
 
-            juce::DropShadow(juce::Colours::black.withAlpha(0.5f), 12, {0,2})
-                .drawForRectangle(g, cover.getSmallestIntegerContainer());
+                g.setColour(lnf.theme.sh.withAlpha(0.85f));
+                g.fillRect(juce::Rectangle<float>(cover.getX(), cover.getBottom()-1.0f, cover.getWidth(), 1.0f));
 
-            drawFieldLogo(g, cover);
+                juce::DropShadow(juce::Colours::black.withAlpha(0.5f), 12, {0,2})
+                    .drawForRectangle(g, cover.getSmallestIntegerContainer());
+
+                drawFieldLogo(g, cover);
+            }
         }
 
         drawHandle(g, getHandle());
@@ -131,15 +144,23 @@ private:
         // If we have a PaneManager reference, limit the shade to the container bounds
         if (paneManager)
         {
-            auto activeContainerBounds = paneManager->getActiveGraphicsContainerBounds();
-            if (!activeContainerBounds.isEmpty())
+            auto activePane = paneManager->getActiveID();
+            bool hasShadeOverlay = (activePane == PaneID::Phase || activePane == PaneID::XY || 
+                                  activePane == PaneID::Band || activePane == PaneID::Motion || 
+                                  activePane == PaneID::Reverb || activePane == PaneID::Delay);
+            
+            if (hasShadeOverlay)
             {
-                // Convert the graphics container bounds to ShadeOverlay local coordinates
-                auto localContainerBounds = activeContainerBounds - r.getPosition().toInt();
-                auto containerHeight = (float)localContainerBounds.getHeight();
-                
-                // Calculate shade edge within the container bounds
-                return localContainerBounds.getY() + (containerHeight * getAmount());
+                auto activeContainerBounds = paneManager->getActiveGraphicsContainerBounds();
+                if (!activeContainerBounds.isEmpty())
+                {
+                    // Convert the graphics container bounds to ShadeOverlay local coordinates
+                    auto localContainerBounds = activeContainerBounds - r.getPosition().toInt();
+                    auto containerHeight = (float)localContainerBounds.getHeight();
+                    
+                    // Calculate shade edge within the container bounds
+                    return localContainerBounds.getY() + (containerHeight * getAmount());
+                }
             }
         }
         
@@ -166,35 +187,29 @@ private:
                 // Convert the graphics container bounds to ShadeOverlay local coordinates
                 auto localContainerBounds = activeContainerBounds - r.getPosition().toInt();
                 
-                // Check the active pane to determine positioning strategy
-                auto activePane = paneManager->getActiveID();
-                bool isFullContainerTab = (activePane == PaneID::Imager || activePane == PaneID::Machine);
-                bool isDynamicEQ = (activePane == PaneID::DynEQ);
-                
-                if (isFullContainerTab)
-                {
-                    // For Imager and Machine, position at the shade edge within the ShadeOverlay bounds
-                    y = shadeEdgeY() - tabH;
-                    x = r.getCentreX() - tabW * 0.5f;
-                }
-                else if (isDynamicEQ)
-                {
-                    // For Dynamic EQ, use the tab center instead of the analyzer component center
-                    // because the analyzer is offset by the zoomRail (48px from left)
-                    y = shadeEdgeY() - tabH;
-                    x = r.getCentreX() - tabW * 0.5f;
-                }
-                else
-                {
-                    // For other tabs (first 6), position at the shade edge within the graphics container
-                    // But ensure the handle is within the ShadeOverlay bounds
-                    y = shadeEdgeY() - tabH;
-                    x = (float)localContainerBounds.getCentreX() - tabW * 0.5f;
+                    // Only show ShadeOverlay for the first 6 tabs (Phase, XY, Band, Motion, Reverb, Delay)
+                    // Dynamic EQ, Imager, and Machine tabs don't have ShadeOverlay
+                    auto activePane = paneManager->getActiveID();
+                    bool hasShadeOverlay = (activePane == PaneID::Phase || activePane == PaneID::XY || 
+                                          activePane == PaneID::Band || activePane == PaneID::Motion || 
+                                          activePane == PaneID::Reverb || activePane == PaneID::Delay);
                     
-                    // Clamp the handle position to be within the ShadeOverlay bounds
-                    x = juce::jlimit(0.0f, r.getWidth() - tabW, x);
-                    y = juce::jlimit(0.0f, r.getHeight() - tabH, y);
-                }
+                    if (hasShadeOverlay)
+                    {
+                        // For tabs with ShadeOverlay, position at the shade edge within the graphics container
+                        y = shadeEdgeY() - tabH;
+                        x = (float)localContainerBounds.getCentreX() - tabW * 0.5f;
+                        
+                        // Clamp the handle position to be within the ShadeOverlay bounds
+                        x = juce::jlimit(0.0f, r.getWidth() - tabW, x);
+                        y = juce::jlimit(0.0f, r.getHeight() - tabH, y);
+                    }
+                    else
+                    {
+                        // For tabs without ShadeOverlay, position handle off-screen
+                        y = -tabH;
+                        x = 0.0f;
+                    }
             }
         }
         
