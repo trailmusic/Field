@@ -34,6 +34,9 @@ set(SRC
     ui/Components/ToggleSwitch.cpp
     ui/Components/CorrelationMeter.h
     ui/Components/CorrelationMeter.cpp
+    ui/Components/MonoSlopeSwitch.h
+    ui/Components/MonoSlopeSwitch.cpp
+    ui/Components/ShadeOverlay.h
     ui/Components/GainSlider.h
     ui/Components/PanSlider.h
     ui/Components/ControlContainer.h

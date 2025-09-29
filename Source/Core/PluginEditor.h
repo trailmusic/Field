@@ -21,6 +21,8 @@
 #include "ui/Components/VerticalSlider3D.h"
 #include "ui/Components/ToggleSwitch.h"
 #include "ui/Components/CorrelationMeter.h"
+#include "ui/Components/MonoSlopeSwitch.h"
+#include "ui/Components/ShadeOverlay.h"
 #include "ui/Components/GainSlider.h"
 #include "ui/Components/PanSlider.h"
 #include "ui/Components/ControlContainer.h"
@@ -960,83 +962,14 @@ private:
 public:
 public:
     // Placeholder for mono slope switch definition (defined after SpaceAlgorithmSwitch)
-    class MonoSlopeSwitch;
-    std::unique_ptr<MonoSlopeSwitch> monoSlopeSwitch;
+    std::unique_ptr<::MonoSlopeSwitch> monoSlopeSwitch;
     
     // OLD REVERB SYSTEM REMOVED - Now using new reverb system in Source/reverb/
 
     std::unique_ptr<SwitchCell> wetOnlyCell;
 
     // Dedicated Mono Slope Switch (6/12/24) with independent drawing but same visual language
-    class MonoSlopeSwitch : public juce::Component
-    {
-    public:
-        MonoSlopeSwitch() = default;
-        void setIndex (int idx) { current = juce::jlimit (0, 2, idx); repaint(); if (onChange) onChange (current); }
-        int  getIndex () const { return current; }
-        std::function<void(int)> onChange;
-        void paint (juce::Graphics& g) override
-        {
-            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-            auto accent = lf ? lf->theme.eq.hp : juce::Colour (0xFF5AA9E6);
-            auto panel  = lf ? lf->theme.panel  : juce::Colour (0xFF2A2C30);
-            auto sh     = lf ? lf->theme.sh     : juce::Colour (0xFF1A1C20);
-            auto hl     = lf ? lf->theme.hl     : juce::Colour (0xFF4A4A4A);
-            auto text   = lf ? lf->theme.text   : juce::Colours::white;
-
-            auto b = getLocalBounds().toFloat();
-            const float spacing = 6.0f;
-            const float availableH = juce::jmax (0.0f, b.getHeight() - 2.0f * spacing);
-            const float h = availableH / 3.0f;
-
-            auto draw = [&](juce::Rectangle<float> r, int idx, const juce::String& lbl)
-            {
-                const bool on = (current == idx);
-                // Elevation shadow like AUD
-                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) g.setColour (lf->theme.shadowDark.withAlpha (0.25f)); else g.setColour (juce::Colour (0x40000000));
-                g.fillRoundedRectangle (r.translated (1.5f, 1.5f), 6.0f);
-
-                if (on)
-                {
-                    juce::Colour bg = accent;
-                    if (idx == 0) bg = accent.brighter (0.25f);    // 6 dB
-                    else if (idx == 2) bg = accent.darker (0.25f); // 24 dB
-                    g.setColour (bg);
-                    g.fillRoundedRectangle (r, 6.0f);
-                    g.setColour (bg.darker (0.30f));
-                    g.drawRoundedRectangle (r, 6.0f, 1.0f);
-                }
-                else
-                {
-                    // Gradient panel like ThemedIconButton::GradientPanel
-                    juce::Colour top = panel.brighter (0.10f), bot = panel.darker (0.10f);
-                    juce::ColourGradient grad (top, r.getX(), r.getY(), bot, r.getX(), r.getBottom(), false);
-                    g.setGradientFill (grad);
-                    g.fillRoundedRectangle (r, 6.0f);
-                    g.setColour (sh);
-                    g.drawRoundedRectangle (r, 6.0f, 1.0f);
-                }
-
-                g.setColour (text);
-                g.setFont (juce::Font (juce::FontOptions (12.0f).withStyle ("Bold")));
-                g.drawText (lbl, r, juce::Justification::centred);
-            };
-
-            draw ({ b.getX(), b.getY(),                     b.getWidth(), h },                 0, "6");
-            draw ({ b.getX(), b.getY() + h + spacing,       b.getWidth(), h },                 1, "12");
-            draw ({ b.getX(), b.getY() + 2*(h + spacing),   b.getWidth(), h },                 2, "24");
-        }
-        void mouseDown (const juce::MouseEvent& e) override
-        {
-            const float spacing = 6.0f;
-            const float availableH = juce::jmax (0.0f, (float)getHeight() - 2.0f * spacing);
-            const float h = availableH / 3.0f; const float y = (float) e.y;
-            int idx = (y <= h) ? 0 : (y <= h * 2 + spacing ? 1 : 2);
-            if (idx != current) { current = idx; repaint(); if (onChange) onChange (current); }
-        }
-    private:
-        int current { 1 }; // default to 12 dB/oct
-    };
+    // MonoSlopeSwitch class extracted to Source/ui/Components/MonoSlopeSwitch.h
     
     // A/B & presets
     
@@ -1454,251 +1387,14 @@ public:
     void updateMutedKnobVisuals();
     void childrenChanged() override { juce::Component::childrenChanged(); applyGlobalCursorPolicy(); }
 
-    // Shade overlay for XYPad (block-vision control)
-    class ShadeOverlay : public juce::Component, private juce::Timer
-    {
-    public:
-        ~ShadeOverlay() override { stopTimer(); }
-        
-        explicit ShadeOverlay (FieldLNF& lnfRef) : lnf(lnfRef)
-        {
-            setAlwaysOnTop(true);
-            setInterceptsMouseClicks(true, true);
-            amount.reset(0.0, 0.12);
-            amount.setCurrentAndTargetValue(0.0f);
-            startTimerHz(30);
-        }
-
-        void setAmount (float a, bool animate = true)
-        {
-            a = juce::jlimit(0.f, 1.f, a);
-            animate ? amount.setTargetValue(a) : amount.setCurrentAndTargetValue(a);
-            if (onAmountChanged) onAmountChanged(getAmount());
-            repaint();
-        }
-        float getAmount() const { return amount.getCurrentValue(); }
-        void toggle(bool animate = true) { setAmount(getAmount() > 0.5f ? 0.f : 1.f, animate); }
-
-        std::function<void(float)> onAmountChanged;
-
-        bool hitTest (int x, int y) override
-        {
-            auto edge = juce::jlimit (0.0f, (float) getHeight(), shadeEdgeY());
-            if (y <= edge) return true; // covered area blocks
-            return getHandle().contains ((float) x, (float) y);
-        }
-
-        void paint (juce::Graphics& g) override
-        {
-            const auto r = getLocalBounds().toFloat();
-            const float coveredH = r.getHeight() * getAmount();
-            const auto cover = r.withHeight(coveredH);
-
-            if (coveredH > 0.001f)
-            {
-                g.setColour(lnf.theme.panel.withAlpha(0.92f));
-                g.fillRect(cover);
-
-                g.setColour(lnf.theme.sh.withAlpha(0.07f));
-                for (int yy = 0; yy < (int)coveredH; yy += 3)
-                    g.drawHorizontalLine(yy, cover.getX(), cover.getRight());
-
-                g.setColour(lnf.theme.sh.withAlpha(0.85f));
-                g.fillRect(juce::Rectangle<float>(cover.getX(), cover.getBottom()-1.0f, cover.getWidth(), 1.0f));
-                juce::DropShadow(juce::Colours::black.withAlpha(0.5f), 12, {0,2})
-                    .drawForRectangle(g, cover.getSmallestIntegerContainer());
-
-                drawFieldLogo(g, cover);
-            }
-
-            drawHandle(g, getHandle());
-        }
-
-        void visibilityChanged() override { if (isVisible()) startTimerHz(30); else stopTimer(); }
-
-        void mouseDown (const juce::MouseEvent& e) override { dragStartY = e.y; startAmt = amount.getTargetValue(); }
-        void mouseDrag (const juce::MouseEvent& e) override
-        {
-            const float dy = (float)(e.y - dragStartY);
-            setAmount(juce::jlimit(0.f, 1.f, startAmt + dy / (float)getHeight()));
-        }
-        void mouseDoubleClick (const juce::MouseEvent&) override { toggle(); }
-        void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails& wd) override
-        {
-            setAmount(juce::jlimit(0.f, 1.f, getAmount() - wd.deltaY * 0.5f));
-        }
-        void mouseMove (const juce::MouseEvent& e) override
-        {
-            const bool over = getHandle().contains (e.position.toFloat());
-            if (over != hoverHandle)
-            {
-                hoverHandle = over;
-                repaint();
-            }
-            setMouseCursor (over ? juce::MouseCursor::UpDownResizeCursor : juce::MouseCursor::NormalCursor);
-        }
-        void mouseExit (const juce::MouseEvent&) override
-        {
-            if (hoverHandle)
-            {
-                hoverHandle = false;
-                repaint();
-            }
-            setMouseCursor (juce::MouseCursor::NormalCursor);
-        }
-
-    private:
-        FieldLNF& lnf;
-        juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> amount;
-        int   dragStartY = 0;
-        float startAmt   = 0.f;
-        bool  hoverHandle = false;
-
-        float shadeEdgeY () const 
-        { 
-            // Simplified: just return the actual shade edge position
-            auto r = getLocalBounds().toFloat();
-            return r.getHeight() * getAmount();
-        }
-
-        juce::Rectangle<float> getHandle () const
-        {
-            auto r = getLocalBounds().toFloat();
-            float tabW = juce::jmin(120.0f, r.getWidth() * 0.6f);
-            float tabH = 26.0f;  // Slightly reduced from 30.0f for better proportions
-            
-            // Position handle so its BOTTOM edge aligns with the shade edge
-            const float edge = shadeEdgeY();
-            float y = juce::jlimit (0.0f, r.getHeight() - tabH, edge - tabH);
-            
-            // Center the handle horizontally within the extended bounds
-            float x = r.getCentreX() - tabW * 0.5f;
-            
-            return { x, y, tabW, tabH };
-        }
-
-        void drawHandle (juce::Graphics& g, juce::Rectangle<float> tab) const
-        {
-            // Base handle background
-            g.setColour (lnf.theme.meters.trackBase.withAlpha (0.85f));
-            g.fillRoundedRectangle (tab, 8.0f);
-            
-            // Hover effects with proper accent colors and outer glow
-            if (hoverHandle)
-            {
-                // Use the theme accent color directly (now darker)
-                auto accentColor = lnf.theme.accent;
-                
-                // True outer glow effect - draw multiple shadow layers for proper outer glow
-                juce::DropShadow outerGlow1 (accentColor.withAlpha (0.4f), 20, {0, 0});
-                outerGlow1.drawForRectangle (g, tab.getSmallestIntegerContainer());
-                
-                juce::DropShadow outerGlow2 (accentColor.withAlpha (0.2f), 12, {0, 0});
-                outerGlow2.drawForRectangle (g, tab.getSmallestIntegerContainer());
-                
-                // Accent border using theme accent color
-                g.setColour (accentColor.withAlpha (0.9f));
-                g.drawRoundedRectangle (tab, 8.0f, 1.5f);
-            }
-            else
-            {
-                // Normal border using theme highlight
-                g.setColour (lnf.theme.hl.withAlpha (0.6f));
-                g.drawRoundedRectangle (tab, 8.0f, 1.0f);
-            }
-
-            // Dashed grip bars with hover accent
-            const int numBars = 4;
-            const float barW = 10.0f, barH = 6.0f, gap = 14.0f;
-            const float totalW = numBars * barW + (numBars - 1) * gap;
-            float startX = tab.getCentreX() - totalW * 0.5f;
-            float y = tab.getCentreY() - barH * 0.5f;
-
-            // Grip bars with theme accent color
-            g.setColour (lnf.theme.accent.withAlpha (hoverHandle ? 0.9f : 0.7f));
-            for (int i = 0; i < numBars; ++i)
-            {
-                juce::Rectangle<float> r (startX + i * (barW + gap), y, barW, barH);
-                g.fillRoundedRectangle(r, 2.0f);
-            }
-        }
-
-        void timerCallback() override
-        {
-            if (amount.isSmoothing()) repaint();
-        }
-
-        void drawFieldLogo (juce::Graphics& g, juce::Rectangle<float> area) const
-        {
-            // Calculate logo size based on covered area - increased to 80%
-            const float logoHeight = juce::jmin(area.getHeight() * 0.8f, 200.0f);
-            const float logoWidth = logoHeight * 2.5f; // FIELD is wider than tall
-            
-            // Center the logo in the covered area
-            const float logoX = area.getCentreX() - logoWidth * 0.5f;
-            const float logoY = area.getCentreY() - logoHeight * 0.5f;
-            const auto logoRect = juce::Rectangle<float>(logoX, logoY, logoWidth, logoHeight);
-            
-            // Create large bold font matching the main logo
-            juce::Font logoFont(juce::FontOptions(logoHeight * 0.8f).withStyle("Bold"));
-            g.setFont(logoFont);
-            
-            // Enhanced shadow system with stronger effects (matching header)
-            const int shadowLayers = 12; // Increased from 8 to 12
-            for (int i = shadowLayers; i > 0; --i)
-            {
-                const float shadowOffset = (float)i * 3.5f; // Increased offset for more dramatic effect
-                const float shadowAlpha = (1.0f - (float)i / shadowLayers) * 0.7f; // Increased alpha for stronger effect (matching header)
-                
-                // Multiple glow shadows with different colors and intensities
-                // Outer accent glow (stronger)
-                g.setColour(lnf.theme.accent.withAlpha(shadowAlpha * 0.8f));
-                g.drawText("FIELD", logoRect.translated(shadowOffset, shadowOffset), 
-                          juce::Justification::centred);
-                
-                // Secondary glow with brighter accent (stronger)
-                g.setColour(lnf.theme.accent.brighter(0.4f).withAlpha(shadowAlpha * 0.6f));
-                g.drawText("FIELD", logoRect.translated(shadowOffset * 0.8f, shadowOffset * 0.8f), 
-                          juce::Justification::centred);
-                
-                // Dark shadow for depth with increased intensity (stronger)
-                g.setColour(juce::Colours::black.withAlpha(shadowAlpha * 0.9f));
-                g.drawText("FIELD", logoRect.translated(shadowOffset * 0.5f, shadowOffset * 0.5f), 
-                          juce::Justification::centred);
-                
-                // Additional depth shadow (stronger)
-                g.setColour(juce::Colours::darkgrey.withAlpha(shadowAlpha * 0.5f));
-                g.drawText("FIELD", logoRect.translated(shadowOffset * 0.6f, shadowOffset * 0.6f), 
-                          juce::Justification::centred);
-            }
-            
-            // Enhanced gradient effect with stronger effects (matching header)
-            juce::ColourGradient logoGradient(
-                lnf.theme.accent.brighter(0.6f), logoRect.getX(), logoRect.getY(),
-                lnf.theme.accent.darker(0.3f), logoRect.getX(), logoRect.getBottom(), false);
-            logoGradient.addColour(0.25f, lnf.theme.accent.brighter(0.3f));
-            logoGradient.addColour(0.5f, lnf.theme.accent);
-            logoGradient.addColour(0.75f, lnf.theme.accent.darker(0.1f));
-            
-            g.setGradientFill(logoGradient);
-            g.drawText("FIELD", logoRect, juce::Justification::centred);
-            
-            // Enhanced highlight system with stronger effects (matching header)
-            // Primary highlight (stronger)
-            g.setColour(lnf.theme.accent.brighter(0.7f).withAlpha(0.9f));
-            g.drawText("FIELD", logoRect, juce::Justification::centred);
-            
-            // Secondary highlight for extra shine (stronger)
-            g.setColour(lnf.theme.accent.brighter(0.9f).withAlpha(0.5f));
-            g.drawText("FIELD", logoRect, juce::Justification::centred);
-            
-            // Final white highlight for maximum shine (stronger)
-            g.setColour(juce::Colours::white.withAlpha(0.4f));
-            g.drawText("FIELD", logoRect, juce::Justification::centred);
-        }
-    };
-
     std::unique_ptr<ShadeOverlay> xyShade;
+
+
+
+
+
+
+      
 
     // Mini vertical divider near split toggle
 
