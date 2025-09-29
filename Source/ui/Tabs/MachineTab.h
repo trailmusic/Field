@@ -24,6 +24,9 @@ public:
     void paint (juce::Graphics&) override;
     void paintOverChildren (juce::Graphics&) override;
     void resized() override;
+    
+    // Public getter for graphics container
+    juce::Component* getProposalsContent() { return &proposalsContent; }
 
 private:
     // Minimal cell wrapper to match switch/combobox cell styling
@@ -89,10 +92,12 @@ private:
     juce::Slider     strength; // 0..1
     juce::ToggleButton showPreBtn { "" }; // Pre toggle
     juce::TextButton previewBtn { "Preview 10s" };
-    juce::TextButton ABtn { "A" }, BBtn { "B" }, CBtn { "C" };
     juce::Component  proposalsContent; // holds ProposalCard children (no scrolling)
     std::unique_ptr<SmallSwitchCell> learnCell, stopCell;
     std::unique_ptr<SmallSwitchCell> preCell;
+    std::unique_ptr<SmallSwitchCell> previewCell;
+    std::unique_ptr<SmallSwitchCell> listenCell;
+    std::unique_ptr<SmallSwitchCell> genreCell, venueCell, trackTypeCell;
     juce::ToggleButton listenBtn { "Listen" };
     juce::Rectangle<int> barArea;
 

@@ -12,26 +12,12 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     setLookAndFeel(lnf);
 
     // wrapped in cells later
-    addAndMakeVisible (genreBox);
-    addAndMakeVisible (venueBox);
     // quality/capture removed
     addAndMakeVisible (strength);
-    addAndMakeVisible (showPreBtn);
-    addAndMakeVisible (previewBtn);
-    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-    {
-        showPreBtn.setLookAndFeel(lf);
-        previewBtn.setLookAndFeel(lf);
-    }
-    addAndMakeVisible (ABtn);
-    addAndMakeVisible (BBtn);
-    addAndMakeVisible (CBtn);
     addAndMakeVisible (proposalsContent);
     // Three cards (initially simple placeholders; wired later)
     toneCard.title = "Tone & Balance"; spaceCard.title = "Reverb, Delay, Motion"; clarityCard.title = "Clarity & Movement";
     addAndMakeVisible (toneCard); addAndMakeVisible (spaceCard); addAndMakeVisible (clarityCard);
-    addAndMakeVisible (listenBtn);
-    addAndMakeVisible (trackTypeBox);
     listenBtn.setClickingTogglesState (true);
     listenBtn.setButtonText ("");
     listenBtn.getProperties().set ("iconType", (int) IconSystem::Delta);
@@ -111,6 +97,7 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     styleCell (analyzeBtn);
     styleCell (stopBtn);
     styleCell (showPreBtn);
+    styleCell (previewBtn);
     styleCell (listenBtn);
     
     // Style dropdown controls with theme
@@ -131,6 +118,16 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     styleDropdown (venueBox);
     styleDropdown (trackTypeBox);
     
+    // Apply metallic styling to dropdowns
+    setAreaMetallicForCell (genreBox, MetallicKind::Band);
+    setAreaMetallicForCell (venueBox, MetallicKind::Band);
+    setAreaMetallicForCell (trackTypeBox, MetallicKind::Band);
+    
+    // Add enhanced styling properties for dropdowns
+    genreBox.getProperties().set("enhancedStyling", true);
+    venueBox.getProperties().set("enhancedStyling", true);
+    trackTypeBox.getProperties().set("enhancedStyling", true);
+    
     // Style strength slider with theme
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
     if (lf)
@@ -146,35 +143,61 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     // Enhanced metallic rendering with AB button-style effects
     setAreaMetallicForCell (analyzeBtn, MetallicKind::Band); // Use Band metallic for Machine buttons
     setAreaMetallicForCell (stopBtn, MetallicKind::Band);
+    setAreaMetallicForCell (previewBtn, MetallicKind::Band);
+    setAreaMetallicForCell (listenBtn, MetallicKind::Band);
     
     // Add enhanced styling properties for raised effect and borders
     analyzeBtn.getProperties().set("enhancedStyling", true);
     stopBtn.getProperties().set("enhancedStyling", true);
     showPreBtn.getProperties().set("enhancedStyling", true);
+    previewBtn.getProperties().set("enhancedStyling", true);
     listenBtn.getProperties().set("enhancedStyling", true);
     
     analyzeBtn.setTriggeredOnMouseDown (false);
     stopBtn.setTriggeredOnMouseDown (false);
-    stopBtn.setButtonText (""); // Use icon instead
-    analyzeBtn.setButtonText (""); // Use icon instead
+    previewBtn.setTriggeredOnMouseDown (false);
+    listenBtn.setTriggeredOnMouseDown (false);
     
-    // Set icons for the buttons
-    analyzeBtn.getProperties().set ("iconType", (int) IconSystem::Learn);
-    stopBtn.getProperties().set ("iconType", (int) IconSystem::Stop);
+    // Set button text (use text instead of icons for better clarity)
+    stopBtn.setButtonText ("Stop");
+    analyzeBtn.setButtonText ("Learn");
+    previewBtn.setButtonText ("Preview");
+    listenBtn.setButtonText ("Listen");
 
     // Wrap Learn/Stop into small cells to match delay-style cells
     learnCell = std::make_unique<SmallSwitchCell> (analyzeBtn);
     stopCell  = std::make_unique<SmallSwitchCell> (stopBtn);
+    
+    // No captions needed - buttons have their own text
+    
     addAndMakeVisible (*learnCell);
     addAndMakeVisible (*stopCell);
 
     showPreBtn.setToggleState (false, juce::dontSendNotification); // default to Post
     showPreBtn.setClickingTogglesState (true);
-    showPreBtn.setButtonText ("");
-    // Pre icon-only (match Freeze style)
-    showPreBtn.getProperties().set ("iconType", (int) IconSystem::Stereo);
+    showPreBtn.setButtonText ("Pre");
     preCell = std::make_unique<SmallSwitchCell> (showPreBtn);
     addAndMakeVisible (*preCell);
+
+    // Wrap remaining buttons in cells
+    previewCell = std::make_unique<SmallSwitchCell> (previewBtn);
+    addAndMakeVisible (*previewCell);
+
+    listenCell = std::make_unique<SmallSwitchCell> (listenBtn);
+    addAndMakeVisible (*listenCell);
+
+    // Wrap dropdowns in cells
+    genreCell = std::make_unique<SmallSwitchCell> (genreBox);
+    genreCell->setCaption("Genre");
+    addAndMakeVisible (*genreCell);
+
+    venueCell = std::make_unique<SmallSwitchCell> (venueBox);
+    venueCell->setCaption("Venue");
+    addAndMakeVisible (*venueCell);
+
+    trackTypeCell = std::make_unique<SmallSwitchCell> (trackTypeBox);
+    trackTypeCell->setCaption("Track Type");
+    addAndMakeVisible (*trackTypeCell);
 
     // Handlers
     analyzeBtn.onClick = [this]
@@ -440,17 +463,17 @@ void MachineTab::resized()
         const int reserved = strW + 6 + preW + 6 + lisW + 10; // widths + gaps for trailing controls
         int rem = juce::jmax (0, ia.getWidth() - reserved);
         int ctxW = juce::jmax (110, rem / 3 - 8); // split remaining area
-        place (venueBox,  ctxW);
+        if (venueCell) place (*venueCell, ctxW);
         ia.removeFromLeft (8);
-        place (genreBox,  ctxW);
+        if (genreCell) place (*genreCell, ctxW);
         ia.removeFromLeft (8);
-        place (trackTypeBox, ctxW);
+        if (trackTypeCell) place (*trackTypeCell, ctxW);
     }
     ia.removeFromLeft (10);
     place (strength,   strW);
     if (preCell)    place (*preCell,    preW);
     ia.removeFromLeft (10);
-    place (listenBtn, lisW);
+    if (listenCell) place (*listenCell, lisW);
     // content occupies the rest without scroll; place cards
     // Add 10px top and bottom padding for content
     auto content = r.withTrimmedTop (2).reduced (8, 8).reduced (0, 10);
