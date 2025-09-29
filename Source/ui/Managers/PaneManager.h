@@ -524,32 +524,9 @@ public:
                         break;
                     }
                     case PaneID::Machine: {
-                        // Machine icon: gear/cog with smaller size
-                        const float scale = 0.85f; // Make it slightly smaller
-                        const float centerX = 12.0f*s;
-                        const float centerY = 12.0f*s;
-                        const float radius = 6.0f*s * scale;
-                        
-                        // Outer gear circle
-                        p.addEllipse (centerX - radius, centerY - radius, radius*2, radius*2);
-                        gg.strokePath (p, juce::PathStrokeType (st), T);
-                        p.clear();
-                        
-                        // Gear teeth (8 teeth)
-                        for (int i = 0; i < 8; ++i) {
-                            const float angle = juce::MathConstants<float>::twoPi * (float)i / 8.0f;
-                            const float innerR = radius * 0.6f;
-                            const float outerR = radius * 0.9f;
-                            
-                            p.startNewSubPath (centerX + innerR * std::cos(angle), centerY + innerR * std::sin(angle));
-                            p.lineTo (centerX + outerR * std::cos(angle), centerY + outerR * std::sin(angle));
-                        }
-                        gg.strokePath (p, juce::PathStrokeType (st), T);
-                        p.clear();
-                        
-                        // Center hub
-                        p.addEllipse (centerX - radius*0.3f, centerY - radius*0.3f, radius*0.6f, radius*0.6f);
-                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        // Machine icon: use same cog wheel as Learn button
+                        p = IconSystem::createIcon (IconSystem::Learn, iconR.getWidth());
+                        gg.fillPath (p, T);
                         break;
                     }
                     case PaneID::Reverb: {
