@@ -1386,6 +1386,11 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
 
     // xyShade functionality removed - handled by PaneManager
 
+    // Add meter components
+    addAndMakeVisible (corrMeter);
+    addAndMakeVisible (lrMeters);
+    addAndMakeVisible (ioMeters);
+
     // Containers
     addAndMakeVisible (mainControlsContainer); mainControlsContainer.setTitle (""); mainControlsContainer.setShowBorder (false);
     addAndMakeVisible (panKnobContainer);      panKnobContainer.setTitle ("");     panKnobContainer.setShowBorder (true);
@@ -2170,1187 +2175,15 @@ void MyPluginAudioProcessorEditor::performLayout()
 {
     if (!layoutReady) return;
 
-    const float s = juce::jmax (0.5f, scaleFactor);
-    // Use height-driven scale for vertical metrics to decouple bottom spacing from width changes
-    const float sv = juce::jlimit (0.5f, 2.0f, (float) getHeight() / (float) baseHeight);
-    const int bottomReserve = Layout::dp (6, sv) + Layout::dp (22, sv);
-    auto r = getLocalBounds().reduced (Layout::dp (Layout::PAD, s)).withTrimmedBottom (bottomReserve);
-    
-    
-    // Legacy value-label placement helper removed; KnobCell in Managed mode
-    // positions value labels directly below the knob in its resized().
-
-    // 1) wood bar controls (reduced height)
-    auto woodBar = r.removeFromTop (Layout::dp (50, s));
-    juce::Grid header;
-    header.rowGap = juce::Grid::Px (Layout::dp (4, s));
-    header.columnGap = juce::Grid::Px (0);
-    header.alignContent = juce::Grid::AlignContent::center;
-    header.justifyContent = juce::Grid::JustifyContent::center;
-    header.alignItems = juce::Grid::AlignItems::center;
-    header.justifyItems = juce::Grid::JustifyItems::center;
-    header.templateRows = { juce::Grid::TrackInfo (juce::Grid::Fr (1)) };
-
-    // Compute dynamic left header width based on painted logo size
-    juce::Font logoFont (juce::FontOptions (26.0f * s).withStyle ("Bold"));
-    const int logoTextW = (int) logoFont.getStringWidthFloat ("FIELD");
-    const int leftInset = Layout::dp (20, s);
-    const int bypassW   = Layout::dp (56, s);
-    const int leftPaddingAfterLogo = Layout::dp (120, s); // increased gap between logo and bypass
-    const int leftHeaderW = juce::jmax (Layout::dp (240, s), leftInset + logoTextW + leftPaddingAfterLogo + bypassW);
-
-    header.templateColumns = {
-        juce::Grid::TrackInfo (juce::Grid::Px (leftHeaderW)),         // left: reserve for painted logo + bypass
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (60, s))),  // spacer between left and center controls
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (360, s))), // center: preset field
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // prev
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // next
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // A
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // B
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // copy
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (16, s))),  // spacer
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // snap (moved left of split)
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (16, s))),  // spacer left of split
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (120, s))), // split
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // link (center group)
-        juce::Grid::TrackInfo (juce::Grid::Fr (1)),                   // spacer before right utilities
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (176, s))), // transport clock (right group)
-        // history group removed (divider, undo, redo, history button)
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // color mode (right)
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s))),  // tooltips (right)
-        juce::Grid::TrackInfo (juce::Grid::Px (Layout::dp (40, s)))   // fullscreen (right)
-    };
-
-    const int h = Layout::dp (24, s);
-    auto sizeBtn = [&](juce::Component& c, int w){ c.setSize (w, h); };
-
-    sizeBtn (bypassButton,       Layout::dp (56, s));
-    // Build left header group (bypass only)
-    if (headerLeftGroup.getParentComponent() != this) addAndMakeVisible (headerLeftGroup);
-    if (bypassButton.getParentComponent() != &headerLeftGroup) headerLeftGroup.addAndMakeVisible (bypassButton);
-    headerLeftGroup.setBounds (0, 0, leftHeaderW, h);
-    // Place bypass just after the painted logo text + padding
-    bypassButton.setTopLeftPosition (leftInset + logoTextW + leftPaddingAfterLogo, 0);
-    // savePresetButton removed
-    sizeBtn (abButtonA,          Layout::dp (40, s));
-    sizeBtn (abButtonB,          Layout::dp (40, s));
-    sizeBtn (copyButton,         Layout::dp (40, s));
-    sizeBtn (prevPresetButton,   Layout::dp (40, s));
-    sizeBtn (nextPresetButton,   Layout::dp (40, s));
-    presetNameLabel.setMinimumHorizontalScale (0.8f);
-    presetNameLabel.setText ("Presets", juce::dontSendNotification);
-    presetNameLabel.setJustificationType (juce::Justification::centredLeft);
-    splitToggle.setSize (Layout::dp (120, s), Layout::dp (28, s));
-    sizeBtn (linkButton,         Layout::dp (40, s));
-    sizeBtn (snapButton,         Layout::dp (40, s));
-    // Transport clock label styling and sizing (larger, right-aligned)
-    {
-        if (transportClockLabel.getParentComponent() != this) addAndMakeVisible (transportClockLabel);
-        transportClockLabel.setJustificationType (juce::Justification::centredRight);
-        transportClockLabel.setInterceptsMouseClicks (false, false);
-        transportClockLabel.setText ("00:00.000", juce::dontSendNotification);
-        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        {
-            transportClockLabel.setColour (juce::Label::textColourId, lf->theme.text);
-        }
-        // Larger font
-        transportClockLabel.setFont (juce::Font (juce::FontOptions (18.0f * s).withStyle ("Bold")));
-        const int clockW = Layout::dp (176, s);
-        transportClockLabel.setSize (clockW, h);
+    // Delegate layout to LayoutManager
+    if (layoutManager) {
+        layoutManager->performLayout();
+        return;
     }
-    // history controls removed
-    sizeBtn (colorModeButton,    Layout::dp (40, s));
-    sizeBtn (tooltipsButton,     Layout::dp (40, s));
-    sizeBtn (fullScreenButton,   Layout::dp (40, s));
-    sizeBtn (optionsButton,      Layout::dp (40, s));
-
-    header.items = {
-        juce::GridItem (headerLeftGroup),
-        juce::GridItem(), // spacer after bypass
-        juce::GridItem (presetField),
-        juce::GridItem (prevPresetButton),
-        juce::GridItem (nextPresetButton),
-        juce::GridItem (abButtonA),
-        juce::GridItem (abButtonB),
-        juce::GridItem (copyButton),
-        juce::GridItem(), // spacer left of divider
-        juce::GridItem (snapButton),
-        juce::GridItem(), // spacer left of split
-        juce::GridItem (splitToggle),
-        juce::GridItem (linkButton),
-        juce::GridItem(), // spacer before right utilities
-        juce::GridItem (transportClockLabel),
-        juce::GridItem (colorModeButton),
-        juce::GridItem (tooltipsButton),
-        juce::GridItem (fullScreenButton),
-    };
-
-    auto headerArea = woodBar.reduced (Layout::dp (Layout::GAP, s), Layout::dp (6, s))
-                             .withTrimmedBottom (Layout::dp (8, s))
-                             .withTrimmedTop (Layout::dp (2, s));
-    header.performLayout (headerArea);
-
-    // Tooltip bubble setup delegated to EventManager
-    if (eventManager) {
-        eventManager->setupTooltipBubble();
-    }
-
-    // history panel removed
-
-    // options + phase mode at bottom-left; help to bottom-right; bottom-center panel toggle
-    {
-        auto bounds = getLocalBounds();
-        const int padding = Layout::dp (8, s);
-        const int btnW = Layout::dp (40, s);
-        const int btnH = h;
-        const int leftY = bounds.getBottom() - btnH - padding;
-        optionsButton.setBounds (bounds.getX() + padding, leftY, btnW, btnH);
-
-        // Place Phase button as last in the left group
-        if (!phaseModeParamAttach)
-        {
-            if (auto* p = proc.apvts.getParameter ("phase_mode"))
-            {
-                phaseModeParamAttach = std::make_unique<juce::ParameterAttachment>(*p, [this](float v)
-                {
-                    const int idx = (int) juce::roundToInt (v * 3.0f);
-                    phaseModeButton.setToggleState (idx != 0, juce::dontSendNotification);
-                    phaseModeButton.repaint();
-                }, nullptr);
-            }
-        }
-        phaseModeButton.setBounds (optionsButton.getRight() + Layout::dp (8, s), leftY, btnW, btnH);
-        addAndMakeVisible (phaseModeButton);
-        // Shade per mode (Zero keeps inactive visual; menu shows selection)
-        auto applyPhaseTint = [this]
-        {
-            int cur = 0;
-            if (auto* p = proc.apvts.getParameter ("phase_mode"))
-                if (auto* cp = dynamic_cast<juce::AudioParameterChoice*>(p)) cur = cp->getIndex();
-             // Mode → colour tint (including Zero grey)
-             juce::Colour tint = lnf.theme.textMuted; // Zero default
-             juce::String label = "Z";
-             switch (cur)
-             {
-                case 1: tint = lnf.theme.accent.withHue (lnf.theme.accent.getHue() + 0.12f); label = "N"; break;
-                case 2: tint = lnf.theme.eq.hp;                                            label = "H"; break;
-                case 3: tint = lnf.theme.accent.withHue (lnf.theme.accent.getHue() - 0.18f); label = "F"; break;
-             }
-             phaseModeButton.getProperties().set ("accentOverrideARGB", (int) tint.getARGB());
-             phaseModeButton.getProperties().set ("iconOverrideARGB",   (int) tint.getARGB());
-             phaseModeButton.getProperties().set ("labelText", label);
-             // Always show solid style, including Zero (grey)
-             phaseModeButton.setToggleState (true, juce::dontSendNotification);
-             phaseModeButton.repaint();
-        };
-        applyPhaseTint();
-        if (!phaseModeParamAttach)
-        {
-            if (auto* p = proc.apvts.getParameter ("phase_mode"))
-            {
-                phaseModeParamAttach = std::make_unique<juce::ParameterAttachment>(*p, [applyPhaseTint](float){ applyPhaseTint(); }, nullptr);
-            }
-        }
-        phaseModeButton.onClick = [this, applyPhaseTint]
-        {
-            int cur = 0;
-            if (auto* p = proc.apvts.getParameter ("phase_mode"))
-                if (auto* cp = dynamic_cast<juce::AudioParameterChoice*>(p)) cur = cp->getIndex();
-
-            TintMenuLNFEx menuLnf; menuLnf.defaultTint = lnf.theme.accent; menuLnf.hideChecks = true;
-            menuLnf.setColour (juce::PopupMenu::textColourId, lnf.theme.text);
-
-            showTintedMenu (phaseModeButton, menuLnf,
-                // BUILD
-                [this, cur] (juce::PopupMenu& m, TintMenuLNFEx& lnfEx)
-                {
-                    m.addSectionHeader ("Phase");
-                    struct Row { int id; const char* text; juce::Colour tint; bool ticked; };
-                    juce::Array<Row> rows;
-                rows.add ({ 1, "Zero-latency",    lnf.theme.textMuted,          cur == 0 });
-                rows.add ({ 2, "Natural-phase",   lnf.theme.accent.withHue (lnf.theme.accent.getHue() + 0.12f), cur == 1 });
-                rows.add ({ 3, "Hybrid Linear",   lnf.theme.eq.hp,               cur == 2 });
-                rows.add ({ 4, "Full Linear",     lnf.theme.accent.withHue (lnf.theme.accent.getHue() - 0.18f), cur == 3 });
-
-                    lnfEx.itemTints.clear();
-                    for (auto& r : rows) { m.addItem (r.id, r.text, true, r.ticked); lnfEx.itemTints[r.id] = r.tint; }
-                },
-                // RESULT
-                [this, applyPhaseTint] (int r)
-                {
-                    if (r < 1 || r > 4) return;
-                    if (auto* p = proc.apvts.getParameter ("phase_mode"))
-                    {
-                        p->beginChangeGesture();
-                        p->setValueNotifyingHost ((float) (r - 1) / 3.0f);
-                        p->endChangeGesture();
-                    }
-                    applyPhaseTint();
-                });
-        };
-
-        // Quality button next to Phase
-        if (!qualityParamAttach)
-        {
-            if (auto* p = proc.apvts.getParameter ("quality"))
-            {
-                qualityParamAttach = std::make_unique<juce::ParameterAttachment>(*p, [this](float)
-                {
-                    // tint is updated on demand below
-                    qualityButton.repaint();
-                }, nullptr);
-            }
-        }
-        qualityButton.setBounds (phaseModeButton.getRight() + Layout::dp (8, s), leftY, btnW, btnH);
-        addAndMakeVisible (qualityButton);
-        auto applyQualityTint = [this]
-        {
-            int cur = 1; // default Standard
-            if (auto* p = proc.apvts.getParameter ("quality"))
-                if (auto* cp = dynamic_cast<juce::AudioParameterChoice*>(p)) cur = cp->getIndex();
-            // Distinct palette from Oversampling and Phase
-            juce::Colour tint = lnf.theme.textMuted; // Eco default (Grey)
-            juce::String label = "E";
-            switch (cur)
-            {
-                case 0: tint = lnf.theme.textMuted;            label = "E"; break; // Eco
-                case 1: tint = lnf.theme.eq.bass;              label = "S"; break; // Standard
-                case 2: tint = lnf.theme.eq.scoop;             label = "H"; break; // High
-            }
-            qualityButton.getProperties().set ("accentOverrideARGB", (int) tint.getARGB());
-            qualityButton.getProperties().set ("iconOverrideARGB",   (int) tint.getARGB());
-            qualityButton.getProperties().set ("labelText", label);
-            qualityButton.setToggleState (true, juce::dontSendNotification);
-            qualityButton.repaint();
-        };
-        applyQualityTint();
-        if (!qualityParamAttach)
-        {
-            if (auto* p = proc.apvts.getParameter ("quality"))
-            {
-                qualityParamAttach = std::make_unique<juce::ParameterAttachment>(*p, [applyQualityTint](float){ applyQualityTint(); }, nullptr);
-            }
-        }
-        qualityButton.onClick = [this, applyQualityTint]
-        {
-            int cur = 1;
-            if (auto* p = proc.apvts.getParameter ("quality"))
-                if (auto* cp = dynamic_cast<juce::AudioParameterChoice*>(p)) cur = cp->getIndex();
-
-            TintMenuLNFEx menuLnf; menuLnf.defaultTint = lnf.theme.accent; menuLnf.hideChecks = true;
-            menuLnf.setColour (juce::PopupMenu::textColourId, lnf.theme.text);
-
-            showTintedMenu (qualityButton, menuLnf,
-                // BUILD
-                [this, cur] (juce::PopupMenu& m, TintMenuLNFEx& lnfEx)
-                {
-                    m.addSectionHeader ("Quality");
-                    struct Row { int id; const char* text; juce::Colour tint; bool ticked; };
-                    juce::Array<Row> rows;
-                    rows.add ({ 1, "Eco",      lnf.theme.textMuted,        cur == 0 });
-                    rows.add ({ 2, "Standard", lnf.theme.eq.bass,          cur == 1 });
-                    rows.add ({ 3, "High",     lnf.theme.eq.scoop,         cur == 2 });
-                    lnfEx.itemTints.clear();
-                    for (auto& r : rows) { m.addItem (r.id, r.text, true, r.ticked); lnfEx.itemTints[r.id] = r.tint; }
-                },
-                // RESULT
-                [this, applyQualityTint] (int r)
-                {
-                    if (r < 1 || r > 3) return;
-                    if (auto* p = proc.apvts.getParameter ("quality"))
-                    {
-                        p->beginChangeGesture();
-                        // map 1..3 -> 0..2
-                        const int idx = r - 1;
-                        if (auto* cp = dynamic_cast<juce::AudioParameterChoice*>(p))
-                        {
-                            const int n = cp->choices.size();
-                            const float norm = n > 1 ? (float) idx / (float) (n - 1) : 0.0f;
-                            p->setValueNotifyingHost (juce::jlimit (0.0f, 1.0f, norm));
-                        }
-                        else
-                        {
-                            p->setValueNotifyingHost ((float) idx / 2.0f);
-                        }
-                        p->endChangeGesture();
-                    }
-                    applyQualityTint();
-                });
-        };
-
-        // Hidden position: panel bottom sits well below the bottom bar so it never clips it visually
-        // Derive bottom bar boundary from actual control rectangles (no hardcoding)
-        juce::Rectangle<int> bottomBarRect = optionsButton.getBounds();
-        bottomBarRect = bottomBarRect.getUnion (phaseModeButton.getBounds());
-        bottomBarRect = bottomBarRect.getUnion (helpButton.getBounds());
-        bottomBarRect = bottomBarRect.getUnion (bottomAreaToggle.getBounds());
-        const int bottomBarTop    = bottomBarRect.getY();
-
-        // Help to bottom-right (left of resize grip)
-        const int helpX = bounds.getRight() - Layout::dp (24, s) - btnW;
-        const int helpY = leftY;
-        helpButton.setBounds (helpX, helpY, btnW, btnH);
-        addAndMakeVisible (helpButton);
-
-        // Bottom-center toggle removed; free scrolling via viewport replaces this trigger
-    }
-
-    // divider left of Snap (Divider | Snap | Split)
-    {
-        auto b = snapButton.getBounds();
-        const int lineH = Layout::dp (24, s);
-        const int gapX  = Layout::dp (8, s);
-        auto cy = b.getCentreY();
-        splitDivider.setBounds (b.getX() - gapX - 1, cy - lineH/2, 4, lineH);
-        splitDivider.toFront (false);
-    }
-    // 2) main XY area + vertical meters on right side
-    {
-        // Pre-compute row heights to reserve exact space for rows below, so XY/meters respond consistently
-        const int lPx_rsv       = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), sv);
-        const int labelBand_rsv = Layout::dp (Layout::LABEL_BAND_EXTRA, sv);
-        const int containerH_rsv = lPx_rsv + labelBand_rsv + Layout::dp (Layout::LABEL_BAND_EXTRA, sv);
-        const int rowsTotalH_rsv = containerH_rsv * 4; // four uniform rows
-
-        // Meters take the full right side strip (carve from full remaining area first)
-        // Use grid-derived width so meters do not get too wide on large windows
-        const int lPx_rs     = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
-        const int cellW_rs   = lPx_rs + Layout::dp (8, s);
-        const int colW_m     = juce::jlimit (Layout::dp (24, s), Layout::dp (56, s), juce::roundToInt (cellW_rs * 0.75f));
-        const int corrW_m    = juce::jmax (Layout::dp (10, s), juce::roundToInt (colW_m * 0.5f)); // CORR is half width of others
-        const int inter_m    = juce::jmax (1, Layout::dp (Layout::GAP_S, s) / 2); // tighter spacing between columns
-        const int outerPadM_X= juce::jmax (1, Layout::dp (Layout::GAP_S, s));     // small side padding
-        const int outerPadM_Y= Layout::dp (Layout::GAP, sv);                       // match left container vertical pad for bottom align
-        const int targetStripW = colW_m * 2 + corrW_m + inter_m * 2 + outerPadM_X * 2; // IO | LR | CORR(half)
-        const int metersStripW = juce::jlimit (Layout::dp (96, s), Layout::dp (240, s), targetStripW);
-        // Split the remaining area: left meters container, main content container, and right sliders container
-        auto metersArea = r.removeFromLeft (metersStripW);
-        auto rightSlidersArea = r.removeFromRight (metersStripW); // Same width as meters for now
-        auto leftArea   = r; // whatever remains after carving both meter areas
-        metersArea = metersArea.reduced (outerPadM_X, outerPadM_Y);
-        rightSlidersArea = rightSlidersArea.reduced (outerPadM_X, outerPadM_Y);
-        leftArea   = leftArea  .reduced (Layout::dp (Layout::GAP, s), Layout::dp (Layout::GAP, sv));
-        // Ensure all containers share the same top/bottom so bottoms align
-        metersArea.setY (leftArea.getY());
-        metersArea.setHeight (leftArea.getHeight());
-        rightSlidersArea.setY (leftArea.getY());
-        rightSlidersArea.setHeight (leftArea.getHeight());
-        
-        // Ensure the rightSlidersArea has a minimum size
-        if (rightSlidersArea.getWidth() < 100) {
-            rightSlidersArea.setWidth (100);
-            DBG("WARNING: rightSlidersArea too narrow, forcing width to 100");
-        }
-        if (rightSlidersArea.getHeight() < 100) {
-            rightSlidersArea.setHeight (100);
-            DBG("WARNING: rightSlidersArea too short, forcing height to 100");
-        }
-        
-        MainContentContainer.setBounds (leftArea);
-        rightSlidersContainer.setBounds (rightSlidersArea);
-        rightSlidersContainer.setVisible (true);
-        rightSlidersContainer.toFront (false);
-        metersContainer.setBounds       (metersArea);
-        
-        // Layout the 3D vertical sliders in rightSlidersContainer
-        auto sliderArea = rightSlidersArea.reduced (10);
-        const int sliderWidth = sliderArea.getWidth() / 3;
-        const int sliderHeight = sliderArea.getHeight() - 40; // Leave space for labels
-        
-        // Debug: Check if the area is too small
-        if (sliderWidth < 10 || sliderHeight < 10) {
-            DBG("WARNING: Slider area too small! sliderWidth=" << sliderWidth << ", sliderHeight=" << sliderHeight);
-        }
-        
-        // Debug: Force minimum slider sizes to ensure visibility
-        const int minSliderWidth = juce::jmax (sliderWidth, 50);
-        const int minSliderHeight = juce::jmax (sliderHeight, 100);
-        DBG("Forced slider sizes: width=" << minSliderWidth << ", height=" << minSliderHeight);
-        
-        // Align sliders to match meters (full container height)
-        const int containerWidth = rightSlidersContainer.getWidth();
-        const int containerHeight = rightSlidersContainer.getHeight();
-        const int sliderGap = 8; // 8px gap between sliders
-        const int reducedSliderWidth = minSliderWidth - 8; // Reduce width to allow for gaps
-        const int totalSliderWidth = (reducedSliderWidth * 3) + (sliderGap * 2);
-        const int startX = (containerWidth - totalSliderWidth) / 2;
-        const int startY = 0; // Start at top of container
-        
-        // Use full container height to match meters
-        const int fullSliderHeight = containerHeight;
-        const int sliderStartY = startY;
-        
-        inputSlider.setBounds (startX, sliderStartY, reducedSliderWidth, fullSliderHeight);
-        outputSlider.setBounds (startX + reducedSliderWidth + sliderGap, sliderStartY, reducedSliderWidth, fullSliderHeight);
-        mixSlider.setBounds (startX + (reducedSliderWidth + sliderGap) * 2, sliderStartY, reducedSliderWidth, fullSliderHeight);
-        
-        
-        // Debug: Force sliders to be visible and repaint
-        inputSlider.setVisible (true);
-        outputSlider.setVisible (true);
-        mixSlider.setVisible (true);
-        inputSlider.repaint();
-        outputSlider.repaint();
-        mixSlider.repaint();
-        
-        
-        
-        
-        
-        // Force main editor repaint to show containers
-        repaint();
-        
-        // Labels will be styled with knobcell background in their paint method
-        
-        // Sliders are already visible from addAndMakeVisible in constructor
-        
-        // Debug: Add some logging to see what's happening
-        DBG("rightSlidersArea (right sliders): " << rightSlidersArea.toString());
-        DBG("metersArea (left meters): " << metersArea.toString());
-        DBG("sliderArea: " << sliderArea.toString());
-        DBG("sliderWidth: " << sliderWidth << ", sliderHeight: " << sliderHeight);
-        DBG("inputSlider bounds: " << inputSlider.getBounds().toString());
-        DBG("inputSlider bounds: " << inputSlider.getBounds().toString());
-        DBG("outputSlider bounds: " << outputSlider.getBounds().toString());
-        DBG("mixSlider bounds: " << mixSlider.getBounds().toString());
-        DBG("minSliderWidth: " << minSliderWidth << ", minSliderHeight: " << minSliderHeight);
-        DBG("rightSlidersContainer child count: " << rightSlidersContainer.getNumChildComponents());
-        
-        // Debug: Test if sliders are actually inside the container bounds
-        DBG("Slider positioning test:");
-        DBG("  Container bounds: " << rightSlidersContainer.getBounds().toString());
-        DBG("  Slider area: " << sliderArea.toString());
-        // (Reverted) bottom toggle remains a direct child of the editor; positioned earlier
-
-        // Allocate the top area to full height (legacy rows disabled)
-        const int mainH = juce::jmax (Layout::dp (Layout::XY_MIN_H, s), r.getHeight());
-        auto main = r.removeFromTop (mainH);
-        
-        // Visual dock takes the pad area exactly matching MainContentContainer width
-        auto padLocal = MainContentContainer.getLocalBounds()
-                           .removeFromTop (mainH)
-                           .reduced (Layout::dp (Layout::GAP, s), Layout::dp (Layout::GAP, sv));
-        if (panes)
-        {
-            if (panes->getParentComponent() != &MainContentContainer) MainContentContainer.addAndMakeVisible (panes.get());
-            panes->setBounds (padLocal);
-        }
-        // xyShade functionality removed - handled by PaneManager
-
-        // Hide center container if present
-        phaseCenterContainer.setVisible (false);
-
-        // Layout meters stack: [Corr] [IO (vertical In/Out)] [LR (vertical)] side-by-side inside their panels
-        // Mount meters as children of metersContainer to isolate z-order and clipping
-        if (corrMeter.getParentComponent() != &metersContainer) metersContainer.addAndMakeVisible (corrMeter);
-        if (lrMeters.getParentComponent()   != &metersContainer) metersContainer.addAndMakeVisible (lrMeters);
-        if (ioMeters.getParentComponent()   != &metersContainer) metersContainer.addAndMakeVisible (ioMeters);
-        auto mB = metersContainer.getLocalBounds();
-        // Lay out three tight columns: IO | LR | CORR (CORR half width), minimal spacing
-        int x = mB.getX();
-        const int h = mB.getHeight();
-        const int meterBottomPadding = Layout::dp (8, s); // Add padding to bottom of meters
-        auto ioCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h - meterBottomPadding); x += colW_m + inter_m;
-        auto lrCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h - meterBottomPadding); x += colW_m + inter_m;
-        auto corrCol = juce::Rectangle<int> (x, mB.getY(), corrW_m, h - meterBottomPadding);
-        ioMeters.setBounds   (ioCol);
-        lrMeters.setBounds   (lrCol);
-        corrMeter.setBounds  (corrCol);
-    }
-
-    // Predeclare legacy layout metrics (used only if legacy path is compiled/executed)
-    const int lPx       = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
-    const int valuePxCommon = Layout::dp (14, s);
-    const int labelGapCommon = Layout::dp (2, s); // Reduced from 4 to 2 for tighter spacing
-    const int containerHeight = lPx + labelGapCommon + valuePxCommon;
-    const int rowH1 = containerHeight, rowH2 = containerHeight, rowH3 = containerHeight, rowH4 = containerHeight;
-    juce::Rectangle<int> row1, row2, row3, row4;
-
-    // Legacy controls are disabled; skip legacy layout entirely
-    if (false)
-    {
-        const int gapI      = Layout::dp (Layout::GAP_S, s);
-        const int dividerW  = Layout::dp (8, s); // global divider column width (thicker + more spacing)
-        // microH no longer used (minis integrated into cells)
-
-        // Compute desired delay column width, but do not carve a separate right-hand container.
-        // We'll integrate delay into the same 4-row system and just reserve a right strip later.
-        const int delayCols = 7;
-        const int cellW_right = lPx + Layout::dp (8, s);
-        const int delayCardW = delayCols * cellW_right + Layout::dp (Layout::PAD, s);
-        juce::Rectangle<int> delayArea; // to be computed after rows are defined
-        // Capture the full rows area (left column) for overlay sizing
-        auto rowsArea = r; // rows live directly below the panes (after main area was removed)
-        row1 = r.removeFromTop (rowH1);
-        row2 = r.removeFromTop (rowH2);
-        row3 = r.removeFromTop (rowH3);
-        row4 = r.removeFromTop (rowH4);
-        // Align left content container bottom to the bottom of Row 4 to remove extra space
-        {
-            const int rowsBottom = row4.getBottom();
-            auto lc = MainContentContainer.getBounds();
-            lc.setBottom (rowsBottom);
-            MainContentContainer.setBounds (lc);
-            // Align meters container bottom to the same baseline
-            auto mc = metersContainer.getBounds();
-            mc.setBottom (rowsBottom);
-            metersContainer.setBounds (mc);
-        }
-        // Re-layout meter columns now that meters container height is final
-        {
-            const int lPx_rs   = Layout::dp ((float) Layout::knobPx (Layout::Knob::L), s);
-            const int cellW_rs = lPx_rs + Layout::dp (8, s);
-            const int colW_m   = juce::jlimit (Layout::dp (24, s), Layout::dp (56, s), juce::roundToInt (cellW_rs * 0.75f));
-            const int corrW_m  = juce::jmax (Layout::dp (10, s), juce::roundToInt (colW_m * 0.5f));
-            const int inter_m  = juce::jmax (1, Layout::dp (Layout::GAP_S, s) / 2);
-            auto mB = metersContainer.getLocalBounds();
-            int x = mB.getX();
-            const int h = mB.getHeight();
-            const int meterBottomPadding = Layout::dp (8, s); // Add padding to bottom of meters
-            auto ioCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h - meterBottomPadding); x += colW_m + inter_m;
-            auto lrCol   = juce::Rectangle<int> (x, mB.getY(), colW_m, h - meterBottomPadding); x += colW_m + inter_m;
-            auto corrCol = juce::Rectangle<int> (x, mB.getY(), corrW_m, h - meterBottomPadding);
-            ioMeters.setBounds   (ioCol);
-            lrMeters.setBounds   (lrCol);
-            corrMeter.setBounds  (corrCol);
-        }
-    }
-    // Alternate bottom panel (slides over bottom rows when enabled)
-    if (true)
-    {
-        if (controlsViewport.getParentComponent() == &MainContentContainer)
-            MainContentContainer.removeChildComponent (&controlsViewport);
-        group1Container.setVisible (false);
-        group2Container.setVisible (false);
-    }
-    if (false)
-    {
-
-        // Reserve a rectangle covering bottom rows (1..4), just below the XY pad
-        // Stop position (active): panel bottom sits above the bottom bar by a small gap
-        // Hidden position: panel bottom sits well below the bottom bar so it never clips it visually
-        // Derive bottom bar boundary from actual control rectangles (no hardcoding)
-        juce::Rectangle<int> bottomBarRect = optionsButton.getBounds();
-        bottomBarRect = bottomBarRect.getUnion (phaseModeButton.getBounds());
-        bottomBarRect = bottomBarRect.getUnion (helpButton.getBounds());
-        bottomBarRect = bottomBarRect.getUnion (bottomAreaToggle.getBounds());
-        const int bottomBarTop    = bottomBarRect.getY();
-        const int bottomBarBottom = bottomBarRect.getBottom();
-        const int stackTop        = row1.getY();
-        const int activeGapPx     = Layout::dp (20,  s);  // keep a tight visual gap when active
-        const int hiddenGapPx     = Layout::dp (100, s);  // move panel further DOWN when hidden
-        overlayActiveBaseline  = juce::jmax (stackTop, bottomBarTop - activeGapPx);
-        overlayHiddenBaseline  = bottomBarBottom + hiddenGapPx;
-        overlayHeightPx        = juce::jmax (0, overlayActiveBaseline - stackTop);
-
-        // Mount viewport over the 4 control rows area and stack Group 1 (top) and Group 2 (below)
-        const int totalRowsH_local = rowH1 + rowH2 + rowH3 + rowH4;
-        controlRowsHeightPx = totalRowsH_local;
-        auto rowsLocalRect = MainContentContainer.getLocalBounds().removeFromBottom (totalRowsH_local);
-        if (controlsViewport.getParentComponent() != &MainContentContainer)
-            MainContentContainer.addAndMakeVisible (controlsViewport);
-        controlsViewport.setBounds (rowsLocalRect);
-        controlsViewport.setScrollBarsShown (true, false);
-        controlsViewport.setInterceptsMouseClicks (true, true);
-        // Theme the vertical scrollbar with accent
-        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        {
-            auto& vsb = controlsViewport.getVerticalScrollBar();
-            vsb.setColour (juce::ScrollBar::thumbColourId, lf->theme.accent);
-            vsb.setColour (juce::ScrollBar::trackColourId, lf->theme.panel.darker (0.10f));
-        }
-        if (group1Container.getParentComponent() != &controlsContent)
-            controlsContent.addAndMakeVisible (group1Container);
-        if (group2Container.getParentComponent() != &controlsContent)
-            controlsContent.addAndMakeVisible (group2Container);
-        group1Container.setBounds (juce::Rectangle<int> (0, 0, rowsLocalRect.getWidth(), totalRowsH_local));
-        group2Container.setBounds (juce::Rectangle<int> (0, totalRowsH_local, rowsLocalRect.getWidth(), totalRowsH_local));
-        controlsContent.setBounds (juce::Rectangle<int> (0, 0, rowsLocalRect.getWidth(), totalRowsH_local * 2));
-        controlsViewport.setViewedComponent (&controlsContent, false);
-
-        // Remove reliance on bottomAreaToggle; viewport scrolling will replace this trigger
-
-        // Motion Engine: removed from Group 2. Lives only in Group 1 flat grid.
-        // Group 2 content local bounds (will be used in viewport stack)
-        auto b = juce::Rectangle<int> (0, 0, group2Container.getWidth(), totalRowsH_local);
-        // Delay group positioned directly in Group 2 panel (no container)
-        const int availableWLocal = b.getWidth();
-        const int cellWBase = lPx + Layout::dp (8, s);
-        const int cellWFit  = juce::jmax (1, availableWLocal / 16); // two 8-col blocks (Delay + Reverb)
-        const int cellW     = juce::jmin (cellWBase, cellWFit);
-        const int delayGroupX = b.getX();
-        const int delayGroupW = 8 * cellW; // 8 columns for delay items
-        const int delayGroupH = b.getHeight();
-        const int delayGroupY = 0;
-        
-        // Create and layout delay items in exact 4x7 order
-        const int valuePx = Layout::dp (14, s);
-        const int labelGap = Layout::dp (4, s);
-        const int delayCellW = cellW;
-        
-        // Build overlay contents once; mark dirty for reflow when size/scale changes
-        if (!overlayContentsBuilt)
-        {
-            // Create delay switch cells
-            if (!delayEnabledCell) { delayEnabled.setComponentID ("delayEnabled"); delayEnabled.getProperties().set ("iconType", (int) IconSystem::Power); delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled); delayEnabledCell->setCaption ("Enable"); delayEnabledCell->setDelayTheme (true); }
-            if (!delayModeCell)    { delayModeCell    = std::make_unique<SwitchCell> (delayMode);    delayModeCell->setCaption ("Mode"); delayMode.getProperties().set ("iconOnly", true); delayModeCell->setDelayTheme (true); }
-            if (!delaySyncCell)    { delaySync.getProperties().set ("iconType", (int) IconSystem::Link); delaySyncCell    = std::make_unique<SwitchCell> (delaySync);    delaySyncCell->setCaption ("Sync"); delaySyncCell->setDelayTheme (true); }
-            if (!delayGridFlavorSegments) delayGridFlavorSegments = std::make_unique<Segmented3Control>(proc.apvts, "delay_grid_flavor", juce::StringArray{ "S", "D", "T" });
-            if (!delayGridFlavorCell) { delayGridFlavorCell = std::make_unique<SwitchCell> (*delayGridFlavorSegments); delayGridFlavorCell->setCaption ("Feel"); delayGridFlavorCell->setDelayTheme (true); }
-            if (!delayPingpongCell)   { delayPingpong.getProperties().set ("iconType", (int) IconSystem::Stereo); delayPingpongCell = std::make_unique<SwitchCell> (delayPingpong); delayPingpongCell->setCaption ("Ping-Pong"); delayPingpongCell->setDelayTheme (true); }
-            if (!delayFreezeCell)     { delayFreeze.getProperties().set ("iconType", (int) IconSystem::Snowflake); delayFreezeCell  = std::make_unique<SwitchCell> (delayFreeze);   delayFreezeCell->setCaption ("Freeze"); delayFreezeCell->setDelayTheme (true); }
-            if (!delayKillDryCell)    { delayKillDry.getProperties().set ("iconType", (int) IconSystem::Mix); delayKillDryCell = std::make_unique<SwitchCell> (delayKillDry);  delayKillDryCell->setCaption ("Wet Only"); delayKillDry.setTooltip ("Wet Only: Removes the dry signal from the output (effects only)"); delayKillDryCell->setDelayTheme (true); }
-            if (!delayFilterTypeCell) { delayFilterTypeCell = std::make_unique<SwitchCell> (delayFilterType); delayFilterTypeCell->setCaption ("Filter"); delayFilterTypeCell->setDelayTheme (true); }
-            if (!delayDuckSourceCell) { delayDuckSourceCell = std::make_unique<SwitchCell> (delayDuckSource); delayDuckSourceCell->setCaption ("Duck Source"); delayDuckSourceCell->setDelayTheme (true); }
-            if (!delayDuckPostCell)   { delayDuckPost.getProperties().set ("iconType", (int) IconSystem::RightArrow); delayDuckPostCell = std::make_unique<SwitchCell> (delayDuckPost); delayDuckPostCell->setCaption ("Post"); delayDuckPostCell->setDelayTheme (true); }
-
-            // Create delay knob cells
-            if (!delayTimeCell)      delayTimeCell       = std::make_unique<KnobCell>(delayTime,      delayTimeValue,      "TIME");
-            if (!delayFeedbackCell)  delayFeedbackCell   = std::make_unique<KnobCell>(delayFeedback,  delayFeedbackValue,  "FB");
-            if (!delayWetCell)       delayWetCell        = std::make_unique<KnobCell>(delayWet,       delayWetValue,       "WET");
-            if (!delaySpreadCell)    delaySpreadCell     = std::make_unique<KnobCell>(delaySpread,    delaySpreadValue,    "SPREAD");
-            if (!delayWidthCell)     delayWidthCell      = std::make_unique<KnobCell>(delayWidth,     delayWidthValue,     "WIDTH");
-            if (!delayModRateCell)   delayModRateCell    = std::make_unique<KnobCell>(delayModRate,   delayModRateValue,   "RATE");
-            if (!delayModDepthCell)  delayModDepthCell   = std::make_unique<KnobCell>(delayModDepth,  delayModDepthValue,  "DEPTH");
-            if (!delayWowflutterCell)delayWowflutterCell = std::make_unique<KnobCell>(delayWowflutter,delayWowflutterValue,"WOW");
-            if (!delayJitterCell)    delayJitterCell     = std::make_unique<KnobCell>(delayJitter,    delayJitterValue,    "JITTER");
-            if (!delayHpCell)        delayHpCell         = std::make_unique<KnobCell>(delayHp,        delayHpValue,        "HP");
-            if (!delayLpCell)        delayLpCell         = std::make_unique<KnobCell>(delayLp,        delayLpValue,        "LP");
-            if (!delayTiltCell)      delayTiltCell       = std::make_unique<KnobCell>(delayTilt,      delayTiltValue,      "TILT");
-            if (!delaySatCell)       delaySatCell        = std::make_unique<KnobCell>(delaySat,       delaySatValue,       "SAT");
-            if (!delayDiffusionCell) delayDiffusionCell  = std::make_unique<KnobCell>(delayDiffusion, delayDiffusionValue, "DIFF");
-            if (!delayDiffuseSizeCell)delayDiffuseSizeCell= std::make_unique<KnobCell>(delayDiffuseSize, delayDiffuseSizeValue, "SIZE");
-            if (!delayDuckDepthCell) delayDuckDepthCell  = std::make_unique<KnobCell>(delayDuckDepth, delayDuckDepthValue, "DEPTH");
-            if (!delayDuckAttackCell)delayDuckAttackCell = std::make_unique<KnobCell>(delayDuckAttack,delayDuckAttackValue,"ATT");
-            if (!delayDuckReleaseCell)delayDuckReleaseCell=std::make_unique<KnobCell>(delayDuckRelease,delayDuckReleaseValue,"REL");
-            if (!delayDuckThresholdCell) delayDuckThresholdCell = std::make_unique<KnobCell>(delayDuckThreshold, delayDuckThresholdValue, "THR");
-            if (!delayDuckLookaheadCell) delayDuckLookaheadCell = std::make_unique<KnobCell>(delayDuckLookahead, delayDuckLookaheadValue, "LA");
-            if (!delayDuckRatioCell) delayDuckRatioCell = std::make_unique<KnobCell>(delayDuckRatio, delayDuckRatioValue, "RAT");
-            if (!delayPreDelayCell) delayPreDelayCell = std::make_unique<KnobCell>(delayPreDelay, delayPreDelayValue, "PRE");
-
-            // Add all delay cells directly to the Group 2 panel (once)
-            for (auto* c : { delayEnabledCell.get(), delayModeCell.get(), delaySyncCell.get(), delayGridFlavorCell.get(), delayPingpongCell.get(), delayFreezeCell.get(), delayKillDryCell.get(), delayFilterTypeCell.get(), delayDuckSourceCell.get(), delayDuckPostCell.get() })
-                if (c) { group2Container.addAndMakeVisible (*c); c->setShowBorder (true); }
-            for (auto* c : { delayTimeCell.get(), delayFeedbackCell.get(), delayWetCell.get(), delaySpreadCell.get(), delayWidthCell.get(), delayModRateCell.get(), delayModDepthCell.get(), delayWowflutterCell.get(), delayJitterCell.get(), delayPreDelayCell.get(), delayHpCell.get(), delayLpCell.get(), delayTiltCell.get(), delaySatCell.get(), delayDiffusionCell.get(), delayDiffuseSizeCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckThresholdCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
-                if (c) { group2Container.addAndMakeVisible (*c); c->setShowBorder (true); }
-
-            overlayContentsBuilt = true;
-            overlayLayoutDirty = true;
-        }
-        if (!delayEnabledCell) { delayEnabled.setComponentID ("delayEnabled"); delayEnabled.getProperties().set ("iconType", (int) IconSystem::Power); delayEnabledCell = std::make_unique<SwitchCell> (delayEnabled); delayEnabledCell->setCaption ("Enable"); delayEnabledCell->setDelayTheme (true); }
-        if (!delayModeCell)    { delayModeCell    = std::make_unique<SwitchCell> (delayMode);    delayModeCell->setCaption ("Mode"); delayMode.getProperties().set ("iconOnly", true); delayModeCell->setDelayTheme (true); }
-        if (!delaySyncCell)    { delaySync.getProperties().set ("iconType", (int) IconSystem::Link); delaySyncCell    = std::make_unique<SwitchCell> (delaySync);    delaySyncCell->setCaption ("Sync"); delaySyncCell->setDelayTheme (true); }
-        if (!delayGridFlavorSegments) delayGridFlavorSegments = std::make_unique<Segmented3Control>(proc.apvts, "delay_grid_flavor", juce::StringArray{ "S", "D", "T" });
-        if (!delayGridFlavorCell) { delayGridFlavorCell = std::make_unique<SwitchCell> (*delayGridFlavorSegments); delayGridFlavorCell->setCaption ("Feel"); delayGridFlavorCell->setDelayTheme (true); }
-        if (!delayPingpongCell)   { delayPingpong.getProperties().set ("iconType", (int) IconSystem::Stereo); delayPingpongCell = std::make_unique<SwitchCell> (delayPingpong); delayPingpongCell->setCaption ("Ping-Pong"); delayPingpongCell->setDelayTheme (true); }
-        if (!delayFreezeCell)     { delayFreeze.getProperties().set ("iconType", (int) IconSystem::Snowflake); delayFreezeCell  = std::make_unique<SwitchCell> (delayFreeze);   delayFreezeCell->setCaption ("Freeze"); delayFreezeCell->setDelayTheme (true); }
-        if (!delayKillDryCell)    { delayKillDry.getProperties().set ("iconType", (int) IconSystem::Mix); delayKillDryCell = std::make_unique<SwitchCell> (delayKillDry);  delayKillDryCell->setCaption ("Wet Only"); delayKillDry.setTooltip ("Wet Only: Removes the dry signal from the output (effects only)"); delayKillDryCell->setDelayTheme (true); }
-        if (!delayFilterTypeCell) { delayFilterTypeCell = std::make_unique<SwitchCell> (delayFilterType); delayFilterTypeCell->setCaption ("Filter"); delayFilterTypeCell->setDelayTheme (true); }
-        if (!delayDuckSourceCell) { delayDuckSourceCell = std::make_unique<SwitchCell> (delayDuckSource); delayDuckSourceCell->setCaption ("Duck Source"); delayDuckSourceCell->setDelayTheme (true); }
-        if (!delayDuckPostCell)   { delayDuckPost.getProperties().set ("iconType", (int) IconSystem::RightArrow); delayDuckPostCell = std::make_unique<SwitchCell> (delayDuckPost); delayDuckPostCell->setCaption ("Post"); delayDuckPostCell->setDelayTheme (true); }
-        
-        // Create delay knob cells
-        if (!delayTimeCell)      delayTimeCell       = std::make_unique<KnobCell>(delayTime,      delayTimeValue,      "TIME");
-        if (!delayFeedbackCell)  delayFeedbackCell   = std::make_unique<KnobCell>(delayFeedback,  delayFeedbackValue,  "FB");
-        if (!delayWetCell)       delayWetCell        = std::make_unique<KnobCell>(delayWet,       delayWetValue,       "WET");
-        if (!delaySpreadCell)    delaySpreadCell     = std::make_unique<KnobCell>(delaySpread,    delaySpreadValue,    "SPREAD");
-        if (!delayWidthCell)     delayWidthCell      = std::make_unique<KnobCell>(delayWidth,     delayWidthValue,     "WIDTH");
-        if (!delayModRateCell)   delayModRateCell    = std::make_unique<KnobCell>(delayModRate,   delayModRateValue,   "RATE");
-        if (!delayModDepthCell)  delayModDepthCell   = std::make_unique<KnobCell>(delayModDepth,  delayModDepthValue,  "DEPTH");
-        if (!delayWowflutterCell)delayWowflutterCell = std::make_unique<KnobCell>(delayWowflutter,delayWowflutterValue,"WOW");
-        if (!delayJitterCell)    delayJitterCell     = std::make_unique<KnobCell>(delayJitter,    delayJitterValue,    "JITTER");
-        if (!delayHpCell)        delayHpCell         = std::make_unique<KnobCell>(delayHp,        delayHpValue,        "HP");
-        if (!delayLpCell)        delayLpCell         = std::make_unique<KnobCell>(delayLp,        delayLpValue,        "LP");
-        if (!delayTiltCell)      delayTiltCell       = std::make_unique<KnobCell>(delayTilt,      delayTiltValue,      "TILT");
-        if (!delaySatCell)       delaySatCell        = std::make_unique<KnobCell>(delaySat,       delaySatValue,       "SAT");
-        if (!delayDiffusionCell) delayDiffusionCell  = std::make_unique<KnobCell>(delayDiffusion, delayDiffusionValue, "DIFF");
-        if (!delayDiffuseSizeCell)delayDiffuseSizeCell= std::make_unique<KnobCell>(delayDiffuseSize, delayDiffuseSizeValue, "SIZE");
-        if (!delayDuckDepthCell) delayDuckDepthCell  = std::make_unique<KnobCell>(delayDuckDepth, delayDuckDepthValue, "DEPTH");
-        if (!delayDuckAttackCell)delayDuckAttackCell = std::make_unique<KnobCell>(delayDuckAttack,delayDuckAttackValue,"ATT");
-        if (!delayDuckReleaseCell)delayDuckReleaseCell=std::make_unique<KnobCell>(delayDuckRelease,delayDuckReleaseValue,"REL");
-        if (!delayDuckThresholdCell) delayDuckThresholdCell = std::make_unique<KnobCell>(delayDuckThreshold, delayDuckThresholdValue, "THR");
-        if (!delayDuckLookaheadCell) delayDuckLookaheadCell = std::make_unique<KnobCell>(delayDuckLookahead, delayDuckLookaheadValue, "LA");
-        if (!delayDuckRatioCell) delayDuckRatioCell = std::make_unique<KnobCell>(delayDuckRatio, delayDuckRatioValue, "RAT");
-        if (!delayPreDelayCell) delayPreDelayCell = std::make_unique<KnobCell>(delayPreDelay, delayPreDelayValue, "PRE");
-        
-        // Apply metrics to all delay cells
-        for (auto* c : { delayTimeCell.get(), delayFeedbackCell.get(), delayWetCell.get(), delaySpreadCell.get(), delayWidthCell.get(), delayModRateCell.get(), delayModDepthCell.get(), delayWowflutterCell.get(), delayJitterCell.get(), delayPreDelayCell.get(), delayHpCell.get(), delayLpCell.get(), delayTiltCell.get(), delaySatCell.get(), delayDiffusionCell.get(), delayDiffuseSizeCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckThresholdCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
-        {
-            if (c) {
-                c->setMetrics (lPx, valuePx, labelGap);
-                c->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-                c->setValueLabelGap (labelGap);
-            }
-        }
-        
-        // Add all delay cells directly to the Group 2 panel
-        for (auto* c : { delayEnabledCell.get(), delayModeCell.get(), delaySyncCell.get(), delayGridFlavorCell.get(), delayPingpongCell.get(), delayFreezeCell.get(), delayKillDryCell.get(), delayFilterTypeCell.get(), delayDuckSourceCell.get(), delayDuckPostCell.get() })
-            if (c) { group2Container.addAndMakeVisible (*c); c->setShowBorder (true); }
-            
-        for (auto* c : { delayTimeCell.get(), delayFeedbackCell.get(), delayWetCell.get(), delaySpreadCell.get(), delayWidthCell.get(), delayModRateCell.get(), delayModDepthCell.get(), delayWowflutterCell.get(), delayJitterCell.get(), delayPreDelayCell.get(), delayHpCell.get(), delayLpCell.get(), delayTiltCell.get(), delaySatCell.get(), delayDiffusionCell.get(), delayDiffuseSizeCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckThresholdCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
-            if (c) { group2Container.addAndMakeVisible (*c); c->setShowBorder (true); }
-        
-        // Layout delay items in exact 4x7 order (only when dirty)
-        if (overlayLayoutDirty)
-        {
-        juce::Grid delayGrid;
-        delayGrid.rowGap = juce::Grid::Px (0);
-        delayGrid.columnGap = juce::Grid::Px (0);
-        delayGrid.templateRows = { juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight) };
-        delayGrid.templateColumns = {
-            juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW),
-            juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW)
-        };
-        delayGrid.items = {
-            // Row 1 — Switches/Combos (8 items)
-            juce::GridItem (*delayEnabledCell).withArea (1,1),
-            juce::GridItem (*delayModeCell).withArea (1,2),
-            juce::GridItem (*delaySyncCell).withArea (1,3),
-            juce::GridItem (*delayGridFlavorCell).withArea (1,4),
-            juce::GridItem (*delayPingpongCell).withArea (1,5),
-            juce::GridItem (*delayFreezeCell).withArea (1,6),
-            juce::GridItem (*delayFilterTypeCell).withArea (1,7),
-            juce::GridItem (*delayKillDryCell).withArea (1,8),
-            
-            // Row 2 — Time & Mod Essentials (8 items)
-            juce::GridItem (*delayTimeCell).withArea (2,1),
-            juce::GridItem (*delayFeedbackCell).withArea (2,2),
-            juce::GridItem (*delayWetCell).withArea (2,3),
-            juce::GridItem (*delayModRateCell).withArea (2,4),
-            juce::GridItem (*delayModDepthCell).withArea (2,5),
-            juce::GridItem (*delaySpreadCell).withArea (2,6),
-            juce::GridItem (*delayWidthCell).withArea (2,7),
-            juce::GridItem (*delayPreDelayCell).withArea (2,8),
-            
-            // Row 3 — Tone & Reverb (8 items)
-            juce::GridItem (*delaySatCell).withArea (3,1),
-            juce::GridItem (*delayDiffusionCell).withArea (3,2),
-            juce::GridItem (*delayDiffuseSizeCell).withArea (3,3),
-            juce::GridItem (*delayHpCell).withArea (3,4),
-            juce::GridItem (*delayLpCell).withArea (3,5),
-            juce::GridItem (*delayTiltCell).withArea (3,6),
-            juce::GridItem (*delayWowflutterCell).withArea (3,7),
-            juce::GridItem (*delayJitterCell).withArea (3,8),
-            
-            // Row 4 — Ducking Cluster (8 items)
-            juce::GridItem (*delayDuckSourceCell).withArea (4,1),
-            juce::GridItem (*delayDuckPostCell).withArea (4,2),
-            juce::GridItem (*delayDuckThresholdCell).withArea (4,3),
-            juce::GridItem (*delayDuckDepthCell).withArea (4,4),
-            juce::GridItem (*delayDuckAttackCell).withArea (4,5),
-            juce::GridItem (*delayDuckReleaseCell).withArea (4,6),
-            juce::GridItem (*delayDuckLookaheadCell).withArea (4,7),
-            juce::GridItem (*delayDuckRatioCell).withArea (4,8)
-        };
-        
-        // Perform layout within delay group area (no outer reduction/padding) in group2Container local coords
-        auto delayBounds = juce::Rectangle<int>(delayGroupX, delayGroupY, delayGroupW, delayGroupH);
-        delayGrid.performLayout(delayBounds);
-        }
-
-        // Delay visuals are rendered in the top Delay tab via PaneManager, not in Group 2
-        
-        // Apply delay theme to all cells
-        auto lightenDelayCell = [] (KnobCell* kc) {
-            if (!kc) return;
-            kc->getProperties().set ("panelBrighten", 0.10);
-            kc->getProperties().set ("borderBrighten", 0.15);
-            kc->getProperties().set ("delayThemeBorderTextGrey", true);
-            kc->repaint();
-        };
-        for (auto* kc : { delayTimeCell.get(), delayFeedbackCell.get(), delayWetCell.get(), delayModRateCell.get(), delayModDepthCell.get(), delaySpreadCell.get(), delayWidthCell.get(),
-                           delaySatCell.get(), delayDiffusionCell.get(), delayDiffuseSizeCell.get(), delayHpCell.get(), delayLpCell.get(), delayTiltCell.get(), delayWowflutterCell.get(),
-                           delayJitterCell.get(), delayPreDelayCell.get(), delayDuckThresholdCell.get(), delayDuckDepthCell.get(), delayDuckAttackCell.get(), delayDuckReleaseCell.get(), delayDuckLookaheadCell.get(), delayDuckRatioCell.get() })
-            lightenDelayCell (kc);
-
-        // Reverb controls group to the right of Delay group in Group 2 (flattened 4x16 grid; 8 columns used)
-        {
-            const int reverbGroupX = delayGroupX + delayGroupW;
-            const int reverbGroupY = 0;
-            const int availableW  = b.getRight() - reverbGroupX;
-            const int reverbCellW = cellW;
-            const int targetReverbW = reverbCellW * 8; // 8 columns
-            const int reverbGroupW = juce::jmin (availableW, targetReverbW);
-            const int reverbGroupH = delayGroupH;
-
-            // Reverb controls are now handled by ReverbTab
-
-            // Mirror Delay metrics for Reverb grid so KnobCells match exactly
-            const int valuePx2 = Layout::dp (14, s);
-            const int labelGap2 = Layout::dp (4, s);
-            const int delayCellW = cellW;
-            // Reverb controls are now handled by ReverbTab
-            auto ensureAdd = [this](juce::Component* c)
-            {
-                if (!c) return;
-                if (c->getParentComponent() != &group2Container)
-                    group2Container.addAndMakeVisible (*c);
-                if (auto* kc = dynamic_cast<KnobCell*>(c))
-                {
-                    kc->setShowBorder (true);
-                    kc->getProperties().set ("reverbMaroonBorder", true);
-                }
-                else if (auto* sc = dynamic_cast<SwitchCell*>(c))
-                {
-                    sc->getProperties().set ("reverbMaroonBorder", true);
-                }
-            };
-
-            // Create Enable (switch), Algorithm (switch-like), Wet Only (switch) styled like Delay/Motion
-            static juce::ToggleButton reverbEnable;
-            static std::unique_ptr<SwitchCell> reverbEnableCell;
-            if (!reverbEnableCell) {
-                reverbEnable.setComponentID ("reverb_enable");
-                reverbEnable.getProperties().set ("iconType", (int) IconSystem::Power);
-                reverbEnableCell = std::make_unique<SwitchCell> (reverbEnable);
-                reverbEnableCell->setCaption ("Enable");
-                reverbEnableCell->setDelayTheme (false);
-                // Reverb parameter attachments now handled by AttachmentManager
-            }
-
-            static juce::ComboBox reverbAlgo;
-            static std::unique_ptr<SwitchCell> reverbAlgoCell;
-            if (!reverbAlgoCell) {
-                if (auto* ch = dynamic_cast<juce::AudioParameterChoice*>(proc.apvts.getParameter(ReverbIDs::algo))) {
-                    reverbAlgo.clear(); for (int i = 0; i < ch->choices.size(); ++i) reverbAlgo.addItem (ch->choices[i], i + 1);
-                    reverbAlgo.setSelectedId (ch->getIndex() + 1, juce::dontSendNotification);
-                    // Reverb parameter attachments now handled by AttachmentManager
-                }
-                reverbAlgo.getProperties().set ("iconOnly", true);
-                reverbAlgoCell = std::make_unique<SwitchCell> (reverbAlgo);
-                reverbAlgoCell->setCaption ("Algo");
-                reverbAlgoCell->setDelayTheme (false);
-            }
-
-            static juce::ToggleButton reverbWetOnly;
-            static std::unique_ptr<SwitchCell> reverbWetOnlyCell;
-            if (!reverbWetOnlyCell) {
-                reverbWetOnly.setComponentID ("reverb_wet_only");
-                reverbWetOnly.getProperties().set ("iconType", (int) IconSystem::Mix);
-                reverbWetOnlyCell = std::make_unique<SwitchCell> (reverbWetOnly);
-                reverbWetOnlyCell->setCaption ("Wet Only");
-                reverbWetOnlyCell->setDelayTheme (false);
-                // Reverb parameter attachments now handled by AttachmentManager
-            }
-
-            group2Container.addAndMakeVisible (*reverbEnableCell);
-            group2Container.addAndMakeVisible (*reverbAlgoCell);
-            group2Container.addAndMakeVisible (*reverbWetOnlyCell);
-            reverbEnableCell->getProperties().set ("reverbMaroonBorder", true);
-            reverbAlgoCell  ->getProperties().set ("reverbMaroonBorder", true);
-            reverbWetOnlyCell->getProperties().set ("reverbMaroonBorder", true);
-
-            // Additional knobs (new params): SIZE, DECAY XOVER LO/HI, BLOOM, DISTANCE
-            static std::unique_ptr<KnobCell> sizeCell, dreqXLoCell, dreqXHiCell, bloomCell, distanceCell;
-            static juce::Slider sizeS, dreqXLoS, dreqXHiS, bloomS, distanceS;
-            static juce::Label  sizeV, dreqXLoV, dreqXHiV, bloomV, distanceV;
-            auto attachSlider = [this, &s, lPx](auto& aStore, const char* id, juce::Slider& sl, juce::Label& val, const juce::String& cap, std::unique_ptr<KnobCell>& cell)
-            {
-                if (!cell)
-                {
-                    sl.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-                    sl.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-                    sl.setRotaryParameters (juce::MathConstants<float>::pi,
-                                            juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
-                                            true);
-                    sl.setName (cap);
-                    cell = std::make_unique<KnobCell> (sl, val, cap);
-                    cell->setMetrics (lPx, Layout::dp (14, s), Layout::dp (4, s));
-                    cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-                    cell->setValueLabelGap (Layout::dp (4, s));
-                    bottomAltPanel.addAndMakeVisible (*cell);
-                    aStore.push_back (std::make_unique<SliderAttachment> (proc.apvts, id, sl));
-                }
-            };
-            // Reverb parameter attachments now handled by AttachmentManager
-
-            // Freeze switch (Row 4, Col 2)
-            static juce::ToggleButton reverbFreeze;
-            static std::unique_ptr<SwitchCell> reverbFreezeCell;
-            if (!reverbFreezeCell)
-            {
-                reverbFreeze.setComponentID ("reverb_freeze");
-                reverbFreeze.getProperties().set ("iconType", (int) IconSystem::Snowflake);
-                reverbFreezeCell = std::make_unique<SwitchCell> (reverbFreeze);
-                reverbFreezeCell->setCaption ("Freeze");
-                group2Container.addAndMakeVisible (*reverbFreezeCell);
-                // Reverb parameter attachments now handled by AttachmentManager
-            }
-
-            juce::Grid reverbGrid;
-            reverbGrid.rowGap = juce::Grid::Px (0);
-            reverbGrid.columnGap = juce::Grid::Px (0);
-            reverbGrid.templateRows = { juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight) };
-            reverbGrid.templateColumns = {
-                juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW),
-                juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW),
-                juce::Grid::Px (delayCellW), juce::Grid::Px (delayCellW)
-            };
-            // Explicit placement into 4x8 grid per spec
-            juce::Array<juce::GridItem> items;
-            // Reverb controls are now handled by ReverbTab
-
-            // Row 4: DISTANCE, FREEZE, DUCK, ATT, REL, THR, RAT, DECAY XOVER HI
-            auto setDuckMetrics = [&](KnobCell* kc)
-            {
-                if (!kc) return;
-                kc->setMetrics (lPx, valuePx2, labelGap2);
-                kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-                kc->setValueLabelGap (labelGap2);
-            };
-            if (distanceCell) { ensureAdd (distanceCell.get()); items.add (juce::GridItem (*distanceCell).withArea (4, 1)); }
-            ensureAdd (reverbFreezeCell.get()); items.add (juce::GridItem (*reverbFreezeCell).withArea (4, 2));
-            if (dreqXHiCell) { ensureAdd (dreqXHiCell.get()); items.add (juce::GridItem (*dreqXHiCell).withArea (4, 8)); }
-            reverbGrid.items = std::move (items);
-
-            // Center a fixed-width 7-column block inside the available group width (no outer reduction/padding)
-            auto rb = juce::Rectangle<int>(reverbGroupX, reverbGroupY, reverbGroupW, reverbGroupH);
-            const int fixedW = delayCellW * 8;
-            auto rbCentered = rb.withWidth (juce::jmin (rb.getWidth(), fixedW));
-            rbCentered.setX (rb.getX() + (rb.getWidth() - rbCentered.getWidth())); // right-align to match group placement
-            reverbGrid.performLayout (rbCentered);
-            overlayLayoutDirty = false;
-        }
-    }
-    // ---------------- Group 1: flat 4x16 contiguous grid -----------------------
-    {
-        const int valuePx = Layout::dp (14, s);
-        const int labelGap = Layout::dp (4, s);
-        const int cellWTarget = lPx + Layout::dp (8, s);
-        const int availableWLocal = group1Container.getWidth();
-        const int cellWFit = juce::jmax (1, availableWLocal / 16);
-        const int cellW     = juce::jmin (cellWTarget, cellWFit);
-
-        // Compute a single bounds covering rows 1-4 across the full left content width (container-local)
-        const int totalRowsH = rowH1 + rowH2 + rowH3 + rowH4;
-        juce::Rectangle<int> group1BoundsLocal = juce::Rectangle<int>(0, 0, group1Container.getWidth(), totalRowsH);
-
-        // Ensure cells/components exist and have metrics
-        {
-            // Left: BASS, HP, Q, Q LINK, LP
-            const int miniStripW = Layout::dp (90, s);
-            const int miniBarH   = Layout::dp (12, s);
-            const int valueGap   = Layout::dp (6,  s);
-            bassCell ->setMetrics (lPx, valuePx, 0, miniStripW);
-            bassCell ->setMiniPlacementRight (true);
-            bassCell ->setMiniThicknessPx (miniBarH);
-            bassCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            bassCell ->setValueLabelGap (valueGap);
-            bassCell ->setMiniWithLabel (&bassFreqSlider, &bassFreqValue, miniStripW);
-            bassFreqSlider.getProperties().set ("micro", true);
-
-            if (!hpCell) hpCell = std::make_unique<KnobCell>(hpHz, hpValue, "HP");
-            if (!lpCell) lpCell = std::make_unique<KnobCell>(lpHz, lpValue, "LP");
-            if (!filterQCell)  filterQCell  = std::make_unique<KnobCell>(filterQ, filterQValue, "Q");
-            if (!qClusterCell) qClusterCell = std::make_unique<KnobCell>(qClusterDummySlider, qClusterDummyValue, "Q LINK");
-            for (auto* kc : { hpCell.get(), lpCell.get(), filterQCell.get(), qClusterCell.get() })
-                if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap); }
-            qClusterCell->setShowKnob (false);
-            qClusterCell->setMiniPlacementRight (true);
-            qClusterCell->setMiniThicknessPx (Layout::dp (12, s));
-            qClusterCell->setAuxAsBars (true);
-            qClusterCell->setAuxComponents ({ &qLinkButton, &hpQSlider, &lpQSlider }, Layout::dp (90, s));
-            hpQSlider.getProperties().set ("micro", true);
-            lpQSlider.getProperties().set ("micro", true);
-
-            // Left Row2: AIR + WIDTH cluster
-            airCell    ->setMetrics (lPx, valuePx, 0, miniStripW);
-            airCell    ->setMiniPlacementRight (true);
-            airCell    ->setMiniThicknessPx (miniBarH);
-            airCell    ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            airCell    ->setValueLabelGap (valueGap);
-            airCell    ->setMiniWithLabel (&airFreqSlider, &airFreqValue, miniStripW);
-            airFreqSlider.getProperties().set ("micro", true);
-            for (auto* kc : { widthCell.get(), widthLoCell.get(), widthMidCell.get(), widthHiCell.get() })
-                if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap); }
-
-            // Left Row3: TILT + XO/SHUF
-            tiltCell ->setMetrics (lPx, valuePx, 0, miniStripW);
-            tiltCell ->setMiniPlacementRight (true);
-            tiltCell ->setMiniThicknessPx (miniBarH);
-            tiltCell ->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            tiltCell ->setValueLabelGap (valueGap);
-            tiltCell ->setMiniWithLabel (&tiltFreqSlider, &tiltFreqValue, miniStripW);
-            tiltFreqSlider.getProperties().set ("micro", true);
-            if (!xoverLoCell)  xoverLoCell  = std::make_unique<KnobCell>(xoverLoHz, xoverLoValue, "XO LO");
-            if (!xoverHiCell)  xoverHiCell  = std::make_unique<KnobCell>(xoverHiHz, xoverHiValue, "XO HI");
-            for (auto* kc : { xoverLoCell.get(), xoverHiCell.get() })
-                if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap); }
-
-            // Left Row4: SCOOP + imaging
-            const int scoopMiniW = Layout::dp (90, s);
-            const int scoopMiniH = Layout::dp (12, s);
-            scoopCell->setMetrics (lPx, valuePx, 0, scoopMiniW);
-            scoopCell->setMiniPlacementRight (true);
-            scoopCell->setMiniThicknessPx (scoopMiniH);
-            scoopCell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            scoopCell->setValueLabelGap (valueGap);
-            scoopCell->setMiniWithLabel (&scoopFreqSlider, &scoopFreqValue, scoopMiniW);
-            scoopFreqSlider.getProperties().set ("micro", true);
-            if (!shelfShapeCell) shelfShapeCell = std::make_unique<KnobCell>(shelfShapeS, shelfShapeValue, "Shape");
-            for (auto* kc : { rotationCell.get(), asymCell.get(), shelfShapeCell.get() })
-                if (kc) { kc->setMetrics (lPx, valuePx, 0); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (Layout::dp (6, s)); }
-
-            // Center rows 1-4
-            if (!satDriveCell) satDriveCell = std::make_unique<KnobCell>(satDrive, satDriveValue, "DRIVE");
-            if (!panCell)      panCell      = std::make_unique<KnobCell>(panKnob,  panValue,        "");
-            if (!wetOnlyCell)
-            {
-                wetOnlyToggle.getProperties().set ("iconType", (int) IconSystem::Mix);
-                wetOnlyToggle.setButtonText ("");
-                wetOnlyCell = std::make_unique<SwitchCell> (wetOnlyToggle);
-                wetOnlyCell->setCaption ("Wet Only");
-            }
-            for (auto* kc : { gainCell.get(), satMixCell.get(), satDriveCell.get(), panCell.get() })
-                if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->setValueLabelMode (KnobCell::ValueLabelMode::Managed); kc->setValueLabelGap (labelGap); kc->getProperties().set ("metallic", true); }
-            if (wetOnlyCell) wetOnlyCell->getProperties().set ("metallic", true);
-            if (monoCell)
-            {
-                monoCell->setMetrics (lPx, valuePx, labelGap, Layout::dp (24, s));
-                monoCell->setMiniPlacementRight (true);
-                monoCell->setMiniThicknessPx (juce::jmax (8, Layout::dp (12, s)));
-                if (monoSlopeSwitch != nullptr)
-                {
-                    monoCell->setAuxComponents ({ monoSlopeSwitch.get(), &monoAuditionButton }, juce::jmax (32, Layout::dp (90, s)));
-                    monoCell->setAuxWeights ({ 2.0f, 1.0f });
-                    monoCell->setAuxAsBars (false);
-                    monoSlopeSwitch->setVisible (true);
-                    monoSlopeSwitch->toFront (false);
-                }
-                monoCell->getProperties().set ("metallic", true);
-            }
-
-            // Center group cells moved to XYControlsPane (complete implementation there)
-        }
-
-        // Make visible (Group 1 into group1Container)
-        auto addVis = [this](juce::Component* c)
-        {
-            if (!c) return;
-            if (c->getParentComponent() != &group1Container)
-                group1Container.addAndMakeVisible (*c);
-        };
-        addVis (bassCell.get());
-        addVis (hpCell.get());
-        addVis (filterQCell.get());
-        addVis (qClusterCell.get());
-        addVis (lpCell.get());
-        addVis (airCell.get());
-        addVis (widthCell.get());
-        addVis (widthLoCell.get());
-        addVis (widthMidCell.get());
-        addVis (widthHiCell.get());
-        addVis (tiltCell.get());
-        addVis (xoverLoCell.get());
-        addVis (xoverHiCell.get());
-        addVis (scoopCell.get());
-        addVis (rotationCell.get());
-        addVis (asymCell.get());
-        addVis (shelfShapeCell.get());
-        addVis (gainCell.get());
-        addVis (satMixCell.get());
-        addVis (satDriveCell.get());
-        addVis (panCell.get());
-        addVis (wetOnlyCell ? wetOnlyCell.get() : nullptr);
-        addVis (monoCell ? monoCell.get() : nullptr);
-        // Center group visibility moved to XYControlsPane (complete implementation there)
-
-        // Prepare Motion controls (reparent from Group 2 container if needed)
-        auto reparent = [this](juce::Component* c)
-        {
-            if (c == nullptr) return;
-            if (c->getParentComponent() == &group2Container)
-                group2Container.removeChildComponent (c);
-            if (c->getParentComponent() != &group1Container)
-                group1Container.addAndMakeVisible (*c);
-        };
-        auto setKMetrics = [lPx, s](KnobCell* kc)
-        {
-            if (kc) kc->setMetrics (lPx, Layout::dp (14, s), Layout::dp (4, s));
-        };
-
-        const bool group2Raised  = bottomAltTargetOn || (bottomAltSlide01 > 0.01f);
-
-        // Ensure Motion knob cells exist (now live only in Group 1)
-        {
-            const juce::StringArray motionLabels = {
-                "Enable", "Panner", "Path", "Rate", "Depth", "Phase",
-                "Spread", "Elev", "Bounce", "Jitter", "Quant", "Swing",
-                "Mode", "Retrig", "Hold", "Sens", "Offset", "Inertia",
-                "Front", "Doppler", "Send", "Anchor", "Bass", "Occlusion"
-            };
-            for (int i = 0; i < 24; ++i)
-            {
-                // Motion grid layout removed - now handled by MotionControlsPane
-            }
-        }
-
-        // Flat grid: 4 rows x 16 columns (6 left + 4 center + 6 motion)
-        juce::Grid g; g.rowGap = juce::Grid::Px (0); g.columnGap = juce::Grid::Px (0);
-        g.templateRows = { juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight), juce::Grid::Px (containerHeight) };
-        g.templateColumns = {
-            juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
-            juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW),
-            juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW), juce::Grid::Px (cellW)
-        };
-
-        juce::Array<juce::GridItem> items;
-        // Row 1: Left (1-6)
-        items.add (juce::GridItem (*bassCell)     .withArea (1, 1, 2, 3)); // spans 1-2
-        items.add (juce::GridItem (*hpCell)       .withArea (1, 3));
-        items.add (juce::GridItem (*filterQCell)  .withArea (1, 4));
-        items.add (juce::GridItem (*qClusterCell) .withArea (1, 5));
-        items.add (juce::GridItem (*lpCell)       .withArea (1, 6));
-        // Row 1: Center (7-10)
-        items.add (juce::GridItem (*gainCell)     .withArea (1, 7));
-        items.add (juce::GridItem (*satMixCell)   .withArea (1, 8));
-        items.add (juce::GridItem (*satDriveCell) .withArea (1, 9));
-        if (wetOnlyCell) items.add (juce::GridItem (*wetOnlyCell).withArea (1, 10));
-        // Row 1: Motion controls removed - now handled by MotionControlsPane
-
-        // Row 2: Left (1-6)
-        items.add (juce::GridItem (*airCell)      .withArea (2, 1, 3, 3)); // spans 1-2
-        items.add (juce::GridItem (*widthCell)    .withArea (2, 3));
-        items.add (juce::GridItem (*widthLoCell)  .withArea (2, 4));
-        items.add (juce::GridItem (*widthMidCell) .withArea (2, 5));
-        items.add (juce::GridItem (*widthHiCell)  .withArea (2, 6));
-        // Row 2: Center (7-10)
-        items.add (juce::GridItem (*panCell)      .withArea (2, 7, 3, 9)); // spans 7-8
-        if (monoCell) items.add (juce::GridItem (*monoCell).withArea (2, 9, 3, 11)); // spans 9-10
-        // Row 2: Motion controls removed - now handled by MotionControlsPane
-
-        // Row 3: Left (1-6)
-        items.add (juce::GridItem (*tiltCell)     .withArea (3, 1, 4, 3)); // spans 1-2
-        items.add (juce::GridItem (*xoverLoCell)  .withArea (3, 3));
-        items.add (juce::GridItem (*xoverHiCell)  .withArea (3, 4));
-        // Row 3: Center (7-10)
-        // Center group controls moved to XYControlsPane (complete implementation there)
-        // Row 3: Motion controls removed - now handled by MotionControlsPane
-
-        // Row 4: Left (1-6)
-        items.add (juce::GridItem (*scoopCell)    .withArea (4, 1, 5, 3)); // spans 1-2
-        items.add (juce::GridItem (*rotationCell) .withArea (4, 3));
-        items.add (juce::GridItem (*asymCell)     .withArea (4, 4));
-        items.add (juce::GridItem (*shelfShapeCell).withArea (4, 5));
-        // Row 4: Center (7-10)
-        // Center group controls moved to XYControlsPane (complete implementation there)
-        // Row 4: Motion controls removed - now handled by MotionControlsPane
-
-        g.items = std::move (items);
-        g.performLayout (group1BoundsLocal);
-
-        // Center group value label updates moved to XYControlsPane (complete implementation there)
-
-        // Motion controls removed - now handled by MotionControlsPane
-    }
-
-    // Legacy Row 2 reverb group removed; Group 2 Reverb grid now owns reverb/ducking UI
-    // Delay theme applied in Group 2
 }
 
 void MyPluginAudioProcessorEditor::mouseDown (const juce::MouseEvent& e)
 {
-    noteUserInteraction();
     if (eventManager)
     {
         eventManager->handleMouseDown(e);
@@ -3368,7 +2201,6 @@ void MyPluginAudioProcessorEditor::mouseDrag (const juce::MouseEvent& e)
 
 void MyPluginAudioProcessorEditor::mouseUp (const juce::MouseEvent& e)
 {
-    noteUserInteraction();
     if (eventManager)
     {
         eventManager->handleMouseUp(e);
@@ -3377,15 +2209,6 @@ void MyPluginAudioProcessorEditor::mouseUp (const juce::MouseEvent& e)
 
 void MyPluginAudioProcessorEditor::resized()
 {
-    // Calculate scale factor from both width and height; use the smaller to ensure uniform downsizing
-    const float wScale = (float)getWidth()  / (float)baseWidth;
-    const float hScale = (float)getHeight() / (float)baseHeight;
-    scaleFactor = juce::jmin (wScale, hScale);
-
-    // Ensure scale factor stays within reasonable bounds
-    scaleFactor = juce::jlimit (0.5f, 2.0f, scaleFactor);
-    
-    // Call the existing layout code with the calculated scale factor
     if (!layoutReady) return;
     performLayout();
 }
@@ -3407,75 +2230,8 @@ void MyPluginAudioProcessorEditor::timerCallback()
     }
     
     // Additional timer logic that needs to stay in PluginEditor
-    if (! isShowing()) return;
-    // history removed
-    // OLD REVERB SYSTEM REMOVED - Ducking now handled by new Reverb system
-    
-    // Update motion panel visual state with sequence tracking and idle fallback
-    if (panes) {
-        motion::VisualState visualState;
-        // Motion Engine is now handled by FieldChain template
-        auto seq = 0; // Motion visual state will be handled by FieldChain
-        
-        // Only update if we have a new sequence number (prevents unnecessary repaints)
-        static uint32_t lastSeq = 0;
-        static int staleMs = 0;
-        
-        if (seq == lastSeq) {
-            staleMs += 16; // ~60Hz timer
-            if (staleMs > 200) { // 200ms timeout
-                // Synthesize a static pose from APVTS (no DSP needed)
-                // Motion visual state synthesis removed - now handled by MotionControlsPane
-            }
-        } else {
-            staleMs = 0;
-        }
-        
-        if (visualState.seq != lastSeq || staleMs > 200) {
-            lastSeq = visualState.seq;
-            panes->setMotionVisualState(visualState);
-        }
-    }
-    // OLD REVERB SYSTEM REMOVED - Ducking now handled by new Reverb system
-    if (auto* xyTab = panes->getXYTab()) {
-        xyTab->repaint();
-    }
-
-    // Update transport clock label (host/standalone song time)
-    {
-        const double tSec = proc.getTransportTimeSeconds();
-        const bool isPlaying = proc.isTransportPlaying();
-        // Format as mm:SS.mmm similar to Ableton's transport
-        auto formatTime = [] (double seconds)
-        {
-            if (seconds < 0.0) seconds = 0.0;
-            const int totalMs = (int) std::llround (seconds * 1000.0);
-            const int ms = totalMs % 1000;
-            const int totalSec = totalMs / 1000;
-            const int sec = totalSec % 60;
-            const int min = (totalSec / 60);
-            return juce::String::formatted ("%02d:%02d.%03d", min, sec, ms);
-        };
-        // Only update text when host transport supplies a position; otherwise hold last
-        transportClockLabel.setText (formatTime (tSec), juce::dontSendNotification);
-        // Dim when stopped
-        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        {
-            auto col = isPlaying ? lf->theme.text : lf->theme.textMuted;
-            transportClockLabel.setColour (juce::Label::textColourId, col);
-        }
-    }
-
-    // Drive bottom panel slide animation (move-only; no full relayout)
-    {
-        bool changed = false;
-        if (bottomAltTargetOn && bottomAltSlide01 < 1.0f) { bottomAltSlide01 = juce::jmin (1.0f, bottomAltSlide01 + 0.06f); changed = true; }
-        else if (!bottomAltTargetOn && bottomAltSlide01 > 0.0f) { bottomAltSlide01 = juce::jmax (0.0f, bottomAltSlide01 - 0.06f); changed = true; }
-        if (changed) updateGroup2OverlayDuringSlide();
-    }
+    // This will be implemented when we extract the remaining timer logic
 }
-
- 
 
 void MyPluginAudioProcessorEditor::paintOverChildren (juce::Graphics& g)
 {
@@ -3486,38 +2242,16 @@ void MyPluginAudioProcessorEditor::paintOverChildren (juce::Graphics& g)
 // Move-only animation of Group 2 overlay; avoid reflow during slide
 void MyPluginAudioProcessorEditor::updateGroup2OverlayDuringSlide()
 {
-    // Compute eased slide progress for visual feel
-    const float appearThresh = 0.10f;
-    const float t0 = juce::jlimit (0.0f, 1.0f, (bottomAltSlide01 - appearThresh) / juce::jmax (0.0001f, 1.0f - appearThresh));
-    const float effSlide = 0.5f - 0.5f * std::cos (juce::MathConstants<float>::pi * t0);
-
-    // Animate between cached baselines; keep bounds fixed to overlay rect
-    const int bottomY = juce::roundToInt (juce::jmap (effSlide, 0.0f, 1.0f, (float) overlayHiddenBaseline, (float) overlayActiveBaseline));
-    const int curTop  = bottomY - juce::roundToInt ((float) overlayHeightPx * effSlide);
-
-    // Set visibility based on threshold
-    const bool showPanel = effSlide > 0.001f;
-    bottomAltPanel.setVisible (showPanel);
-    if (!showPanel) return;
-
-    // We keep the overlay sized to overlayLocalRect, and slide its clip region via setBounds() within that local rect
-    // Move by adjusting Y within the overlayLocalRect height (top anchored by curTop relative to MainContentContainer rows stack top)
-    // Here we compute a translation within the same width and height
-    auto base = overlayLocalRect;
-    const int desiredTop = curTop; // curTop is relative to MainContentContainer
-    const int deltaY = desiredTop - base.getY();
-    base.translate (0, deltaY);
-    bottomAltPanel.setBounds (base);
-    bottomAltPanel.toFront (true);
-    bottomAreaToggle.toFront (true);
+    // Implementation moved to LayoutManager
 }
 
 void MyPluginAudioProcessorEditor::setScaleFactor (float newScale)
 {
-    scaleFactor = juce::jlimit (0.5f, 2.0f, newScale);
+    scaleFactor = newScale;
     resized();
     repaint();
 }
+
 void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
 {
     if (eventManager)
@@ -3528,6 +2262,7 @@ void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
     // Refresh muted visuals when any control changes
     updateMutedKnobVisuals();
 }
+
 void MyPluginAudioProcessorEditor::comboBoxChanged(juce::ComboBox* comboBox)
 {
     if (eventManager)
@@ -3546,124 +2281,39 @@ void MyPluginAudioProcessorEditor::buttonClicked(juce::Button* button)
 
 void MyPluginAudioProcessorEditor::applyGlobalCursorPolicy()
 {
-    auto setCursor = [] (juce::Component& c, auto& ref) -> void
-    {
-        const bool interactive = dynamic_cast<juce::Button*>(&c)
-                                 || dynamic_cast<juce::Slider*>(&c)
-                                 || dynamic_cast<juce::ComboBox*>(&c)
-                                 || dynamic_cast<ToggleSwitch*>(&c)
-                                 || dynamic_cast<XYPad*>(&c);
-        if (interactive) c.setMouseCursor (juce::MouseCursor::PointingHandCursor);
-        for (int i = 0; i < c.getNumChildComponents(); ++i) ref (*c.getChildComponent (i), ref);
-    };
-    setCursor (*this, setCursor);
+    // Implementation moved to LayoutManager
 }
 
 void MyPluginAudioProcessorEditor::updateMutedKnobVisuals()
 {
-    auto setMutedIf = [] (juce::Slider& s, bool muted)
-    {
-        s.getProperties().set ("muted", muted);
-        s.repaint();
-    };
-
-    // Neutral/default states considered inactive (greyed): tilt=0, scoop=0, gain=0, width=1, monoHz=0, hp=20, lp=20000, air=0, bass=0, ducking=0, etc.
-    setMutedIf (gain,    std::abs ((float) gain.getValue()) < 0.0001f);
-    setMutedIf (width,   std::abs ((float) width.getValue() - 1.0f) < 0.0001f);
-    setMutedIf (tilt,    std::abs ((float) tilt.getValue()) < 0.0001f);
-    setMutedIf (monoHz,  (float) monoHz.getValue() <= 0.0001f);
-    setMutedIf (hpHz,    (float) hpHz.getValue() <= 20.0f + 0.001f);
-    setMutedIf (lpHz,    (float) lpHz.getValue() >= 20000.0f - 0.001f);
-    setMutedIf (air,     std::abs ((float) air.getValue()) < 0.0001f);
-    setMutedIf (bass,    std::abs ((float) bass.getValue()) < 0.0001f);
-    setMutedIf (scoop,   std::abs ((float) scoop.getValue()) < 0.0001f);
-    setMutedIf (panKnob,  std::abs ((float) panKnob.getValue())  < 0.0001f);
-    setMutedIf (satDrive, std::abs ((float) satDrive.getValue()) < 0.0001f);
-    // Mix: only greyed when 0% (default is 100% but should NOT be greyed)
-    setMutedIf (satMix,   (float) satMix.getValue() <= 0.0001f);
-    // EQ Q link logic handled elsewhere; ensure Q shows greyed ring when unlinked
-    if (auto* pLink = proc.apvts.getRawParameterValue ("eq_q_link"))
-    {
-        const bool link = pLink->load() >= 0.5f;
-        filterQ.getProperties().set ("muted", !link);
-        filterQ.repaint();
-    }
+    // Implementation moved to LayoutManager
 }
+
 void MyPluginAudioProcessorEditor::parameterChanged (const juce::String& id, float nv)
 {
-    // Bounce to message thread for UI updates during automation/offline render
-    if (id == "pan" || id == "depth" || id == "split_mode")
-    {
-        const float v = nv;
-        juce::MessageManager::callAsync ([this, id, v]
-        {
-            if      (id == "pan")        { 
-                if (auto* xyTab = panes->getXYTab()) {
-                    xyTab->setPanValue   (v);
-                }
-            }
-            else if (id == "depth")      { 
-                if (auto* xyTab = panes->getXYTab()) {
-                    xyTab->setSpaceValue (v);
-                }
-            }
-            else if (id == "split_mode") { 
-                if (auto* xyTab = panes->getXYTab()) {
-                    xyTab->setSplitMode  (v >= 0.5f);
-                }
-                resized(); 
-            }
-        });
-    }
-    else if (id == "mono_slope_db_oct")
-    {
-        const int idx = (int) std::round (nv); // 0,1,2 from choice
-        const int slope = (idx == 0 ? 6 : idx == 1 ? 12 : 24);
-        juce::MessageManager::callAsync ([this, slope]
-        {
-            if (auto* xyTab = panes->getXYTab()) {
-                xyTab->setMonoSlopeDbPerOct (slope);
-            }
-        });
-    }
-    else if (id == "eq_shelf_shape" || id == "eq_q_link" || id == "eq_filter_q"
-          || id == "hp_q" || id == "lp_q" || id == "tilt_link_s")
-    {
-        juce::MessageManager::callAsync ([this]
-        {
-            syncXYPadWithParameters();
-        });
-    }
-    else if (id == "xover_lo_hz" || id == "xover_hi_hz" || id == "rotation_deg" || id == "asymmetry")
-    {
-        juce::MessageManager::callAsync ([this]
-        {
-            syncXYPadWithParameters();
-        });
-    }
-    else if (id == motion::id::panner_select)
-    {
-        // Trigger async rebinding on message thread (no races, no dangles)
-        // Motion binding removed - now handled by MotionControlsPane
-    }
+    // Implementation moved to EventManager
 }
 
 void MyPluginAudioProcessorEditor::updatePresetDisplay() { /* hook to PresetManager */ }
 
-// --- A/B state helpers (unchanged from your version, trimmed) ---
+void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
+{
+    // Implementation moved to LayoutManager
+}
+
 void MyPluginAudioProcessorEditor::saveCurrentState()
 {
     std::map<juce::String, float> s;
-    s["gain_db"]  = (float) gain.getValue();
+    s["gain"]     = (float) gain.getValue();
     s["width"]    = (float) width.getValue();
     s["tilt"]     = (float) tilt.getValue();
-    s["mono_hz"]  = (float) monoHz.getValue();
-    s["hp_hz"]    = (float) hpHz.getValue();
-    s["lp_hz"]    = (float) lpHz.getValue();
-    s["sat_drive_db"] = (float) satDrive.getValue();
-    s["sat_mix"]  = (float) satMix.getValue();
-    s["air_db"]   = (float) air.getValue();
-    s["bass_db"]  = (float) bass.getValue();
+    s["mono"]     = (float) monoHz.getValue();
+    s["hp"]       = (float) hpHz.getValue();
+    s["lp"]       = (float) lpHz.getValue();
+    s["satDrive"] = (float) satDrive.getValue();
+    s["satMix"]   = (float) satMix.getValue();
+    s["air"]      = (float) air.getValue();
+    s["bass"]     = (float) bass.getValue();
     s["scoop"]    = (float) scoop.getValue();
     s["pan"]      = (float) panKnob.getValue();
     if (isStateA) stateA = std::move (s); else stateB = std::move (s);
@@ -3671,125 +2321,72 @@ void MyPluginAudioProcessorEditor::saveCurrentState()
 
 static void applyStateToSlider (juce::Slider& s, float v) { s.setValue (v, juce::sendNotificationSync); }
 
-void MyPluginAudioProcessorEditor::loadState (bool A)
+void MyPluginAudioProcessorEditor::loadState (bool loadStateA)
 {
-    const auto& s = A ? stateA : stateB;
-    if (s.empty()) return;
-
-    if (auto it = s.find ("gain_db");  it != s.end()) applyStateToSlider (gain, it->second);
+    auto& s = loadStateA ? stateA : stateB;
+    if (auto it = s.find ("gain");     it != s.end()) applyStateToSlider (gain, it->second);
     if (auto it = s.find ("width");    it != s.end()) applyStateToSlider (width, it->second);
     if (auto it = s.find ("tilt");     it != s.end()) applyStateToSlider (tilt, it->second);
-    if (auto it = s.find ("mono_hz");  it != s.end()) applyStateToSlider (monoHz, it->second);
-    if (auto it = s.find ("hp_hz");    it != s.end()) applyStateToSlider (hpHz, it->second);
-    if (auto it = s.find ("lp_hz");    it != s.end()) applyStateToSlider (lpHz, it->second);
-    if (auto it = s.find ("sat_drive_db"); it != s.end()) applyStateToSlider (satDrive, it->second);
-    if (auto it = s.find ("sat_mix");  it != s.end()) applyStateToSlider (satMix, it->second);
-    if (auto it = s.find ("air_db");   it != s.end()) applyStateToSlider (air, it->second);
-    if (auto it = s.find ("bass_db");  it != s.end()) applyStateToSlider (bass, it->second);
+    if (auto it = s.find ("mono");     it != s.end()) applyStateToSlider (monoHz, it->second);
+    if (auto it = s.find ("hp");       it != s.end()) applyStateToSlider (hpHz, it->second);
+    if (auto it = s.find ("lp");       it != s.end()) applyStateToSlider (lpHz, it->second);
+    if (auto it = s.find ("satDrive"); it != s.end()) applyStateToSlider (satDrive, it->second);
+    if (auto it = s.find ("satMix");   it != s.end()) applyStateToSlider (satMix, it->second);
+    if (auto it = s.find ("air");      it != s.end()) applyStateToSlider (air, it->second);
+    if (auto it = s.find ("bass");     it != s.end()) applyStateToSlider (bass, it->second);
     if (auto it = s.find ("scoop");    it != s.end()) applyStateToSlider (scoop, it->second);
     if (auto it = s.find ("pan");      it != s.end()) applyStateToSlider (panKnob, it->second);
 }
 
 void MyPluginAudioProcessorEditor::toggleABState()
 {
-    saveCurrentState();
     isStateA = !isStateA;
-    abButtonA.setToggleState (isStateA,   juce::dontSendNotification);
+    abButtonA.setToggleState (isStateA,  juce::dontSendNotification);
     abButtonB.setToggleState (!isStateA,  juce::dontSendNotification);
     loadState (isStateA);
 }
 
 void MyPluginAudioProcessorEditor::copyState (bool fromA) { clipboardState = fromA ? stateA : stateB; }
-void MyPluginAudioProcessorEditor::pasteState (bool toA)  { if (!clipboardState.empty()) { (toA ? stateA : stateB) = clipboardState; loadState (toA); } }
 
-void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
+void MyPluginAudioProcessorEditor::pasteState (bool pasteToA)
 {
-    // Get XYPad from XYTab through PaneManager
-    if (panes && panes->getActiveID() == PaneID::XY)
-    {
-        if (auto* xyTab = dynamic_cast<XYTab*>(panes->getActive()))
-        {
-            if (auto* xyPad = xyTab->getXYPad())
-            {
-                xyPad->setPanValue   ((float) panKnob.getValue());
-                xyPad->setWidthValue ((float) width.getValue());
-                xyPad->setTiltValue  ((float) tilt .getValue());
-                xyPad->setHPValue    ((float) hpHz .getValue());
-                xyPad->setLPValue    ((float) lpHz .getValue());
-                // initialize mono slope for XY visualization
-                {
-                    int slopeGuess = 12;
-                    auto txt = monoSlopeChoice.getText();
-                    if      (txt == "6")  slopeGuess = 6;
-                    else if (txt == "12") slopeGuess = 12;
-                    else if (txt == "24") slopeGuess = 24;
-                    xyPad->setMonoSlopeDbPerOct (slopeGuess);
-                }
-                xyPad->setAirValue   ((float) air  .getValue());
-                xyPad->setBassValue  ((float) bass .getValue());
-                xyPad->setScoopValue ((float) scoop.getValue());
-                xyPad->setGainValue  ((float) gain .getValue());
-
-                // Push EQ S/Q and link states from APVTS to XYPad and UI
-                if (auto* pS = proc.apvts.getRawParameterValue ("eq_shelf_shape"))
-                    {
-                        const float S = (float) pS->load();
-                        xyPad->setShelfShapeS (S);
-                        shelfShapeS.getProperties().set ("S_value", (double) S); // expose to LNF for warning segment
-                        shelfShapeS.repaint();
-                    }
-                if (auto* pLink = proc.apvts.getRawParameterValue ("eq_q_link"))
-                {
-                    const bool link = pLink->load() >= 0.5f;
-                    xyPad->setQLink (link);
-                    // Reflect minis enabled state + muted visuals
-                    hpQSlider.setEnabled (!link);
-                    lpQSlider.setEnabled (!link);
-                    hpQSlider.getProperties().set ("muted", link);
-                    lpQSlider.getProperties().set ("muted", link);
-                    filterQ.getProperties().set ("muted", !link); // unlinked => grey ring on global Q
-                    if (link)
-                    {
-                        if (auto* pQ = proc.apvts.getRawParameterValue ("eq_filter_q"))
-                            xyPad->setFilterQ ((float) pQ->load());
-                    }
-                    else
-                    {
-                        if (auto* pHP = proc.apvts.getRawParameterValue ("hp_q")) xyPad->setHPQ ((float) pHP->load());
-                        if (auto* pLP = proc.apvts.getRawParameterValue ("lp_q")) xyPad->setLPQ ((float) pLP->load());
-                    }
-                }
-                if (auto* pTiltS = proc.apvts.getRawParameterValue ("tilt_link_s"))
-                    xyPad->setTiltUseS (pTiltS->load() >= 0.5f);
-
-                // Imaging/shuffler overlays
-                xyPad->setXoverLoHz   ((float) xoverLoHz.getValue());
-                xyPad->setXoverHiHz   ((float) xoverHiHz.getValue());
-                xyPad->setRotationDeg ((float) rotationDeg.getValue());
-                xyPad->setAsymmetry   ((float) asymmetry.getValue());
-                // SHUF parameters moved to Band tab
-                updateMutedKnobVisuals();
-            }
-        }
-    }
+    if (pasteToA) stateA = clipboardState; else stateB = clipboardState;
+    loadState (pasteToA);
 }
-// Motion parameter attachment methods removed - now handled by MotionControlsPane
-
-// Motion parameter attachment methods removed - now handled by MotionControlsPane
-
-// Motion visual state synthesis removed - now handled by MotionControlsPane
-
-// Motion control value refresh removed - now handled by MotionControlsPane
 
 void MyPluginAudioProcessorEditor::layoutMeters(juce::Rectangle<int> metersArea, float s, float sv)
 {
-    // Placeholder implementation for meters layout
-    // This will be implemented when we extract the meters layout logic
+    // Layout the three meter components in the right strip
+    if (metersArea.getWidth() <= 0 || metersArea.getHeight() <= 0) return;
+    
+    // Calculate meter dimensions
+    const int meterWidth = juce::jlimit(Layout::dp(24, s), Layout::dp(56, s), 
+                                       juce::roundToInt(metersArea.getWidth() * 0.75f));
+    const int corrWidth = juce::jmax(Layout::dp(10, s), juce::roundToInt(meterWidth * 0.5f));
+    const int interGap = juce::jmax(1, Layout::dp(Layout::GAP_S, s) / 2);
+    const int outerPadX = juce::jmax(1, Layout::dp(Layout::GAP_S, s));
+    const int outerPadY = Layout::dp(Layout::GAP, sv);
+    
+    // Calculate total width needed
+    const int totalWidth = meterWidth * 2 + corrWidth + interGap * 2 + outerPadX * 2;
+    const int actualWidth = juce::jlimit(Layout::dp(96, s), Layout::dp(240, s), totalWidth);
+    
+    // Center the meters in the available area
+    auto centeredArea = metersArea.withWidth(actualWidth).withX(metersArea.getX() + (metersArea.getWidth() - actualWidth) / 2);
+    
+    // Position the three meters
+    auto ioArea = centeredArea.removeFromLeft(meterWidth).reduced(outerPadX, outerPadY);
+    auto lrArea = centeredArea.removeFromLeft(meterWidth).reduced(outerPadX, outerPadY);
+    auto corrArea = centeredArea.removeFromLeft(corrWidth).reduced(outerPadX, outerPadY);
+    
+    // Set bounds for each meter
+    ioMeters.setBounds(ioArea);
+    lrMeters.setBounds(lrArea);
+    corrMeter.setBounds(corrArea);
 }
 
 void MyPluginAudioProcessorEditor::initializeParameterAttachments()
 {
-    // Initialize parameter attachments using AttachmentManager
     if (attachmentManager)
     {
         attachmentManager->attachAllParameters();

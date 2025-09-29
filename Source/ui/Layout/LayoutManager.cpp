@@ -187,34 +187,40 @@ void LayoutManager::layoutMainControls()
     // Remove the header area that was already processed
     r.removeFromTop(Layout::dp(50, s));
     
-    // 2) main XY area + vertical meters on right side
-    {
-        // Pre-compute row heights to reserve exact space for rows below, so XY/meters respond consistently
-        const int lPx_rsv = Layout::dp((float)Layout::knobPx(Layout::Knob::L), sv);
-        const int labelBand_rsv = Layout::dp(Layout::LABEL_BAND_EXTRA, sv);
-        const int containerH_rsv = lPx_rsv + labelBand_rsv + Layout::dp(Layout::LABEL_BAND_EXTRA, sv);
-        const int rowsTotalH_rsv = containerH_rsv * 4; // four uniform rows
-
-        // Meters take the full right side strip (carve from full remaining area first)
-        // Use grid-derived width so meters do not get too wide on large windows
-        const int lPx_rs = Layout::dp((float)Layout::knobPx(Layout::Knob::L), s);
-        const int cellW_rs = lPx_rs + Layout::dp(8, s);
-        const int colW_m = juce::jlimit(Layout::dp(24, s), Layout::dp(56, s), juce::roundToInt(cellW_rs * 0.75f));
-        const int corrW_m = juce::jmax(Layout::dp(10, s), juce::roundToInt(colW_m * 0.5f)); // CORR is half width of others
-        const int inter_m = juce::jmax(1, Layout::dp(Layout::GAP_S, s) / 2); // tighter spacing between columns
-        const int outerPadM_X = juce::jmax(1, Layout::dp(Layout::GAP_S, s)); // small side padding
-        const int outerPadM_Y = Layout::dp(Layout::GAP, sv); // match left container vertical pad for bottom align
-        const int targetStripW = colW_m * 2 + corrW_m + inter_m * 2 + outerPadM_X * 2; // IO | LR | CORR(half)
-        const int metersStripW = juce::jlimit(Layout::dp(96, s), Layout::dp(240, s), targetStripW);
-        
-        // Split the remaining area: left meters container, main content container, and right sliders container
-        auto metersArea = r.removeFromLeft(metersStripW);
-        
-        // Layout the meters in the right strip
-        editor.layoutMeters(metersArea, s, sv);
-        
-        // The main content area (r) is now ready for center group layout
-        // This will be handled by layoutCenterGroup()
+    // Clean layout: meters (left) → center content → sliders (right)
+    
+    // 1) Calculate meters width
+    const int lPx_rs = Layout::dp((float)Layout::knobPx(Layout::Knob::L), s);
+    const int cellW_rs = lPx_rs + Layout::dp(8, s);
+    const int colW_m = juce::jlimit(Layout::dp(24, s), Layout::dp(56, s), juce::roundToInt(cellW_rs * 0.75f));
+    const int corrW_m = juce::jmax(Layout::dp(10, s), juce::roundToInt(colW_m * 0.5f));
+    const int inter_m = juce::jmax(1, Layout::dp(Layout::GAP_S, s) / 2);
+    const int outerPadM_X = juce::jmax(1, Layout::dp(Layout::GAP_S, s));
+    const int targetStripW = colW_m * 2 + corrW_m + inter_m * 2 + outerPadM_X * 2;
+    const int metersWidth = juce::jlimit(Layout::dp(96, s), Layout::dp(240, s), targetStripW);
+    
+    // 2) Calculate sliders width
+    const int slidersWidth = juce::jlimit(Layout::dp(80, s), Layout::dp(120, s), 
+                                         juce::roundToInt(r.getWidth() * 0.15f));
+    
+    // 3) Layout meters on the left
+    auto metersArea = r.removeFromLeft(metersWidth);
+    editor.layoutMeters(metersArea, s, sv);
+    
+    // 4) Layout sliders on the right
+    auto slidersArea = r.removeFromRight(slidersWidth);
+    editor.rightSlidersContainer.setBounds(slidersArea);
+    
+    // Layout the individual sliders horizontally within the container
+    const int sliderWidth = slidersArea.getWidth() / 3;
+    editor.inputSlider.setBounds(0, 0, sliderWidth, slidersArea.getHeight());
+    editor.outputSlider.setBounds(sliderWidth, 0, sliderWidth, slidersArea.getHeight());
+    editor.mixSlider.setBounds(sliderWidth * 2, 0, sliderWidth, slidersArea.getHeight());
+    
+    // 5) Layout main content in the center (remaining area)
+    if (editor.panes) {
+        editor.panes->setBounds(r);
+        editor.panes->resized();
     }
 }
 
