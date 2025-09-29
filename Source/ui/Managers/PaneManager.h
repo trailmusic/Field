@@ -617,9 +617,9 @@ public:
                     }
                     else
                     {
-                        // Fallback colors - blue for Imager, green for Machine
-                        borderColor = (id == PaneID::Imager) ? juce::Colour (0xFF2B7BC7).withAlpha (on ? 0.9f : 0.6f) // Blue
-                                                           : juce::Colour (0xFF66BB6A).withAlpha (on ? 0.9f : 0.6f); // Green
+                        // Fallback colors - use theme accent for Imager, green for Machine
+                        borderColor = (id == PaneID::Imager) ? lf->theme.accent.withAlpha (on ? 0.9f : 0.6f) // Theme accent for Imager
+                                                           : juce::Colour (0xFF66BB6A).withAlpha (on ? 0.9f : 0.6f); // Green for Machine
                     }
                     
                     g.setColour (borderColor);

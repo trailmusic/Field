@@ -253,7 +253,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
 
         if (isApply)
         {
-            fill = juce::Colour(0xFF2196F3); // Blue for Apply
+            fill = theme.accent; // Use theme accent color for Apply
             if (isButtonDown) fill = fill.darker(0.20f);
         }
         else if (metallicKind != MetallicKind::None)
