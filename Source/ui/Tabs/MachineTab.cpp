@@ -19,8 +19,7 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     toneCard.title = "Tone & Balance"; spaceCard.title = "Reverb, Delay, Motion"; clarityCard.title = "Clarity & Movement";
     addAndMakeVisible (toneCard); addAndMakeVisible (spaceCard); addAndMakeVisible (clarityCard);
     listenBtn.setClickingTogglesState (true);
-    listenBtn.setButtonText ("");
-    listenBtn.getProperties().set ("iconType", (int) IconSystem::Delta);
+    listenBtn.setButtonText ("Listen");
     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
     {
         listenBtn.setLookAndFeel(lf);
@@ -143,6 +142,7 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     // Enhanced metallic rendering with AB button-style effects
     setAreaMetallicForCell (analyzeBtn, MetallicKind::Band); // Use Band metallic for Machine buttons
     setAreaMetallicForCell (stopBtn, MetallicKind::Band);
+    setAreaMetallicForCell (showPreBtn, MetallicKind::Band);
     setAreaMetallicForCell (previewBtn, MetallicKind::Band);
     setAreaMetallicForCell (listenBtn, MetallicKind::Band);
     
@@ -155,6 +155,7 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     
     analyzeBtn.setTriggeredOnMouseDown (false);
     stopBtn.setTriggeredOnMouseDown (false);
+    showPreBtn.setTriggeredOnMouseDown (false);
     previewBtn.setTriggeredOnMouseDown (false);
     listenBtn.setTriggeredOnMouseDown (false);
     
@@ -450,13 +451,14 @@ void MachineTab::resized()
     auto r = getLocalBounds();
     // Recompute tight bar area (keep layout independent of paint)
     auto bar = r.removeFromTop (56);
-    const int learnW = 180, stopW = 56, strW = 220, preW=90, lisW=90;
+    const int learnW = 180, stopW = 56, strW = 220, preW=90, lisW=90, previewW=100;
     auto ba = bar.reduced (8, 4);
     // add padding inside the container
     auto ia = ba.reduced (10, 6);
     auto place = [&](juce::Component& c, int w){ c.setBounds (ia.removeFromLeft (w)); ia.removeFromLeft (6); };
     if (learnCell) place (*learnCell, learnW);
     if (stopCell)  place (*stopCell,  stopW);
+    if (previewCell) place (*previewCell, previewW);
     ia.removeFromLeft (10);
     // Compute responsive widths for Venue/Genre/Track type combos
     {
