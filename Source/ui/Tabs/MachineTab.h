@@ -63,21 +63,51 @@ private:
         {
             auto b = getLocalBounds().reduced (6);
             const int capH = captionText.isNotEmpty() ? 14 : 0;
-            if (capH > 0)
+            
+            // Check if the child component has metallic properties
+            auto metallicKind = metallicFromProps (child.getProperties());
+            if (metallicKind != MetallicKind::None)
             {
-                caption.setBounds (b.removeFromTop (capH));
-                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                    caption.setColour (juce::Label::textColourId, lf->theme.textMuted);
+                // For metallic components, don't show caption - let the button handle its own text
+                caption.setVisible(false);
+                child.setBounds (b);
             }
-            child.setBounds (b);
+            else
+            {
+                // For non-metallic components, show caption above
+                if (capH > 0)
+                {
+                    caption.setVisible(true);
+                    caption.setBounds (b.removeFromTop (capH));
+                    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                        caption.setColour (juce::Label::textColourId, lf->theme.textMuted);
+                }
+                child.setBounds (b);
+            }
         }
         void paint (juce::Graphics& g) override
         {
+            // For metallic components, don't draw anything - let the child handle its own rendering
+            auto metallicKind = metallicFromProps (child.getProperties());
+            if (metallicKind != MetallicKind::None)
+            {
+                // Just ensure the child has the right bounds and let it handle everything
+                auto cellBounds = getLocalBounds().reduced(3);
+                child.setBounds(cellBounds);
+                return; // Let the child component handle all rendering
+            }
+            
+            // Non-metallic components use the standard SimpleSwitchCell rendering
+            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
             auto r = getLocalBounds().toFloat().reduced (3.0f);
-            g.setColour (juce::Colour (0xFF3A3E45));
-            g.fillRoundedRectangle (r, 8.0f);
-            g.setColour (juce::Colours::white.withAlpha (0.12f));
-            g.drawRoundedRectangle (r, 8.0f, 1.5f);
+            const float rad = 8.0f;
+            auto panel = lf ? lf->theme.panel : juce::Colour (0xFF3A3D45);
+            auto border = lf ? lf->theme.sh    : juce::Colour (0xFF2A2A2A);
+            
+            g.setColour (panel);
+            g.fillRoundedRectangle (r, rad);
+            g.setColour (border);
+            g.drawRoundedRectangle (r, rad, 1.5f);
         }
     private:
         juce::Component& child;

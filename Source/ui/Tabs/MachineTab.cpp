@@ -19,7 +19,7 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     toneCard.title = "Tone & Balance"; spaceCard.title = "Reverb, Delay, Motion"; clarityCard.title = "Clarity & Movement";
     addAndMakeVisible (toneCard); addAndMakeVisible (spaceCard); addAndMakeVisible (clarityCard);
     listenBtn.setClickingTogglesState (true);
-    listenBtn.setButtonText ("Listen");
+    // Button text handled by cell captions
     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
     {
         listenBtn.setLookAndFeel(lf);
@@ -166,33 +166,33 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     showPreBtn.setTriggeredOnMouseDown (false);
     listenBtn.setTriggeredOnMouseDown (false);
     
-    // Set button text
-    stopBtn.setButtonText ("Stop");
-    analyzeBtn.setButtonText ("Learn");
-    listenBtn.setButtonText ("Listen");
+    // Button text will be handled by cell captions
 
     // Wrap Learn/Stop into small cells to match delay-style cells
     learnCell = std::make_unique<SmallSwitchCell> (analyzeBtn);
     stopCell  = std::make_unique<SmallSwitchCell> (stopBtn);
     
-    // No captions needed - buttons have their own text
+    // Set captions to show button text
+    learnCell->setCaption("Learn");
+    stopCell->setCaption("Stop");
     
     addAndMakeVisible (*learnCell);
     addAndMakeVisible (*stopCell);
 
     showPreBtn.setToggleState (false, juce::dontSendNotification); // default to Post
     showPreBtn.setClickingTogglesState (true);
-    showPreBtn.setButtonText ("Pre"); // Set the text label
     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
     {
         showPreBtn.setLookAndFeel(lf);
     }
     preCell = std::make_unique<SmallSwitchCell> (showPreBtn);
+    preCell->setCaption("Pre");
     addAndMakeVisible (*preCell);
 
     // Wrap remaining buttons in cells
 
     listenCell = std::make_unique<SmallSwitchCell> (listenBtn);
+    listenCell->setCaption("Listen");
     addAndMakeVisible (*listenCell);
 
     // Wrap dropdowns in cells (no captions - text is inside dropdowns)
@@ -463,20 +463,41 @@ void MachineTab::resized()
     const int totalWidth = ia.getWidth();
     const int minControlWidth = 80; // Minimum width for any control
     const int dropdownWidth = juce::jmax(minControlWidth, (totalWidth - 100) / 8); // 8 controls total
-    auto place = [&](juce::Component& c, int w){ c.setBounds (ia.removeFromLeft (w)); ia.removeFromLeft (6); };
+    
+    // Calculate total width needed for all controls
+    int totalControlsWidth = 0;
+    int controlCount = 0;
+    if (learnCell) { totalControlsWidth += dropdownWidth; controlCount++; }
+    if (stopCell) { totalControlsWidth += dropdownWidth; controlCount++; }
+    if (preCell) { totalControlsWidth += dropdownWidth; controlCount++; }
+    if (venueCell) { totalControlsWidth += dropdownWidth; controlCount++; }
+    if (genreCell) { totalControlsWidth += dropdownWidth; controlCount++; }
+    if (trackTypeCell) { totalControlsWidth += dropdownWidth; controlCount++; }
+    if (listenCell) { totalControlsWidth += dropdownWidth; controlCount++; }
+    totalControlsWidth += dropdownWidth; // strength slider
+    
+    // Add spacing between controls (6px between each, 10px for larger gaps)
+    int totalSpacing = (controlCount - 1) * 6 + 10 + 8 + 8 + 10; // spacing for gaps
+    totalControlsWidth += totalSpacing;
+    
+    // Center the controls within the available space
+    int startX = (ia.getWidth() - totalControlsWidth) / 2;
+    auto centeredArea = ia.withX(ia.getX() + startX);
+    
+    auto place = [&](juce::Component& c, int w){ c.setBounds (centeredArea.removeFromLeft (w)); centeredArea.removeFromLeft (6); };
     // Responsive layout - all controls get equal space
     if (learnCell) place (*learnCell, dropdownWidth);
     if (stopCell)  place (*stopCell, dropdownWidth);
     if (preCell)   place (*preCell, dropdownWidth); // Moved Pre to where preview was
-    ia.removeFromLeft (10);
+    centeredArea.removeFromLeft (10);
     
     // Dropdowns get responsive width
     if (venueCell) place (*venueCell, dropdownWidth);
-    ia.removeFromLeft (8);
+    centeredArea.removeFromLeft (8);
     if (genreCell) place (*genreCell, dropdownWidth);
-    ia.removeFromLeft (8);
+    centeredArea.removeFromLeft (8);
     if (trackTypeCell) place (*trackTypeCell, dropdownWidth);
-    ia.removeFromLeft (10);
+    centeredArea.removeFromLeft (10);
     
     // Strength slider and Listen button
     place (strength, dropdownWidth);

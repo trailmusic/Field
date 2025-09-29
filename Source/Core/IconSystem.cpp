@@ -782,8 +782,9 @@ juce::Path IconSystem::createStopIcon (float size)
     juce::Path path;
     const float s = size / 16.0f;
     
-    // Square stop icon
+    // Filled square stop icon
     path.addRectangle (4 * s, 4 * s, 8 * s, 8 * s);
+    path.setUsingNonZeroWinding (true);
     
     return path;
 }

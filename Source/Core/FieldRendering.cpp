@@ -215,7 +215,6 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         juce::String txt = button.getButtonText().trim();
 
         bool isLearn = txt.equalsIgnoreCase("Learn");
-        bool isStop = txt == juce::String::fromUTF8("\u25A0") || txt.equalsIgnoreCase("Stop");
         bool isApply = txt.equalsIgnoreCase("Apply");
 
         juce::Colour fill = panel;
@@ -223,11 +222,6 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         if (isLearn)
         {
             fill = juce::Colour(0xFF4CAF50); // Green for Learn
-            if (isButtonDown) fill = fill.darker(0.20f);
-        }
-        else if (isStop)
-        {
-            fill = juce::Colour(0xFFF44336); // Red for Stop
             if (isButtonDown) fill = fill.darker(0.20f);
         }
         else if (isApply)
@@ -260,6 +254,20 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
                 g.setColour(theme.accentSecondary.withAlpha(0.85f));
                 g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
                 
+                // Render icon on top of metallic background
+                int iconInt = (int)button.getProperties().getWithDefault("iconType", -1);
+                if (iconInt >= 0)
+                {
+                    auto inner = r.reduced(4.0f);
+                    juce::Colour iconCol = button.getToggleState() ? accent : theme.text.withAlpha(0.75f);
+                    // Shadow pass for weight
+                    g.setColour(juce::Colours::black.withAlpha(0.18f));
+                    IconSystem::drawIcon(g, (IconSystem::IconType)iconInt, inner.translated(0.7f, 1.0f), iconCol);
+                    // Main icon
+                    g.setColour(iconCol);
+                    IconSystem::drawIcon(g, (IconSystem::IconType)iconInt, inner, iconCol);
+                }
+                
                 return; // Early return for metallic rendering
             }
             else
@@ -284,6 +292,20 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
                 // Add KnobCell-style border
                 g.setColour(theme.accentSecondary.withAlpha(0.85f));
                 g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
+                
+                // Render icon on top of metallic background
+                int iconInt = (int)button.getProperties().getWithDefault("iconType", -1);
+                if (iconInt >= 0)
+                {
+                    auto inner = r.reduced(4.0f);
+                    juce::Colour iconCol = button.getToggleState() ? accent : theme.text.withAlpha(0.75f);
+                    // Shadow pass for weight
+                    g.setColour(juce::Colours::black.withAlpha(0.18f));
+                    IconSystem::drawIcon(g, (IconSystem::IconType)iconInt, inner.translated(0.7f, 1.0f), iconCol);
+                    // Main icon
+                    g.setColour(iconCol);
+                    IconSystem::drawIcon(g, (IconSystem::IconType)iconInt, inner, iconCol);
+                }
                 
                 return; // Early return for metallic rendering
             }
