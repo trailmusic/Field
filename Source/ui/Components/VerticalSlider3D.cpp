@@ -92,27 +92,27 @@ void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> h
     
     // Draw handle under glow
     g.setColour (accent.withAlpha (0.4f));
-    g.fillEllipse (handleRect.expanded (4, 4));
+    g.fillRoundedRectangle (handleRect.expanded (4, 4), 4.0f);
     
     // Draw handle shadow
     g.setColour (shadowDark.withAlpha (0.4f));
-    g.fillEllipse (handleRect.translated (2, 2));
+    g.fillRoundedRectangle (handleRect.translated (2, 2), 4.0f);
     
     // Draw handle body
     g.setGradientFill (gradient);
-    g.fillEllipse (handleRect);
+    g.fillRoundedRectangle (handleRect, 4.0f);
     
     // Draw darker interior for better text visibility
     g.setColour (accent.darker (0.4f));
-    g.fillEllipse (handleRect.reduced (3));
+    g.fillRoundedRectangle (handleRect.reduced (3), 2.0f);
     
     // Draw subtle highlight
     g.setColour (accent.brighter (0.2f));
-    g.fillEllipse (handleRect.reduced (4));
+    g.fillRoundedRectangle (handleRect.reduced (4), 1.0f);
     
     // Draw rim
     g.setColour (accent.darker (0.2f));
-    g.drawEllipse (handleRect, 1.0f);
+    g.drawRoundedRectangle (handleRect, 4.0f, 1.0f);
     
     // Draw handle label (I, O, M) - use component name to identify slider type
     g.setColour (juce::Colours::white);
