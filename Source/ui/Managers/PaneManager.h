@@ -322,7 +322,9 @@ public:
                 }
                 break;
             case PaneID::DynEQ: 
-                activeGraphicsContainer = dyneq.get(); // DynEqTab is the graphics container itself
+                if (auto* dyneqTab = dynamic_cast<DynEqTab*>(dyneq.get())) {
+                    activeGraphicsContainer = dyneqTab->getAnalyzer();
+                }
                 break;
             case PaneID::Imager: 
                 activeGraphicsContainer = imgr.get(); // ImagerTab is the graphics container itself

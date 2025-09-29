@@ -153,8 +153,8 @@ private:
         float tabW = juce::jmin(120.0f, r.getWidth() * 0.6f);
         float tabH = 20.0f;  // Reduced to 20.0f as per user request
         
-        // Position handle so its TOP edge is pinned to the top of the active graphics container
-        float y = 0.0f;  // Default to top of ShadeOverlay bounds
+        // Position handle at the shade edge (bottom of covered area)
+        float y = shadeEdgeY() - tabH;  // Position handle at shade edge, with handle above the edge
         float x = r.getCentreX() - tabW * 0.5f;  // Center horizontally
         
         // If we have a PaneManager reference, get the active graphics container bounds
@@ -164,23 +164,25 @@ private:
             if (!activeContainerBounds.isEmpty())
             {
                 // Convert the graphics container bounds to ShadeOverlay local coordinates
-                // The graphics container is positioned within the ShadeOverlay bounds
                 auto localContainerBounds = activeContainerBounds - r.getPosition().toInt();
                 
-                // For Dynamic EQ, Imager, and Machine, the tabs themselves are the graphics containers
-                // The ShadeOverlay is positioned below the tab headers, so we need to position
-                // the handle at the top of the ShadeOverlay bounds (y = 0) for these tabs
-                // Check if the active graphics container is the same as the active pane component
+                // For tabs where the graphics container is the same as the pane manager bounds
+                // (Imager, Machine), position at the shade edge within the ShadeOverlay bounds
                 if (activeContainerBounds == paneManager->getBounds())
                 {
-                    y = 0.0f; // Position at top of ShadeOverlay bounds
-                    x = r.getCentreX() - tabW * 0.5f; // Center horizontally
+                    y = shadeEdgeY() - tabH;
+                    x = r.getCentreX() - tabW * 0.5f;
                 }
                 else
                 {
-                    // For other tabs, position at the top of the graphics container
-                    y = (float)localContainerBounds.getY();
+                    // For other tabs, position at the shade edge within the graphics container
+                    // But ensure the handle is within the ShadeOverlay bounds
+                    y = shadeEdgeY() - tabH;
                     x = (float)localContainerBounds.getCentreX() - tabW * 0.5f;
+                    
+                    // Clamp the handle position to be within the ShadeOverlay bounds
+                    x = juce::jlimit(0.0f, r.getWidth() - tabW, x);
+                    y = juce::jlimit(0.0f, r.getHeight() - tabH, y);
                 }
             }
         }

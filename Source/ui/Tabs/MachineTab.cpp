@@ -425,6 +425,9 @@ void MachineTab::resized()
         spaceCard.setBounds  (content.removeFromTop (h).reduced (2)); content.removeFromTop (gutter);
         clarityCard.setBounds(content.reduced (2));
     }
+    
+    // Position proposalsContent to cover the main content area
+    proposalsContent.setBounds(content);
 }
 
 void MachineTab::timerCallback()
