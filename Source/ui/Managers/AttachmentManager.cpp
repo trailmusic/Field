@@ -56,9 +56,9 @@ void AttachmentManager::attachMainControlsParameters()
 {
     // Main controls
     attachSliderParameterSafely(ParameterIDs::gain, editor.gain);
-    attachSliderParameterSafely(ParameterIDs::inputGain, editor.inputSlider);
-    attachSliderParameterSafely(ParameterIDs::outputGain, editor.outputSlider);
-    attachSliderParameterSafely(ParameterIDs::mix, editor.mixSlider);
+    attachSliderParameterSafely(ParameterIDs::inputGain, editor.sliderManager->getInputSlider());
+    attachSliderParameterSafely(ParameterIDs::outputGain, editor.sliderManager->getOutputSlider());
+    attachSliderParameterSafely(ParameterIDs::mix, editor.sliderManager->getMixSlider());
     attachSliderParameterSafely(ParameterIDs::width, editor.width);
     attachSliderParameterSafely(ParameterIDs::tilt, editor.tilt);
     attachSliderParameterSafely(ParameterIDs::monoHz, editor.monoHz);

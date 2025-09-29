@@ -25,6 +25,8 @@
 #include "ui/Components/ShadeOverlay.h"
 #include "ui/Components/VerticalLRMeters.h"
 #include "ui/Components/IOGainMeters.h"
+#include "ui/Managers/MeterManager.h"
+#include "ui/Managers/SliderManager.h"
 #include "ui/Components/SwitchCell.h"
 #include "ui/Components/Segmented3Control.h"
 #include "ui/Components/SimpleIconButtons.h"
@@ -208,9 +210,7 @@ public:
 
     // Containers
     ControlContainer mainControlsContainer, volumeContainer;
-    ControlContainer metersContainer;
-    ControlContainer MainContentContainer, rightSlidersContainer;
-    VerticalSlider3D inputSlider, outputSlider, mixSlider;
+    ControlContainer MainContentContainer;
     ControlContainer panKnobContainer;
     ControlContainer widthGroupContainer;
     juce::Component  widthGroupSlot1, widthGroupSlot2, widthGroupSlot3;
@@ -305,9 +305,9 @@ public:
     std::unique_ptr<class ReverbGraphics> reverbPanel;
     int controlRowsHeightPx { 0 };
 
-    CorrelationMeter corrMeter { proc, lnf };
-    VerticalLRMeters lrMeters  { proc, lnf };
-    IOGainMeters ioMeters      { proc, lnf };
+    // Meter and Slider Managers
+    std::unique_ptr<MeterManager> meterManager;
+    std::unique_ptr<SliderManager> sliderManager;
 
     // A/B state (moved to StateManager)
     bool isGreenMode = false;

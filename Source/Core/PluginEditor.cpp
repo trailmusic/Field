@@ -83,6 +83,14 @@ void MyPluginAudioProcessorEditor::initializeManagers()
     cleanupManager    = std::make_unique<CleanupManager>    (*this);
     paintManager      = std::make_unique<PaintManager>      (*this);
     stateManager      = std::make_unique<StateManager>      (*this);
+    
+    // Initialize meter and slider managers
+    meterManager = std::make_unique<MeterManager>(*this);
+    sliderManager = std::make_unique<SliderManager>(*this);
+    
+    // Initialize the managers
+    meterManager->initializeMeters();
+    sliderManager->initializeSliders();
 }
 
 void MyPluginAudioProcessorEditor::initializeSizeConstraints()
@@ -469,35 +477,10 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     addAndMakeVisible (panKnobContainer);       panKnobContainer.setTitle ("");       panKnobContainer.setShowBorder (true);
     addAndMakeVisible (volumeContainer);        volumeContainer.setTitle ("");        volumeContainer.setShowBorder (true);
     addAndMakeVisible (MainContentContainer);   MainContentContainer.setTitle ("");   MainContentContainer.setShowBorder (false);
-    addAndMakeVisible (rightSlidersContainer);  rightSlidersContainer.setTitle ("");  rightSlidersContainer.setShowBorder (false);
-    addAndMakeVisible (metersContainer);        metersContainer.setTitle ("");        metersContainer.setShowBorder (false);
-
-    // Add meters to their container
-    metersContainer.addAndMakeVisible (ioMeters);
-    metersContainer.addAndMakeVisible (lrMeters);
-    metersContainer.addAndMakeVisible (corrMeter);
-
-    for (auto* s : { &inputSlider, &outputSlider, &mixSlider })
-        rightSlidersContainer.addAndMakeVisible (*s);
-
-    inputSlider.setTextValueSuffix (" dB");
-    inputSlider.setLookAndFeel (&lnf);
     
-    outputSlider.setTextValueSuffix (" dB");
-    outputSlider.setLookAndFeel (&lnf);
-    
-    mixSlider.setRange (0.0, 100.0, 0.1);
-    mixSlider.setValue (100.0);
-    mixSlider.setTextValueSuffix (" %");
-    mixSlider.setLookAndFeel (&lnf);
-    
-    inputSlider .setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 15);
-    outputSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 15);
-    mixSlider   .setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 15);
-    
-    inputSlider.setName  ("inputSlider");
-    outputSlider.setName ("outputSlider");
-    mixSlider.setName    ("mixSlider");
+    // Add manager containers
+    addAndMakeVisible (meterManager->getMetersContainer());
+    addAndMakeVisible (sliderManager->getSlidersContainer());
 
     addChildComponent (widthGroupContainer);
     widthGroupContainer.setTitle ("");
@@ -896,27 +879,10 @@ void MyPluginAudioProcessorEditor::pasteState (bool pasteToA)       { if (stateM
 
 void MyPluginAudioProcessorEditor::layoutMeters (juce::Rectangle<int> metersArea, float s, float sv)
 {
-    if (metersArea.isEmpty()) return;
-
-    // Use the full container width - no more artificial width limits
-    auto containerBounds = metersContainer.getBounds();
-    
-    // Calculate meter widths to fill the container completely
-    const int totalWidth = containerBounds.getWidth();
-    const int meterWidth = totalWidth / 3; // Each meter gets exactly 1/3 of container
-    const int corrWidth  = totalWidth / 3; // Correlation also gets 1/3 of container
-    const int interGap   = 0; // No gap between meters
-    const int outerPadX  = 0; // No outer padding
-    const int outerPadY  = 0; // No outer padding
-
-    // Fill the container completely from left to right
-    auto ioArea   = juce::Rectangle<int>(0, 0, meterWidth, containerBounds.getHeight()).reduced(outerPadX, outerPadY);
-    auto lrArea   = juce::Rectangle<int>(meterWidth, 0, meterWidth, containerBounds.getHeight()).reduced(outerPadX, outerPadY);
-    auto corrArea = juce::Rectangle<int>(meterWidth * 2, 0, corrWidth, containerBounds.getHeight()).reduced(outerPadX, outerPadY);
-
-    ioMeters .setBounds (ioArea);
-    lrMeters .setBounds (lrArea);
-    corrMeter.setBounds (corrArea);
+    // Delegate meter layout to MeterManager
+    if (meterManager) {
+        meterManager->layoutMeters(metersArea, s, sv);
+    }
 }
 
 void MyPluginAudioProcessorEditor::initializeParameterAttachments()
@@ -1048,10 +1014,13 @@ MyPluginAudioProcessorEditor::ThemeConfig MyPluginAudioProcessorEditor::applyOpt
 // Performance & Safety Optimizations
 // ============================================================================
 
+
 void MyPluginAudioProcessorEditor::initializeMeters()
 {
-    // Meter initialization with consistent styling
-    corrMeter.setLookAndFeel(&lnf);
-    lrMeters.setLookAndFeel(&lnf);
-    ioMeters.setLookAndFeel(&lnf);
+    // Meter initialization delegated to MeterManager
+    if (meterManager) {
+        meterManager->getCorrelationMeter().setLookAndFeel(&lnf);
+        meterManager->getLRMeters().setLookAndFeel(&lnf);
+        meterManager->getIOGainMeters().setLookAndFeel(&lnf);
+    }
 }

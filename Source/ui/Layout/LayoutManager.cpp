@@ -196,24 +196,23 @@ void LayoutManager::layoutMainControls()
     const int slidersWidth = juce::jlimit(Layout::dp(40, s), Layout::dp(60, s), 
                                          juce::roundToInt(r.getWidth() * 0.08f));
     
-    // 3) Layout meters container on the left - remove padding only for meters
+    // 3) Layout meters container on the left - delegate to MeterManager
     auto metersArea = r.removeFromLeft(metersWidth);
     // Remove the left padding from meters area to position them at the edge
     metersArea = metersArea.withX(0).withWidth(metersWidth);
-    editor.metersContainer.setBounds(metersArea);
+    editor.meterManager->setMetersContainerBounds(metersArea);
     
     // Layout individual meters within the container
     editor.layoutMeters(metersArea, s, sv);
     
-    // 4) Layout sliders on the right
+    // 4) Layout sliders on the right - delegate to SliderManager
     auto slidersArea = r.removeFromRight(slidersWidth);
-    editor.rightSlidersContainer.setBounds(slidersArea);
+    // Position sliders at the right edge
+    slidersArea = slidersArea.withX(editor.getWidth() - slidersWidth).withWidth(slidersWidth);
+    editor.sliderManager->setSlidersContainerBounds(slidersArea);
     
     // Layout the individual sliders horizontally within the container
-    const int sliderWidth = slidersArea.getWidth() / 3;
-    editor.inputSlider.setBounds(0, 0, sliderWidth, slidersArea.getHeight());
-    editor.outputSlider.setBounds(sliderWidth, 0, sliderWidth, slidersArea.getHeight());
-    editor.mixSlider.setBounds(sliderWidth * 2, 0, sliderWidth, slidersArea.getHeight());
+    editor.sliderManager->layoutSliders(slidersArea);
     
     // 5) Layout main content in the center (remaining area)
     if (editor.panes) {
