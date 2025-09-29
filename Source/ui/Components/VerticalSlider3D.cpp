@@ -185,6 +185,10 @@ void VerticalSlider3D::drawMarkers (juce::Graphics& g, juce::Rectangle<float> tr
         const float labelY = markerY - 6.0f;
         g.drawText (markerLabel, labelX, labelY, 40.0f, 12.0f, juce::Justification::left);
         
+        // Debug: Force font size to be very small to test
+        g.setFont (juce::Font (5.0f, juce::Font::bold));
+        g.drawText (markerLabel + "!", labelX, labelY + 15, 40.0f, 12.0f, juce::Justification::left);
+        
         // Add subtle accent highlight for key values
         if (markerValue == 0.0f || markerValue == 50.0f || markerValue == 100.0f) {
             g.setColour (accentColor.withAlpha (0.3f));

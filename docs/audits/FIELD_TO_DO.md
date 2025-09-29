@@ -43,6 +43,16 @@
 - **Performance Settings**: Master animation toggle and FPS control
 - **Reusability**: Theme system ready for future animation effects
 
+### **Theme Consistency and Container Padding** ✅ **COMPLETED**
+- **Tab Headers**: Updated inactive tabs to use `theme.meters.panelDark` for visual consistency
+- **Container Backgrounds**: ControlContainer now uses consistent darker theme color
+- **Knob Gradients**: Updated KnobCell gradients to use `theme.meters.panelDark` base color
+- **Container Padding**: Added proper spacing between meters/sliders and center content
+- **Layout System**: Uses `Layout::GAP` (10px) for consistent spacing throughout UI
+- **Visual Consistency**: All UI elements now use unified `theme.meters.panelDark` color
+- **Professional Spacing**: Proper breathing room between functional areas
+- **Build Success**: All changes compile and link successfully with no functional loss
+
 ### **XY Architecture Fix** ✅ **COMPLETED**
 - **XYPad Integration**: XYPad successfully moved from PluginEditor to XYTab
 - **Circular Dependency Resolved**: Eliminated circular dependency between PluginEditor and PaneManager
@@ -269,3 +279,14 @@ PluginEditor (Lightweight Coordinator)
 - **Theme-Based FPS**: Consistent 20fps animation rate across all components
 - **Code Cleanup**: Removed all debugging overhead and unused code
 - **File Reduction**: Deleted unused files to reduce build time
+
+## 🔧 **CURRENT ISSUES & DEBUGGING**
+
+### **Slider Unit Labels Font Size Debug** 🔍 **IN PROGRESS**
+- **Issue**: Unit labels (dB, %) in VerticalSlider3D sliders not taking 7.0f font size adjustment
+- **Handle Labels**: Working correctly with 7.0f font size (I, O, M labels)
+- **Unit Labels**: Still appearing larger than expected despite font setting
+- **Debug Status**: Added debug labels with 5.0f font size to test font system
+- **Files Modified**: `Source/ui/Components/VerticalSlider3D.cpp`
+- **Next Steps**: Investigate why unit labels aren't responding to font size changes
+- **Priority**: Medium - Visual consistency issue
