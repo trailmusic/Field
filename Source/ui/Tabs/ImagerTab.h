@@ -34,11 +34,40 @@ public:
     }
 
 
+    void paint(juce::Graphics& g) override
+    {
+        auto r = getLocalBounds().toFloat();
+        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+        auto panel = lf ? lf->theme.meters.panelDark : juce::Colour(0xFF2A2C30);
+        auto sh = lf ? lf->theme.sh : juce::Colour(0xFF2A2A2A);
+        
+        // AB Button styling: Solid panel background with elevation shadow
+        const float cr = 8.0f; // Match KnobCell corner radius
+        
+        // Elevation shadow first (AB button style)
+        if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
+        else g.setColour(juce::Colour(0x40000000));
+        g.fillRoundedRectangle(r.translated(1.5f, 1.5f), cr);
+        
+        // Solid panel background (no aliasing)
+        g.setColour(panel);
+        g.fillRoundedRectangle(r, cr);
+        
+        // Border (AB button style)
+        g.setColour(sh);
+        g.drawRoundedRectangle(r, cr, 1.0f);
+        
+        // Add 10px top and bottom padding for content
+        auto contentR = r.reduced(0, 10.0f);
+    }
+
     void resized() override
     {
         auto r = getLocalBounds();
+        // Add 10px top and bottom padding for content
+        auto contentR = r.reduced(0, 10);
         // Imager is visuals-only now (no 2x16 controls)
-        if (visuals) visuals->setBounds (r);
+        if (visuals) visuals->setBounds (contentR);
     }
 
 private:

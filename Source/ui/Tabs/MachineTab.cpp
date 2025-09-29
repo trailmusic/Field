@@ -166,6 +166,28 @@ void MachineTab::paint (juce::Graphics& g)
     // paint full-width top bar background for responsive layout
     barArea = bar.reduced (8, 4);
     paintTopBarBackground (g, barArea);
+    
+    // Add consistent styling for main content area
+    auto r = b.toFloat();
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    auto panel = lf ? lf->theme.meters.panelDark : juce::Colour(0xFF2A2C30);
+    auto sh = lf ? lf->theme.sh : juce::Colour(0xFF2A2A2A);
+    
+    // AB Button styling: Solid panel background with elevation shadow
+    const float cr = 8.0f; // Match KnobCell corner radius
+    
+    // Elevation shadow first (AB button style)
+    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
+    else g.setColour(juce::Colour(0x40000000));
+    g.fillRoundedRectangle(r.translated(1.5f, 1.5f), cr);
+    
+    // Solid panel background (no aliasing)
+    g.setColour(panel);
+    g.fillRoundedRectangle(r, cr);
+    
+    // Border (AB button style)
+    g.setColour(sh);
+    g.drawRoundedRectangle(r, cr, 1.0f);
 }
 
 void MachineTab::paintOverChildren (juce::Graphics& g)
@@ -373,7 +395,8 @@ void MachineTab::resized()
     ia.removeFromLeft (10);
     place (listenBtn, lisW);
     // content occupies the rest without scroll; place cards
-    auto content = r.withTrimmedTop (2).reduced (8, 8);
+    // Add 10px top and bottom padding for content
+    auto content = r.withTrimmedTop (2).reduced (8, 8).reduced (0, 10);
     const int cols = content.getWidth() > 1200 ? 3 : (content.getWidth() > 800 ? 2 : 1);
     const int gutter = 12;
     if (cols == 3)

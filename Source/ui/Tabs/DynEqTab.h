@@ -252,24 +252,29 @@ public:
     void paint (juce::Graphics& g) override
     {
         auto r = getLocalBounds().toFloat();
-        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        {
-            // Fully opaque pane background (no see-through)
-            juce::Colour top = lf->theme.shadowDark.withAlpha (1.0f);
-            juce::Colour bot = lf->theme.shadowDark.withAlpha (1.0f);
-            juce::ColourGradient grad (top, r.getCentreX(), r.getY(), bot, r.getCentreX(), r.getBottom(), false);
-            g.setGradientFill (grad);
-            g.fillRect (r);
-            g.setColour (juce::Colours::white.withAlpha (0.10f));
-            g.drawRoundedRectangle (r, 8.0f, 1.0f);
-        }
-        else
-        {
-            g.fillAll (juce::Colours::darkgrey.darker (0.35f));
-            g.setColour (juce::Colours::white.withAlpha (0.10f));
-            g.drawRoundedRectangle (r, 8.0f, 1.0f);
-        }
-
+        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+        auto panel = lf ? lf->theme.meters.panelDark : juce::Colour(0xFF2A2C30);
+        auto sh = lf ? lf->theme.sh : juce::Colour(0xFF2A2A2A);
+        
+        // AB Button styling: Solid panel background with elevation shadow
+        const float cr = 8.0f; // Match KnobCell corner radius
+        
+        // Elevation shadow first (AB button style)
+        if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
+        else g.setColour(juce::Colour(0x40000000));
+        g.fillRoundedRectangle(r.translated(1.5f, 1.5f), cr);
+        
+        // Solid panel background (no aliasing)
+        g.setColour(panel);
+        g.fillRoundedRectangle(r, cr);
+        
+        // Border (AB button style)
+        g.setColour(sh);
+        g.drawRoundedRectangle(r, cr, 1.0f);
+        
+        // Add 10px top and bottom padding for content
+        auto contentR = r.reduced(0, 10.0f);
+        
         // background only; overlay drawn in paintOverChildren
     }
 
@@ -550,13 +555,16 @@ public:
     {
         auto r = getLocalBounds().reduced (6);
         
+        // Add 10px top and bottom padding for content
+        auto contentR = r.reduced(0, 10);
+        
         // Left rail outside the pane (48px width)
-        auto rail = r.removeFromLeft (48);
+        auto rail = contentR.removeFromLeft (48);
         rail.removeFromRight (4); // little breathing room
         zoomRail.setBounds (rail);
         
         // Analyzer takes remaining area
-        analyzer.setBounds (r);
+        analyzer.setBounds (contentR);
         rebuildEqPath();
         positionOverlay();
     }
