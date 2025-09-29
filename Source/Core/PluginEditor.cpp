@@ -970,6 +970,7 @@ void MyPluginAudioProcessorEditor::initializeManagers()
     attachmentManager = std::make_unique<AttachmentManager>(*this);
     cleanupManager = std::make_unique<CleanupManager>(*this);
     paintManager = std::make_unique<PaintManager>(*this);
+    stateManager = std::make_unique<StateManager>(*this);
 }
 
 void MyPluginAudioProcessorEditor::initializeSizeConstraints()
@@ -2088,7 +2089,10 @@ void MyPluginAudioProcessorEditor::parameterChanged (const juce::String& id, flo
     // Implementation moved to EventManager
 }
 
-void MyPluginAudioProcessorEditor::updatePresetDisplay() { /* hook to PresetManager */ }
+void MyPluginAudioProcessorEditor::updatePresetDisplay() 
+{ 
+    if (stateManager) stateManager->updatePresetDisplay(); 
+}
 
 void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
 {
@@ -2097,55 +2101,28 @@ void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
 
 void MyPluginAudioProcessorEditor::saveCurrentState()
 {
-    std::map<juce::String, float> s;
-    s["gain"]     = (float) gain.getValue();
-    s["width"]    = (float) width.getValue();
-    s["tilt"]     = (float) tilt.getValue();
-    s["mono"]     = (float) monoHz.getValue();
-    s["hp"]       = (float) hpHz.getValue();
-    s["lp"]       = (float) lpHz.getValue();
-    s["satDrive"] = (float) satDrive.getValue();
-    s["satMix"]   = (float) satMix.getValue();
-    s["air"]      = (float) air.getValue();
-    s["bass"]     = (float) bass.getValue();
-    s["scoop"]    = (float) scoop.getValue();
-    s["pan"]      = (float) panKnob.getValue();
-    if (isStateA) stateA = std::move (s); else stateB = std::move (s);
+    if (stateManager) stateManager->saveCurrentState();
 }
 
-static void applyStateToSlider (juce::Slider& s, float v) { s.setValue (v, juce::sendNotificationSync); }
 
 void MyPluginAudioProcessorEditor::loadState (bool loadStateA)
 {
-    auto& s = loadStateA ? stateA : stateB;
-    if (auto it = s.find ("gain");     it != s.end()) applyStateToSlider (gain, it->second);
-    if (auto it = s.find ("width");    it != s.end()) applyStateToSlider (width, it->second);
-    if (auto it = s.find ("tilt");     it != s.end()) applyStateToSlider (tilt, it->second);
-    if (auto it = s.find ("mono");     it != s.end()) applyStateToSlider (monoHz, it->second);
-    if (auto it = s.find ("hp");       it != s.end()) applyStateToSlider (hpHz, it->second);
-    if (auto it = s.find ("lp");       it != s.end()) applyStateToSlider (lpHz, it->second);
-    if (auto it = s.find ("satDrive"); it != s.end()) applyStateToSlider (satDrive, it->second);
-    if (auto it = s.find ("satMix");   it != s.end()) applyStateToSlider (satMix, it->second);
-    if (auto it = s.find ("air");      it != s.end()) applyStateToSlider (air, it->second);
-    if (auto it = s.find ("bass");     it != s.end()) applyStateToSlider (bass, it->second);
-    if (auto it = s.find ("scoop");    it != s.end()) applyStateToSlider (scoop, it->second);
-    if (auto it = s.find ("pan");      it != s.end()) applyStateToSlider (panKnob, it->second);
+    if (stateManager) stateManager->loadState(loadStateA);
 }
 
 void MyPluginAudioProcessorEditor::toggleABState()
 {
-    isStateA = !isStateA;
-    abButtonA.setToggleState (isStateA,  juce::dontSendNotification);
-    abButtonB.setToggleState (!isStateA,  juce::dontSendNotification);
-    loadState (isStateA);
+    if (stateManager) stateManager->toggleABState();
 }
 
-void MyPluginAudioProcessorEditor::copyState (bool fromA) { clipboardState = fromA ? stateA : stateB; }
+void MyPluginAudioProcessorEditor::copyState (bool fromA) 
+{ 
+    if (stateManager) stateManager->copyState(fromA); 
+}
 
 void MyPluginAudioProcessorEditor::pasteState (bool pasteToA)
 {
-    if (pasteToA) stateA = clipboardState; else stateB = clipboardState;
-    loadState (pasteToA);
+    if (stateManager) stateManager->pasteState(pasteToA);
 }
 
 void MyPluginAudioProcessorEditor::layoutMeters(juce::Rectangle<int> metersArea, float s, float sv)

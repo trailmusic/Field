@@ -82,9 +82,8 @@ void CleanupManager::cleanupState()
     editor.panes.reset();
     
     // ensure A holds final state if user ended on B
-    if (!editor.isStateA) { 
+    if (editor.stateManager && !editor.stateManager->isStateA()) { 
         editor.saveCurrentState(); 
-        editor.stateA = editor.stateB; 
     }
 }
 

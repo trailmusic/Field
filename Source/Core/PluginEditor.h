@@ -39,6 +39,7 @@
 #include "ui/Managers/AttachmentManager.h"
 #include "ui/Managers/CleanupManager.h"
 #include "ui/Managers/PaintManager.h"
+#include "ui/Managers/StateManager.h"
 #include "Presets/PresetRegistry.h"
 #include "Presets/PresetCommandPalette.h"
 #include "Presets/PresetManager.h"
@@ -119,6 +120,7 @@ public:
     std::unique_ptr<AttachmentManager> attachmentManager;
     std::unique_ptr<CleanupManager> cleanupManager;
     std::unique_ptr<PaintManager> paintManager;
+    std::unique_ptr<StateManager> stateManager;
 
 private:
 
@@ -330,15 +332,11 @@ public:
     VerticalLRMeters lrMeters  { proc, lnf };
     IOGainMeters ioMeters      { proc, lnf };
 
-    // A/B state
-    std::map<juce::String, float> stateA, stateB;
-    bool isStateA = true;
+    // A/B state (moved to StateManager)
     bool isGreenMode = false;
-    std::map<juce::String, float> clipboardState;
     int  currentAlgorithm = 0; // 0=Inner, 1=Outer, 2=Deep
-    juce::String presetNameA = "Default", presetNameB = "Default";
 
-    // A/B logic
+    // A/B logic (delegated to StateManager)
     void saveCurrentState();
     void loadState (bool loadStateA);
     void toggleABState();
