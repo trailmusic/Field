@@ -55,13 +55,13 @@ struct FieldTheme
     };
     
     struct MetalTheme {
-        MetalStops neutral  { juce::Colour (0xFF9CA4AD), juce::Colour (0xFF6E747C), juce::Colour (0x003D7BB8), 0.06f };
+        MetalStops neutral  { juce::Colour (0xFF9CA4AD), juce::Colour (0xFF6E747C), juce::Colour (0x00000000), 0.06f };
         MetalStops reverb   { juce::Colour (0xFFB87749), juce::Colour (0xFF7D4D2E), juce::Colour (0x00F2C39A), 0.10f };
-        MetalStops delay    { juce::Colour (0xFFC9CFB9), juce::Colour (0xFF8D927F), juce::Colour (0x004AA3FF), 0.05f };
-        MetalStops motion   { juce::Colour (0xFF6D76B2), juce::Colour (0xFF434A86), juce::Colour (0x00C2D8FF), 0.06f };
-        MetalStops band     { juce::Colour (0xFF6AA0D8), juce::Colour (0xFF3A6EA8), juce::Colour (0x000A0C0F), 0.12f };
-        MetalStops phase    { juce::Colour (0xFF3E6BA3), juce::Colour (0xFF24466E), juce::Colour (0xFFC2D8FF), 0.06f };
-        MetalStops xy       { juce::Colour (0xFF4B5560), juce::Colour (0xFF2E333A), juce::Colour (0xFF3D7BB8), 0.05f };
+        MetalStops delay    { juce::Colour (0xFFC9CFB9), juce::Colour (0xFF8D927F), juce::Colour (0x00000000), 0.05f };
+        MetalStops motion   { juce::Colour (0xFF6D76B2), juce::Colour (0xFF434A86), juce::Colour (0x00000000), 0.06f };
+        MetalStops band     { juce::Colour (0xFF6AA0D8), juce::Colour (0xFF3A6EA8), juce::Colour (0x00000000), 0.12f };
+        MetalStops phase    { juce::Colour (0xFF3E6BA3), juce::Colour (0xFF24466E), juce::Colour (0x00000000), 0.06f };
+        MetalStops xy       { juce::Colour (0xFF4B5560), juce::Colour (0xFF2E333A), juce::Colour (0x00000000), 0.05f };
     } metal;
 
     // EQ palette

@@ -310,8 +310,8 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
                 // Untoggled state - check if this is a Learn button for special green handling
                 if (isLearn)
                 {
-                    // Learn button inactive state - green background
-                    fill = juce::Colour(0xFF4CAF50); // Green for Learn
+                    // Learn button inactive state - use theme accent color
+                    fill = theme.accent; // Use theme accent for Learn
                     if (isButtonDown) fill = fill.darker(0.20f);
                     if (isMouseOver) fill = fill.brighter(0.10f);
                     
