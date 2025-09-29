@@ -116,7 +116,7 @@ void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> h
     
     // Draw handle label (I, O, M) - use component name to identify slider type
     g.setColour (juce::Colours::white);
-    g.setFont (juce::Font (8.0f, juce::Font::bold));
+    g.setFont (juce::Font (7.0f, juce::Font::bold));
     juce::String handleLabel;
     juce::String componentName = getName();
     if (componentName.contains ("input")) handleLabel = "I";
@@ -136,7 +136,7 @@ void VerticalSlider3D::drawMarkers (juce::Graphics& g, juce::Rectangle<float> tr
     const auto accentColor = lf->theme.accent;
     
     g.setColour (textColor);
-    g.setFont (juce::Font (9.0f, juce::Font::bold));
+    g.setFont (juce::Font (7.0f, juce::Font::bold));
     
     // Determine marker values based on slider range
     std::vector<float> markerValues;
