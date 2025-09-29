@@ -968,12 +968,16 @@ void MyPluginAudioProcessorEditor::initializeManagers()
     layoutManager = std::make_unique<LayoutManager>(*this);
     eventManager = std::make_unique<EventManager>(*this);
     attachmentManager = std::make_unique<AttachmentManager>(*this);
+    cleanupManager = std::make_unique<CleanupManager>(*this);
+    paintManager = std::make_unique<PaintManager>(*this);
 }
 
 void MyPluginAudioProcessorEditor::initializeSizeConstraints()
 {
     // Build knob cells once after all sliders/labels are created
-    buildCells();
+    if (layoutManager) {
+        layoutManager->buildCells();
+    }
     
     // Calculate minimum size based on layout requirements
     const float s = 1.0f;
@@ -1937,58 +1941,6 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     resized();
 }
 
-void MyPluginAudioProcessorEditor::buildCells()
-{
-    // Row 1
-    if (!widthCell)   widthCell   = std::make_unique<KnobCell>(width,    widthValue,    "WIDTH");
-    if (!widthLoCell) widthLoCell = std::make_unique<KnobCell>(widthLo,  widthLoValue,  "W LO");
-    if (!widthMidCell)widthMidCell= std::make_unique<KnobCell>(widthMid, widthMidValue, "W MID");
-    if (!widthHiCell) widthHiCell = std::make_unique<KnobCell>(widthHi,  widthHiValue,  "W HI");
-    if (!gainCell)    gainCell    = std::make_unique<KnobCell>(gain,     gainValue,     "GAIN");
-    if (!satDriveCell)satDriveCell= std::make_unique<KnobCell>(satDrive, satDriveValue, "DRIVE");
-    if (!satMixCell)  satMixCell  = std::make_unique<KnobCell>(satMix,   satMixValue,   "MIX");
-    if (!monoCell)    monoCell    = std::make_unique<KnobCell>(monoHz,   monoValue,     "MONO");
-    // Legacy spaceCell (REVERB) removed from Group 1 row; Reverb amount lives in Group 2 as WET
-
-    if (!bassCell)     bassCell     = std::make_unique<KnobCell>(bass,  bassValue,  "BASS");
-    if (!airCell)      airCell      = std::make_unique<KnobCell>(air,   airValue,   "AIR");
-    if (!tiltCell)     tiltCell     = std::make_unique<KnobCell>(tilt,  tiltValue,  "TILT");
-    if (!scoopCell)    scoopCell    = std::make_unique<KnobCell>(scoop, scoopValue, "SCOOP");
-    if (!hpCell)       hpCell       = std::make_unique<KnobCell>(hpHz,  hpValue,    "HP Hz");
-    if (!lpCell)       lpCell       = std::make_unique<KnobCell>(lpHz,  lpValue,    "LP Hz");
-
-    if (!xoverLoCell)  xoverLoCell  = std::make_unique<KnobCell>(xoverLoHz, xoverLoValue, "XO LO");
-    if (!xoverHiCell)  xoverHiCell  = std::make_unique<KnobCell>(xoverHiHz, xoverHiValue, "XO HI");
-    if (!rotationCell) rotationCell = std::make_unique<KnobCell>(rotationDeg, rotationValue, "ROT");
-    if (!asymCell)     asymCell     = std::make_unique<KnobCell>(asymmetry,   asymValue,     "ASYM");
-    // SHUF cells moved to Band tab
-
-    if (!delayTimeCell)      delayTimeCell       = std::make_unique<KnobCell>(delayTime,      delayTimeValue,      "TIME");
-    if (!delayFeedbackCell)  delayFeedbackCell   = std::make_unique<KnobCell>(delayFeedback,  delayFeedbackValue,  "FB");
-    if (!delayWetCell)       delayWetCell        = std::make_unique<KnobCell>(delayWet,       delayWetValue,       "WET");
-    if (!delaySpreadCell)    delaySpreadCell     = std::make_unique<KnobCell>(delaySpread,    delaySpreadValue,    "SPREAD");
-    if (!delayWidthCell)     delayWidthCell      = std::make_unique<KnobCell>(delayWidth,     delayWidthValue,     "WIDTH");
-    if (!delayModRateCell)   delayModRateCell    = std::make_unique<KnobCell>(delayModRate,   delayModRateValue,   "RATE");
-    if (!delayModDepthCell)  delayModDepthCell   = std::make_unique<KnobCell>(delayModDepth,  delayModDepthValue,  "DEPTH");
-    if (!delayWowflutterCell)delayWowflutterCell = std::make_unique<KnobCell>(delayWowflutter,delayWowflutterValue,"WOW");
-    if (!delayJitterCell)    delayJitterCell     = std::make_unique<KnobCell>(delayJitter,    delayJitterValue,    "JITTER");
-    if (!delayHpCell)        delayHpCell         = std::make_unique<KnobCell>(delayHp,        delayHpValue,        "HP");
-    if (!delayLpCell)        delayLpCell         = std::make_unique<KnobCell>(delayLp,        delayLpValue,        "LP");
-    if (!delayTiltCell)      delayTiltCell       = std::make_unique<KnobCell>(delayTilt,      delayTiltValue,      "TILT");
-    if (!delaySatCell)       delaySatCell        = std::make_unique<KnobCell>(delaySat,       delaySatValue,       "SAT");
-    if (!delayDiffusionCell) delayDiffusionCell  = std::make_unique<KnobCell>(delayDiffusion, delayDiffusionValue, "DIFF");
-    if (!delayDiffuseSizeCell)delayDiffuseSizeCell= std::make_unique<KnobCell>(delayDiffuseSize, delayDiffuseSizeValue, "SIZE");
-    if (!delayDuckDepthCell) delayDuckDepthCell  = std::make_unique<KnobCell>(delayDuckDepth, delayDuckDepthValue, "DEPTH");
-    if (!delayDuckAttackCell)delayDuckAttackCell = std::make_unique<KnobCell>(delayDuckAttack,delayDuckAttackValue,"ATT");
-    if (!delayDuckReleaseCell)delayDuckReleaseCell=std::make_unique<KnobCell>(delayDuckRelease,delayDuckReleaseValue,"REL");
-    if (!delayJitterCell) delayJitterCell = std::make_unique<KnobCell>(delayJitter, delayJitterValue, "JITTER");
-    if (!delayDuckRatioCell) delayDuckRatioCell = std::make_unique<KnobCell>(delayDuckRatio, delayDuckRatioValue, "RAT");
-    
-    // Log: Editor constructor complete
-    // TEMPORARILY DISABLE file logging to test if this is causing the crash
-    // juce::File f = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("Field_CrashLog.txt");
-    // f.appendText("Editor Ctor: COMPLETE\n", false, false, "\n");
-}
 
 
 MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
@@ -1997,179 +1949,21 @@ MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
     juce::File f = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("Field_CrashLog.txt");
     f.appendText("Editor Destructor: STARTED\n", false, false, "\n");
     
-    // Cancel AsyncUpdater to prevent use-after-free
-    // Motion binding removed - now handled by MotionControlsPane
-    f.appendText("Editor Destructor: AsyncUpdater cancelled\n", false, false, "\n");
-    
-    // Detach APVTS attachments BEFORE any controls are destroyed
-    // Parameter attachments now handled by AttachmentManager
-    if (attachmentManager) {
-        attachmentManager->detachAllParameters();
+    // Delegate cleanup to CleanupManager
+    if (cleanupManager) {
+        cleanupManager->performCleanup();
     }
-    // Motion attachments removed - now handled by MotionControlsPane
-    f.appendText("Editor Destructor: APVTS attachments cleared\n", false, false, "\n");
-
-    // Stop editor timer early
-    stopTimer();
-    f.appendText("Editor Destructor: Editor timer stopped\n", false, false, "\n");
-
-    // Remove key listener safely
-    if (keyListener)
-    {
-        removeKeyListener (keyListener.get());
-        keyListener.reset();
-    }
-    f.appendText("Editor Destructor: Key listener removed\n", false, false, "\n");
-
-    // Clear audio->UI callbacks to prevent use-after-free from audio thread
-    proc.onAudioSample   = nullptr;
-    proc.onAudioBlock    = nullptr;
-    proc.onAudioBlockPre = nullptr;
-    f.appendText("Editor Destructor: Audio callbacks cleared\n", false, false, "\n");
-
-    // Remove all parameter listeners that were added in the ctor
-    // OLD REVERB SYSTEM REMOVED
-    proc.apvts.removeParameterListener ("split_mode", this);
-    proc.apvts.removeParameterListener ("pan",        this);
-    proc.apvts.removeParameterListener ("depth",      this);
-    proc.apvts.removeParameterListener ("mono_slope_db_oct", this);
-    proc.apvts.removeParameterListener ("eq_shelf_shape", this);
-    proc.apvts.removeParameterListener ("eq_q_link",      this);
-    proc.apvts.removeParameterListener ("eq_filter_q",    this);
-    proc.apvts.removeParameterListener ("hp_q",           this);
-    proc.apvts.removeParameterListener (motion::id::panner_select, this);
-    proc.apvts.removeParameterListener ("lp_q",           this);
-    proc.apvts.removeParameterListener ("tilt_link_s",    this);
-    proc.apvts.removeParameterListener ("xover_lo_hz",    this);
-    proc.apvts.removeParameterListener ("xover_hi_hz",    this);
-    proc.apvts.removeParameterListener ("rotation_deg",   this);
-    proc.apvts.removeParameterListener ("asymmetry",      this);
-    f.appendText("Editor Destructor: Parameter listeners removed\n", false, false, "\n");
-
-    // Detach UI listeners from knobs
-    panKnobLeft.removeListener (this);
-    panKnobRight.removeListener (this);
-    f.appendText("Editor Destructor: UI listeners removed\n", false, false, "\n");
-
-    // Ensure PaneManager timers and children are torn down before editor memory goes away
-    panes.reset();
-    f.appendText("Editor Destructor: PaneManager reset\n", false, false, "\n");
-
-    // ensure A holds final state if user ended on B
-    if (!isStateA) { saveCurrentState(); stateA = stateB; }
-    f.appendText("Editor Destructor: State saved\n", false, false, "\n");
-
-    setLookAndFeel (nullptr);
-    f.appendText("Editor Destructor: LookAndFeel detached\n", false, false, "\n");
     
     f.appendText("Editor Destructor: COMPLETE\n", false, false, "\n");
 }
 void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    // Paint method - removed logging to prevent file I/O on every paint
-    
-    // background gradient (toned down and tinted with accent color)
-    auto full = getLocalBounds();
-    juce::Colour top    = lnf.theme.sh.interpolatedWith(lnf.theme.accent, 0.08f); // Subtle accent tint
-    juce::Colour mid    = lnf.theme.hl.darker(0.15f).interpolatedWith(lnf.theme.accent, 0.12f); // Accent tint on middle
-    juce::Colour bottom = lnf.theme.sh.interpolatedWith(lnf.theme.accent, 0.08f); // Subtle accent tint
-    juce::ColourGradient bg (top, (float) full.getCentreX(), (float) full.getY(),
-                             bottom, (float) full.getCentreX(), (float) full.getBottom(), false);
-    bg.addColour (0.85, mid);
-    g.setGradientFill (bg);
-    g.fillAll();
-
-    // logo + tagline
-    auto header = getLocalBounds().removeFromTop ((int) (100 * scaleFactor));
-    const int leftInset = Layout::dp (20, scaleFactor);
-    auto logoArea = juce::Rectangle<int> (header.getX() + leftInset, header.getY() + Layout::dp (4, scaleFactor),
-                                          header.getWidth(), (int) (30 * scaleFactor + 2));
-    
-    // Enhanced FIELD logo with shadow and glow effects
-    drawHeaderFieldLogo(g, logoArea.toFloat());
-
-    // version - position after the actual logo width
-    const juce::String ver = " v" + juce::String (JUCE_STRINGIFY (JucePlugin_VersionString));
-    juce::Font vfont (juce::FontOptions (juce::jmax (9, (int) std::round (8 * scaleFactor))));
-    g.setFont (vfont);
-    g.setColour (lnf.theme.textMuted);
-    
-    // Calculate actual logo width and position version after it
-    const float actualLogoWidth = juce::jmin(logoArea.getHeight() * 0.8f, 30.0f) * 2.5f;
-    const int vx = logoArea.getX() + (int) actualLogoWidth + Layout::dp (8, scaleFactor);
-    const int vy = logoArea.getY() + (logoArea.getHeight() - vfont.getHeight()) * 0.5f + 1;
-    g.drawText (ver, juce::Rectangle<int> (vx, vy, 120, (int) vfont.getHeight() + 2), juce::Justification::centredLeft);
-
-    // tagline
-    g.setColour (lnf.theme.textMuted);
-    g.setFont (juce::Font (juce::FontOptions (13.0f * scaleFactor).withStyle ("Bold")));
-    g.drawText ("Spatial Audio Processor",
-                juce::Rectangle<int> (logoArea.getX(), logoArea.getBottom() + Layout::dp (2, scaleFactor),
-                                     header.getWidth(), (int) (14 * scaleFactor + 2)),
-                juce::Justification::centredLeft);
-
-    // resize handle
-    auto bounds = getLocalBounds();
-    auto resizeArea = bounds.removeFromRight (20).removeFromBottom (20);
-    g.setColour (lnf.theme.textMuted);
-    for (int i = 0; i < 3; ++i)
-    {
-        int off = i * 4;
-        g.drawLine (resizeArea.getRight() - 8 - off, resizeArea.getBottom() - 4 - off,
-                    resizeArea.getRight() - 4 - off, resizeArea.getBottom() - 8 - off, 1.0f);
+    // Delegate painting to PaintManager
+    if (paintManager) {
+        paintManager->paint(g);
     }
 }
 
-void MyPluginAudioProcessorEditor::drawHeaderFieldLogo (juce::Graphics& g, juce::Rectangle<float> area) const
-{
-    // Calculate logo size for header (smaller than shade overlay)
-    const float logoHeight = juce::jmin(area.getHeight() * 0.8f, 30.0f);
-    const float logoWidth = logoHeight * 2.5f; // FIELD is wider than tall
-    
-    // Center the logo in the header area
-    const float logoX = area.getX();
-    const float logoY = area.getCentreY() - logoHeight * 0.5f;
-    const auto logoRect = juce::Rectangle<float>(logoX, logoY, logoWidth, logoHeight);
-    
-    // Create bold font for header logo
-    juce::Font logoFont(juce::FontOptions(logoHeight * 0.8f).withStyle("Bold"));
-    g.setFont(logoFont);
-    
-    // Enhanced shadow system for header (stronger effects)
-    const int shadowLayers = 8; // Increased for stronger effect
-    for (int i = shadowLayers; i > 0; --i)
-    {
-        const float shadowOffset = (float)i * 2.0f; // Increased offset for stronger effect
-        const float shadowAlpha = (1.0f - (float)i / shadowLayers) * 0.7f; // Increased alpha for stronger effect
-        
-        // Outer accent glow
-        g.setColour(lnf.theme.accent.withAlpha(shadowAlpha * 0.8f));
-        g.drawText("FIELD", logoRect.translated(shadowOffset, shadowOffset), 
-                  juce::Justification::centredLeft);
-        
-        // Dark shadow for depth
-        g.setColour(juce::Colours::black.withAlpha(shadowAlpha * 0.9f));
-        g.drawText("FIELD", logoRect.translated(shadowOffset * 0.5f, shadowOffset * 0.5f), 
-                  juce::Justification::centredLeft);
-    }
-    
-    // Enhanced gradient effect for header (stronger)
-    juce::ColourGradient logoGradient(
-        lnf.theme.accent.brighter(0.6f), logoRect.getX(), logoRect.getY(),
-        lnf.theme.accent.darker(0.3f), logoRect.getX(), logoRect.getBottom(), false);
-    logoGradient.addColour(0.5f, lnf.theme.accent);
-    
-    g.setGradientFill(logoGradient);
-    g.drawText("FIELD", logoRect, juce::Justification::centredLeft);
-    
-    // Enhanced highlight for header (stronger)
-    g.setColour(lnf.theme.accent.brighter(0.7f).withAlpha(0.9f));
-    g.drawText("FIELD", logoRect, juce::Justification::centredLeft);
-    
-    // Final white highlight for shine (stronger)
-    g.setColour(juce::Colours::white.withAlpha(0.4f));
-    g.drawText("FIELD", logoRect, juce::Justification::centredLeft);
-}
 
 void MyPluginAudioProcessorEditor::performLayout()
 {

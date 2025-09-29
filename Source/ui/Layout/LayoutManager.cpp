@@ -365,3 +365,51 @@ void LayoutManager::positionLabel(juce::Component& component, int row, int col)
     auto bounds = getControlBounds(row, col);
     component.setBounds(bounds);
 }
+
+void LayoutManager::buildCells()
+{
+    // Row 1
+    if (!editor.widthCell)   editor.widthCell   = std::make_unique<KnobCell>(editor.width,    editor.widthValue,    "WIDTH");
+    if (!editor.widthLoCell) editor.widthLoCell = std::make_unique<KnobCell>(editor.widthLo,  editor.widthLoValue,  "W LO");
+    if (!editor.widthMidCell)editor.widthMidCell= std::make_unique<KnobCell>(editor.widthMid, editor.widthMidValue, "W MID");
+    if (!editor.widthHiCell) editor.widthHiCell = std::make_unique<KnobCell>(editor.widthHi,  editor.widthHiValue,  "W HI");
+    if (!editor.gainCell)    editor.gainCell    = std::make_unique<KnobCell>(editor.gain,     editor.gainValue,     "GAIN");
+    if (!editor.satDriveCell)editor.satDriveCell= std::make_unique<KnobCell>(editor.satDrive, editor.satDriveValue, "DRIVE");
+    if (!editor.satMixCell)  editor.satMixCell  = std::make_unique<KnobCell>(editor.satMix,   editor.satMixValue,   "MIX");
+    if (!editor.monoCell)    editor.monoCell    = std::make_unique<KnobCell>(editor.monoHz,   editor.monoValue,     "MONO");
+    // Legacy spaceCell (REVERB) removed from Group 1 row; Reverb amount lives in Group 2 as WET
+
+    if (!editor.bassCell)     editor.bassCell     = std::make_unique<KnobCell>(editor.bass,  editor.bassValue,  "BASS");
+    if (!editor.airCell)      editor.airCell      = std::make_unique<KnobCell>(editor.air,   editor.airValue,   "AIR");
+    if (!editor.tiltCell)     editor.tiltCell     = std::make_unique<KnobCell>(editor.tilt,  editor.tiltValue,  "TILT");
+    if (!editor.scoopCell)    editor.scoopCell    = std::make_unique<KnobCell>(editor.scoop, editor.scoopValue, "SCOOP");
+    if (!editor.hpCell)       editor.hpCell       = std::make_unique<KnobCell>(editor.hpHz,  editor.hpValue,    "HP Hz");
+    if (!editor.lpCell)       editor.lpCell       = std::make_unique<KnobCell>(editor.lpHz,  editor.lpValue,    "LP Hz");
+
+    if (!editor.xoverLoCell)  editor.xoverLoCell  = std::make_unique<KnobCell>(editor.xoverLoHz, editor.xoverLoValue, "XO LO");
+    if (!editor.xoverHiCell)  editor.xoverHiCell  = std::make_unique<KnobCell>(editor.xoverHiHz, editor.xoverHiValue, "XO HI");
+    if (!editor.rotationCell) editor.rotationCell = std::make_unique<KnobCell>(editor.rotationDeg, editor.rotationValue, "ROT");
+    if (!editor.asymCell)     editor.asymCell     = std::make_unique<KnobCell>(editor.asymmetry,   editor.asymValue,     "ASYM");
+    // SHUF cells moved to Band tab
+
+    if (!editor.delayTimeCell)      editor.delayTimeCell       = std::make_unique<KnobCell>(editor.delayTime,      editor.delayTimeValue,      "TIME");
+    if (!editor.delayFeedbackCell)  editor.delayFeedbackCell   = std::make_unique<KnobCell>(editor.delayFeedback,  editor.delayFeedbackValue,  "FB");
+    if (!editor.delayWetCell)       editor.delayWetCell        = std::make_unique<KnobCell>(editor.delayWet,       editor.delayWetValue,       "WET");
+    if (!editor.delaySpreadCell)    editor.delaySpreadCell     = std::make_unique<KnobCell>(editor.delaySpread,    editor.delaySpreadValue,    "SPREAD");
+    if (!editor.delayWidthCell)     editor.delayWidthCell      = std::make_unique<KnobCell>(editor.delayWidth,     editor.delayWidthValue,     "WIDTH");
+    if (!editor.delayModRateCell)   editor.delayModRateCell    = std::make_unique<KnobCell>(editor.delayModRate,   editor.delayModRateValue,   "RATE");
+    if (!editor.delayModDepthCell)  editor.delayModDepthCell   = std::make_unique<KnobCell>(editor.delayModDepth,  editor.delayModDepthValue,  "DEPTH");
+    if (!editor.delayWowflutterCell)editor.delayWowflutterCell = std::make_unique<KnobCell>(editor.delayWowflutter,editor.delayWowflutterValue,"WOW");
+    if (!editor.delayJitterCell)    editor.delayJitterCell     = std::make_unique<KnobCell>(editor.delayJitter,    editor.delayJitterValue,    "JITTER");
+    if (!editor.delayHpCell)        editor.delayHpCell         = std::make_unique<KnobCell>(editor.delayHp,        editor.delayHpValue,        "HP");
+    if (!editor.delayLpCell)        editor.delayLpCell         = std::make_unique<KnobCell>(editor.delayLp,        editor.delayLpValue,        "LP");
+    if (!editor.delayTiltCell)      editor.delayTiltCell       = std::make_unique<KnobCell>(editor.delayTilt,      editor.delayTiltValue,      "TILT");
+    if (!editor.delaySatCell)       editor.delaySatCell        = std::make_unique<KnobCell>(editor.delaySat,       editor.delaySatValue,       "SAT");
+    if (!editor.delayDiffusionCell) editor.delayDiffusionCell  = std::make_unique<KnobCell>(editor.delayDiffusion, editor.delayDiffusionValue, "DIFF");
+    if (!editor.delayDiffuseSizeCell)editor.delayDiffuseSizeCell= std::make_unique<KnobCell>(editor.delayDiffuseSize, editor.delayDiffuseSizeValue, "SIZE");
+    if (!editor.delayDuckDepthCell) editor.delayDuckDepthCell  = std::make_unique<KnobCell>(editor.delayDuckDepth, editor.delayDuckDepthValue, "DEPTH");
+    if (!editor.delayDuckAttackCell)editor.delayDuckAttackCell = std::make_unique<KnobCell>(editor.delayDuckAttack,editor.delayDuckAttackValue,"ATT");
+    if (!editor.delayDuckReleaseCell)editor.delayDuckReleaseCell=std::make_unique<KnobCell>(editor.delayDuckRelease,editor.delayDuckReleaseValue,"REL");
+    if (!editor.delayJitterCell) editor.delayJitterCell = std::make_unique<KnobCell>(editor.delayJitter, editor.delayJitterValue, "JITTER");
+    if (!editor.delayDuckRatioCell) editor.delayDuckRatioCell = std::make_unique<KnobCell>(editor.delayDuckRatio, editor.delayDuckRatioValue, "RAT");
+}

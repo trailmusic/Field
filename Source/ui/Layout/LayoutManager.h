@@ -35,6 +35,9 @@ public:
     void setResizeConstraints();
     void updateControlGridMetrics();
     
+    // Cell management
+    void buildCells();
+    
     // Grid layout helpers
     juce::Rectangle<int> getControlBounds(int row, int col, int width = 1, int height = 1) const;
     juce::Rectangle<int> getHeaderBounds() const;

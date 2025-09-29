@@ -52,8 +52,12 @@ set(SRC
     ui/Layout/LayoutManager.cpp
     ui/Events/EventManager.h
     ui/Events/EventManager.cpp
-    ui/Managers/AttachmentManager.h
-    ui/Managers/AttachmentManager.cpp
+            ui/Managers/AttachmentManager.h
+            ui/Managers/AttachmentManager.cpp
+            ui/Managers/CleanupManager.h
+            ui/Managers/CleanupManager.cpp
+            ui/Managers/PaintManager.h
+            ui/Managers/PaintManager.cpp
     Core/IconSystem.h
     Core/IconSystem.cpp
     reverb/ReverbParamIDs.h

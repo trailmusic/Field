@@ -37,6 +37,8 @@
 #include "ui/Layout/LayoutManager.h"
 #include "ui/Events/EventManager.h"
 #include "ui/Managers/AttachmentManager.h"
+#include "ui/Managers/CleanupManager.h"
+#include "ui/Managers/PaintManager.h"
 #include "Presets/PresetRegistry.h"
 #include "Presets/PresetCommandPalette.h"
 #include "Presets/PresetManager.h"
@@ -62,7 +64,6 @@ public:
     void paint (juce::Graphics&) override;
     void paintOverChildren (juce::Graphics&) override;
     void resized() override;
-    void drawHeaderFieldLogo (juce::Graphics& g, juce::Rectangle<float> area) const;
     void timerCallback() override;
     void sliderValueChanged (juce::Slider* slider) override;
     void comboBoxChanged (juce::ComboBox* comboBox) override;
@@ -111,11 +112,15 @@ public:
     FieldLNF lnf;
     std::unique_ptr<class PaneManager> panes;
 
-private:
+public:
     std::unique_ptr<juce::KeyListener> keyListener;
     std::unique_ptr<LayoutManager> layoutManager;
     std::unique_ptr<EventManager> eventManager;
     std::unique_ptr<AttachmentManager> attachmentManager;
+    std::unique_ptr<CleanupManager> cleanupManager;
+    std::unique_ptr<PaintManager> paintManager;
+
+private:
 
 public:
     int minWidth = 0, minHeight = 0, maxWidth = 3000, maxHeight = 2000;
@@ -262,7 +267,6 @@ public:
     std::unique_ptr<SwitchCell> delayEnabledCell, delayModeCell, delaySyncCell, delayGridFlavorCell, delayFreezeCell, delayKillDryCell, delayPingpongCell, delayFilterTypeCell, delayDuckSourceCell, delayDuckPostCell;
     std::unique_ptr<Segmented3Control> delayGridFlavorSegments;
 
-    void buildCells();
 
     // Sizing/scaling
     const int standardKnobSize = 80;
