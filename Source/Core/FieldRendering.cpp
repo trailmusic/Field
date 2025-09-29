@@ -203,20 +203,55 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         g.setColour(fill);
         g.fillRoundedRectangle(r, cr);
 
-        // Add KnobCell-style shadows for all buttons
-        auto ri = r.reduced(3.0f).getSmallestIntegerContainer();
-        juce::DropShadow ds1(juce::Colours::black.withAlpha(0.28f), 10, {-1, -1});
-        juce::DropShadow ds2(juce::Colours::white.withAlpha(0.18f), 5, {-1, -1});
-        ds1.drawForRectangle(g, ri);
-        ds2.drawForRectangle(g, ri);
+        // Check for enhanced styling (Machine tab buttons)
+        bool hasEnhancedStyling = button.getProperties().getWithDefault("enhancedStyling", false);
+        
+        if (hasEnhancedStyling)
+        {
+            // Enhanced AB button-style shadows and effects
+            auto ri = r.reduced(2.0f).getSmallestIntegerContainer();
+            
+            // Multiple shadow layers for raised effect
+            juce::DropShadow ds1(juce::Colours::black.withAlpha(0.35f), 12, {-2, -2});
+            juce::DropShadow ds2(juce::Colours::white.withAlpha(0.25f), 8, {-1, -1});
+            juce::DropShadow ds3(theme.shadowDark.withAlpha(0.20f), 6, {1, 1});
+            
+            ds1.drawForRectangle(g, ri);
+            ds2.drawForRectangle(g, ri);
+            ds3.drawForRectangle(g, ri);
+            
+            // Enhanced inner rim with gradient effect
+            g.setColour(juce::Colour(0xFF51565D).withAlpha(0.20f));
+            g.drawRoundedRectangle(r.reduced(3.0f), cr - 1.0f, 1.0f);
+            
+            // Enhanced border with accent color
+            g.setColour(theme.accentSecondary.withAlpha(0.95f));
+            g.drawRoundedRectangle(r.reduced(1.5f), cr, 2.0f);
+            
+            // Additional accent glow for active state
+            if (button.getToggleState())
+            {
+                g.setColour(theme.accent.withAlpha(0.15f));
+                g.drawRoundedRectangle(r.expanded(1.0f), cr + 1.0f, 1.5f);
+            }
+        }
+        else
+        {
+            // Standard KnobCell-style shadows for regular buttons
+            auto ri = r.reduced(3.0f).getSmallestIntegerContainer();
+            juce::DropShadow ds1(juce::Colours::black.withAlpha(0.28f), 10, {-1, -1});
+            juce::DropShadow ds2(juce::Colours::white.withAlpha(0.18f), 5, {-1, -1});
+            ds1.drawForRectangle(g, ri);
+            ds2.drawForRectangle(g, ri);
 
-        // Add inner rim like KnobCell
-        g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
-        g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
+            // Add inner rim like KnobCell
+            g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
+            g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
 
-        // Border - use KnobCell styling for all buttons
-        g.setColour(theme.accentSecondary.withAlpha(0.85f)); // Match KnobCell border color
-        g.drawRoundedRectangle(r.reduced(2.0f), cr, 1.5f); // Match KnobCell border thickness
+            // Border - use KnobCell styling for all buttons
+            g.setColour(theme.accentSecondary.withAlpha(0.85f)); // Match KnobCell border color
+            g.drawRoundedRectangle(r.reduced(2.0f), cr, 1.5f); // Match KnobCell border thickness
+        }
     }
 
     void drawButtonText(juce::Graphics& g, juce::TextButton& button, bool isMouseOver, bool isButtonDown, const FieldTheme& theme)

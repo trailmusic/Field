@@ -76,13 +76,31 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
 
     startTimerHz (30);
 
-    // style: cell-like buttons (larger for bottom bar)
+    // Enhanced styling: AB button-style with borders, shadowing, and raised effects
     auto styleCell = [&](juce::Button& b)
     {
-        b.setColour (juce::TextButton::buttonColourId, juce::Colour (0xFF3A3E45));
-        b.setColour (juce::TextButton::buttonOnColourId, juce::Colour (0xFF5AA9E6));
-        b.setColour (juce::TextButton::textColourOffId, juce::Colours::white.withAlpha (0.92f));
-        b.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
+        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+        if (lf)
+        {
+            // Use theme-based colors with enhanced styling
+            b.setColour (juce::TextButton::buttonColourId, lf->theme.panel);
+            b.setColour (juce::TextButton::buttonOnColourId, lf->theme.accent);
+            b.setColour (juce::TextButton::textColourOffId, lf->theme.text.withAlpha (0.92f));
+            b.setColour (juce::TextButton::textColourOnId, lf->theme.text);
+            
+            // Enhanced styling will be handled through properties and FieldRendering
+            b.setColour (juce::TextButton::textColourOffId, lf->theme.text.withAlpha (0.92f));
+            b.setColour (juce::TextButton::textColourOnId, lf->theme.text);
+        }
+        else
+        {
+            // Fallback to hardcoded colors if theme not available
+            b.setColour (juce::TextButton::buttonColourId, juce::Colour (0xFF3A3E45));
+            b.setColour (juce::TextButton::buttonOnColourId, juce::Colour (0xFF5AA9E6));
+            b.setColour (juce::TextButton::textColourOffId, juce::Colours::white.withAlpha (0.92f));
+            b.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
+            // Enhanced styling will be handled through properties and FieldRendering
+        }
         b.setConnectedEdges (juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
         
         if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
@@ -92,9 +110,48 @@ MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce:
     };
     styleCell (analyzeBtn);
     styleCell (stopBtn);
+    styleCell (showPreBtn);
+    styleCell (listenBtn);
     
+    // Style dropdown controls with theme
+    auto styleDropdown = [&](juce::ComboBox& cb)
+    {
+        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+        if (lf)
+        {
+            cb.setColour (juce::ComboBox::backgroundColourId, lf->theme.panel);
+            cb.setColour (juce::ComboBox::textColourId, lf->theme.text);
+            cb.setColour (juce::ComboBox::arrowColourId, lf->theme.textMuted);
+            cb.setColour (juce::ComboBox::buttonColourId, lf->theme.panel);
+            cb.setColour (juce::ComboBox::outlineColourId, lf->theme.sh);
+        }
+        cb.setLookAndFeel(&getLookAndFeel());
+    };
+    styleDropdown (genreBox);
+    styleDropdown (venueBox);
+    styleDropdown (trackTypeBox);
+    
+    // Style strength slider with theme
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    if (lf)
+    {
+        strength.setColour (juce::Slider::backgroundColourId, lf->theme.panel);
+        strength.setColour (juce::Slider::thumbColourId, lf->theme.accent);
+        strength.setColour (juce::Slider::trackColourId, lf->theme.hl);
+        strength.setColour (juce::Slider::textBoxTextColourId, lf->theme.text);
+        strength.setColour (juce::Slider::textBoxBackgroundColourId, lf->theme.panel);
+        strength.setColour (juce::Slider::textBoxOutlineColourId, lf->theme.sh);
+    }
+    
+    // Enhanced metallic rendering with AB button-style effects
     setAreaMetallicForCell (analyzeBtn, MetallicKind::Band); // Use Band metallic for Machine buttons
     setAreaMetallicForCell (stopBtn, MetallicKind::Band);
+    
+    // Add enhanced styling properties for raised effect and borders
+    analyzeBtn.getProperties().set("enhancedStyling", true);
+    stopBtn.getProperties().set("enhancedStyling", true);
+    showPreBtn.getProperties().set("enhancedStyling", true);
+    listenBtn.getProperties().set("enhancedStyling", true);
     
     analyzeBtn.setTriggeredOnMouseDown (false);
     stopBtn.setTriggeredOnMouseDown (false);
@@ -368,8 +425,6 @@ void MachineTab::paintOverChildren (juce::Graphics& g)
 void MachineTab::resized()
 {
     auto r = getLocalBounds();
-    // Add padding to avoid conflict with shade handle (20px + 5px margin)
-    r = r.withY(r.getY() + 25);
     // Recompute tight bar area (keep layout independent of paint)
     auto bar = r.removeFromTop (56);
     const int learnW = 180, stopW = 56, strW = 220, preW=90, lisW=90;
