@@ -28,6 +28,7 @@ set(SRC
     ui/Components/VerticalDivider.h
     ui/Components/HorizontalDivider.h
     ui/Components/XYPad.h
+    ui/Components/XYPad.cpp
     ui/Components/VerticalSlider3D.h
     ui/Components/VerticalSlider3D.cpp
     ui/Components/ToggleSwitch.h
@@ -47,6 +48,11 @@ set(SRC
     ui/Components/GainSlider.h
     ui/Components/PanSlider.h
     ui/Components/ControlContainer.h
+    ui/Components/ControlContainer.cpp
+    ui/Components/VizEQ.h
+    ui/Components/VizEQ.cpp
+    ui/Components/TintMenuLNFEx.h
+    ui/Components/TintMenuLNFEx.cpp
     ui/Components/UIHelpers.h
     ui/Layout/LayoutManager.h
     ui/Layout/LayoutManager.cpp
