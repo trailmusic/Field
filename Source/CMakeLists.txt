@@ -37,6 +37,10 @@ set(SRC
     ui/Components/MonoSlopeSwitch.h
     ui/Components/MonoSlopeSwitch.cpp
     ui/Components/ShadeOverlay.h
+    ui/Components/VerticalLRMeters.h
+    ui/Components/IOGainMeters.h
+    ui/Components/SwitchCell.h
+    ui/Components/Segmented3Control.h
     ui/Components/GainSlider.h
     ui/Components/PanSlider.h
     ui/Components/ControlContainer.h
@@ -53,7 +57,6 @@ set(SRC
     reverb/ReverbParameters.h
     reverb/ReverbEngine.h
     reverb/ReverbEngine.cpp
-    # legacy visuals removed: DecayCurve/ReverbEQ/ReverbScope
     reverb/ui/ReverbCanvasComponent.h
     reverb/ui/ReverbCanvasComponent.cpp
     reverb/ui/ReverbGraphics.h
