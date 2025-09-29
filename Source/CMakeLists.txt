@@ -41,6 +41,9 @@ set(SRC
     ui/Components/IOGainMeters.h
     ui/Components/SwitchCell.h
     ui/Components/Segmented3Control.h
+    ui/Components/SimpleIconButtons.h
+    ui/Components/ComplexIconButtons.h
+    ui/Components/PresetArrowButton.h
     ui/Components/GainSlider.h
     ui/Components/PanSlider.h
     ui/Components/ControlContainer.h

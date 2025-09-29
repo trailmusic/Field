@@ -17,7 +17,6 @@
 #include "ui/Components/TooltipBubble.h"
 #include "ui/Components/VerticalDivider.h"
 #include "ui/Components/HorizontalDivider.h"
-#include "ui/Components/XYPad.h"
 #include "ui/Components/VerticalSlider3D.h"
 #include "ui/Components/ToggleSwitch.h"
 #include "ui/Components/CorrelationMeter.h"
@@ -27,6 +26,9 @@
 #include "ui/Components/IOGainMeters.h"
 #include "ui/Components/SwitchCell.h"
 #include "ui/Components/Segmented3Control.h"
+#include "ui/Components/SimpleIconButtons.h"
+#include "ui/Components/ComplexIconButtons.h"
+#include "ui/Components/PresetArrowButton.h"
 #include "ui/Components/GainSlider.h"
 #include "ui/Components/PanSlider.h"
 #include "ui/Components/ControlContainer.h"
@@ -38,9 +40,7 @@
 #include "Presets/PresetCommandPalette.h"
 #include "Presets/PresetManager.h"
 #include "ui/Engines/StereoFieldEngine.h"
-#include "ui/Panes/ImagerPane.h"
 #include "ui/Managers/PaneManager.h"
-#include "ui/delay/DelayVisuals.h"
 
 /*==============================================================================
     DEV NOTES – OVERVIEW
@@ -81,182 +81,13 @@ using ComboAttachment  = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
 
 //------------------------------------------------------------------------------
-// Concrete icon buttons (tiny classes = tiny maintenance)
+// Icon button classes moved to dedicated files
 //------------------------------------------------------------------------------
-class OptionsButton    : public ThemedIconButton { public: OptionsButton()
-: ThemedIconButton(Options{ IconSystem::CogWheel, false, ThemedIconButton::Style::SolidAccentWhenOn, 3.0f, 4.0f, false }) {} };
 
-class LinkButton       : public ThemedIconButton { public: LinkButton()
-: ThemedIconButton(Options{ IconSystem::Link, true, ThemedIconButton::Style::SolidAccentWhenOn, 4.0f, 4.0f, true }) {} };
 
-class SnapButton       : public ThemedIconButton { public: SnapButton()
-: ThemedIconButton(Options{ IconSystem::Snap, true, ThemedIconButton::Style::SolidAccentWhenOn, 4.0f, 4.0f, false }) {} };
 
-class FullScreenButton : public ThemedIconButton
-{
-public:
-    FullScreenButton() : ThemedIconButton(Options{ IconSystem::FullScreen, true, ThemedIconButton::Style::GradientPanel, 3.0f, 4.0f, false }) {}
-    void paintButton(juce::Graphics& g, bool over, bool down) override
-    {
-        // Check for metallic properties first - if found, delegate to FieldLNF
-        auto metallicKind = metallicFromProps(getProperties());
-        if (metallicKind != MetallicKind::None)
-        {
-            // Delegate to FieldLNF for metallic buttons
-            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-            {
-                lf->drawButtonBackground(g, *this, juce::Colour(), over, down);
-                return;
-            }
-        }
-        
-        // Fall back to custom rendering for non-metallic buttons
-        auto r = getLocalBounds().toFloat().reduced(2.0f);
-        drawBackground(g, r, over, down);
-        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-        auto iconColor = lf ? lf->theme.textMuted : juce::Colour(0xFF888888);
-        auto icon = getToggleState() ? IconSystem::ExitFullScreen : IconSystem::FullScreen;
-        IconSystem::drawIcon(g, icon, r.reduced(4.0f), iconColor);
-    }
-};
 
-class ColorModeButton  : public ThemedIconButton
-{
-public:
-    ColorModeButton() : ThemedIconButton(Options{ IconSystem::ColorPalette, true, ThemedIconButton::Style::GradientPanel, 4.0f, 4.0f, false }) {}
-    void paintButton(juce::Graphics& g, bool over, bool down) override
-    {
-        // Check for metallic properties first - if found, delegate to FieldLNF
-        auto metallicKind = metallicFromProps(getProperties());
-        if (metallicKind != MetallicKind::None)
-        {
-            // Delegate to FieldLNF for metallic buttons
-            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-            {
-                lf->drawButtonBackground(g, *this, juce::Colour(), over, down);
-                return;
-            }
-        }
-        
-        // Fall back to custom rendering for non-metallic buttons
-        auto r = getLocalBounds().toFloat().reduced(2.0f);
-        drawBackground(g, r, over, down);
-        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        {
-            IconSystem::drawIcon(g, IconSystem::ColorPalette, r.reduced(4.0f), lf->theme.accent);
-        }
-        else
-        {
-            IconSystem::drawIcon(g, IconSystem::ColorPalette, r.reduced(4.0f), lf ? lf->theme.accent : juce::Colour(0xFF5AA9E6));
-        }
-    }
-};
 
-class CopyButton       : public ThemedIconButton { public: CopyButton()
-: ThemedIconButton(Options{ IconSystem::Save, false, ThemedIconButton::Style::GradientPanel, 3.0f, 4.0f, false }) {} };
-
-class LockButton       : public ThemedIconButton
-{
-public:
-    LockButton() : ThemedIconButton(Options{ IconSystem::Lock, true, ThemedIconButton::Style::GradientPanel, 4.0f, 4.0f, false }) {}
-    void paintButton(juce::Graphics& g, bool over, bool down) override
-    {
-        // Check for metallic properties first - if found, delegate to FieldLNF
-        auto metallicKind = metallicFromProps(getProperties());
-        if (metallicKind != MetallicKind::None)
-        {
-            // Delegate to FieldLNF for metallic buttons
-            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-            {
-                lf->drawButtonBackground(g, *this, juce::Colour(), over, down);
-                return;
-            }
-        }
-        
-        // Fall back to custom rendering for non-metallic buttons
-        auto r = getLocalBounds().toFloat().reduced(2.0f);
-        drawBackground(g, r, over, down);
-        auto icon = getToggleState() ? IconSystem::Lock : IconSystem::Unlock;
-        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-        auto col = getToggleState() ? (lf ? lf->theme.accent : juce::Colour(0xFF5AA9E6))
-                                    : (lf ? lf->theme.textMuted : juce::Colour(0xFF888888));
-        IconSystem::drawIcon(g, icon, r.reduced(4.0f), col);
-    }
-};
-
-// NOTE: PresetArrowButton kept custom drawing (half-circle motif) to preserve your unique look
-class PresetArrowButton : public juce::TextButton
-{
-public:
-    explicit PresetArrowButton(bool isLeft) : juce::TextButton(""), leftArrow(isLeft) {}
-
-    void paintButton(juce::Graphics& g, bool isMouseOver, bool isButtonDown) override
-    {
-        // Check for metallic properties first - if found, delegate to FieldLNF
-        auto metallicKind = metallicFromProps(getProperties());
-        if (metallicKind != MetallicKind::None)
-        {
-            // Delegate to FieldLNF for metallic buttons
-            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-            {
-                lf->drawButtonBackground(g, *this, juce::Colour(), isMouseOver, isButtonDown);
-                return;
-            }
-        }
-        
-        // Fall back to custom rendering for non-metallic buttons
-        auto bounds = getLocalBounds().toFloat().reduced(2.0f);
-
-        // shadow
-        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) g.setColour(lf->theme.shadowDark.withAlpha (0.25f)); else g.setColour(juce::Colour(0x40000000));
-        g.fillRoundedRectangle(bounds.translated(1.5f, 1.5f), 3.0f);
-
-        // panel gradient
-        juce::Colour base = juce::Colour(0xFF3A3D45);
-        juce::Colour top  = base.brighter(0.10f);
-        juce::Colour bot  = base.darker(0.10f);
-        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        {
-            base = lf->theme.panel; top = base.brighter(0.10f); bot = base.darker(0.10f);
-        }
-        juce::ColourGradient grad(top, bounds.getX(), bounds.getY(), bot, bounds.getX(), bounds.getBottom(), false);
-        g.setGradientFill(grad);
-        g.fillRoundedRectangle(bounds, 3.0f);
-
-        // border
-        auto borderColor = juce::Colour(0xFF2A2A2A);
-        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-            borderColor = isButtonDown ? lf->theme.sh : (isMouseOver ? lf->theme.hl : lf->theme.sh);
-        g.setColour(borderColor);
-        g.drawRoundedRectangle(bounds, 3.0f, 1.0f);
-
-        // half-circle motif
-        auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-        auto accent = lf ? lf->theme.accent : juce::Colour(0xFF2196F3);
-        auto defaultColor = lf ? lf->theme.text : juce::Colour(0xFFF0F2F5);
-
-        auto c = bounds.getCentre();
-        float r = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.25f;
-        juce::Rectangle<float> circle (c.x - r, c.y - r, 2*r, 2*r);
-
-        if (leftArrow)
-        {
-            g.setColour(accent);       g.fillEllipse(circle.getX(), circle.getY(), circle.getWidth(), circle.getHeight() * 0.5f);       // top
-            g.setColour(defaultColor); g.fillEllipse(circle.getX(), circle.getCentreY(), circle.getWidth(), circle.getHeight() * 0.5f); // bottom
-        }
-        else
-        {
-            g.setColour(defaultColor); g.fillEllipse(circle.getX(), circle.getY(), circle.getWidth(), circle.getHeight() * 0.5f);       // top
-            g.setColour(accent);       g.fillEllipse(circle.getX(), circle.getCentreY(), circle.getWidth(), circle.getHeight() * 0.5f); // bottom
-        }
-
-        g.setColour(juce::Colour(0xFF2A2A2A));
-        g.drawEllipse(circle, 1.0f);
-    }
-
-private:
-    bool leftArrow;
-};
 
 //==============================================================================
 // Editor
@@ -319,89 +150,6 @@ public:
     
     //--- custom sliders --------------------------------------------------------
     
-    class PanSlider : public juce::Slider
-    {
-    public:
-        PanSlider() : Slider(RotaryHorizontalVerticalDrag, NoTextBox) {}
-        void mouseEnter (const juce::MouseEvent&) override { hovered = true; repaint(); }
-        void mouseExit  (const juce::MouseEvent&) override { hovered = false; repaint(); }
-        void mouseDown  (const juce::MouseEvent& e) override { active = true;  Slider::mouseDown(e); repaint(); }
-        void mouseUp    (const juce::MouseEvent& e) override { active = false; Slider::mouseUp(e);   repaint(); }
-
-        void setSplitPercentage(float leftPercent, float rightPercent) { splitLeftPercent = leftPercent; splitRightPercent = rightPercent; repaint(); }
-        void setLabel(const juce::String& label) { knobLabel = label; repaint(); }
-        void setOverlayEnabled (bool enabled) { overlayEnabled = enabled; repaint(); }
-        
-        void paint(juce::Graphics& g) override
-        {
-            auto bounds = getLocalBounds().toFloat().reduced(2.0f);
-            if (hovered || active) bounds = bounds.expanded(2.0f);
-            
-            // base rotary
-            ui::paintRotaryWithLNF(g, *this, bounds);
-            
-            if (overlayEnabled)
-            {
-                // current pan indicator arc
-                const float normalizedValue = (getValue() + 1.0f) * 0.5f; // -1..1 -> 0..1
-                const float borderThickness = 3.0f;
-                juce::Path valueBorder;
-                const float valueAngle = juce::jmap(normalizedValue, 0.0f, 1.0f, 
-                                            juce::MathConstants<float>::pi, 
-                                            juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi);
-                valueBorder.addArc(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(),
-                                 juce::MathConstants<float>::pi, valueAngle, true);
-                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                    g.setColour(lf->theme.accent.withAlpha(0.8f));
-                else
-                    g.setColour(juce::Colours::lightblue.withAlpha(0.8f));
-                g.strokePath(valueBorder, juce::PathStrokeType(borderThickness));
-            }
-            
-            // split arcs (L: blue, R: red)
-            if (overlayEnabled && splitLeftPercent >= 0.0f && splitRightPercent >= 0.0f)
-            {
-                const float borderThickness = 3.0f;
-
-                juce::Path leftBorder;
-                const float leftAngle = juce::jmap(splitLeftPercent, 0.0f, 100.0f, 
-                                           juce::MathConstants<float>::pi, 
-                                           juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi);
-                leftBorder.addArc(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(),
-                                 juce::MathConstants<float>::pi, leftAngle, true);
-                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                    g.setColour(lf->theme.accent.withAlpha(0.8f));
-                else
-                    g.setColour(juce::Colours::lightblue.withAlpha(0.8f));
-                g.strokePath(leftBorder, juce::PathStrokeType(borderThickness));
-                
-                juce::Path rightBorder;
-                const float rightAngle = juce::jmap(splitRightPercent, 0.0f, 100.0f, 
-                                            juce::MathConstants<float>::pi, 
-                                            juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi);
-                rightBorder.addArc(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(),
-                                  leftAngle, rightAngle, true);
-                g.setColour(juce::Colour(0xFFFF6B6B).withAlpha(0.8f));
-                g.strokePath(rightBorder, juce::PathStrokeType(borderThickness));
-            }
-            
-            if (knobLabel.isNotEmpty())
-            {
-                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                    g.setColour(lf->theme.text);
-                else
-                    g.setColour(juce::Colours::ghostwhite);
-                g.setFont(juce::Font(juce::FontOptions(14.0f).withStyle("Bold")));
-                g.drawText(knobLabel, bounds, juce::Justification::centred);
-            }
-        }
-        
-    private:
-        float splitLeftPercent = -1.0f;  // -1 = not in split mode
-        float splitRightPercent = -1.0f;
-        bool hovered = false, active = false, overlayEnabled = false;
-        juce::String knobLabel;
-    };
     
 
 
@@ -701,7 +449,6 @@ public:
 public:
 private:
     const int standardKnobSize = 80;
-    bool resizingRowGuard = false;
     
     // Helpers
     void styleSlider (juce::Slider& s);
@@ -711,7 +458,6 @@ private:
     void drawKnobWithIntegratedValue (juce::Graphics& g, juce::Rectangle<int> bounds, const juce::String& knobName, const juce::String& value, bool isActive = true);
     
     // Resize handle
-    bool isResizing = false;
     juce::Point<int> resizeStart;
     juce::Rectangle<int> originalBounds;
     
