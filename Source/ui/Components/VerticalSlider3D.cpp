@@ -180,6 +180,7 @@ void VerticalSlider3D::drawMarkers (juce::Graphics& g, juce::Rectangle<float> tr
         
         // Draw label
         g.setColour (textColor);
+        g.setFont (juce::Font (7.0f, juce::Font::bold));
         const float labelX = tickX + tickLength + 3.0f;
         const float labelY = markerY - 6.0f;
         g.drawText (markerLabel, labelX, labelY, 40.0f, 12.0f, juce::Justification::left);
