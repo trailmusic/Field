@@ -169,12 +169,6 @@ private:
     juce::Label  qClusterDummyValue;
 
 public:
-    // Delay controls
-    juce::Slider delayTime, delayFeedback, delayWet, delaySpread, delayWidth, delayModRate, delayModDepth, delayWowflutter, delayJitter, delayPreDelay;
-    juce::Slider delayHp, delayLp, delayTilt, delaySat, delayDiffusion, delayDiffuseSize;
-    juce::Slider delayDuckDepth, delayDuckAttack, delayDuckRelease, delayDuckThreshold, delayDuckRatio, delayDuckLookahead;
-    juce::ComboBox delayMode, delayTimeDiv, delayDuckSource, delayGridFlavor, delayFilterType;
-    juce::ToggleButton delayEnabled, delaySync, delayKillDry, delayFreeze, delayPingpong, delayDuckPost, delayDuckLinkGlobal;
 
 public:
     // Icon buttons
@@ -214,7 +208,7 @@ public:
 
     // Containers
     ControlContainer mainControlsContainer, volumeContainer;
-    ControlContainer delayContainer, metersContainer;
+    ControlContainer metersContainer;
     ControlContainer MainContentContainer, rightSlidersContainer;
     VerticalSlider3D inputSlider, outputSlider, mixSlider;
     ControlContainer panKnobContainer;
@@ -236,18 +230,12 @@ public:
     juce::Label panValue, panValueLeft, panValueRight;
     juce::Label tiltFreqValue, scoopFreqValue, bassFreqValue, airFreqValue;
     juce::Label widthLoValue, widthMidValue, widthHiValue, xoverLoValue, xoverHiValue, rotationValue, asymValue;
-    juce::Label delayTimeValue, delayFeedbackValue, delayWetValue, delaySpreadValue, delayWidthValue, delayModRateValue, delayModDepthValue, delayWowflutterValue, delayJitterValue, delayPreDelayValue;
-    juce::Label delayHpValue, delayLpValue, delayTiltValue, delaySatValue, delayDiffusionValue, delayDiffuseSizeValue;
-    juce::Label delayDuckDepthValue, delayDuckAttackValue, delayDuckReleaseValue, delayDuckThresholdValue, delayDuckRatioValue, delayDuckLookaheadValue;
 
     // Name labels
     juce::Label widthLoName, widthMidName, widthHiName;
     juce::Label xoverLoName, xoverHiName;
     juce::Label rotationName, asymName;
     juce::Label shufLoName, shufHiName, shufXName;
-    juce::Label delayTimeName, delayFeedbackName, delayWetName, delaySpreadName, delayWidthName, delayModRateName, delayModDepthName, delayWowflutterName, delayJitterName, delayPreDelayName;
-    juce::Label delayHpName, delayLpName, delayTiltName, delaySatName, delayDiffusionName, delayDiffuseSizeName;
-    juce::Label delayDuckDepthName, delayDuckAttackName, delayDuckReleaseName, delayDuckThresholdName, delayDuckRatioName, delayDuckLookaheadName;
     juce::Label gainL, widthL, tiltL, monoL, hpL, lpL, satDriveL, satMixL;
     juce::Label panL;
 
@@ -258,17 +246,6 @@ public:
     std::unique_ptr<KnobCell> bassCell, airCell, tiltCell, scoopCell, hpCell, lpCell;
     std::unique_ptr<KnobCell> xoverLoCell, xoverHiCell, rotationCell, asymCell;
     std::unique_ptr<KnobCell> shelfShapeCell, filterQCell, qClusterCell;
-
-    // Delay cells
-    std::unique_ptr<KnobCell> delayTimeCell, delayFeedbackCell, delayWetCell, delaySpreadCell, delayWidthCell;
-    std::unique_ptr<KnobCell> delayModRateCell, delayModDepthCell, delayWowflutterCell, delayPreDelayCell, delayJitterCell;
-    std::unique_ptr<KnobCell> delayHpCell, delayLpCell, delayTiltCell, delaySatCell, delayDiffusionCell, delayDiffuseSizeCell;
-    std::unique_ptr<KnobCell> delayDuckDepthCell, delayDuckAttackCell, delayDuckReleaseCell, delayDuckThresholdCell, delayDuckLookaheadCell, delayDuckRatioCell;
-
-    // Delay control cells
-    std::unique_ptr<SwitchCell> delayEnabledCell, delayModeCell, delaySyncCell, delayGridFlavorCell, delayFreezeCell, delayKillDryCell, delayPingpongCell, delayFilterTypeCell, delayDuckSourceCell, delayDuckPostCell;
-    std::unique_ptr<Segmented3Control> delayGridFlavorSegments;
-
 
     // Sizing/scaling
     const int standardKnobSize = 80;

@@ -17,7 +17,6 @@ void LayoutManager::performLayout()
     layoutMainControls();
     layoutCenterGroup();
     layoutPhaseControls();
-    layoutDelayControls();
     layoutReverbControls();
     layoutMotionControls();
     layoutImagerControls();
@@ -237,12 +236,6 @@ void LayoutManager::layoutPhaseControls()
     // without changing any visual behavior
 }
 
-void LayoutManager::layoutDelayControls()
-{
-    // PLACEHOLDER: Delay controls layout logic
-    // This will be implemented by extracting from PluginEditor::performLayout()
-    // without changing any visual behavior
-}
 
 void LayoutManager::layoutReverbControls()
 {
@@ -392,24 +385,4 @@ void LayoutManager::buildCells()
     if (!editor.asymCell)     editor.asymCell     = std::make_unique<KnobCell>(editor.asymmetry,   editor.asymValue,     "ASYM");
     // SHUF cells moved to Band tab
 
-    if (!editor.delayTimeCell)      editor.delayTimeCell       = std::make_unique<KnobCell>(editor.delayTime,      editor.delayTimeValue,      "TIME");
-    if (!editor.delayFeedbackCell)  editor.delayFeedbackCell   = std::make_unique<KnobCell>(editor.delayFeedback,  editor.delayFeedbackValue,  "FB");
-    if (!editor.delayWetCell)       editor.delayWetCell        = std::make_unique<KnobCell>(editor.delayWet,       editor.delayWetValue,       "WET");
-    if (!editor.delaySpreadCell)    editor.delaySpreadCell     = std::make_unique<KnobCell>(editor.delaySpread,    editor.delaySpreadValue,    "SPREAD");
-    if (!editor.delayWidthCell)     editor.delayWidthCell      = std::make_unique<KnobCell>(editor.delayWidth,     editor.delayWidthValue,     "WIDTH");
-    if (!editor.delayModRateCell)   editor.delayModRateCell    = std::make_unique<KnobCell>(editor.delayModRate,   editor.delayModRateValue,   "RATE");
-    if (!editor.delayModDepthCell)  editor.delayModDepthCell   = std::make_unique<KnobCell>(editor.delayModDepth,  editor.delayModDepthValue,  "DEPTH");
-    if (!editor.delayWowflutterCell)editor.delayWowflutterCell = std::make_unique<KnobCell>(editor.delayWowflutter,editor.delayWowflutterValue,"WOW");
-    if (!editor.delayJitterCell)    editor.delayJitterCell     = std::make_unique<KnobCell>(editor.delayJitter,    editor.delayJitterValue,    "JITTER");
-    if (!editor.delayHpCell)        editor.delayHpCell         = std::make_unique<KnobCell>(editor.delayHp,        editor.delayHpValue,        "HP");
-    if (!editor.delayLpCell)        editor.delayLpCell         = std::make_unique<KnobCell>(editor.delayLp,        editor.delayLpValue,        "LP");
-    if (!editor.delayTiltCell)      editor.delayTiltCell       = std::make_unique<KnobCell>(editor.delayTilt,      editor.delayTiltValue,      "TILT");
-    if (!editor.delaySatCell)       editor.delaySatCell        = std::make_unique<KnobCell>(editor.delaySat,       editor.delaySatValue,       "SAT");
-    if (!editor.delayDiffusionCell) editor.delayDiffusionCell  = std::make_unique<KnobCell>(editor.delayDiffusion, editor.delayDiffusionValue, "DIFF");
-    if (!editor.delayDiffuseSizeCell)editor.delayDiffuseSizeCell= std::make_unique<KnobCell>(editor.delayDiffuseSize, editor.delayDiffuseSizeValue, "SIZE");
-    if (!editor.delayDuckDepthCell) editor.delayDuckDepthCell  = std::make_unique<KnobCell>(editor.delayDuckDepth, editor.delayDuckDepthValue, "DEPTH");
-    if (!editor.delayDuckAttackCell)editor.delayDuckAttackCell = std::make_unique<KnobCell>(editor.delayDuckAttack,editor.delayDuckAttackValue,"ATT");
-    if (!editor.delayDuckReleaseCell)editor.delayDuckReleaseCell=std::make_unique<KnobCell>(editor.delayDuckRelease,editor.delayDuckReleaseValue,"REL");
-    if (!editor.delayJitterCell) editor.delayJitterCell = std::make_unique<KnobCell>(editor.delayJitter, editor.delayJitterValue, "JITTER");
-    if (!editor.delayDuckRatioCell) editor.delayDuckRatioCell = std::make_unique<KnobCell>(editor.delayDuckRatio, editor.delayDuckRatioValue, "RAT");
 }

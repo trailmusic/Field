@@ -37,7 +37,6 @@ void AttachmentManager::attachAllParameters()
     attachMainControlsParameters();
     attachImagingParameters();
     attachEQParameters();
-    attachDelayParameters();
     attachBypassParameters();
 }
 
@@ -203,128 +202,6 @@ void AttachmentManager::attachEQParameters()
     });
 }
 
-void AttachmentManager::attachDelayParameters()
-{
-    using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
-    using BA = juce::AudioProcessorValueTreeState::ButtonAttachment;
-    using CA = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
-    
-    // Delay safety attachment helper
-    auto safeDelayAttachment = [&](const char* paramId, std::function<void()> attachmentFunction) {
-        if (editor.proc.apvts.getParameter(paramId) != nullptr) {
-            attachmentFunction();
-        }
-    };
-    
-    // Delay parameters with safety checks
-    safeDelayAttachment(ParameterIDs::delayEnabled, [&]() {
-        buttonAttachments.push_back(std::make_unique<BA>(editor.proc.apvts, ParameterIDs::delayEnabled, editor.delayEnabled));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayMode, [&]() {
-        comboBoxAttachments.push_back(std::make_unique<CA>(editor.proc.apvts, ParameterIDs::delayMode, editor.delayMode));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delaySync, [&]() {
-        buttonAttachments.push_back(std::make_unique<BA>(editor.proc.apvts, ParameterIDs::delaySync, editor.delaySync));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayGridFlavor, [&]() {
-        comboBoxAttachments.push_back(std::make_unique<CA>(editor.proc.apvts, ParameterIDs::delayGridFlavor, editor.delayGridFlavor));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayTimeMs, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayTimeMs, editor.delayTime));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayTimeDiv, [&]() {
-        comboBoxAttachments.push_back(std::make_unique<CA>(editor.proc.apvts, ParameterIDs::delayTimeDiv, editor.delayTimeDiv));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayFeedbackPct, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayFeedbackPct, editor.delayFeedback));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayWet, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayWet, editor.delayWet));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayKillDry, [&]() {
-        buttonAttachments.push_back(std::make_unique<BA>(editor.proc.apvts, ParameterIDs::delayKillDry, editor.delayKillDry));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayFreeze, [&]() {
-        buttonAttachments.push_back(std::make_unique<BA>(editor.proc.apvts, ParameterIDs::delayFreeze, editor.delayFreeze));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayPingpong, [&]() {
-        buttonAttachments.push_back(std::make_unique<BA>(editor.proc.apvts, ParameterIDs::delayPingpong, editor.delayPingpong));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayCrossfeedPct, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayCrossfeedPct, editor.delaySpread));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayStereoSpreadPct, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayStereoSpreadPct, editor.delaySpread));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayWidth, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayWidth, editor.delayWidth));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayModRateHz, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayModRateHz, editor.delayModRate));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayModDepthMs, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayModDepthMs, editor.delayModDepth));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayWowflutter, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayWowflutter, editor.delayWowflutter));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayJitterPct, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayJitterPct, editor.delayJitter));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayHpHz, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayHpHz, editor.delayHp));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayLpHz, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayLpHz, editor.delayLp));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayTiltDb, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayTiltDb, editor.delayTilt));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delaySat, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delaySat, editor.delaySat));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayDiffusion, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayDiffusion, editor.delayDiffusion));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayDiffuseSizeMs, [&]() {
-        sliderAttachments.push_back(std::make_unique<SA>(editor.proc.apvts, ParameterIDs::delayDiffuseSizeMs, editor.delayDiffuseSize));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayDuckSource, [&]() {
-        comboBoxAttachments.push_back(std::make_unique<CA>(editor.proc.apvts, ParameterIDs::delayDuckSource, editor.delayDuckSource));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayDuckPost, [&]() {
-        buttonAttachments.push_back(std::make_unique<BA>(editor.proc.apvts, ParameterIDs::delayDuckPost, editor.delayDuckPost));
-    });
-    
-    safeDelayAttachment(ParameterIDs::delayFilterType, [&]() {
-        comboBoxAttachments.push_back(std::make_unique<CA>(editor.proc.apvts, ParameterIDs::delayFilterType, editor.delayFilterType));
-    });
-}
 
 void AttachmentManager::attachBypassParameters()
 {
