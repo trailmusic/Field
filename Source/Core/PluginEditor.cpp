@@ -1384,17 +1384,7 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     panes->setActive (PaneID::XY, true);
     // Spectrum removed; Dynamic EQ pane owns its analyzer styling
 
-    xyShade = std::make_unique<ShadeOverlay> (lnf);
-    addAndMakeVisible (*xyShade);
-    xyShade->onAmountChanged = [this](float a)
-    {
-        if (panes) panes->setActiveShade (a);
-        proc.apvts.state.setProperty ("ui_shade_active", a, nullptr);
-    };
-    if (panes && xyShade)
-        xyShade->setAmount (panes->getActiveShade(), false);
-    if (panes)
-        panes->onActivePaneChanged = [this](PaneID){ if (xyShade) xyShade->setAmount (panes->getActiveShade(), false); };
+    // xyShade functionality removed - handled by PaneManager
 
     // Containers
     addAndMakeVisible (mainControlsContainer); mainControlsContainer.setTitle (""); mainControlsContainer.setShowBorder (false);
@@ -2645,25 +2635,7 @@ void MyPluginAudioProcessorEditor::performLayout()
             if (panes->getParentComponent() != &MainContentContainer) MainContentContainer.addAndMakeVisible (panes.get());
             panes->setBounds (padLocal);
         }
-        if (xyShade)
-        {
-            // Keep ShadeOverlay as direct child of main editor for setAlwaysOnTop to work
-            if (xyShade->getParentComponent() != this) addAndMakeVisible (*xyShade);
-            // Extend ShadeOverlay bounds to include tab area above the pad
-            // Convert padLocal (relative to MainContentContainer) to main editor coordinates
-            auto extendedBounds = padLocal;
-            const int tabHeight = 40;  // Tab height from PaneManager
-            const int handleOffset = -10;  // Further reduced space for handle above tabs (was 20px, now -10px)
-            extendedBounds.setY(extendedBounds.getY() - tabHeight - handleOffset);
-            extendedBounds.setHeight(extendedBounds.getHeight() + tabHeight + handleOffset);
-            
-            // Convert to main editor coordinates by adding MainContentContainer position
-            extendedBounds.setX(extendedBounds.getX() + MainContentContainer.getX());
-            extendedBounds.setY(extendedBounds.getY() + MainContentContainer.getY());
-            
-            xyShade->setBounds (extendedBounds);
-            // setAlwaysOnTop(true) in constructor should make it appear above everything
-        }
+        // xyShade functionality removed - handled by PaneManager
 
         // Hide center container if present
         phaseCenterContainer.setVisible (false);

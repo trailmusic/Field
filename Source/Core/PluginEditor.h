@@ -1,11 +1,12 @@
 #pragma once
+
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "PluginProcessor.h"
 #include "Core/FieldLookAndFeel.h"
 #include "Core/FieldTheme.h"
 #include "Core/FieldMetallic.h"
-#include "ui/Components/KnobCell.h"
 #include "Core/IconSystem.h"
+#include "ui/Components/KnobCell.h"
 #include "ui/Components/BypassButton.h"
 #include "ui/Components/ThemedIconButton.h"
 #include "ui/Components/AuditionButton.h"
@@ -42,56 +43,11 @@
 #include "ui/Engines/StereoFieldEngine.h"
 #include "ui/Managers/PaneManager.h"
 
-/*==============================================================================
-    DEV NOTES – OVERVIEW
-    - This header keeps your visual design as-is while removing duplication.
-    - Rotary drawing is centralized via ui::paintRotaryWithLNF.
-    - Icon-style buttons share a single base: ThemedIconButton (consistent states).
-    - "Green mode" is inferred from FieldLNF::theme.accent instead of per-control flags.
-    - XYPad public API is preserved to avoid .cpp breakage.
-    - Attachment aliases reduce type noise.
-==============================================================================*/
-
-//------------------------------------------------------------------------------
-// Shared UI helpers
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-// Attachment aliases (cuts down type verbosity)
-//------------------------------------------------------------------------------
+// Attachment aliases
 using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
 using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
 using ComboAttachment  = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
 
- 
-
-//==============================================================================
-// XYPad (kept API to avoid .cpp breakage)
-// DEV NOTE: Hover timer retained; if you want instant hover, remove Timer and
-//   update mouseEnter/Exit to just repaint immediately.
-//==============================================================================
-
-//==============================================================================
-// ControlContainer (kept hover timer; purely cosmetic "soft fade" on hover)
-//==============================================================================
-
-//==============================================================================
-
-
-
-
-//------------------------------------------------------------------------------
-// Icon button classes moved to dedicated files
-//------------------------------------------------------------------------------
-
-
-
-
-
-
-//==============================================================================
-// Editor
-//==============================================================================
 class MyPluginAudioProcessorEditor : public juce::AudioProcessorEditor,
                                      public juce::Timer,
                                      public juce::Slider::Listener,
@@ -102,255 +58,170 @@ class MyPluginAudioProcessorEditor : public juce::AudioProcessorEditor,
 public:
     explicit MyPluginAudioProcessorEditor (MyPluginAudioProcessor&);
     ~MyPluginAudioProcessorEditor() override;
-    
-    // Motion parameter management removed - now handled by MotionControlsPane
 
     void paint (juce::Graphics&) override;
-    void paintOverChildren(juce::Graphics&) override;
+    void paintOverChildren (juce::Graphics&) override;
     void resized() override;
     void drawHeaderFieldLogo (juce::Graphics& g, juce::Rectangle<float> area) const;
     void timerCallback() override;
-    void sliderValueChanged(juce::Slider* slider) override;
-    void comboBoxChanged(juce::ComboBox* comboBox) override;
-    void buttonClicked(juce::Button* button) override;
-    void parameterChanged(const juce::String& parameterID, float newValue) override;
+    void sliderValueChanged (juce::Slider* slider) override;
+    void comboBoxChanged (juce::ComboBox* comboBox) override;
+    void buttonClicked (juce::Button* button) override;
+    void parameterChanged (const juce::String& parameterID, float newValue) override;
 
-    // Site-wide interaction tracking (proxy captures child events; we patch explicit handlers in cpp)
-
-    // Header hover (kept timer; cosmetic)
     void mouseEnter (const juce::MouseEvent& e) override
-    { 
-        auto headerBounds = getLocalBounds().removeFromTop(static_cast<int>(60 * scaleFactor));
-        if (headerBounds.contains(e.position.toInt()))
+    {
+        auto headerBounds = getLocalBounds().removeFromTop (static_cast<int> (60 * scaleFactor));
+        if (headerBounds.contains (e.position.toInt()))
         {
-            headerHovered = true; 
-            headerHoverActive = true; 
-            stopTimer(); 
-            repaint(); 
+            headerHovered = true;
+            headerHoverActive = true;
+            stopTimer();
+            repaint();
         }
     }
-    void mouseExit  (const juce::MouseEvent& e) override
-    { 
-        auto headerBounds = getLocalBounds().removeFromTop(static_cast<int>(60 * scaleFactor));
-        if (!headerBounds.contains(e.position.toInt()))
+    void mouseExit (const juce::MouseEvent& e) override
+    {
+        auto headerBounds = getLocalBounds().removeFromTop (static_cast<int> (60 * scaleFactor));
+        if (! headerBounds.contains (e.position.toInt()))
         {
-            headerHovered = false; 
-            startTimer (headerHoverOffDelayMs); 
+            headerHovered = false;
+            startTimer (headerHoverOffDelayMs);
         }
     }
     void mouseMove (const juce::MouseEvent& e) override;
-    
+
     void setScaleFactor (float newScale) override;
-    
-    // Waveform is now drawn behind XYPad; no explicit push from editor
+
     void syncXYPadWithParameters();
     void setupTooltips();
-    
+
     bool layoutReady { false };
-    
-    //--- custom sliders --------------------------------------------------------
-    
-    
 
-
-    
-    // Lightweight container cell for non-knob components (e.g., switches)
-    
-    
-    // Resize handle functionality
+    // Resize handle
     void mouseDown (const juce::MouseEvent& e) override;
     void mouseDrag (const juce::MouseEvent& e) override;
     void mouseUp   (const juce::MouseEvent& e) override;
 
-    // Layout management
+    // Layout
     void performLayout();
-    void layoutMeters(juce::Rectangle<int> metersArea, float s, float sv);
+    void layoutMeters (juce::Rectangle<int> metersArea, float s, float sv);
 
-private:
-    // Forward declaration for nested divider type used earlier in members
-public:
     MyPluginAudioProcessor& proc;
     FieldLNF lnf;
-    // XYPad moved into XYTab - no longer direct member
-    // Multi-pane visual dock (XY, Spectrum, Imager)
     std::unique_ptr<class PaneManager> panes;
+
 private:
     std::unique_ptr<juce::KeyListener> keyListener;
-    
-    // Layout and Event Management
     std::unique_ptr<LayoutManager> layoutManager;
     std::unique_ptr<EventManager> eventManager;
     std::unique_ptr<AttachmentManager> attachmentManager;
-    
-    // Resize constraints
+
 public:
-    int minWidth = 0;
-    int minHeight = 0;
-    int maxWidth = 3000;
-    int maxHeight = 2000;
-    int baseWidth = 1500; // 75% of 2000 to try a smaller default
-    int baseHeight = 1000; // increased for Dynamic EQ controls and better layout
+    int minWidth = 0, minHeight = 0, maxWidth = 3000, maxHeight = 2000;
+    int baseWidth = 1500;
+    int baseHeight = 1000;
     float scaleFactor = 1.0f;
+
     bool tooltipAssistantOn_ = false;
     juce::Component* lastTooltipTarget = nullptr;
     juce::uint32 lastUserInteractionMs = 0;
     int uiTimerHzCurrent = 30;
-private:
-    
+
     // UI Components
-public:
     GainSlider   gain;
-    juce::Slider width, tilt, monoHz, hpHz, lpHz, satDrive, satMix, air, bass, scoop; // includes Scoop
-    juce::ComboBox  monoSlopeChoice;
-    // Center group controls moved to XYControlsPane (complete implementation there)
-    // AUD audition: custom-styled toggle button (non-checkbox)
+    juce::Slider width, tilt, monoHz, hpHz, lpHz, satDrive, satMix, air, bass, scoop;
+    juce::ComboBox monoSlopeChoice;
     AuditionButton monoAuditionButton;
-    // Imaging controls
     juce::Slider widthLo, widthMid, widthHi;
     juce::Slider xoverLoHz, xoverHiHz;
     juce::Slider rotationDeg, asymmetry;
-    // SHUF sliders moved to Band tab
     PanSlider    panKnob;
-    PanSlider    panKnobLeft, panKnobRight;  // split mode pan
+    PanSlider    panKnobLeft, panKnobRight;
     juce::ComboBox osSelect;
 
-    // Old preset combo & save button removed
-public:
-    BypassButton     bypassButton;
-private:
-public:
-    ToggleSwitch     splitToggle;
-private:
-    
-    // Unified controls viewport (stacks Group 1 and Group 2 vertically)
-    juce::Viewport controlsViewport;
-    juce::Component controlsContent;     // content for the viewport
-    juce::Component group1Container;     // holds Group 1 controls (flat 4x16 grid)
-    juce::Component group2Container;     // holds Group 2 controls (Delay/Reverb grids)
-    
-    // Frequency control sliders
-public:
+    BypassButton  bypassButton;
+    ToggleSwitch  splitToggle;
+
+    // Unified controls viewport
+    juce::Viewport  controlsViewport;
+    juce::Component controlsContent;
+    juce::Component group1Container;
+    juce::Component group2Container;
+
+    // Frequency controls
     juce::Slider tiltFreqSlider, scoopFreqSlider, bassFreqSlider, airFreqSlider;
-    // EQ shape/Q controls
+
+    // EQ/Q controls
     juce::Slider shelfShapeS, filterQ;
     juce::ToggleButton tiltLinkSButton, qLinkButton;
     juce::Slider hpQSlider, lpQSlider;
+
 private:
-    // Q-cluster dummy hosts (no visible knob in cluster)
     juce::Slider qClusterDummySlider;
     juce::Label  qClusterDummyValue;
-    
-    // Delay controls
+
 public:
+    // Delay controls
     juce::Slider delayTime, delayFeedback, delayWet, delaySpread, delayWidth, delayModRate, delayModDepth, delayWowflutter, delayJitter, delayPreDelay;
     juce::Slider delayHp, delayLp, delayTilt, delaySat, delayDiffusion, delayDiffuseSize;
     juce::Slider delayDuckDepth, delayDuckAttack, delayDuckRelease, delayDuckThreshold, delayDuckRatio, delayDuckLookahead;
     juce::ComboBox delayMode, delayTimeDiv, delayDuckSource, delayGridFlavor, delayFilterType;
     juce::ToggleButton delayEnabled, delaySync, delayKillDry, delayFreeze, delayPingpong, delayDuckPost, delayDuckLinkGlobal;
-private:
-    
-    // Icon buttons (shared base)
+
 public:
+    // Icon buttons
     OptionsButton    optionsButton;
-private:
-public:
     LinkButton       linkButton;
     SnapButton       snapButton;
-private:
-public:
     FullScreenButton fullScreenButton;
     ColorModeButton  colorModeButton;
-    TooltipsButton   tooltipsButton; // Wrench icon (Options) toggles tooltip assistant
-    // History and undo/redo removed
+    TooltipsButton   tooltipsButton;
     HelpButton       helpButton;
-private:
-public:
     CopyButton       copyButton;
-private:
     LockButton       lockButton;
 
-public:
-private:
-
-    // Lightweight tooltip bubble shown when tooltip assistant is ON
-    public:
     TooltipBubble tooltipBubble;
-private:
 
-    // Global Wet Only (Kill Dry) UI toggle (no param binding per instructions)
+    // Global wet-only UI toggle (no param binding)
     juce::ToggleButton wetOnlyToggle;
 
-    public:
-public:
-    // Placeholder for mono slope switch definition (defined after SpaceAlgorithmSwitch)
     std::unique_ptr<::MonoSlopeSwitch> monoSlopeSwitch;
-    
-    // OLD REVERB SYSTEM REMOVED - Now using new reverb system in Source/reverb/
-
     std::unique_ptr<SwitchCell> wetOnlyCell;
 
-    // Dedicated Mono Slope Switch (6/12/24) with independent drawing but same visual language
-    // MonoSlopeSwitch class extracted to Source/ui/Components/MonoSlopeSwitch.h
-    
-    // A/B & presets
-    
 public:
-    ABButton abButtonA{true}, abButtonB{false};
-    PresetArrowButton prevPresetButton{true}, nextPresetButton{false};
-    juce::TextButton presetField; // clickable field to open palette and display current preset
-    juce::Label presetNameLabel;
-private:
-public:
-    juce::Label transportClockLabel;
-private:
-public:
-    juce::Component headerLeftGroup; // container for bypass (no logo)
-private:
+    // Presets / A/B
+    ABButton abButtonA { true }, abButtonB { false };
+    PresetArrowButton prevPresetButton { true }, nextPresetButton { false };
+    juce::TextButton presetField;
+    juce::Label presetNameLabel, transportClockLabel;
+    juce::Component headerLeftGroup;
 
-    // Split-pan container placeholder for grid cell (no painting, no mouse)
+    // Split-pan container
     juce::Component panSplitContainer;
-    
-    // Preset system
+
 public:
-    PresetStore presetStore;
-    NewPresetManager presetManager;
-    
+    // Preset system
+    PresetStore       presetStore;
+    NewPresetManager  presetManager;
+
     // Containers
     ControlContainer mainControlsContainer, volumeContainer;
-    ControlContainer delayContainer;
-    ControlContainer metersContainer;
-    ControlContainer MainContentContainer;
-    ControlContainer rightSlidersContainer;  // Container for sliders on the right
-    
-    // 3D Vertical Sliders for Input, Output, Mix
+    ControlContainer delayContainer, metersContainer;
+    ControlContainer MainContentContainer, rightSlidersContainer;
     VerticalSlider3D inputSlider, outputSlider, mixSlider;
     ControlContainer panKnobContainer;
-    
-    // Width grouping (Image row): large WIDTH + small W LO/MID/HI
     ControlContainer widthGroupContainer;
-    juce::Component widthGroupSlot1, widthGroupSlot2, widthGroupSlot3; // grid placeholders to claim columns
-    
-    // Gain+Drive+Mix grouping (Volume row): invisible container spanning three columns (right side)
+    juce::Component  widthGroupSlot1, widthGroupSlot2, widthGroupSlot3;
     ControlContainer gainMixGroupContainer;
-    juce::Component gainMixSlot1, gainMixSlot2;
-
-    // Ducking group container (Depth, Attack, Release, Threshold)
+    juce::Component  gainMixSlot1, gainMixSlot2;
     ControlContainer duckGroupContainer;
-    juce::Component duckSlot1, duckSlot2, duckSlot3;
-    
-    // Volume row unified grouping
-    ControlContainer volGroupContainer;
-    ControlContainer eqGroupContainer;
-    ControlContainer imgGroupContainer;
-    ControlContainer volGroupContainer2;
-    ControlContainer monoGroupContainer;
- 
-    juce::Component volSlot1, volSlot2, volSlot3, volSlot4, volSlot5, volSlot6, volSlot7;
+    juce::Component  duckSlot1, duckSlot2, duckSlot3;
+    ControlContainer volGroupContainer, eqGroupContainer, imgGroupContainer, volGroupContainer2, monoGroupContainer;
+    juce::Component  volSlot1, volSlot2, volSlot3, volSlot4, volSlot5, volSlot6, volSlot7;
 
-    
-
-    // Value indicators (if you keep them)
 public:
+    // Value indicators
     juce::Label leftIndicator, rightIndicator;
     juce::Label gainValue, widthValue, tiltValue, monoValue, hpValue, lpValue, satDriveValue, satMixValue, airValue, bassValue, scoopValue;
     juce::Label shelfShapeValue, filterQValue;
@@ -361,96 +232,42 @@ public:
     juce::Label delayTimeValue, delayFeedbackValue, delayWetValue, delaySpreadValue, delayWidthValue, delayModRateValue, delayModDepthValue, delayWowflutterValue, delayJitterValue, delayPreDelayValue;
     juce::Label delayHpValue, delayLpValue, delayTiltValue, delaySatValue, delayDiffusionValue, delayDiffuseSizeValue;
     juce::Label delayDuckDepthValue, delayDuckAttackValue, delayDuckReleaseValue, delayDuckThresholdValue, delayDuckRatioValue, delayDuckLookaheadValue;
-    // Imaging knob name labels (third row)
+
+    // Name labels
     juce::Label widthLoName, widthMidName, widthHiName;
     juce::Label xoverLoName, xoverHiName;
     juce::Label rotationName, asymName;
     juce::Label shufLoName, shufHiName, shufXName;
-    
-    // Delay name labels
     juce::Label delayTimeName, delayFeedbackName, delayWetName, delaySpreadName, delayWidthName, delayModRateName, delayModDepthName, delayWowflutterName, delayJitterName, delayPreDelayName;
     juce::Label delayHpName, delayLpName, delayTiltName, delaySatName, delayDiffusionName, delayDiffuseSizeName;
     juce::Label delayDuckDepthName, delayDuckAttackName, delayDuckReleaseName, delayDuckThresholdName, delayDuckRatioName, delayDuckLookaheadName;
-    
-    // Text labels
     juce::Label gainL, widthL, tiltL, monoL, hpL, lpL, satDriveL, satMixL;
     juce::Label panL;
 
-    // Row 1 cells
+    // Cells
     std::unique_ptr<KnobCell> panCell;
     std::unique_ptr<KnobCell> widthCell, widthLoCell, widthMidCell, widthHiCell;
     std::unique_ptr<KnobCell> gainCell, satDriveCell, satMixCell, monoCell;
+    std::unique_ptr<KnobCell> bassCell, airCell, tiltCell, scoopCell, hpCell, lpCell;
+    std::unique_ptr<KnobCell> xoverLoCell, xoverHiCell, rotationCell, asymCell;
+    std::unique_ptr<KnobCell> shelfShapeCell, filterQCell, qClusterCell;
 
-    // EQ row cells (knob + value + optional mini)
-    std::unique_ptr<KnobCell> bassCell;
-    std::unique_ptr<KnobCell> airCell;
-    std::unique_ptr<KnobCell> tiltCell;
-    std::unique_ptr<KnobCell> scoopCell;
-    std::unique_ptr<KnobCell> hpCell;
-    std::unique_ptr<KnobCell> lpCell;
+    // Delay cells
+    std::unique_ptr<KnobCell> delayTimeCell, delayFeedbackCell, delayWetCell, delaySpreadCell, delayWidthCell;
+    std::unique_ptr<KnobCell> delayModRateCell, delayModDepthCell, delayWowflutterCell, delayPreDelayCell, delayJitterCell;
+    std::unique_ptr<KnobCell> delayHpCell, delayLpCell, delayTiltCell, delaySatCell, delayDiffusionCell, delayDiffuseSizeCell;
+    std::unique_ptr<KnobCell> delayDuckDepthCell, delayDuckAttackCell, delayDuckReleaseCell, delayDuckThresholdCell, delayDuckLookaheadCell, delayDuckRatioCell;
 
-    // Reverb/Duck cells
-
-    // Imaging (row 4) cells
-    std::unique_ptr<KnobCell> xoverLoCell;
-    std::unique_ptr<KnobCell> xoverHiCell;
-    std::unique_ptr<KnobCell> rotationCell;
-    std::unique_ptr<KnobCell> asymCell;
-    // SHUF cells moved to Band tab
-    std::unique_ptr<KnobCell> shelfShapeCell;
-    std::unique_ptr<KnobCell> filterQCell;
-    std::unique_ptr<KnobCell> qClusterCell;
-
-    // Delay cells (knob + value)
-    std::unique_ptr<KnobCell> delayTimeCell;
-    std::unique_ptr<KnobCell> delayFeedbackCell;
-    std::unique_ptr<KnobCell> delayWetCell;
-    std::unique_ptr<KnobCell> delaySpreadCell;
-    std::unique_ptr<KnobCell> delayWidthCell;
-    std::unique_ptr<KnobCell> delayModRateCell;
-    std::unique_ptr<KnobCell> delayModDepthCell;
-    std::unique_ptr<KnobCell> delayWowflutterCell;
-    std::unique_ptr<KnobCell> delayPreDelayCell;
-    std::unique_ptr<KnobCell> delayJitterCell;
-    std::unique_ptr<KnobCell> delayHpCell;
-    std::unique_ptr<KnobCell> delayLpCell;
-    std::unique_ptr<KnobCell> delayTiltCell;
-    std::unique_ptr<KnobCell> delaySatCell;
-    std::unique_ptr<KnobCell> delayDiffusionCell;
-    std::unique_ptr<KnobCell> delayDiffuseSizeCell;
-    std::unique_ptr<KnobCell> delayDuckDepthCell;
-    std::unique_ptr<KnobCell> delayDuckAttackCell;
-    std::unique_ptr<KnobCell> delayDuckReleaseCell;
-    std::unique_ptr<KnobCell> delayDuckThresholdCell;
-    std::unique_ptr<KnobCell> delayDuckLookaheadCell;
-    std::unique_ptr<KnobCell> delayDuckRatioCell;
-
-    // Delay control cells (buttons/combos, styled like KnobCell panels)
-    std::unique_ptr<SwitchCell> delayEnabledCell;
-    std::unique_ptr<SwitchCell> delayModeCell;
-    std::unique_ptr<SwitchCell> delaySyncCell;
-    std::unique_ptr<SwitchCell> delayGridFlavorCell;
-    std::unique_ptr<SwitchCell> delayFreezeCell;
-    std::unique_ptr<SwitchCell> delayKillDryCell;
-    std::unique_ptr<SwitchCell> delayPingpongCell;
-    std::unique_ptr<SwitchCell> delayFilterTypeCell;
-    std::unique_ptr<SwitchCell> delayDuckSourceCell;
-    std::unique_ptr<SwitchCell> delayDuckPostCell;
-
-    // Delay group positioned directly in Group 2 panel (no container)
-
+    // Delay control cells
+    std::unique_ptr<SwitchCell> delayEnabledCell, delayModeCell, delaySyncCell, delayGridFlavorCell, delayFreezeCell, delayKillDryCell, delayPingpongCell, delayFilterTypeCell, delayDuckSourceCell, delayDuckPostCell;
     std::unique_ptr<Segmented3Control> delayGridFlavorSegments;
 
     void buildCells();
 
-    // [moved] Attachment containers declared after all bound controls (see below)
-    
-    // Scaling
-public:
-private:
+    // Sizing/scaling
     const int standardKnobSize = 80;
-    
-    // Initialization Methods
+
+    // Init
     void initializePresetSystem();
     void initializeManagers();
     void initializeSizeConstraints();
@@ -458,106 +275,93 @@ private:
     void initializeButtonCallbacks();
     void initializeParameterAttachments();
     void finalizeInitialization();
-    
+
     // Helpers
     void styleSlider (juce::Slider& s);
     void styleMainSlider (juce::Slider& s);
     void updateParameterLocks();
     void drawRecessedLabel (juce::Graphics& g, juce::Rectangle<int> bounds, const juce::String& text, bool isActive = true);
     void drawKnobWithIntegratedValue (juce::Graphics& g, juce::Rectangle<int> bounds, const juce::String& knobName, const juce::String& value, bool isActive = true);
-    
-    // Resize handle
+
+    // Resize handle state
     juce::Point<int> resizeStart;
     juce::Rectangle<int> originalBounds;
-    
-    // Full screen
+
 public:
+    // Full screen
     juce::Rectangle<int> savedBounds;
 
-    // Bottom area toggle and alternate overlay panel
-    juce::TextButton bottomAreaToggle; // bottom-center toggle to reveal alternate bottom controls
-    struct BottomAltPanel : public juce::Component {
+    // Bottom area toggle and overlay panel
+    juce::TextButton bottomAreaToggle;
+    struct BottomAltPanel : public juce::Component
+    {
         void paint (juce::Graphics& g) override
         {
             auto r = getLocalBounds().toFloat();
-            // Match main site background gradient exactly (Editor::paint)
-            juce::Colour top    = juce::Colour (0xFF2A2C30);
-            juce::Colour mid    = juce::Colour (0xFF4A4D55);
+            juce::Colour top = juce::Colour (0xFF2A2C30);
+            juce::Colour mid = juce::Colour (0xFF4A4D55);
             juce::Colour bottom = juce::Colour (0xFF2A2C30);
-            juce::ColourGradient bg (top, r.getCentreX(), r.getY(),
-                                     bottom, r.getCentreX(), r.getBottom(), false);
+            juce::ColourGradient bg (top, r.getCentreX(), r.getY(), bottom, r.getCentreX(), r.getBottom(), false);
             bg.addColour (0.85, mid);
             g.setGradientFill (bg);
-            // Fill with rounded corners instead of fillAll()
             g.fillRoundedRectangle (r, 6.0f);
         }
-    } bottomAltPanel;          // sliding overlay panel that covers bottom control rows, with gradient BG
-    bool bottomAltTargetOn { false };  // target state for slide animation
-    float bottomAltSlide01 { 0.0f };   // 0..1 slide progress (0=hidden)
-    bool bottomAltAnimating { false }; // animate slide in timer
-    // Group 2 overlay layout caching to avoid per-frame reflow
-    bool overlayLayoutDirty { true };
-    bool overlayContentsBuilt { false };
-    juce::Rectangle<int> overlayLocalRect;  // leftContentContainer-local rect for Group 2 overlay
+    } bottomAltPanel;
+
+    bool  bottomAltTargetOn   { false };
+    float bottomAltSlide01    { 0.0f };
+    bool  bottomAltAnimating  { false };
+    bool  overlayLayoutDirty  { true };
+    bool  overlayContentsBuilt{ false };
+    juce::Rectangle<int> overlayLocalRect;
     int overlayActiveBaseline { 0 };
     int overlayHiddenBaseline { 0 };
-    int overlayHeightPx { 0 };
-    // Fast-path overlay movement during slide (no child reflow)
+    int overlayHeightPx       { 0 };
     void updateGroup2OverlayDuringSlide();
-    // New Reverb panel mounted in Group 2
+
     std::unique_ptr<class ReverbGraphics> reverbPanel;
     int controlRowsHeightPx { 0 };
 
-    // Correlation meter mini component
-
     CorrelationMeter corrMeter { proc, lnf };
-
-    // Vertical L/R meters (RMS + Peak overlays)
-
-    VerticalLRMeters lrMeters { proc, lnf };
-
-    // IO Gain Meters (Input/Output RMS)
-
-    IOGainMeters ioMeters { proc, lnf };
+    VerticalLRMeters lrMeters  { proc, lnf };
+    IOGainMeters ioMeters      { proc, lnf };
 
     // A/B state
     std::map<juce::String, float> stateA, stateB;
     bool isStateA = true;
-    bool isGreenMode = false; // global color mode (your .cpp likely toggles LNF accent)
+    bool isGreenMode = false;
     std::map<juce::String, float> clipboardState;
     int  currentAlgorithm = 0; // 0=Inner, 1=Outer, 2=Deep
     juce::String presetNameA = "Default", presetNameB = "Default";
-    
+
     // A/B logic
     void saveCurrentState();
-    void loadState(bool loadStateA);
-public:
+    void loadState (bool loadStateA);
     void toggleABState();
-    void copyState(bool copyFromA);
-    void pasteState(bool pasteToA);
+    void copyState (bool copyFromA);
+    void pasteState (bool pasteToA);
     void updatePresetDisplay();
-    
+
     // Header hover
     bool headerHovered = false;
     bool headerHoverActive = false;
     const int headerHoverOffDelayMs = 160;
 
-    // Adaptive UI refresh (burst to 60 Hz during user interaction)
+    // Adaptive UI refresh
     void noteUserInteraction() { lastUserInteractionMs = juce::Time::getMillisecondCounter(); }
-
     struct BurstMouseProxy : public juce::MouseListener
     {
         explicit BurstMouseProxy (MyPluginAudioProcessorEditor& o) : owner (o) {}
-        void mouseDown (const juce::MouseEvent&) override               { owner.noteUserInteraction(); }
-        void mouseDrag (const juce::MouseEvent&) override               { owner.noteUserInteraction(); }
-        void mouseUp   (const juce::MouseEvent&) override               { owner.noteUserInteraction(); }
+        void mouseDown (const juce::MouseEvent&) override { owner.noteUserInteraction(); }
+        void mouseDrag (const juce::MouseEvent&) override { owner.noteUserInteraction(); }
+        void mouseUp   (const juce::MouseEvent&) override { owner.noteUserInteraction(); }
         void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override { owner.noteUserInteraction(); }
     private:
         MyPluginAudioProcessorEditor& owner;
     };
     std::unique_ptr<BurstMouseProxy> burstMouseProxy;
 
-    // Cached layout
+    // Layout cache
     juce::Rectangle<int> dividerVolBounds;
 
     // Cursor policy
@@ -565,45 +369,20 @@ public:
     void updateMutedKnobVisuals();
     void childrenChanged() override { juce::Component::childrenChanged(); applyGlobalCursorPolicy(); }
 
-    std::unique_ptr<ShadeOverlay> xyShade;
+    // Dividers
+    VerticalDivider splitDivider { lnf }, eqDivLpMono { lnf }, eqDivScoopHp { lnf };
+    VerticalDivider volDivPanSpace { lnf }, volDivDuckRight { lnf }, delayDivider { lnf }, motionDivider { lnf };
+    HorizontalDivider rowDivVol { lnf }, rowDivEQ { lnf };
 
-
-
-
-
-
-      
-
-    // Mini vertical divider near split toggle
-
-    VerticalDivider splitDivider{lnf}, eqDivLpMono{lnf}, eqDivScoopHp{lnf};
-    VerticalDivider volDivPanSpace{lnf}, volDivDuckRight{lnf}, delayDivider{lnf}, motionDivider{lnf};
-    // Horizontal dividers between rows
-
-    HorizontalDivider rowDivVol{lnf}, rowDivEQ{lnf};
-
-    // Motion controls removed - now handled by MotionControlsPane
-    // Parameter attachments now handled by AttachmentManager
-    
-    // Motion ComboBoxes and Buttons removed - now handled by MotionControlsPane
-    
-    // Motion SwitchCell wrappers removed - now handled by MotionControlsPane
-
-    // Phase Mode center group
+    // Phase/quality center
     ControlContainer phaseCenterContainer;
-public:
     PhaseModeButton  phaseModeButton;
     QualityButton    qualityButton;
+
 private:
     std::unique_ptr<juce::ParameterAttachment> phaseModeParamAttach;
     std::unique_ptr<juce::ParameterAttachment> osModeParamAttach;
     std::unique_ptr<juce::ParameterAttachment> qualityParamAttach;
 
-    // Motion parameter management removed - now handled by MotionControlsPane
-    
-    // MotionBinding removed - now handled by MotionControlsPane
-
-    // Delay visuals are managed by PaneManager's Delay tab
-
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessorEditor)
-}; 
+};
