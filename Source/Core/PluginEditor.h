@@ -151,6 +151,7 @@ public:
 
     BypassButton  bypassButton;
     ToggleSwitch  splitToggle;
+    ShadeOverlay  shadeOverlay;
 
     // Unified controls viewport
     juce::Viewport  controlsViewport;
@@ -320,6 +321,9 @@ public:
     void copyState (bool copyFromA);
     void pasteState (bool pasteToA);
     void updatePresetDisplay();
+    
+    // ShadeOverlay initialization
+    void initializeShadeOverlay();
 
     // Header hover
     bool headerHovered = false;

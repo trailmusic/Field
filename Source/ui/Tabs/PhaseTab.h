@@ -19,16 +19,28 @@ public:
         auto r = getLocalBounds().toFloat();
         if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
         {
-            // Fully opaque background (no see-through)
-            g.setColour (lf->theme.panel);
-            g.fillRoundedRectangle (r, 8.0f);
-            g.setColour (lf->theme.accent.withAlpha (0.3f));
-            g.drawRoundedRectangle (r, 8.0f, 1.0f);
+            // AB Button styling: Solid panel background with elevation shadow
+            const float cr = 8.0f; // Match KnobCell corner radius
+            
+            // Elevation shadow first (AB button style)
+            g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
+            g.fillRoundedRectangle(r.translated(1.5f, 1.5f), cr);
+            
+            // Solid panel background (no aliasing)
+            g.setColour(lf->theme.meters.panelDark);
+            g.fillRoundedRectangle(r, cr);
+            
+            // Border (AB button style)
+            g.setColour(lf->theme.sh);
+            g.drawRoundedRectangle(r, cr, 1.0f);
+            
+            // Add 10px top and bottom padding for content
+            auto contentR = r.reduced(0, 10.0f);
             
             // Placeholder text
             g.setColour (lf->theme.textMuted);
             g.setFont (14.0f);
-            g.drawText ("Phase Alignment Visuals", r, juce::Justification::centred);
+            g.drawText ("Phase Alignment Visuals", contentR, juce::Justification::centred);
         }
         else
         {
@@ -57,6 +69,9 @@ public:
         buildControls();
         applyMetricsToAll();
     }
+    
+    // Public getter for graphics container
+    PhaseVisualContainer* getPhaseVisualContainer() const { return phaseVisualContainer.get(); }
     
     ~PhaseTab() override
     {

@@ -186,30 +186,6 @@ void LayoutManager::layoutMainControls()
     // Remove the header area that was already processed
     r.removeFromTop(Layout::dp(50, s));
     
-    // Layout ShadeOverlay container - just the height of the handle (26px)
-    const int shadeContainerHeight = Layout::dp(26, s);
-    auto shadeContainerArea = r.removeFromTop(shadeContainerHeight);
-    editor.shadeOverlayContainer.setBounds(shadeContainerArea);
-    
-    // Position ShadeOverlay to extend beyond container to cover main content
-    // The ShadeOverlay needs to be able to cover the entire main content area
-    // But we need to position it so the handle appears in the container area
-    auto shadeOverlayArea = juce::Rectangle<int>(
-        shadeContainerArea.getX(), 
-        shadeContainerArea.getY(), 
-        shadeContainerArea.getWidth(), 
-        shadeContainerArea.getHeight() + r.getHeight() // Extend to cover remaining content
-    );
-    editor.shadeOverlay.setBounds(shadeOverlayArea);
-    
-    // The ShadeOverlay handle should appear in the container area (first 26px)
-    // We need to modify the ShadeOverlay's internal coordinate system
-    // The handle should be positioned relative to the container, not the extended area
-    
-    // Set the ShadeOverlay's internal offset so it thinks the container is at (0,0)
-    // This way the handle will appear in the container area
-    editor.shadeOverlay.setTopLeftPosition(0, 0);
-    
     // Clean layout: meters (left) → center content → sliders (right)
     
     // 1) Calculate meters width (smaller than half)
@@ -244,6 +220,23 @@ void LayoutManager::layoutMainControls()
     if (editor.panes) {
         editor.panes->setBounds(r);
         editor.panes->resized();
+    }
+    
+    // Position ShadeOverlay to cover only the content area below the tab headers
+    // The ShadeOverlay should not cover the tab headers to allow clicking
+    if (editor.panes) {
+        // Get the content area from PaneManager (below tab headers)
+        auto panesBounds = editor.panes->getBounds();
+        auto contentArea = panesBounds;
+        
+        // Adjust content area to exclude tab headers (tab height is 40px + 2px gap)
+        const int tabHeight = 40;
+        const int tabGap = 2;
+        contentArea = contentArea.withY(contentArea.getY() + tabHeight + tabGap + 5); // +5 for the margin we added
+        
+        editor.shadeOverlay.setBounds(contentArea);
+    } else {
+        editor.shadeOverlay.setBounds(r);
     }
 }
 

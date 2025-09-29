@@ -68,6 +68,9 @@ public:
     // Callback properties
     std::function<void(float, float)> onChange;
     std::function<void(float, float, float)> onSplitChange;
+    
+    // Public getter for graphics container
+    XYPad* getXYPad() const { return xyPad.get(); }
 
 private:
     MyPluginAudioProcessor& proc;

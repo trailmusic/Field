@@ -23,18 +23,37 @@ void ReverbCanvasComponent::paint(Graphics& g)
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
 
-    auto R = getLocalBounds().toFloat().reduced(6);
-    drawBackground(g, R);
-    drawTailHeatmapImage(g, R);
-    drawER(g, R);
-    drawWidthRotation(g, R);
-    drawToneCurtainAndEQ(g, R);
-    drawDucking(g, R);
-    drawSpecials(g, R);
-    drawDynEqOverlays(g, R);
-
-    g.setColour(th.text.withAlpha(0.20f));
-    g.drawRoundedRectangle(R, 8.f, 1.2f);
+    auto R = getLocalBounds().toFloat();
+    
+    // AB Button styling: Solid panel background with elevation shadow
+    const float cr = 8.0f; // Match KnobCell corner radius
+    
+    // Elevation shadow first (AB button style)
+    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
+    else g.setColour(juce::Colour(0x40000000));
+    g.fillRoundedRectangle(R.translated(1.5f, 1.5f), cr);
+    
+    // Solid panel background (no aliasing)
+    g.setColour(th.meters.panelDark);
+    g.fillRoundedRectangle(R, cr);
+    
+    // Border (AB button style)
+    g.setColour(th.sh);
+    g.drawRoundedRectangle(R, cr, 1.0f);
+    
+    // Add 10px top and bottom padding for content
+    auto paddedR = R.reduced(0, 10.0f);
+    
+    // Content area (reduced for inner content)
+    auto contentR = paddedR.reduced(6);
+    drawBackground(g, contentR);
+    drawTailHeatmapImage(g, contentR);
+    drawER(g, contentR);
+    drawWidthRotation(g, contentR);
+    drawToneCurtainAndEQ(g, contentR);
+    drawDucking(g, contentR);
+    drawSpecials(g, contentR);
+    drawDynEqOverlays(g, contentR);
 }
 
 void ReverbCanvasComponent::timerCallback()

@@ -1447,6 +1447,13 @@ Source/Core/
 7. **MeterManager** - Centralized meter component management
 8. **SliderManager** - Centralized slider component management
 
+#### **Theme System Improvements (January 2025)**
+- **Tab Headers**: Updated to use `theme.meters.panelDark` for inactive tabs
+- **Container Backgrounds**: ControlContainer now uses consistent darker theme
+- **Knob Gradients**: Updated to use `theme.meters.panelDark` base color
+- **Container Padding**: Added proper spacing between meters/sliders and center content
+- **Layout Consistency**: Uses `Layout::GAP` (10px) for consistent spacing throughout UI
+
 #### **Component Architecture**
 - **Components/**: Reusable UI components (BypassButton, ButtonSwitch, XYPad, etc.)
 - **Tabs/**: Main functionality containers (XYTab, ImagerTab, MotionTab, etc.)

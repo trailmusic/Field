@@ -30,6 +30,9 @@ public:
         if (visuals) visuals->setBounds (r);
         if (controls) controls->setBounds (controlsArea);
     }
+    
+    // Public getter for graphics container
+    motion::MotionGraphics* getMotionGraphics() const { return visuals.get(); }
 
 private:
     MyPluginAudioProcessor& proc;

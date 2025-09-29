@@ -31,20 +31,42 @@ public:
     void paint (juce::Graphics& g) override
     {
         auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-        auto bg = lf ? lf->theme.panel : juce::Colours::black;
-        g.fillAll (bg);
-
+        auto panel = lf ? lf->theme.meters.panelDark : juce::Colour(0xFF2A2C30);
+        auto sh = lf ? lf->theme.sh : juce::Colour(0xFF2A2A2A);
+        
         auto r = getLocalBounds().toFloat();
+        
+        // AB Button styling: Solid panel background with elevation shadow
+        const float cr = 8.0f; // Match KnobCell corner radius
+        
+        // Elevation shadow first (AB button style)
+        if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
+        else g.setColour(juce::Colour(0x40000000));
+        g.fillRoundedRectangle(r.translated(1.5f, 1.5f), cr);
+        
+        // Solid panel background (no aliasing)
+        g.setColour(panel);
+        g.fillRoundedRectangle(r, cr);
+        
+        // Border (AB button style)
+        g.setColour(sh);
+        g.drawRoundedRectangle(r, cr, 1.0f);
+        
+        // Add 10px top and bottom padding for content
+        auto paddedR = r.reduced(0, 10.0f);
+        
+        // Content area (reduced for inner content)
+        auto contentR = paddedR.reduced(6.0f);
         const float pad = 8.0f;
         const float titleH = 20.0f;
 
         // Header with key labels
-        juce::Rectangle<float> header = r.removeFromTop (titleH + 4.0f);
+        juce::Rectangle<float> header = contentR.removeFromTop (titleH + 4.0f);
         paintHeader (g, header);
 
-        auto timeline = r.removeFromTop (r.getHeight() * 0.45f).reduced (pad);
-        auto eqStrip  = r.removeFromTop (r.getHeight() * 0.30f).reduced (pad);
-        auto ducking  = r.reduced (pad);
+        auto timeline = contentR.removeFromTop (contentR.getHeight() * 0.45f).reduced (pad);
+        auto eqStrip  = contentR.removeFromTop (contentR.getHeight() * 0.30f).reduced (pad);
+        auto ducking  = contentR.reduced (pad);
 
         paintTimeline (g, timeline);
         paintEqStrip  (g, eqStrip);

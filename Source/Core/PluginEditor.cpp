@@ -14,7 +14,7 @@
 #include "ui/Components/VizEQ.h"
 
 MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcessor& p)
-: AudioProcessorEditor (&p), proc (p), presetManager (proc.apvts, nullptr), bypassButton (lnf)
+: AudioProcessorEditor (&p), proc (p), presetManager (proc.apvts, nullptr), bypassButton (lnf), shadeOverlay (lnf)
 {
     initializePresetSystem();
     initializeManagers();
@@ -22,6 +22,7 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
     initializeUIComponents();
     initializeButtonCallbacks();
     initializeParameterAttachments();
+    initializeShadeOverlay();
     finalizeInitialization();
 }
 
@@ -1022,5 +1023,25 @@ void MyPluginAudioProcessorEditor::initializeMeters()
         meterManager->getCorrelationMeter().setLookAndFeel(&lnf);
         meterManager->getLRMeters().setLookAndFeel(&lnf);
         meterManager->getIOGainMeters().setLookAndFeel(&lnf);
+    }
+}
+
+void MyPluginAudioProcessorEditor::initializeShadeOverlay()
+{
+    // Initialize ShadeOverlay directly
+    addAndMakeVisible(shadeOverlay);
+    
+    // Initialize ShadeOverlay with PaneManager integration
+    shadeOverlay.onAmountChanged = [this](float amount) {
+        if (panes) {
+            panes->setActiveShade(amount);
+        }
+    };
+    
+    // Set initial shade amount from PaneManager
+    if (panes) {
+        shadeOverlay.setAmount(panes->getActiveShade(), false);
+        // Set PaneManager reference for getting active graphics container bounds
+        shadeOverlay.setPaneManager(panes.get());
     }
 }

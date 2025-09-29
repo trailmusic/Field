@@ -64,6 +64,9 @@ public:
         if (visuals) visuals->setBounds (r);
         if (controls && controls->isVisible()) controls->setBounds (controlsArea);
     }
+    
+    // Public getter for graphics container
+    DelayVisuals* getDelayVisuals() const { return visuals.get(); }
 
 private:
     MyPluginAudioProcessor& proc;

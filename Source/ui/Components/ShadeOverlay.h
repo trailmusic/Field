@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <functional>
 #include "../../Core/FieldLookAndFeel.h"
+#include "../Managers/PaneManager.h"
 
 class ShadeOverlay : public juce::Component, private juce::Timer
 {
@@ -17,6 +18,9 @@ public:
         amount.setCurrentAndTargetValue(0.0f);
         startTimerHz(30);
     }
+    
+    // Set the PaneManager reference for getting active graphics container bounds
+    void setPaneManager(PaneManager* pm) { paneManager = pm; }
 
     void setAmount (float a, bool animate = true)
     {
@@ -40,8 +44,22 @@ public:
     void paint (juce::Graphics& g) override
     {
         const auto r = getLocalBounds().toFloat();
-        const float coveredH = r.getHeight() * getAmount();
-        const auto cover = r.withHeight(coveredH);
+        
+        // Get the shade area respecting the active graphics container bounds
+        juce::Rectangle<float> shadeArea = r;
+        if (paneManager)
+        {
+            auto activeContainerBounds = paneManager->getActiveGraphicsContainerBounds();
+            if (!activeContainerBounds.isEmpty())
+            {
+                // Convert the graphics container bounds to ShadeOverlay local coordinates
+                auto localContainerBounds = activeContainerBounds - r.getPosition().toInt();
+                shadeArea = localContainerBounds.toFloat();
+            }
+        }
+        
+        const float coveredH = shadeArea.getHeight() * getAmount();
+        const auto cover = shadeArea.withHeight(coveredH);
 
         if (coveredH > 0.001f)
         {
@@ -103,11 +121,29 @@ private:
     int   dragStartY = 0;
     float startAmt   = 0.f;
     bool  hoverHandle = false;
+    PaneManager* paneManager = nullptr;
 
     float shadeEdgeY () const 
     { 
-        // Simplified: just return the actual shade edge position
+        // Get the shade edge position respecting the active graphics container bounds
         auto r = getLocalBounds().toFloat();
+        
+        // If we have a PaneManager reference, limit the shade to the container bounds
+        if (paneManager)
+        {
+            auto activeContainerBounds = paneManager->getActiveGraphicsContainerBounds();
+            if (!activeContainerBounds.isEmpty())
+            {
+                // Convert the graphics container bounds to ShadeOverlay local coordinates
+                auto localContainerBounds = activeContainerBounds - r.getPosition().toInt();
+                auto containerHeight = (float)localContainerBounds.getHeight();
+                
+                // Calculate shade edge within the container bounds
+                return localContainerBounds.getY() + (containerHeight * getAmount());
+            }
+        }
+        
+        // Fallback to full area
         return r.getHeight() * getAmount();
     }
 
@@ -115,14 +151,39 @@ private:
     {
         auto r = getLocalBounds().toFloat();
         float tabW = juce::jmin(120.0f, r.getWidth() * 0.6f);
-        float tabH = 26.0f;  // Slightly reduced from 30.0f for better proportions
+        float tabH = 20.0f;  // Reduced to 20.0f as per user request
         
-        // Position handle so its BOTTOM edge aligns with the shade edge
-        const float edge = shadeEdgeY();
-        float y = juce::jlimit (0.0f, r.getHeight() - tabH, edge - tabH);
+        // Position handle so its TOP edge is pinned to the top of the active graphics container
+        float y = 0.0f;  // Default to top of ShadeOverlay bounds
+        float x = r.getCentreX() - tabW * 0.5f;  // Center horizontally
         
-        // Center the handle horizontally within the extended bounds
-        float x = r.getCentreX() - tabW * 0.5f;
+        // If we have a PaneManager reference, get the active graphics container bounds
+        if (paneManager)
+        {
+            auto activeContainerBounds = paneManager->getActiveGraphicsContainerBounds();
+            if (!activeContainerBounds.isEmpty())
+            {
+                // Convert the graphics container bounds to ShadeOverlay local coordinates
+                // The graphics container is positioned within the ShadeOverlay bounds
+                auto localContainerBounds = activeContainerBounds - r.getPosition().toInt();
+                
+                // For Dynamic EQ, Imager, and Machine, the tabs themselves are the graphics containers
+                // The ShadeOverlay is positioned below the tab headers, so we need to position
+                // the handle at the top of the ShadeOverlay bounds (y = 0) for these tabs
+                // Check if the active graphics container is the same as the active pane component
+                if (activeContainerBounds == paneManager->getBounds())
+                {
+                    y = 0.0f; // Position at top of ShadeOverlay bounds
+                    x = r.getCentreX() - tabW * 0.5f; // Center horizontally
+                }
+                else
+                {
+                    // For other tabs, position at the top of the graphics container
+                    y = (float)localContainerBounds.getY();
+                    x = (float)localContainerBounds.getCentreX() - tabW * 0.5f;
+                }
+            }
+        }
         
         return { x, y, tabW, tabH };
     }

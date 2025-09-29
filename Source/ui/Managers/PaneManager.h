@@ -283,6 +283,61 @@ public:
     {
         vt.setProperty (juce::String("ui_shade_") + paneKey(active), juce::jlimit(0.0f,1.0f,a), nullptr);
     }
+    
+    // Get the bounds of the currently active graphics container
+    juce::Rectangle<int> getActiveGraphicsContainerBounds() const
+    {
+        // Get the active graphics container based on the current active pane
+        juce::Component* activeGraphicsContainer = nullptr;
+        switch (active)
+        {
+            case PaneID::Phase: 
+                if (auto* phaseTab = dynamic_cast<PhaseTab*>(phase.get())) {
+                    activeGraphicsContainer = phaseTab->getPhaseVisualContainer();
+                }
+                break;
+            case PaneID::XY: 
+                if (auto* xyTab = dynamic_cast<XYTab*>(this->xyTab.get())) {
+                    activeGraphicsContainer = xyTab->getXYPad();
+                }
+                break;
+            case PaneID::Band: 
+                if (auto* bandTab = dynamic_cast<BandTab*>(band.get())) {
+                    activeGraphicsContainer = bandTab->getBandGraphics();
+                }
+                break;
+            case PaneID::Motion: 
+                if (auto* motionTab = dynamic_cast<MotionTab*>(motion.get())) {
+                    activeGraphicsContainer = motionTab->getMotionGraphics();
+                }
+                break;
+            case PaneID::Reverb: 
+                if (auto* reverbTab = dynamic_cast<ReverbTab*>(reverb.get())) {
+                    activeGraphicsContainer = reverbTab->getReverbCanvas();
+                }
+                break;
+            case PaneID::Delay: 
+                if (auto* delayTab = dynamic_cast<DelayTab*>(delay.get())) {
+                    activeGraphicsContainer = delayTab->getDelayVisuals();
+                }
+                break;
+            case PaneID::DynEQ: 
+                activeGraphicsContainer = dyneq.get(); // DynEqTab is the graphics container itself
+                break;
+            case PaneID::Imager: 
+                activeGraphicsContainer = imgr.get(); // ImagerTab is the graphics container itself
+                break;
+            case PaneID::Machine: 
+                activeGraphicsContainer = mach.get(); // MachineTab is the graphics container itself
+                break;
+        }
+        
+        if (activeGraphicsContainer)
+        {
+            return activeGraphicsContainer->getBounds();
+        }
+        return juce::Rectangle<int>();
+    }
 
     void setActive (PaneID id, bool persist)
     {
@@ -373,6 +428,11 @@ public:
         // Content starts directly under tabs with a tiny breathing space
         auto paneTop = tabs.getBottom() + 2;
         juce::Rectangle<int> paneR (full.getX(), paneTop, full.getWidth(), full.getBottom() - paneTop);
+        
+        // Add 5px margin to top only for exterior padding
+        // Leave sides and bottom untouched
+        paneR = paneR.withY(paneR.getY() + 5);
+        
         for (auto* c : { (juce::Component*) phase.get(), (juce::Component*) xyTab.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
             if (c) c->setBounds (paneR);
     }

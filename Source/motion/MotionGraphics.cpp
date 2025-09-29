@@ -1,5 +1,6 @@
 #include "MotionGraphics.h"
 #include "../ui/Design/Layout.h"
+#include "Core/FieldLookAndFeel.h"
 using namespace UI;
 namespace motion {
 
@@ -27,7 +28,31 @@ void MotionGraphics::visibilityChanged()
 
 void MotionGraphics::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colour(0xff121317));
+    auto r = getLocalBounds().toFloat();
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    auto panel = lf ? lf->theme.meters.panelDark : juce::Colour(0xFF2A2C30);
+    auto accent = lf ? lf->theme.accent : juce::Colour(0xFF2196F3);
+    auto sh = lf ? lf->theme.sh : juce::Colour(0xFF2A2A2A);
+    auto hl = lf ? lf->theme.hl : juce::Colour(0xFF4A4A4A);
+    
+    // AB Button styling: Solid panel background with elevation shadow
+    const float cr = 8.0f; // Match KnobCell corner radius
+    
+    // Elevation shadow first (AB button style)
+    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
+    else g.setColour(juce::Colour(0x40000000));
+    g.fillRoundedRectangle(r.translated(1.5f, 1.5f), cr);
+    
+    // Solid panel background (no aliasing)
+    g.setColour(panel);
+    g.fillRoundedRectangle(r, cr);
+    
+    // Border (AB button style)
+    g.setColour(sh);
+    g.drawRoundedRectangle(r, cr, 1.0f);
+    
+    // Add 10px top and bottom padding for content
+    auto contentR = r.reduced(0, 10.0f);
     
     if (orbBounds.isEmpty()) return;
     

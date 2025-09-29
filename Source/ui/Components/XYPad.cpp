@@ -68,52 +68,33 @@ void XYPad::drag (const juce::MouseEvent& e)
 void XYPad::paint (juce::Graphics& g)
 {
     auto r = getLocalBounds().toFloat();
-    const float rad = 8.0f;
-
-    // panel
-    if (auto* lfPanel = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        g.setColour (lfPanel->theme.panel);
-    else
-        g.setColour (juce::Colours::darkgrey);
-    g.fillRoundedRectangle (r.reduced (3.0f), rad);
-
-    // depth (softer to avoid visible top/bottom bars)
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    juce::DropShadow ds1 ((lf ? lf->theme.shadowDark  : juce::Colours::black).withAlpha (0.35f), 12, { -1, -1 });
-    juce::DropShadow ds2 ((lf ? lf->theme.shadowLight : juce::Colours::grey).withAlpha (0.25f),  6, { -1, -1 });
-    auto ri = r.reduced (3.0f).getSmallestIntegerContainer();
-    ds1.drawForRectangle (g, ri);
-    ds2.drawForRectangle (g, ri);
+    auto panel = lf ? lf->theme.meters.panelDark : juce::Colour(0xFF2A2C30);
+    auto sh = lf ? lf->theme.sh : juce::Colour(0xFF2A2A2A);
+    
+    // AB Button styling: Solid panel background with elevation shadow
+    const float cr = 8.0f; // Match KnobCell corner radius
+    
+    // Elevation shadow first (AB button style)
+    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
+    else g.setColour(juce::Colour(0x40000000));
+    g.fillRoundedRectangle(r.translated(1.5f, 1.5f), cr);
+    
+    // Solid panel background (no aliasing)
+    g.setColour(panel);
+    g.fillRoundedRectangle(r, cr);
+    
+    // Border (AB button style)
+    g.setColour(sh);
+    g.drawRoundedRectangle(r, cr, 1.0f);
 
-    // rim (lighter)
-    g.setColour ((lf ? lf->theme.sh : juce::Colours::black).withAlpha (0.18f));
-    g.drawRoundedRectangle (r.reduced (4.0f), rad - 1.0f, 0.8f);
+    // No hover effects - clean appearance
 
-    // hover halo
-    const auto accent = (lf ? lf->theme.accent : juce::Colours::lightblue);
-    auto border = r.reduced (2.0f);
-    const bool over = isMouseOverOrDragging();
-    g.setColour (accent);
-    g.drawRoundedRectangle (border, rad, 2.0f);
-    if (over || hoverActive)
-    {
-        for (int i = 1; i <= 8; ++i)
-        {
-            const float t = (float) i / 8.0f;
-            const float expand = 3.0f + t * 10.0f;
-            g.setColour (accent.withAlpha ((1.0f - t) * (isGreenMode ? 0.25f : 0.22f)));
-            g.drawRoundedRectangle (border.expanded (expand), rad + expand * 0.4f, 2.0f);
-        }
-        g.setColour (accent);
-        g.drawRoundedRectangle (border, rad, 2.0f);
-    }
-
-    // Standard border treatment: accent border (reduced brightness for XY pad)
-    g.setColour (accent.withAlpha (0.3f));
-    g.drawRoundedRectangle (r, rad, 1.0f);
-
+    // Add 10px top and bottom padding for content
+    auto contentR = r.reduced(0, 10.0f);
+    
     // inner content
-    auto padBounds = r.reduced (40.0f);
+    auto padBounds = contentR.reduced (40.0f);
 
     drawWaveformBackground (g, padBounds);
     drawGrid              (g, padBounds);

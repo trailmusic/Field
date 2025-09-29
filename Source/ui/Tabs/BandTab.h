@@ -43,6 +43,9 @@ public:
         if (visuals)
             visuals->onParamEdit = std::move (cb);
     }
+    
+    // Public getter for graphics container
+    BandGraphics* getBandGraphics() const { return visuals.get(); }
 
 private:
     std::unique_ptr<BandGraphics> visuals;

@@ -368,6 +368,8 @@ void MachineTab::paintOverChildren (juce::Graphics& g)
 void MachineTab::resized()
 {
     auto r = getLocalBounds();
+    // Add padding to avoid conflict with shade handle (20px + 5px margin)
+    r = r.withY(r.getY() + 25);
     // Recompute tight bar area (keep layout independent of paint)
     auto bar = r.removeFromTop (56);
     const int learnW = 180, stopW = 56, strW = 220, preW=90, lisW=90;

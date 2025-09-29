@@ -62,6 +62,9 @@ public:
         if (reverbPanel) reverbPanel->setBounds (r);
         if (controls && controls->isVisible()) controls->setBounds (controlsArea);
     }
+    
+    // Public getter for graphics container
+    ReverbGraphics* getReverbCanvas() const { return reverbPanel.get(); }
 
 private:
     MyPluginAudioProcessor& proc;

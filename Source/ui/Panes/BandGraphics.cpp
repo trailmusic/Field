@@ -109,24 +109,44 @@ void BandGraphics::resized()
 void BandGraphics::paint (juce::Graphics& g)
 {
     auto b = getLocalBounds().toFloat();
-    g.setColour (juce::Colours::black.withAlpha (1.0f)); // Fully opaque background
-    g.fillRoundedRectangle (b.reduced (2.0f), 8.0f);
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    auto panel = lf ? lf->theme.meters.panelDark : juce::Colour(0xFF2A2C30);
+    auto sh = lf ? lf->theme.sh : juce::Colour(0xFF2A2A2A);
+    
+    // AB Button styling: Solid panel background with elevation shadow
+    const float cr = 8.0f; // Match KnobCell corner radius
+    
+    // Elevation shadow first (AB button style)
+    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
+    else g.setColour(juce::Colour(0x40000000));
+    g.fillRoundedRectangle(b.translated(1.5f, 1.5f), cr);
+    
+    // Solid panel background (no aliasing)
+    g.setColour(panel);
+    g.fillRoundedRectangle(b, cr);
+    
+    // Border (AB button style)
+    g.setColour(sh);
+    g.drawRoundedRectangle(b, cr, 1.0f);
+
+    // Add 10px top and bottom padding for content
+    auto contentB = b.reduced(0, 10.0f);
 
     const juce::SpinLock::ScopedTryLockType tl (dataLock);
-    if (!tl.isLocked()) { drawGrid (g, b); return; }
-    drawGrid (g, b);
+    if (!tl.isLocked()) { drawGrid (g, contentB); return; }
+    drawGrid (g, contentB);
 
     // Band-specific: Width mode only
-    drawWidthWaveform (g, b.reduced (8.0f));
-    drawWidthEditor (g, b.reduced (8.0f));
-    drawWidthOverlay (g, b.reduced (8.0f));
-    drawWidthHints (g, b.reduced (8.0f));
+    drawWidthWaveform (g, contentB.reduced (8.0f));
+    drawWidthEditor (g, contentB.reduced (8.0f));
+    drawWidthOverlay (g, contentB.reduced (8.0f));
+    drawWidthHints (g, contentB.reduced (8.0f));
     
     // Shuffler visual strip
-    drawShufflerStrip (g, b.reduced (8.0f));
+    drawShufflerStrip (g, contentB.reduced (8.0f));
     
     // Draw center lines on top of everything
-    drawCenterLines (g, b.reduced (8.0f));
+    drawCenterLines (g, contentB.reduced (8.0f));
 }
 
 void BandGraphics::timerCallback()
