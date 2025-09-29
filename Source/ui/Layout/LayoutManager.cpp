@@ -188,22 +188,21 @@ void LayoutManager::layoutMainControls()
     
     // Clean layout: meters (left) → center content → sliders (right)
     
-    // 1) Calculate meters width
-    const int lPx_rs = Layout::dp((float)Layout::knobPx(Layout::Knob::L), s);
-    const int cellW_rs = lPx_rs + Layout::dp(8, s);
-    const int colW_m = juce::jlimit(Layout::dp(24, s), Layout::dp(56, s), juce::roundToInt(cellW_rs * 0.75f));
-    const int corrW_m = juce::jmax(Layout::dp(10, s), juce::roundToInt(colW_m * 0.5f));
-    const int inter_m = juce::jmax(1, Layout::dp(Layout::GAP_S, s) / 2);
-    const int outerPadM_X = juce::jmax(1, Layout::dp(Layout::GAP_S, s));
-    const int targetStripW = colW_m * 2 + corrW_m + inter_m * 2 + outerPadM_X * 2;
-    const int metersWidth = juce::jlimit(Layout::dp(96, s), Layout::dp(240, s), targetStripW);
+    // 1) Calculate meters width (smaller than half)
+    const int metersWidth = juce::jlimit(Layout::dp(24, s), Layout::dp(60, s), 
+                                         juce::roundToInt(r.getWidth() * 0.25f));
     
-    // 2) Calculate sliders width
-    const int slidersWidth = juce::jlimit(Layout::dp(80, s), Layout::dp(120, s), 
-                                         juce::roundToInt(r.getWidth() * 0.15f));
+    // 2) Calculate sliders width (smaller)
+    const int slidersWidth = juce::jlimit(Layout::dp(40, s), Layout::dp(60, s), 
+                                         juce::roundToInt(r.getWidth() * 0.08f));
     
-    // 3) Layout meters on the left
+    // 3) Layout meters container on the left - remove padding only for meters
     auto metersArea = r.removeFromLeft(metersWidth);
+    // Remove the left padding from meters area to position them at the edge
+    metersArea = metersArea.withX(0).withWidth(metersWidth);
+    editor.metersContainer.setBounds(metersArea);
+    
+    // Layout individual meters within the container
     editor.layoutMeters(metersArea, s, sv);
     
     // 4) Layout sliders on the right

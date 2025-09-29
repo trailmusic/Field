@@ -363,14 +363,7 @@ private:
     void initializeTheme();
     void initializeTimer();
     void initializeMouseListener();
-    void initializeOptionsMenu();
-    void initializeThemeButtons();
-    void initializePresetUI();
-    void initializeABControls();
-    void initializeXYBindings();
     void initializeMeters();
-    void initializeContainers();
-    void initializeSlidersAndLabels();
     
     // DRY helper methods
     void addShowHide(juce::Component& component, bool visible);

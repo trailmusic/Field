@@ -463,9 +463,7 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     panes->setSampleRate (proc.getSampleRate());
     panes->setActive (PaneID::XY, true);
 
-    addAndMakeVisible (corrMeter);
-    addAndMakeVisible (lrMeters);
-    addAndMakeVisible (ioMeters);
+    // Meters are now added to metersContainer above
 
     addAndMakeVisible (mainControlsContainer);  mainControlsContainer.setTitle ("");  mainControlsContainer.setShowBorder (false);
     addAndMakeVisible (panKnobContainer);       panKnobContainer.setTitle ("");       panKnobContainer.setShowBorder (true);
@@ -473,6 +471,11 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     addAndMakeVisible (MainContentContainer);   MainContentContainer.setTitle ("");   MainContentContainer.setShowBorder (false);
     addAndMakeVisible (rightSlidersContainer);  rightSlidersContainer.setTitle ("");  rightSlidersContainer.setShowBorder (false);
     addAndMakeVisible (metersContainer);        metersContainer.setTitle ("");        metersContainer.setShowBorder (false);
+
+    // Add meters to their container
+    metersContainer.addAndMakeVisible (ioMeters);
+    metersContainer.addAndMakeVisible (lrMeters);
+    metersContainer.addAndMakeVisible (corrMeter);
 
     for (auto* s : { &inputSlider, &outputSlider, &mixSlider })
         rightSlidersContainer.addAndMakeVisible (*s);
@@ -895,22 +898,21 @@ void MyPluginAudioProcessorEditor::layoutMeters (juce::Rectangle<int> metersArea
 {
     if (metersArea.isEmpty()) return;
 
-    const int meterWidth = juce::jlimit (Layout::dp (24, s), Layout::dp (56, s),
-                                         juce::roundToInt (metersArea.getWidth () * 0.75f));
-    const int corrWidth  = juce::jmax (Layout::dp (10, s), juce::roundToInt (meterWidth * 0.5f));
-    const int interGap   = juce::jmax (1, Layout::dp (Layout::GAP_S, s) / 2);
-    const int outerPadX  = juce::jmax (1, Layout::dp (Layout::GAP_S, s));
-    const int outerPadY  = Layout::dp (Layout::GAP, sv);
+    // Use the full container width - no more artificial width limits
+    auto containerBounds = metersContainer.getBounds();
+    
+    // Calculate meter widths to fill the container completely
+    const int totalWidth = containerBounds.getWidth();
+    const int meterWidth = totalWidth / 3; // Each meter gets exactly 1/3 of container
+    const int corrWidth  = totalWidth / 3; // Correlation also gets 1/3 of container
+    const int interGap   = 0; // No gap between meters
+    const int outerPadX  = 0; // No outer padding
+    const int outerPadY  = 0; // No outer padding
 
-    const int totalWidth  = meterWidth * 2 + corrWidth + interGap * 2 + outerPadX * 2;
-    const int actualWidth = juce::jlimit (Layout::dp (96, s), Layout::dp (240, s), totalWidth);
-
-    auto centeredArea = metersArea.withWidth (actualWidth)
-                                  .withX (metersArea.getX() + (metersArea.getWidth() - actualWidth) / 2);
-
-    auto ioArea   = centeredArea.removeFromLeft (meterWidth).reduced (outerPadX, outerPadY);
-    auto lrArea   = centeredArea.removeFromLeft (meterWidth).reduced (outerPadX, outerPadY);
-    auto corrArea = centeredArea.removeFromLeft (corrWidth).reduced (outerPadX, outerPadY);
+    // Fill the container completely from left to right
+    auto ioArea   = juce::Rectangle<int>(0, 0, meterWidth, containerBounds.getHeight()).reduced(outerPadX, outerPadY);
+    auto lrArea   = juce::Rectangle<int>(meterWidth, 0, meterWidth, containerBounds.getHeight()).reduced(outerPadX, outerPadY);
+    auto corrArea = juce::Rectangle<int>(meterWidth * 2, 0, corrWidth, containerBounds.getHeight()).reduced(outerPadX, outerPadY);
 
     ioMeters .setBounds (ioArea);
     lrMeters .setBounds (lrArea);
@@ -1046,58 +1048,10 @@ MyPluginAudioProcessorEditor::ThemeConfig MyPluginAudioProcessorEditor::applyOpt
 // Performance & Safety Optimizations
 // ============================================================================
 
-void MyPluginAudioProcessorEditor::initializeOptionsMenu()
-{
-    // Optimized options menu setup with static data
-    struct OsOption { juce::String id; juce::String label; juce::Colour tint; };
-    static const std::array<OsOption, 5> osOptions = {{
-        {"os1x", "1x", juce::Colour(0xFF5AA9E6)},
-        {"os2x", "2x", juce::Colour(0xFFE65A5A)},
-        {"os4x", "4x", juce::Colour(0xFF5AE65A)},
-        {"os8x", "8x", juce::Colour(0xFFE6E65A)},
-        {"os16x", "16x", juce::Colour(0xFFE65AE6)}
-    }};
-    
-    for (const auto& option : osOptions)
-    {
-        osSelect.addItem(option.label, option.id.hashCode());
-    }
-}
-
-void MyPluginAudioProcessorEditor::initializeThemeButtons()
-{
-    // Theme button initialization - placeholder for future optimization
-}
-
-void MyPluginAudioProcessorEditor::initializePresetUI()
-{
-    // Preset UI initialization - placeholder for future optimization
-}
-
-void MyPluginAudioProcessorEditor::initializeABControls()
-{
-    // A/B controls initialization - placeholder for future optimization
-}
-
-void MyPluginAudioProcessorEditor::initializeXYBindings()
-{
-    // XY bindings initialization - placeholder for future optimization
-}
-
 void MyPluginAudioProcessorEditor::initializeMeters()
 {
     // Meter initialization with consistent styling
     corrMeter.setLookAndFeel(&lnf);
     lrMeters.setLookAndFeel(&lnf);
     ioMeters.setLookAndFeel(&lnf);
-}
-
-void MyPluginAudioProcessorEditor::initializeContainers()
-{
-    // Container initialization - placeholder for future optimization
-}
-
-void MyPluginAudioProcessorEditor::initializeSlidersAndLabels()
-{
-    // Slider and label initialization - placeholder for future optimization
 }
