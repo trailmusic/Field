@@ -1444,6 +1444,8 @@ Source/Core/
 4. **CleanupManager** - Handles resource cleanup and destruction
 5. **PaintManager** - Manages all rendering and visual effects
 6. **StateManager** - Handles A/B states, copy/paste, and preset management
+7. **MeterManager** - Centralized meter component management
+8. **SliderManager** - Centralized slider component management
 
 #### **Component Architecture**
 - **Components/**: Reusable UI components (BypassButton, ButtonSwitch, XYPad, etc.)
