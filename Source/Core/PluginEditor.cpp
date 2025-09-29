@@ -14,7 +14,7 @@
 #include "ui/Components/VizEQ.h"
 
 MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcessor& p)
-: AudioProcessorEditor (&p), proc (p), presetManager (proc.apvts, nullptr), bypassButton(lnf)
+: AudioProcessorEditor (&p), proc (p), presetManager (proc.apvts, nullptr), bypassButton (lnf)
 {
     initializePresetSystem();
     initializeManagers();
@@ -26,17 +26,18 @@ MyPluginAudioProcessorEditor::MyPluginAudioProcessorEditor (MyPluginAudioProcess
 }
 
 void MyPluginAudioProcessorEditor::initializePresetSystem()
-{
     {
         const auto presetsFile = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
                                   .getChildFile ("Field/Presets/delay_presets.json");
+
         if (presetsFile.existsAsFile())
         {
             const auto text = presetsFile.loadFileAsString();
             const auto root = juce::JSON::parse (text);
-            auto importOne = [this](const juce::var& v)
+
+        auto importOne = [this] (const juce::var& v)
             {
-                if (! v.isObject()) return;
+            if (!v.isObject()) return;
                 if (auto* obj = v.getDynamicObject())
                 {
                     LibraryPreset pr;
@@ -45,102 +46,103 @@ void MyPluginAudioProcessorEditor::initializePresetSystem()
                     pr.meta.hint        = obj->getProperty ("hint").toString();
                     pr.meta.author      = "Factory";
                     pr.meta.category    = "Delay";
+
                     if (auto tags = obj->getProperty ("tags"); tags.isArray())
-                        for (auto& t : *tags.getArray()) pr.meta.tags.add (t.toString());
+                    for (const auto& t : *tags.getArray()) pr.meta.tags.add (t.toString());
+
                     if (auto params = obj->getProperty ("params"); params.isObject())
                         if (auto* pv = params.getDynamicObject())
-                            for (auto& kv : pv->getProperties())
+                        for (const auto& kv : pv->getProperties())
                                 pr.params.set (kv.name.toString(), kv.value);
-                    if (pr.meta.name.isNotEmpty()) presetStore.addFactoryPreset (pr);
+
+                if (pr.meta.name.isNotEmpty())
+                    presetStore.addFactoryPreset (pr);
                 }
             };
+
             if (root.isArray())
             {
                 for (const auto& it : *root.getArray()) importOne (it);
             }
             else if (auto* d = root.getDynamicObject())
             {
-                auto arr = d->getProperty ("presets");
-                if (arr.isArray()) for (const auto& it : *arr.getArray()) importOne (it);
+            if (auto arr = d->getProperty ("presets"); arr.isArray())
+                for (const auto& it : *arr.getArray()) importOne (it);
             }
         }
-    }
+
     presetStore.scan();
-    DBG("[PresetStore] after add+scan: " << presetStore.getAll().size() << " presets");
+    DBG ("[PresetStore] after add+scan: " << presetStore.getAll().size() << " presets");
 }
 
 void MyPluginAudioProcessorEditor::initializeManagers()
 {
-    layoutManager = std::make_unique<LayoutManager>(*this);
-    eventManager = std::make_unique<EventManager>(*this);
-    attachmentManager = std::make_unique<AttachmentManager>(*this);
-    cleanupManager = std::make_unique<CleanupManager>(*this);
-    paintManager = std::make_unique<PaintManager>(*this);
-    stateManager = std::make_unique<StateManager>(*this);
+    layoutManager     = std::make_unique<LayoutManager>     (*this);
+    eventManager      = std::make_unique<EventManager>      (*this);
+    attachmentManager = std::make_unique<AttachmentManager> (*this);
+    cleanupManager    = std::make_unique<CleanupManager>    (*this);
+    paintManager      = std::make_unique<PaintManager>      (*this);
+    stateManager      = std::make_unique<StateManager>      (*this);
 }
 
 void MyPluginAudioProcessorEditor::initializeSizeConstraints()
 {
-    if (layoutManager) {
-        layoutManager->buildCells();
-    }
-    
-    const float s = 1.0f;
-    const int lPx  = Layout::dp ((float) Layout::knobPx (Layout::Knob::L),  s);
-    const int xlPx = Layout::dp ((float) Layout::knobPx (Layout::Knob::XL), s);
-    const int swW  = Layout::dp ((int) (Layout::ALGO_SWITCH_W * Layout::ALGO_SWITCH_W_RATIO), s);
-    const int numItems = 1 + 1 + 1 + 5 + 3;
-    const int gaps = numItems - 1;
-    const int gapS = Layout::dp (Layout::GAP_S, s);
-    const int cellW_delay_min = lPx + Layout::dp (8, s);
-    const int delayColsMin = 7;
-    const int delayCardWMin = delayColsMin * cellW_delay_min + gapS * (delayColsMin - 1) + Layout::dp (Layout::GAP, s);
-    const int motionColsMin = 4;
+    if (layoutManager) layoutManager->buildCells();
+
+    const float s     = 1.0f;
+    const int   lPx   = Layout::dp ((float) Layout::knobPx (Layout::Knob::L),  s);
+    const int   xlPx  = Layout::dp ((float) Layout::knobPx (Layout::Knob::XL), s);
+    const int   swW   = Layout::dp ((int) (Layout::ALGO_SWITCH_W * Layout::ALGO_SWITCH_W_RATIO), s);
+    const int   numItems = 1 + 1 + 1 + 5 + 3;
+    const int   gaps  = numItems - 1;
+    const int   gapS  = Layout::dp (Layout::GAP_S, s);
+
+    const int cellWDelayMin  = lPx + Layout::dp (8, s);
+    const int delayColsMin   = 7;
+    const int delayCardWMin  = delayColsMin * cellWDelayMin + gapS * (delayColsMin - 1) + Layout::dp (Layout::GAP, s);
+    const int motionColsMin  = 4;
     const int motionCellWMin = lPx + Layout::dp (8, s);
     const int motionDividerWMin = Layout::dp (8, s);
     const int motionAreaWMin = motionDividerWMin + Layout::dp (Layout::GAP, s) + motionColsMin * motionCellWMin;
-    const int calculatedMinWidth = xlPx + lPx + swW + 5*lPx + 3*lPx + gaps * gapS
+
+    const int calculatedMinWidth =
+        xlPx + lPx + swW + 5 * lPx + 3 * lPx + gaps * gapS
                                    + Layout::dp (Layout::PAD, s) * 2
                                    + delayCardWMin + Layout::dp (Layout::GAP, s)
                                    + motionAreaWMin;
     
-    const int headerH = Layout::dp (50, s);
-    const int xyMinH = Layout::dp (Layout::XY_MIN_H, s);
-    const int metersH = Layout::dp (84, s);
+    const int headerH          = Layout::dp (50, s);
+    const int xyMinH           = Layout::dp (Layout::XY_MIN_H, s);
+    const int metersH          = Layout::dp (84, s);
     const int bottomReserveMin = Layout::dp (6, s) + Layout::dp (22, s);
-    const int gapH = Layout::dp (Layout::GAP, s);
-    const auto gridMetrics = ControlGridMetrics::compute (baseWidth, baseHeight);
-    const int controlsHMin = gridMetrics.controlsH;
-    const int calculatedMinHeight = headerH + juce::jmax (xyMinH, metersH) + gapH + controlsHMin + Layout::dp (Layout::PAD, s) + bottomReserveMin;
-    
+    const int gapH             = Layout::dp (Layout::GAP, s);
+    const auto gridMetrics     = ControlGridMetrics::compute (baseWidth, baseHeight);
+    const int controlsHMin     = gridMetrics.controlsH;
+
+    const int calculatedMinHeight =
+        headerH + juce::jmax (xyMinH, metersH) + gapH + controlsHMin + Layout::dp (Layout::PAD, s) + bottomReserveMin;
+
     const int minWidthAllowed = juce::jmax (800, (int) std::round ((float) baseWidth * 0.5f));
     const int minWidthFloor   = Layout::BP_WIDE;
     const int proposedMinW    = juce::jmin (calculatedMinWidth, minWidthAllowed);
-    this->minWidth = juce::jmax (minWidthFloor, proposedMinW);
-    this->minHeight = calculatedMinHeight;
-    this->maxWidth = 3000;
-    this->maxHeight = 2000;
-    
+
+    minWidth  = juce::jmax (minWidthFloor, proposedMinW);
+    minHeight = calculatedMinHeight;
+    maxWidth  = 3000;
+    maxHeight = 2000;
+
     setResizeLimits (minWidth, minHeight, maxWidth, maxHeight);
-    
-    const int initialWidth = juce::jmax (baseWidth, minWidth);
-    const int initialHeight = juce::jmax (baseHeight, calculatedMinHeight);
-    setSize (initialWidth, initialHeight);
+    setSize (juce::jmax (baseWidth,  minWidth),
+             juce::jmax (baseHeight, calculatedMinHeight));
 }
 
 void MyPluginAudioProcessorEditor::initializeUIComponents()
 {
-    juce::MessageManager::callAsync ([this]
-    {
-        repaint();
-    });
-    lnf.theme.accent = juce::Colour (0xFF5AA9E6);
-    lnf.setupColours();
-    setLookAndFeel (&lnf);
+    juce::MessageManager::callAsync ([this] { repaint(); });
 
-    startTimerHz (30);
-    uiTimerHzCurrent = 30;
-    addMouseListener (this, true);
+    initializeTheme();
+    initializeTimer();
+    initializeMouseListener();
 }
 
 void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
@@ -152,27 +154,30 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
         optionsButton.setToggleState (true, juce::dontSendNotification);
         optionsButton.repaint();
 
-        TintMenuLNFEx menuLnf; menuLnf.defaultTint = lnf.theme.accent; menuLnf.hideChecks = true;
+        TintMenuLNFEx menuLnf;
+        menuLnf.defaultTint = lnf.theme.accent;
+        menuLnf.hideChecks  = true;
         menuLnf.setColour (juce::PopupMenu::textColourId, lnf.theme.text);
 
         int curIdx = 0, numChoices = 1;
-        if (auto* rp = proc.apvts.getParameter ("os_mode"))
-            if (auto* cp = dynamic_cast<juce::AudioParameterChoice*> (rp)) { curIdx = cp->getIndex(); numChoices = cp->choices.size(); }
+        if (const auto* rp = proc.apvts.getParameter ("os_mode"))
+            if (const auto* cp = dynamic_cast<const juce::AudioParameterChoice*> (rp))
+            { curIdx = cp->getIndex(); numChoices = (int) cp->choices.size(); }
 
         showTintedMenu (optionsButton, menuLnf,
             [this, curIdx, numChoices] (juce::PopupMenu& m, TintMenuLNFEx& lnfEx)
             {
-                m.addSectionHeader ("Oversampling");
                 struct Row { int id; const char* text; juce::Colour tint; bool enabled; };
-                juce::Array<Row> rows;
-                rows.add ({ 1, "1x (Off)",          lnf.theme.textMuted, true });
-                rows.add ({ 2, "2x (High Quality)", lnf.theme.eq.bass.withAlpha (0.95f),   numChoices > 1 });
-                rows.add ({ 3, "4x (Ultra)",        lnf.theme.accent.withHue   (lnf.theme.accent.getHue() + 0.08f).withSaturation (0.9f), numChoices > 2 });
-                rows.add ({ 4, "8x (Max)",          lnf.theme.accent.withHue   (lnf.theme.accent.getHue() - 0.08f).withBrightness (0.95f), numChoices > 3 });
-                rows.add ({ 5, "16x (Extreme)",     lnf.theme.eq.scoop.withAlpha (0.95f), numChoices > 4 });
+                const Row rows[] = {
+                    { 1, "1x (Off)",          lnf.theme.textMuted,                                                             true },
+                    { 2, "2x (High Quality)", lnf.theme.eq.bass.withAlpha (0.95f),                                             numChoices > 1 },
+                    { 3, "4x (Ultra)",        lnf.theme.accent.withHue (lnf.theme.accent.getHue() + 0.08f).withSaturation (0.9f), numChoices > 2 },
+                    { 4, "8x (Max)",          lnf.theme.accent.withHue (lnf.theme.accent.getHue() - 0.08f).withBrightness (0.95f), numChoices > 3 },
+                    { 5, "16x (Extreme)",     lnf.theme.eq.scoop.withAlpha (0.95f),                                            numChoices > 4 },
+                };
 
                 lnfEx.itemTints.clear();
-                for (int i = 0; i < rows.size(); ++i)
+                for (int i = 0; i < (int) std::size (rows); ++i)
                 {
                     m.addItem (rows[i].id, rows[i].text, rows[i].enabled, i == curIdx);
                     lnfEx.itemTints.add (rows[i].tint);
@@ -180,18 +185,22 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
             },
             [this, wasOn, numChoices] (int r)
             {
-                if (auto* rp = proc.apvts.getParameter ("os_mode"))
-                    if (auto* cp = dynamic_cast<juce::AudioParameterChoice*> (rp))
+                if (const auto* rp = proc.apvts.getParameter ("os_mode"))
+                    if (const auto* cp = dynamic_cast<const juce::AudioParameterChoice*> (rp))
                         optionsButton.setToggleState (cp->getIndex() > 0, juce::dontSendNotification);
-                    else optionsButton.setToggleState (wasOn, juce::dontSendNotification);
+                    else
+                        optionsButton.setToggleState (wasOn, juce::dontSendNotification);
+
                 optionsButton.repaint();
 
-                if (r == 0) return;
-                if (r < 1 || r > numChoices) return;
+                if (r <= 0 || r > numChoices) return;
+
                 if (auto* p = proc.apvts.getParameter ("os_mode"))
                 {
                     const float norm = numChoices > 1 ? (float) (r - 1) / (float) (numChoices - 1) : 0.0f;
-                    p->beginChangeGesture(); p->setValueNotifyingHost (norm); p->endChangeGesture();
+                    p->beginChangeGesture();
+                    p->setValueNotifyingHost (norm);
+                    p->endChangeGesture();
                 }
             });
     };
@@ -199,43 +208,44 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     auto applyOptionsTint = [this]
     {
         int sel = 0;
-        if (auto* rp = proc.apvts.getParameter ("os_mode"))
-            if (auto* cp = dynamic_cast<juce::AudioParameterChoice*> (rp)) sel = cp->getIndex();
+        if (const auto* rp = proc.apvts.getParameter ("os_mode"))
+            if (const auto* cp = dynamic_cast<const juce::AudioParameterChoice*> (rp))
+                sel = cp->getIndex();
+
         juce::Colour tint = lnf.theme.textMuted;
-        juce::String label = "1x";
+        juce::String label { "1x" };
+
         switch (sel)
         {
-            case 0: tint = lnf.theme.textMuted; label = "1x"; break;
-            case 1: tint = lnf.theme.eq.bass.withAlpha (0.95f); label = "2x"; break;
-            case 2: tint = lnf.theme.accent.withHue (lnf.theme.accent.getHue() + 0.08f).withSaturation (0.9f); label = "4x"; break;
-            case 3: tint = lnf.theme.accent.withHue (lnf.theme.accent.getHue() - 0.08f).withBrightness (0.95f); label = "8x"; break;
-            case 4: tint = lnf.theme.eq.scoop.withAlpha (0.95f); label = "16x"; break;
+            case 0: tint = lnf.theme.textMuted;                                                                 label = "1x";  break;
+            case 1: tint = lnf.theme.eq.bass.withAlpha (0.95f);                                                 label = "2x";  break;
+            case 2: tint = lnf.theme.accent.withHue (lnf.theme.accent.getHue() + 0.08f).withSaturation (0.9f); label = "4x";  break;
+            case 3: tint = lnf.theme.accent.withHue (lnf.theme.accent.getHue() - 0.08f).withBrightness (0.95f);label = "8x";  break;
+            case 4: tint = lnf.theme.eq.scoop.withAlpha (0.95f);                                                label = "16x"; break;
         }
+
         optionsButton.getProperties().set ("accentOverrideARGB", (int) tint.getARGB());
-        optionsButton.getProperties().set ("iconOverrideARGB", (int) tint.getARGB());
-        optionsButton.getProperties().set ("labelText", label);
+        optionsButton.getProperties().set ("iconOverrideARGB",   (int) tint.getARGB());
+        optionsButton.getProperties().set ("labelText",          label);
         optionsButton.setToggleState (true, juce::dontSendNotification);
         optionsButton.repaint();
     };
+
     applyOptionsTint();
-    osSelect.onChange = [this, applyOptionsTint]
-    {
-        applyOptionsTint();
-    };
+
+    osSelect.onChange = [this, applyOptionsTint] { applyOptionsTint(); };
+
     if (!osModeParamAttach)
-    {
         if (auto* p = proc.apvts.getParameter ("os_mode"))
-        {
-            osModeParamAttach = std::make_unique<juce::ParameterAttachment>(*p, [applyOptionsTint](float){ applyOptionsTint(); }, nullptr);
-        }
-    }
+            osModeParamAttach = std::make_unique<juce::ParameterAttachment> (
+                *p, [applyOptionsTint] (float) { applyOptionsTint(); }, nullptr);
 
     addAndMakeVisible (helpButton);
     helpButton.onClick = [this]
     {
         struct HelpFAQComponent : public juce::Component
         {
-            HelpFAQComponent (FieldLNF& l) : lnf(l)
+            explicit HelpFAQComponent (FieldLNF& l) : lnf (l)
             {
                 addAndMakeVisible (text);
                 text.setReadOnly (true);
@@ -257,16 +267,16 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
                     "A: In your user data folder under the plugin's presets directory.\n\n"
                 );
             }
-            void resized() override
-            {
-                text.setBounds (getLocalBounds().reduced (12));
-            }
+
+            void resized() override { text.setBounds (getLocalBounds().reduced (12)); }
+
             void paint (juce::Graphics& g) override
             {
                 g.fillAll (lnf.theme.panel);
                 g.setColour (lnf.theme.sh);
                 g.drawRoundedRectangle (getLocalBounds().toFloat().reduced (2.0f), 6.0f, 1.0f);
             }
+
             juce::TextEditor text;
             FieldLNF& lnf;
         };
@@ -296,28 +306,31 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     colorModeButton.setTooltip (ThemeManager::getThemeName (lnf.currentVariant));
     colorModeButton.onClick = [this]
     {
-        using TV = ThemeVariant;
-        static ThemeVariant order[] = { ThemeVariant::Ocean, ThemeVariant::Green, ThemeVariant::Pink, ThemeVariant::Yellow, ThemeVariant::Grey };
-        auto currentAccent = lnf.theme.accent.getARGB();
+        static ThemeVariant order[] { ThemeVariant::Ocean, ThemeVariant::Green, ThemeVariant::Pink, ThemeVariant::Yellow, ThemeVariant::Grey };
+
+        const auto currentAccent = lnf.theme.accent.getARGB();
+
         int idx = 0;
-        if (currentAccent == juce::Colour (0xFF5AA9E6).getARGB()) idx = 0;
+        if      (currentAccent == juce::Colour (0xFF5AA9E6).getARGB()) idx = 0;
         else if (currentAccent == juce::Colour (0xFF5AA95A).getARGB()) idx = 1;
         else if (currentAccent == juce::Colour (0xFFE91E63).getARGB()) idx = 2;
         else if (currentAccent == juce::Colour (0xFFFFC107).getARGB()) idx = 3;
         else if (currentAccent == juce::Colour (0xFF9EA3AA).getARGB()) idx = 4;
+
         idx = (idx + 1) % 5;
+
         lnf.setTheme (order[idx]);
         colorModeButton.setTooltip (ThemeManager::getThemeName (order[idx]));
+
         const bool greenNow = (order[idx] == ThemeVariant::Green);
-        if (auto* xyTab = panes->getXYTab()) {
-            xyTab->setGreenMode(greenNow);
-        }
+        if (auto* xyTab = panes->getXYTab()) xyTab->setGreenMode (greenNow);
+
         repaint();
     };
 
     tooltipsButton.setTooltip ("Tooltip Assistant");
     tooltipsButton.setToggleState (tooltipAssistantOn_, juce::dontSendNotification);
-    tooltipsButton.onClick = [this] { };
+    tooltipsButton.onClick = [this] {};
 
     addAndMakeVisible (fullScreenButton);
     fullScreenButton.onClick = [this]
@@ -325,8 +338,7 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
         const bool on = fullScreenButton.getToggleState();
 
         if (auto* tlw = getTopLevelComponent())
-        {
-            if (auto* rw = dynamic_cast<juce::ResizableWindow*>(tlw))
+            if (auto* rw = dynamic_cast<juce::ResizableWindow*> (tlw))
             {
                 if (on)
                 {
@@ -336,63 +348,67 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
                 else
                 {
                     rw->setFullScreen (false);
-                    if (!savedBounds.isEmpty())
-                        rw->setBounds (savedBounds);
+                    if (!savedBounds.isEmpty()) rw->setBounds (savedBounds);
                 }
                 return;
-            }
         }
 
-        if (on)
-            fullScreenButton.setToggleState (false, juce::dontSendNotification);
+        if (on) fullScreenButton.setToggleState (false, juce::dontSendNotification);
     };
 
     addAndMakeVisible (linkButton);
     linkButton.onClick = [this]
     {
         linkButton.setToggleState (!linkButton.getToggleState(), juce::dontSendNotification);
-        if (auto* xyTab = panes->getXYTab()) {
-            xyTab->setLinked(linkButton.getToggleState());
-        }
+        if (auto* xyTab = panes->getXYTab()) xyTab->setLinked (linkButton.getToggleState());
     };
+
     addAndMakeVisible (snapButton);
     snapButton.setToggleState (false, juce::dontSendNotification);
     snapButton.onClick = [this]
     {
         const bool on = !snapButton.getToggleState();
         snapButton.setToggleState (on, juce::dontSendNotification);
-        if (auto* xyTab = panes->getXYTab()) {
-            xyTab->setSnapEnabled(on);
-        }
+        if (auto* xyTab = panes->getXYTab()) xyTab->setSnapEnabled (on);
     };
 
     addAndMakeVisible (presetField);
     presetField.setButtonText ("Search presets…");
-    presetField.setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
-    presetField.setColour (juce::TextButton::buttonOnColourId, juce::Colours::transparentBlack);
+    presetField.setColour (juce::TextButton::buttonColourId,    juce::Colours::transparentBlack);
+    presetField.setColour (juce::TextButton::buttonOnColourId,  juce::Colours::transparentBlack);
+
     addAndMakeVisible (prevPresetButton);
     addAndMakeVisible (nextPresetButton);
+    prevPresetButton.onClick = [this] {};
+    nextPresetButton.onClick = [this] {};
 
-    prevPresetButton.onClick = [this]
-    {
-    };
-    nextPresetButton.onClick = [this]
-    {
-    };
     presetField.onClick = [this]
     {
         static PresetRegistry presetRegistry;
         presetRegistry.reloadAll();
+
         PresetCommandPalette::show(
-            presetRegistry, presetField,
-            [this](const PresetEntry& e){
+            presetRegistry,
+            presetField,
+            [this] (const PresetEntry& e)
+            {
                 LibraryPreset tmp; tmp.meta.id = e.id; tmp.meta.name = e.name; tmp.params = e.params;
                 presetManager.applyPresetAtomic (tmp);
                 presetNameLabel.setText (e.name, juce::dontSendNotification);
             },
-            [this](const PresetEntry& e, bool toA){ LibraryPreset tmp; tmp.params = e.params; presetManager.loadToSlot (tmp, toA); },
-            [reg=&presetRegistry](const PresetEntry& e, bool fav){ reg->setFavorite (e.id, fav); },
-            [this](juce::String name, juce::StringArray tags, juce::String cat){ auto pr = presetManager.currentAsPreset (name, cat, tags, "User preset", "", "You"); presetStore.saveUserPreset (pr); presetStore.scan(); },
+            [this] (const PresetEntry& e, bool toA)
+            {
+                LibraryPreset tmp;
+                tmp.params = e.params;
+                presetManager.loadToSlot (tmp, toA);
+            },
+            [reg = &presetRegistry] (const PresetEntry& e, bool fav) { reg->setFavorite (e.id, fav); },
+            [this] (juce::String name, juce::StringArray tags, juce::String cat)
+            {
+                auto pr = presetManager.currentAsPreset (name, cat, tags, "User preset", "", "You");
+                presetStore.saveUserPreset (pr);
+                presetStore.scan();
+            },
             presetField.getButtonText()
         );
     };
@@ -400,17 +416,21 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     addAndMakeVisible (abButtonA);
     addAndMakeVisible (abButtonB);
     addAndMakeVisible (copyButton);
-    abButtonA.setToggleState (true, juce::dontSendNotification);
+
+    abButtonA.setToggleState (true,  juce::dontSendNotification);
     abButtonB.setToggleState (false, juce::dontSendNotification);
-    abButtonA.onClick = [this]{ if (!abButtonA.getToggleState()) toggleABState(); };
-    abButtonB.onClick = [this]{ if (!abButtonB.getToggleState()) toggleABState(); };
-    
+    abButtonA.onClick = [this] { if (!abButtonA.getToggleState()) toggleABState(); };
+    abButtonB.onClick = [this] { if (!abButtonB.getToggleState()) toggleABState(); };
+
     setAreaMetallicForCell (abButtonA, MetallicKind::Band);
     setAreaMetallicForCell (abButtonB, MetallicKind::Band);
+
     copyButton.onClick = [this]
     {
-        juce::PopupMenu m; m.addItem (1, "Copy A to B"); m.addItem (2, "Copy B to A");
-        m.showMenuAsync (juce::PopupMenu::Options(), [this](int r)
+        juce::PopupMenu m;
+        m.addItem (1, "Copy A to B");
+        m.addItem (2, "Copy B to A");
+        m.showMenuAsync (juce::PopupMenu::Options(), [this] (int r)
         {
             if (r == 1) { copyState (true);  pasteState (false); }
             if (r == 2) { copyState (false); pasteState (true);  }
@@ -420,20 +440,24 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     addAndMakeVisible (splitToggle);
     splitToggle.onToggleChange = [this] (bool split)
     {
-        if (auto* xyTab = panes->getXYTab()) {
-            xyTab->setSplitMode(split);
-        }
+        if (auto* xyTab = panes->getXYTab()) xyTab->setSplitMode (split);
+
         linkButton.setVisible (split);
-        panKnob.setVisible (!split);
-        panValue.setVisible (!split);
-        panKnobLeft .setVisible (split);
-        panKnobRight.setVisible (split);
-        panValueLeft .setVisible (split);
-        panValueRight.setVisible (split);
+
+        const bool showSingle = !split;
+        panKnob.setVisible (showSingle);
+        panValue.setVisible (showSingle);
+
+        panKnobLeft .setVisible (!showSingle);
+        panKnobRight.setVisible (!showSingle);
+        panValueLeft .setVisible (!showSingle);
+        panValueRight.setVisible (!showSingle);
+
         resized();
     };
     splitToggle.setToggleState (false, juce::dontSendNotification);
     linkButton.setVisible (false);
+
     panes = std::make_unique<PaneManager> (proc, proc.apvts.state, &lnf);
     addAndMakeVisible (panes.get());
     panes->setSampleRate (proc.getSampleRate());
@@ -443,17 +467,16 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     addAndMakeVisible (lrMeters);
     addAndMakeVisible (ioMeters);
 
-    addAndMakeVisible (mainControlsContainer); mainControlsContainer.setTitle (""); mainControlsContainer.setShowBorder (false);
-    addAndMakeVisible (panKnobContainer);      panKnobContainer.setTitle ("");     panKnobContainer.setShowBorder (true);
-    addAndMakeVisible (volumeContainer);       volumeContainer.setTitle ("");   volumeContainer.setShowBorder (true);
-    addAndMakeVisible (MainContentContainer);  MainContentContainer.setTitle ("");    MainContentContainer.setShowBorder (false);
-    addAndMakeVisible (rightSlidersContainer);   rightSlidersContainer.setTitle ("");     rightSlidersContainer.setShowBorder (false);
-    addAndMakeVisible (metersContainer);       metersContainer.setTitle ("");         metersContainer.setShowBorder (false);
-    
-    rightSlidersContainer.addAndMakeVisible (inputSlider);
-    rightSlidersContainer.addAndMakeVisible (outputSlider);
-    rightSlidersContainer.addAndMakeVisible (mixSlider);
-    
+    addAndMakeVisible (mainControlsContainer);  mainControlsContainer.setTitle ("");  mainControlsContainer.setShowBorder (false);
+    addAndMakeVisible (panKnobContainer);       panKnobContainer.setTitle ("");       panKnobContainer.setShowBorder (true);
+    addAndMakeVisible (volumeContainer);        volumeContainer.setTitle ("");        volumeContainer.setShowBorder (true);
+    addAndMakeVisible (MainContentContainer);   MainContentContainer.setTitle ("");   MainContentContainer.setShowBorder (false);
+    addAndMakeVisible (rightSlidersContainer);  rightSlidersContainer.setTitle ("");  rightSlidersContainer.setShowBorder (false);
+    addAndMakeVisible (metersContainer);        metersContainer.setTitle ("");        metersContainer.setShowBorder (false);
+
+    for (auto* s : { &inputSlider, &outputSlider, &mixSlider })
+        rightSlidersContainer.addAndMakeVisible (*s);
+
     inputSlider.setTextValueSuffix (" dB");
     inputSlider.setLookAndFeel (&lnf);
     
@@ -465,24 +488,14 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     mixSlider.setTextValueSuffix (" %");
     mixSlider.setLookAndFeel (&lnf);
     
-    inputSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 15);
+    inputSlider .setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 15);
     outputSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 15);
-    mixSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 15);
+    mixSlider   .setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 15);
     
-    inputSlider.setName ("inputSlider");
+    inputSlider.setName  ("inputSlider");
     outputSlider.setName ("outputSlider");
-    mixSlider.setName ("mixSlider");
-    
-    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    auto sh = lf->theme.meters.panelDark;
-    
-    auto labelStyle = [&](juce::Label& label) {
-        label.setColour (juce::Label::backgroundColourId, sh.withAlpha (0.15f));
-        label.setColour (juce::Label::textColourId, juce::Colours::white);
-        label.setJustificationType (juce::Justification::centred);
-        label.setFont (juce::Font (10.0f, juce::Font::bold));
-    };
-    
+    mixSlider.setName    ("mixSlider");
+
     addChildComponent (widthGroupContainer);
     widthGroupContainer.setTitle ("");
     widthGroupContainer.setShowBorder (true);
@@ -494,39 +507,45 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     gainMixGroupContainer.setShowBorder (false);
     gainMixGroupContainer.setVisible (false);
     gainMixGroupContainer.setInterceptsMouseClicks (false, false);
-    addChildComponent (gainMixSlot1); gainMixSlot1.setInterceptsMouseClicks (false, false); gainMixSlot1.setVisible (false);
-    addChildComponent (gainMixSlot2); gainMixSlot2.setInterceptsMouseClicks (false, false); gainMixSlot2.setVisible (false);
+
+    for (auto* c : { &gainMixSlot1, &gainMixSlot2 })
+    {
+        addChildComponent (*c);
+        c->setInterceptsMouseClicks (false, false);
+        c->setVisible (false);
+    }
 
     addChildComponent (duckGroupContainer);
     duckGroupContainer.setTitle ("");
     duckGroupContainer.setShowBorder (false);
     duckGroupContainer.setVisible (false);
     duckGroupContainer.setInterceptsMouseClicks (false, false);
-    addChildComponent (duckSlot1); duckSlot1.setInterceptsMouseClicks (false, false); duckSlot1.setVisible (false);
-    addChildComponent (duckSlot2); duckSlot2.setInterceptsMouseClicks (false, false); duckSlot2.setVisible (false);
-    addChildComponent (duckSlot3); duckSlot3.setInterceptsMouseClicks (false, false); duckSlot3.setVisible (false);
-    addChildComponent (widthGroupSlot1); widthGroupSlot1.setInterceptsMouseClicks (false, false); widthGroupSlot1.setVisible (false);
-    addChildComponent (widthGroupSlot2); widthGroupSlot2.setInterceptsMouseClicks (false, false); widthGroupSlot2.setVisible (false);
-    addChildComponent (widthGroupSlot3); widthGroupSlot3.setInterceptsMouseClicks (false, false); widthGroupSlot3.setVisible (false);
+
+    for (auto* c : { &duckSlot1, &duckSlot2, &duckSlot3, &widthGroupSlot1, &widthGroupSlot2, &widthGroupSlot3 })
+    {
+        addChildComponent (*c);
+        c->setInterceptsMouseClicks (false, false);
+        c->setVisible (false);
+    }
 
     addChildComponent (volGroupContainer);
-    volGroupContainer.setTitle("");
-    volGroupContainer.setShowBorder(false);
-    volGroupContainer.setVisible(false);
-    volGroupContainer.setInterceptsMouseClicks(false, false);
-    addChildComponent (volSlot1); volSlot1.setInterceptsMouseClicks(false,false); volSlot1.setVisible(false);
-    addChildComponent (volSlot2); volSlot2.setInterceptsMouseClicks(false,false); volSlot2.setVisible(false);
-    addChildComponent (volSlot3); volSlot3.setInterceptsMouseClicks(false,false); volSlot3.setVisible(false);
-    addChildComponent (volSlot4); volSlot4.setInterceptsMouseClicks(false,false); volSlot4.setVisible(false);
-    addChildComponent (volSlot5); volSlot5.setInterceptsMouseClicks(false,false); volSlot5.setVisible(false);
-    addChildComponent (volSlot6); volSlot6.setInterceptsMouseClicks(false,false); volSlot6.setVisible(false);
-    addChildComponent (volSlot7); volSlot7.setInterceptsMouseClicks(false,false); volSlot7.setVisible(false);
+    volGroupContainer.setTitle ("");
+    volGroupContainer.setShowBorder (false);
+    volGroupContainer.setVisible (false);
+    volGroupContainer.setInterceptsMouseClicks (false, false);
+
+    for (auto* c : { &volSlot1, &volSlot2, &volSlot3, &volSlot4, &volSlot5, &volSlot6, &volSlot7 })
+    {
+        addChildComponent (*c);
+        c->setInterceptsMouseClicks (false, false);
+        c->setVisible (false);
+    }
 
     addAndMakeVisible (panSplitContainer);
     panSplitContainer.setVisible (false);
     panSplitContainer.setInterceptsMouseClicks (false, false);
 
-    auto style = [this](juce::Slider& s, bool main = false)
+    auto styleRotary = [this] (juce::Slider& s)
     {
         s.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
         s.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
@@ -536,29 +555,38 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
         s.setLookAndFeel (&lnf);
     };
 
-    for (juce::Slider* slider : { &width,&tilt,&monoHz,&hpHz,&lpHz,&satDrive,&satMix,&air,&bass,&scoop,
+    for (juce::Slider* slider : {
+             &width,&tilt,&monoHz,&hpHz,&lpHz,&satDrive,&satMix,&air,&bass,&scoop,
                               &widthLo,&widthMid,&widthHi,&xoverLoHz,&xoverHiHz,&rotationDeg,&asymmetry,
                               &shelfShapeS,&filterQ })
     {
         addAndMakeVisible (*slider);
-        style (*slider);
+        styleRotary (*slider);
         slider->setVelocityBasedMode (true);
         slider->setVelocityModeParameters (0.85, 1, 0.0, true);
         slider->setMouseDragSensitivity (140);
         slider->addListener (this);
     }
-    addAndMakeVisible (gain); style (gain); gain.addListener (this);
+
+    addAndMakeVisible (gain);
+    styleRotary (gain);
+    gain.addListener (this);
+
+    auto styleLinear = [this] (juce::Slider& s)
+    {
+        s.setSliderStyle (juce::Slider::LinearHorizontal);
+        s.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+        s.setMouseDragSensitivity (140);
+        s.setVelocityBasedMode (false);
+        s.setSliderSnapsToMousePosition (false);
+        s.setDoubleClickReturnValue (true, 0.0);
+        s.setLookAndFeel (&lnf);
+    };
 
     for (juce::Slider* slider : { &tiltFreqSlider,&scoopFreqSlider,&bassFreqSlider,&airFreqSlider, &hpQSlider, &lpQSlider })
     {
         addAndMakeVisible (*slider);
-        slider->setSliderStyle (juce::Slider::LinearHorizontal);
-        slider->setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-        slider->setMouseDragSensitivity (140);
-        slider->setVelocityBasedMode (false);
-        slider->setSliderSnapsToMousePosition (false);
-        slider->setDoubleClickReturnValue (true, 0.0);
-        slider->setLookAndFeel (&lnf);
+        styleLinear (*slider);
         slider->addListener (this);
     }
 
@@ -568,56 +596,57 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     qLinkButton.setLookAndFeel (&lnf);
     tiltLinkSButton.setButtonText ("Tilt uses S");
     qLinkButton.setButtonText ("");
-    addAndMakeVisible (panKnob);      style (panKnob, true);     panKnob.setRange (-1.0, 1.0, 0.01); panKnob.setOverlayEnabled (false); panKnob.addListener (this);
-    addAndMakeVisible (panKnobLeft);  style (panKnobLeft, true); panKnobLeft.setRange (-1.0, 1.0, 0.01); panKnobLeft.setOverlayEnabled (true);  panKnobLeft.setLabel ("L"); panKnobLeft.addListener (this);
-    addAndMakeVisible (panKnobRight); style (panKnobRight, true);panKnobRight.setRange(-1.0, 1.0, 0.01); panKnobRight.setOverlayEnabled (true); panKnobRight.setLabel ("R"); panKnobRight.addListener (this);
+
+    addAndMakeVisible (panKnob);      styleRotary (panKnob);      panKnob.setRange (-1.0, 1.0, 0.01); panKnob.setOverlayEnabled (false); panKnob.addListener (this);
+    addAndMakeVisible (panKnobLeft);  styleRotary (panKnobLeft);  panKnobLeft.setRange (-1.0, 1.0, 0.01);  panKnobLeft.setOverlayEnabled  (true); panKnobLeft.setLabel  ("L"); panKnobLeft.addListener  (this);
+    addAndMakeVisible (panKnobRight); styleRotary (panKnobRight); panKnobRight.setRange(-1.0, 1.0, 0.01);  panKnobRight.setOverlayEnabled (true); panKnobRight.setLabel ("R"); panKnobRight.addListener (this);
 
     panKnob.setVisible (true);
     panKnobLeft.setVisible (false);
     panKnobRight.setVisible (false);
 
-    for (juce::Label* l : { &gainValue,&widthValue,&tiltValue,&monoValue,&hpValue,&lpValue,&satDriveValue,&satMixValue,&airValue,&bassValue,&scoopValue,&shelfShapeValue,&filterQValue,
-                             &panValue,&panValueLeft,&panValueRight,
+    for (juce::Label* l : {
+             &gainValue,&widthValue,&tiltValue,&monoValue,&hpValue,&lpValue,&satDriveValue,&satMixValue,&airValue,&bassValue,&scoopValue,&shelfShapeValue,&filterQValue,
+             &panValue,&panValueLeft,&panValueRight,
                              &tiltFreqValue,&scoopFreqValue,&bassFreqValue,&airFreqValue,
                              &widthLoValue,&widthMidValue,&widthHiValue,&xoverLoValue,&xoverHiValue,
-                             &rotationValue,&asymValue })
+             &rotationValue,&asymValue })
     {
         addAndMakeVisible (*l);
         l->setJustificationType (juce::Justification::centred);
         l->setFont (juce::Font (juce::FontOptions (15.0f * scaleFactor).withStyle ("Bold")));
-        l->setColour (juce::Label::textColourId, lnf.theme.text);
+        l->setColour (juce::Label::textColourId,       lnf.theme.text);
         l->setColour (juce::Label::backgroundColourId, juce::Colours::transparentBlack);
-        l->setColour (juce::Label::outlineColourId, juce::Colours::transparentBlack);
+        l->setColour (juce::Label::outlineColourId,    juce::Colours::transparentBlack);
     }
-    auto addLiveRepaint = [this](juce::Slider& s)
+
+    auto addLiveRepaint = [this] (juce::Slider& s)
     {
         s.onValueChange = [this]
         {
-            if (auto* xyTab = panes->getXYTab()) {
-                xyTab->setTiltValue((float) tilt.getValue());
-                xyTab->setHPValue((float) hpHz.getValue());
-                xyTab->setLPValue((float) lpHz.getValue());
-                xyTab->setAirValue((float) air.getValue());
-            }
-            if (auto* xyTab = panes->getXYTab()) {
-                xyTab->setBassValue((float) bass.getValue());
+            if (auto* xyTab = panes->getXYTab())
+            {
+                xyTab->setTiltValue ((float) tilt.getValue());
+                xyTab->setHPValue   ((float) hpHz.getValue());
+                xyTab->setLPValue   ((float) lpHz.getValue());
+                xyTab->setAirValue  ((float) air.getValue());
+                xyTab->setBassValue ((float) bass.getValue());
                 xyTab->setScoopValue((float) scoop.getValue());
-                xyTab->setTiltFreqValue((float) tiltFreqSlider.getValue());
-                xyTab->setScoopFreqValue((float) scoopFreqSlider.getValue());
-                xyTab->setBassFreqValue((float) bassFreqSlider.getValue());
-            }
-            if (auto* xyTab = panes->getXYTab()) {
-                xyTab->setAirFreqValue((float) airFreqSlider.getValue());
-                xyTab->setMonoValue((float) monoHz.getValue());
+                xyTab->setTiltFreqValue  ((float) tiltFreqSlider.getValue());
+                xyTab->setScoopFreqValue ((float) scoopFreqSlider.getValue());
+                xyTab->setBassFreqValue  ((float) bassFreqSlider.getValue());
+                xyTab->setAirFreqValue   ((float) airFreqSlider.getValue());
+                xyTab->setMonoValue      ((float) monoHz.getValue());
                 xyTab->repaint();
             }
         };
     };
+
     for (juce::Slider* slider : { &tilt,&hpHz,&lpHz,&air,&bass,&scoop,&tiltFreqSlider,&scoopFreqSlider,&bassFreqSlider,&airFreqSlider,&monoHz,&shelfShapeS,&filterQ,&hpQSlider,&lpQSlider })
     {
         addLiveRepaint (*slider);
-        slider->onDragStart = [this]{ proc.setIsEditing (true); };
-        slider->onDragEnd   = [this]{ proc.setIsEditing (false); };
+        slider->onDragStart = [this] { proc.setIsEditing (true);  };
+        slider->onDragEnd   = [this] { proc.setIsEditing (false); };
     }
 
     gain.setName ("GAIN"); width.setName ("WIDTH"); tilt.setName ("TILT"); monoHz.setName ("MONO");
@@ -639,34 +668,36 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
         l->setInterceptsMouseClicks (false, false);
     }
     widthLoName.setText ("", juce::dontSendNotification);
-    widthMidName.setText("", juce::dontSendNotification);
+    widthMidName.setText ("", juce::dontSendNotification);
     widthHiName.setText ("", juce::dontSendNotification);
-    xoverLoName.setText ("", juce::dontSendNotification);
-    xoverHiName.setText ("", juce::dontSendNotification);
-    rotationName.setText("", juce::dontSendNotification);
-    asymName.setText   ("", juce::dontSendNotification);
-    shufLoName.setText ("", juce::dontSendNotification);
-    shufHiName.setText ("", juce::dontSendNotification);
-    shufXName.setText  ("", juce::dontSendNotification);
-    
-    sliderValueChanged (&width);
-    sliderValueChanged (&tilt);
-    sliderValueChanged (&monoHz);
-    sliderValueChanged (&hpHz);
-    sliderValueChanged (&lpHz);
-    sliderValueChanged (&satDrive);
-    sliderValueChanged (&satMix);
-    sliderValueChanged (&air);
-    sliderValueChanged (&bass);
-    sliderValueChanged (&scoop);
-    sliderValueChanged (&panKnob);
-    sliderValueChanged (&panKnobLeft);
-    sliderValueChanged (&panKnobRight);
-    sliderValueChanged (&tiltFreqSlider);
-    sliderValueChanged (&scoopFreqSlider);
-    sliderValueChanged (&bassFreqSlider);
-    sliderValueChanged (&airFreqSlider);
-    sliderValueChanged (&gain);
+    xoverLoName.setText  ("", juce::dontSendNotification);
+    xoverHiName.setText  ("", juce::dontSendNotification);
+    rotationName.setText ("", juce::dontSendNotification);
+    asymName.setText     ("", juce::dontSendNotification);
+    shufLoName.setText   ("", juce::dontSendNotification);
+    shufHiName.setText   ("", juce::dontSendNotification);
+    shufXName.setText    ("", juce::dontSendNotification);
+
+    // Update slider value labels
+    sliderValueChanged(&width);
+    sliderValueChanged(&tilt);
+    sliderValueChanged(&monoHz);
+    sliderValueChanged(&hpHz);
+    sliderValueChanged(&lpHz);
+    sliderValueChanged(&satDrive);
+    sliderValueChanged(&satMix);
+    sliderValueChanged(&air);
+    sliderValueChanged(&bass);
+    sliderValueChanged(&scoop);
+    sliderValueChanged(&panKnob);
+    sliderValueChanged(&panKnobLeft);
+    sliderValueChanged(&panKnobRight);
+    sliderValueChanged(&tiltFreqSlider);
+    sliderValueChanged(&scoopFreqSlider);
+    sliderValueChanged(&bassFreqSlider);
+    sliderValueChanged(&airFreqSlider);
+    sliderValueChanged(&gain);
+
     updateMutedKnobVisuals();
 
     addChildComponent (monoSlopeChoice);
@@ -674,19 +705,17 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     monoSlopeChoice.addItem ("12", 2);
     monoSlopeChoice.addItem ("24", 3);
 
-    if (!monoSlopeSwitch)
-        monoSlopeSwitch = std::make_unique<MonoSlopeSwitch>();
+    if (!monoSlopeSwitch) monoSlopeSwitch = std::make_unique<MonoSlopeSwitch>();
     addAndMakeVisible (*monoSlopeSwitch);
-    monoSlopeSwitch->onChange = [this](int idx)
+    monoSlopeSwitch->onChange = [this] (int idx)
     {
         monoSlopeChoice.setSelectedItemIndex (juce::jlimit (0, 2, idx), juce::NotificationType::sendNotification);
     };
+
     addAndMakeVisible (monoAuditionButton);
     monoAuditionButton.setButtonText ("AUD");
 
-    if (attachmentManager) {
-        attachmentManager->attachAllParameters();
-    }
+    if (attachmentManager) attachmentManager->attachAllParameters();
 
     layoutReady = true;
 
@@ -695,97 +724,92 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
 
     auto refreshXYOverlays = [this]
     {
-        if (auto* xyTab = panes->getXYTab()) {
-            xyTab->setMixValue   (proc.apvts.getRawParameterValue ("sat_mix")->load());
-            xyTab->setDriveValue (proc.apvts.getRawParameterValue ("sat_drive_db")->load());
-            xyTab->setTiltValue  (proc.apvts.getRawParameterValue ("tilt")->load());
-            xyTab->setHPValue    (proc.apvts.getRawParameterValue ("hp_hz")->load());
-            xyTab->setLPValue    (proc.apvts.getRawParameterValue ("lp_hz")->load());
-            xyTab->setAirValue   (proc.apvts.getRawParameterValue ("air_db")->load());
-            xyTab->setBassValue  (proc.apvts.getRawParameterValue ("bass_db")->load());
-            xyTab->setScoopValue (proc.apvts.getRawParameterValue ("scoop")->load());
+        if (auto* xyTab = panes->getXYTab())
+        {
+            xyTab->setMixValue     (proc.apvts.getRawParameterValue ("sat_mix")->load());
+            xyTab->setDriveValue   (proc.apvts.getRawParameterValue ("sat_drive_db")->load());
+            xyTab->setTiltValue    (proc.apvts.getRawParameterValue ("tilt")->load());
+            xyTab->setHPValue      (proc.apvts.getRawParameterValue ("hp_hz")->load());
+            xyTab->setLPValue      (proc.apvts.getRawParameterValue ("lp_hz")->load());
+            xyTab->setAirValue     (proc.apvts.getRawParameterValue ("air_db")->load());
+            xyTab->setBassValue    (proc.apvts.getRawParameterValue ("bass_db")->load());
+            xyTab->setScoopValue   (proc.apvts.getRawParameterValue ("scoop")->load());
             xyTab->setTiltFreqValue  (proc.apvts.getRawParameterValue ("tilt_freq")->load());
             xyTab->setScoopFreqValue (proc.apvts.getRawParameterValue ("scoop_freq")->load());
             xyTab->setBassFreqValue  (proc.apvts.getRawParameterValue ("bass_freq")->load());
             xyTab->setAirFreqValue   (proc.apvts.getRawParameterValue ("air_freq")->load());
-            xyTab->setWidthValue (proc.apvts.getRawParameterValue ("width")->load());
-            xyTab->setPanValue   (proc.apvts.getRawParameterValue ("pan")->load());
-            xyTab->setGainValue  (proc.apvts.getRawParameterValue ("gain_db")->load());
+            xyTab->setWidthValue   (proc.apvts.getRawParameterValue ("width")->load());
+            xyTab->setPanValue     (proc.apvts.getRawParameterValue ("pan")->load());
+            xyTab->setGainValue    (proc.apvts.getRawParameterValue ("gain_db")->load());
         }
     };
 
-    if (auto* xyTab = panes->getXYTab()) {
-        xyTab->onChange = [this, refreshXYOverlays](float x01, float y01)
+    if (auto* xyTab = panes->getXYTab())
+    {
+        xyTab->onChange = [this, refreshXYOverlays] (float x01, float y01)
     {
         if (auto* split = proc.apvts.getParameter ("split_mode")) { split->beginChangeGesture(); split->setValueNotifyingHost (0.0f); split->endChangeGesture(); }
         if (auto* pan   = proc.apvts.getParameter ("pan"))        { pan  ->beginChangeGesture(); pan  ->setValueNotifyingHost (x01);  pan  ->endChangeGesture(); }
         if (auto* dep   = proc.apvts.getParameter ("depth"))      { dep  ->beginChangeGesture(); dep  ->setValueNotifyingHost (y01);  dep  ->endChangeGesture(); }
         refreshXYOverlays();
     };
-        xyTab->onSplitChange = [this, refreshXYOverlays](float l01, float r01, float y01)
+
+        xyTab->onSplitChange = [this, refreshXYOverlays] (float l01, float r01, float y01)
     {
         if (auto* split = proc.apvts.getParameter ("split_mode")) { split->beginChangeGesture(); split->setValueNotifyingHost (1.0f); split->endChangeGesture(); }
-        if (auto* pL = proc.apvts.getParameter ("pan_l")) { pL->beginChangeGesture(); pL->setValueNotifyingHost (l01); pL->endChangeGesture(); }
-        if (auto* pR = proc.apvts.getParameter ("pan_r")) { pR->beginChangeGesture(); pR->setValueNotifyingHost (r01); pR->endChangeGesture(); }
-        if (auto* dep= proc.apvts.getParameter ("depth")) { dep->beginChangeGesture(); dep->setValueNotifyingHost (y01); dep->endChangeGesture(); }
+            if (auto* pL    = proc.apvts.getParameter ("pan_l"))      { pL   ->beginChangeGesture(); pL   ->setValueNotifyingHost (l01);  pL   ->endChangeGesture(); }
+            if (auto* pR    = proc.apvts.getParameter ("pan_r"))      { pR   ->beginChangeGesture(); pR   ->setValueNotifyingHost (r01);  pR   ->endChangeGesture(); }
+            if (auto* dep   = proc.apvts.getParameter ("depth"))      { dep  ->beginChangeGesture(); dep  ->setValueNotifyingHost (y01);  dep  ->endChangeGesture(); }
         refreshXYOverlays();
     };
     }
+
     panKnobLeft.addListener (this);
     panKnobRight.addListener (this);
 
-    proc.apvts.addParameterListener ("split_mode", this);
-    proc.apvts.addParameterListener ("pan",        this);
-    proc.apvts.addParameterListener ("depth",      this);
-    proc.apvts.addParameterListener ("mono_slope_db_oct", this);
-    proc.apvts.addParameterListener ("eq_shelf_shape", this);
-    proc.apvts.addParameterListener ("eq_q_link",      this);
-    proc.apvts.addParameterListener ("eq_filter_q",    this);
-    proc.apvts.addParameterListener ("hp_q",           this);
-    proc.apvts.addParameterListener ("lp_q",           this);
-    proc.apvts.addParameterListener ("tilt_link_s",    this);
-    proc.apvts.addParameterListener ("xover_lo_hz",    this);
-    proc.apvts.addParameterListener ("xover_hi_hz",    this);
-    proc.apvts.addParameterListener ("rotation_deg",   this);
-    proc.apvts.addParameterListener ("asymmetry",      this);
+    for (const char* pid :
+         { "split_mode","pan","depth","mono_slope_db_oct","eq_shelf_shape","eq_q_link","eq_filter_q","hp_q","lp_q",
+           "tilt_link_s","xover_lo_hz","xover_hi_hz","rotation_deg","asymmetry" })
+        proc.apvts.addParameterListener (pid, this);
 
-    proc.onAudioSample   = [this](float L, float R) { if (panes) panes->onAudioSample (L, R); };
-    proc.onAudioBlock    = [this](const float* L, const float* R, int n) { if (panes) panes->onAudioBlock (L, R, n); };
-    proc.onAudioBlockPre = [this](const float* L, const float* R, int n) { if (panes) panes->onAudioBlockPre (L, R, n); };
+    proc.onAudioSample   = [this] (float L, float R) { if (panes) panes->onAudioSample (L, R); };
+    proc.onAudioBlock    = [this] (const float* L, const float* R, int n) { if (panes) panes->onAudioBlock (L, R, n); };
+    proc.onAudioBlockPre = [this] (const float* L, const float* R, int n) { if (panes) panes->onAudioBlockPre (L, R, n); };
 
-    struct LocalKeyListener : public juce::KeyListener {
-        PaneManager* mgr;
+    struct LocalKeyListener : public juce::KeyListener
+    {
         explicit LocalKeyListener (PaneManager* m) : mgr (m) {}
         bool keyPressed (const juce::KeyPress& k, juce::Component*) override
         {
             if (!mgr) return false;
-            if (k.getTextCharacter()=='1') { mgr->setActive (PaneID::XY, true);       return true; }
-            if (k.getTextCharacter()=='2') { mgr->setActive (PaneID::DynEQ, true); return true; }
-            if (k.getTextCharacter()=='3') { mgr->setActive (PaneID::Imager, true);   return true; }
+            if (k.getTextCharacter() == '1') { mgr->setActive (PaneID::XY,    true); return true; }
+            if (k.getTextCharacter() == '2') { mgr->setActive (PaneID::DynEQ, true); return true; }
+            if (k.getTextCharacter() == '3') { mgr->setActive (PaneID::Imager,true); return true; }
             return false;
         }
+        PaneManager* mgr;
     };
+
     keyListener.reset (new LocalKeyListener (panes.get()));
     addKeyListener (keyListener.get());
 
     addAndMakeVisible (splitDivider);
-
     syncXYPadWithParameters();
-
     applyGlobalCursorPolicy();
-
     startTimerHz (20);
 
     addChildComponent (imgGroupContainer);
-    imgGroupContainer.setTitle("");
-    imgGroupContainer.setShowBorder(false);
-    imgGroupContainer.setVisible(false);
-    imgGroupContainer.setInterceptsMouseClicks(false, false);
+    imgGroupContainer.setTitle ("");
+    imgGroupContainer.setShowBorder (false);
+    imgGroupContainer.setVisible (false);
+    imgGroupContainer.setInterceptsMouseClicks (false, false);
+
     addChildComponent (volGroupContainer2);
-    volGroupContainer2.setTitle("");
-    volGroupContainer2.setShowBorder(false);
-    volGroupContainer2.setVisible(false);
-    volGroupContainer2.setInterceptsMouseClicks(false, false);
+    volGroupContainer2.setTitle ("");
+    volGroupContainer2.setShowBorder (false);
+    volGroupContainer2.setVisible (false);
+    volGroupContainer2.setInterceptsMouseClicks (false, false);
+
     addAndMakeVisible (monoGroupContainer);
     monoGroupContainer.setTitle ("");
     monoGroupContainer.setShowBorder (true);
@@ -795,55 +819,30 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
 
 MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
 {
-    juce::File f = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("Field_CrashLog.txt");
-    f.appendText("Editor Destructor: STARTED\n", false, false, "\n");
-    
-    if (cleanupManager) {
-        cleanupManager->performCleanup();
-    }
-    
-    f.appendText("Editor Destructor: COMPLETE\n", false, false, "\n");
+    juce::File f = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory).getChildFile ("Field_CrashLog.txt");
+    f.appendText ("Editor Destructor: STARTED\n", false, false, "\n");
+
+    if (cleanupManager) cleanupManager->performCleanup();
+
+    f.appendText ("Editor Destructor: COMPLETE\n", false, false, "\n");
 }
+
 void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    if (paintManager) {
-        paintManager->paint(g);
-    }
+    if (paintManager) paintManager->paint (g);
 }
+
 void MyPluginAudioProcessorEditor::performLayout()
 {
     if (!layoutReady) return;
-
-    if (layoutManager) {
-        layoutManager->performLayout();
-        return;
-    }
+    if (layoutManager) layoutManager->performLayout();
 }
 
-void MyPluginAudioProcessorEditor::mouseDown (const juce::MouseEvent& e)
-{
-    if (eventManager)
-    {
-        eventManager->handleMouseDown(e);
-    }
-}
-
-void MyPluginAudioProcessorEditor::mouseDrag (const juce::MouseEvent& e)
-{
-    noteUserInteraction();
-    if (eventManager)
-    {
-        eventManager->handleMouseDrag(e);
-    }
-}
-
-void MyPluginAudioProcessorEditor::mouseUp (const juce::MouseEvent& e)
-{
-    if (eventManager)
-    {
-        eventManager->handleMouseUp(e);
-    }
-}
+void MyPluginAudioProcessorEditor::mouseDown  (const juce::MouseEvent& e) { if (eventManager) eventManager->handleMouseDown  (e); }
+void MyPluginAudioProcessorEditor::mouseDrag  (const juce::MouseEvent& e) { noteUserInteraction(); if (eventManager) eventManager->handleMouseDrag  (e); }
+void MyPluginAudioProcessorEditor::mouseUp    (const juce::MouseEvent& e) { if (eventManager) eventManager->handleMouseUp    (e); }
+void MyPluginAudioProcessorEditor::mouseMove  (const juce::MouseEvent& e) { if (eventManager) eventManager->handleMouseMove  (e); }
+void MyPluginAudioProcessorEditor::timerCallback()                        { if (eventManager) eventManager->handleTimerCallback(); }
 
 void MyPluginAudioProcessorEditor::resized()
 {
@@ -851,30 +850,12 @@ void MyPluginAudioProcessorEditor::resized()
     performLayout();
 }
 
-void MyPluginAudioProcessorEditor::mouseMove (const juce::MouseEvent& e)
-{
-    if (eventManager)
-    {
-        eventManager->handleMouseMove(e);
-    }
-}
-
-void MyPluginAudioProcessorEditor::timerCallback()
-{
-    if (eventManager)
-    {
-        eventManager->handleTimerCallback();
-    }
-}
-
-void MyPluginAudioProcessorEditor::paintOverChildren (juce::Graphics& g)
-{
-    juce::ignoreUnused (g);
-}
-
-void MyPluginAudioProcessorEditor::updateGroup2OverlayDuringSlide()
-{
-}
+void MyPluginAudioProcessorEditor::paintOverChildren (juce::Graphics& g) { juce::ignoreUnused (g); }
+void MyPluginAudioProcessorEditor::updateGroup2OverlayDuringSlide()      {}
+void MyPluginAudioProcessorEditor::applyGlobalCursorPolicy()             {}
+void MyPluginAudioProcessorEditor::updateMutedKnobVisuals()              {}
+void MyPluginAudioProcessorEditor::parameterChanged (const juce::String&, float) {}
+void MyPluginAudioProcessorEditor::syncXYPadWithParameters()             {}
 
 void MyPluginAudioProcessorEditor::setScaleFactor (float newScale)
 {
@@ -885,109 +866,238 @@ void MyPluginAudioProcessorEditor::setScaleFactor (float newScale)
 
 void MyPluginAudioProcessorEditor::sliderValueChanged (juce::Slider* s)
 {
-    if (eventManager)
-    {
-        eventManager->handleSliderValueChanged(s);
-    }
-    
+    if (eventManager) eventManager->handleSliderValueChanged (s);
     updateMutedKnobVisuals();
 }
 
-void MyPluginAudioProcessorEditor::comboBoxChanged(juce::ComboBox* comboBox)
+void MyPluginAudioProcessorEditor::comboBoxChanged (juce::ComboBox* comboBox)
 {
-    if (eventManager)
-    {
-        eventManager->handleComboBoxChanged(comboBox);
-    }
+    if (eventManager) eventManager->handleComboBoxChanged (comboBox);
 }
 
-void MyPluginAudioProcessorEditor::buttonClicked(juce::Button* button)
+void MyPluginAudioProcessorEditor::buttonClicked (juce::Button* button)
 {
-    if (eventManager)
-    {
-        eventManager->handleButtonClicked(button);
-    }
+    if (eventManager) eventManager->handleButtonClicked (button);
 }
 
-void MyPluginAudioProcessorEditor::applyGlobalCursorPolicy()
+void MyPluginAudioProcessorEditor::updatePresetDisplay()
 {
+    if (stateManager) stateManager->updatePresetDisplay();
 }
 
-void MyPluginAudioProcessorEditor::updateMutedKnobVisuals()
-{
-}
+void MyPluginAudioProcessorEditor::saveCurrentState()               { if (stateManager) stateManager->saveCurrentState(); }
+void MyPluginAudioProcessorEditor::loadState (bool a)               { if (stateManager) stateManager->loadState (a); }
+void MyPluginAudioProcessorEditor::toggleABState()                  { if (stateManager) stateManager->toggleABState(); }
+void MyPluginAudioProcessorEditor::copyState (bool fromA)           { if (stateManager) stateManager->copyState (fromA); }
+void MyPluginAudioProcessorEditor::pasteState (bool pasteToA)       { if (stateManager) stateManager->pasteState (pasteToA); }
 
-void MyPluginAudioProcessorEditor::parameterChanged (const juce::String& id, float nv)
+void MyPluginAudioProcessorEditor::layoutMeters (juce::Rectangle<int> metersArea, float s, float sv)
 {
-}
+    if (metersArea.isEmpty()) return;
 
-void MyPluginAudioProcessorEditor::updatePresetDisplay() 
-{ 
-    if (stateManager) stateManager->updatePresetDisplay(); 
-}
+    const int meterWidth = juce::jlimit (Layout::dp (24, s), Layout::dp (56, s),
+                                         juce::roundToInt (metersArea.getWidth () * 0.75f));
+    const int corrWidth  = juce::jmax (Layout::dp (10, s), juce::roundToInt (meterWidth * 0.5f));
+    const int interGap   = juce::jmax (1, Layout::dp (Layout::GAP_S, s) / 2);
+    const int outerPadX  = juce::jmax (1, Layout::dp (Layout::GAP_S, s));
+    const int outerPadY  = Layout::dp (Layout::GAP, sv);
 
-void MyPluginAudioProcessorEditor::syncXYPadWithParameters()
-{
-}
+    const int totalWidth  = meterWidth * 2 + corrWidth + interGap * 2 + outerPadX * 2;
+    const int actualWidth = juce::jlimit (Layout::dp (96, s), Layout::dp (240, s), totalWidth);
 
-void MyPluginAudioProcessorEditor::saveCurrentState()
-{
-    if (stateManager) stateManager->saveCurrentState();
-}
-void MyPluginAudioProcessorEditor::loadState (bool loadStateA)
-{
-    if (stateManager) stateManager->loadState(loadStateA);
-}
+    auto centeredArea = metersArea.withWidth (actualWidth)
+                                  .withX (metersArea.getX() + (metersArea.getWidth() - actualWidth) / 2);
 
-void MyPluginAudioProcessorEditor::toggleABState()
-{
-    if (stateManager) stateManager->toggleABState();
-}
+    auto ioArea   = centeredArea.removeFromLeft (meterWidth).reduced (outerPadX, outerPadY);
+    auto lrArea   = centeredArea.removeFromLeft (meterWidth).reduced (outerPadX, outerPadY);
+    auto corrArea = centeredArea.removeFromLeft (corrWidth).reduced (outerPadX, outerPadY);
 
-void MyPluginAudioProcessorEditor::copyState (bool fromA) 
-{ 
-    if (stateManager) stateManager->copyState(fromA); 
-}
-
-void MyPluginAudioProcessorEditor::pasteState (bool pasteToA)
-{
-    if (stateManager) stateManager->pasteState(pasteToA);
-}
-
-void MyPluginAudioProcessorEditor::layoutMeters(juce::Rectangle<int> metersArea, float s, float sv)
-{
-    if (metersArea.getWidth() <= 0 || metersArea.getHeight() <= 0) return;
-    
-    const int meterWidth = juce::jlimit(Layout::dp(24, s), Layout::dp(56, s), 
-                                       juce::roundToInt(metersArea.getWidth() * 0.75f));
-    const int corrWidth = juce::jmax(Layout::dp(10, s), juce::roundToInt(meterWidth * 0.5f));
-    const int interGap = juce::jmax(1, Layout::dp(Layout::GAP_S, s) / 2);
-    const int outerPadX = juce::jmax(1, Layout::dp(Layout::GAP_S, s));
-    const int outerPadY = Layout::dp(Layout::GAP, sv);
-    
-    const int totalWidth = meterWidth * 2 + corrWidth + interGap * 2 + outerPadX * 2;
-    const int actualWidth = juce::jlimit(Layout::dp(96, s), Layout::dp(240, s), totalWidth);
-    
-    auto centeredArea = metersArea.withWidth(actualWidth).withX(metersArea.getX() + (metersArea.getWidth() - actualWidth) / 2);
-    
-    auto ioArea = centeredArea.removeFromLeft(meterWidth).reduced(outerPadX, outerPadY);
-    auto lrArea = centeredArea.removeFromLeft(meterWidth).reduced(outerPadX, outerPadY);
-    auto corrArea = centeredArea.removeFromLeft(corrWidth).reduced(outerPadX, outerPadY);
-    
-    ioMeters.setBounds(ioArea);
-    lrMeters.setBounds(lrArea);
-    corrMeter.setBounds(corrArea);
+    ioMeters .setBounds (ioArea);
+    lrMeters .setBounds (lrArea);
+    corrMeter.setBounds (corrArea);
 }
 
 void MyPluginAudioProcessorEditor::initializeParameterAttachments()
 {
-    if (attachmentManager)
-    {
-        attachmentManager->attachAllParameters();
-    }
+    if (attachmentManager) attachmentManager->attachAllParameters();
 }
 
 void MyPluginAudioProcessorEditor::finalizeInitialization()
 {
     resized();
+}
+
+
+// ============================================================================
+// Helper Methods for Initialization
+// ============================================================================
+
+void MyPluginAudioProcessorEditor::initializeTheme()
+{
+    lnf.theme.accent = juce::Colour (0xFF5AA9E6);
+    lnf.setupColours();
+    setLookAndFeel (&lnf);
+}
+
+void MyPluginAudioProcessorEditor::initializeTimer()
+{
+    startTimerHz (30);
+    uiTimerHzCurrent = 30;
+}
+
+void MyPluginAudioProcessorEditor::initializeMouseListener()
+{
+    addMouseListener (this, true);
+}
+
+// ============================================================================
+// DRY Helper Methods
+// ============================================================================
+
+void MyPluginAudioProcessorEditor::addShowHide(juce::Component& component, bool visible)
+{
+    component.setVisible(visible);
+    component.setInterceptsMouseClicks(visible, visible);
+}
+
+void MyPluginAudioProcessorEditor::addChildHidden(juce::Component& component)
+{
+    addChildComponent(component);
+    component.setInterceptsMouseClicks(false, false);
+    component.setVisible(false);
+}
+
+void MyPluginAudioProcessorEditor::styleRotary(juce::Slider& slider)
+{
+    slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
+    slider.setColour(juce::Slider::rotarySliderFillColourId, lnf.theme.accent);
+    slider.setColour(juce::Slider::rotarySliderOutlineColourId, lnf.theme.text.withAlpha(0.3f));
+    slider.setColour(juce::Slider::thumbColourId, lnf.theme.accent);
+}
+
+void MyPluginAudioProcessorEditor::styleLinear(juce::Slider& slider)
+{
+    slider.setSliderStyle(juce::Slider::LinearHorizontal);
+    slider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
+    slider.setColour(juce::Slider::trackColourId, lnf.theme.accent);
+    slider.setColour(juce::Slider::thumbColourId, lnf.theme.accent);
+}
+
+void MyPluginAudioProcessorEditor::seedLabels(std::initializer_list<juce::Label*> labels, const juce::Font& font, juce::Colour colour)
+{
+    for (auto* label : labels)
+    {
+        if (label)
+        {
+            label->setFont(font);
+            label->setColour(juce::Label::textColourId, colour);
+            label->setJustificationType(juce::Justification::centred);
+        }
+    }
+}
+
+void MyPluginAudioProcessorEditor::setParam(juce::RangedAudioParameter& param, float value)
+{
+    param.beginChangeGesture();
+    param.setValueNotifyingHost(value);
+    param.endChangeGesture();
+}
+
+// ============================================================================
+// Parameter Listener Management
+// ============================================================================
+
+void MyPluginAudioProcessorEditor::registerParameterListeners()
+{
+    // Parameter listeners are handled by AttachmentManager
+    // This method is kept for future use if needed
+}
+
+void MyPluginAudioProcessorEditor::removeParameterListeners()
+{
+    // Parameter listeners are handled by AttachmentManager
+    // This method is kept for future use if needed
+}
+
+// ============================================================================
+// Theming Helpers
+// ============================================================================
+
+MyPluginAudioProcessorEditor::ThemeConfig MyPluginAudioProcessorEditor::applyOptionsTint(int choiceIndex)
+{
+    static const std::array<ThemeConfig, 5> themeConfigs = {{
+        {juce::Colour(0xFF5AA9E6), "Blue"},
+        {juce::Colour(0xFFE65A5A), "Red"}, 
+        {juce::Colour(0xFF5AE65A), "Green"},
+        {juce::Colour(0xFFE6E65A), "Yellow"},
+        {juce::Colour(0xFFE65AE6), "Purple"}
+    }};
+    
+    if (choiceIndex >= 0 && choiceIndex < static_cast<int>(themeConfigs.size()))
+    {
+        return themeConfigs[choiceIndex];
+    }
+    
+    return themeConfigs[0]; // Default to blue
+}
+
+// ============================================================================
+// Performance & Safety Optimizations
+// ============================================================================
+
+void MyPluginAudioProcessorEditor::initializeOptionsMenu()
+{
+    // Optimized options menu setup with static data
+    struct OsOption { juce::String id; juce::String label; juce::Colour tint; };
+    static const std::array<OsOption, 5> osOptions = {{
+        {"os1x", "1x", juce::Colour(0xFF5AA9E6)},
+        {"os2x", "2x", juce::Colour(0xFFE65A5A)},
+        {"os4x", "4x", juce::Colour(0xFF5AE65A)},
+        {"os8x", "8x", juce::Colour(0xFFE6E65A)},
+        {"os16x", "16x", juce::Colour(0xFFE65AE6)}
+    }};
+    
+    for (const auto& option : osOptions)
+    {
+        osSelect.addItem(option.label, option.id.hashCode());
+    }
+}
+
+void MyPluginAudioProcessorEditor::initializeThemeButtons()
+{
+    // Theme button initialization - placeholder for future optimization
+}
+
+void MyPluginAudioProcessorEditor::initializePresetUI()
+{
+    // Preset UI initialization - placeholder for future optimization
+}
+
+void MyPluginAudioProcessorEditor::initializeABControls()
+{
+    // A/B controls initialization - placeholder for future optimization
+}
+
+void MyPluginAudioProcessorEditor::initializeXYBindings()
+{
+    // XY bindings initialization - placeholder for future optimization
+}
+
+void MyPluginAudioProcessorEditor::initializeMeters()
+{
+    // Meter initialization with consistent styling
+    corrMeter.setLookAndFeel(&lnf);
+    lrMeters.setLookAndFeel(&lnf);
+    ioMeters.setLookAndFeel(&lnf);
+}
+
+void MyPluginAudioProcessorEditor::initializeContainers()
+{
+    // Container initialization - placeholder for future optimization
+}
+
+void MyPluginAudioProcessorEditor::initializeSlidersAndLabels()
+{
+    // Slider and label initialization - placeholder for future optimization
 }

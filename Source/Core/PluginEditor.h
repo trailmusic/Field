@@ -359,6 +359,35 @@ public:
     QualityButton    qualityButton;
 
 private:
+    // Helper methods for initialization
+    void initializeTheme();
+    void initializeTimer();
+    void initializeMouseListener();
+    void initializeOptionsMenu();
+    void initializeThemeButtons();
+    void initializePresetUI();
+    void initializeABControls();
+    void initializeXYBindings();
+    void initializeMeters();
+    void initializeContainers();
+    void initializeSlidersAndLabels();
+    
+    // DRY helper methods
+    void addShowHide(juce::Component& component, bool visible);
+    void addChildHidden(juce::Component& component);
+    void styleRotary(juce::Slider& slider);
+    void styleLinear(juce::Slider& slider);
+    void seedLabels(std::initializer_list<juce::Label*> labels, const juce::Font& font, juce::Colour colour);
+    void setParam(juce::RangedAudioParameter& param, float value);
+    
+    // Parameter listener management
+    void registerParameterListeners();
+    void removeParameterListeners();
+    
+    // Theming helpers
+    struct ThemeConfig { juce::Colour tint; juce::String label; };
+    ThemeConfig applyOptionsTint(int choiceIndex);
+    
     std::unique_ptr<juce::ParameterAttachment> phaseModeParamAttach;
     std::unique_ptr<juce::ParameterAttachment> osModeParamAttach;
     std::unique_ptr<juce::ParameterAttachment> qualityParamAttach;
