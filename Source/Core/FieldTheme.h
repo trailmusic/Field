@@ -47,7 +47,7 @@ struct FieldTheme
     juce::Colour motionPanelBot { 0xFF555A99 }; // deeper bluish-purple bottom
     juce::Colour motionBorder   { 0xFF4A4A8E }; // purple border
 
-    // Metallic system colors
+    // Metallic system colors - now theme-aware
     struct MetalStops { 
         juce::Colour top, bottom; 
         juce::Colour tint; 
@@ -63,6 +63,45 @@ struct FieldTheme
         MetalStops phase    { juce::Colour (0xFF3E6BA3), juce::Colour (0xFF24466E), juce::Colour (0x00000000), 0.06f };
         MetalStops xy       { juce::Colour (0xFF4B5560), juce::Colour (0xFF2E333A), juce::Colour (0x00000000), 0.05f };
     } metal;
+    
+    // Theme-aware metallic color generation
+    void updateMetallicColors()
+    {
+        // Neutral metallic - based on panel colors
+        metal.neutral.top = panel.brighter(0.15f);
+        metal.neutral.bottom = panel.darker(0.15f);
+        metal.neutral.tint = accent.withAlpha(0.0f);
+        
+        // Reverb metallic - warm orange tones
+        metal.reverb.top = juce::Colour(0xFFB87749);
+        metal.reverb.bottom = juce::Colour(0xFF7D4D2E);
+        metal.reverb.tint = accent.withAlpha(0.1f);
+        
+        // Delay metallic - cool green tones  
+        metal.delay.top = juce::Colour(0xFFC9CFB9);
+        metal.delay.bottom = juce::Colour(0xFF8D927F);
+        metal.delay.tint = accent.withAlpha(0.05f);
+        
+        // Motion metallic - purple tones
+        metal.motion.top = juce::Colour(0xFF6D76B2);
+        metal.motion.bottom = juce::Colour(0xFF434A86);
+        metal.motion.tint = accent.withAlpha(0.06f);
+        
+        // Band metallic - accent-based blue tones
+        metal.band.top = accent.brighter(0.3f);
+        metal.band.bottom = accent.darker(0.2f);
+        metal.band.tint = accent.withAlpha(0.12f);
+        
+        // Phase metallic - deeper accent tones
+        metal.phase.top = accent.darker(0.1f);
+        metal.phase.bottom = accent.darker(0.3f);
+        metal.phase.tint = accent.withAlpha(0.06f);
+        
+        // XY metallic - neutral grey tones
+        metal.xy.top = panel.brighter(0.05f);
+        metal.xy.bottom = panel.darker(0.1f);
+        metal.xy.tint = accent.withAlpha(0.05f);
+    }
 
     // EQ palette
     struct EqPalette {
@@ -140,6 +179,9 @@ public:
                 applyOceanTheme(theme);
                 break;
         }
+        
+        // Update metallic colors to be theme-aware
+        theme.updateMetallicColors();
     }
 
 private:
