@@ -124,41 +124,41 @@ private:
             s.onValueChange = [&, applyLabel]() { applyLabel(); };
         };
 
-        // Row 1 (16 controls)
-        makeCell (pre,  preV,  "PRE",       ReverbIDs::preDelayMs);
-        makeCell (erL,  erLV,  "ER LVL",    ReverbIDs::erLevelDb);
-        makeCell (erD,  erDV,  "ER DEN",    ReverbIDs::erDensityPct);
-        makeCell (erW,  erWV,  "ER WID",    ReverbIDs::erWidthPct);
-        makeCell (dif,  difV,  "DIFF",      ReverbIDs::diffusionPct);
-        makeCell (md,   mdV,   "MOD DEP",   ReverbIDs::modDepthCents);
-        makeCell (mr,   mrV,   "MOD RATE",  ReverbIDs::modRateHz);
-        makeCell (w,    wV,    "TL WID",    ReverbIDs::widthPct);
-        makeCell (erTime, erTimeV, "ER TIME", ReverbIDs::erTimeMs);
-        makeCell (erToTail, erToTailV, "ER->T", ReverbIDs::erToTailPct);
-        makeCell (density, densityV, "DENS", ReverbIDs::densityPct);
-        makeCell (widthStart, widthStartV, "W START", ReverbIDs::widthStartPct);
-        makeCell (widthEnd, widthEndV, "W END", ReverbIDs::widthEndPct);
-        makeCell (rotStart, rotStartV, "R START", ReverbIDs::rotStartDeg);
-        makeCell (rotEnd, rotEndV, "R END", ReverbIDs::rotEndDeg);
-        makeCell (outTrim, outTrimV, "TRIM", ReverbIDs::outTrimDb);
+        // Row 1 (16 controls) - Final 2×16 grid map
+        makeCell (enabled, enabledV, "ENABLE", ReverbParamIDs::enabled);
+        makeCell (pre,  preV,  "PRE",       ReverbParamIDs::preDelayMs);
+        makeCell (erL,  erLV,  "ER LVL",    ReverbParamIDs::erLevelDb);
+        makeCell (erD,  erDV,  "ER DEN",    ReverbParamIDs::erDensityPct);
+        makeCell (erW,  erWV,  "ER WID",    ReverbParamIDs::erWidthPct);
+        makeCell (erTime, erTimeV, "ER TIME", ReverbParamIDs::erTimeMs);
+        makeCell (erToTail, erToTailV, "ER->T", ReverbParamIDs::erToTailPct);
+        makeCell (dif,  difV,  "DIFF",      ReverbParamIDs::diffusionPct);
+        makeCell (density, densityV, "DENS", ReverbParamIDs::densityPct);
+        makeCell (md,   mdV,   "MOD DEP",   ReverbParamIDs::modDepthCents);
+        makeCell (mr,   mrV,   "MOD RATE",  ReverbParamIDs::modRateHz);
+        makeCell (w,    wV,    "WIDTH",     ReverbParamIDs::widthPct);
+        makeCell (rotation, rotationV, "ROT", ReverbParamIDs::rotationDeg);
+        makeCell (size, sizeV, "SIZE",      ReverbParamIDs::sizePct);
+        makeCell (dec,  decV,  "DECAY",     ReverbParamIDs::decaySec);
+        makeCell (killDry, killDryV, "WET ONLY", ReverbParamIDs::killDry);
 
-        // Row 2 (16 controls)
-        makeCell (wet,  wetV,  "WET",       ReverbIDs::wetMix01);
-        makeCell (dec,  decV,  "DECAY",     ReverbIDs::decaySec);
-        makeCell (size, sizeV, "SIZE",      ReverbIDs::sizePct);
-        makeCell (bloom,bloomV,"BLOOM",     ReverbIDs::bloomPct);
-        makeCell (distance, distanceV, "DIST", ReverbIDs::distancePct);
-        makeCell (duckDepth, duckDepthV, "DUCK", ReverbIDs::duckDepthDb);
-        makeCell (duckAtk,   duckAtkV,   "ATT",  ReverbIDs::duckAtkMs);
-        makeCell (duckRel,   duckRelV,   "REL",  ReverbIDs::duckRelMs);
-        makeCell (duckThr,   duckThrV,   "THR",  ReverbIDs::duckThrDb);
-        makeCell (duckRatio, duckRatioV, "RAT",  ReverbIDs::duckRatio);
-        makeCell (duckKnee, duckKneeV, "KNEE", ReverbIDs::duckKneeDb);
-        makeCell (duckLa, duckLaV, "LOOK", ReverbIDs::duckLaMs);
-        makeCell (duckRms, duckRmsV, "RMS", ReverbIDs::duckRmsMs);
-        makeCell (duckBandHz, duckBandHzV, "BAND", ReverbIDs::duckBandHz);
-        makeCell (duckBandQ, duckBandQV, "Q", ReverbIDs::duckBandQ);
-        makeCell (freeze, freezeV, "FREEZE", ReverbIDs::freeze);
+        // Row 2 (16 controls) - Final 2×16 grid map
+        makeCell (wet,  wetV,  "WET",       ReverbParamIDs::wetMix01);
+        makeCell (bloom,bloomV,"BLOOM",     ReverbParamIDs::bloomPct);
+        makeCell (distance, distanceV, "DIST", ReverbParamIDs::distancePct);
+        makeCell (freeze, freezeV, "FREEZE", ReverbParamIDs::freeze);
+        makeCell (shimmerAmt, shimmerAmtV, "SHIM AMT", ReverbParamIDs::shimmerAmtPct);
+        makeCell (shimmerInt, shimmerIntV, "SHIM INT", ReverbParamIDs::shimmerInt);
+        makeCell (gateAmt, gateAmtV, "GATE", ReverbParamIDs::gateAmtPct);
+        makeCell (dreqXoverLo, dreqXoverLoV, "DREQ XO LO", ReverbParamIDs::dreqXoverLoHz);
+        makeCell (dreqXoverHi, dreqXoverHiV, "DREQ XO HI", ReverbParamIDs::dreqXoverHiHz);
+        makeCell (dreqApply, dreqApplyV, "EQ APPLY", ReverbParamIDs::dreqApply);
+        makeCell (followWidth, followWidthV, "FOLLOW W", ReverbParamIDs::followWidth);
+        makeCell (followWidthAmt, followWidthAmtV, "W AMT", ReverbParamIDs::followWidthAmt);
+        makeCell (followRot, followRotV, "FOLLOW R", ReverbParamIDs::followRot);
+        makeCell (followRotAmt, followRotAmtV, "R AMT", ReverbParamIDs::followRotAmt);
+        makeCell (outTrim, outTrimV, "TRIM", ReverbParamIDs::outTrimDb);
+        makeCell (spare, spareV, "SPARE", "spare");
 
         // Grid order (Row 1, then Row 2)
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
@@ -219,19 +219,13 @@ private:
     int colW       = 56;
     int rowH       = 0;
 
-    // Sliders/labels
-    juce::Slider pre, erL, erD, erW, dif, md, mr, w,
-                 erTime, erToTail, density, widthStart, widthEnd, rotStart, rotEnd, outTrim,
-                 wet, dec, size, bloom, distance,
-                 duckDepth, duckAtk, duckRel, duckThr, duckRatio,
-                 duckKnee, duckLa, duckRms, duckBandHz, duckBandQ,
-                 freeze;
-    juce::Label  preV, erLV, erDV, erWV, difV, mdV, mrV, wV,
-                 erTimeV, erToTailV, densityV, widthStartV, widthEndV, rotStartV, rotEndV, outTrimV,
-                 wetV, decV, sizeV, bloomV, distanceV,
-                 duckDepthV, duckAtkV, duckRelV, duckThrV, duckRatioV,
-                 duckKneeV, duckLaV, duckRmsV, duckBandHzV, duckBandQV,
-                 freezeV;
+    // Sliders/labels - Updated for final 2×16 grid map
+    juce::Slider enabled, pre, erL, erD, erW, erTime, erToTail, dif, density, md, mr, w, rotation, size, dec, killDry,
+                 wet, bloom, distance, freeze, shimmerAmt, shimmerInt, gateAmt, dreqXoverLo, dreqXoverHi, dreqApply,
+                 followWidth, followWidthAmt, followRot, followRotAmt, outTrim, spare;
+    juce::Label  enabledV, preV, erLV, erDV, erWV, erTimeV, erToTailV, difV, densityV, mdV, mrV, wV, rotationV, sizeV, decV, killDryV,
+                 wetV, bloomV, distanceV, freezeV, shimmerAmtV, shimmerIntV, gateAmtV, dreqXoverLoV, dreqXoverHiV, dreqApplyV,
+                 followWidthV, followWidthAmtV, followRotV, followRotAmtV, outTrimV, spareV;
 };
 
 

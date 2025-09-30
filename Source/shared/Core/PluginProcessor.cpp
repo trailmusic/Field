@@ -332,36 +332,38 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.delayDuckLinkGlobal = (getParam(apvts, IDs::delayDuckLinkGlobal) >= 0.5f);
     // p.phaseMode = (int) apvts.getParameterAsValue (IDs::phaseMode).getValue(); // Removed - using new Phase Alignment system
     // Reverb params ingress (APVTS -> HostParams)
-    p.rvEnabled       = apvts.getRawParameterValue (ReverbIDs::enabled)->load() > 0.5f;
-    p.rvKillDry       = apvts.getRawParameterValue (ReverbIDs::killDry)->load() > 0.5f;
+    p.rvEnabled       = apvts.getRawParameterValue (ReverbParamIDs::enabled)->load() > 0.5f;
+    p.rvKillDry       = apvts.getRawParameterValue (ReverbParamIDs::killDry)->load() > 0.5f;
     // p.rvAlgo removed - algo parameter no longer exists
-    p.rvPreDelayMs    = apvts.getRawParameterValue (ReverbIDs::preDelayMs)->load();
-    p.rvDecaySec      = apvts.getRawParameterValue (ReverbIDs::decaySec)->load();
-    p.rvDensityPct    = apvts.getRawParameterValue (ReverbIDs::densityPct)->load();
-    p.rvDiffusionPct  = apvts.getRawParameterValue (ReverbIDs::diffusionPct)->load();
-    p.rvModDepthCents = apvts.getRawParameterValue (ReverbIDs::modDepthCents)->load();
-    p.rvModRateHz     = apvts.getRawParameterValue (ReverbIDs::modRateHz)->load();
-    p.rvErLevelDb     = apvts.getRawParameterValue (ReverbIDs::erLevelDb)->load();
-    p.rvErTimeMs      = apvts.getRawParameterValue (ReverbIDs::erTimeMs)->load();
-    p.rvErDensityPct  = apvts.getRawParameterValue (ReverbIDs::erDensityPct)->load();
-    p.rvErWidthPct    = apvts.getRawParameterValue (ReverbIDs::erWidthPct)->load();
-    p.rvErToTailPct   = apvts.getRawParameterValue (ReverbIDs::erToTailPct)->load();
+    p.rvPreDelayMs    = apvts.getRawParameterValue (ReverbParamIDs::preDelayMs)->load();
+    p.rvDecaySec      = apvts.getRawParameterValue (ReverbParamIDs::decaySec)->load();
+    p.rvDensityPct    = apvts.getRawParameterValue (ReverbParamIDs::densityPct)->load();
+    p.rvDiffusionPct  = apvts.getRawParameterValue (ReverbParamIDs::diffusionPct)->load();
+    p.rvModDepthCents = apvts.getRawParameterValue (ReverbParamIDs::modDepthCents)->load();
+    p.rvModRateHz     = apvts.getRawParameterValue (ReverbParamIDs::modRateHz)->load();
+    p.rvErLevelDb     = apvts.getRawParameterValue (ReverbParamIDs::erLevelDb)->load();
+    p.rvErTimeMs      = apvts.getRawParameterValue (ReverbParamIDs::erTimeMs)->load();
+    p.rvErDensityPct  = apvts.getRawParameterValue (ReverbParamIDs::erDensityPct)->load();
+    p.rvErWidthPct    = apvts.getRawParameterValue (ReverbParamIDs::erWidthPct)->load();
+    p.rvErToTailPct   = apvts.getRawParameterValue (ReverbParamIDs::erToTailPct)->load();
     // Old knob-based EQ controls removed - now handled by DynEQ pane
-    p.rvDreqLowX      = apvts.getRawParameterValue (ReverbIDs::dreqLowX)->load();
-    p.rvDreqMidX      = apvts.getRawParameterValue (ReverbIDs::dreqMidX)->load();
-    p.rvDreqHighX     = apvts.getRawParameterValue (ReverbIDs::dreqHighX)->load();
-    p.rvWidthPct      = apvts.getRawParameterValue (ReverbIDs::widthPct)->load();
-    p.rvWet01         = apvts.getRawParameterValue (ReverbIDs::wetMix01)->load();
+    // Note: Some DR-EQ parameters may need to be updated based on new parameter structure
+    // p.rvDreqLowX      = apvts.getRawParameterValue (ReverbParamIDs::dreqLowX)->load();
+    // p.rvDreqMidX      = apvts.getRawParameterValue (ReverbParamIDs::dreqMidX)->load();
+    // p.rvDreqHighX     = apvts.getRawParameterValue (ReverbParamIDs::dreqHighX)->load();
+    p.rvWidthPct      = apvts.getRawParameterValue (ReverbParamIDs::widthPct)->load();
+    p.rvWet01         = apvts.getRawParameterValue (ReverbParamIDs::wetMix01)->load();
     // Reverb ducking ingress
-    p.rvDuckDepthDb   = apvts.getRawParameterValue (ReverbIDs::duckDepthDb)->load();
-    p.rvDuckThrDb     = apvts.getRawParameterValue (ReverbIDs::duckThrDb)->load();
-    p.rvDuckKneeDb    = apvts.getRawParameterValue (ReverbIDs::duckKneeDb)->load();
-    p.rvDuckRatio     = apvts.getRawParameterValue (ReverbIDs::duckRatio)->load();
-    p.rvDuckAtkMs     = apvts.getRawParameterValue (ReverbIDs::duckAtkMs)->load();
-    p.rvDuckRelMs     = apvts.getRawParameterValue (ReverbIDs::duckRelMs)->load();
-    p.rvDuckLaMs      = apvts.getRawParameterValue (ReverbIDs::duckLaMs)->load();
-    p.rvDuckRmsMs     = apvts.getRawParameterValue (ReverbIDs::duckRmsMs)->load();
-    p.rvOutTrimDb     = apvts.getRawParameterValue (ReverbIDs::outTrimDb)->load();
+    p.rvDuckDepthDb   = apvts.getRawParameterValue (ReverbParamIDs::duckDepthDb)->load();
+    p.rvDuckThrDb     = apvts.getRawParameterValue (ReverbParamIDs::duckThrDb)->load();
+    p.rvDuckKneeDb    = apvts.getRawParameterValue (ReverbParamIDs::duckKneeDb)->load();
+    p.rvDuckRatio     = apvts.getRawParameterValue (ReverbParamIDs::duckRatio)->load();
+    p.rvDuckAtkMs     = apvts.getRawParameterValue (ReverbParamIDs::duckAtkMs)->load();
+    p.rvDuckRelMs     = apvts.getRawParameterValue (ReverbParamIDs::duckRelMs)->load();
+    // Note: duckLaMs and duckRmsMs were removed in new parameter system
+    // p.rvDuckLaMs      = apvts.getRawParameterValue (ReverbParamIDs::duckLaMs)->load();
+    // p.rvDuckRmsMs     = apvts.getRawParameterValue (ReverbParamIDs::duckRmsMs)->load();
+    p.rvOutTrimDb     = apvts.getRawParameterValue (ReverbParamIDs::outTrimDb)->load();
     
     // Dynamic EQ parameters
     p.dynEqEnabled    = apvts.getRawParameterValue (dynEq::IDs::enabled)->load() > 0.5f;
@@ -955,14 +957,14 @@ void MyPluginAudioProcessor::setStateInformation (const void* data, int sizeInBy
         apvts.replaceState (juce::ValueTree::fromXml (*xml));
         // Migration: map legacy duck depth to Reverb Engine duck depth if engine depth is zero
         if (auto* legacy = apvts.getRawParameterValue (IDs::ducking))
-        if (auto* rvDepth = apvts.getRawParameterValue (ReverbIDs::duckDepthDb))
+        if (auto* rvDepth = apvts.getRawParameterValue (ReverbParamIDs::duckDepthDb))
         {
             const float legacy01 = legacy->load();
             const float currentDb = rvDepth->load();
             if (legacy01 > 0.001f && currentDb <= 0.001f)
             {
                 const float mappedDb = juce::jlimit (0.0f, 36.0f, legacy01 * 24.0f);
-                if (auto* p = apvts.getParameter (ReverbIDs::duckDepthDb))
+                if (auto* p = apvts.getParameter (ReverbParamIDs::duckDepthDb))
                 {
                     p->beginChangeGesture();
                     p->setValueNotifyingHost (p->convertTo0to1 (mappedDb));
@@ -1048,13 +1050,13 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
         }
     }
     // Auto-enable/disable Reverb based on WET amount
-    if (parameterID == ReverbIDs::wetMix01 && !reverbAutoGuard.load())
+    if (parameterID == ReverbParamIDs::wetMix01 && !reverbAutoGuard.load())
     {
         const float wet = newValue;
-        if (auto* p = apvts.getParameter (ReverbIDs::enabled))
+        if (auto* p = apvts.getParameter (ReverbParamIDs::enabled))
         {
             const bool wantOn = wet > 0.0001f;
-            const bool isOn   = apvts.getRawParameterValue (ReverbIDs::enabled)->load() > 0.5f;
+            const bool isOn   = apvts.getRawParameterValue (ReverbParamIDs::enabled)->load() > 0.5f;
             if (wantOn != isOn)
             {
                 reverbAutoGuard.store (true);

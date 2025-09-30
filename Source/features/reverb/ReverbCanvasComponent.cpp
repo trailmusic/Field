@@ -57,13 +57,13 @@ void ReverbCanvasComponent::paint(Graphics& g)
 
 void ReverbCanvasComponent::timerCallback()
 {
-    const float rt60 = getF2("reverb_rt60_s", ReverbIDs::decaySec, 2.4f);
+    const float rt60 = getF2("reverb_rt60_s", ReverbParamIDs::decaySec, 2.4f);
     horizonSec = jlimit(0.6f, 8.0f, rt60 * 1.2f);
 
-    const float rate = getF(ReverbIDs::modRateHz, 0.2f);
+    const float rate = getF(ReverbParamIDs::modRateHz, 0.2f);
     phase = std::fmod(phase + (float)(2.0 * MathConstants<double>::pi) * rate / 30.f, (float) MathConstants<double>::twoPi);
 
-    if (! getB(ReverbIDs::freeze, false))
+    if (! getB(ReverbParamIDs::freeze, false))
         advanceHeatmapRow();
 
     repaint();
@@ -100,11 +100,11 @@ void ReverbCanvasComponent::drawER(Graphics& g, Rectangle<float> r)
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
 
-    const float preMs    = getF(ReverbIDs::preDelayMs, 0.f);
-    const float densPct  = clamp01(getF(ReverbIDs::erDensityPct, 50.f) / 100.f);
-    const float widthPct = clamp01(getF(ReverbIDs::erWidthPct, 50.f) / 100.f);
-    const float lvlDb    = getF(ReverbIDs::erLevelDb, -12.f);
-    const float toTail   = clamp01(getF(ReverbIDs::erToTailPct, 30.f) / 100.f);
+    const float preMs    = getF(ReverbParamIDs::preDelayMs, 0.f);
+    const float densPct  = clamp01(getF(ReverbParamIDs::erDensityPct, 50.f) / 100.f);
+    const float widthPct = clamp01(getF(ReverbParamIDs::erWidthPct, 50.f) / 100.f);
+    const float lvlDb    = getF(ReverbParamIDs::erLevelDb, -12.f);
+    const float toTail   = clamp01(getF(ReverbParamIDs::erToTailPct, 30.f) / 100.f);
 
     const int seed = (int) (preMs * 7) ^ (int) (densPct * 997) ^ (int) (widthPct * 1439);
     Random rng (seed);
@@ -141,14 +141,15 @@ void ReverbCanvasComponent::advanceHeatmapRow()
     const float dt = horizonSec / (float) H;
     tSeconds += dt;
 
-    const float rt60Base = jlimit(0.2f, 20.f, getF2("reverb_rt60_s", ReverbIDs::decaySec, 2.4f));
-    const float loX      = jlimit(0.3f, 2.0f, getF(ReverbIDs::dreqLowX, 1.f));
-    const float midX     = jlimit(0.5f, 1.5f, getF(ReverbIDs::dreqMidX, 1.f));
-    const float hiX      = jlimit(0.3f, 2.0f, getF(ReverbIDs::dreqHighX, 1.f));
-    const float xLoHz    = jlimit(80.f, 800.f,     getF(ReverbIDs::dreqXoverLoHz, 250.f));
-    const float xHiHz    = jlimit(1000.f, 10000.f, getF(ReverbIDs::dreqXoverHiHz, 4500.f));
-    const float bloom01  = clamp01(getF(ReverbIDs::bloomPct, 35.f) / 100.f);
-    const float modDepth = getF(ReverbIDs::modDepthCents, 0.f) / 50.f;
+    const float rt60Base = jlimit(0.2f, 20.f, getF2("reverb_rt60_s", ReverbParamIDs::decaySec, 2.4f));
+    // Legacy DR-EQ parameters removed - using defaults
+    const float loX      = 1.0f; // Default value
+    const float midX     = 1.0f; // Default value  
+    const float hiX      = 1.0f; // Default value
+    const float xLoHz    = jlimit(80.f, 800.f,     getF(ReverbParamIDs::dreqXoverLoHz, 250.f));
+    const float xHiHz    = jlimit(1000.f, 10000.f, getF(ReverbParamIDs::dreqXoverHiHz, 4500.f));
+    const float bloom01  = clamp01(getF(ReverbParamIDs::bloomPct, 35.f) / 100.f);
+    const float modDepth = getF(ReverbParamIDs::modDepthCents, 0.f) / 50.f;
     const float tailLive = tailNow ? jlimit(0.f, 1.f, tailNow()) : 0.3f;
 
     const float gamma = juce::jmap(bloom01, 0.2f, 1.2f);
@@ -190,8 +191,8 @@ void ReverbCanvasComponent::drawTailHeatmapImage(Graphics& g, Rectangle<float> r
     const int W = heatmap.getWidth(), H = heatmap.getHeight();
     Image tinted (Image::ARGB, W, H, true);
 
-    const float xLoHz  = jlimit(80.f, 800.f,     getF(ReverbIDs::dreqXoverLoHz, 250.f));
-    const float xHiHz  = jlimit(1000.f, 10000.f, getF(ReverbIDs::dreqXoverHiHz, 4500.f));
+    const float xLoHz  = jlimit(80.f, 800.f,     getF(ReverbParamIDs::dreqXoverLoHz, 250.f));
+    const float xHiHz  = jlimit(1000.f, 10000.f, getF(ReverbParamIDs::dreqXoverHiHz, 4500.f));
     for (int y=0; y<H; ++y)
     {
         for (int x=0; x<W; ++x)
@@ -218,7 +219,7 @@ void ReverbCanvasComponent::drawTailHeatmapImage(Graphics& g, Rectangle<float> r
     }
 
     g.setColour(th.text.withAlpha(0.18f));
-    for (float hz : { getF(ReverbIDs::dreqXoverLoHz, 250.f), getF(ReverbIDs::dreqXoverHiHz, 4500.f) })
+    for (float hz : { getF(ReverbParamIDs::dreqXoverLoHz, 250.f), getF(ReverbParamIDs::dreqXoverHiHz, 4500.f) })
     {
         const float x = left + log01FromHz(hz) * (right - left);
         g.drawVerticalLine((int) x, top, bottom);
@@ -232,10 +233,11 @@ void ReverbCanvasComponent::drawWidthRotation(Graphics& g, Rectangle<float> r)
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
 
-    const float wStart = getF(ReverbIDs::widthStartPct, getF(ReverbIDs::widthPct, 100.f));
-    const float wEnd   = getF(ReverbIDs::widthEndPct,   getF(ReverbIDs::widthPct, 100.f));
-    const float rotS   = getF(ReverbIDs::rotStartDeg, 0.f);
-    const float rotE   = getF(ReverbIDs::rotEndDeg,   0.f);
+    // Legacy motion parameters removed - using static values
+    const float wStart = getF(ReverbParamIDs::widthPct, 100.f);
+    const float wEnd   = getF(ReverbParamIDs::widthPct, 100.f);
+    const float rotS   = getF(ReverbParamIDs::rotationDeg, 0.f);
+    const float rotE   = getF(ReverbParamIDs::rotationDeg, 0.f);
 
     const float top = r.getY()+8.f, bottom = r.getBottom()-10.f, left = r.getX()+6.f, right = r.getRight()-6.f;
     Path p; p.preallocateSpace(128);
@@ -244,8 +246,9 @@ void ReverbCanvasComponent::drawWidthRotation(Graphics& g, Rectangle<float> r)
     {
         const float t01 = (float) i / (float) (steps-1);
         const float y   = jmap(t01, 0.f, 1.f, top, bottom);
-        const float wCurve  = clamp01(0.5f + 0.5f * getF(ReverbIDs::widthEnvCurve, 0.f));
-        const float rotCurve= clamp01(0.5f + 0.5f * getF(ReverbIDs::rotEnvCurve,   0.f));
+        // Legacy envelope curve parameters removed - using linear curves
+        const float wCurve  = 0.5f; // Linear curve
+        const float rotCurve= 0.5f; // Linear curve
         const float tw = std::pow(t01, 1.f + (wCurve * 1.5f - 0.75f));
         const float tr = std::pow(t01, 1.f + (rotCurve * 1.5f - 0.75f));
         const float widthPct = lerp(wStart, wEnd, tw);
@@ -304,7 +307,7 @@ void ReverbCanvasComponent::drawDucking(Graphics& g, Rectangle<float> r)
     const float GR = grNow ? jmax(0.f, grNow()) : 0.f;
     if (GR <= 0.01f) return;
     const float left = r.getX()+6.f, right = r.getRight()-6.f, top = r.getY()+8.f;
-    const float widthPx = jmap(clamp01(GR / jmax(1.f, getF(ReverbIDs::duckDepthDb, 12.f))), 0.f, 1.f, 0.f, (right-left) * 0.35f);
+    const float widthPx = jmap(clamp01(GR / jmax(1.f, getF(ReverbParamIDs::duckDepthDb, 12.f))), 0.f, 1.f, 0.f, (right-left) * 0.35f);
     g.setColour(th.text.withAlpha(0.60f));
     g.drawText("Ducking", Rectangle<int>((int) left, (int) top-2, 80, 14), Justification::left, false);
     g.setColour(th.hl); g.fillRoundedRectangle(left, top+14.f, widthPx, 8.f, 4.f);
@@ -317,7 +320,7 @@ void ReverbCanvasComponent::drawSpecials(Graphics& g, Rectangle<float> r)
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
 
-    if (getB(ReverbIDs::freeze, false))
+    if (getB(ReverbParamIDs::freeze, false))
     {
         g.setColour(th.accent.withAlpha(0.10f));
         g.drawRoundedRectangle(r.reduced(10.f), 10.f, 2.0f);
@@ -328,7 +331,7 @@ void ReverbCanvasComponent::drawSpecials(Graphics& g, Rectangle<float> r)
         g.fillEllipse(px-3.f, py-3.f, 6.f, 6.f);
     }
 
-    const float dist = clamp01(getF(ReverbIDs::distancePct, 35.f)/100.f);
+    const float dist = clamp01(getF(ReverbParamIDs::distancePct, 35.f)/100.f);
     if (dist > 0.02f)
     {
         Colour aC = th.eq.air.withAlpha(0.04f * dist);
@@ -337,7 +340,7 @@ void ReverbCanvasComponent::drawSpecials(Graphics& g, Rectangle<float> r)
         g.fillRoundedRectangle(r.reduced(6.f), 7.f);
     }
 
-    const float shim = clamp01(getF(ReverbIDs::shimmerAmtPct, 0.f)/100.f);
+    const float shim = clamp01(getF(ReverbParamIDs::shimmerAmtPct, 0.f)/100.f);
     if (shim > 0.01f)
     {
         const float left = r.getX()+6.f, right = r.getRight()-6.f, top = r.getY()+8.f, bottom = r.getBottom()-10.f;
@@ -355,7 +358,7 @@ void ReverbCanvasComponent::drawSpecials(Graphics& g, Rectangle<float> r)
         g.strokePath(ridge, PathStrokeType(1.6f));
     }
 
-    const float gate = clamp01(getF(ReverbIDs::gateAmtPct, 0.f)/100.f);
+    const float gate = clamp01(getF(ReverbParamIDs::gateAmtPct, 0.f)/100.f);
     if (gate > 0.01f)
     {
         g.setColour(Colours::black.withAlpha(0.05f * gate));

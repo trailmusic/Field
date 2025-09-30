@@ -960,7 +960,7 @@ public:
     bool producesMidi() const override                         { return false; }
     bool isMidiEffect() const override                         { return false; }
     double getTailLengthSeconds() const override               {
-        if (auto* p = apvts.getRawParameterValue (ReverbIDs::decaySec))
+        if (auto* p = apvts.getRawParameterValue (ReverbParamIDs::decaySec))
             return juce::jlimit (0.0, 20.0, (double) p->load() * 2.0);
         return 0.0;
     }

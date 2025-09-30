@@ -76,6 +76,7 @@ set(SRC
     shared/Core/IconSystem.cpp
     features/reverb/ReverbParamIDs.h
     features/reverb/ReverbParameters.h
+    features/reverb/ReverbParameters.cpp
     features/reverb/ReverbEngine.h
     features/reverb/ReverbEngine.cpp
     features/reverb/ReverbCanvasComponent.h

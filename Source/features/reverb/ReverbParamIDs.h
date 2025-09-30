@@ -1,70 +1,70 @@
 #pragma once
 
-namespace ReverbIDs {
-// Top
-inline constexpr const char* enabled   = "reverb_enabled";
-inline constexpr const char* killDry   = "reverb_kill_dry";
+namespace ReverbParamIDs
+{
+    // Core routing
+    static constexpr const char* enabled         = "reverb_enabled";
+    static constexpr const char* killDry         = "reverb_kill_dry";
 
-// Time
-inline constexpr const char* preDelayMs    = "reverb_predelay_ms";
-inline constexpr const char* decaySec      = "reverb_decay_s";
-inline constexpr const char* densityPct    = "reverb_density_pct";
-inline constexpr const char* diffusionPct  = "reverb_diffusion_pct";
-inline constexpr const char* modDepthCents = "reverb_mod_depth_cents";
-inline constexpr const char* modRateHz     = "reverb_mod_rate_hz";
+    // Structure / space
+    static constexpr const char* preDelayMs      = "preDelayMs";
+    static constexpr const char* decaySec        = "decaySec";
+    static constexpr const char* sizePct         = "sizePct";
 
-// ER
-inline constexpr const char* erLevelDb    = "reverb_er_level_db";
-inline constexpr const char* erTimeMs     = "reverb_er_time_ms";
-inline constexpr const char* erDensityPct = "reverb_er_density_pct";
-inline constexpr const char* erWidthPct   = "reverb_er_width_pct";
-inline constexpr const char* erToTailPct  = "reverb_er_to_tail_pct";
+    // Early reflections
+    static constexpr const char* erLevelDb       = "erLevelDb";
+    static constexpr const char* erDensityPct    = "erDensityPct";
+    static constexpr const char* erWidthPct      = "erWidthPct";
+    static constexpr const char* erTimeMs        = "erTimeMs";
+    static constexpr const char* erToTailPct     = "erToTailPct";
 
-// DR-EQ
-inline constexpr const char* dreqLowX  = "reverb_decay_low_mult";
-inline constexpr const char* dreqMidX  = "reverb_decay_mid_mult";
-inline constexpr const char* dreqHighX = "reverb_decay_high_mult";
-// DR-EQ Crossovers (new)
-inline constexpr const char* dreqXoverLoHz = "reverb_decay_xover_lo_hz";
-inline constexpr const char* dreqXoverHiHz = "reverb_decay_xover_hi_hz";
+    // Diffusion / density
+    static constexpr const char* diffusionPct    = "diffusionPct";
+    static constexpr const char* densityPct      = "densityPct";
 
-// Motion
-inline constexpr const char* widthPct      = "reverb_width_pct";
-inline constexpr const char* widthStartPct = "reverb_width_start_pct";
-inline constexpr const char* widthEndPct   = "reverb_width_end_pct";
-inline constexpr const char* widthEnvCurve = "reverb_width_env_curve";
-inline constexpr const char* rotStartDeg   = "reverb_rotate_start_deg";
-inline constexpr const char* rotEndDeg     = "reverb_rotate_end_deg";
-inline constexpr const char* rotEnvCurve   = "reverb_rotate_env_curve";
+    // Modulation
+    static constexpr const char* modDepthCents   = "modDepthCents";
+    static constexpr const char* modRateHz       = "modRateHz";
 
-// Ducking
-inline constexpr const char* duckMode    = "reverb_duck_mode"; // WetOnly/Center/Band
-inline constexpr const char* duckDepthDb = "reverb_duck_depth_db";
-inline constexpr const char* duckThrDb   = "reverb_duck_threshold_db";
-inline constexpr const char* duckKneeDb  = "reverb_duck_knee_db";
-inline constexpr const char* duckRatio   = "reverb_duck_ratio";
-inline constexpr const char* duckAtkMs   = "reverb_duck_attack_ms";
-inline constexpr const char* duckRelMs   = "reverb_duck_release_ms";
-inline constexpr const char* duckLaMs    = "reverb_duck_lookahead_ms";
-inline constexpr const char* duckRmsMs   = "reverb_duck_rms_ms";
-inline constexpr const char* duckBandHz  = "reverb_duck_band_center_hz";
-inline constexpr const char* duckBandQ   = "reverb_duck_band_q";
+    // Stereo + rotation (single static; motion follows external engine)
+    static constexpr const char* widthPct        = "widthPct";
+    static constexpr const char* rotationDeg     = "rotationDeg";
 
-// Specials
-inline constexpr const char* freeze        = "reverb_freeze";
-inline constexpr const char* gateAmtPct    = "reverb_gate_amount_pct";
-inline constexpr const char* shimmerAmtPct = "reverb_shimmer_amt_pct";
-inline constexpr const char* shimmerInt    = "reverb_shimmer_interval"; // +12/+7/-12
-// Macro / shaping (new)
-inline constexpr const char* sizePct     = "reverb_size_pct";
-inline constexpr const char* bloomPct    = "reverb_bloom_pct";
-inline constexpr const char* distancePct = "reverb_distance_pct";
+    // Motion follow (from global Motion Engine)
+    static constexpr const char* followWidth     = "followWidth";
+    static constexpr const char* followWidthAmt  = "followWidthAmt";
+    static constexpr const char* followRot       = "followRot";
+    static constexpr const char* followRotAmt    = "followRotAmt";
 
-// Old Post-EQ removed - now handled by DynEQ pane
+    // Mix & specials
+    static constexpr const char* wetMix01        = "wetMix01";
+    static constexpr const char* bloomPct        = "bloomPct";
+    static constexpr const char* distancePct     = "distancePct";
+    static constexpr const char* freeze          = "freeze";
+    static constexpr const char* shimmerAmtPct   = "shimmerAmtPct";
+    static constexpr const char* shimmerInt      = "shimmerInt";
+    static constexpr const char* gateAmtPct      = "gateAmtPct";
+    static constexpr const char* outTrimDb       = "outTrimDb";
 
-// Mix / Out
-inline constexpr const char* wetMix01   = "reverb_wet_mix";
-inline constexpr const char* outTrimDb  = "reverb_output_trim_db";
-} // namespace ReverbIDs
+    // Reverb EQ routing (your 4-band dyna-EQ pane)
+    static constexpr const char* dreqXoverLoHz   = "dreqXoverLoHz";
+    static constexpr const char* dreqXoverHiHz   = "dreqXoverHiHz";
+    static constexpr const char* dreqApply       = "dreqApply"; // 0=Pre,1=Post,2=ER,3=Tail
+
+    // Ducking (moved to floating module)
+    static constexpr const char* duckOn          = "duckOn";
+    static constexpr const char* duckMode        = "duckMode";   // 0=General,1=Vocal,2=DrumBus,3=Guitar,4=Keys
+    static constexpr const char* duckDepthDb     = "duckDepthDb";
+    static constexpr const char* duckAtkMs       = "duckAtkMs";
+    static constexpr const char* duckRelMs        = "duckRelMs";
+    static constexpr const char* duckThrDb        = "duckThrDb";
+    static constexpr const char* duckRatio        = "duckRatio";
+    static constexpr const char* duckKneeDb       = "duckKneeDb";
+    static constexpr const char* duckBandHz       = "duckBandHz";
+    static constexpr const char* duckBandQ        = "duckBandQ";
+    static constexpr const char* duckDetectorSrc  = "duckDetectorSrc"; // 0=Dry,1=ER,2=Tail,3=Wet
+
+    // Removed (legacy): widthStartPct, widthEndPct, rotStartDeg, rotEndDeg, duckLaMs, duckRmsMs
+}
 
 
