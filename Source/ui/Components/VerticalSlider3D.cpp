@@ -47,9 +47,9 @@ void VerticalSlider3D::paint (juce::Graphics& g)
     }
     drawMetallicBackground (g, extendedBounds);
     
-    // Draw track (full height since no text boxes)
+    // Draw track (leave room for bottom labels)
     const float trackTop = 20.0f; // Start track lower
-    const float trackBottom = bounds.getHeight() - 20.0f; // Leave small margin at bottom
+    const float trackBottom = bounds.getHeight() - 40.0f; // Leave room for bottom labels
     const float trackHeight = trackBottom - trackTop;
     auto trackRect = juce::Rectangle<float> (bounds.getCentreX() - trackWidth/2, trackTop, trackWidth, trackHeight);
     drawMetallicTrack (g, trackRect);
@@ -66,9 +66,16 @@ void VerticalSlider3D::paint (juce::Graphics& g)
     // Draw visual markers and labels
     drawMarkers (g, trackRect);
     
+    // Draw bottom value label
+    drawBottomLabel (g, bounds);
+    
     // Standard border treatment: accent border (reduced brightness for sliders)
     g.setColour (accentColor.withAlpha (0.3f));
     g.drawRoundedRectangle (bounds, 6.0f, 1.0f);
+    
+    // Peak line (thicker bottom border like meters)
+    g.setColour (accentColor.withAlpha (0.6f));
+    g.fillRect (juce::Rectangle<float> (bounds.getX(), bounds.getBottom() - 1.0f, bounds.getWidth(), 2.0f));
 }
 
 void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> handleRect)
@@ -86,10 +93,6 @@ void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> h
                                   false);
     gradient.addColour (0.5, accent);
     
-    // Draw handle under glow
-    g.setColour (accent.withAlpha (0.4f));
-    g.fillRoundedRectangle (handleRect.expanded (4, 4), 4.0f);
-    
     // Draw handle shadow
     g.setColour (shadowDark.withAlpha (0.4f));
     g.fillRoundedRectangle (handleRect.translated (2, 2), 4.0f);
@@ -98,12 +101,12 @@ void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> h
     g.setGradientFill (gradient);
     g.fillRoundedRectangle (handleRect, 4.0f);
     
-    // Draw interior fill using theme dark grey
-    g.setColour (lf->theme.meters.panelDark);
-    g.fillRoundedRectangle (handleRect.reduced (4), 1.0f);
-    
-    // Draw interior frame using accent color
+    // Draw accent color outer frame first (smaller frame)
     g.setColour (accent);
+    g.fillRoundedRectangle (handleRect.reduced (1), 1.0f);
+    
+    // Draw grey interior fill on top (more room for labels)
+    g.setColour (lf->theme.meters.panelDark.darker (0.5f));
     g.fillRoundedRectangle (handleRect.reduced (3), 2.0f);
     
     // Draw rim
@@ -146,9 +149,9 @@ void VerticalSlider3D::drawMarkers (juce::Graphics& g, juce::Rectangle<float> tr
         markerValues = {-60.0f, -40.0f, -20.0f, -10.0f, -6.0f, -3.0f, 0.0f, 3.0f, 6.0f, 12.0f};
         markerLabels = {"-60", "-40", "-20", "-10", "-6", "-3", "0", "+3", "+6", "+12"};
     } else if (maxVal <= 100.0f && minVal >= 0.0f) {
-        // Percentage range (Mix slider)
+        // Percentage range (Mix slider) - no % symbols to save space
         markerValues = {0.0f, 25.0f, 50.0f, 75.0f, 100.0f};
-        markerLabels = {"0%", "25%", "50%", "75%", "100%"};
+        markerLabels = {"0", "25", "50", "75", "100"};
     } else {
         // Generic range - create 5 markers
         const float range = maxVal - minVal;
@@ -253,6 +256,34 @@ void VerticalSlider3D::mouseUp (const juce::MouseEvent& e)
 {
     isDragging = false;
     juce::Slider::mouseUp (e);
+}
+
+void VerticalSlider3D::drawBottomLabel (juce::Graphics& g, juce::Rectangle<float> bounds)
+{
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    if (!lf) return;
+    
+    const auto textColor = lf->theme.textMuted;
+    g.setColour (textColor);
+    g.setFont (juce::Font (7.0f, juce::Font::bold));
+    
+    // Format the current value based on slider type
+    juce::String valueText;
+    const float currentValue = getValue();
+    juce::String componentName = getName();
+    
+    if (componentName.contains ("mix")) {
+        // Mix slider: show percentage without % symbol
+        valueText = juce::String (juce::roundToInt (currentValue));
+    } else {
+        // Input/Output sliders: show dB value
+        valueText = juce::String (currentValue, 1);
+    }
+    
+    // Draw at bottom of slider
+    const float labelY = bounds.getHeight() - 25.0f;
+    const float labelHeight = 15.0f;
+    g.drawText (valueText, bounds.getX(), labelY, bounds.getWidth(), labelHeight, juce::Justification::centred);
 }
 
 void VerticalSlider3D::setSliderStyle (SliderStyle newStyle)

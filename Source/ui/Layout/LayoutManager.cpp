@@ -209,8 +209,8 @@ void LayoutManager::layoutMainControls()
     // 4) Layout sliders on the right with padding
     const int slidersPadding = Layout::dp(Layout::GAP, s); // Add gap between content and sliders
     auto slidersArea = r.removeFromRight(slidersWidth + slidersPadding);
-    // Keep sliders at the right edge but add padding to the left
-    slidersArea = slidersArea.withX(editor.getWidth() - slidersWidth).withWidth(slidersWidth);
+    // Keep sliders at the right edge but add padding to the left and 2px margin from edge
+    slidersArea = slidersArea.withX(editor.getWidth() - slidersWidth - 2).withWidth(slidersWidth);
     editor.sliderManager->setSlidersContainerBounds(slidersArea);
     
     // Layout the individual sliders horizontally within the container

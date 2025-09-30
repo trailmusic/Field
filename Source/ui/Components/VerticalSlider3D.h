@@ -22,6 +22,7 @@ private:
     void drawMetallicTrack (juce::Graphics& g, juce::Rectangle<float> trackRect);
     void drawMetallicBackground (juce::Graphics& g, juce::Rectangle<float> backgroundRect);
     void drawMarkers (juce::Graphics& g, juce::Rectangle<float> trackRect);
+    void drawBottomLabel (juce::Graphics& g, juce::Rectangle<float> bounds);
     
     bool isDragging = false;
     juce::Point<float> lastMousePos;
