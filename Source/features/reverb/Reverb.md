@@ -515,3 +515,12 @@ All reverb controls use:
 - **DecayRateEQ**: Smart positioning prevents BandOverlay/BandBadge overlap with band points
 - **Band Limits**: 4-band limit for Tone EQ, 3-band limit for Decay-Rate EQ
 - **Algorithm**: 12px band radius + 20px margin with fallback positioning (right → left → above → below)
+
+## ✅ DOUBLE-CLICK DELETE FUNCTIONALITY (January 2025)
+
+### Reverb EQ System
+- **ReverbToneEQ**: Double-click any band point to delete it instantly
+- **DecayRateEQ**: Double-click any band point to delete it instantly
+- **Parameter Cleanup**: Automatically deactivates band parameters in processor
+- **UI Management**: Updates overlays, badges, and selection state properly
+- **Consistent UX**: Same interaction pattern as main Dynamic EQ

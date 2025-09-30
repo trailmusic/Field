@@ -44,6 +44,7 @@ private:
     void mouseDrag(const juce::MouseEvent& e) override;
     void mouseUp(const juce::MouseEvent& e) override;
     void mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel) override;
+    void mouseDoubleClick(const juce::MouseEvent& e) override;
     void mouseMove(const juce::MouseEvent& e) override;
     void mouseExit(const juce::MouseEvent& e) override;
     
@@ -147,6 +148,8 @@ private:
     bool hoverInPane = false;
     juce::Point<int> hoverPos{0, 0};
     float hoverHz = 0.0f;
+    juce::int64 lastMouseMoveMs = 0;
+    int ghostDelayMs = 220;
     int badgeFor = -1;
     
     juce::Path eqPath;

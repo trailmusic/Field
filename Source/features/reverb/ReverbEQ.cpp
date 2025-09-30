@@ -212,6 +212,7 @@ void ReverbToneEQ::mouseMove(const juce::MouseEvent& e)
     hoverInPane = r.contains(hoverPos);
     if (hoverInPane)
         hoverHz = juce::jlimit(20.0f, 20000.0f, mapXToHz(hoverPos.x));
+    lastMouseMoveMs = (juce::int64) juce::Time::getMillisecondCounterHiRes();
     repaint();
 }
 
@@ -236,6 +237,37 @@ void ReverbToneEQ::mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWh
         positionOverlay();
         positionBadgeFor(selected);
         repaint();
+    }
+}
+
+void ReverbToneEQ::mouseDoubleClick(const juce::MouseEvent& e)
+{
+    const int idx = hitTestPoint(e.getPosition());
+    if (idx >= 0 && idx < (int)points.size())
+    {
+        // Double-click on an existing point deletes it
+        const int bandIdx = points[(size_t)idx].bandIdx;
+        if (bandIdx >= 0)
+            setBandParam(bandIdx, ReverbEQParams::ToneBand::active, 0.0f);
+        points.erase(points.begin() + idx);
+        if (selected == idx) selected = -1; 
+        else if (selected > idx) --selected;
+        rebuildEqPath();
+        repaint();
+        if (selected < 0) 
+        {
+            overlay.setVisible(false);
+            badge.setVisible(false);
+        }
+        else 
+        {
+            auto& pt2 = points[(size_t)selected];
+            overlay.setValues(pt2.db, pt2.q, pt2.hz, pt2.type);
+            overlay.setVisible(true);
+            positionOverlay();
+            positionBadgeFor(selected);
+        }
+        return;
     }
 }
 
@@ -297,6 +329,91 @@ void ReverbToneEQ::paint(juce::Graphics& g)
             const float y = mapDbToY(pt.db);
             g.setColour(juce::Colours::black.withAlpha(0.6f));
             g.drawEllipse(x-12, y-12, 24, 24, 1.6f);
+        }
+        
+        // Hover readout and predictive ghost
+        if (hoverInPane)
+        {
+            // Vertical guide lines that track the cursor (soft when moving, stronger when ghost reveals)
+            const juce::int64 nowMs = (juce::int64) juce::Time::getMillisecondCounterHiRes();
+            const bool ghostOn = (nowMs - lastMouseMoveMs) >= (juce::int64) ghostDelayMs;
+            auto rGuide = rA;
+            // Smooth fade for center line based on time since last move
+            const float tSince = (float) juce::jlimit<juce::int64> (0, ghostDelayMs, nowMs - lastMouseMoveMs);
+            const float aMove = juce::jmap (tSince, 0.0f, (float) ghostDelayMs, 0.26f, 0.18f); // while moving
+            const float aGhost= 0.34f; // when ghost is on
+            float alpha = ghostOn ? aGhost : aMove;
+            float alphaFade = ghostOn ? 0.12f : 0.06f;
+            g.setColour (juce::Colours::white.withAlpha (alpha));
+            const float x = (float) hoverPos.x;
+            // Main center line
+            g.drawLine (x, rGuide.getY(), x, rGuide.getBottom(), ghostOn ? 1.4f : 1.0f);
+            // Side fades
+            g.setColour (juce::Colours::white.withAlpha (alphaFade));
+            g.drawLine (x-12.0f, rGuide.getY(), x-12.0f, rGuide.getBottom(), ghostOn ? 1.0f : 0.8f);
+            g.drawLine (x+12.0f, rGuide.getY(), x+12.0f, rGuide.getBottom(), ghostOn ? 1.0f : 0.8f);
+            g.setColour (juce::Colours::white.withAlpha (alphaFade * 0.6f));
+            g.drawLine (x-24.0f, rGuide.getY(), x-24.0f, rGuide.getBottom(), 0.8f);
+            g.drawLine (x+24.0f, rGuide.getY(), x+24.0f, rGuide.getBottom(), 0.8f);
+
+            // Hz readout near bottom and top (follow cursor)
+            g.setColour (juce::Colours::white.withAlpha (0.60f));
+            juce::String hzText;
+            if (hoverHz >= 1000.0f && hoverHz < 10000.0f) hzText = juce::String (hoverHz / 1000.0f, 1) + "k";
+            else if (hoverHz >= 10000.0f) hzText = juce::String ((int) std::round (hoverHz/1000.0f)) + "k";
+            else hzText = juce::String ((int) hoverHz);
+            juce::String lbl = hzText + " Hz";
+            auto tb = juce::Rectangle<float> ((float) hoverPos.x - 32.0f, rA.getBottom() - 20.0f, 64.0f, 14.0f);
+            g.setColour (juce::Colours::black.withAlpha (0.45f));
+            g.fillRoundedRectangle (tb, 4.0f);
+            g.setColour (juce::Colours::white.withAlpha (0.80f));
+            g.drawFittedText (lbl, tb.toNearestInt(), juce::Justification::centred, 1);
+            // Top badge
+            auto tt = juce::Rectangle<float> ((float) hoverPos.x - 28.0f, rA.getY() + 6.0f, 56.0f, 14.0f);
+            g.setColour (juce::Colours::black.withAlpha (0.40f));
+            g.fillRoundedRectangle (tt, 4.0f);
+            g.setColour (juce::Colours::white.withAlpha (0.85f));
+            g.drawFittedText (lbl, tt.toNearestInt(), juce::Justification::centred, 1);
+
+            // Predictive ghost: show faint HP/LP in low/high zones, else Bell
+            const bool showGhost = ghostOn;
+            if (showGhost)
+            {
+                // Suppress ghost if near an existing point (avoid conflicts)
+                const float suppressRadiusPx = 24.0f;
+                bool nearPoint = false;
+                for (const auto& pt : points)
+                {
+                    if (juce::Point<float> (mapHzToX (pt.hz), mapDbToY (pt.db)).getDistanceFrom (hoverPos.toFloat()) <= suppressRadiusPx)
+                    { nearPoint = true; break; }
+                }
+                if (! nearPoint)
+                {
+                // Build full ghost
+                juce::Path ghost;
+                const bool mouseAbove0 = mapYToDb (hoverPos.y) > 0.0f;
+                auto makeGhost = [&](int type, float amtDb){ BandPoint b; b.type = type; b.hz = hoverHz; b.db = amtDb; b.q = 0.9f; const int N = juce::jmax (64, (int) rA.getWidth()); for (int i=0;i<N;++i){ const double minHz=20.0, maxHz=20000.0; const double t=(double)i/(double)(N-1); const double a=std::log10(minHz), bL=std::log10(maxHz); const double logF=juce::jmap(t,0.0,1.0,a,bL); const double hz=std::pow(10.0, logF); const float x=rA.getX() + (float) i/(float)(N-1)*rA.getWidth(); const float y=mapDbToY (bandDbAtForPaint (b, (float) hz)); if (i==0) ghost.startNewSubPath (x, y); else ghost.lineTo (x, y);} };
+                // Predictive: shelves in low/high, bell elsewhere; sign by mouse Y
+                if (hoverHz <= 50.0f)
+                {
+                    makeGhost (1 /*LowShelf*/, mouseAbove0 ? +3.0f : -3.0f);
+                }
+                else if (hoverHz >= 10000.0f)
+                {
+                    makeGhost (2 /*HighShelf*/, mouseAbove0 ? +3.0f : -3.0f);
+                }
+                else
+                {
+                    makeGhost (0 /*Bell*/, mouseAbove0 ? +3.0f : -3.0f);
+                }
+                // Radial fade around cursor to softly reveal only local part
+                juce::Path clipped; clipped.addEllipse ((float) hoverPos.x - rA.getWidth()*0.05f, (float) hoverPos.y - rA.getHeight()*0.15f, rA.getWidth()*0.10f, rA.getHeight()*0.30f);
+                juce::Graphics::ScopedSaveState ss (g);
+                g.reduceClipRegion (clipped);
+                g.setColour (juce::Colours::white.withAlpha (0.16f));
+                g.strokePath (ghost, juce::PathStrokeType (1.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
+                }
+            }
         }
     }
 }
