@@ -8,8 +8,9 @@ void ReverbEngine::prepare (double sr, int maxBlock, int channels)
     erBuf.setSize (chans, maxSamples);
     tailBuf.setSize (chans, maxSamples);
     tmpBuf.setSize (chans, maxSamples);
-    dynEq.resize (chans);
-    dynEqGrDb.reset (0.f);
+    
+    // Prepare Early Reflections system
+    earlyReflections.prepare (chans, sampleRate);
 }
 
 void ReverbEngine::reset ()
@@ -18,22 +19,20 @@ void ReverbEngine::reset ()
 
 void ReverbEngine::setParams (const ReverbParams& p)
 {
-    // Configure DynEQ filters per band (simple peaking for now; mode mapping todo)
-    for (size_t i=0;i<p.dyneq.size();++i)
-    {
-        const auto& b = p.dyneq[i];
-        if (!b.on) { dyneqGrDb[i].store(0.f); continue; }
-        dyneqFilters[i] = Biquad::makePeaking (sampleRate, jlimit (20.0, 20000.0, (double) b.freq), jmax (0.1, (double) b.Q), b.gainDb);
-        dyneqFilters[i].resize (chans);
-    }
+    // Configure Early Reflections
+    earlyReflections.setParams(p.erTimeMs, p.erDensity, p.erWidthPct, p.erLevelDb);
+    
 }
 
 void ReverbEngine::processWet (AudioBuffer<float>& wet, const AudioBuffer<float>& sidechain)
 {
     ignoreUnused (sidechain);
-    // Stub: pass-through for now so UI can integrate; replace with ER+FDN rendering
-    tailBuf.makeCopyOf (wet);
-    erBuf.clear();
+    
+    // Process Early Reflections
+    earlyReflections.process(wet, erBuf);
+    
+    // For now, copy ER to tail (will be replaced with FDN in Phase 2)
+    tailBuf.makeCopyOf(erBuf);
     // Meters
     auto rms = [] (const AudioBuffer<float>& b)
     {
@@ -50,28 +49,154 @@ void ReverbEngine::processWet (AudioBuffer<float>& wet, const AudioBuffer<float>
     AudioBuffer<float> work (C, N);
     work.makeCopyOf (tailBuf);
 
-    // Very rough per-band energy estimate: split with simple peaking filters and measure RMS
-    for (size_t i=0;i<dyneqFilters.size(); ++i)
-    {
-        auto& f = dyneqFilters[i];
-        if (f.z1.empty()) continue; // not configured
-        AudioBuffer<float> band (C, N);
-        band.makeCopyOf (work);
-        f.processInPlace (band);
-        long double s = 0.0; for (int c=0;c<C;++c){ const float* d=band.getReadPointer(c); for (int n=0;n<N;++n) s += (long double) d[n]*d[n]; }
-        const float rms = std::sqrt ((double) s / jmax (1, C*N));
-        // Map RMS to a crude GR for UI; engine GR computer to be refined with thr/ratio/atk/rel
-        const float gr = juce::jlimit (0.f, 12.f, juce::Decibels::gainToDecibels (rms + 1.0e-6f, -120.0f) > -20.f ? 3.f : 0.f);
-        dyneqGrDb[i].store (gr);
-    }
-
-    // Apply cascaded filters (static gainDb already included; dynamic GR not yet applied to audio in this scaffold)
-    for (size_t i=0;i<dyneqFilters.size(); ++i)
-        if (!dyneqFilters[i].z1.empty()) dyneqFilters[i].processInPlace (tailBuf);
 
     // Sum ER+Tail into wet
     wet.makeCopyOf (tailBuf);
     duckGrDb.store (0.f);
+}
+
+// ================================================================
+// Early Reflections Implementation
+// ================================================================
+
+void ReverbEngine::EarlyReflections::prepare(int channels, double sr)
+{
+    sampleRate = sr;
+    numTaps = 0;
+    delayLines.clear();
+    delayIndices.clear();
+    tapFilters.clear();
+    
+    // Initialize delay lines for each channel
+    delayLines.resize(channels);
+    delayIndices.resize(channels, 0);
+    
+    // Initialize filters for each tap
+    tapFilters.resize(MAX_ER_TAPS);
+    
+    // Generate initial ER tap configuration
+    generateERTaps();
+}
+
+void ReverbEngine::EarlyReflections::reset()
+{
+    // Clear all delay lines
+    for (auto& line : delayLines)
+        std::fill(line.begin(), line.end(), 0.0f);
+    
+    // Reset delay indices
+    std::fill(delayIndices.begin(), delayIndices.end(), 0);
+    
+    // Reset filter states
+    for (auto& filter : tapFilters)
+    {
+        filter.z1.assign(delayLines.size(), 0.0f);
+        filter.z2.assign(delayLines.size(), 0.0f);
+    }
+}
+
+void ReverbEngine::EarlyReflections::process(const juce::AudioBuffer<float>& input, juce::AudioBuffer<float>& output)
+{
+    const int numChannels = input.getNumChannels();
+    const int numSamples = input.getNumSamples();
+    
+    // Clear output
+    output.clear();
+    
+    // Process each ER tap
+    for (int tap = 0; tap < numTaps; ++tap)
+    {
+        const auto& tapData = taps[tap];
+        const int delaySamples = static_cast<int>(tapData.delayMs * sampleRate / 1000.0f);
+        
+        // Process each channel
+        for (int ch = 0; ch < numChannels; ++ch)
+        {
+            const float* inputData = input.getReadPointer(ch);
+            float* outputData = output.getWritePointer(ch);
+            
+            // Apply delay
+            for (int i = 0; i < numSamples; ++i)
+            {
+                // Read from delay line
+                float delayedSample = 0.0f;
+                if (delaySamples > 0 && delaySamples < static_cast<int>(delayLines[ch].size()))
+                {
+                    int readIndex = (delayIndices[ch] - delaySamples + static_cast<int>(delayLines[ch].size())) % static_cast<int>(delayLines[ch].size());
+                    delayedSample = delayLines[ch][readIndex];
+                }
+                
+                // Apply gain and pan
+                float processedSample = delayedSample * tapData.gain;
+                
+                // Apply panning (simple stereo panning)
+                if (numChannels == 2)
+                {
+                    if (ch == 0) // Left channel
+                        processedSample *= (1.0f - tapData.pan) * 0.5f;
+                    else // Right channel
+                        processedSample *= (1.0f + tapData.pan) * 0.5f;
+                }
+                
+                // Apply filter
+                if (tap < static_cast<int>(tapFilters.size()))
+                {
+                    auto& filter = tapFilters[tap];
+                    if (filter.z1.size() > static_cast<size_t>(ch))
+                    {
+                        // Simple filter processing (placeholder - will be enhanced)
+                        processedSample = filter.processInPlace(processedSample, ch);
+                    }
+                }
+                
+                // Write to output
+                outputData[i] += processedSample;
+                
+                // Update delay line
+                delayLines[ch][delayIndices[ch]] = inputData[i];
+                delayIndices[ch] = (delayIndices[ch] + 1) % static_cast<int>(delayLines[ch].size());
+            }
+        }
+    }
+}
+
+void ReverbEngine::EarlyReflections::setParams(float erTimeMs, float erDensity, float erWidthPct, float erLevelDb)
+{
+    // Update ER configuration based on parameters
+    generateERTaps();
+    
+    // Apply level scaling
+    float levelScale = juce::Decibels::decibelsToGain(erLevelDb);
+    for (int i = 0; i < numTaps; ++i)
+    {
+        taps[i].gain *= levelScale;
+    }
+}
+
+void ReverbEngine::EarlyReflections::generateERTaps()
+{
+    // Generate ER taps based on current parameters
+    // This is a simplified implementation - will be enhanced with proper room modeling
+    
+    numTaps = 16; // Start with 16 taps
+    
+    // Generate tap delays (exponential distribution)
+    for (int i = 0; i < numTaps; ++i)
+    {
+        float t = static_cast<float>(i) / static_cast<float>(numTaps - 1);
+        taps[i].delayMs = 5.0f + t * 50.0f; // 5ms to 55ms range
+        taps[i].gain = 0.8f * std::exp(-t * 2.0f); // Exponential decay
+        taps[i].pan = (static_cast<float>(i % 2) - 0.5f) * 2.0f; // Alternating pan
+        taps[i].filterFreq = 1000.0f + t * 4000.0f; // Frequency sweep
+        taps[i].filterQ = 0.707f;
+    }
+    
+    // Resize delay lines to accommodate maximum delay
+    int maxDelaySamples = static_cast<int>(55.0f * sampleRate / 1000.0f);
+    for (auto& line : delayLines)
+    {
+        line.resize(maxDelaySamples, 0.0f);
+    }
 }
 
 

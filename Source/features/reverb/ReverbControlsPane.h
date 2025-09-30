@@ -132,15 +132,7 @@ private:
         makeCell (dif,  difV,  "DIFF",      ReverbIDs::diffusionPct);
         makeCell (md,   mdV,   "MOD DEP",   ReverbIDs::modDepthCents);
         makeCell (mr,   mrV,   "MOD RATE",  ReverbIDs::modRateHz);
-        makeCell (hp,   hpV,   "HP",        ReverbIDs::hpfHz);
-        // Row A tail
-        makeCell (lp,   lpV,   "LP",        ReverbIDs::lpfHz);
-        makeCell (tilt, tiltV, "TILT",      ReverbIDs::tiltDb);
-        makeCell (eqm,  eqmV,  "EQ MIX",    ReverbIDs::postEqMixPct);
-        makeCell (ert,  ertV,  "ER→TAIL",   ReverbIDs::erToTailPct);
-        makeCell (dl,   dlV,   "LOW×",      ReverbIDs::dreqLowX);
-        makeCell (dm,   dmV,   "MID×",      ReverbIDs::dreqMidX);
-        makeCell (dh,   dhV,   "HIGH×",     ReverbIDs::dreqHighX);
+        // Old EQ controls removed - now handled by DynEQ pane
         makeCell (w,    wV,    "TL WID",    ReverbIDs::widthPct);
 
         // Row B core (WET, DECAY, SIZE, BLOOM, DISTANCE, dec XO Lo/Hi)
@@ -149,8 +141,7 @@ private:
         makeCell (size, sizeV, "SIZE",      ReverbIDs::sizePct);
         makeCell (bloom,bloomV,"BLOOM",     ReverbIDs::bloomPct);
         makeCell (distance, distanceV, "DIST", ReverbIDs::distancePct);
-        makeCell (xLo,  xLoV, "DEC XO LO", ReverbIDs::dreqXoverLoHz);
-        makeCell (xHi,  xHiV, "DEC XO HI", ReverbIDs::dreqXoverHiHz);
+        // Crossover controls removed - now handled by DynEQ pane
 
         // Ducking cluster (mode + 5)
         makeCell (duckDepth, duckDepthV, "DUCK", ReverbIDs::duckDepthDb);
@@ -219,11 +210,11 @@ private:
     int rowH       = 0;
 
     // Sliders/labels
-    juce::Slider pre, erL, erD, erW, dif, md, mr, hp, lp, tilt, eqm, ert, dl, dm, dh, w,
-                 wet, dec, size, bloom, distance, xLo, xHi,
+    juce::Slider pre, erL, erD, erW, dif, md, mr, w,
+                 wet, dec, size, bloom, distance,
                  duckDepth, duckAtk, duckRel, duckThr, duckRatio;
-    juce::Label  preV, erLV, erDV, erWV, difV, mdV, mrV, hpV, lpV, tiltV, eqmV, ertV, dlV, dmV, dhV, wV,
-                 wetV, decV, sizeV, bloomV, distanceV, xLoV, xHiV,
+    juce::Label  preV, erLV, erDV, erWV, difV, mdV, mrV, wV,
+                 wetV, decV, sizeV, bloomV, distanceV,
                  duckDepthV, duckAtkV, duckRelV, duckThrV, duckRatioV;
 };
 

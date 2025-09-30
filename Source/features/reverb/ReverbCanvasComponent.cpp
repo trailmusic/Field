@@ -53,7 +53,6 @@ void ReverbCanvasComponent::paint(Graphics& g)
     drawToneCurtainAndEQ(g, contentR);
     drawDucking(g, contentR);
     drawSpecials(g, contentR);
-    drawDynEqOverlays(g, contentR);
 }
 
 void ReverbCanvasComponent::timerCallback()
@@ -267,9 +266,10 @@ void ReverbCanvasComponent::drawToneCurtainAndEQ(Graphics& g, Rectangle<float> r
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
 
-    const float hp = getF(ReverbIDs::hpfHz, 20.f);
-    const float lp = getF(ReverbIDs::lpfHz, 20000.f);
-    const float tiltDb = getF(ReverbIDs::tiltDb, 0.f);
+    // Old knob-based EQ controls removed - now handled by DynEQ pane
+    const float hp = 20.f;  // Default values
+    const float lp = 20000.f;
+    const float tiltDb = 0.f;
 
     const float left = r.getX()+6.f, right = r.getRight()-6.f, top = r.getY()+8.f, bottom = r.getBottom()-10.f;
 
@@ -365,33 +365,6 @@ void ReverbCanvasComponent::drawSpecials(Graphics& g, Rectangle<float> r)
     }
 }
 
-void ReverbCanvasComponent::drawDynEqOverlays(Graphics& g, Rectangle<float> r)
-{
-    if (!dyneqGrNow) return;
-    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
-
-    const auto grs = dyneqGrNow(); // dB per band, positive means reduction
-    const float left = r.getX()+6.f, right = r.getRight()-6.f, top = r.getY()+8.f, bottom = r.getBottom()-10.f;
-
-    // Fetch band freqs from APVTS for positioning (fallbacks typical)
-    const float fz[4] = {
-        getF(ReverbIDs::dyneq1_freqHz, 120.f),
-        getF(ReverbIDs::dyneq2_freqHz, 750.f),
-        getF(ReverbIDs::dyneq3_freqHz, 2500.f),
-        getF(ReverbIDs::dyneq4_freqHz, 8000.f)
-    };
-    for (int i=0;i<4;++i)
-    {
-        const float gr = grs[i]; if (gr <= 0.01f) continue;
-        const float x = left + log01FromHz(fz[i]) * (right - left);
-        const float h = jmap (jlimit (0.f, 12.f, gr), 0.f, 12.f, 0.f, (bottom-top) * 0.22f);
-        g.setColour (th.accent.withAlpha (0.25f));
-        g.fillRoundedRectangle (x - 4.f, top + 22.f, 8.f, h, 3.f);
-        g.setColour (th.text.withAlpha (0.65f));
-        g.drawText (juce::String (gr, 1) + " dB", Rectangle<int> ((int) (x - 20), (int) (top + 22.f + h + 2.f), 40, 14), Justification::centred, false);
-    }
-}
 
 // === RBJ ===
 void ReverbCanvasComponent::RBJ::lowShelf(double fs, double f0, double Q, double gainDb, double& b0,double& b1,double& b2,double& a0,double& a1,double& a2)

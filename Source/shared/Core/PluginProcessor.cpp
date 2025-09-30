@@ -346,9 +346,7 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.rvErDensityPct  = apvts.getRawParameterValue (ReverbIDs::erDensityPct)->load();
     p.rvErWidthPct    = apvts.getRawParameterValue (ReverbIDs::erWidthPct)->load();
     p.rvErToTailPct   = apvts.getRawParameterValue (ReverbIDs::erToTailPct)->load();
-    p.rvHpfHz         = apvts.getRawParameterValue (ReverbIDs::hpfHz)->load();
-    p.rvLpfHz         = apvts.getRawParameterValue (ReverbIDs::lpfHz)->load();
-    p.rvTiltDb        = apvts.getRawParameterValue (ReverbIDs::tiltDb)->load();
+    // Old knob-based EQ controls removed - now handled by DynEQ pane
     p.rvDreqLowX      = apvts.getRawParameterValue (ReverbIDs::dreqLowX)->load();
     p.rvDreqMidX      = apvts.getRawParameterValue (ReverbIDs::dreqMidX)->load();
     p.rvDreqHighX     = apvts.getRawParameterValue (ReverbIDs::dreqHighX)->load();
@@ -1846,9 +1844,7 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.rvErDensityPct  = (Sample) hp.rvErDensityPct;
     params.rvErWidthPct    = (Sample) hp.rvErWidthPct;
     params.rvErToTailPct   = (Sample) hp.rvErToTailPct;
-    params.rvHpfHz         = (Sample) hp.rvHpfHz;
-    params.rvLpfHz         = (Sample) hp.rvLpfHz;
-    params.rvTiltDb        = (Sample) hp.rvTiltDb;
+    // Old knob-based EQ controls removed - now handled by DynEQ pane
     params.rvDreqLowX      = (Sample) hp.rvDreqLowX;
     params.rvDreqMidX      = (Sample) hp.rvDreqMidX;
     params.rvDreqHighX     = (Sample) hp.rvDreqHighX;

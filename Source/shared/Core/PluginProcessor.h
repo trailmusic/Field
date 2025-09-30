@@ -1060,10 +1060,6 @@ public:
         return 0.0f;
     }
     float getReverbWidthNow() const { return 100.0f; }
-    std::array<float,4> getReverbDynEqGrDb() const { 
-        // Reverb Engine is now handled by FieldChain template
-        return {0.0f, 0.0f, 0.0f, 0.0f}; 
-    }
     
     // Transport info (UI polling)
     double getTransportTimeSeconds() const { return transportTimeSeconds.load(); }

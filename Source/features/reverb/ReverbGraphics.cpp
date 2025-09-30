@@ -1,6 +1,5 @@
 #include "ReverbGraphics.h"
 #include "DecayCurveComponent.h"
-#include "ReverbEQComponent.h"
 #include "ReverbScopeComponent.h"
 #include "ReverbParamIDs.h"
 #include "shared/ui/Components/KnobCell.h"
@@ -20,11 +19,9 @@ ReverbGraphics::ReverbGraphics (juce::AudioProcessorValueTreeState& s,
 
     canvas.reset (new ReverbCanvasComponent (state,
                                              std::move(getEr), std::move(getTail), std::move(getDuckDb), std::move(getWidthNow)));
-    if (dyneqGrProvider) canvas->setDynEqGrProvider (dyneqGrProvider);
     addAndMakeVisible (*canvas);
 
-    dyneqPane = std::make_unique<ReverbDynEQPane> (state);
-    addAndMakeVisible (*dyneqPane);
+    // DynEQ pane now handled by ReverbTab
 
     // No 5x4 grid attachments here (those live in Group 2 UI)
 
@@ -56,7 +53,7 @@ void ReverbGraphics::resized()
 
     auto top = r.removeFromTop (juce::roundToInt (r.getHeight() * 0.62f));
     canvas->setBounds (top);
-    dyneqPane->setBounds (r);
+    // DynEQ pane now handled by ReverbTab
 }
 
 
