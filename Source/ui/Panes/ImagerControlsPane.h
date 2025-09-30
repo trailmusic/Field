@@ -97,19 +97,11 @@ private:
 
     void buildControls()
     {
-        // Imaging widths for Band: Global + per-band
-        makeCell (width,    widthV,    "WIDTH",     "width");
-        makeCell (widthLo,  widthLoV,  "W LO",  "width_lo");
-        makeCell (widthMid, widthMidV, "W MID", "width_mid");
-        makeCell (widthHi,  widthHiV,  "W HI",  "width_hi");
+        // WIDTH controls moved to BandControlsPane.h (no duplication)
 
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
-        // Row A: WIDTH, WIDTH LO, WIDTH MID, WIDTH HI, [12 empty]
-        push (ownedCells[0].get()); // WIDTH
-        push (ownedCells[1].get()); // WIDTH LO
-        push (ownedCells[2].get()); // WIDTH MID
-        push (ownedCells[3].get()); // WIDTH HI
-        for (int i = 0; i < 12; ++i) gridOrder.push_back (nullptr);
+        // Row A: [16 empty] - WIDTH controls moved to BandControlsPane.h
+        for (int i = 0; i < 16; ++i) gridOrder.push_back (nullptr);
 
         // Row B: [16 empty]
         for (int i = 0; i < 16; ++i) gridOrder.push_back (nullptr);
@@ -149,9 +141,7 @@ private:
     }
 
     juce::AudioProcessorValueTreeState& apvts;
-    // Sliders/labels (Band): master width + per-band widths
-    juce::Slider width, widthLo, widthMid, widthHi;
-    juce::Label  widthV, widthLoV, widthMidV, widthHiV;
+    // WIDTH controls moved to BandControlsPane.h (no duplication)
     std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>> sAtts;
     std::vector<KnobCell*> knobCells;
     std::vector<std::unique_ptr<KnobCell>> ownedCells;
