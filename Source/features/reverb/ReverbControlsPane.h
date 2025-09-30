@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "shared/ui/Components/KnobCell.h"
+#include "shared/ui/Controls/SimpleSwitchCell.h"
 #include "shared/ui/Design/Layout.h"
 #include "ReverbParamIDs.h"
 #include "shared/Core/FieldLookAndFeel.h"
@@ -23,6 +24,8 @@ public:
     {
         // Clear parameter attachments before destruction to prevent crashes
         sAtts.clear();
+        btnAtts.clear();
+        cmbAtts.clear();
     }
 
     void setCellMetrics (int knobDiameterPx, int valueBandPx, int labelGapPxIn, int columnWidthPx)
@@ -98,11 +101,8 @@ private:
             auto cell = std::make_unique<KnobCell> (s, v, cap);
             cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             cell->setValueLabelGap (labelGapPx);
-            // Styling: Reverb metallic (burnt orange) + border
-            cell->getProperties().set ("reverbMaroonBorder", true);
-            cell->getProperties().set ("metallic", true);
-            cell->getProperties().set ("reverbMetallic", true);
-            cell->getProperties().set ("caption", cap);
+            // Apply Reverb metallic styling
+            setAreaMetallicForCell (*cell, MetallicKind::Reverb);
             addAndMakeVisible (*cell);
             knobCells.emplace_back (cell.get());
             ownedCells.emplace_back (std::move (cell));
@@ -124,8 +124,52 @@ private:
             s.onValueChange = [&, applyLabel]() { applyLabel(); };
         };
 
+        auto makeToggleCell = [&](juce::ToggleButton& b, const juce::String& cap, const char* pid)
+        {
+            if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr)
+            {
+                return;
+            }
+            
+            b.setName (cap);
+            // Apply Reverb metallic styling
+            setAreaMetallicForCell (b, MetallicKind::Reverb);
+            addAndMakeVisible (b);
+            btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, pid, b));
+        };
+
+        auto makeComboCell = [&](juce::ComboBox& c, const juce::String& cap, const char* pid)
+        {
+            if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr)
+            {
+                return;
+            }
+            
+            c.setName (cap);
+            // Add items for EQ Apply choices
+            if (pid == ReverbParamIDs::dreqApply)
+            {
+                c.addItem ("Pre", 1);
+                c.addItem ("Post", 2);
+                c.addItem ("ER", 3);
+                c.addItem ("Tail", 4);
+            }
+            
+            // Apply Reverb metallic styling
+            setAreaMetallicForCell (c, MetallicKind::Reverb);
+            
+            // Wrap in SimpleSwitchCell for consistent styling
+            auto cell = std::make_unique<SimpleSwitchCell> (c);
+            cell->setCaption (cap);
+            cell->setShowBorder (true);
+            addAndMakeVisible (*cell);
+            switchCells.emplace_back (cell.get());
+            ownedSwitches.emplace_back (std::move (cell));
+            cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, pid, c));
+        };
+
         // Row 1 (16 controls) - Final 2×16 grid map
-        makeCell (enabled, enabledV, "ENABLE", ReverbParamIDs::enabled);
+        makeToggleCell (enabled, "ENABLE", ReverbParamIDs::enabled);
         makeCell (pre,  preV,  "PRE",       ReverbParamIDs::preDelayMs);
         makeCell (erL,  erLV,  "ER LVL",    ReverbParamIDs::erLevelDb);
         makeCell (erD,  erDV,  "ER DEN",    ReverbParamIDs::erDensityPct);
@@ -140,32 +184,46 @@ private:
         makeCell (rotation, rotationV, "ROT", ReverbParamIDs::rotationDeg);
         makeCell (size, sizeV, "SIZE",      ReverbParamIDs::sizePct);
         makeCell (dec,  decV,  "DECAY",     ReverbParamIDs::decaySec);
-        makeCell (killDry, killDryV, "WET ONLY", ReverbParamIDs::killDry);
+        makeToggleCell (killDry, "WET ONLY", ReverbParamIDs::killDry);
 
         // Row 2 (16 controls) - Final 2×16 grid map
         makeCell (wet,  wetV,  "WET",       ReverbParamIDs::wetMix01);
         makeCell (bloom,bloomV,"BLOOM",     ReverbParamIDs::bloomPct);
         makeCell (distance, distanceV, "DIST", ReverbParamIDs::distancePct);
-        makeCell (freeze, freezeV, "FREEZE", ReverbParamIDs::freeze);
+        makeToggleCell (freeze, "FREEZE", ReverbParamIDs::freeze);
         makeCell (shimmerAmt, shimmerAmtV, "SHIM AMT", ReverbParamIDs::shimmerAmtPct);
         makeCell (shimmerInt, shimmerIntV, "SHIM INT", ReverbParamIDs::shimmerInt);
         makeCell (gateAmt, gateAmtV, "GATE", ReverbParamIDs::gateAmtPct);
         makeCell (dreqXoverLo, dreqXoverLoV, "DREQ XO LO", ReverbParamIDs::dreqXoverLoHz);
         makeCell (dreqXoverHi, dreqXoverHiV, "DREQ XO HI", ReverbParamIDs::dreqXoverHiHz);
-        makeCell (dreqApply, dreqApplyV, "EQ APPLY", ReverbParamIDs::dreqApply);
-        makeCell (followWidth, followWidthV, "FOLLOW W", ReverbParamIDs::followWidth);
+        makeComboCell (dreqApply, "EQ APPLY", ReverbParamIDs::dreqApply);
+        makeToggleCell (followWidth, "FOLLOW W", ReverbParamIDs::followWidth);
         makeCell (followWidthAmt, followWidthAmtV, "W AMT", ReverbParamIDs::followWidthAmt);
-        makeCell (followRot, followRotV, "FOLLOW R", ReverbParamIDs::followRot);
+        makeToggleCell (followRot, "FOLLOW R", ReverbParamIDs::followRot);
         makeCell (followRotAmt, followRotAmtV, "R AMT", ReverbParamIDs::followRotAmt);
         makeCell (outTrim, outTrimV, "TRIM", ReverbParamIDs::outTrimDb);
         makeCell (spare, spareV, "SPARE", "spare");
 
         // Grid order (Row 1, then Row 2)
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
-        // Row 1
-        for (int i = 0; i < 16; ++i) push (ownedCells[(size_t) i].get());
-        // Row 2
-        for (int i = 16; i < ownedCells.size(); ++i) push (ownedCells[(size_t) i].get());
+        
+        // Row 1: enabled, pre, erL, erD, erW, erTime, erToTail, dif, density, md, mr, w, rotation, size, dec, killDry
+        push (&enabled);
+        for (int i = 0; i < 15; ++i) push (ownedCells[(size_t) i].get());
+        
+        // Row 2: wet, bloom, distance, freeze, shimmerAmt, shimmerInt, gateAmt, dreqXoverLo, dreqXoverHi, dreqApply, followWidth, followWidthAmt, followRot, followRotAmt, outTrim, spare
+        push (&wet);
+        push (&bloom);
+        push (&distance);
+        push (&freeze);
+        for (int i = 15; i < 20; ++i) push (ownedCells[(size_t) i].get()); // shimmerAmt, shimmerInt, gateAmt, dreqXoverLo, dreqXoverHi
+        push (ownedSwitches[0].get()); // dreqApply (SimpleSwitchCell)
+        push (&followWidth);
+        push (&followWidthAmt);
+        push (&followRot);
+        push (&followRotAmt);
+        push (&outTrim);
+        push (&spare);
 
         // Fill blanks up to 32 with styled Reverb blanks
         const int totalNeeded = 32;
@@ -201,14 +259,25 @@ private:
             c->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
             c->setValueLabelGap (labelGapPx);
         }
+        
+        // Apply metrics to SimpleSwitchCell components for consistent sizing
+        for (auto* c : switchCells)
+        {
+            if (c == nullptr) continue;
+            c->setMetrics (knobPx, valuePx, labelGapPx);
+        }
     }
 
     juce::AudioProcessorValueTreeState& apvts;
     std::vector<std::unique_ptr<juce::Slider>> sliders;
     std::vector<std::unique_ptr<juce::Label>>  values;
     std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>> sAtts;
+    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment>> btnAtts;
+    std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment>> cmbAtts;
     std::vector<KnobCell*> knobCells;
     std::vector<std::unique_ptr<KnobCell>> ownedCells;
+    std::vector<SimpleSwitchCell*> switchCells;
+    std::vector<std::unique_ptr<SimpleSwitchCell>> ownedSwitches;
     std::vector<juce::Component*> gridOrder;
     std::vector<std::unique_ptr<juce::Slider>> blankSliders;
     std::vector<std::unique_ptr<juce::Label>>  blankLabels;
@@ -219,13 +288,17 @@ private:
     int colW       = 56;
     int rowH       = 0;
 
+    // ToggleButtons and ComboBoxes
+    juce::ToggleButton enabled, killDry, freeze, followWidth, followRot;
+    juce::ComboBox dreqApply;
+    
     // Sliders/labels - Updated for final 2×16 grid map
-    juce::Slider enabled, pre, erL, erD, erW, erTime, erToTail, dif, density, md, mr, w, rotation, size, dec, killDry,
-                 wet, bloom, distance, freeze, shimmerAmt, shimmerInt, gateAmt, dreqXoverLo, dreqXoverHi, dreqApply,
-                 followWidth, followWidthAmt, followRot, followRotAmt, outTrim, spare;
-    juce::Label  enabledV, preV, erLV, erDV, erWV, erTimeV, erToTailV, difV, densityV, mdV, mrV, wV, rotationV, sizeV, decV, killDryV,
-                 wetV, bloomV, distanceV, freezeV, shimmerAmtV, shimmerIntV, gateAmtV, dreqXoverLoV, dreqXoverHiV, dreqApplyV,
-                 followWidthV, followWidthAmtV, followRotV, followRotAmtV, outTrimV, spareV;
+    juce::Slider pre, erL, erD, erW, erTime, erToTail, dif, density, md, mr, w, rotation, size, dec,
+                 wet, bloom, distance, shimmerAmt, shimmerInt, gateAmt, dreqXoverLo, dreqXoverHi,
+                 followWidthAmt, followRotAmt, outTrim, spare;
+    juce::Label  preV, erLV, erDV, erWV, erTimeV, erToTailV, difV, densityV, mdV, mrV, wV, rotationV, sizeV, decV,
+                 wetV, bloomV, distanceV, shimmerAmtV, shimmerIntV, gateAmtV, dreqXoverLoV, dreqXoverHiV,
+                 followWidthAmtV, followRotAmtV, outTrimV, spareV;
 };
 
 
