@@ -1,7 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
-#include "../Components/UpwardComboBox.h"
-#include "../Engines/StereoFieldEngine.h"
+#include "ui/Components/UpwardComboBox.h"
+#include "ui/Engines/StereoFieldEngine.h"
 
 // Minimal Imager pane: goniometer (Lissajous) with optional PRE overlay
 class ImagerPane : public juce::Component, private juce::Timer

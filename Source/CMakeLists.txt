@@ -95,10 +95,10 @@ set(SRC
     dynEQ/DynamicEqParamIDs.h
     dynEQ/DynamicEqState.h
     dynEQ/DynamicEqState.cpp
-    ui/Panes/ImagerPane.h
-    ui/Panes/ImagerControlsPane.h
+    imager/ImagerPane.h
+    imager/ImagerControlsPane.h
     band/BandControlsPane.h
-    ui/Tabs/ImagerTab.h
+    imager/ImagerTab.h
     xy/XYControlsPane.h
     xy/XYTab.h
     band/BandTab.h
