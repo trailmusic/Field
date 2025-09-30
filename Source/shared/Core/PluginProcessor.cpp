@@ -334,7 +334,7 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     // Reverb params ingress (APVTS -> HostParams)
     p.rvEnabled       = apvts.getRawParameterValue (ReverbIDs::enabled)->load() > 0.5f;
     p.rvKillDry       = apvts.getRawParameterValue (ReverbIDs::killDry)->load() > 0.5f;
-    p.rvAlgo          = (int) apvts.getParameterAsValue (ReverbIDs::algo).getValue();
+    // p.rvAlgo removed - algo parameter no longer exists
     p.rvPreDelayMs    = apvts.getRawParameterValue (ReverbIDs::preDelayMs)->load();
     p.rvDecaySec      = apvts.getRawParameterValue (ReverbIDs::decaySec)->load();
     p.rvDensityPct    = apvts.getRawParameterValue (ReverbIDs::densityPct)->load();

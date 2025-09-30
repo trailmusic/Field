@@ -163,14 +163,14 @@ void KnobCellWithAux::paint (juce::Graphics& g)
             {
                 switch (metallicKind)
                 {
-                    case MetallicKind::Reverb:  FieldLNF::paintMetal(g, rr, lf->theme.metal.reverb,  rad); break;
-                    case MetallicKind::Delay:   FieldLNF::paintMetal(g, rr, lf->theme.metal.delay,   rad); break;
-                    case MetallicKind::Band:    FieldLNF::paintMetal(g, rr, lf->theme.metal.band,    rad); break;
-                    case MetallicKind::Phase:   FieldLNF::paintMetal(g, rr, lf->theme.metal.phase, rad); break;
-                    case MetallicKind::Motion:  FieldLNF::paintMetal(g, rr, lf->theme.metal.motion,  rad); break;
-                    case MetallicKind::XY:      FieldLNF::paintMetal(g, rr, lf->theme.metal.xy,      rad); break;
-                    case MetallicKind::Neutral: FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
-                    default:                    FieldLNF::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
+                    case MetallicKind::Reverb:  MetallicRenderer::paintMetal(g, rr, lf->theme.metal.reverb,  rad); break;
+                    case MetallicKind::Delay:   MetallicRenderer::paintMetal(g, rr, lf->theme.metal.delay,   rad); break;
+                    case MetallicKind::Band:    MetallicRenderer::paintMetal(g, rr, lf->theme.metal.band,    rad); break;
+                    case MetallicKind::Phase:   MetallicRenderer::paintMetal(g, rr, lf->theme.metal.phase, rad); break;
+                    case MetallicKind::Motion:  MetallicRenderer::paintMetal(g, rr, lf->theme.metal.motion,  rad); break;
+                    case MetallicKind::XY:      MetallicRenderer::paintMetal(g, rr, lf->theme.metal.xy,      rad); break;
+                    case MetallicKind::Neutral: MetallicRenderer::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
+                    default:                    MetallicRenderer::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
                 }
             }
         }

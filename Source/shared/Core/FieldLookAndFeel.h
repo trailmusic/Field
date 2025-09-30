@@ -52,17 +52,7 @@ public:
     }
 
     // Centralized knob styling function to eliminate redundancy
-    static void styleKnob(juce::Slider& k, juce::LookAndFeel* lf = nullptr)
-    {
-        k.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-        k.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-        k.setRotaryParameters(juce::MathConstants<float>::pi,
-                             juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
-                             true);
-        // Assign FieldLookAndFeel to get custom tick rendering
-        if (auto* fieldLnf = dynamic_cast<FieldLNF*>(lf))
-            k.setLookAndFeel(fieldLnf);
-    }
+    // Moved to FieldRendering::styleKnob()
 
     // --- JUCE LookAndFeel overrides (delegate to FieldRendering) ---
     
@@ -169,10 +159,7 @@ public:
     void drawTabPill(juce::Graphics& g, juce::Rectangle<float> r, bool active, bool hover = false) const;
 
     // Metallic rendering (delegate to MetallicRenderer)
-    static void paintMetal(juce::Graphics& g, const juce::Rectangle<float>& r,
-                          const FieldTheme::MetalStops& metal, float corner = 8.0f);
-    static void paintPhaseMetal(juce::Graphics& g, const juce::Rectangle<float>& r,
-                               const MetallicRenderer::PhaseMetal& metal, float corner = 10.0f, float dpi = 1.0f);
+    // MetallicRenderer::paintMetal() and MetallicRenderer::paintPhaseMetal()
 
     // Active theme (mutable for runtime palette switching)
     FieldTheme theme;

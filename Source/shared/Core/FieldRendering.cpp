@@ -1,4 +1,5 @@
 #include "FieldRendering.h"
+#include "FieldLookAndFeel.h"
 #include "IconSystem.h"
 #include "shared/ui/Controls/SimpleSwitchCell.h"
 
@@ -984,5 +985,18 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         g.setColour(theme.textMuted);
         g.setFont(12.0f);
         g.drawFittedText(label.getText(), label.getLocalBounds(), juce::Justification::centred, 1);
+    }
+
+    // Static helper methods (moved from FieldLookAndFeel)
+    void styleKnob(juce::Slider& k, juce::LookAndFeel* lf)
+    {
+        k.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+        k.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        k.setRotaryParameters(juce::MathConstants<float>::pi,
+                             juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
+                             true);
+        // Assign FieldLookAndFeel to get custom tick rendering
+        if (auto* fieldLnf = dynamic_cast<FieldLNF*>(lf))
+            k.setLookAndFeel(fieldLnf);
     }
 }

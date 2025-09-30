@@ -52,7 +52,7 @@ private:
     void styleKnob (juce::Slider& k)
     {
         // Use centralized styling function to eliminate redundancy
-        FieldLNF::styleKnob(k, &getLookAndFeel());
+        FieldRendering::styleKnob(k, &getLookAndFeel());
     }
     void makeCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid)
     {

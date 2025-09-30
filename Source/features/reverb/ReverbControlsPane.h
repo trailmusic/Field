@@ -124,7 +124,7 @@ private:
             s.onValueChange = [&, applyLabel]() { applyLabel(); };
         };
 
-        // Row A first 8 (Enable/Algo/WetOnly/SIZE handled in ReverbTab header area if needed)
+        // Row 1 (16 controls)
         makeCell (pre,  preV,  "PRE",       ReverbIDs::preDelayMs);
         makeCell (erL,  erLV,  "ER LVL",    ReverbIDs::erLevelDb);
         makeCell (erD,  erDV,  "ER DEN",    ReverbIDs::erDensityPct);
@@ -132,29 +132,39 @@ private:
         makeCell (dif,  difV,  "DIFF",      ReverbIDs::diffusionPct);
         makeCell (md,   mdV,   "MOD DEP",   ReverbIDs::modDepthCents);
         makeCell (mr,   mrV,   "MOD RATE",  ReverbIDs::modRateHz);
-        // Old EQ controls removed - now handled by DynEQ pane
         makeCell (w,    wV,    "TL WID",    ReverbIDs::widthPct);
+        makeCell (erTime, erTimeV, "ER TIME", ReverbIDs::erTimeMs);
+        makeCell (erToTail, erToTailV, "ER->T", ReverbIDs::erToTailPct);
+        makeCell (density, densityV, "DENS", ReverbIDs::densityPct);
+        makeCell (widthStart, widthStartV, "W START", ReverbIDs::widthStartPct);
+        makeCell (widthEnd, widthEndV, "W END", ReverbIDs::widthEndPct);
+        makeCell (rotStart, rotStartV, "R START", ReverbIDs::rotStartDeg);
+        makeCell (rotEnd, rotEndV, "R END", ReverbIDs::rotEndDeg);
+        makeCell (outTrim, outTrimV, "TRIM", ReverbIDs::outTrimDb);
 
-        // Row B core (WET, DECAY, SIZE, BLOOM, DISTANCE, dec XO Lo/Hi)
+        // Row 2 (16 controls)
         makeCell (wet,  wetV,  "WET",       ReverbIDs::wetMix01);
         makeCell (dec,  decV,  "DECAY",     ReverbIDs::decaySec);
         makeCell (size, sizeV, "SIZE",      ReverbIDs::sizePct);
         makeCell (bloom,bloomV,"BLOOM",     ReverbIDs::bloomPct);
         makeCell (distance, distanceV, "DIST", ReverbIDs::distancePct);
-        // Crossover controls removed - now handled by DynEQ pane
-
-        // Ducking cluster (mode + 5)
         makeCell (duckDepth, duckDepthV, "DUCK", ReverbIDs::duckDepthDb);
         makeCell (duckAtk,   duckAtkV,   "ATT",  ReverbIDs::duckAtkMs);
         makeCell (duckRel,   duckRelV,   "REL",  ReverbIDs::duckRelMs);
         makeCell (duckThr,   duckThrV,   "THR",  ReverbIDs::duckThrDb);
         makeCell (duckRatio, duckRatioV, "RAT",  ReverbIDs::duckRatio);
+        makeCell (duckKnee, duckKneeV, "KNEE", ReverbIDs::duckKneeDb);
+        makeCell (duckLa, duckLaV, "LOOK", ReverbIDs::duckLaMs);
+        makeCell (duckRms, duckRmsV, "RMS", ReverbIDs::duckRmsMs);
+        makeCell (duckBandHz, duckBandHzV, "BAND", ReverbIDs::duckBandHz);
+        makeCell (duckBandQ, duckBandQV, "Q", ReverbIDs::duckBandQ);
+        makeCell (freeze, freezeV, "FREEZE", ReverbIDs::freeze);
 
-        // Grid order (Row A, then Row B), aligned to DEC-0002 mapping
+        // Grid order (Row 1, then Row 2)
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
-        // Row A
+        // Row 1
         for (int i = 0; i < 16; ++i) push (ownedCells[(size_t) i].get());
-        // Row B (WET..RAT then XO HI)
+        // Row 2
         for (int i = 16; i < ownedCells.size(); ++i) push (ownedCells[(size_t) i].get());
 
         // Fill blanks up to 32 with styled Reverb blanks
@@ -211,11 +221,17 @@ private:
 
     // Sliders/labels
     juce::Slider pre, erL, erD, erW, dif, md, mr, w,
+                 erTime, erToTail, density, widthStart, widthEnd, rotStart, rotEnd, outTrim,
                  wet, dec, size, bloom, distance,
-                 duckDepth, duckAtk, duckRel, duckThr, duckRatio;
+                 duckDepth, duckAtk, duckRel, duckThr, duckRatio,
+                 duckKnee, duckLa, duckRms, duckBandHz, duckBandQ,
+                 freeze;
     juce::Label  preV, erLV, erDV, erWV, difV, mdV, mrV, wV,
+                 erTimeV, erToTailV, densityV, widthStartV, widthEndV, rotStartV, rotEndV, outTrimV,
                  wetV, decV, sizeV, bloomV, distanceV,
-                 duckDepthV, duckAtkV, duckRelV, duckThrV, duckRatioV;
+                 duckDepthV, duckAtkV, duckRelV, duckThrV, duckRatioV,
+                 duckKneeV, duckLaV, duckRmsV, duckBandHzV, duckBandQV,
+                 freezeV;
 };
 
 

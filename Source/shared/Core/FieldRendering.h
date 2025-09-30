@@ -53,4 +53,7 @@ namespace FieldRendering
 
     // Label rendering
     void drawLabel(juce::Graphics& g, juce::Label& label, const FieldTheme& theme);
+
+    // Static helper methods (moved from FieldLookAndFeel)
+    void styleKnob(juce::Slider& k, juce::LookAndFeel* lf = nullptr);
 }

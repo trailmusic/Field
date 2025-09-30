@@ -7,7 +7,6 @@
 #include "shared/ui/Design/Layout.h"
 #include "shared/dsp/DelayPresetLibrary.h"
 #include "features/reverb/ReverbGraphics.h"
-#include "features/reverb/ReverbDynEQPane.h"
 #include "shared/ui/Controls/ControlGridMetrics.h"
 #include "shared/ui/Components/TintMenuLNFEx.h"
 #include "shared/ui/Components/BottomChevronLNF.h"

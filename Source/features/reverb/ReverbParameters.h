@@ -18,12 +18,11 @@ inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioPa
         return std::make_unique<AudioParameterChoice> (ParameterID{ id, 1 }, nm, choices, defIdx);
     };
 
-    // Top / Algo
+    // Top
     p.push_back (B (ReverbIDs::enabled, "Reverb Enable", false));
     p.push_back (B (ReverbIDs::killDry, "Wet Only", false));
-    p.push_back (C (ReverbIDs::algo, "Reverb Algo", StringArray{ "Modern FDN", "Chamber", "Platey", "Vintage" }, 0));
 
-    // Space / Time
+    // Time
     p.push_back (F (ReverbIDs::preDelayMs,    "Pre-Delay (ms)",    {0.f, 120.f, 0.01f}, 12.f));
     p.push_back (F (ReverbIDs::decaySec,      "Decay (s)",         {0.2f, 20.f, 0.001f, 0.4f}, 2.2f));
     p.push_back (F (ReverbIDs::densityPct,    "Density (%)",       {0.f,100.f,0.01f}, 75.f));

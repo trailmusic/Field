@@ -1,12 +1,11 @@
 #pragma once
 
 namespace ReverbIDs {
-// Top / Algo
+// Top
 inline constexpr const char* enabled   = "reverb_enabled";
 inline constexpr const char* killDry   = "reverb_kill_dry";
-inline constexpr const char* algo      = "reverb_algo";
 
-// Space / Time
+// Time
 inline constexpr const char* preDelayMs    = "reverb_predelay_ms";
 inline constexpr const char* decaySec      = "reverb_decay_s";
 inline constexpr const char* densityPct    = "reverb_density_pct";

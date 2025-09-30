@@ -40,15 +40,4 @@ void FieldLNF::drawTabPill(juce::Graphics& g, juce::Rectangle<float> r, bool act
     FieldRendering::drawTabPill(g, r, active, hover, theme);
 }
 
-// Metallic rendering delegates
-void FieldLNF::paintMetal(juce::Graphics& g, const juce::Rectangle<float>& r,
-                          const FieldTheme::MetalStops& metal, float corner)
-{
-    MetallicRenderer::paintMetal(g, r, metal, corner);
-}
-
-void FieldLNF::paintPhaseMetal(juce::Graphics& g, const juce::Rectangle<float>& r,
-                               const MetallicRenderer::PhaseMetal& metal, float corner, float dpi)
-{
-    MetallicRenderer::paintPhaseMetal(g, r, metal, corner, dpi);
-}
+// Metallic rendering delegates - handled by MetallicRenderer

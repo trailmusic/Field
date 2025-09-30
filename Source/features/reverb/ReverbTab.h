@@ -38,7 +38,6 @@ public:
         controls.reset();
         f.appendText("ReverbTab Destructor: Controls destroyed\n", false, false, "\n");
         
-        
         // Destroy reverb panel
         reverbPanel.reset();
         f.appendText("ReverbTab Destructor: ReverbPanel destroyed\n", false, false, "\n");
