@@ -1963,8 +1963,6 @@ void MyComponent::~MyComponent()
 
 **Rule**: Custom engines provide unique sound characteristics, while JUCE DSP provides standard, reliable processing.
 
-**Note**: Legacy JUCE reverb code exists in PluginProcessor but is not used - the new ReverbEngine system is active.
-
 ---
 
 ## 🔄 Git Workflow

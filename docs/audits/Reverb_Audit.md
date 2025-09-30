@@ -290,12 +290,10 @@ Source/features/reverb/
 
 ## **📝 NOTES**
 
-- **JUCE Reverb**: Legacy code exists in PluginProcessor but is not used - new ReverbEngine system is active
 - **Parameter System**: Comprehensive and ready for use
 - **UI System**: Sophisticated and complete
 - **Integration**: Well-architected and ready for algorithm implementation
 - **Development**: Ready to begin core algorithm implementation
-- **Legacy Cleanup**: Remove unused JUCE reverb code from PluginProcessor (FloatReverbAdapter, reverbD, rvParams)
 
 ---
 

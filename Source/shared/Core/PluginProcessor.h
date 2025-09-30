@@ -453,20 +453,14 @@ private:
     // Width Designer: side-only tilt filters
     juce::dsp::IIR::Filter<Sample>            sTiltLow, sTiltHigh;
 
-    // Reverb (float adapter for double chain)
-    std::unique_ptr<FloatReverbAdapter>  reverbD;  // only used when Sample == double
-    std::unique_ptr<juce::dsp::Reverb>   reverbF;  // used when Sample == float
-    juce::dsp::Reverb::Parameters        rvParams;
+    // Legacy JUCE reverb code removed - using custom ReverbEngine system
     // Preallocated buses to avoid per-block allocations
     juce::AudioBuffer<Sample>            dryBusBuf;
     juce::AudioBuffer<Sample>            wetBusBuf;
     juce::AudioBuffer<Sample>            delayWetBuf; // delay wet-only bus
     // Smoothed wet mix (per-sample ramp)
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> wetMixSmoothed;
-    // Smoothed reverb macro params
-    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> roomSizeSmoothed;
-    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> dampingSmoothed;
-    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> widthSmoothed;
+    // Legacy smoothed reverb parameters removed - using custom ReverbEngine system
 
     // New lightweight reverb state (no JUCE Reverb): simple dual delay feedback per channel
     std::vector<Sample> rvDelayL, rvDelayR;

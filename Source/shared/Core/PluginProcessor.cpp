@@ -37,53 +37,7 @@ static inline float mapDampHzToParam01 (float hz)
 // HostParams is declared in PluginProcessor.h
 
 // ================================================================
-// Float-only reverb adapter for double chains (parallel, wet return)
-// ================================================================
-struct FloatReverbAdapter
-{
-    juce::dsp::Reverb                      reverbF;
-    juce::dsp::Reverb::Parameters          params;
-    juce::AudioBuffer<float>               scratch;
-
-    void prepare (double sr, int maxBlock, int chans)
-    {
-        scratch.setSize (chans, maxBlock, false, false, true);
-        juce::dsp::ProcessSpec spec { sr, (juce::uint32) maxBlock, (juce::uint32) chans };
-        reverbF.prepare (spec);
-    }
-
-    void setParameters (const juce::dsp::Reverb::Parameters& p) { params = p; reverbF.setParameters (params); }
-
-    // Renders a wet-only float buffer from a double AudioBlock and mixes back with wetLevel
-    void processParallelMix (juce::dsp::AudioBlock<double> block, float wetLevel)
-    {
-        if (wetLevel <= 0.0001f) return;
-        const int ch = (int) block.getNumChannels();
-        const int n  = (int) block.getNumSamples();
-        scratch.setSize (ch, n, false, false, true);
-
-        // Copy double -> float (manual conversion)
-        for (int c = 0; c < ch; ++c)
-        {
-            auto* dst = scratch.getWritePointer (c);
-            auto* src = block.getChannelPointer (c);
-            for (int i = 0; i < n; ++i)
-                dst[i] = static_cast<float> (src[i]);
-        }
-
-        juce::dsp::AudioBlock<float> fblk (scratch);
-        juce::dsp::ProcessContextReplacing<float> fctx (fblk);
-        reverbF.process (fctx);
-
-        // Mix wet back into double
-        for (int c = 0; c < ch; ++c)
-        {
-            auto* d = block.getChannelPointer (c);
-            auto* s = scratch.getReadPointer (c);
-            for (int i = 0; i < n; ++i) d[i] += (double) s[i] * (double) wetLevel;
-        }
-    }
-};
+// Legacy FloatReverbAdapter removed - using custom ReverbEngine system
 
 // ================================================================
 // MyPluginAudioProcessor
@@ -1612,25 +1566,9 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     lrLpL.setCutoffFrequency ((Sample) juce::jmin<Sample> ((Sample)20000, (Sample)(sr*0.49)));
     lrLpR.setCutoffFrequency ((Sample) juce::jmin<Sample> ((Sample)20000, (Sample)(sr*0.49)));
 
-    if constexpr (std::is_same_v<Sample, double>)
-    {
-        reverbD = std::make_unique<FloatReverbAdapter>();
-        reverbD->prepare (spec.sampleRate, (int) spec.maximumBlockSize, (int) spec.numChannels);
-    }
-    else
-    {
-        juce::dsp::ProcessSpec rspec { spec.sampleRate, spec.maximumBlockSize, spec.numChannels };
-        reverbF = std::make_unique<juce::dsp::Reverb>();
-        reverbF->prepare (rspec);
-    }
+    // Legacy JUCE reverb initialization removed - using custom ReverbEngine system
 
-    // Default reverb params
-    rvParams.roomSize   = 0.45f;
-    rvParams.width      = 1.0f;
-    rvParams.damping    = 0.35f;
-    rvParams.dryLevel   = 1.0f;
-    rvParams.wetLevel   = 0.0f;
-    rvParams.freezeMode = 0.0f;
+    // Legacy JUCE reverb parameters removed - using custom ReverbEngine system
 
     // No OS by default
     oversampling.reset();
@@ -1647,13 +1585,7 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     wetBusBuf.setSize ((int) spec.numChannels, (int) spec.maximumBlockSize);
     const double smoothMs = 0.02;
     wetMixSmoothed.reset (sr, smoothMs);
-    wetMixSmoothed.setCurrentAndTargetValue (rvParams.wetLevel);
-    roomSizeSmoothed.reset (sr, smoothMs);
-    roomSizeSmoothed.setCurrentAndTargetValue (rvParams.roomSize);
-    dampingSmoothed.reset (sr, smoothMs);
-    dampingSmoothed.setCurrentAndTargetValue (rvParams.damping);
-    widthSmoothed.reset (sr, smoothMs);
-    widthSmoothed.setCurrentAndTargetValue (rvParams.width);
+    // Legacy reverb parameter smoothing removed - using custom ReverbEngine system
 
     // Prepare linear-phase convolver (allocated lazily on first use)
     if (! linConvolver)
@@ -1692,8 +1624,7 @@ void FieldChain<Sample>::reset()
     lowShelf.reset(); highShelf.reset(); airFilter.reset(); bassFilter.reset(); scoopFilter.reset();
     dcBlocker.reset();
     if (oversampling) oversampling->reset();
-    if constexpr (std::is_same_v<Sample, double>) { if (reverbD) reverbD->reverbF.reset(); }
-    else                                           { /* removed JUCE Reverb reset */ }
+    // Legacy JUCE reverb reset removed - using custom ReverbEngine system
 }
 
 // --------- parameter ingress ---------
@@ -3065,7 +2996,7 @@ void FieldChain<Sample>::process (Block block)
     // Reverb Engine ducking: Duck reverb wet against dry (WetOnly), only when Reverb is active
     const bool rvEnabled = params.rvEnabled;
     const float rvWet01 = (float) params.rvWet01;
-    const bool spaceWetActive = (rvParams.wetLevel > 0.0001f) && rvEnabled && (rvWet01 > 0.0001f);
+    const bool spaceWetActive = rvEnabled && (rvWet01 > 0.0001f);
     // Read Reverb Engine duck parameters from per-block params
     const float duckDepthDb = (float) params.rvDuckDepthDb;
     const float duckThrDb   = (float) params.rvDuckThrDb;
