@@ -134,7 +134,14 @@ private:
             b.setName (cap);
             // Apply Reverb metallic styling
             setAreaMetallicForCell (b, MetallicKind::Reverb);
-            addAndMakeVisible (b);
+            
+            // Wrap in SimpleSwitchCell for consistent styling and labels
+            auto cell = std::make_unique<SimpleSwitchCell> (b);
+            cell->setCaption (cap);
+            cell->setShowBorder (true);
+            addAndMakeVisible (*cell);
+            switchCells.emplace_back (cell.get());
+            ownedSwitches.emplace_back (std::move (cell));
             btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, pid, b));
         };
 
@@ -208,19 +215,20 @@ private:
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
         
         // Row 1: enabled, pre, erL, erD, erW, erTime, erToTail, dif, density, md, mr, w, rotation, size, dec, killDry
-        push (&enabled);
-        for (int i = 0; i < 15; ++i) push (ownedCells[(size_t) i].get());
+        push (ownedSwitches[0].get()); // enabled (SimpleSwitchCell)
+        for (int i = 0; i < 15; ++i) push (ownedCells[(size_t) i].get()); // pre, erL, erD, erW, erTime, erToTail, dif, density, md, mr, w, rotation, size, dec
+        push (ownedSwitches[1].get()); // killDry (SimpleSwitchCell)
         
         // Row 2: wet, bloom, distance, freeze, shimmerAmt, shimmerInt, gateAmt, dreqXoverLo, dreqXoverHi, dreqApply, followWidth, followWidthAmt, followRot, followRotAmt, outTrim, spare
         push (&wet);
         push (&bloom);
         push (&distance);
-        push (&freeze);
+        push (ownedSwitches[2].get()); // freeze (SimpleSwitchCell)
         for (int i = 15; i < 20; ++i) push (ownedCells[(size_t) i].get()); // shimmerAmt, shimmerInt, gateAmt, dreqXoverLo, dreqXoverHi
-        push (ownedSwitches[0].get()); // dreqApply (SimpleSwitchCell)
-        push (&followWidth);
+        push (ownedSwitches[3].get()); // dreqApply (SimpleSwitchCell)
+        push (ownedSwitches[4].get()); // followWidth (SimpleSwitchCell)
         push (&followWidthAmt);
-        push (&followRot);
+        push (ownedSwitches[5].get()); // followRot (SimpleSwitchCell)
         push (&followRotAmt);
         push (&outTrim);
         push (&spare);
