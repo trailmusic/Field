@@ -3,8 +3,7 @@
 #include "shared/Core/FieldLookAndFeel.h"
 
 DuckingFloat::DuckingFloat(juce::AudioProcessorValueTreeState& apvts)
-    : expandButton("DUCKING", "Expand/Collapse ducking controls"),
-      grLabel("grLabel", "GR"),
+    : grLabel("grLabel", "GR"),
       grMeter(juce::Slider::LinearHorizontal, juce::Slider::NoTextBox),
       modeSelector("modeSelector"),
       detectorSelector("detectorSelector"),
@@ -29,9 +28,9 @@ DuckingFloat::DuckingFloat(juce::AudioProcessorValueTreeState& apvts)
 {
     setupComponents();
     
-    // Set initial size
-    setSize(300, COLLAPSED_HEIGHT);
-    setExpanded(false);
+    // Set initial size - always expanded
+    setSize(300, EXPANDED_HEIGHT);
+    setExpanded(true);
 }
 
 DuckingFloat::~DuckingFloat()
@@ -41,15 +40,7 @@ DuckingFloat::~DuckingFloat()
 
 void DuckingFloat::setupComponents()
 {
-    // Expand button with enhanced styling
-    addAndMakeVisible(expandButton);
-    expandButton.setButtonText("DUCKING");
-    expandButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF2D2D2D));
-    expandButton.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xFF4A4A4A));
-    expandButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFFFFFFFF));
-    expandButton.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFCCCCCC));
-    expandButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFFFFFFFF));
-    expandButton.onClick = [this] { setExpanded(!expanded); };
+    // No expand button needed - module is always expanded
     
     // GR meter
     addAndMakeVisible(grMeter);
@@ -210,7 +201,6 @@ void DuckingFloat::updateLayout()
     // Set component enabled state based on active and greyed out state
     bool componentsEnabled = active && !greyedOut;
     
-    expandButton.setEnabled(componentsEnabled);
     grMeter.setEnabled(componentsEnabled);
     modeSelector.setEnabled(componentsEnabled);
     detectorSelector.setEnabled(componentsEnabled);
@@ -228,8 +218,7 @@ void DuckingFloat::updateLayout()
         // Expanded layout
         auto headerArea = bounds.removeFromTop(40.0f);
         
-        // Header with expand button and GR meter
-        expandButton.setBounds(headerArea.removeFromLeft(80).toNearestInt());
+        // Header with GR meter
         auto grArea = headerArea.removeFromLeft(80);
         grLabel.setBounds(grArea.removeFromTop(15).toNearestInt());
         grMeter.setBounds(grArea.toNearestInt());
@@ -271,7 +260,6 @@ void DuckingFloat::updateLayout()
     else
     {
         // Collapsed layout - just header
-        expandButton.setBounds(bounds.removeFromLeft(80).toNearestInt());
         auto grArea = bounds.removeFromLeft(80);
         grLabel.setBounds(grArea.removeFromTop(15).toNearestInt());
         grMeter.setBounds(grArea.toNearestInt());

@@ -34,7 +34,6 @@ private:
     void paintGrMeter(juce::Graphics& g, juce::Rectangle<float> bounds);
     
     // UI Components
-    juce::TextButton expandButton;
     juce::Label grLabel;
     juce::Slider grMeter;
     
