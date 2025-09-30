@@ -106,80 +106,97 @@ private:
         if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
             k.setLookAndFeel(lf);
     }
-    void makeCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid, bool metallic=false)
+    // Unified control creation method - consolidates makeCell, makeSwitch, makeCombo, makeUpwardCombo
+    void makeControl(juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid, bool metallic = false)
     {
         // Safety check: ensure parameter exists before creating attachment
         if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr)
         {
-            // Skip this cell if parameter doesn't exist
-            return;
+            return; // Skip if parameter doesn't exist
         }
         
-        styleKnob (s); s.setName (cap);
-        auto cell = std::make_unique<KnobCell> (s, v, cap);
-        cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        cell->setValueLabelGap (labelGapPx);
+        styleKnob(s);
+        s.setName(cap);
+        auto cell = std::make_unique<KnobCell>(s, v, cap);
+        cell->setValueLabelMode(KnobCell::ValueLabelMode::Managed);
+        cell->setValueLabelGap(labelGapPx);
         if (metallic) {
-            setAreaMetallicForCell (*cell, MetallicKind::XY);
+            setAreaMetallicForCell(*cell, MetallicKind::XY);
         }
-        // XY knobs now use proper metallic system - no centerStyle needed
-        // Ensure caption renders via KnobCell paint helper
-        cell->getProperties().set ("caption", cap);
-        addAndMakeVisible (*cell);
-        knobCells.emplace_back (cell.get());
-        ownedCells.emplace_back (std::move (cell));
-        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, pid, s));
-        s.onValueChange = [this, &s, &v]() { v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification); };
-        // Initialize value label immediately
-        v.setInterceptsMouseClicks (false, false);
-        v.setJustificationType (juce::Justification::centred);
-        v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification);
-    }
-    void makeSwitch (juce::Button& b, const juce::String& cap, const char* pid, bool metallic=false)
-    {
-        b.setButtonText (cap);
-        
-        // CRITICAL: Assign FieldLNF LookAndFeel to the button BEFORE setting metallic properties
-        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-            b.setLookAndFeel(lf);
-        
-        // Apply metallic properties to the actual button, not the wrapper
-        if (metallic) {
-            setAreaMetallicForCell (b, MetallicKind::XY);
-        }
-        auto cell = std::make_unique<SimpleSwitchCell> (b);
-        cell->setCaption (cap);
-        addAndMakeVisible (*cell);
-        switchCells.emplace_back (cell.get());
-        ownedSwitches.emplace_back (std::move (cell));
-        btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, pid, b));
-    }
-    void makeCombo (juce::ComboBox& c, const juce::String& cap, const char* pid, bool metallic=false)
-    {
-        // Apply metallic properties to the actual combo, not the wrapper
-        if (metallic) {
-            setAreaMetallicForCell (c, MetallicKind::XY);
-        }
-        auto cell = std::make_unique<SimpleSwitchCell> (c);
-        cell->setCaption (cap);
-        addAndMakeVisible (*cell);
-        switchCells.emplace_back (cell.get());
-        ownedSwitches.emplace_back (std::move (cell));
-        cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, pid, c));
+        cell->getProperties().set("caption", cap);
+        addAndMakeVisible(*cell);
+        knobCells.emplace_back(cell.get());
+        ownedCells.emplace_back(std::move(cell));
+        sAtts.push_back(std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, pid, s));
+        s.onValueChange = [this, &s, &v]() { 
+            v.setText(juce::String(s.getValue(), 2), juce::dontSendNotification); 
+        };
+        v.setInterceptsMouseClicks(false, false);
+        v.setJustificationType(juce::Justification::centred);
+        v.setText(juce::String(s.getValue(), 2), juce::dontSendNotification);
     }
     
-    void makeUpwardCombo (UpwardComboBox& c, const juce::String& cap, const char* pid, bool metallic=false)
+    void makeControl(juce::Button& b, const juce::String& cap, const char* pid, bool metallic = false)
     {
-        // Apply metallic properties to the actual combo, not the wrapper
+        b.setButtonText(cap);
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            b.setLookAndFeel(lf);
         if (metallic) {
-            setAreaMetallicForCell (c, MetallicKind::XY);
+            setAreaMetallicForCell(b, MetallicKind::XY);
         }
-        auto cell = std::make_unique<SimpleSwitchCell> (c);
-        cell->setCaption (cap);
-        addAndMakeVisible (*cell);
-        switchCells.emplace_back (cell.get());
-        ownedCells.emplace_back (std::move (cell));
-        cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, pid, c));
+        auto cell = std::make_unique<SimpleSwitchCell>(b);
+        cell->setCaption(cap);
+        addAndMakeVisible(*cell);
+        switchCells.emplace_back(cell.get());
+        ownedSwitches.emplace_back(std::move(cell));
+        btnAtts.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(apvts, pid, b));
+    }
+    
+    void makeControl(juce::ComboBox& c, const juce::String& cap, const char* pid, bool metallic = false)
+    {
+        if (metallic) {
+            setAreaMetallicForCell(c, MetallicKind::XY);
+        }
+        auto cell = std::make_unique<SimpleSwitchCell>(c);
+        cell->setCaption(cap);
+        addAndMakeVisible(*cell);
+        switchCells.emplace_back(cell.get());
+        ownedSwitches.emplace_back(std::move(cell));
+        cmbAtts.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(apvts, pid, c));
+    }
+    
+    void makeControl(UpwardComboBox& c, const juce::String& cap, const char* pid, bool metallic = false)
+    {
+        if (metallic) {
+            setAreaMetallicForCell(c, MetallicKind::XY);
+        }
+        auto cell = std::make_unique<SimpleSwitchCell>(c);
+        cell->setCaption(cap);
+        addAndMakeVisible(*cell);
+        switchCells.emplace_back(cell.get());
+        ownedCells.emplace_back(std::move(cell));
+        cmbAtts.push_back(std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(apvts, pid, c));
+    }
+    
+    // Convenience methods for backward compatibility
+    void makeCell(juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid, bool metallic = false)
+    {
+        makeControl(s, v, cap, pid, metallic);
+    }
+    
+    void makeSwitch(juce::Button& b, const juce::String& cap, const char* pid, bool metallic = false)
+    {
+        makeControl(b, cap, pid, metallic);
+    }
+    
+    void makeCombo(juce::ComboBox& c, const juce::String& cap, const char* pid, bool metallic = false)
+    {
+        makeControl(c, cap, pid, metallic);
+    }
+    
+    void makeUpwardCombo(UpwardComboBox& c, const juce::String& cap, const char* pid, bool metallic = false)
+    {
+        makeControl(c, cap, pid, metallic);
     }
     
     // Helper for creating cells with frequency mini sliders (double-wide)
@@ -319,265 +336,9 @@ private:
         }
     }
     
-    // Helper for creating BASS cell with frequency mini slider using KnobCellWithAux
-    void makeBassCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid,
-                      juce::Slider& freqS, juce::Label& freqV, const char* freqPid, bool metallic=false)
-    {
-        // Safety check: ensure parameters exist before creating attachments
-        if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr) return;
-        if (freqPid == nullptr || apvts.getParameter(juce::String(freqPid)) == nullptr) return;
-        
-        styleKnob (s); s.setName (cap);
-        
-        // Style frequency slider as linear horizontal
-        freqS.setSliderStyle (juce::Slider::LinearHorizontal);
-        freqS.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-        freqS.setMouseDragSensitivity (140);
-        freqS.setVelocityBasedMode (false);
-        freqS.setSliderSnapsToMousePosition (false);
-        freqS.setDoubleClickReturnValue (true, 0.0);
-        freqS.getProperties().set ("micro", true);
-        
-        // Create KnobCellWithAux with frequency mini slider as aux component
-        std::vector<juce::Component*> auxComponents = { &freqS };
-        std::vector<float> auxWeights = { 1.0f }; // Single aux component gets full weight
-        auto cell = std::make_unique<KnobCellWithAux> (s, v, auxComponents, auxWeights);
-        
-        // Set metrics to match other cells
-        cell->setMetrics (knobPx, valuePx, labelGapPx);
-        cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
-        
-        // Set caption property for knob name rendering
-        cell->getProperties().set ("caption", cap);
-        
-        // Apply metallic styling like other cells
-        if (metallic) {
-            setAreaMetallicForCell (*cell, MetallicKind::XY);
-            // For KnobCellWithAux, also apply metallic to aux components
-            for (auto* auxComp : cell->getAuxComponents()) {
-                if (auxComp) {
-                    setAreaMetallic (*auxComp, MetallicKind::XY);
-                }
-            }
-        }
-        
-        addAndMakeVisible (*cell);
-        knobCells.emplace_back (cell.get());
-        ownedCells.emplace_back (std::move (cell));
-        
-        // Create attachments
-        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, pid, s));
-        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, freqPid, freqS));
-        
-        // Initialize value labels
-        s.onValueChange = [this, &s, &v]() { v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification); };
-        freqS.onValueChange = [this, &freqS, &freqV]() { 
-            freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification); 
-        };
-        
-        v.setInterceptsMouseClicks (false, false);
-        v.setJustificationType (juce::Justification::centred);
-        v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification);
-        
-        freqV.setInterceptsMouseClicks (false, false);
-        freqV.setJustificationType (juce::Justification::centred);
-        freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification);
-    }
     
-    // Helper for creating AIR cell with frequency mini slider using KnobCellWithAux
-    void makeAirCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid,
-                      juce::Slider& freqS, juce::Label& freqV, const char* freqPid, bool metallic=false)
-    {
-        // Safety check: ensure parameters exist before creating attachments
-        if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr) return;
-        if (freqPid == nullptr || apvts.getParameter(juce::String(freqPid)) == nullptr) return;
-        
-        styleKnob (s); s.setName (cap);
-        
-        // Style frequency slider as linear horizontal
-        freqS.setSliderStyle (juce::Slider::LinearHorizontal);
-        freqS.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-        freqS.setMouseDragSensitivity (140);
-        freqS.setVelocityBasedMode (false);
-        freqS.setSliderSnapsToMousePosition (false);
-        freqS.setDoubleClickReturnValue (true, 0.0);
-        freqS.getProperties().set ("micro", true);
-        
-        // Create KnobCellWithAux with frequency mini slider as aux component
-        std::vector<juce::Component*> auxComponents = { &freqS };
-        std::vector<float> auxWeights = { 1.0f }; // Single aux component gets full weight
-        auto cell = std::make_unique<KnobCellWithAux> (s, v, auxComponents, auxWeights);
-        
-        // Set metrics to match other cells
-        cell->setMetrics (knobPx, valuePx, labelGapPx);
-        cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
-        
-        // Set caption property for knob name rendering
-        cell->getProperties().set ("caption", cap);
-        
-        // Apply metallic styling like other cells
-        if (metallic) {
-            setAreaMetallicForCell (*cell, MetallicKind::XY);
-            // For KnobCellWithAux, also apply metallic to aux components
-            for (auto* auxComp : cell->getAuxComponents()) {
-                if (auxComp) {
-                    setAreaMetallic (*auxComp, MetallicKind::XY);
-                }
-            }
-        }
-        
-        addAndMakeVisible (*cell);
-        knobCells.emplace_back (cell.get());
-        ownedCells.emplace_back (std::move (cell));
-        
-        // Create attachments
-        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, pid, s));
-        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, freqPid, freqS));
-        
-        // Initialize value labels
-        s.onValueChange = [this, &s, &v]() { v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification); };
-        freqS.onValueChange = [this, &freqS, &freqV]() { 
-            freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification); 
-        };
-        
-        v.setInterceptsMouseClicks (false, false);
-        v.setJustificationType (juce::Justification::centred);
-        v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification);
-        
-        freqV.setInterceptsMouseClicks (false, false);
-        freqV.setJustificationType (juce::Justification::centred);
-        freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification);
-    }
     
-    // Helper for creating TILT cell with frequency mini slider using KnobCellWithAux
-    void makeTiltCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid,
-                       juce::Slider& freqS, juce::Label& freqV, const char* freqPid, bool metallic=false)
-    {
-        // Safety check: ensure parameters exist before creating attachments
-        if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr) return;
-        if (freqPid == nullptr || apvts.getParameter(juce::String(freqPid)) == nullptr) return;
-        
-        styleKnob (s); s.setName (cap);
-        
-        // Style frequency slider as linear horizontal
-        freqS.setSliderStyle (juce::Slider::LinearHorizontal);
-        freqS.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-        freqS.setMouseDragSensitivity (140);
-        freqS.setVelocityBasedMode (false);
-        freqS.setSliderSnapsToMousePosition (false);
-        freqS.setDoubleClickReturnValue (true, 0.0);
-        freqS.getProperties().set ("micro", true);
-        
-        // Create KnobCellWithAux with frequency mini slider as aux component
-        std::vector<juce::Component*> auxComponents = { &freqS };
-        std::vector<float> auxWeights = { 1.0f }; // Single aux component gets full weight
-        auto cell = std::make_unique<KnobCellWithAux> (s, v, auxComponents, auxWeights);
-        
-        // Set metrics to match other cells
-        cell->setMetrics (knobPx, valuePx, labelGapPx);
-        cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
-        
-        // Set caption property for knob name rendering
-        cell->getProperties().set ("caption", cap);
-        
-        // Apply metallic styling like other cells
-        if (metallic) {
-            setAreaMetallicForCell (*cell, MetallicKind::XY);
-            // For KnobCellWithAux, also apply metallic to aux components
-            for (auto* auxComp : cell->getAuxComponents()) {
-                if (auxComp) {
-                    setAreaMetallic (*auxComp, MetallicKind::XY);
-                }
-            }
-        }
-        
-        addAndMakeVisible (*cell);
-        knobCells.emplace_back (cell.get());
-        ownedCells.emplace_back (std::move (cell));
-        
-        // Create attachments
-        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, pid, s));
-        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, freqPid, freqS));
-        
-        // Initialize value labels
-        s.onValueChange = [this, &s, &v]() { v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification); };
-        freqS.onValueChange = [this, &freqS, &freqV]() { 
-            freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification); 
-        };
-        
-        v.setInterceptsMouseClicks (false, false);
-        v.setJustificationType (juce::Justification::centred);
-        v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification);
-        
-        freqV.setInterceptsMouseClicks (false, false);
-        freqV.setJustificationType (juce::Justification::centred);
-        freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification);
-    }
     
-    // Helper for creating SCOOP cell with frequency mini slider using KnobCellWithAux
-    void makeScoopCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid,
-                        juce::Slider& freqS, juce::Label& freqV, const char* freqPid, bool metallic=false)
-    {
-        // Safety check: ensure parameters exist before creating attachments
-        if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr) return;
-        if (freqPid == nullptr || apvts.getParameter(juce::String(freqPid)) == nullptr) return;
-        
-        styleKnob (s); s.setName (cap);
-        
-        // Style frequency slider as linear horizontal
-        freqS.setSliderStyle (juce::Slider::LinearHorizontal);
-        freqS.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-        freqS.setMouseDragSensitivity (140);
-        freqS.setVelocityBasedMode (false);
-        freqS.setSliderSnapsToMousePosition (false);
-        freqS.setDoubleClickReturnValue (true, 0.0);
-        freqS.getProperties().set ("micro", true);
-        
-        // Create KnobCellWithAux with frequency mini slider as aux component
-        std::vector<juce::Component*> auxComponents = { &freqS };
-        std::vector<float> auxWeights = { 1.0f }; // Single aux component gets full weight
-        auto cell = std::make_unique<KnobCellWithAux> (s, v, auxComponents, auxWeights);
-        
-        // Set metrics to match other cells
-        cell->setMetrics (knobPx, valuePx, labelGapPx);
-        cell->setAuxHeight (Layout::dp (40, 1.0f)); // Responsive aux height like other cells
-        
-        // Set caption property for knob name rendering
-        cell->getProperties().set ("caption", cap);
-        
-        // Apply metallic styling like other cells
-        if (metallic) {
-            setAreaMetallicForCell (*cell, MetallicKind::XY);
-            // For KnobCellWithAux, also apply metallic to aux components
-            for (auto* auxComp : cell->getAuxComponents()) {
-                if (auxComp) {
-                    setAreaMetallic (*auxComp, MetallicKind::XY);
-                }
-            }
-        }
-        
-        addAndMakeVisible (*cell);
-        knobCells.emplace_back (cell.get());
-        ownedCells.emplace_back (std::move (cell));
-        
-        // Create attachments
-        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, pid, s));
-        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, freqPid, freqS));
-        
-        // Initialize value labels
-        s.onValueChange = [this, &s, &v]() { v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification); };
-        freqS.onValueChange = [this, &freqS, &freqV]() { 
-            freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification); 
-        };
-        
-        v.setInterceptsMouseClicks (false, false);
-        v.setJustificationType (juce::Justification::centred);
-        v.setText (juce::String (s.getValue(), 2), juce::dontSendNotification);
-        
-        freqV.setInterceptsMouseClicks (false, false);
-        freqV.setJustificationType (juce::Justification::centred);
-        freqV.setText (juce::String (freqS.getValue(), 0) + "Hz", juce::dontSendNotification);
-    }
     
     // Helper for creating Q cell with Q link toggle and HP/LP Q sliders using KnobCellWithAux
     void makeQCell (juce::Slider& qS, juce::Label& qV, const juce::String& qCap, const char* qPid,
@@ -753,6 +514,12 @@ private:
 
     void buildControls()
     {
+        buildRowAControls();
+        buildRowBControls();
+    }
+    
+    void buildRowAControls()
+    {
         // Row A: MONO(1,2), HP(3), BASS(4,5), TILT(6,7), SCOOP(8,9), AIR(10,11), LP(12), Q+QLink(13,14), S(15), [1 empty]
         const bool Mgrey = true; // all XY controls use grey metallic styling
         
@@ -764,16 +531,16 @@ private:
         makeCell (hp,     hpV,     "HP",     "hp_hz",          Mgrey);
         
         // BASS with frequency mini slider (double-wide, positions 4-5) - using KnobCellWithAux
-        makeBassCell (bass, bassV, "BASS", "bass_db", bassFreq, bassFreqV, "bass_freq", Mgrey);
+        makeCellWithFreq (bass, bassV, "BASS", "bass_db", bassFreq, bassFreqV, "bass_freq", Mgrey);
         
         // TILT with frequency mini slider (double-wide, positions 6-7) - using KnobCellWithAux
-        makeTiltCell (tilt, tiltV, "TILT", "tilt", tiltFreq, tiltFreqV, "tilt_freq", Mgrey);
+        makeCellWithFreq (tilt, tiltV, "TILT", "tilt", tiltFreq, tiltFreqV, "tilt_freq", Mgrey);
         
         // SCOOP with frequency mini slider (double-wide, positions 8-9) - using KnobCellWithAux
-        makeScoopCell (scoop, scoopV, "SCOOP", "scoop", scoopFreq, scoopFreqV, "scoop_freq", Mgrey);
+        makeCellWithFreq (scoop, scoopV, "SCOOP", "scoop", scoopFreq, scoopFreqV, "scoop_freq", Mgrey);
         
         // AIR with frequency mini slider (double-wide, positions 10-11) - using KnobCellWithAux
-        makeAirCell (air, airV, "AIR", "air_db", airFreq, airFreqV, "air_freq", Mgrey);
+        makeCellWithFreq (air, airV, "AIR", "air_db", airFreq, airFreqV, "air_freq", Mgrey);
         
         // LP (single-wide, position 12)
         makeCell (lp,     lpV,     "LP",     "lp_hz",          Mgrey);
@@ -785,30 +552,18 @@ private:
         // SHELF SHAPE (single-wide, position 15)
         makeCell (shelfS, shelfSV, "S",      "eq_shelf_shape", Mgrey);
         
-
         // Additional imaging/placement controls moved from Imager to XY
         makeCell (rotation, rotationV, "ROT",      "rotation_deg",     Mgrey);
         makeCell (asym,     asymV,     "ASYM",     "asymmetry",        Mgrey);
         makeCell (pan,      panV,      "PAN",      "pan",               Mgrey);
         makeCell (satMix,   satMixV,   "SAT MIX",  "sat_mix",           Mgrey);
+        
         // Create blank placeholders for Row A (7 blanks)
-        for (int i = 0; i < 7; ++i) {
-            auto sl = std::make_unique<juce::Slider>();
-            auto lb = std::make_unique<juce::Label>(); 
-            lb->setVisible (false);
-            styleKnob (*sl);
-            auto cell = std::make_unique<KnobCell> (*sl, *lb, juce::String());
-            cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-            cell->setValueLabelGap (labelGapPx);
-            cell->setShowKnob (false);
-            setAreaMetallicForCell (*cell, MetallicKind::XY);
-            addAndMakeVisible (*cell);
-            knobCells.emplace_back (cell.get());
-            blankSliders.emplace_back (std::move (sl));
-            blankLabels.emplace_back (std::move (lb));
-            ownedCells.emplace_back (std::move (cell));
-        }
-
+        createBlankPlaceholders(7);
+    }
+    
+    void buildRowBControls()
+    {
         // Row B: Center tools (metallic) - reordered to match resized() expectations
         const bool M = true;
         makeUpwardCombo (punchMode,          "PUNCH MODE","center_punch_mode", M);
@@ -821,7 +576,12 @@ private:
         makeSwitch (centerLockOn,      "CNTR LOCK", "center_lock_on", M);
         
         // Create blank placeholders for Row B (7 blanks)
-        for (int i = 0; i < 7; ++i) {
+        createBlankPlaceholders(7);
+    }
+    
+    void createBlankPlaceholders(int count)
+    {
+        for (int i = 0; i < count; ++i) {
             auto sl = std::make_unique<juce::Slider>();
             auto lb = std::make_unique<juce::Label>(); 
             lb->setVisible (false);
@@ -837,9 +597,6 @@ private:
             blankLabels.emplace_back (std::move (lb));
             ownedCells.emplace_back (std::move (cell));
         }
-
-        // Grid layout is now handled directly in resized() method
-        // No need for the old gridOrder system since we use explicit component placement
     }
 
     void applyMetricsToAll()
