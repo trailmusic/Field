@@ -735,6 +735,7 @@ private:
         // Reverb (Sample domain)
         bool   rvEnabled{};
         bool   rvKillDry{};
+        bool   rvDuckOn{};
         Sample rvPreDelayMs{};
         Sample rvDecaySec{};
         Sample rvDensityPct{};
@@ -846,6 +847,7 @@ struct HostParams
     // Reverb (new)
     bool   rvEnabled{};            // enabled
     bool   rvKillDry{};            // wet only
+    bool   rvDuckOn{};             // ducking on/off
     double rvPreDelayMs{};
     double rvDecaySec{};
     double rvDensityPct{};

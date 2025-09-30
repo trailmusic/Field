@@ -110,9 +110,14 @@ Complete package for implementing the reverb system with:
 13. FOLLOW R (followRot) - Toggle
 14. R AMT (followRotAmt) - %
 15. TRIM (outTrimDb) - dB
-16. SPARE (spare) - Reserved
+16. DUCK (duckOn) - Toggle
 
 ### 3. Floating Ducking Module (DuckingFloat.h/.cpp)
+
+**Activation:**
+- **DUCK Toggle**: The floating ducking module is activated when the DUCK toggle (R2C16) is enabled
+- **Visual Integration**: When DUCK is on, the floating module appears and shows ducking controls
+- **State Management**: DUCK toggle controls the visibility and functionality of the ducking system
 
 **Features:**
 - Collapsible/expandable UI with pill-style header
@@ -331,7 +336,7 @@ Complete package for implementing the reverb system with:
 - ✅ **FOLLOW R** (ToggleButton) - Follow motion rotation
 - ✅ **R AMT** (KnobCell) - Rotation amount (0-100%)
 - ✅ **TRIM** (KnobCell) - Output trim (-12 to +12dB)
-- ✅ **SPARE** (BlankCell) - Reserved placeholder
+- ✅ **DUCK** (ToggleButton) - Ducking on/off toggle
 
 ### **🚨 Control Type Issues Identified**
 
@@ -350,9 +355,8 @@ Complete package for implementing the reverb system with:
 ### **✅ Correct Control Types Summary**
 
 - **KnobCell Controls (25 total)**: Time, level, percentage, modulation, frequency, and angle parameters
-- **ToggleButton Controls (5 total)**: ENABLE, WET ONLY, FREEZE, FOLLOW W, FOLLOW R
+- **ToggleButton Controls (6 total)**: ENABLE, WET ONLY, FREEZE, FOLLOW W, FOLLOW R, DUCK
 - **ComboBox Controls (1 total)**: EQ APPLY (needs conversion)
-- **BlankCell Controls (1 total)**: SPARE placeholder
 
 ### **🎨 Metallic Styling Requirements**
 

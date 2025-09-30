@@ -209,7 +209,7 @@ private:
         makeToggleCell (followRot, "FOLLOW R", ReverbParamIDs::followRot);
         makeCell (followRotAmt, followRotAmtV, "R AMT", ReverbParamIDs::followRotAmt);
         makeCell (outTrim, outTrimV, "TRIM", ReverbParamIDs::outTrimDb);
-        makeCell (spare, spareV, "SPARE", "spare");
+        makeToggleCell (duckOn, "DUCK", ReverbParamIDs::duckOn);
 
         // Grid order (Row 1, then Row 2) - matches Reverb.md documentation
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
@@ -232,7 +232,7 @@ private:
         push (ownedCells[13].get());   // DECAY (decaySec)
         push (ownedSwitches[1].get()); // WET ONLY (killDry) - SimpleSwitchCell
         
-        // Row 2 (16 controls): WET, BLOOM, DIST, FREEZE, SHIM AMT, SHIM INT, GATE, DREQ XO LO, DREQ XO HI, EQ APPLY, FOLLOW W, W AMT, FOLLOW R, R AMT, TRIM, SPARE
+        // Row 2 (16 controls): WET, BLOOM, DIST, FREEZE, SHIM AMT, SHIM INT, GATE, DREQ XO LO, DREQ XO HI, EQ APPLY, FOLLOW W, W AMT, FOLLOW R, R AMT, TRIM, DUCK
         push (ownedCells[14].get());   // WET (wetMix01)
         push (ownedCells[15].get());    // BLOOM (bloomPct)
         push (ownedCells[16].get());    // DIST (distancePct)
@@ -248,7 +248,7 @@ private:
         push (ownedSwitches[5].get());  // FOLLOW R (followRot) - SimpleSwitchCell
         push (ownedCells[23].get());    // R AMT (followRotAmt)
         push (ownedCells[24].get());    // TRIM (outTrimDb)
-        push (ownedCells[25].get());    // SPARE (spare)
+        push (ownedSwitches[6].get());  // DUCK (duckOn) - SimpleSwitchCell
 
         // Fill blanks up to 32 with styled Reverb blanks
         const int totalNeeded = 32;
@@ -314,16 +314,16 @@ private:
     int rowH       = 0;
 
     // ToggleButtons and ComboBoxes
-    juce::ToggleButton enabled, killDry, freeze, followWidth, followRot;
+    juce::ToggleButton enabled, killDry, freeze, followWidth, followRot, duckOn;
     juce::ComboBox dreqApply;
     
     // Sliders/labels - Updated for final 2×16 grid map
     juce::Slider pre, erL, erD, erW, erTime, erToTail, dif, density, md, mr, w, rotation, size, dec,
                  wet, bloom, distance, shimmerAmt, shimmerInt, gateAmt, dreqXoverLo, dreqXoverHi,
-                 followWidthAmt, followRotAmt, outTrim, spare;
+                 followWidthAmt, followRotAmt, outTrim;
     juce::Label  preV, erLV, erDV, erWV, erTimeV, erToTailV, difV, densityV, mdV, mrV, wV, rotationV, sizeV, decV,
                  wetV, bloomV, distanceV, shimmerAmtV, shimmerIntV, gateAmtV, dreqXoverLoV, dreqXoverHiV,
-                 followWidthAmtV, followRotAmtV, outTrimV, spareV;
+                 followWidthAmtV, followRotAmtV, outTrimV;
 };
 
 

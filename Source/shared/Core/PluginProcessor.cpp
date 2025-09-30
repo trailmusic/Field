@@ -326,6 +326,7 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     // Reverb params ingress (APVTS -> HostParams)
     p.rvEnabled       = apvts.getRawParameterValue (ReverbParamIDs::enabled)->load() > 0.5f;
     p.rvKillDry       = apvts.getRawParameterValue (ReverbParamIDs::killDry)->load() > 0.5f;
+    p.rvDuckOn        = apvts.getRawParameterValue (ReverbParamIDs::duckOn)->load() > 0.5f;
     p.rvPreDelayMs    = apvts.getRawParameterValue (ReverbParamIDs::preDelayMs)->load();
     p.rvDecaySec      = apvts.getRawParameterValue (ReverbParamIDs::decaySec)->load();
     p.rvDensityPct    = apvts.getRawParameterValue (ReverbParamIDs::densityPct)->load();
@@ -1657,6 +1658,7 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.airFreq   = (Sample) hp.airFreq;
     // Ingest Reverb ducking params (Sample domain)
     params.rvEnabled      = hp.rvEnabled;
+    params.rvDuckOn       = hp.rvDuckOn;
     params.rvWet01        = (Sample) hp.rvWet01;
     params.rvDuckDepthDb  = (Sample) hp.rvDuckDepthDb;
     params.rvDuckThrDb    = (Sample) hp.rvDuckThrDb;
@@ -1806,6 +1808,7 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     // Reverb (cast to Sample)
     params.rvEnabled       = hp.rvEnabled;
     params.rvKillDry       = hp.rvKillDry;
+    params.rvDuckOn        = hp.rvDuckOn;
     params.rvPreDelayMs    = (Sample) hp.rvPreDelayMs;
     params.rvDecaySec      = (Sample) hp.rvDecaySec;
     params.rvDensityPct    = (Sample) hp.rvDensityPct;
