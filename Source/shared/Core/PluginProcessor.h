@@ -63,7 +63,6 @@ namespace IDs {
     static constexpr const char* satDriveDb = "sat_drive_db";
     static constexpr const char* satMix     = "sat_mix";
     static constexpr const char* bypass     = "bypass";
-    // OLD REVERB SYSTEM REMOVED - Now using new reverb system in Source/reverb/
     static constexpr const char* airDb      = "air_db";
     static constexpr const char* bassDb     = "bass_db";
     static constexpr const char* ducking    = "ducking";
@@ -73,7 +72,6 @@ namespace IDs {
     static constexpr const char* duckAtkMs  = "duck_attack_ms";
     static constexpr const char* duckRelMs  = "duck_release_ms";
     static constexpr const char* duckLAms   = "duck_lookahead_ms";
-    static constexpr const char* duckRmsMs  = "duck_rms_ms";
     static constexpr const char* duckTarget = "duck_target"; // 0 WetOnly, 1 Global
     static constexpr const char* osMode     = "os_mode";      // 0 Off, 1=2x, 2=4x
     static constexpr const char* splitMode  = "split_mode";   // 0 normal, 1 split
@@ -276,7 +274,6 @@ struct VisBus
 
 // Forward decls used by the templated chain / processor snapshot
 struct HostParams;           // Double-domain snapshot built each block in the processor
-struct FloatReverbAdapter;   // Float-only reverb wrapper for the double chain
 
 // ===============================
 // Templated DSP Chain (declaration)
@@ -412,8 +409,6 @@ private:
     // Nonlinear / dynamics / FX
     void applySaturationOnBlock (juce::dsp::AudioBlock<Sample> b, Sample driveLin);
     void applySaturation (Block, Sample driveLin, Sample mix01, int osModeIndex);
-    void applySpaceAlgorithm (Block, Sample depth01, int algo);
-    void renderSpaceWet (juce::AudioBuffer<Sample>& wet);
     
     // Dynamic EQ
     void applyDynamicEq (Block audioBlock);
@@ -453,14 +448,12 @@ private:
     // Width Designer: side-only tilt filters
     juce::dsp::IIR::Filter<Sample>            sTiltLow, sTiltHigh;
 
-    // Legacy JUCE reverb code removed - using custom ReverbEngine system
     // Preallocated buses to avoid per-block allocations
     juce::AudioBuffer<Sample>            dryBusBuf;
     juce::AudioBuffer<Sample>            wetBusBuf;
     juce::AudioBuffer<Sample>            delayWetBuf; // delay wet-only bus
     // Smoothed wet mix (per-sample ramp)
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> wetMixSmoothed;
-    // Legacy smoothed reverb parameters removed - using custom ReverbEngine system
 
     // New lightweight reverb state (no JUCE Reverb): simple dual delay feedback per channel
     std::vector<Sample> rvDelayL, rvDelayR;
@@ -680,7 +673,6 @@ private:
         Sample duckAttackMs{};
         Sample duckReleaseMs{};
         Sample duckLookaheadMs{};
-        Sample duckRmsMs{};
         int    duckTarget{}; // 0=WetOnly, 1=Global
         Sample tiltFreq{}, scoopFreq{}, bassFreq{}, airFreq{};
         // Imaging additions (Sample domain)
@@ -743,7 +735,6 @@ private:
         // Reverb (Sample domain)
         bool   rvEnabled{};
         bool   rvKillDry{};
-        int    rvAlgo{};
         Sample rvPreDelayMs{};
         Sample rvDecaySec{};
         Sample rvDensityPct{};
@@ -758,9 +749,6 @@ private:
         Sample rvHpfHz{};
         Sample rvLpfHz{};
         Sample rvTiltDb{};
-        Sample rvDreqLowX{};
-        Sample rvDreqMidX{};
-        Sample rvDreqHighX{};
         Sample rvWidthPct{};
         Sample rvWet01{};
         Sample rvOutTrimDb{};
@@ -771,8 +759,6 @@ private:
         Sample rvDuckRatio{};
         Sample rvDuckAtkMs{};
         Sample rvDuckRelMs{};
-        Sample rvDuckLaMs{};
-        Sample rvDuckRmsMs{};
         
         // Additional reverb ducking parameters
         Sample rvDuckDepth{};
@@ -833,7 +819,6 @@ struct HostParams
     double duckAttackMs{};
     double duckReleaseMs{};
     double duckLookaheadMs{};
-    double duckRmsMs{};
     int    duckTarget{}; // 0 wet, 1 global
     double tiltFreq{}, scoopFreq{}, bassFreq{}, airFreq{};
     // Imaging additions
@@ -861,7 +846,6 @@ struct HostParams
     // Reverb (new)
     bool   rvEnabled{};            // enabled
     bool   rvKillDry{};            // wet only
-    int    rvAlgo{};               // algorithm index
     double rvPreDelayMs{};
     double rvDecaySec{};
     double rvDensityPct{};
@@ -876,9 +860,6 @@ struct HostParams
     double rvHpfHz{};
     double rvLpfHz{};
     double rvTiltDb{};
-    double rvDreqLowX{};
-    double rvDreqMidX{};
-    double rvDreqHighX{};
     double rvWidthPct{};
     double rvWet01{};
     double rvOutTrimDb{};
@@ -889,8 +870,6 @@ struct HostParams
     double rvDuckRatio{};
     double rvDuckAtkMs{};
     double rvDuckRelMs{};
-    double rvDuckLaMs{};
-    double rvDuckRmsMs{};
         
     // Delay parameters
     bool   delayEnabled{};

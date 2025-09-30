@@ -16,15 +16,12 @@ static inline float getParam (juce::AudioProcessorValueTreeState& apvts, const c
     jassertfalse; return 0.0f;
 }
 
-// ===== [REVERB] Macro voicing helper =====
-// Why: map Room/Plate/Hall + Depth to JUCE Reverb params
 static inline float lerpFloat (float a, float b, float t)
 {
     t = juce::jlimit (0.0f, 1.0f, t);
     return a + (b - a) * t;
 }
 
-// Roughly map damping cutoff in Hz to JUCE Reverb damping [0..1]
 // (not perceptual; placeholder until full engine is integrated)
 static inline float mapDampHzToParam01 (float hz)
 {
@@ -32,12 +29,10 @@ static inline float mapDampHzToParam01 (float hz)
     return juce::jlimit (0.0f, 1.0f, (hz - lo) / (hi - lo));
 }
 
-// OLD REVERB SYSTEM REMOVED - Now using new reverb system in Source/reverb/
 
 // HostParams is declared in PluginProcessor.h
 
 // ================================================================
-// Legacy FloatReverbAdapter removed - using custom ReverbEngine system
 
 // ================================================================
 // MyPluginAudioProcessor
@@ -244,10 +239,8 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.satDriveDb = getParam(apvts, IDs::satDriveDb);
     p.satMix     = getParam(apvts, IDs::satMix);
     p.bypass     = (getParam(apvts, IDs::bypass) >= 0.5f);
-    // OLD REVERB SYSTEM REMOVED
     p.airDb    = getParam(apvts, IDs::airDb);
     p.bassDb   = getParam(apvts, IDs::bassDb);
-    // Legacy ducking retained for Delay duck link, but Reverb uses ReverbIDs now
     p.ducking  = getParam(apvts, IDs::ducking);
     p.duckThresholdDb = getParam(apvts, IDs::duckThrDb);
     p.duckKneeDb      = getParam(apvts, IDs::duckKneeDb);
@@ -255,7 +248,6 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.duckAttackMs    = getParam(apvts, IDs::duckAtkMs);
     p.duckReleaseMs   = getParam(apvts, IDs::duckRelMs);
     p.duckLookaheadMs = getParam(apvts, IDs::duckLAms);
-    p.duckRmsMs       = getParam(apvts, IDs::duckRmsMs);
     p.duckTarget      = (int) apvts.getParameterAsValue (IDs::duckTarget).getValue();
     p.osMode   = (int) apvts.getParameterAsValue (IDs::osMode).getValue();
     p.splitMode= (bool) apvts.getParameterAsValue (IDs::splitMode).getValue();
@@ -334,7 +326,6 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     // Reverb params ingress (APVTS -> HostParams)
     p.rvEnabled       = apvts.getRawParameterValue (ReverbParamIDs::enabled)->load() > 0.5f;
     p.rvKillDry       = apvts.getRawParameterValue (ReverbParamIDs::killDry)->load() > 0.5f;
-    // p.rvAlgo removed - algo parameter no longer exists
     p.rvPreDelayMs    = apvts.getRawParameterValue (ReverbParamIDs::preDelayMs)->load();
     p.rvDecaySec      = apvts.getRawParameterValue (ReverbParamIDs::decaySec)->load();
     p.rvDensityPct    = apvts.getRawParameterValue (ReverbParamIDs::densityPct)->load();
@@ -346,11 +337,6 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.rvErDensityPct  = apvts.getRawParameterValue (ReverbParamIDs::erDensityPct)->load();
     p.rvErWidthPct    = apvts.getRawParameterValue (ReverbParamIDs::erWidthPct)->load();
     p.rvErToTailPct   = apvts.getRawParameterValue (ReverbParamIDs::erToTailPct)->load();
-    // Old knob-based EQ controls removed - now handled by DynEQ pane
-    // Note: Some DR-EQ parameters may need to be updated based on new parameter structure
-    // p.rvDreqLowX      = apvts.getRawParameterValue (ReverbParamIDs::dreqLowX)->load();
-    // p.rvDreqMidX      = apvts.getRawParameterValue (ReverbParamIDs::dreqMidX)->load();
-    // p.rvDreqHighX     = apvts.getRawParameterValue (ReverbParamIDs::dreqHighX)->load();
     p.rvWidthPct      = apvts.getRawParameterValue (ReverbParamIDs::widthPct)->load();
     p.rvWet01         = apvts.getRawParameterValue (ReverbParamIDs::wetMix01)->load();
     // Reverb ducking ingress
@@ -360,9 +346,6 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.rvDuckRatio     = apvts.getRawParameterValue (ReverbParamIDs::duckRatio)->load();
     p.rvDuckAtkMs     = apvts.getRawParameterValue (ReverbParamIDs::duckAtkMs)->load();
     p.rvDuckRelMs     = apvts.getRawParameterValue (ReverbParamIDs::duckRelMs)->load();
-    // Note: duckLaMs and duckRmsMs were removed in new parameter system
-    // p.rvDuckLaMs      = apvts.getRawParameterValue (ReverbParamIDs::duckLaMs)->load();
-    // p.rvDuckRmsMs     = apvts.getRawParameterValue (ReverbParamIDs::duckRmsMs)->load();
     p.rvOutTrimDb     = apvts.getRawParameterValue (ReverbParamIDs::outTrimDb)->load();
     
     // Dynamic EQ parameters
@@ -955,7 +938,6 @@ void MyPluginAudioProcessor::setStateInformation (const void* data, int sizeInBy
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes)) {
         apvts.replaceState (juce::ValueTree::fromXml (*xml));
-        // Migration: map legacy duck depth to Reverb Engine duck depth if engine depth is zero
         if (auto* legacy = apvts.getRawParameterValue (IDs::ducking))
         if (auto* rvDepth = apvts.getRawParameterValue (ReverbParamIDs::duckDepthDb))
         {
@@ -1142,7 +1124,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::satDriveDb, 1 }, "Saturation Drive (dB)", juce::NormalisableRange<float> (0.0f, 36.0f, 0.01f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::satMix, 1 }, "Saturation Mix", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 1.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::bypass, 1 }, "Bypass", juce::NormalisableRange<float> (0.0f, 1.0f, 1.0f), 0.0f));
-    // OLD REVERB SYSTEM REMOVED - Now using new reverb system in Source/reverb/
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::airDb, 1 }, "Air", juce::NormalisableRange<float> (0.0f, 6.0f, 0.01f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::bassDb, 1 }, "Bass", juce::NormalisableRange<float> (-6.0f, 6.0f, 0.01f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::ducking, 1 }, "Ducking", juce::NormalisableRange<float> (0.0f, 1.0f, 0.01f), 0.0f));
@@ -1152,7 +1133,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckAtkMs, 1 },  "Duck Attack (ms)",    juce::NormalisableRange<float> (1.0f, 80.0f, 0.01f), 12.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckRelMs, 1 },  "Duck Release (ms)",   juce::NormalisableRange<float> (20.0f, 800.0f, 0.1f), 180.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckLAms, 1 },   "Duck Lookahead (ms)", juce::NormalisableRange<float> (0.0f, 20.0f, 0.01f), 5.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::duckRmsMs, 1 },  "Duck RMS (ms)",       juce::NormalisableRange<float> (2.0f, 50.0f, 0.01f), 15.0f));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::duckTarget, 1 }, "Duck Target", juce::StringArray { "WetOnly", "Global" }, 0));
     // Quality / Precision user controls
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::quality, 1 },   "Quality",   juce::StringArray { "Eco", "Standard", "High" }, 1));
@@ -1566,9 +1546,7 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     lrLpL.setCutoffFrequency ((Sample) juce::jmin<Sample> ((Sample)20000, (Sample)(sr*0.49)));
     lrLpR.setCutoffFrequency ((Sample) juce::jmin<Sample> ((Sample)20000, (Sample)(sr*0.49)));
 
-    // Legacy JUCE reverb initialization removed - using custom ReverbEngine system
 
-    // Legacy JUCE reverb parameters removed - using custom ReverbEngine system
 
     // No OS by default
     oversampling.reset();
@@ -1585,7 +1563,6 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     wetBusBuf.setSize ((int) spec.numChannels, (int) spec.maximumBlockSize);
     const double smoothMs = 0.02;
     wetMixSmoothed.reset (sr, smoothMs);
-    // Legacy reverb parameter smoothing removed - using custom ReverbEngine system
 
     // Prepare linear-phase convolver (allocated lazily on first use)
     if (! linConvolver)
@@ -1624,7 +1601,6 @@ void FieldChain<Sample>::reset()
     lowShelf.reset(); highShelf.reset(); airFilter.reset(); bassFilter.reset(); scoopFilter.reset();
     dcBlocker.reset();
     if (oversampling) oversampling->reset();
-    // Legacy JUCE reverb reset removed - using custom ReverbEngine system
 }
 
 // --------- parameter ingress ---------
@@ -1670,7 +1646,6 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.satDriveLin = (Sample) juce::Decibels::decibelsToGain (hp.satDriveDb);
     params.satMix    = (Sample) juce::jlimit (0.0, 1.0, hp.satMix);
     params.bypass    = hp.bypass;
-    // OLD REVERB SYSTEM REMOVED
     params.airDb     = (Sample) hp.airDb;
     params.bassDb    = (Sample) hp.bassDb;
     params.ducking   = (Sample) juce::jlimit (0.0, 1.0, hp.ducking);
@@ -1689,8 +1664,6 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.rvDuckRatio    = (Sample) hp.rvDuckRatio;
     params.rvDuckAtkMs    = (Sample) hp.rvDuckAtkMs;
     params.rvDuckRelMs    = (Sample) hp.rvDuckRelMs;
-    params.rvDuckLaMs     = (Sample) hp.rvDuckLaMs;
-    params.rvDuckRmsMs    = (Sample) hp.rvDuckRmsMs;
     // Push smoothed targets
     tiltDbSm.setTargetValue   (params.tiltDb);
     tiltFreqSm.setTargetValue (juce::jlimit ((Sample) 50,  (Sample) 5000, params.tiltFreq));
@@ -1732,7 +1705,6 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.duckAttackMs    = (Sample) hp.duckAttackMs;
     params.duckReleaseMs   = (Sample) hp.duckReleaseMs;
     params.duckLookaheadMs = (Sample) hp.duckLookaheadMs;
-    params.duckRmsMs       = (Sample) hp.duckRmsMs;
     params.duckTarget      = hp.duckTarget;
     // Imaging
     params.xoverLoHz = (Sample) juce::jlimit (40.0, 400.0, hp.xoverLoHz);
@@ -1834,7 +1806,6 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     // Reverb (cast to Sample)
     params.rvEnabled       = hp.rvEnabled;
     params.rvKillDry       = hp.rvKillDry;
-    params.rvAlgo          = hp.rvAlgo;
     params.rvPreDelayMs    = (Sample) hp.rvPreDelayMs;
     params.rvDecaySec      = (Sample) hp.rvDecaySec;
     params.rvDensityPct    = (Sample) hp.rvDensityPct;
@@ -1847,9 +1818,6 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.rvErWidthPct    = (Sample) hp.rvErWidthPct;
     params.rvErToTailPct   = (Sample) hp.rvErToTailPct;
     // Old knob-based EQ controls removed - now handled by DynEQ pane
-    params.rvDreqLowX      = (Sample) hp.rvDreqLowX;
-    params.rvDreqMidX      = (Sample) hp.rvDreqMidX;
-    params.rvDreqHighX     = (Sample) hp.rvDreqHighX;
     params.rvWidthPct      = (Sample) hp.rvWidthPct;
     params.rvWet01         = (Sample) hp.rvWet01;
     params.rvOutTrimDb     = (Sample) hp.rvOutTrimDb;
@@ -2460,11 +2428,8 @@ void FieldChain<Sample>::applySaturation (Block block, Sample driveLin, Sample m
 }
 
  
-// Reverb algorithms (Room/Plate/Hall) macro mapping, parallel wet return
 
-// OLD REVERB SYSTEM REMOVED - Now using new reverb system in Source/reverb/
 
-// OLD REVERB SYSTEM REMOVED - Now using new reverb system in Source/reverb/
 
 // --------- main process (Sample) ---------
 
@@ -2779,7 +2744,6 @@ void FieldChain<Sample>::process (Block block)
         }
     }
 
-    // OLD REVERB SYSTEM REMOVED - Now using new reverb system in Source/reverb/
 
     // Build dry (post tone/imaging) and wet buses (preallocated)
     const int ch = (int) block.getNumChannels();
@@ -2796,7 +2760,6 @@ void FieldChain<Sample>::process (Block block)
         std::memcpy (dst, src, sizeof (Sample) * (size_t) n);
         wetBusBuf.clear (c, 0, n);
     }
-    // Render reverb into wet (100% wet) - removed old reverb system
 
     // (moved) LF mono is applied after final dry/wet mix
 
@@ -2876,8 +2839,6 @@ void FieldChain<Sample>::process (Block block)
         rvParams.duckRelMs = params.rvDuckReleaseMs;
         rvParams.duckThrDb = params.rvDuckThresholdDb;
         rvParams.duckRatio = params.rvDuckRatio;
-        rvParams.duckLaMs = params.rvDuckLookaheadMs;
-        rvParams.duckRmsMs = params.rvDuckRmsMs;
         reverbEngine.setParams(rvParams);
         
         // Process reverb
@@ -3002,8 +2963,6 @@ void FieldChain<Sample>::process (Block block)
     const float duckRatio   = (float) params.rvDuckRatio;
     const float duckAtkMs   = (float) params.rvDuckAtkMs;
     const float duckRelMs   = (float) params.rvDuckRelMs;
-    const float duckLaMs    = (float) params.rvDuckLaMs;
-    const float duckRmsMs   = (float) params.rvDuckRmsMs;
     if (duckDepthDb > 0.001f && spaceWetActive)
     {
         fielddsp::DuckParams p;
@@ -3013,8 +2972,8 @@ void FieldChain<Sample>::process (Block block)
         p.ratio       = duckRatio;
         p.attackMs    = duckAtkMs;
         p.releaseMs   = duckRelMs;
-        p.lookaheadMs = duckLaMs;
-        p.rmsMs       = duckRmsMs;
+        p.lookaheadMs = 5.0f;  // Default lookahead
+        p.rmsMs       = 15.0f; // Default RMS
         p.bypass      = (p.maxDepthDb <= 0.001f);
         ducker.setParams (p);
 
