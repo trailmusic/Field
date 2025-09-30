@@ -1960,9 +1960,10 @@ void MyComponent::~MyComponent()
 - `juce::dsp::LinkwitzRileyFilter` - Standard crossover filters
 - `juce::dsp::IIR::Filter` - Standard IIR filters
 - `juce::dsp::StateVariableTPTFilter` - Standard state variable filters
-- `juce::dsp::Reverb` - Standard JUCE reverb
 
 **Rule**: Custom engines provide unique sound characteristics, while JUCE DSP provides standard, reliable processing.
+
+**Note**: Legacy JUCE reverb code exists in PluginProcessor but is not used - the new ReverbEngine system is active.
 
 ---
 
