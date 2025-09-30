@@ -1,7 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
-#include "ZoomState.h"
-#include "ZoomControl.h"
+#include "ui/Controls/ZoomState.h"
+#include "ui/Controls/ZoomControl.h"
 #include "Core/IconSystem.h"
 
 // Side rail container for Dynamic EQ zoom control

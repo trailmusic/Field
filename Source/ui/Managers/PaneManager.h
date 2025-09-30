@@ -1,6 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
-#include "../Tabs/DynEqTab.h"
+#include "dynEQ/DynEqTab.h"
 #include "xy/XYTab.h"
 #include "imager/ImagerTab.h"
 #include "band/BandTab.h"

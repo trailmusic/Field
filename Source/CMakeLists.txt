@@ -91,7 +91,7 @@ set(SRC
     delay/DelayVisuals.h
     delay/DelayControlsPane.h
     delay/DelayTab.h
-    ui/Tabs/DynEqTab.h
+    dynEq/DynEqTab.h
     dynEQ/DynamicEqParamIDs.h
     dynEQ/DynamicEqState.h
     dynEQ/DynamicEqState.cpp
