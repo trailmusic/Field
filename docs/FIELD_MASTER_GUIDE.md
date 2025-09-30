@@ -3584,7 +3584,7 @@ The logo provides consistent branding across the interface while maintaining the
 - **Conditional add/remove in layout paths**; verify no creation/reparenting in timers/drag
 - **Excessive timer rates**: `startTimerHz(60)` in several components; target 15–30 Hz per rules
 - **Opaqueness**: defer changes to visuals. Identify candidates only (components that fully paint their backgrounds) and revisit later
-- **Remove legacy 4-row assumptions**; tabs now use per‑pane 2×16 grids with zero gaps
+- **Modern feature-based organization**; each feature uses 2×16 grids with zero gaps
 - **Widespread `reduced(...)` use**; ensure no outer reductions on grid containers; grids remain gapless
 - **Ocean-harmonized metallic system** implemented via `FieldLNF::paintMetal()` with proper caching and performance optimization
 
@@ -3593,7 +3593,7 @@ The logo provides consistent branding across the interface while maintaining the
 - **Attachments**: created once and owned long-term; none created in `resized/timer/drag`
 - **Paint**: no heavy per-pixel/random work; textures cached; Ocean-harmonized metallic rendering via `FieldLNF::paintMetal()`; repaint minimal region; `setOpaque(true)` when fully painting
 - **Timers**: 15–30 Hz; no layout or heavy work in callbacks
-- **Layout**: per‑tab flat 2×16 grids; zero gaps; no outer `reduced(...)`; DUCK strip metrics match
+- **Layout**: per‑feature flat 2×16 grids; zero gaps; no outer `reduced(...)`; DUCK strip metrics match
 - **Band**: verify Designer overlay removed from `ImagerPane`; seven Designer controls live in `BandControlsPane` with metallic blue; blanks filled
 - **Theme**: no hardcoded hex/`Colours::`; colours derived from `FieldLNF::theme`; Ocean-harmonized metallic system via `FieldLNF::paintMetal()` with `theme.metal.*` variants; correct metallic scope and border flags
 
@@ -3638,14 +3638,14 @@ The logo provides consistent branding across the interface while maintaining the
 - [ ] Abbreviations per spec (ER WID, TL WID, ER DEN, ...)
 - [ ] DUCK strip metrics match main knobs
 - [ ] Managed value labels; captions and precision correct
-- [ ] Theme-only colours; Ocean-harmonized metallic system via `FieldLNF::paintMetal()` with `theme.metal.reverb`; no metallic tint on Group 2
+- [ ] Theme-only colours; Ocean-harmonized metallic system via `FieldLNF::paintMetal()` with `theme.metal.reverb`
 - [ ] Timers within 15–30 Hz; no layout in callbacks
 
 #### **Motion UI**
 - `Source/features/motion/MotionPanel.*`
 
 **Checklist:**
-- [ ] Lives in Group 1 only; flat grid; zero gaps
+- [ ] Lives in feature tabs only; flat grid; zero gaps
 - [ ] Theme: `motionPanelTop/motionPanelBot/motionBorder`; migrate to `motionPurpleBorder`; Ocean-harmonized metallic system via `FieldLNF::paintMetal()` with `theme.metal.motion`
 - [ ] Managed value labels; captions present for LNF rendering
 - [ ] No hardcoded colours; cache heavy paints
@@ -3675,7 +3675,7 @@ The logo provides consistent branding across the interface while maintaining the
 - `Source/features/machine/ParamPatch.h`
 
 **Checklist:**
-- [ ] Flat layouts; no outer `reduced(...)` on Group 2 screens
+- [ ] Flat layouts; no outer `reduced(...)` on feature screens
 - [ ] No add/remove/reparent in timers/drag; toggle visibility instead
 - [ ] Theme-only colours; Ocean-harmonized metallic system via `FieldLNF::paintMetal()` where appropriate; set opaque where fully painted
 
@@ -3694,7 +3694,7 @@ The logo provides consistent branding across the interface while maintaining the
 - [ ] Remove `placeLabelBelow` path; enforce Managed labels in all `KnobCell` usages
 - [x] Normalize timer rates to 15–30 Hz where feasible (Motion/Delay visuals at 60 Hz require profiling justification)
 - [ ] Audit and set `setOpaque(true)` where applicable
-- [ ] Verify Group 2 layouts have no outer `reduced(...)`; keep zero gaps
+- [ ] Verify feature layouts have no outer `reduced(...)`; keep zero gaps
 - [ ] Ensure texture caching for Ocean-harmonized metallic/brush/noise where used via `FieldLNF::paintMetal()`
 - [ ] Confirm overlay children are built once and not re-parented during slide
 - [ ] Ensure overlay grids reflow only on size/scale change (dirty flag)
@@ -3705,7 +3705,7 @@ The logo provides consistent branding across the interface while maintaining the
 - **Interaction sweep**: fast drags; confirm no creation/reparenting in logs
 - **Timer sweep**: disable meters/animations → baseline; re-enable at 15–30 Hz; confirm stability
 - **Adaptive burst sweep**: begin dragging any control; confirm editor timer rises to ~60 Hz during interaction and returns to ~30 Hz within ~150 ms after release; ensure CPU drops back accordingly
-- **Group 2 overlay**: toggle repeatedly and verify smooth slide with minimal repaints; check logs show no add/remove/reparent during slide and no `performLayout()` calls from the timer
+- **Feature overlays**: toggle repeatedly and verify smooth slide with minimal repaints; check logs show no add/remove/reparent during slide and no `performLayout()` calls from the timer
 
 ---
 
@@ -3984,7 +3984,7 @@ This system ensures consistent visual language across all UI components while ma
 - Minimum width floor uses `Layout::BP_WIDE` (wide breakpoint) or calculated content minimum, whichever is larger. Initial size prefers baseWidth/baseHeight over content min.
 
 ### **Containers (Editor-Level)**
-- `leftContentContainer`: holds panes (top) and both control groups (rows) below. All Group 1/2 controls are parented here and use container-local coordinates starting at x=0.
+- `leftContentContainer`: holds panes (top) and feature controls below. All feature controls are parented here and use container-local coordinates starting at x=0.
 - `metersContainer`: sibling at right; meters are children here (no overlap with left content). Width is derived from grid metrics; heights are local to the container.
 - Stacking: panes at the top of the left container, then 4 uniform control rows directly below; no left padding beyond container border.
 
@@ -4178,37 +4178,34 @@ if (auto* p = apvts.getParameter("width")) {
 
 ---
 
-## **12) Group 2 Panel System**
+## **12) Feature-Based Control System**
 
-### **Panel Architecture**
-- Group 2 panel (`bottomAltPanel`) is a sliding overlay above the four control rows (inside `leftContentContainer`).
-- Panel uses rounded corners (6px radius) via `g.fillRoundedRectangle()`.
-- Base bounds match the exact 4‑row rectangle of Group 1 (container‑local). The panel is mounted once as a child of `leftContentContainer`.
-- Panel slides in/out with smooth animation driven by a single timer; slide progress is `bottomAltSlide01`. During slide, the overlay moves only; children are not reflowed.
+### **Modern Architecture**
+- Each feature (band, delay, dynEq, imager, machine, motion, phase, reverb, xy) has its own dedicated tab with 2x16 control grid.
+- **Feature organization**: Controls are organized by functionality rather than arbitrary groups.
+- All feature controls use consistent 2x16 grid layout with zero gaps and responsive metrics.
 
-### **Group Separation**
-- **Group 1**: Main flat grid (4×16) of controls; always visible below panes.
-- **Group 2**: Delay + Reverb flat grids (8 columns each) presented in the sliding panel; shares the same rows rectangle as Group 1.
-- Motion Engine lives only in Group 1's grid; it is not duplicated in Group 2.
+### **Feature Separation**
+- **Feature tabs**: Each feature has its own dedicated tab with specialized controls.
+- **Consistent layout**: All features use 2x16 grid with `knobPx = Layout::knobPx(L)`, `valuePx`, `labelGap` via `Layout::dp`.
+- **Feature isolation**: Each feature is self-contained with its own controls and logic.
 
-### **Grid Fit (Group 2)**
-- Cell width is derived from available width: `cellW = min(cellWTarget, availableWidth / 16)` so Delay (8) + Reverb (8) columns fit the panel without horizontal scroll.
-- Delay and Reverb grids use zero gaps; metrics mirror Group 1: `knobPx = Layout::knobPx(L)`, `valuePx`, `labelGap` via `Layout::dp`.
+### **Grid Metrics**
+- **Zero gaps**: All control grids use zero column and row gaps for clean appearance.
+- **Responsive layout**: Grid adapts to container width with proper component sizing.
+- **Performance**: Efficient rendering with minimal repaints during interactions.
+- **Visual consistency**: All features use consistent styling and theming.
 
 ### **Layout Rules**
-- Base bounds: `overlayLocalRect = leftContentContainer.getLocalBounds().removeFromBottom(totalRowsH)`; no extra padding. Delay group at `(x=0,y=0)`, Reverb immediately to the right.
-- The overlay children (Delay/Reverb cells) are created once and added to `bottomAltPanel` once. Reflow of their grids happens only when the editor size/scale changes.
-- All positioning uses `Layout::dp()`; rows are uniform height: `rowH = knobPx + labelGap + valuePx`.
+- **Feature-specific controls**: Each feature has controls tailored to its functionality.
+- **Consistent metrics**: All features use the same grid metrics and responsive design.
+- **Performance optimization**: Minimal repaints during interactions and layout changes.
 
-### **Z-Order Management**
-- Panel is a child of `leftContentContainer` (above row controls); meters live in `metersContainer`.
-- Panel intercepts mouse clicks when active: `setInterceptsMouseClicks(true, false)`; hidden when fully retracted.
-
-### **Animation & State**
-- Single animation driver: the editor timer advances `bottomAltSlide01` toward the target (`bottomAltTargetOn`). No slide advancement inside layout.
-- Cosine easing: `effSlide = 0.5f - 0.5f * cos(π * t0)` with a small appearance threshold to avoid flicker.
-- Move-only animation: during slide, only the `bottomAltPanel` Y is adjusted between cached `overlayHiddenBaseline` and `overlayActiveBaseline`. No per-frame `Grid::performLayout()`.
-- Overlay layout caching: recompute `overlayLocalRect` and grid layouts only when size/scale changes; mark dirty via a flag.
+### **Integration Points**
+- **Feature isolation**: Each feature is self-contained with its own controls and logic.
+- **Layout management**: Grid reflow only on size/scale changes.
+- **Visual consistency**: All features use consistent styling and theming.
+- **Performance optimization**: Minimal repaints during interactions.
 
 ---
 
@@ -4216,8 +4213,8 @@ if (auto* p = apvts.getParameter("width")) {
 
 - Four uniform rows beneath panes, with row height:
   - `rowH = knobPx(L) + labelGap + valuePx` (all via `Layout::dp(scaleFactor)`).
-- Zero column and row gaps inside all control grids (Group 1 and Group 2), consistent with UI rules.
-- Group 1 uses a flat 4×16 grid; Group 2 uses two 8‑column grids (Delay, Reverb) that fit the panel width. [Legacy - replaced by per‑tab 2×16 grids]
+- Zero column and row gaps inside all control grids, consistent with UI rules.
+- Each feature uses a flat 2×16 grid with specialized controls for that feature's functionality.
 
 ---
 
@@ -4225,7 +4222,7 @@ if (auto* p = apvts.getParameter("width")) {
 
 ### **Ownership & Switching**
 - Tabs own visuals and controls; switching is visibility‑only (no create/destroy churn).
-- Legacy Group 1/2 rows are retired. Each tab standardizes on a 2×16 flat grid of controls.
+- Modern feature-based organization. Each feature standardizes on a 2×16 flat grid of controls.
 
 ### **Per‑Tab Layout**
 - Delay, Reverb, Motion, Band, XY each host their own 2×16 grid (styled empty `KnobCell` for blanks).
