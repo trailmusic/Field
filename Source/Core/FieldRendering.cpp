@@ -882,17 +882,77 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
                   centre.x + radius * v.x, centre.y + radius * v.y, 1.6f);
     }
 
-    void drawTabPill(juce::Graphics& g, juce::Rectangle<float> r, bool active, const FieldTheme& theme)
+    void drawTabPill(juce::Graphics& g, juce::Rectangle<float> r, bool active, bool hover, const FieldTheme& theme)
     {
+        const float corner = r.getHeight() * 0.5f;
+        
         if (active)
         {
-            g.setColour(theme.accent);
-            g.fillRoundedRectangle(r, r.getHeight() * 0.5f);
+            // Active tab - use metallic system with inverted gradient (darker at top)
+            auto metallicKind = MetallicKind::Neutral; // Use neutral metallic for tabs
+            auto metalStops = theme.metal.neutral;
+            
+            // Create inverted gradient (darker at top, lighter at bottom)
+            juce::ColourGradient gradient(metalStops.bottom, r.getX(), r.getY(),
+                                         metalStops.top, r.getX(), r.getBottom(), false);
+            
+            // Apply tint if specified
+            if (metalStops.tintAlpha > 0.0f)
+            {
+                gradient.addColour(0.5f, metalStops.tint.withAlpha(metalStops.tintAlpha));
+            }
+            
+            g.setGradientFill(gradient);
+            g.fillRoundedRectangle(r, corner);
+            
+            // Add hover effects for active tab
+            if (hover)
+            {
+                // Enhanced metallic colors on hover
+                juce::ColourGradient hoverGradient(metalStops.bottom.brighter(0.1f), r.getX(), r.getY(),
+                                                   metalStops.top.brighter(0.1f), r.getX(), r.getBottom(), false);
+                g.setGradientFill(hoverGradient);
+                g.fillRoundedRectangle(r, corner);
+                
+                // Glow effect
+                g.setColour(theme.accent.withAlpha(0.15f));
+                g.drawRoundedRectangle(r.reduced(1.0f), corner, 1.5f);
+            }
+            
+            // Add border with accent color
+            g.setColour(theme.accent.withAlpha(hover ? 0.9f : 0.8f));
+            g.drawRoundedRectangle(r, corner, hover ? 2.0f : 1.5f);
         }
         else
         {
-            g.setColour(theme.meters.panelDark);
-            g.fillRoundedRectangle(r, r.getHeight() * 0.5f);
+            // Inactive tab - use darker metallic with inverted gradient
+            auto metallicKind = MetallicKind::Neutral;
+            auto metalStops = theme.metal.neutral;
+            
+            // Create darker, more subtle inverted gradient
+            juce::ColourGradient gradient(metalStops.bottom.darker(0.3f), r.getX(), r.getY(),
+                                         metalStops.top.darker(0.1f), r.getX(), r.getBottom(), false);
+            
+            g.setGradientFill(gradient);
+            g.fillRoundedRectangle(r, corner);
+            
+            // Add hover effects for inactive tab
+            if (hover)
+            {
+                // Slightly brighter on hover
+                juce::ColourGradient hoverGradient(metalStops.bottom.darker(0.2f), r.getX(), r.getY(),
+                                                   metalStops.top.darker(0.05f), r.getX(), r.getBottom(), false);
+                g.setGradientFill(hoverGradient);
+                g.fillRoundedRectangle(r, corner);
+                
+                // Subtle glow effect
+                g.setColour(theme.accent.withAlpha(0.1f));
+                g.drawRoundedRectangle(r.reduced(1.0f), corner, 1.2f);
+            }
+            
+            // Add subtle border
+            g.setColour(theme.accent.withAlpha(hover ? 0.5f : 0.3f));
+            g.drawRoundedRectangle(r, corner, hover ? 1.5f : 1.0f);
         }
     }
 

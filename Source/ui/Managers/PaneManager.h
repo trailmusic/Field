@@ -563,6 +563,10 @@ public:
                 // Check if this is an analysis/tools tab (Imager or Machine)
                 const bool isAnalysisTab = (id == PaneID::Imager || id == PaneID::Machine);
                 
+                // Detect hover state
+                auto mousePos = getMouseXYRelative();
+                const bool hover = r.contains(mousePos.toFloat());
+                
                 if (auto* lf = dynamic_cast<FieldLNF*> (&getLookAndFeel())) 
                 {
                     // Apply reduced opacity for analysis tabs
@@ -571,7 +575,7 @@ public:
                         g.saveState();
                         g.setOpacity (0.75f); // Reduced opacity for analysis tabs
                     }
-                    lf->drawTabPill (g, rr, on);
+                    lf->drawTabPill (g, rr, on, hover);
                     if (isAnalysisTab)
                     {
                         g.restoreState();

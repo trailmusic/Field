@@ -166,7 +166,7 @@ public:
     void drawGainSlider(juce::Graphics& g, int x, int y, int w, int h, float sliderPosProportional,
                        float rotaryStartAngle, float rotaryEndAngle, float gainDb);
     void drawKnobLabel(juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& text);
-    void drawTabPill(juce::Graphics& g, juce::Rectangle<float> r, bool active) const;
+    void drawTabPill(juce::Graphics& g, juce::Rectangle<float> r, bool active, bool hover = false) const;
 
     // Metallic rendering (delegate to MetallicRenderer)
     static void paintMetal(juce::Graphics& g, const juce::Rectangle<float>& r,

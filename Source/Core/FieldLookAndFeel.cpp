@@ -35,9 +35,9 @@ void FieldLNF::drawKnobLabel(juce::Graphics& g, juce::Rectangle<float> bounds, c
     FieldRendering::drawKnobLabel(g, bounds, text, theme);
 }
 
-void FieldLNF::drawTabPill(juce::Graphics& g, juce::Rectangle<float> r, bool active) const
+void FieldLNF::drawTabPill(juce::Graphics& g, juce::Rectangle<float> r, bool active, bool hover) const
 {
-    FieldRendering::drawTabPill(g, r, active, theme);
+    FieldRendering::drawTabPill(g, r, active, hover, theme);
 }
 
 // Metallic rendering delegates
