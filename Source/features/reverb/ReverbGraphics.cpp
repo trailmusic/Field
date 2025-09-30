@@ -33,8 +33,8 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
         decayRateEQ = std::make_unique<DecayRateEQ>(proc, &getLookAndFeel());
         addAndMakeVisible(*decayRateEQ);
     
-    // Setup view mode buttons
-    setupViewModeButtons();
+    // Setup visualization control panel
+    setupVisualizationControlPanel();
     
     // Start animation timer
     startTimerHz(30);
@@ -94,15 +94,27 @@ void ReverbGraphics::resized()
         duckingFloat->setBounds(duckingBounds);
     }
     
-    // Position view mode buttons in top-left
-    auto buttonArea = bounds.removeFromTop(30).removeFromLeft(200);
-    raysButton.setBounds(buttonArea.removeFromLeft(60));
-    waterfallButton.setBounds(buttonArea.removeFromLeft(70));
-    spectralButton.setBounds(buttonArea.removeFromLeft(70));
-    
-    // Vertical split: EQ panels on left (60%), visualizations on right (40%)
+    // Horizontal split: EQ panels on left (60%), visualization controls on right (40%)
     auto leftArea = bounds.removeFromLeft(bounds.getWidth() * 0.6f);
     auto rightArea = bounds;
+    
+    // Position visualization control panel on the right
+    visualizationControlPanel.setBounds(rightArea);
+    
+    // Layout buttons within the control panel
+    auto buttonArea = rightArea.reduced(10);
+    buttonArea.removeFromTop(25); // Space for title
+    
+    auto buttonHeight = 35;
+    auto buttonSpacing = 8;
+    
+    raysButton.setBounds(buttonArea.removeFromTop(buttonHeight));
+    buttonArea.removeFromTop(buttonSpacing);
+    
+    waterfallButton.setBounds(buttonArea.removeFromTop(buttonHeight));
+    buttonArea.removeFromTop(buttonSpacing);
+    
+    spectralButton.setBounds(buttonArea.removeFromTop(buttonHeight));
     
         // Left side: EQ panels
         if (reverbEQ && decayRateEQ)
@@ -118,16 +130,25 @@ void ReverbGraphics::resized()
     // The visualization content is drawn in paint() method
 }
 
-void ReverbGraphics::setupViewModeButtons()
+void ReverbGraphics::setupVisualizationControlPanel()
 {
-    addAndMakeVisible(raysButton);
-    addAndMakeVisible(waterfallButton);
-    addAndMakeVisible(spectralButton);
+    // Add the visualization control panel as a child component
+    addAndMakeVisible(visualizationControlPanel);
     
+    // Add buttons to the control panel
+    visualizationControlPanel.addAndMakeVisible(raysButton);
+    visualizationControlPanel.addAndMakeVisible(waterfallButton);
+    visualizationControlPanel.addAndMakeVisible(spectralButton);
+    
+    // Set up custom paint for the control panel
+    visualizationControlPanel.setOpaque(true);
+    
+    // Configure button text and styling
     raysButton.setButtonText("Rays");
     waterfallButton.setButtonText("Waterfall");
     spectralButton.setButtonText("Spectral");
     
+    // Set up button callbacks
     raysButton.onClick = [this] { setViewMode(ViewMode::Rays); };
     waterfallButton.onClick = [this] { setViewMode(ViewMode::Waterfall); };
     spectralButton.onClick = [this] { setViewMode(ViewMode::Spectral); };
@@ -136,6 +157,18 @@ void ReverbGraphics::setupViewModeButtons()
     raysButton.setToggleState(true, juce::dontSendNotification);
     waterfallButton.setToggleState(false, juce::dontSendNotification);
     spectralButton.setToggleState(false, juce::dontSendNotification);
+    
+    // Style the buttons with Field theme
+    auto styleButton = [](juce::TextButton& button) {
+        button.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF2D2D2D));
+        button.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xFF4A90E2));
+        button.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFFFFFFFF));
+        button.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFCCCCCC));
+    };
+    
+    styleButton(raysButton);
+    styleButton(waterfallButton);
+    styleButton(spectralButton);
 }
 
 void ReverbGraphics::setViewMode(ViewMode mode)
@@ -367,6 +400,36 @@ void ReverbGraphics::updateDuckingModuleVisibility()
             duckingFloat->toFront(false);
         }
     }
+}
+
+// VisualizationControlPanel paint implementation
+void ReverbGraphics::VisualizationControlPanel::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat();
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
+    
+    const float cr = 8.0f;
+    
+    // Elevation shadow
+    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.2f));
+    else g.setColour(juce::Colour(0x30000000));
+    g.fillRoundedRectangle(bounds.translated(1.0f, 1.0f), cr);
+    
+    // Main background with subtle gradient
+    juce::ColourGradient bgGradient(th.meters.panelDark, 0, 0,
+                                   th.meters.panelDark.darker(0.1f), 0, bounds.getHeight(), false);
+    g.setGradientFill(bgGradient);
+    g.fillRoundedRectangle(bounds, cr);
+    
+    // Border
+    g.setColour(th.sh.withAlpha(0.6f));
+    g.drawRoundedRectangle(bounds, cr, 1.0f);
+    
+    // Title
+    g.setColour(th.text);
+    g.setFont(juce::FontOptions(14.0f).withStyle("bold"));
+    g.drawText("Visualization", bounds.removeFromTop(25).reduced(10, 0), juce::Justification::centredLeft);
 }
 
 

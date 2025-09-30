@@ -51,6 +51,9 @@ public:
     
     // Ducking module control
     void updateDuckingModuleVisibility();
+    
+    // Visualization control panel setup
+    void setupVisualizationControlPanel();
 
 private:
     void setupViewModeButtons();
@@ -65,6 +68,15 @@ private:
     // View mode controls
     juce::TextButton raysButton, waterfallButton, spectralButton;
     ViewMode currentViewMode = ViewMode::Rays;
+    
+    // Visualization control container
+    class VisualizationControlPanel : public juce::Component
+    {
+    public:
+        void paint(juce::Graphics& g) override;
+    };
+    
+    VisualizationControlPanel visualizationControlPanel;
     
     // Ducking float
     std::unique_ptr<DuckingFloat> duckingFloat;
