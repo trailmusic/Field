@@ -1,5 +1,6 @@
 #include "LayoutManager.h"
 #include "../../Core/PluginEditor.h"
+#include "../Managers/ButtonManager.h"
 
 LayoutManager::LayoutManager(MyPluginAudioProcessorEditor& editor)
     : editor(editor)
@@ -167,8 +168,15 @@ void LayoutManager::layoutHeader()
         const int btnH = h;
         const int leftY = bounds.getBottom() - btnH - padding;
         editor.optionsButton.setBounds(bounds.getX() + padding, leftY, btnW, btnH);
-        editor.phaseModeButton.setBounds(editor.optionsButton.getRight() + Layout::dp(8, s), leftY, btnW, btnH);
-        editor.qualityButton.setBounds(editor.phaseModeButton.getRight() + Layout::dp(8, s), leftY, btnW, btnH);
+        if (editor.buttonManager) {
+            // Position the buttons container
+            const int buttonsWidth = btnW * 2 + Layout::dp(8, s); // 2 buttons + gap
+            editor.buttonManager->buttonsContainer.setBounds(editor.optionsButton.getRight() + Layout::dp(8, s), leftY, buttonsWidth, btnH);
+            
+            // Position buttons within their container
+            editor.buttonManager->getPhaseModeButton().setBounds(0, 0, btnW, btnH);
+            editor.buttonManager->getQualityButton().setBounds(btnW + Layout::dp(8, s), 0, btnW, btnH);
+        }
         editor.helpButton.setBounds(bounds.getRight() - btnW - padding, leftY, btnW, btnH);
     }
 }

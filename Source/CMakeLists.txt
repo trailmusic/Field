@@ -70,6 +70,8 @@ set(SRC
     ui/Managers/MeterManager.cpp
     ui/Managers/SliderManager.h
     ui/Managers/SliderManager.cpp
+    ui/Managers/ButtonManager.h
+    ui/Managers/ButtonManager.cpp
     Core/IconSystem.h
     Core/IconSystem.cpp
     reverb/ReverbParamIDs.h

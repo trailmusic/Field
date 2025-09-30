@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "../Components/KnobCell.h"
 #include "../Components/KnobCellWithAux.h"
+#include "../Components/UpwardComboBox.h"
 #include "../Controls/SimpleSwitchCell.h"
 #include "../Design/Layout.h"
 #include "Core/FieldLookAndFeel.h"
@@ -151,6 +152,20 @@ private:
         btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, pid, b));
     }
     void makeCombo (juce::ComboBox& c, const juce::String& cap, const char* pid, bool metallic=false)
+    {
+        // Apply metallic properties to the actual combo, not the wrapper
+        if (metallic) {
+            setAreaMetallicForCell (c, MetallicKind::XY);
+        }
+        auto cell = std::make_unique<SimpleSwitchCell> (c);
+        cell->setCaption (cap);
+        addAndMakeVisible (*cell);
+        switchCells.emplace_back (cell.get());
+        ownedSwitches.emplace_back (std::move (cell));
+        cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, pid, c));
+    }
+    
+    void makeUpwardCombo (UpwardComboBox& c, const juce::String& cap, const char* pid, bool metallic=false)
     {
         // Apply metallic properties to the actual combo, not the wrapper
         if (metallic) {
@@ -658,7 +673,7 @@ private:
     
     // Helper for creating mono group cell (double-wide with slope switch and audition button)
     void makeMonoGroupCell (juce::Slider& monoS, juce::Label& monoV, const juce::String& monoCap, const char* monoPid,
-                           juce::ComboBox& slopeC, const char* slopePid,
+                           UpwardComboBox& slopeC, const char* slopePid,
                            juce::ToggleButton& audB, const char* audPid, bool metallic=false)
     {
         // Safety check: ensure parameters exist before creating attachments
@@ -794,7 +809,7 @@ private:
         // Row B: Center tools (metallic)
         const bool M = true;
         makeCell (punchAmt, punchAmtV, "PUNCH",    "center_punch_amt", M);
-        makeCombo (punchMode,          "PUNCH MODE","center_punch_mode", M);
+        makeUpwardCombo (punchMode,          "PUNCH MODE","center_punch_mode", M);
         makeSwitch (phaseRecOn,        "PHASE REC", "center_phase_rec_on", M);
         makeCell (phaseAmt, phaseAmtV, "PHASE",    "center_phase_rec_amt", M);
         makeSwitch (centerLockOn,      "CNTR LOCK", "center_lock_on", M);
@@ -871,7 +886,7 @@ private:
     juce::Label  hpQV, lpQV;
     
     // Mono group controls
-    juce::ComboBox monoSlopeChoice;
+    UpwardComboBox monoSlopeChoice;
     juce::ToggleButton monoAuditionButton;
     
     // Slope switch and audition button for mono group
@@ -950,7 +965,7 @@ private:
     // Center row
     juce::Slider punchAmt, phaseAmt, promDb, focusLo, focusHi;
     juce::Label  punchAmtV, phaseAmtV, promDbV, focusLoV, focusHiV;
-    juce::ComboBox punchMode;
+    UpwardComboBox punchMode;
     juce::ToggleButton phaseRecOn, centerLockOn;
 
     std::vector<std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment>> sAtts;

@@ -114,6 +114,7 @@ public:
     MyPluginAudioProcessor& proc;
     FieldLNF lnf;
     std::unique_ptr<class PaneManager> panes;
+    std::unique_ptr<class ButtonManager> buttonManager;
 
 public:
     std::unique_ptr<juce::KeyListener> keyListener;
@@ -359,8 +360,6 @@ public:
 
     // Phase/quality center
     ControlContainer phaseCenterContainer;
-    PhaseModeButton  phaseModeButton;
-    QualityButton    qualityButton;
 
 private:
     // Helper methods for initialization

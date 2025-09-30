@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "ui/Managers/PaneManager.h"
+#include "ui/Managers/ButtonManager.h"
 #include "ui/Components/XYPad.h"
 #include "reverb/ReverbParamIDs.h"
 #include "ui/Design/Layout.h"
@@ -88,6 +89,7 @@ void MyPluginAudioProcessorEditor::initializeManagers()
     // Initialize meter and slider managers
     meterManager = std::make_unique<MeterManager>(*this);
     sliderManager = std::make_unique<SliderManager>(*this);
+    buttonManager = std::make_unique<ButtonManager>(*this);
     
     // Initialize the managers
     meterManager->initializeMeters();
@@ -341,6 +343,7 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
     tooltipsButton.setTooltip ("Tooltip Assistant");
     tooltipsButton.setToggleState (tooltipAssistantOn_, juce::dontSendNotification);
     tooltipsButton.onClick = [this] {};
+
 
     addAndMakeVisible (fullScreenButton);
     fullScreenButton.onClick = [this]
@@ -1046,3 +1049,4 @@ void MyPluginAudioProcessorEditor::initializeShadeOverlay()
         shadeOverlay.setPaneManager(panes.get());
     }
 }
+

@@ -592,23 +592,10 @@ public:
                 }
                 // label + icon
                 auto txtCol = juce::Colours::white.withAlpha (on ? 0.95f : 0.65f);
-                if (id == PaneID::Machine)
-                {
-                    g.setColour (txtCol);
-                    // Slightly larger font for Machine tab
-                    juce::Font f (juce::FontOptions (on ? 20.0f : 19.0f).withStyle ("Bold"));
-                    f.setTypefaceName ("Impact");
-                    f.setTypefaceStyle ("Bold");
-                    f.setExtraKerningFactor (0.20f);
-                    g.setFont (f);
-                }
-                else
-                {
-                    g.setColour (txtCol);
-                    juce::Font f (juce::FontOptions (on ? 16.5f : 15.5f).withStyle ("Bold"));
-                    f.setExtraKerningFactor (0.0f);
-                    g.setFont (f);
-                }
+                g.setColour (txtCol);
+                juce::Font f (juce::FontOptions (on ? 16.5f : 15.5f).withStyle ("Bold"));
+                f.setExtraKerningFactor (0.0f);
+                g.setFont (f);
                 const float pad = (id == PaneID::Machine) ? 2.0f : 4.0f; // Reduced padding for 9 tabs
                 const float iconSz = (id == PaneID::Machine)
                                       ? juce::jmin (rr.getHeight() - 4.0f, rr.getHeight() - 4.0f)

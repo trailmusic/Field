@@ -1,5 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
+#include "../Components/UpwardComboBox.h"
 #include "../Engines/StereoFieldEngine.h"
 
 // Minimal Imager pane: goniometer (Lissajous) with optional PRE overlay
@@ -553,7 +554,7 @@ private:
     // Tooling UI
     juce::Label preLabel;
     juce::ToggleButton preToggle;
-    juce::ComboBox qualityBox;
+    UpwardComboBox qualityBox;
     juce::TextButton modeXY, modePolar, modeWidth, modeHeat;
     // Designer controls migrated to BandControlsPane
 
