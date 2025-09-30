@@ -218,20 +218,28 @@ private:
         freqS.setDoubleClickReturnValue (true, 0.0);
         freqS.getProperties().set ("micro", true);
         
-        auto cell = std::make_unique<KnobCell> (s, v, cap);
-        cell->setValueLabelMode (KnobCell::ValueLabelMode::Managed);
-        cell->setValueLabelGap (labelGapPx);
-        if (metallic) {
-            setAreaMetallicForCell (*cell, MetallicKind::XY);
-        }
-        // XY knobs now use proper metallic system - no centerStyle needed
+        // Create KnobCellWithAux for frequency controls with metallic styling
+        std::vector<juce::Component*> auxComponents = { &freqS };
+        std::vector<float> auxWeights = { 1.0f };
+        auto cell = std::make_unique<KnobCellWithAux> (s, v, auxComponents, auxWeights);
+        
+        // Set metrics to match other cells
+        cell->setMetrics (knobPx, valuePx, labelGapPx);
+        cell->setAuxHeight (Layout::dp (12, 1.0f)); // Mini slider height
+        
+        // Set caption property for knob name rendering
         cell->getProperties().set ("caption", cap);
         
-        // Add mini slider with label - place on the right and center vertically
-        const int miniHeight = Layout::dp (12, 1.0f); // 12px mini height
-        cell->setMiniWithLabel (&freqS, &freqV, miniHeight);
-        cell->setMiniPlacementRight (true); // Place on the right side
-        cell->setMiniThicknessPx (Layout::dp (8, 1.0f)); // 8px thickness
+        // Apply metallic styling like other cells
+        if (metallic) {
+            setAreaMetallicForCell (*cell, MetallicKind::XY);
+            // For KnobCellWithAux, also apply metallic to aux components
+            for (auto* auxComp : cell->getAuxComponents()) {
+                if (auxComp) {
+                    setAreaMetallic (*auxComp, MetallicKind::XY);
+                }
+            }
+        }
         
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
