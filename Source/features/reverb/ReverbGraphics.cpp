@@ -68,7 +68,20 @@ void ReverbGraphics::paint(juce::Graphics& g)
     // Content area
     auto contentR = r.reduced(10.0f);
     
-    // Paint visualization based on current mode
+    // Paint visualization in the right panel area only
+    auto bounds = getLocalBounds();
+    auto leftArea = bounds.removeFromLeft(bounds.getWidth() * 0.6f);
+    auto rightArea = bounds;
+    
+    // Add gap between EQs and visuals
+    leftArea.removeFromRight(15);
+    rightArea.removeFromLeft(15);
+    
+    // Paint visualization based on current mode in the right area
+    g.saveState();
+    g.setOrigin(rightArea.getX(), rightArea.getY());
+    g.reduceClipRegion(0, 0, rightArea.getWidth(), rightArea.getHeight());
+    
     switch (currentViewMode)
     {
         case ViewMode::Rays:
@@ -81,6 +94,8 @@ void ReverbGraphics::paint(juce::Graphics& g)
             paintSpectral(g);
             break;
     }
+    
+    g.restoreState();
     
     // Paint GR overlay
     paintGrOverlay(g);
@@ -108,22 +123,24 @@ void ReverbGraphics::resized()
     // Position visualization control panel on the right
     visualizationControlPanel.setBounds(rightArea);
     
-    // Layout buttons within the control panel (relative to the panel)
+    // Layout buttons in horizontal row across the top
     auto panelBounds = visualizationControlPanel.getBounds();
     auto buttonArea = panelBounds.reduced(15);
     buttonArea.removeFromTop(30); // Space for title
     
-    auto buttonHeight = 35;
+    auto buttonHeight = 30;
+    auto buttonWidth = 80;
     auto buttonSpacing = 8;
     
-    // Position buttons relative to the visualization control panel
-    raysButton.setBounds(buttonArea.removeFromTop(buttonHeight));
-    buttonArea.removeFromTop(buttonSpacing);
+    // Position buttons in horizontal row
+    auto buttonRow = buttonArea.removeFromTop(buttonHeight);
+    raysButton.setBounds(buttonRow.removeFromLeft(buttonWidth));
+    buttonRow.removeFromLeft(buttonSpacing);
     
-    waterfallButton.setBounds(buttonArea.removeFromTop(buttonHeight));
-    buttonArea.removeFromTop(buttonSpacing);
+    waterfallButton.setBounds(buttonRow.removeFromLeft(buttonWidth));
+    buttonRow.removeFromLeft(buttonSpacing);
     
-    spectralButton.setBounds(buttonArea.removeFromTop(buttonHeight));
+    spectralButton.setBounds(buttonRow.removeFromLeft(buttonWidth));
     
         // Left side: EQ panels with labels
         if (reverbEQ && decayRateEQ)
@@ -221,7 +238,7 @@ void ReverbGraphics::setViewMode(ViewMode mode)
 
 void ReverbGraphics::paintRays(juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat().reduced(20.0f);
+    auto bounds = getLocalBounds().toFloat().reduced(10.0f);
     auto center = bounds.getCentre();
     
     // Get current parameters for ray properties
@@ -262,7 +279,7 @@ void ReverbGraphics::paintRays(juce::Graphics& g)
 
 void ReverbGraphics::paintWaterfall(juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat().reduced(20.0f);
+    auto bounds = getLocalBounds().toFloat().reduced(10.0f);
     
     // Get current levels
     auto erLevel = getErRms ? getErRms() : 0.0f;
@@ -295,7 +312,7 @@ void ReverbGraphics::paintWaterfall(juce::Graphics& g)
 
 void ReverbGraphics::paintSpectral(juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat().reduced(20.0f);
+    auto bounds = getLocalBounds().toFloat().reduced(10.0f);
     
     // Get current levels
     auto erLevel = getErRms ? getErRms() : 0.0f;
