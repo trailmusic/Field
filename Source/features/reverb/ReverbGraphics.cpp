@@ -68,19 +68,15 @@ void ReverbGraphics::paint(juce::Graphics& g)
     // Content area
     auto contentR = r.reduced(10.0f);
     
-    // Paint visualization in the right panel area only
-    auto bounds = getLocalBounds();
-    auto leftArea = bounds.removeFromLeft(bounds.getWidth() * 0.6f);
-    auto rightArea = bounds;
+    // Paint visualization in the visualization control panel
+    auto panelBounds = visualizationControlPanel.getBounds();
+    auto visualizationArea = panelBounds.reduced(15);
+    visualizationArea.removeFromTop(60); // Space for title and buttons
     
-    // Add gap between EQs and visuals
-    leftArea.removeFromRight(15);
-    rightArea.removeFromLeft(15);
-    
-    // Paint visualization based on current mode in the right area
+    // Paint visualization based on current mode in the panel area
     g.saveState();
-    g.setOrigin(rightArea.getX(), rightArea.getY());
-    g.reduceClipRegion(0, 0, rightArea.getWidth(), rightArea.getHeight());
+    g.setOrigin(visualizationArea.getX(), visualizationArea.getY());
+    g.reduceClipRegion(0, 0, visualizationArea.getWidth(), visualizationArea.getHeight());
     
     switch (currentViewMode)
     {
@@ -123,24 +119,23 @@ void ReverbGraphics::resized()
     // Position visualization control panel on the right
     visualizationControlPanel.setBounds(rightArea);
     
-    // Layout buttons in horizontal row across the top
+    // Layout buttons in horizontal row centered with title
     auto panelBounds = visualizationControlPanel.getBounds();
+    auto titleArea = panelBounds.removeFromTop(30); // Space for title
     auto buttonArea = panelBounds.reduced(15);
-    buttonArea.removeFromTop(30); // Space for title
     
     auto buttonHeight = 30;
     auto buttonWidth = 80;
     auto buttonSpacing = 8;
+    auto totalButtonWidth = (buttonWidth * 3) + (buttonSpacing * 2);
     
-    // Position buttons in horizontal row
+    // Center buttons in the available space
     auto buttonRow = buttonArea.removeFromTop(buttonHeight);
-    raysButton.setBounds(buttonRow.removeFromLeft(buttonWidth));
-    buttonRow.removeFromLeft(buttonSpacing);
+    auto buttonStartX = buttonRow.getX() + (buttonRow.getWidth() - totalButtonWidth) / 2;
     
-    waterfallButton.setBounds(buttonRow.removeFromLeft(buttonWidth));
-    buttonRow.removeFromLeft(buttonSpacing);
-    
-    spectralButton.setBounds(buttonRow.removeFromLeft(buttonWidth));
+    raysButton.setBounds(buttonStartX, buttonRow.getY(), buttonWidth, buttonHeight);
+    waterfallButton.setBounds(buttonStartX + buttonWidth + buttonSpacing, buttonRow.getY(), buttonWidth, buttonHeight);
+    spectralButton.setBounds(buttonStartX + (buttonWidth + buttonSpacing) * 2, buttonRow.getY(), buttonWidth, buttonHeight);
     
         // Left side: EQ panels with labels
         if (reverbEQ && decayRateEQ)
