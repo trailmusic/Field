@@ -83,6 +83,8 @@ set(SRC
     features/reverb/ReverbCanvasComponent.cpp
     features/reverb/ReverbGraphics.h
     features/reverb/ReverbGraphics.cpp
+    features/reverb/DuckingFloat.h
+    features/reverb/DuckingFloat.cpp
     features/reverb/ReverbDynEQPane.h
     features/reverb/ReverbControlsPane.h
     features/reverb/ReverbTab.h
