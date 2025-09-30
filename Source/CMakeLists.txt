@@ -97,13 +97,13 @@ set(SRC
     dynEQ/DynamicEqState.cpp
     ui/Panes/ImagerPane.h
     ui/Panes/ImagerControlsPane.h
-    ui/Panes/BandControlsPane.h
+    band/BandControlsPane.h
     ui/Tabs/ImagerTab.h
     xy/XYControlsPane.h
     xy/XYTab.h
-    ui/Tabs/BandTab.h
-    ui/Panes/BandGraphics.h
-    ui/Panes/BandGraphics.cpp
+    band/BandTab.h
+    band/BandGraphics.h
+    band/BandGraphics.cpp
     ui/Engines/StereoFieldEngine.h
     ui/Engines/StereoFieldEngine.cpp
     ui/Managers/PaneManager.h

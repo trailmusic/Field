@@ -1,6 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
-#include "../Engines/StereoFieldEngine.h"
+#include "ui/Engines/StereoFieldEngine.h"
 #include "Core/FieldLookAndFeel.h"
 
 // Band Visual Pane: Width mode visuals for Band tab

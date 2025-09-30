@@ -1,8 +1,8 @@
 #pragma once
 #include <JuceHeader.h>
-#include "../Panes/BandGraphics.h"
-#include "../Controls/ControlGridMetrics.h"
-#include "../Panes/BandControlsPane.h"
+#include "BandGraphics.h"
+#include "ui/Controls/ControlGridMetrics.h"
+#include "BandControlsPane.h"
 
 // BandTab: A focused view with Band-specific Width mode visuals and controls
 class BandTab : public juce::Component

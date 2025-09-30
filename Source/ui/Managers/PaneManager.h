@@ -3,7 +3,7 @@
 #include "../Tabs/DynEqTab.h"
 #include "xy/XYTab.h"
 #include "../Tabs/ImagerTab.h"
-#include "../Tabs/BandTab.h"
+#include "band/BandTab.h"
 #include "../Tabs/MachineTab.h"
 #include "Core/IconSystem.h"
 #include "../../motion/MotionTab.h"
