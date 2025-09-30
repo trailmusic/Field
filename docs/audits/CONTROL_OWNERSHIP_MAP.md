@@ -1,13 +1,13 @@
 # 🗺️ **Control Ownership Map**
 
 ## **📋 Overview**
-This document maps all controls across the Panes directory to their single owners, eliminating redundancy and clarifying responsibilities.
+This document maps all controls across the Field plugin features to their single owners, eliminating redundancy and clarifying responsibilities. **UPDATED**: Reflects completed directory reorganization into `features/` structure.
 
 ---
 
 ## **🎯 Control Ownership by Pane**
 
-### **1. XYControlsPane.h** 
+### **1. XYControlsPane.h** (`Source/features/xy/XYControlsPane.h`) ✅ **MOVED TO FEATURES**
 **Primary Owner: EQ + Imaging + Center Processing**
 
 #### **EQ Controls (Slots 1-15)**
@@ -39,7 +39,7 @@ This document maps all controls across the Panes directory to their single owner
 
 ---
 
-### **2. BandControlsPane.h**
+### **2. BandControlsPane.h** (`Source/features/band/BandControlsPane.h`) ✅ **MOVED TO FEATURES**
 **Primary Owner: WIDTH + Crossover + Shuffle + Designer Controls**
 
 #### **WIDTH Controls**

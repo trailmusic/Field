@@ -86,7 +86,7 @@ FieldLookAndFeel System:
 
 #### **New Architecture:**
 ```
-Source/ui/
+Source/shared/ui/ ✅ **MOVED TO SHARED**
 ├── Components/     - Reusable UI components (23 files)
 ├── Controls/      - Control-related files (5 files)
 ├── Design/        - Design and layout files (2 files)
@@ -809,10 +809,10 @@ if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
 ### **Button Switch Files Modified**
 - `Source/Core/IconSystem.h` - Added new IconType enum values
 - `Source/Core/IconSystem.cpp` - Added create...Icon method implementations
-- `Source/ui/ImagerPane.h` - Added LookAndFeel assignment and metallic properties
-- `Source/ui/machine/MachinePane.cpp` - Added LookAndFeel assignment and metallic properties
+- `Source/shared/ui/ ✅ **MOVED TO SHARED**ImagerPane.h` - Added LookAndFeel assignment and metallic properties
+- `Source/shared/ui/ ✅ **MOVED TO SHARED**machine/MachinePane.cpp` - Added LookAndFeel assignment and metallic properties
 - `Source/reverb/ui/ReverbDynEQPane.h` - Added LookAndFeel assignment
-- `Source/ui/XYControlsPane.h` - Added LookAndFeel assignment to member variables
+- `Source/shared/ui/ ✅ **MOVED TO SHARED**XYControlsPane.h` - Added LookAndFeel assignment to member variables
 - `Source/Core/FieldRendering.cpp` - Added drawButtonText method
 - `Source/Core/FieldLookAndFeel.h` - Added drawButtonText override
 
@@ -898,10 +898,10 @@ if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
 ### **Files Modified in Latest Updates**
 - `Source/Core/FieldTheme.h` - Added AnimationTheme system
 - `Source/Core/PluginEditor.h` - Enhanced BypassButton with theme-based animation
-- `Source/ui/machine/MachinePane.h` - Updated CardBypassButton with theme system
-- `Source/ui/machine/MachinePane.cpp` - Cleaned up debug code and empty blocks
-- `Source/ui/ImagerPane.h` - Cleaned up debug code and empty blocks
-- `Source/ui/DynEqTab.h` - Cleaned up debug code and empty blocks
+- `Source/shared/ui/ ✅ **MOVED TO SHARED**machine/MachinePane.h` - Updated CardBypassButton with theme system
+- `Source/shared/ui/ ✅ **MOVED TO SHARED**machine/MachinePane.cpp` - Cleaned up debug code and empty blocks
+- `Source/shared/ui/ ✅ **MOVED TO SHARED**ImagerPane.h` - Cleaned up debug code and empty blocks
+- `Source/shared/ui/ ✅ **MOVED TO SHARED**DynEqTab.h` - Cleaned up debug code and empty blocks
 - `Source/CMakeLists.txt` - Removed references to deleted files
 - `docs/audits/Field_Cell_Audit.md` - Updated documentation
 
