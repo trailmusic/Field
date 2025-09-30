@@ -109,12 +109,14 @@ void ReverbGraphics::resized()
     visualizationControlPanel.setBounds(rightArea);
     
     // Layout buttons within the control panel (relative to the panel)
-    auto buttonArea = rightArea.reduced(15);
+    auto panelBounds = visualizationControlPanel.getBounds();
+    auto buttonArea = panelBounds.reduced(15);
     buttonArea.removeFromTop(30); // Space for title
     
     auto buttonHeight = 35;
     auto buttonSpacing = 8;
     
+    // Position buttons relative to the visualization control panel
     raysButton.setBounds(buttonArea.removeFromTop(buttonHeight));
     buttonArea.removeFromTop(buttonSpacing);
     
@@ -150,10 +152,10 @@ void ReverbGraphics::setupVisualizationControlPanel()
     // Add the visualization control panel as a child component
     addAndMakeVisible(visualizationControlPanel);
     
-    // Add buttons to the control panel
-    visualizationControlPanel.addAndMakeVisible(raysButton);
-    visualizationControlPanel.addAndMakeVisible(waterfallButton);
-    visualizationControlPanel.addAndMakeVisible(spectralButton);
+    // Add buttons to the main component (not the control panel)
+    addAndMakeVisible(raysButton);
+    addAndMakeVisible(waterfallButton);
+    addAndMakeVisible(spectralButton);
     
     // Set up custom paint for the control panel
     visualizationControlPanel.setOpaque(true);
