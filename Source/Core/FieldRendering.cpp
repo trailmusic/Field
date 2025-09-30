@@ -884,7 +884,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
 
     void drawTabPill(juce::Graphics& g, juce::Rectangle<float> r, bool active, bool hover, const FieldTheme& theme)
     {
-        const float corner = r.getHeight() * 0.5f;
+        const float corner = 8.0f; // Match KnobCell radius
         
         if (active)
         {

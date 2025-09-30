@@ -586,9 +586,9 @@ public:
                 {
                     // Fallback rendering for non-FieldLNF LookAndFeel
                     g.setColour (juce::Colour (0xFF3A3E45));
-                    g.fillRoundedRectangle (rr, r.getHeight() * 0.5f);
-                    if (on) { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.85f)); g.drawRoundedRectangle (rr, r.getHeight() * 0.5f, 2.0f); }
-                    else     { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.3f)); g.drawRoundedRectangle (rr, r.getHeight() * 0.5f, 1.0f); }
+                    g.fillRoundedRectangle (rr, 8.0f);
+                    if (on) { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.85f)); g.drawRoundedRectangle (rr, 8.0f, 2.0f); }
+                    else     { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.3f)); g.drawRoundedRectangle (rr, 8.0f, 1.0f); }
                 }
                 // label + icon
                 auto txtCol = juce::Colours::white.withAlpha (on ? 0.95f : 0.65f);
