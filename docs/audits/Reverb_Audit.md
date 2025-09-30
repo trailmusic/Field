@@ -19,7 +19,7 @@ The Field plugin is developing a **custom reverb system** to replace the JUCE re
 ### **✅ COMPLETED COMPONENTS**
 
 **1. Parameter System (100+ Parameters)**
-- **Algorithm Selection**: Modern FDN, Chamber, Platey, Vintage
+- **Algorithm Selection**: [REMOVED - Old algorithm system no longer used]
 - **Space/Time Controls**: Pre-delay, Decay, Density, Diffusion, Modulation
 - **Early Reflections**: Level, Time, Density, Width, ER→Tail transition
 - **Tone Controls**: HPF, LPF, Tilt
@@ -105,13 +105,13 @@ void ReverbEngine::processWet (AudioBuffer<float>& wet, const AudioBuffer<float>
   - `densityPct`: Reflection density
   - `diffusionPct`: Diffusion amount
   - `modDepthCents`/`modRateHz`: Modulation
-- **Algorithm Variants**: Modern FDN, Chamber, Platey, Vintage
+- **Algorithm Variants**: [REMOVED - Old algorithm system no longer used]
 - **Modulation**: Chorus/vibrato effects on delay lines
 
 **Implementation Notes:**
 - Implement 4x4 or 8x8 feedback matrix
 - Add modulation to delay times
-- Implement different algorithms for character variation
+- Implement core reverb algorithm with parameter-based character variation
 - Add parameter smoothing for decay time changes
 
 ---
@@ -214,7 +214,7 @@ Source/features/reverb/
 - [ ] FDN generates realistic reverb tail
 - [ ] All decay parameters control tail length correctly
 - [ ] Modulation adds movement without artifacts
-- [ ] Different algorithms produce distinct characters
+- [ ] Core reverb algorithm produces realistic reverb character
 - [ ] Parameter smoothing works for all controls
 
 ### **Phase 3 Success (Spatial Processing)**

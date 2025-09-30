@@ -4065,7 +4065,7 @@ if (auto* p = apvts.getParameter("pan")) { p->beginChangeGesture(); p->setValueN
 ```
 
 ### **Listeners**
-- Use listeners only when you must react to host-driven changes (e.g., `space_algo` to UI switch).
+- Use listeners only when you must react to host-driven changes (e.g., parameter changes to UI updates).
 
 ### **Preset Manager**
 - Parameter getter/setter are declared once and shared; no duplicates.
