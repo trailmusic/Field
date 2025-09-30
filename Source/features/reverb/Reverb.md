@@ -288,7 +288,84 @@ Complete package for implementing the reverb system with:
 
 ### Next Steps
 - **Phase 1**: ✅ COMPLETE - Parameter system migration and legacy cleanup
-- **Phase 2**: Implement floating ducking module UI
+- **Phase 2**: Fix control types (ToggleButtons, ComboBox) and implement floating ducking module UI
 - **Phase 3**: Add hero visualization modes (Rays/Waterfall/Spectral)
 - **Phase 4**: Integrate stripped Pro-Q style EQ system
 - **Phase 5**: Final testing and optimization
+
+## Control Type Analysis (January 2025)
+
+### **🎛️ Current 2x16 Grid Status**
+
+**Row 1 (16 controls):**
+- ✅ **ENABLE** (ToggleButton) - Master enable/disable
+- ✅ **PRE** (KnobCell) - Pre-delay time (0-200ms)
+- ✅ **ER LVL** (KnobCell) - Early reflection level (-60 to +6dB)
+- ✅ **ER DEN** (KnobCell) - Early reflection density (0-100%)
+- ✅ **ER WID** (KnobCell) - Early reflection width (0-100%)
+- ✅ **ER TIME** (KnobCell) - Early reflection time (0-100ms)
+- ✅ **ER→T** (KnobCell) - ER to tail transition (0-100%)
+- ✅ **DIFF** (KnobCell) - Diffusion amount (0-100%)
+- ✅ **DENS** (KnobCell) - Density amount (0-100%)
+- ✅ **MOD DEP** (KnobCell) - Modulation depth (0-50¢)
+- ✅ **MOD RATE** (KnobCell) - Modulation rate (0.1-10Hz)
+- ✅ **WIDTH** (KnobCell) - Stereo width (0-100%)
+- ✅ **ROT** (KnobCell) - Rotation angle (0-360°)
+- ✅ **SIZE** (KnobCell) - Room size (0-100%)
+- ✅ **DECAY** (KnobCell) - Decay time (0.1-20s)
+- ✅ **WET ONLY** (ToggleButton) - Kill dry signal
+
+**Row 2 (16 controls):**
+- ✅ **WET** (KnobCell) - Wet mix (0-1)
+- ✅ **BLOOM** (KnobCell) - Bloom amount (0-100%)
+- ✅ **DIST** (KnobCell) - Distance (0-100%)
+- ✅ **FREEZE** (ToggleButton) - Freeze reverb tail
+- ✅ **SHIM AMT** (KnobCell) - Shimmer amount (0-100%)
+- ✅ **SHIM INT** (KnobCell) - Shimmer intensity (0-100%)
+- ✅ **GATE** (KnobCell) - Gate amount (0-100%)
+- ✅ **DREQ XO LO** (KnobCell) - EQ crossover low (80-400Hz)
+- ✅ **DREQ XO HI** (KnobCell) - EQ crossover high (1k-6kHz)
+- 🚨 **EQ APPLY** (ComboBox) - EQ routing (Pre/Post/ER/Tail) - **NEEDS FIX**
+- ✅ **FOLLOW W** (ToggleButton) - Follow motion width
+- ✅ **W AMT** (KnobCell) - Width amount (0-100%)
+- ✅ **FOLLOW R** (ToggleButton) - Follow motion rotation
+- ✅ **R AMT** (KnobCell) - Rotation amount (0-100%)
+- ✅ **TRIM** (KnobCell) - Output trim (-12 to +12dB)
+- ✅ **SPARE** (BlankCell) - Reserved placeholder
+
+### **🚨 Control Type Issues Identified**
+
+#### **1. EQ APPLY Control Type Mismatch**
+- **Current**: KnobCell (slider)
+- **Should Be**: ComboBox (dropdown)
+- **Reason**: Choice parameter with 4 options (Pre, Post, ER, Tail)
+- **Fix Needed**: Convert to ComboBox with proper item list
+
+#### **2. ToggleButton Implementation Status**
+- **Current**: All toggles implemented as KnobCell sliders
+- **Should Be**: ToggleButton components
+- **Affected Controls**: ENABLE, WET ONLY, FREEZE, FOLLOW W, FOLLOW R
+- **Fix Needed**: Convert to proper ToggleButton components
+
+### **✅ Correct Control Types Summary**
+
+- **KnobCell Controls (25 total)**: Time, level, percentage, modulation, frequency, and angle parameters
+- **ToggleButton Controls (5 total)**: ENABLE, WET ONLY, FREEZE, FOLLOW W, FOLLOW R
+- **ComboBox Controls (1 total)**: EQ APPLY (needs conversion)
+- **BlankCell Controls (1 total)**: SPARE placeholder
+
+### **🎨 Metallic Styling Requirements**
+
+All reverb controls use:
+- **MetallicKind::Reverb** - Burnt orange theme
+- **setAreaMetallicForCell()** - Apply metallic styling
+- **Visual Consistency** - 8px corner radius, shadows, borders
+- **Hover Effects** - Enhanced borders and glow on hover
+
+### **📋 Implementation Fixes Needed**
+
+1. **Convert ToggleButtons**: Change ENABLE, WET ONLY, FREEZE, FOLLOW W, FOLLOW R from KnobCell to ToggleButton
+2. **Convert ComboBox**: Change EQ APPLY from KnobCell to ComboBox with proper item list
+3. **Apply Metallic Styling**: Ensure all components use `setAreaMetallicForCell(*component, MetallicKind::Reverb)`
+4. **Maintain Grid Layout**: Keep the 2x16 grid structure with proper positioning
+5. **Value Labels**: Ensure all KnobCell controls have proper value labels with appropriate decimal places
