@@ -22,12 +22,12 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     duckingFloat = std::make_unique<DuckingFloat>(state);
     addAndMakeVisible(*duckingFloat);
     
-    // Create EQ panels (temporarily disabled)
-    // reverbEQ = std::make_unique<ReverbEQ>(proc, &getLookAndFeel());
-    // addAndMakeVisible(*reverbEQ);
-    
-    // decayRateEQ = std::make_unique<DecayRateEQ>(proc, &getLookAndFeel());
-    // addAndMakeVisible(*decayRateEQ);
+        // Create EQ panels
+        reverbEQ = std::make_unique<ReverbToneEQ>(proc, &getLookAndFeel());
+        addAndMakeVisible(*reverbEQ);
+        
+        decayRateEQ = std::make_unique<DecayRateEQ>(proc, &getLookAndFeel());
+        addAndMakeVisible(*decayRateEQ);
     
     // Setup view mode buttons
     setupViewModeButtons();
@@ -100,15 +100,15 @@ void ReverbGraphics::resized()
     auto leftArea = bounds.removeFromLeft(bounds.getWidth() * 0.6f);
     auto rightArea = bounds;
     
-    // Left side: EQ panels (temporarily disabled)
-    // if (reverbEQ && decayRateEQ)
-    // {
-    //     auto toneArea = leftArea.removeFromTop(leftArea.getHeight() * 0.5f);
-    //     auto decayArea = leftArea;
-    //     
-    //     reverbEQ->setBounds(toneArea);
-    //     decayRateEQ->setBounds(decayArea);
-    // }
+        // Left side: EQ panels
+        if (reverbEQ && decayRateEQ)
+        {
+            auto toneArea = leftArea.removeFromTop(leftArea.getHeight() * 0.5f);
+            auto decayArea = leftArea;
+            
+            reverbEQ->setBounds(toneArea);
+            decayRateEQ->setBounds(decayArea);
+        }
     
     // Right side: Visualization area (for future use)
     // The visualization content is drawn in paint() method
@@ -312,32 +312,32 @@ void ReverbGraphics::timerCallback()
 
 void ReverbGraphics::setSampleRate(double sr)
 {
-    // if (reverbEQ) reverbEQ->setSampleRate(sr);
-    // if (decayRateEQ) decayRateEQ->setSampleRate(sr);
+    if (reverbEQ) reverbEQ->setSampleRate(sr);
+    if (decayRateEQ) decayRateEQ->setSampleRate(sr);
 }
 
 void ReverbGraphics::pause()
 {
-    // if (reverbEQ) reverbEQ->pause();
-    // if (decayRateEQ) decayRateEQ->pause();
+    if (reverbEQ) reverbEQ->pause();
+    if (decayRateEQ) decayRateEQ->pause();
 }
 
 void ReverbGraphics::resume()
 {
-    // if (reverbEQ) reverbEQ->resume();
-    // if (decayRateEQ) decayRateEQ->resume();
+    if (reverbEQ) reverbEQ->resume();
+    if (decayRateEQ) decayRateEQ->resume();
 }
 
 void ReverbGraphics::pushBlock(const float* L, const float* R, int n)
 {
-    // if (reverbEQ) reverbEQ->pushBlock(L, R, n);
-    // if (decayRateEQ) decayRateEQ->pushBlock(L, R, n);
+    if (reverbEQ) reverbEQ->pushBlock(L, R, n);
+    if (decayRateEQ) decayRateEQ->pushBlock(L, R, n);
 }
 
 void ReverbGraphics::pushBlockPre(const float* L, const float* R, int n)
 {
-    // if (reverbEQ) reverbEQ->pushBlockPre(L, R, n);
-    // if (decayRateEQ) decayRateEQ->pushBlockPre(L, R, n);
+    if (reverbEQ) reverbEQ->pushBlockPre(L, R, n);
+    if (decayRateEQ) decayRateEQ->pushBlockPre(L, R, n);
 }
 
 

@@ -7,7 +7,17 @@
 
 class MyPluginAudioProcessor; // fwd
 
-// Decay Rate EQ for reverb (3 bands with decay multipliers)
+// Band point structure for Decay-Rate EQ visualization
+struct DecayBandPoint 
+{ 
+    float hz = 1000.f; 
+    float mult = 1.0f; // Decay multiplier (0.5x - 2.0x)
+    float q = 0.707f; 
+    int type = 0; // 0=Bell, 1=TiltLo, 2=TiltHi
+    int bandIdx = -1; 
+};
+
+// Decay-Rate EQ for reverb decay shaping (3 bands)
 class DecayRateEQ : public juce::Component, private juce::Timer
 {
 public:
@@ -26,7 +36,7 @@ public:
 
 private:
     void timerCallback() override;
-    void rebuildDecayPath();
+    void rebuildEqPath();
     void drawUnits(juce::Graphics& g);
     
     // Mouse interaction
@@ -53,29 +63,21 @@ private:
     
     // Visual helpers
     juce::Colour bandColourFor(int bandIdx) const;
-    float decayMultAtForPaint(const DecayPoint& b, float hz) const;
+    float bandMultAtForPaint(const DecayBandPoint& b, float hz) const;
     
-    struct DecayPoint 
-    { 
-        float hz = 1000.f; 
-        float mult = 1.0f; 
-        float q = 0.707f; 
-        float dynAmt = 0.0f;
-        int bandIdx = -1; 
-    };
     
     MyPluginAudioProcessor& proc;
     SpectrumAnalyzer analyzer;
     ZoomState zoomState;
     
-    std::vector<DecayPoint> points;
+    std::vector<DecayBandPoint> points;
     int selected = -1;
     int hover = -1;
     bool hoverInPane = false;
     juce::Point<int> hoverPos{0, 0};
     float hoverHz = 0.0f;
     
-    juce::Path decayPath;
+    juce::Path eqPath;
     std::vector<juce::Path> bandPaths;
     
     // Drag state

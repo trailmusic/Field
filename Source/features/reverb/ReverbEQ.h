@@ -7,12 +7,24 @@
 
 class MyPluginAudioProcessor; // fwd
 
+// Band point structure for EQ visualization
+struct BandPoint 
+{ 
+    float hz = 1000.f; 
+    float db = 0.f; 
+    float q = 0.707f; 
+    int type = 0; 
+    int phase = 1; 
+    int bandIdx = -1; 
+    float dynAmt = 0.f; // Dynamic amount (0-100%)
+};
+
 // Stripped Pro-Q style EQ for reverb tone shaping (4 bands)
-class ReverbEQ : public juce::Component, private juce::Timer
+class ReverbToneEQ : public juce::Component, private juce::Timer
 {
 public:
-    ReverbEQ(MyPluginAudioProcessor& p, juce::LookAndFeel* lnf);
-    ~ReverbEQ() override;
+    ReverbToneEQ(MyPluginAudioProcessor& p, juce::LookAndFeel* lnf);
+    ~ReverbToneEQ() override;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
@@ -55,15 +67,6 @@ private:
     juce::Colour bandColourFor(int bandIdx) const;
     float bandDbAtForPaint(const BandPoint& b, float hz) const;
     
-    struct BandPoint 
-    { 
-        float hz = 1000.f; 
-        float db = 0.f; 
-        float q = 0.707f; 
-        int type = 0; 
-        int phase = 1; 
-        int bandIdx = -1; 
-    };
     
     MyPluginAudioProcessor& proc;
     SpectrumAnalyzer analyzer;

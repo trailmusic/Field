@@ -1,8 +1,12 @@
 #pragma once
 #include <JuceHeader.h>
 #include "DuckingFloat.h"
+#include "ReverbEQ.h"
+#include "DecayRateEQ.h"
 
 class MyPluginAudioProcessor; // fwd
+class ReverbToneEQ; // fwd
+class DecayRateEQ; // fwd
 
 class ReverbGraphics : public juce::Component, public juce::Timer
 {
@@ -31,9 +35,9 @@ public:
     // Ducking float access
     DuckingFloat* getDuckingFloat() { return duckingFloat.get(); }
     
-    // EQ access (temporarily disabled)
-    // ReverbEQ* getReverbEQ() { return reverbEQ.get(); }
-    // DecayRateEQ* getDecayRateEQ() { return decayRateEQ.get(); }
+        // EQ access
+        ReverbToneEQ* getReverbEQ() { return reverbEQ.get(); }
+        DecayRateEQ* getDecayRateEQ() { return decayRateEQ.get(); }
     
     // Analyzer control
     void setSampleRate(double sr);
@@ -62,9 +66,9 @@ private:
     // Ducking float
     std::unique_ptr<DuckingFloat> duckingFloat;
     
-    // EQ panels (temporarily disabled)
-    // std::unique_ptr<ReverbEQ> reverbEQ;
-    // std::unique_ptr<DecayRateEQ> decayRateEQ;
+        // EQ panels
+        std::unique_ptr<ReverbToneEQ> reverbEQ;
+        std::unique_ptr<DecayRateEQ> decayRateEQ;
     
     // Callback functions
     std::function<float()> getErRms, getTailRms, getDuckGrDb, getWidthNow;
