@@ -549,6 +549,34 @@ All reverb controls use:
 - **Layout Management**: Responsive layout with proper button positioning
 - **Theme Consistency**: Consistent with Field's overall design language
 
+## ✅ VISUAL SEPARATION & LAYOUT FIXES (January 2025)
+
+### **🎯 Complete Layout & Visual Improvements**
+
+**Fixed Visualization Control Panel**
+- **✅ Button Visibility**: Fixed button positioning within the control panel
+- **✅ Proper Layout**: Buttons now properly positioned relative to the panel
+- **✅ 15px Gap**: Added spacing between EQs and visuals to prevent accidental clicks
+- **✅ Recessed Container**: Visual container now appears recessed with inner shadows
+
+**EQ Labels & Visual Separation**
+- **✅ TONE EQ Label**: Styled label above the Tone EQ with Field theme colors
+- **✅ DECAY-RATE EQ Label**: Styled label above the Decay-Rate EQ with Field theme colors
+- **✅ Visual Hierarchy**: Clear separation between the two EQs with proper labeling
+- **✅ Theme Integration**: Labels use Field's accent color (#4A90E2) and bold typography
+
+**Layout Architecture**
+- **✅ Horizontal Split**: 60% left for EQs, 40% right for visualization controls
+- **✅ 15px Gap**: Proper spacing between EQs and visualization panel
+- **✅ Label Positioning**: 25px height labels positioned above each EQ
+- **✅ Recessed Effect**: Visual container with inner shadows and darker gradient
+
+**Technical Implementation**
+- **✅ setupEQLabels()**: Method to configure and position EQ labels
+- **✅ Recessed Paint**: Custom paint method with inner shadows and darker gradients
+- **✅ Proper Spacing**: 15px gap prevents accidental clicks between areas
+- **✅ Theme Consistency**: All elements use Field's theme system consistently
+
 ## ✅ DUCKING MODULE ENHANCEMENTS (January 2025)
 
 ### **🎯 World-Class UI Implementation**

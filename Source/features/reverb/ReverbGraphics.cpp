@@ -36,6 +36,9 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     // Setup visualization control panel
     setupVisualizationControlPanel();
     
+    // Setup EQ labels
+    setupEQLabels();
+    
     // Start animation timer
     startTimerHz(30);
 }
@@ -98,12 +101,16 @@ void ReverbGraphics::resized()
     auto leftArea = bounds.removeFromLeft(bounds.getWidth() * 0.6f);
     auto rightArea = bounds;
     
+    // Add gap between EQs and visuals to prevent accidental clicks
+    leftArea.removeFromRight(15); // 15px gap
+    rightArea.removeFromLeft(15);  // 15px gap
+    
     // Position visualization control panel on the right
     visualizationControlPanel.setBounds(rightArea);
     
-    // Layout buttons within the control panel
-    auto buttonArea = rightArea.reduced(10);
-    buttonArea.removeFromTop(25); // Space for title
+    // Layout buttons within the control panel (relative to the panel)
+    auto buttonArea = rightArea.reduced(15);
+    buttonArea.removeFromTop(30); // Space for title
     
     auto buttonHeight = 35;
     auto buttonSpacing = 8;
@@ -116,13 +123,21 @@ void ReverbGraphics::resized()
     
     spectralButton.setBounds(buttonArea.removeFromTop(buttonHeight));
     
-        // Left side: EQ panels
+        // Left side: EQ panels with labels
         if (reverbEQ && decayRateEQ)
         {
-            auto toneArea = leftArea.removeFromTop(leftArea.getHeight() * 0.5f);
-            auto decayArea = leftArea;
+            // Tone EQ section
+            auto toneLabelArea = leftArea.removeFromTop(25);
+            toneEqLabel.setBounds(toneLabelArea);
             
+            auto toneArea = leftArea.removeFromTop(leftArea.getHeight() * 0.5f);
             reverbEQ->setBounds(toneArea);
+            
+            // Decay Rate EQ section
+            auto decayLabelArea = leftArea.removeFromTop(25);
+            decayRateEqLabel.setBounds(decayLabelArea);
+            
+            auto decayArea = leftArea;
             decayRateEQ->setBounds(decayArea);
         }
     
@@ -169,6 +184,25 @@ void ReverbGraphics::setupVisualizationControlPanel()
     styleButton(raysButton);
     styleButton(waterfallButton);
     styleButton(spectralButton);
+}
+
+void ReverbGraphics::setupEQLabels()
+{
+    // Add EQ labels as visible components
+    addAndMakeVisible(toneEqLabel);
+    addAndMakeVisible(decayRateEqLabel);
+    
+    // Configure tone EQ label
+    toneEqLabel.setText("TONE EQ", juce::dontSendNotification);
+    toneEqLabel.setJustificationType(juce::Justification::centred);
+    toneEqLabel.setColour(juce::Label::textColourId, juce::Colour(0xFF4A90E2));
+    toneEqLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
+    
+    // Configure decay rate EQ label
+    decayRateEqLabel.setText("DECAY-RATE EQ", juce::dontSendNotification);
+    decayRateEqLabel.setJustificationType(juce::Justification::centred);
+    decayRateEqLabel.setColour(juce::Label::textColourId, juce::Colour(0xFF4A90E2));
+    decayRateEqLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
 }
 
 void ReverbGraphics::setViewMode(ViewMode mode)
@@ -411,20 +445,24 @@ void ReverbGraphics::VisualizationControlPanel::paint(juce::Graphics& g)
     
     const float cr = 8.0f;
     
-    // Elevation shadow
-    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.2f));
-    else g.setColour(juce::Colour(0x30000000));
-    g.fillRoundedRectangle(bounds.translated(1.0f, 1.0f), cr);
+    // Recessed effect - inner shadow
+    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.4f));
+    else g.setColour(juce::Colour(0x60000000));
+    g.fillRoundedRectangle(bounds, cr);
     
-    // Main background with subtle gradient
-    juce::ColourGradient bgGradient(th.meters.panelDark, 0, 0,
+    // Main background with recessed gradient (darker on top, lighter on bottom)
+    juce::ColourGradient bgGradient(th.meters.panelDark.darker(0.3f), 0, 0,
                                    th.meters.panelDark.darker(0.1f), 0, bounds.getHeight(), false);
     g.setGradientFill(bgGradient);
     g.fillRoundedRectangle(bounds, cr);
     
-    // Border
-    g.setColour(th.sh.withAlpha(0.6f));
+    // Inner border for recessed effect
+    g.setColour(th.sh.withAlpha(0.8f));
     g.drawRoundedRectangle(bounds, cr, 1.0f);
+    
+    // Inner highlight for recessed effect
+    g.setColour(th.sh.withAlpha(0.2f));
+    g.drawRoundedRectangle(bounds.reduced(1.0f), cr - 1.0f, 1.0f);
     
     // Title
     g.setColour(th.text);

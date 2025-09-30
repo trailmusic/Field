@@ -54,6 +54,9 @@ public:
     
     // Visualization control panel setup
     void setupVisualizationControlPanel();
+    
+    // EQ labels setup
+    void setupEQLabels();
 
 private:
     void setupViewModeButtons();
@@ -77,6 +80,9 @@ private:
     };
     
     VisualizationControlPanel visualizationControlPanel;
+    
+    // EQ labels for visual separation
+    juce::Label toneEqLabel, decayRateEqLabel;
     
     // Ducking float
     std::unique_ptr<DuckingFloat> duckingFloat;
