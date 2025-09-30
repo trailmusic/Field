@@ -248,8 +248,8 @@ private:
         {
             auto b = getLocalBounds().toFloat();
             auto bg = b.reduced (2.0f);
-            g.setColour (juce::Colour (0xFF3A3E45)); g.fillRoundedRectangle (bg, 10.0f);
-            g.setColour (juce::Colours::white.withAlpha (0.08f)); g.drawRoundedRectangle (bg, 10.0f, 1.0f);
+            g.setColour (juce::Colour (0xFF3A3E45)); g.fillRoundedRectangle (bg, 8.0f);
+            g.setColour (juce::Colours::white.withAlpha (0.08f)); g.drawRoundedRectangle (bg, 8.0f, 1.0f);
 
             auto header = bg.removeFromTop (44.0f);
             header = header.reduced (10.0f, 0.0f);

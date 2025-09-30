@@ -391,9 +391,9 @@ void MachineTab::paintOverChildren (juce::Graphics& g)
         juce::Colour cBot = juce::Colours::black.withAlpha (0.20f);
         juce::ColourGradient grad (cTop, panel.getCentreX(), panel.getY(), cBot, panel.getCentreX(), panel.getBottom(), false);
         g.setGradientFill (grad);
-        g.fillRoundedRectangle (panel, 10.0f);
+        g.fillRoundedRectangle (panel, 8.0f);
         g.setColour (juce::Colours::white.withAlpha (0.20f));
-        g.drawRoundedRectangle (panel, 10.0f, 1.0f);
+        g.drawRoundedRectangle (panel, 8.0f, 1.0f);
 
         // Title line (technical status)
         g.setColour (juce::Colours::white.withAlpha (0.96f));
@@ -779,7 +779,7 @@ void MachineTab::paintTopBarBackground (juce::Graphics& g, juce::Rectangle<int> 
         juce::Colour::fromHSV (0.60f, 0.25f, 0.10f, 0.90f), r.getX(), r.getY(),
         juce::Colour::fromHSV (0.62f, 0.20f, 0.16f, 0.90f), r.getX(), r.getBottom(), false);
     g.setGradientFill (grad);
-    g.fillRoundedRectangle (r, 10.0f);
+    g.fillRoundedRectangle (r, 8.0f);
     g.saveState();
     juce::Random rnd (0xC0FFEE);
     for (int i = 0; i < 40; ++i)

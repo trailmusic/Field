@@ -707,10 +707,10 @@ private:
             juce::Colour bg = juce::Colours::darkgrey.darker (0.20f);
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) bg = lf->theme.shadowDark.brighter (0.20f);
             g.setColour (bg.withAlpha (0.96f));
-            g.fillRoundedRectangle (r, 6.0f);
+            g.fillRoundedRectangle (r, 8.0f);
             // Subtle outline (slightly stronger)
             g.setColour (juce::Colours::white.withAlpha (0.18f));
-            g.drawRoundedRectangle (r, 6.0f, 1.0f);
+            g.drawRoundedRectangle (r, 8.0f, 1.0f);
             // Accent vertical strip on the left (bottom-to-top gradient)
             juce::Rectangle<float> strip = r.removeFromLeft (2.0f).reduced (0.5f, 1.5f);
             // Top-down gradient for border accent

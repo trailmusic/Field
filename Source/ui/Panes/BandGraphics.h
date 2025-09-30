@@ -26,7 +26,7 @@ private:
         auto panel = juce::Colours::white.withAlpha (0.10f);
         g.setColour (panel);
         auto inner = r.reduced (8.0f);
-        g.drawRoundedRectangle (inner, 6.0f, 1.0f);
+        g.drawRoundedRectangle (inner, 8.0f, 1.0f);
         // Removed horizontal and vertical divider lines that were interfering with Band visuals
     }
 
@@ -36,7 +36,7 @@ private:
         auto grid = juce::Colours::white.withAlpha (0.12f);
         auto acc  = juce::Colours::aqua.withAlpha (0.80f);
         g.setColour (grid);
-        g.drawRoundedRectangle (r, 6.0f, 1.0f);
+        g.drawRoundedRectangle (r, 8.0f, 1.0f);
 
         // Account for SHUF strip area - bands should only use the area above it
         const float shufStripHeight = 144.0f; // SHUF strip height
@@ -108,9 +108,9 @@ private:
             auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
             auto bg = (lf ? lf->theme.accent : juce::Colours::cornflowerblue).withAlpha (0.35f);
             g.setColour (bg);
-            g.fillRoundedRectangle (rect.reduced (2.0f), 6.0f);
+            g.fillRoundedRectangle (rect.reduced (2.0f), 8.0f);
             g.setColour (bg.darker (0.35f));
-            g.drawRoundedRectangle (rect.reduced (2.0f), 6.0f, 1.0f);
+            g.drawRoundedRectangle (rect.reduced (2.0f), 8.0f, 1.0f);
             g.setColour (lf ? lf->theme.text : juce::Colours::white);
             g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
             g.drawText (txt, rect, juce::Justification::centred);

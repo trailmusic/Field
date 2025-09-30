@@ -123,7 +123,7 @@ private:
         auto grid = lf ? lf->theme.sh : juce::Colours::grey;
 
         g.setColour (grid.withAlpha (0.5f));
-        g.drawRoundedRectangle (area, 6.0f, 1.0f);
+        g.drawRoundedRectangle (area, 8.0f, 1.0f);
 
         // Draw S/D/T markers and animated playhead
         const int divs = 8;
@@ -185,7 +185,7 @@ private:
         auto grid = lf ? lf->theme.sh : juce::Colours::grey;
 
         g.setColour (grid.withAlpha (0.5f));
-        g.drawRoundedRectangle (area, 6.0f, 1.0f);
+        g.drawRoundedRectangle (area, 8.0f, 1.0f);
 
         // HP/LP handles
         const float minHz = 20.0f, maxHz = 20000.0f;
@@ -320,7 +320,7 @@ private:
         auto acc = lf ? lf->theme.accent : juce::Colours::orange;
 
         g.setColour (grid.withAlpha (0.5f));
-        g.drawRoundedRectangle (area, 6.0f, 1.0f);
+        g.drawRoundedRectangle (area, 8.0f, 1.0f);
 
         // Gain reduction bar (0..24 dB visual range)
         const float maxDb = 24.0f;

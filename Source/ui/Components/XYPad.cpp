@@ -149,7 +149,7 @@ void XYPad::drawGrid (juce::Graphics& g, juce::Rectangle<float> b)
     const auto sub    = lf ? lf->theme.hl.withAlpha (0.10f) : juce::Colours::grey.withAlpha (0.10f);
 
     g.setColour (border);
-    g.drawRoundedRectangle (b, 6.0f, 1.0f);
+    g.drawRoundedRectangle (b, 8.0f, 1.0f);
 
     // Pan subgrid (every 5 units across -50..0..+50)
     // Map -50..+50 to left..right; ticks every 5
