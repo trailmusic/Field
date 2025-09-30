@@ -3,10 +3,10 @@
 #include "Core/PluginProcessor.h"
 #include "Core/FieldLookAndFeel.h"
 #include "Core/FieldMetallic.h"
-#include "../Controls/ControlGridMetrics.h"
-#include "../Components/KnobCell.h"
-#include "../Components/ButtonSwitch.h"
-#include "../Controls/SimpleSwitchCell.h"
+#include "ui/Controls/ControlGridMetrics.h"
+#include "ui/Components/KnobCell.h"
+#include "ui/Components/ButtonSwitch.h"
+#include "ui/Controls/SimpleSwitchCell.h"
 
 // Phase Visual Container - placeholder for phase alignment visuals
 class PhaseVisualContainer : public juce::Component

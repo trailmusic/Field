@@ -216,7 +216,7 @@ namespace IDs {
     static constexpr const char* centerLockDb        = "center_lock_db";        // 0..6 dB cap
 }
 // Delay UI bridge
-#include "ui/delay/DelayUiBridge.h"
+#include "delay/DelayUiBridge.h"
 // ==================================
 // Visualization Bus (lock-free SPSC)
 // ==================================

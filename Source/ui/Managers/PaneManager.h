@@ -9,8 +9,8 @@
 #include "../../motion/MotionTab.h"
 #include "../../motion/MotionVisual.h"
 #include "../../reverb/ui/ReverbTab.h"
-#include "../delay/DelayTab.h"
-#include "../Tabs/PhaseTab.h"
+#include "delay/DelayTab.h"
+#include "phase/PhaseTab.h"
 
 // XYPaneAdapter removed - XYTab now contains XYPad directly
 

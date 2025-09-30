@@ -4,7 +4,7 @@
 #include "DelayUiBridge.h"
 #include "DelayVisuals.h"
 #include "DelayControlsPane.h"
-#include "../Controls/ControlGridMetrics.h"
+#include "ui/Controls/ControlGridMetrics.h"
 
 class MyPluginAudioProcessor; // fwd
 

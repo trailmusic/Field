@@ -87,10 +87,10 @@ set(SRC
     reverb/ui/ReverbTab.h
     ui/Engines/SpectrumAnalyzer.h
     ui/Engines/SpectrumAnalyzer.cpp
-    ui/delay/DelayUiBridge.h
-    ui/delay/DelayVisuals.h
-    ui/delay/DelayControlsPane.h
-    ui/delay/DelayTab.h
+    delay/DelayUiBridge.h
+    delay/DelayVisuals.h
+    delay/DelayControlsPane.h
+    delay/DelayTab.h
     ui/Tabs/DynEqTab.h
     dynEQ/DynamicEqParamIDs.h
     dynEQ/DynamicEqState.h
@@ -107,14 +107,14 @@ set(SRC
     ui/Engines/StereoFieldEngine.h
     ui/Engines/StereoFieldEngine.cpp
     ui/Managers/PaneManager.h
-    ui/Tabs/PhaseTab.h
-    ui/Tabs/PhaseTab.cpp
+    phase/PhaseTab.h
+    phase/PhaseTab.cpp
     ui/Controls/SimpleSwitchCell.h
-    ui/machine/ParamPatch.h
-    ui/machine/ProposalCard.h
-    ui/machine/ProposalCard.cpp
-    ui/machine/MachineEngine.h
-    ui/machine/MachineEngine.cpp
+    machine/ParamPatch.h
+    machine/ProposalCard.h
+    machine/ProposalCard.cpp
+    machine/MachineEngine.h
+    machine/MachineEngine.cpp
     ui/Tabs/MachineTab.h
     ui/Tabs/MachineTab.cpp
     
