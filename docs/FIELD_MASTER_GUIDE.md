@@ -1954,7 +1954,7 @@ void MyComponent::~MyComponent()
 **Custom Engines** (use custom math):
 - `DelayEngine` - Custom delay line with dual-reader crossfade
 - `MotionEngine` - Custom envelope follower and filter algorithms
-- `ReverbEngine` - Custom reverb algorithms
+- `ReverbEngine` - Custom reverb algorithms (IN DEVELOPMENT - Core algorithm implementation phase)
 
 **Direct JUCE DSP** (use built-in components):
 - `juce::dsp::LinkwitzRileyFilter` - Standard crossover filters
@@ -2153,9 +2153,18 @@ ls -la build/Source/Field_artefacts/Debug/Standalone/Field.app
 - `Source/features/motion/MotionEngine.h` - Enhanced spatial audio processor
 - `Source/features/motion/MotionPanel.h` - Motion UI implementation
 - `Source/features/motion/MotionControlsPane.h` - Motion control interface
-- `Source/features/reverb/ReverbEngine.h` - Reverb processing engine
-- `Source/features/reverb/ReverbTab.h` - Reverb tab implementation
+- `Source/features/reverb/ReverbEngine.h` - Reverb processing engine (IN DEVELOPMENT - Core algorithm implementation phase)
+- `Source/features/reverb/ReverbTab.h` - Reverb tab implementation (COMPLETE - UI and parameter system ready)
 - `Source/shared/Presets/PresetManager.h` - Preset management system
+
+### **Reverb System Development Status**
+- **Parameter System**: ✅ COMPLETE (100+ parameters ready)
+- **UI Components**: ✅ COMPLETE (6 specialized components)
+- **Engine Integration**: ✅ COMPLETE (parameter mapping and preparation)
+- **Core Algorithm**: ❌ IN DEVELOPMENT (ER + FDN implementation needed)
+- **Current State**: Stub implementation with pass-through audio processing
+- **Next Phase**: Early Reflections (ER) system implementation
+- **Development Plan**: See `docs/audits/Reverb_Audit.md` for detailed implementation plan
 
 ### **Build System**
 - `build_all.sh` - Build script for all targets
