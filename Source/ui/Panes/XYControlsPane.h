@@ -514,13 +514,14 @@ private:
 
     void buildControls()
     {
-        buildRowAControls();
-        buildRowBControls();
+        buildEQAndImagingControls();
+        buildCenterProcessingControls();
     }
     
-    void buildRowAControls()
+    void buildEQAndImagingControls()
     {
-        // Row A: MONO(1,2), HP(3), BASS(4,5), TILT(6,7), SCOOP(8,9), AIR(10,11), LP(12), Q+QLink(13,14), S(15), [1 empty]
+        // EQ controls: MONO(1,2), HP(3), BASS(4,5), TILT(6,7), SCOOP(8,9), AIR(10,11), LP(12), Q+QLink(13,14), S(15)
+        // Imaging controls: ROT, ASYM, PAN, SAT MIX (moved from Imager to XY)
         const bool Mgrey = true; // all XY controls use grey metallic styling
         
         // MONO group with slope switch and audition button (double-wide, positions 1-2)
@@ -552,19 +553,19 @@ private:
         // SHELF SHAPE (single-wide, position 15)
         makeCell (shelfS, shelfSV, "S",      "eq_shelf_shape", Mgrey);
         
-        // Additional imaging/placement controls moved from Imager to XY
+        // Imaging/placement controls moved from Imager to XY
         makeCell (rotation, rotationV, "ROT",      "rotation_deg",     Mgrey);
         makeCell (asym,     asymV,     "ASYM",     "asymmetry",        Mgrey);
         makeCell (pan,      panV,      "PAN",      "pan",               Mgrey);
         makeCell (satMix,   satMixV,   "SAT MIX",  "sat_mix",           Mgrey);
         
-        // Create blank placeholders for Row A (7 blanks)
+        // Create blank placeholders (7 blanks)
         createBlankPlaceholders(7);
     }
     
-    void buildRowBControls()
+    void buildCenterProcessingControls()
     {
-        // Row B: Center tools (metallic) - reordered to match resized() expectations
+        // Center processing controls: PUNCH MODE, PUNCH, CNTR, LO, HI, PHASE REC, PHASE, CNTR LOCK
         const bool M = true;
         makeUpwardCombo (punchMode,          "PUNCH MODE","center_punch_mode", M);
         makeCell (punchAmt, punchAmtV, "PUNCH",    "center_punch_amt", M);
@@ -575,7 +576,7 @@ private:
         makeCell (phaseAmt, phaseAmtV, "PHASE",    "center_phase_rec_amt", M);
         makeSwitch (centerLockOn,      "CNTR LOCK", "center_lock_on", M);
         
-        // Create blank placeholders for Row B (7 blanks)
+        // Create blank placeholders (7 blanks)
         createBlankPlaceholders(7);
     }
     
