@@ -78,13 +78,13 @@ set(SRC
     reverb/ReverbParameters.h
     reverb/ReverbEngine.h
     reverb/ReverbEngine.cpp
-    reverb/ui/ReverbCanvasComponent.h
-    reverb/ui/ReverbCanvasComponent.cpp
-    reverb/ui/ReverbGraphics.h
-    reverb/ui/ReverbGraphics.cpp
-    reverb/ui/ReverbDynEQPane.h
-    reverb/ui/ReverbControlsPane.h
-    reverb/ui/ReverbTab.h
+    reverb/ReverbCanvasComponent.h
+    reverb/ReverbCanvasComponent.cpp
+    reverb/ReverbGraphics.h
+    reverb/ReverbGraphics.cpp
+    reverb/ReverbDynEQPane.h
+    reverb/ReverbControlsPane.h
+    reverb/ReverbTab.h
     ui/Engines/SpectrumAnalyzer.h
     ui/Engines/SpectrumAnalyzer.cpp
     delay/DelayUiBridge.h

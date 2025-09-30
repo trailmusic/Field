@@ -8,7 +8,7 @@
 #include "Core/IconSystem.h"
 #include "../../motion/MotionTab.h"
 #include "../../motion/MotionVisual.h"
-#include "../../reverb/ui/ReverbTab.h"
+#include "reverb/ReverbTab.h"
 #include "delay/DelayTab.h"
 #include "phase/PhaseTab.h"
 

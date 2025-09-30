@@ -1,11 +1,11 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "../../ui/Components/KnobCell.h"
-#include "../../ui/Design/Layout.h"
-#include "../ReverbParamIDs.h"
-#include "../../Core/FieldLookAndFeel.h"
-#include "../../Core/FieldMetallic.h"
+#include "ui/Components/KnobCell.h"
+#include "ui/Design/Layout.h"
+#include "ReverbParamIDs.h"
+#include "Core/FieldLookAndFeel.h"
+#include "Core/FieldMetallic.h"
 
 // ReverbControlsPane: 2x16 flat grid container for Reverb controls.
 // Scaffolding-only: initially populated with styled empty KnobCells.

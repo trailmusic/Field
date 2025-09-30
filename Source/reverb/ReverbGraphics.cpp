@@ -2,8 +2,8 @@
 #include "DecayCurveComponent.h"
 #include "ReverbEQComponent.h"
 #include "ReverbScopeComponent.h"
-#include "../ReverbParamIDs.h"
-#include "../../ui/Components/KnobCell.h"
+#include "ReverbParamIDs.h"
+#include "ui/Components/KnobCell.h"
 
 using SA = juce::AudioProcessorValueTreeState::SliderAttachment;
 using BA = juce::AudioProcessorValueTreeState::ButtonAttachment;
