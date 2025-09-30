@@ -15,68 +15,6 @@ The `ReverbGraphics` component was missing its own `paint()` method, causing the
 - `ReverbGraphics.h`: Added `void paint(juce::Graphics& g) override;`
 - `ReverbGraphics.cpp`: Added paint implementation with theme integration
 
-## 2x16 Control Grid Layout Analysis (January 2025)
-
-### Current Status
-- **Grid Structure**: 2 rows × 16 columns = 32 total slots
-- **Current Controls**: 32 controls implemented
-- **Available Parameters**: 45 total parameters in ReverbParamIDs.h
-- **Missing Parameters**: 13 parameters not in UI (including required `enabled` and `killDry`)
-
-### Required Changes
-**User Requirements:**
-- **Enable** must be in position 1 (Row 1, Column 1)
-- **Wet Only** (killDry) must be in position 16 (Row 1, Column 16)
-- Need to remove 2 existing controls to make room
-
-### Current Control Layout
-
-**Row 1 (16 controls):**
-1. PRE (preDelayMs)
-2. ER LVL (erLevelDb)
-3. ER DEN (erDensityPct)
-4. ER WID (erWidthPct)
-5. DIFF (diffusionPct)
-6. MOD DEP (modDepthCents)
-7. MOD RATE (modRateHz)
-8. TL WID (widthPct)
-9. ER TIME (erTimeMs)
-10. ER->T (erToTailPct)
-11. DENS (densityPct)
-12. W START (widthStartPct)
-13. W END (widthEndPct)
-14. R START (rotStartDeg)
-15. R END (rotEndDeg)
-16. TRIM (outTrimDb)
-
-**Row 2 (16 controls):**
-17. WET (wetMix01)
-18. DECAY (decaySec)
-19. SIZE (sizePct)
-20. BLOOM (bloomPct)
-21. DIST (distancePct)
-22. DUCK (duckDepthDb)
-23. ATT (duckAtkMs)
-24. REL (duckRelMs)
-25. THR (duckThrDb)
-26. RAT (duckRatio)
-27. KNEE (duckKneeDb)
-28. LOOK (duckLaMs)
-29. RMS (duckRmsMs)
-30. BAND (duckBandHz)
-31. Q (duckBandQ)
-32. FREEZE (freeze)
-
-### Parameter Analysis
-**Available but Missing from UI (13 parameters):**
-- `enabled` (reverb_enabled) - **REQUIRED for position 1**
-- `killDry` (reverb_kill_dry) - **REQUIRED for position 16**
-- `dreqLowX`, `dreqMidX`, `dreqHighX` (DR-EQ parameters)
-- `dreqXoverLoHz`, `dreqXoverHiHz` (DR-EQ crossovers)
-- `widthEnvCurve`, `rotEnvCurve` (motion envelope curves)
-- `duckMode` (ducking mode selector)
-- `gateAmtPct`, `shimmerAmtPct`, `shimmerInt` (special effects)
-
 ## Visual Cleanup (January 2025)
 
 ### Reverb Visuals Removed
@@ -94,8 +32,239 @@ The `ReverbGraphics` component was missing its own `paint()` method, causing the
 - **Background**: Consistent dark panel with elevation shadows and rounded corners
 - **Ready**: Clean slate for rebuilding reverb visuals from scratch
 
+## Complete Reverb Visual System Implementation (January 2025)
+
+### Overview
+Complete package for implementing the reverb system with:
+- **Finalized 2×16 grid map** with required R1C1=Enable and R1C16=Wet Only
+- **Floating Ducking module** (UI + hooks) with GR meter and mode logic
+- **Visualization modes** with GR overlay (Rays | Waterfall | Spectral)
+- **Stripped Pro-Q style EQ** for reverb (Tone EQ + Decay-Rate EQ)
+- **Migration notes** for seamless integration
+
+### 1. Parameter System (ReverbParamIDs.h)
+
+**Core routing:**
+- `enabled`, `killDry`
+
+**Structure/space:**
+- `preDelayMs`, `decaySec`, `sizePct`
+
+**Early reflections:**
+- `erLevelDb`, `erDensityPct`, `erWidthPct`, `erTimeMs`, `erToTailPct`
+
+**Diffusion/density:**
+- `diffusionPct`, `densityPct`
+
+**Modulation:**
+- `modDepthCents`, `modRateHz`
+
+**Stereo + rotation:**
+- `widthPct`, `rotationDeg`
+
+**Motion follow (from global Motion Engine):**
+- `followWidth`, `followWidthAmt`, `followRot`, `followRotAmt`
+
+**Mix & specials:**
+- `wetMix01`, `bloomPct`, `distancePct`, `freeze`, `shimmerAmtPct`, `shimmerInt`, `gateAmtPct`, `outTrimDb`
+
+**Reverb EQ routing (4-band dyna-EQ pane):**
+- `dreqXoverLoHz`, `dreqXoverHiHz`, `dreqApply` (0=Pre,1=Post,2=ER,3=Tail)
+
+**Ducking (floating module):**
+- `duckOn`, `duckMode`, `duckDepthDb`, `duckAtkMs`, `duckRelMs`, `duckThrDb`, `duckRatio`, `duckKneeDb`, `duckBandHz`, `duckBandQ`, `duckDetectorSrc`
+
+### 2. Final 2×16 Grid Map (ReverbControlsPane.h/.cpp)
+
+**Row 1 (16 controls):**
+1. ENABLE (enabled) - Toggle
+2. PRE (preDelayMs) - ms
+3. ER LVL (erLevelDb) - dB
+4. ER DEN (erDensityPct) - %
+5. ER WID (erWidthPct) - %
+6. ER TIME (erTimeMs) - ms
+7. ER→T (erToTailPct) - %
+8. DIFF (diffusionPct) - %
+9. DENS (densityPct) - %
+10. MOD DEP (modDepthCents) - ¢
+11. MOD RATE (modRateHz) - Hz
+12. WIDTH (widthPct) - %
+13. ROT (rotationDeg) - °
+14. SIZE (sizePct) - %
+15. DECAY (decaySec) - s
+16. WET ONLY (killDry) - Toggle
+
+**Row 2 (16 controls):**
+1. WET (wetMix01) - 0-1
+2. BLOOM (bloomPct) - %
+3. DIST (distancePct) - %
+4. FREEZE (freeze) - Toggle
+5. SHIM AMT (shimmerAmtPct) - %
+6. SHIM INT (shimmerInt) - %
+7. GATE (gateAmtPct) - %
+8. DREQ XO LO (dreqXoverLoHz) - Hz
+9. DREQ XO HI (dreqXoverHiHz) - Hz
+10. EQ APPLY (dreqApply) - Choice
+11. FOLLOW W (followWidth) - Toggle
+12. W AMT (followWidthAmt) - %
+13. FOLLOW R (followRot) - Toggle
+14. R AMT (followRotAmt) - %
+15. TRIM (outTrimDb) - dB
+16. SPARE (spare) - Reserved
+
+### 3. Floating Ducking Module (DuckingFloat.h/.cpp)
+
+**Features:**
+- Collapsible/expandable UI with pill-style header
+- GR meter with real-time gain reduction display
+- Mode selection (General, Vocal, DrumBus, Guitar, Keys)
+- Detector source selection (Dry, ER, Tail, Wet Sum)
+- Auto lookahead/RMS based on mode selection
+
+**UI Layout:**
+- **Collapsed**: Pill header with GR meter and status
+- **Expanded**: Full control grid with all ducking parameters
+- **GR Meter**: Real-time gain reduction visualization
+
+### 4. Hero Visualization (ReverbGraphics.h/.cpp)
+
+**View Modes:**
+- **Rays**: Fan of lines with random jitter, brightness maps to density/diffusion
+- **Waterfall**: Gradient bands with IR preview texture
+- **Spectral**: Frequency response curves
+
+**Features:**
+- GR overlay across all visualization modes
+- Mode switching buttons (Rays | Waterfall | Spectral)
+- Embedded DuckingFloat container
+- Real-time gain reduction visualization
+
+### 5. Stripped Pro-Q Style EQ for Reverb
+
+**Tone EQ (POST) - 4 bands max:**
+- Band types: Bell, Low Shelf, High Shelf
+- Per-band dynamics: DynAmt only (0-100%)
+- Auto A/R by band frequency
+- Default: Post reverb
+
+**Decay-Rate EQ (DR-EQ) - 3 bands max:**
+- Band types: Bell, Low Tilt, High Tilt
+- Y-axis controls Decay Multiplier (0.5× - 2.0×)
+- Default: Tail-Only
+
+**Unified Gestures:**
+- Drag node: X = Freq (log), Y = Gain (Tone) or Decay Multiplier (Decay)
+- Mouse wheel over node: Q
+- Alt/Option + drag vertical: DynAmt ring (Tone lane only)
+- Right-click: band type menu
+- Double-click node: bypass/enable band
+- "+" on spectrum: add band at cursor
+
+**Visual Language:**
+- Tone EQ: outer ring shows DynAmt fill
+- Decay EQ: bidirectional arrows or "T60×" tick marks
+- Analyzer: ER trace + Tail trace
+- Decay lane: dim static magnitude, emphasize decay slope guide
+
+### 6. Parameter IDs for ReverbEQ
+
+**Tone EQ (post):**
+- `rvb_eq_b{i}_enabled` (bool)
+- `rvb_eq_b{i}_type` (int: 0=Bell,1=LS,2=HS)
+- `rvb_eq_b{i}_freq` (20-20000 Hz, log)
+- `rvb_eq_b{i}_gainDb` (-12...+12 dB)
+- `rvb_eq_b{i}_q` (0.3...4.0)
+- `rvb_eq_b{i}_dynAmt` (0...100 %)
+
+**Decay-Rate EQ:**
+- `rvb_dreq_b{j}_enabled` (bool)
+- `rvb_dreq_b{j}_type` (int: 0=Bell,1=TiltLo,2=TiltHi)
+- `rvb_dreq_b{j}_freq` (20-20000 Hz)
+- `rvb_dreq_b{j}_q` (0.3...3.0)
+- `rvb_dreq_b{j}_mult` (Decay Multiplier: 0.5×...2.0×)
+
+**Lane/global:**
+- `dreqApply` (0=Pre,1=Post,2=ER,3=Tail)
+- `dreqXoverLoHz` (80-400 Hz), `dreqXoverHiHz` (1k-6k Hz)
+- `rvb_dreq_apply` (0=Tail-Only,1=ER-Only,2=Both)
+
+### 7. Defaults & UX
+
+**Ducking Modes (hidden lookahead/RMS):**
+- General: LA 6-10 ms, RMS 15-25 ms
+- Vocal: LA 12-20 ms, RMS 20-30 ms
+- DrumBus: LA 3-6 ms, RMS 6-12 ms
+- Guitar/Keys: LA 5-10 ms, RMS 15-25 ms
+
+**EQ Apply defaults:**
+- Tone EQ: Post (default)
+- Decay-Rate EQ: Tail-Only (default)
+
+**Follow Motion:**
+- Toggles default off
+- Amounts at 0%
+
+**Wet Only:**
+- Off by default
+- Enable on by default
+
+### 8. Migration Notes
+
+**Remove legacy params:**
+- `widthStartPct`, `widthEndPct`, `rotStartDeg`, `rotEndDeg`
+- `duckLaMs`, `duckRmsMs`
+
+**Add new params:**
+- `rotationDeg`, `followWidth`, `followWidthAmt`, `followRot`, `followRotAmt`
+- `dreqApply`, ducking group IDs, shimmer/gate
+
+**Update attachments:**
+- Update control pane to new map
+- Instantiate `ReverbGraphics` in reverb tab
+- Add `.duckUI()` access for floating panel
+
+**DSP graph:**
+- Ensure ER and Tail are separate taps
+- Apply `duck.getLinearGR()` to Tail gain reduction
+- Split internally if one-bus'd reverb
+
+### 9. QA Checklist
+
+**Slot positions:**
+- R1C1 Enable, R1C16 Wet Only confirmed
+- `Trim` at R2C15
+
+**Duck float:**
+- Collapsed/expanded works
+- DUCK ON toggles detector processing
+- GR meter moves
+
+**GR overlay:**
+- Appears across all three viz modes
+- No frame drops at 30 FPS
+
+**Freeze:**
+- IR/late reflections stop evolving
+- GR overlay still renders (optional)
+
+**Preset compatibility:**
+- Add migration shim for removed IDs
+- Map to new defaults
+
+**Automation:**
+- Parameters grouped in host
+- Use `AudioProcessorParameterGroup` for foldering
+
+### 10. Implementation Priority
+
+1. **Phase 1**: Update parameter system and 2×16 grid
+2. **Phase 2**: Implement floating ducking module
+3. **Phase 3**: Add hero visualization modes
+4. **Phase 4**: Integrate stripped Pro-Q style EQ
+5. **Phase 5**: Final testing and optimization
+
 ### Next Steps
-- **Decision Required**: Which 2 controls to remove to make room for Enable and Wet Only
-- **Implementation**: Update ReverbControlsPane.h to reflect new layout
-- **Verification**: Ensure all parameters exist in ReverbParameters.h
-- **Visual Rebuild**: Design new reverb visual system from scratch
+- **Immediate**: Update ReverbParamIDs.h and ReverbParameters.h with new parameter structure
+- **Short-term**: Implement 2×16 grid with required Enable/Wet Only positions
+- **Medium-term**: Add floating ducking module and visualization modes
+- **Long-term**: Integrate stripped Pro-Q style EQ system
