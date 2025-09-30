@@ -581,54 +581,14 @@ public:
                         g.restoreState();
                     }
                     
-                    // Add standard accent border for non-analysis tabs
-                    if (!isAnalysisTab)
-                    {
-                        if (on)
-                        {
-                            // Active state - thicker accent border
-                            g.setColour (lf->theme.accent.withAlpha (0.9f));
-                            g.drawRoundedRectangle (rr, 9.0f, 2.0f);
-                        }
-                        else
-                        {
-                            // Inactive state - subtle accent border
-                            g.setColour (lf->theme.accent.withAlpha (0.3f));
-                            g.drawRoundedRectangle (rr, 9.0f, 1.0f);
-                        }
-                    }
                 }
                 else
                 {
+                    // Fallback rendering for non-FieldLNF LookAndFeel
                     g.setColour (juce::Colour (0xFF3A3E45));
-                    g.fillRoundedRectangle (rr, 9.0f);
-                    if (on) { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.85f)); g.drawRoundedRectangle (rr, 9.0f, 2.0f); }
-                    else     { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.3f)); g.drawRoundedRectangle (rr, 9.0f, 1.0f); }
-                }
-                
-                // Add solid border for analysis tabs with border growth
-                if (isAnalysisTab)
-                {
-                    auto* lf = dynamic_cast<FieldLNF*> (&getLookAndFeel());
-                    juce::Colour borderColor;
-                    if (lf)
-                    {
-                        // Use correct theme colors for border
-                        if (id == PaneID::Imager)
-                            borderColor = lf->theme.eq.hp.withAlpha (on ? 0.9f : 0.6f); // Blue for Imager
-                        else // Machine
-                            borderColor = lf->theme.eq.bass.withAlpha (on ? 0.9f : 0.6f); // Green for Machine
-                    }
-                    else
-                    {
-                        // Fallback colors - use theme accent for Imager, green for Machine
-                        borderColor = (id == PaneID::Imager) ? lf->theme.accent.withAlpha (on ? 0.9f : 0.6f) // Theme accent for Imager
-                                                           : juce::Colour (0xFF66BB6A).withAlpha (on ? 0.9f : 0.6f); // Green for Machine
-                    }
-                    
-                    g.setColour (borderColor);
-                    // Border growth: active = 2.0px, inactive = 1.0px
-                    g.drawRoundedRectangle (rr, 9.0f, on ? 2.0f : 1.0f);
+                    g.fillRoundedRectangle (rr, r.getHeight() * 0.5f);
+                    if (on) { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.85f)); g.drawRoundedRectangle (rr, r.getHeight() * 0.5f, 2.0f); }
+                    else     { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.3f)); g.drawRoundedRectangle (rr, r.getHeight() * 0.5f, 1.0f); }
                 }
                 // label + icon
                 auto txtCol = juce::Colours::white.withAlpha (on ? 0.95f : 0.65f);
