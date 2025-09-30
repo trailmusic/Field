@@ -113,19 +113,7 @@ void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> h
     g.setColour (accent.darker (0.2f));
     g.drawRoundedRectangle (handleRect, 4.0f, 1.0f);
     
-    // Draw handle label (I, O, M) - use component name to identify slider type
-    g.setColour (juce::Colours::white);
-    g.setFont (juce::Font (7.0f, juce::Font::bold));
-    juce::String handleLabel;
-    juce::String componentName = getName();
-    if (componentName.contains ("input")) handleLabel = "I";
-    else if (componentName.contains ("output")) handleLabel = "O";
-    else if (componentName.contains ("mix")) handleLabel = "M";
-    
-    if (!handleLabel.isEmpty())
-    {
-        g.drawText (handleLabel, handleRect, juce::Justification::centred);
-    }
+    // No handle labels - let track markers show through for better visibility
 }
 
 void VerticalSlider3D::drawMarkers (juce::Graphics& g, juce::Rectangle<float> trackRect)
@@ -135,7 +123,7 @@ void VerticalSlider3D::drawMarkers (juce::Graphics& g, juce::Rectangle<float> tr
     const auto accentColor = lf->theme.accent;
     
     g.setColour (textColor);
-    g.setFont (juce::Font (7.0f, juce::Font::bold));
+    g.setFont (juce::Font (9.0f, juce::Font::bold));
     
     // Determine marker values based on slider range
     std::vector<float> markerValues;
@@ -145,13 +133,13 @@ void VerticalSlider3D::drawMarkers (juce::Graphics& g, juce::Rectangle<float> tr
     const float maxVal = (float) getMaximum();
     
     if (maxVal <= 12.0f && minVal >= -60.0f) {
-        // dB range (Input/Output sliders)
-        markerValues = {-60.0f, -40.0f, -20.0f, -10.0f, -6.0f, -3.0f, 0.0f, 3.0f, 6.0f, 12.0f};
-        markerLabels = {"-60", "-40", "-20", "-10", "-6", "-3", "0", "+3", "+6", "+12"};
+        // dB range (Input/Output sliders) - remove lowest distracting units
+        markerValues = {-20.0f, -10.0f, -6.0f, -3.0f, 3.0f, 6.0f, 12.0f};
+        markerLabels = {"-20", "-10", "-6", "-3", "+3", "+6", "+12"};
     } else if (maxVal <= 100.0f && minVal >= 0.0f) {
         // Percentage range (Mix slider) - no % symbols to save space
-        markerValues = {0.0f, 25.0f, 50.0f, 75.0f, 100.0f};
-        markerLabels = {"0", "25", "50", "75", "100"};
+        markerValues = {25.0f, 50.0f, 75.0f, 85.0f, 95.0f, 100.0f};
+        markerLabels = {"25", "50", "75", "85", "95", "100"};
     } else {
         // Generic range - create 5 markers
         const float range = maxVal - minVal;
@@ -199,6 +187,25 @@ void VerticalSlider3D::drawMetallicTrack (juce::Graphics& g, juce::Rectangle<flo
     // Track background using meter colors
     g.setColour (lf->theme.meters.trackBase);
     g.fillRoundedRectangle (trackRect, 4.0f);
+    
+    // Draw accent color gradient for the "used" portion of the track
+    const float value = (float) getValue();
+    const float normalizedValue = (value - getMinimum()) / (getMaximum() - getMinimum());
+    const float usedHeight = trackRect.getHeight() * normalizedValue;
+    const float usedY = trackRect.getBottom() - usedHeight;
+    
+    if (usedHeight > 0) {
+        auto usedRect = juce::Rectangle<float> (trackRect.getX(), usedY, trackRect.getWidth(), usedHeight);
+        
+        // Create gradient from solid accent at top to transparent at bottom
+        juce::ColourGradient gradient (lf->theme.accent.withAlpha (0.6f), 
+                                       usedRect.getX(), usedRect.getY(),
+                                       lf->theme.accent.withAlpha (0.0f), 
+                                       usedRect.getX(), usedRect.getBottom(),
+                                       false);
+        g.setGradientFill (gradient);
+        g.fillRoundedRectangle (usedRect, 4.0f);
+    }
     
     // Inner shadow
     g.setColour (lf->theme.meters.trackBorder);
@@ -265,7 +272,7 @@ void VerticalSlider3D::drawBottomLabel (juce::Graphics& g, juce::Rectangle<float
     
     const auto textColor = lf->theme.textMuted;
     g.setColour (textColor);
-    g.setFont (juce::Font (7.0f, juce::Font::bold));
+    g.setFont (juce::Font (9.0f, juce::Font::bold));
     
     // Format the current value based on slider type
     juce::String valueText;
