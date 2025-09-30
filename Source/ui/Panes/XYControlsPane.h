@@ -72,11 +72,14 @@ public:
         place(idx++, 2, 3, 1);  // PAN (slot 19)
         place(idx++, 2, 4, 1);  // SAT MIX (slot 20)
         
-        // Slots 21-27: 7 blank placeholders (already created in buildControls)
-        for (int col = 5; col <= 11 && idx < (int)ownedCells.size(); ++col)
+        // Slots 21-26: 6 blank placeholders (already created in buildControls)
+        for (int col = 5; col <= 10 && idx < (int)ownedCells.size(); ++col)
         {
             place(idx++, 2, col, 1);
         }
+        
+        // Slot 27: PUNCH MODE ComboBox
+        place(idx++, 2, 11, 1); // PUNCH MODE (slot 27)
         
         // Slots 28-30: PUNCH, CNTR, LO, HI (center processing controls)
         place(idx++, 2, 12, 1); // PUNCH (slot 28)
@@ -175,7 +178,7 @@ private:
         cell->setCaption (cap);
         addAndMakeVisible (*cell);
         switchCells.emplace_back (cell.get());
-        ownedSwitches.emplace_back (std::move (cell));
+        ownedCells.emplace_back (std::move (cell));
         cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, pid, c));
     }
     
@@ -806,19 +809,19 @@ private:
             ownedCells.emplace_back (std::move (cell));
         }
 
-        // Row B: Center tools (metallic)
+        // Row B: Center tools (metallic) - reordered to match resized() expectations
         const bool M = true;
-        makeCell (punchAmt, punchAmtV, "PUNCH",    "center_punch_amt", M);
         makeUpwardCombo (punchMode,          "PUNCH MODE","center_punch_mode", M);
-        makeSwitch (phaseRecOn,        "PHASE REC", "center_phase_rec_on", M);
-        makeCell (phaseAmt, phaseAmtV, "PHASE",    "center_phase_rec_amt", M);
-        makeSwitch (centerLockOn,      "CNTR LOCK", "center_lock_on", M);
+        makeCell (punchAmt, punchAmtV, "PUNCH",    "center_punch_amt", M);
         makeCell (promDb,   promDbV,   "CNTR",     "center_prom_db", M);
         makeCell (focusLo,  focusLoV,  "LO",       "center_f_lo_hz", M);
         makeCell (focusHi,  focusHiV,  "HI",       "center_f_hi_hz", M);
+        makeSwitch (phaseRecOn,        "PHASE REC", "center_phase_rec_on", M);
+        makeCell (phaseAmt, phaseAmtV, "PHASE",    "center_phase_rec_amt", M);
+        makeSwitch (centerLockOn,      "CNTR LOCK", "center_lock_on", M);
         
-        // Create blank placeholders for Row B (8 blanks)
-        for (int i = 0; i < 8; ++i) {
+        // Create blank placeholders for Row B (7 blanks)
+        for (int i = 0; i < 7; ++i) {
             auto sl = std::make_unique<juce::Slider>();
             auto lb = std::make_unique<juce::Label>(); 
             lb->setVisible (false);
