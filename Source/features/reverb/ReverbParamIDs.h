@@ -21,8 +21,6 @@ inline constexpr const char* erDensityPct = "reverb_er_density_pct";
 inline constexpr const char* erWidthPct   = "reverb_er_width_pct";
 inline constexpr const char* erToTailPct  = "reverb_er_to_tail_pct";
 
-// Old knob-based EQ controls removed - now handled by DynEQ pane
-
 // DR-EQ
 inline constexpr const char* dreqLowX  = "reverb_decay_low_mult";
 inline constexpr const char* dreqMidX  = "reverb_decay_mid_mult";

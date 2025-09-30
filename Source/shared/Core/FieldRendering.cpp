@@ -896,6 +896,12 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             juce::ColourGradient gradient(metalStops.bottom, r.getX(), r.getY(),
                                          metalStops.top, r.getX(), r.getBottom(), false);
             
+            // Add theme accent tint to the light part (bottom) of the gradient with intensity control
+            const float tintIntensity = 0.25f; // Configurable intensity (0.0 = no tint, 1.0 = full accent color)
+            auto tintedBottom = metalStops.bottom.withMultipliedAlpha(0.7f).interpolatedWith(theme.accent, tintIntensity);
+            gradient = juce::ColourGradient(tintedBottom, r.getX(), r.getY(),
+                                           metalStops.top, r.getX(), r.getBottom(), false);
+            
             // Apply tint if specified
             if (metalStops.tintAlpha > 0.0f)
             {
@@ -908,9 +914,11 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             // Add hover effects for active tab
             if (hover)
             {
-                // Enhanced metallic colors on hover
-                juce::ColourGradient hoverGradient(metalStops.bottom.brighter(0.1f), r.getX(), r.getY(),
-                                                   metalStops.top.brighter(0.1f), r.getX(), r.getBottom(), false);
+                // Slightly enhanced metallic colors on hover with accent tint (reduced brightness)
+                const float hoverTintIntensity = 0.25f; // Same intensity as normal state
+                auto tintedBottomHover = metalStops.bottom.brighter(0.05f).withMultipliedAlpha(0.7f).interpolatedWith(theme.accent, hoverTintIntensity);
+                juce::ColourGradient hoverGradient(tintedBottomHover, r.getX(), r.getY(),
+                                                   metalStops.top.brighter(0.05f), r.getX(), r.getBottom(), false);
                 g.setGradientFill(hoverGradient);
                 g.fillRoundedRectangle(r, corner);
                 
@@ -925,12 +933,14 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         }
         else
         {
-            // Inactive tab - use darker metallic with inverted gradient
+            // Inactive tab - use darker metallic with inverted gradient and accent tint
             auto metallicKind = MetallicKind::Neutral;
             auto metalStops = theme.metal.neutral;
             
-            // Create darker, more subtle inverted gradient
-            juce::ColourGradient gradient(metalStops.bottom.darker(0.3f), r.getX(), r.getY(),
+            // Create darker, more subtle inverted gradient with accent tint
+            const float inactiveTintIntensity = 0.15f; // Slightly less intense for inactive tabs
+            auto tintedBottomInactive = metalStops.bottom.darker(0.3f).withMultipliedAlpha(0.7f).interpolatedWith(theme.accent, inactiveTintIntensity);
+            juce::ColourGradient gradient(tintedBottomInactive, r.getX(), r.getY(),
                                          metalStops.top.darker(0.1f), r.getX(), r.getBottom(), false);
             
             g.setGradientFill(gradient);
@@ -939,8 +949,10 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             // Add hover effects for inactive tab
             if (hover)
             {
-                // Slightly brighter on hover
-                juce::ColourGradient hoverGradient(metalStops.bottom.darker(0.2f), r.getX(), r.getY(),
+                // Slightly brighter on hover with accent tint
+                const float inactiveHoverTintIntensity = 0.15f; // Same as inactive normal state
+                auto tintedBottomInactiveHover = metalStops.bottom.darker(0.2f).withMultipliedAlpha(0.7f).interpolatedWith(theme.accent, inactiveHoverTintIntensity);
+                juce::ColourGradient hoverGradient(tintedBottomInactiveHover, r.getX(), r.getY(),
                                                    metalStops.top.darker(0.05f), r.getX(), r.getBottom(), false);
                 g.setGradientFill(hoverGradient);
                 g.fillRoundedRectangle(r, corner);

@@ -560,27 +560,13 @@ public:
                 const bool on = (current == id);
                 auto rr = r.reduced (1.0f);
                 
-                // Check if this is an analysis/tools tab (Imager or Machine)
-                const bool isAnalysisTab = (id == PaneID::Imager || id == PaneID::Machine);
-                
                 // Detect hover state
                 auto mousePos = getMouseXYRelative();
                 const bool hover = r.contains(mousePos.toFloat());
                 
                 if (auto* lf = dynamic_cast<FieldLNF*> (&getLookAndFeel())) 
                 {
-                    // Apply reduced opacity for analysis tabs
-                    if (isAnalysisTab)
-                    {
-                        g.saveState();
-                        g.setOpacity (0.75f); // Reduced opacity for analysis tabs
-                    }
                     lf->drawTabPill (g, rr, on, hover);
-                    if (isAnalysisTab)
-                    {
-                        g.restoreState();
-                    }
-                    
                 }
                 else
                 {
@@ -596,10 +582,8 @@ public:
                 juce::Font f (juce::FontOptions (on ? 16.5f : 15.5f).withStyle ("Bold"));
                 f.setExtraKerningFactor (0.0f);
                 g.setFont (f);
-                const float pad = (id == PaneID::Machine) ? 2.0f : 4.0f; // Reduced padding for 9 tabs
-                const float iconSz = (id == PaneID::Machine)
-                                      ? juce::jmin (rr.getHeight() - 4.0f, rr.getHeight() - 4.0f)
-                                      : juce::jmin (rr.getHeight() - 6.0f, 22.0f);
+                const float pad = 4.0f;
+                const float iconSz = juce::jmin (rr.getHeight() - 6.0f, 22.0f);
                 juce::Rectangle<float> content = rr.reduced (6.0f, 2.0f);
                 juce::String drawLabel = (id == PaneID::DynEQ ? juce::String ("Dynamic EQ") : label);
                 drawLabel = drawLabel.toUpperCase();
