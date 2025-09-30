@@ -12,10 +12,11 @@ Field is a professional spatial audio processor with three build targets:
 ### **VerticalSlider3D System Enhancements**
 - **Professional 3D Sliders**: Enhanced visual feedback with gradient accent indication
 - **Dynamic Marker System**: Context-aware markers (dB range: -20 to +12, Mix: 25-100)
-- **Improved Layout**: Wider sliders with doubled gaps (4px) and 2px right margin
+- **Improved Layout**: Wider sliders with optimized gaps (4px) and increased container space
 - **Clean Visual Design**: Removed distracting markers, larger fonts (9pt), gradient feedback
 - **Theme Integration**: Seamless integration with Field's theming system
 - **Performance Optimized**: Efficient rendering with pre-computed geometry
+- **Enhanced Container Space**: 30% meters, 15% sliders for better layout flexibility
 
 ### **Key Slider Features**
 - **Gradient Accent Feedback**: Visual indication of current value with smooth gradients

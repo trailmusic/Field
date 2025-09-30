@@ -3151,19 +3151,22 @@ void drawMarkers (juce::Graphics& g, juce::Rectangle<float> bounds)
 
 **Container Sizing:**
 ```cpp
-// LayoutManager.cpp - Container width calculation
-const int slidersWidth = juce::jlimit(Layout::dp(50, s), Layout::dp(80, s), 
-                                     juce::roundToInt(r.getWidth() * 0.12f));
+// LayoutManager.cpp - Container width calculation (Updated)
+const int metersWidth = juce::jlimit(Layout::dp(30, s), Layout::dp(70, s), 
+                                     juce::roundToInt(r.getWidth() * 0.30f));
+const int slidersWidth = juce::jlimit(Layout::dp(60, s), Layout::dp(90, s), 
+                                     juce::roundToInt(r.getWidth() * 0.15f));
 
-// 2px right margin for edge spacing
-slidersArea = slidersArea.withX(editor.getWidth() - slidersWidth - 2)
-                         .withWidth(slidersWidth);
+// Natural spacing with uniform padding
+metersArea = metersArea.reduced(4, 0).withWidth(metersWidth);
+slidersArea = slidersArea.reduced(4, 0).withWidth(slidersWidth);
 ```
 
 **Individual Slider Spacing:**
 ```cpp
 // SliderManager.cpp - Gap between sliders
-const int gap = 4; // Doubled from 2 for better visual separation
+const int gap = 4; // Optimized gap for better visual separation
+const int sliderWidth = (slidersArea.getWidth() - totalGaps) / 3 + 1; // +1 for extra width
 ```
 
 #### **Value Display System**

@@ -188,29 +188,29 @@ void LayoutManager::layoutMainControls()
     
     // Clean layout: meters (left) → center content → sliders (right)
     
-    // 1) Calculate meters width (smaller than half)
-    const int metersWidth = juce::jlimit(Layout::dp(24, s), Layout::dp(60, s), 
-                                         juce::roundToInt(r.getWidth() * 0.25f));
+    // 1) Calculate meters width (increased for more container space)
+    const int metersWidth = juce::jlimit(Layout::dp(30, s), Layout::dp(70, s), 
+                                         juce::roundToInt(r.getWidth() * 0.30f));
     
-    // 2) Calculate sliders width (smaller)
-    const int slidersWidth = juce::jlimit(Layout::dp(50, s), Layout::dp(80, s), 
-                                         juce::roundToInt(r.getWidth() * 0.12f));
+    // 2) Calculate sliders width (increased for more container space)
+    const int slidersWidth = juce::jlimit(Layout::dp(60, s), Layout::dp(90, s), 
+                                         juce::roundToInt(r.getWidth() * 0.15f));
     
-    // 3) Layout meters container on the left with padding
-    const int metersPadding = Layout::dp(Layout::GAP, s); // Add gap between meters and content
+    // 3) Layout meters container on the left with more padding
+    const int metersPadding = Layout::dp(Layout::GAP_S, s); // Use smaller gap (6px) for consistency
     auto metersArea = r.removeFromLeft(metersWidth + metersPadding);
-    // Keep meters at the left edge but add padding to the right
-    metersArea = metersArea.withX(0).withWidth(metersWidth);
+    // Add more padding to prevent cutoff and improve spacing
+    metersArea = metersArea.reduced(4, 0).withWidth(metersWidth);
     editor.meterManager->setMetersContainerBounds(metersArea);
     
     // Layout individual meters within the container
     editor.layoutMeters(metersArea, s, sv);
     
-    // 4) Layout sliders on the right with padding
-    const int slidersPadding = Layout::dp(Layout::GAP, s); // Add gap between content and sliders
+    // 4) Layout sliders on the right with more padding
+    const int slidersPadding = Layout::dp(Layout::GAP_S, s); // Use smaller gap (6px) for better fit
     auto slidersArea = r.removeFromRight(slidersWidth + slidersPadding);
-    // Keep sliders at the right edge but add padding to the left and 2px margin from edge
-    slidersArea = slidersArea.withX(editor.getWidth() - slidersWidth - 2).withWidth(slidersWidth);
+    // Add more padding to prevent cutoff and improve spacing
+    slidersArea = slidersArea.reduced(4, 0).withWidth(slidersWidth);
     editor.sliderManager->setSlidersContainerBounds(slidersArea);
     
     // Layout the individual sliders horizontally within the container
