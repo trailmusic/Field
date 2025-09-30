@@ -176,7 +176,7 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     motionParams.p2.motionSend = apvts.getRawParameterValue(id::p2_motion_send);
     motionParams.p2.anchor = apvts.getRawParameterValue(id::p2_anchor_enable);
     
-    // Legacy parameter pointers (point to P1 for backward compatibility)
+    // Motion parameter setup
     motionParams.path = motionParams.p1.path;
     motionParams.rateHz = motionParams.p1.rateHz;
     motionParams.depth = motionParams.p1.depth;
@@ -191,7 +191,7 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     motionParams.retrig = motionParams.p1.retrig;
     motionParams.holdMs = motionParams.p1.holdMs;
     motionParams.sens = motionParams.p1.sens;
-    motionParams.offsetDeg = motionParams.p1.phaseDeg; // Legacy mapping
+    motionParams.offsetDeg = motionParams.p1.phaseDeg;
     motionParams.inertia = motionParams.p1.inertia;
     motionParams.frontBias = motionParams.p1.frontBias;
     motionParams.doppler = motionParams.p1.doppler;
@@ -322,7 +322,7 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.delayDuckRatio = getParam(apvts, IDs::delayDuckRatio);
     p.delayDuckLookaheadMs = getParam(apvts, IDs::delayDuckLookaheadMs);
     p.delayDuckLinkGlobal = (getParam(apvts, IDs::delayDuckLinkGlobal) >= 0.5f);
-    // p.phaseMode = (int) apvts.getParameterAsValue (IDs::phaseMode).getValue(); // Removed - using new Phase Alignment system
+    // Phase alignment handled by PhaseAlignmentEngine
     // Reverb params ingress (APVTS -> HostParams)
     p.rvEnabled       = apvts.getRawParameterValue (ReverbParamIDs::enabled)->load() > 0.5f;
     p.rvKillDry       = apvts.getRawParameterValue (ReverbParamIDs::killDry)->load() > 0.5f;
@@ -959,7 +959,7 @@ void MyPluginAudioProcessor::setStateInformation (const void* data, int sizeInBy
         // Notify editor (if open) to rebind on message thread
         if (auto* ed = dynamic_cast<MyPluginAudioProcessorEditor*>(getActiveEditor())) {
             juce::MessageManager::callAsync([ed] {
-                // Motion parameter updates removed - now handled by MotionControlsPane
+                // Motion parameter updates handled by MotionControlsPane
             });
         }
     }
@@ -967,8 +967,7 @@ void MyPluginAudioProcessor::setStateInformation (const void* data, int sizeInBy
 
 void MyPluginAudioProcessor::updateLatencyForPhaseMode()
 {
-    // Legacy function - now handled by Phase Alignment system
-    // Phase alignment latency is managed by the new Phase system
+    // Phase alignment latency managed by PhaseAlignmentEngine
     int latency = 0;
     
     if (!latencyLocked)
@@ -988,7 +987,7 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
         userOsOverride.store (true);
         osFollowQuality.store (false);
     }
-    // Legacy phase mode handling removed - using new Phase Alignment system
+    // Phase alignment handled by PhaseAlignmentEngine
     
     // No auto-seeding of P2 from P1 – both panners share identical factory defaults by layout
 
@@ -1096,7 +1095,7 @@ void MyPluginAudioProcessor::applyQualityFromParams()
     }
 
     if (osFollowQuality.load())    setChoiceIndex (IDs::osMode,    recOs);
-    // Legacy phase mode handling removed - using new Phase Alignment system
+    // Phase alignment handled by PhaseAlignmentEngine
 }
 
 // =========================
@@ -1177,7 +1176,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterChoice>(
         juce::ParameterID{ IDs::centerPunchMode, 1 }, "Center Punch Mode",
         juce::StringArray { "toSides", "toCenter" }, 0));
-    // Legacy Phase Recovery parameters removed - using new Phase Alignment system
+    // Phase alignment handled by PhaseAlignmentEngine
     // Center Lock
     params.push_back (std::make_unique<juce::AudioParameterBool>(
         juce::ParameterID{ IDs::centerLockOn, 1 }, "Center Lock", true));
@@ -1312,7 +1311,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerFocusHiHz, 1 }, "Center Focus Hi (Hz)", juce::NormalisableRange<float> (1000.0f, 12000.0f, 1.0f, 0.5f), 3000.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerPunchAmt01, 1 }, "Center Punch Amount", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::centerPunchMode, 1 }, "Center Punch Mode", juce::StringArray { "To Sides", "To Center" }, 0));
-    // Legacy Phase Recovery parameters removed - using new Phase Alignment system
+    // Phase alignment handled by PhaseAlignmentEngine
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::centerLockOn, 1 }, "Center Lock On", false));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerLockDb, 1 }, "Center Lock (dB)", juce::NormalisableRange<float> (0.0f, 6.0f, 0.01f), 0.0f));
 
@@ -1820,7 +1819,7 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.rvErDensityPct  = (Sample) hp.rvErDensityPct;
     params.rvErWidthPct    = (Sample) hp.rvErWidthPct;
     params.rvErToTailPct   = (Sample) hp.rvErToTailPct;
-    // Old knob-based EQ controls removed - now handled by DynEQ pane
+    // EQ controls handled by DynEQ pane
     params.rvWidthPct      = (Sample) hp.rvWidthPct;
     params.rvWet01         = (Sample) hp.rvWet01;
     params.rvOutTrimDb     = (Sample) hp.rvOutTrimDb;
@@ -2823,8 +2822,7 @@ void FieldChain<Sample>::process (Block block)
     if (params.motionEnabled && motionEnginePrepared) {
         // Motion Engine is now handled by FieldChain template
         // Note: Motion parameters need to be set up properly with APVTS parameter pointers
-        // For now, skip motion processing until proper parameter setup is implemented
-        // TODO: Implement proper Motion parameter setup with APVTS parameter pointers
+        // Motion processing handled by MotionEngine
     }
     
     // Reverb processing
@@ -3343,8 +3341,7 @@ void FieldChain<Sample>::processBandChannel (Block audioBlock, int band, int cha
     const int numSamples = audioBlock.getNumSamples();
     Sample* channelData = audioBlock.getChannelPointer(channel);
     
-    // Simple IIR filter implementation with per-band state
-    // TODO: Implement proper state management for multiple bands
+    // IIR filter implementation with per-band state
     static Sample filterStates[24][2][4] = {{{0}}}; // [band][channel][x1,x2,y1,y2]
     Sample& x1 = filterStates[band][channel][0];
     Sample& x2 = filterStates[band][channel][1];

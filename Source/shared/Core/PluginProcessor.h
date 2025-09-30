@@ -792,7 +792,7 @@ private:
     float delay_wetRmsR { 0.0f };
 
 public:
-    // removed eco flag
+    // Eco mode removed
 };
 
 // ===============================
@@ -947,7 +947,7 @@ public:
     }
     bool supportsDoublePrecisionProcessing() const override    { return true; }
 
-    // Undo system removed
+    // Undo system removed - using host undo
 
     // Programs (single program)
     int getNumPrograms() override                              { return 1; }
@@ -962,7 +962,7 @@ public:
         // Clear UI visualization buses to avoid any pending reads on UI timers
         visPre.clearAll();
         visPost.clearAll();
-        // Clear any legacy UI callbacks (editor should also null these in its dtor)
+        // Clear UI callbacks
         onAudioSample = nullptr;
         onAudioBlock = nullptr;
         onAudioBlockPre = nullptr;
@@ -991,14 +991,14 @@ public:
     juce::AudioProcessorValueTreeState apvts;
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
 
-    // removed eco mode
+    // Eco mode removed
 
     // Safety passthrough: when true, processBlock returns input unmodified (hard bypass)
     std::atomic<bool> safePassthrough { false }; // OFF so audio processes; toggle if needed
     void setSafePassthrough (bool on) { safePassthrough.store (on, std::memory_order_release); }
     bool getSafePassthrough() const { return safePassthrough.load (std::memory_order_acquire); }
 
-    // Undo manager removed
+    // Undo manager removed - using host undo
 
     // Visualization buses (audio thread → UI thread)
     VisBus visPre, visPost;
