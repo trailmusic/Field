@@ -683,6 +683,35 @@ All reverb controls use:
 - **✅ Content Clipping**: Proper content clipping within container bounds
 - **✅ Mode Switching**: Proper visualization mode switching functionality
 
+## ✅ DUCKING MODULE REDESIGN & LAYOUT SPLIT (January 2025)
+
+### **🎯 Right Side Split & Ducking Module Upgrade**
+
+**Layout Architecture**
+- **✅ Right Side Split**: Split right side into top half (ducking) and bottom half (visualization)
+- **✅ Ducking Position**: Moved ducking module to top half of right side
+- **✅ Visualization Position**: Visualization control panel in bottom half
+- **✅ Layout Balance**: 60% left for EQs, 40% right split 50/50 for ducking/visualization
+
+**Ducking Module State Management**
+- **✅ Always Visible**: Ducking module now always visible (no hide/show)
+- **✅ Active State**: Controlled by R2C16 DUCK toggle parameter
+- **✅ Greyed Out Mode**: Inactive state shows greyed out overlay with "INACTIVE" text
+- **✅ Settings Retention**: Retains last settings when greyed out, loads defaults on fresh load
+- **✅ Proper Saving**: Respects all proper saving protocols and parameter persistence
+
+**Visual Design Enhancements**
+- **✅ State-Based UI**: Components enabled/disabled based on active state
+- **✅ Greyed Out Overlay**: Semi-transparent overlay when inactive
+- **✅ Visual Feedback**: Clear "INACTIVE" text when greyed out
+- **✅ Professional Polish**: Enhanced visual hierarchy and state indication
+
+**Technical Implementation**
+- **✅ State Management**: Added `setActive()` and `setGreyedOut()` methods
+- **✅ Component Control**: All controls respect active/inactive state
+- **✅ Layout Updates**: Dynamic layout updates based on state
+- **✅ Parameter Integration**: Proper integration with R2C16 DUCK toggle
+
 ## ✅ DUCKING MODULE ENHANCEMENTS (January 2025)
 
 ### **🎯 World-Class UI Implementation**

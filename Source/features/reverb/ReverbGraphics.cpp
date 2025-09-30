@@ -23,8 +23,10 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     duckingFloat = std::make_unique<DuckingFloat>(state);
     addAndMakeVisible(*duckingFloat);
     
-    // Initially hide ducking float (will be shown when DUCK toggle is on)
-    duckingFloat->setVisible(false);
+    // Initially show ducking float but greyed out (will be active when DUCK toggle is on)
+    duckingFloat->setVisible(true);
+    duckingFloat->setActive(false);
+    duckingFloat->setGreyedOut(true);
     
         // Create EQ panels
         reverbEQ = std::make_unique<ReverbToneEQ>(proc, &getLookAndFeel());
@@ -101,23 +103,27 @@ void ReverbGraphics::resized()
 {
     auto bounds = getLocalBounds();
     
-    // Position ducking float in top-right corner
-    if (duckingFloat)
-    {
-        auto duckingBounds = bounds.removeFromTop(50).removeFromRight(300);
-        duckingFloat->setBounds(duckingBounds);
-    }
     
-    // Horizontal split: EQ panels on left (60%), visualization controls on right (40%)
+    // Horizontal split: EQ panels on left (60%), right side split into ducking (top) and visualization (bottom)
     auto leftArea = bounds.removeFromLeft(bounds.getWidth() * 0.6f);
     auto rightArea = bounds;
     
-    // Add gap between EQs and visuals to prevent accidental clicks
+    // Add gap between EQs and right side
     leftArea.removeFromRight(15); // 15px gap
     rightArea.removeFromLeft(15);  // 15px gap
     
-    // Position visualization control panel on the right
-    visualizationControlPanel.setBounds(rightArea);
+    // Split right side: top half for ducking, bottom half for visualization
+    auto duckingArea = rightArea.removeFromTop(rightArea.getHeight() * 0.5f);
+    auto visualizationArea = rightArea;
+    
+    // Position ducking float in top half
+    if (duckingFloat)
+    {
+        duckingFloat->setBounds(duckingArea.reduced(10));
+    }
+    
+    // Position visualization control panel in bottom half
+    visualizationControlPanel.setBounds(visualizationArea);
     
     // Layout buttons in horizontal row centered with title
     auto panelBounds = visualizationControlPanel.getBounds();
@@ -436,18 +442,10 @@ void ReverbGraphics::updateDuckingModuleVisibility()
     auto duckOnParam = state.getRawParameterValue(ReverbParamIDs::duckOn);
     bool duckEnabled = duckOnParam ? (*duckOnParam > 0.5f) : false;
     
-    // Show/hide ducking module based on DUCK toggle
-    bool shouldBeVisible = duckEnabled;
-    if (duckingFloat->isVisible() != shouldBeVisible)
-    {
-        duckingFloat->setVisible(shouldBeVisible);
-        
-        // If showing, bring to front
-        if (shouldBeVisible)
-        {
-            duckingFloat->toFront(false);
-        }
-    }
+    // Always show the ducking module, but control its active/greyed out state
+    duckingFloat->setVisible(true);
+    duckingFloat->setActive(duckEnabled);
+    duckingFloat->setGreyedOut(!duckEnabled);
 }
 
 // VisualizationControlPanel paint implementation

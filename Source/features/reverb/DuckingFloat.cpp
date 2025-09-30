@@ -175,6 +175,20 @@ void DuckingFloat::updateGrMeter(float grDb)
     repaint();
 }
 
+void DuckingFloat::setActive(bool activeState)
+{
+    active = activeState;
+    updateLayout();
+    repaint();
+}
+
+void DuckingFloat::setGreyedOut(bool greyedOutState)
+{
+    greyedOut = greyedOutState;
+    updateLayout();
+    repaint();
+}
+
 void DuckingFloat::setVisible(bool shouldBeVisible)
 {
     juce::Component::setVisible(shouldBeVisible);
@@ -192,6 +206,22 @@ void DuckingFloat::resized()
 void DuckingFloat::updateLayout()
 {
     auto bounds = getLocalBounds().toFloat();
+    
+    // Set component enabled state based on active and greyed out state
+    bool componentsEnabled = active && !greyedOut;
+    
+    expandButton.setEnabled(componentsEnabled);
+    grMeter.setEnabled(componentsEnabled);
+    modeSelector.setEnabled(componentsEnabled);
+    detectorSelector.setEnabled(componentsEnabled);
+    depthSlider.setEnabled(componentsEnabled);
+    thresholdSlider.setEnabled(componentsEnabled);
+    ratioSlider.setEnabled(componentsEnabled);
+    kneeSlider.setEnabled(componentsEnabled);
+    attackSlider.setEnabled(componentsEnabled);
+    releaseSlider.setEnabled(componentsEnabled);
+    bandFreqSlider.setEnabled(componentsEnabled);
+    bandQSlider.setEnabled(componentsEnabled);
     
     if (expanded)
     {
@@ -254,6 +284,19 @@ void DuckingFloat::paint(juce::Graphics& g)
         paintExpanded(g);
     else
         paintCollapsed(g);
+    
+    // Apply greyed out overlay if inactive
+    if (greyedOut || !active)
+    {
+        auto bounds = getLocalBounds().toFloat();
+        g.setColour(juce::Colour(0x80000000)); // Semi-transparent black overlay
+        g.fillRoundedRectangle(bounds, 8.0f);
+        
+        // Add "INACTIVE" text
+        g.setColour(juce::Colour(0xFF666666));
+        g.setFont(juce::FontOptions(12.0f).withStyle("bold"));
+        g.drawText("INACTIVE", bounds, juce::Justification::centred);
+    }
 }
 
 void DuckingFloat::paintCollapsed(juce::Graphics& g)

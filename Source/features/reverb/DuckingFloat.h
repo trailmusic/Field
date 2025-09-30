@@ -19,6 +19,12 @@ public:
     
     // Visibility control
     void setVisible(bool shouldBeVisible) override;
+    
+    // State management for greyed out mode
+    void setActive(bool active);
+    bool isActive() const { return active; }
+    void setGreyedOut(bool greyedOut);
+    bool isGreyedOut() const { return greyedOut; }
 
 private:
     void setupComponents();
@@ -62,6 +68,8 @@ private:
     
     // State
     bool expanded = false;
+    bool active = true;
+    bool greyedOut = false;
     float currentGrDb = 0.0f;
     
     // Constants
