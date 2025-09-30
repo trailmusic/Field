@@ -211,27 +211,44 @@ private:
         makeCell (outTrim, outTrimV, "TRIM", ReverbParamIDs::outTrimDb);
         makeCell (spare, spareV, "SPARE", "spare");
 
-        // Grid order (Row 1, then Row 2)
+        // Grid order (Row 1, then Row 2) - matches Reverb.md documentation
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
         
-        // Row 1: enabled, pre, erL, erD, erW, erTime, erToTail, dif, density, md, mr, w, rotation, size, dec, killDry
-        push (ownedSwitches[0].get()); // enabled (SimpleSwitchCell)
-        for (int i = 0; i < 15; ++i) push (ownedCells[(size_t) i].get()); // pre, erL, erD, erW, erTime, erToTail, dif, density, md, mr, w, rotation, size, dec
-        push (ownedSwitches[1].get()); // killDry (SimpleSwitchCell)
+        // Row 1 (16 controls): ENABLE, PRE, ER LVL, ER DEN, ER WID, ER TIME, ER→T, DIFF, DENS, MOD DEP, MOD RATE, WIDTH, ROT, SIZE, DECAY, WET ONLY
+        push (ownedSwitches[0].get()); // ENABLE (enabled) - SimpleSwitchCell
+        push (ownedCells[0].get());    // PRE (preDelayMs)
+        push (ownedCells[1].get());    // ER LVL (erLevelDb)
+        push (ownedCells[2].get());    // ER DEN (erDensityPct)
+        push (ownedCells[3].get());    // ER WID (erWidthPct)
+        push (ownedCells[4].get());    // ER TIME (erTimeMs)
+        push (ownedCells[5].get());    // ER→T (erToTailPct)
+        push (ownedCells[6].get());    // DIFF (diffusionPct)
+        push (ownedCells[7].get());    // DENS (densityPct)
+        push (ownedCells[8].get());    // MOD DEP (modDepthCents)
+        push (ownedCells[9].get());    // MOD RATE (modRateHz)
+        push (ownedCells[10].get());   // WIDTH (widthPct)
+        push (ownedCells[11].get());   // ROT (rotationDeg)
+        push (ownedCells[12].get());   // SIZE (sizePct)
+        push (ownedCells[13].get());   // DECAY (decaySec)
+        push (ownedSwitches[1].get()); // WET ONLY (killDry) - SimpleSwitchCell
         
-        // Row 2: wet, bloom, distance, freeze, shimmerAmt, shimmerInt, gateAmt, dreqXoverLo, dreqXoverHi, dreqApply, followWidth, followWidthAmt, followRot, followRotAmt, outTrim, spare
-        push (&wet);
-        push (&bloom);
-        push (&distance);
-        push (ownedSwitches[2].get()); // freeze (SimpleSwitchCell)
-        for (int i = 15; i < 20; ++i) push (ownedCells[(size_t) i].get()); // shimmerAmt, shimmerInt, gateAmt, dreqXoverLo, dreqXoverHi
-        push (ownedSwitches[3].get()); // dreqApply (SimpleSwitchCell)
-        push (ownedSwitches[4].get()); // followWidth (SimpleSwitchCell)
-        push (&followWidthAmt);
-        push (ownedSwitches[5].get()); // followRot (SimpleSwitchCell)
-        push (&followRotAmt);
-        push (&outTrim);
-        push (&spare);
+        // Row 2 (16 controls): WET, BLOOM, DIST, FREEZE, SHIM AMT, SHIM INT, GATE, DREQ XO LO, DREQ XO HI, EQ APPLY, FOLLOW W, W AMT, FOLLOW R, R AMT, TRIM, SPARE
+        push (ownedCells[14].get());   // WET (wetMix01)
+        push (ownedCells[15].get());    // BLOOM (bloomPct)
+        push (ownedCells[16].get());    // DIST (distancePct)
+        push (ownedSwitches[2].get()); // FREEZE (freeze) - SimpleSwitchCell
+        push (ownedCells[17].get());    // SHIM AMT (shimmerAmtPct)
+        push (ownedCells[18].get());    // SHIM INT (shimmerInt)
+        push (ownedCells[19].get());    // GATE (gateAmtPct)
+        push (ownedCells[20].get());    // DREQ XO LO (dreqXoverLoHz)
+        push (ownedCells[21].get());    // DREQ XO HI (dreqXoverHiHz)
+        push (ownedSwitches[3].get());  // EQ APPLY (dreqApply) - SimpleSwitchCell
+        push (ownedSwitches[4].get());  // FOLLOW W (followWidth) - SimpleSwitchCell
+        push (ownedCells[22].get());    // W AMT (followWidthAmt)
+        push (ownedSwitches[5].get());  // FOLLOW R (followRot) - SimpleSwitchCell
+        push (ownedCells[23].get());    // R AMT (followRotAmt)
+        push (ownedCells[24].get());    // TRIM (outTrimDb)
+        push (ownedCells[25].get());    // SPARE (spare)
 
         // Fill blanks up to 32 with styled Reverb blanks
         const int totalNeeded = 32;
