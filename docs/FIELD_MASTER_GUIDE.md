@@ -4,7 +4,7 @@
 
 ### **🏗️ ARCHITECTURE & REFACTORING**
 - [Major PluginEditor Cleanup (January 2025)](#-major-plugineditor-cleanup-january-2025)
-- [Major Refactoring Achievement (September 2025)](#-major-refactoring-achievement-september-2025)
+- [Major Refactoring Achievement (December 2024)](#-major-refactoring-achievement-december-2024)
 - [Refactoring Patterns & Best Practices](#-refactoring-patterns--best-practices)
 - [Architecture Patterns](#-architecture-patterns)
 - [Engine Architecture](#-engine-architecture)
@@ -56,198 +56,6 @@
 
 ---
 
-## 📋 DETAILED SUBSECTION INDEX
-
-### **🏗️ ARCHITECTURE & REFACTORING DETAILS**
-#### **Major Refactoring Achievement**
-- [Complete Codebase Reorganization](#complete-codebase-reorganization---the-ultimate-architecture-improvement)
-- [Refactoring Objectives Achieved](#-refactoring-objectives-achieved)
-- [Impact Metrics](#-impact-metrics)
-- [Technical Achievements](#-technical-achievements)
-- [Quality Assurance](#-quality-assurance)
-- [Benefits Realized](#-benefits-realized)
-- [Migration Process](#-migration-process)
-- [Documentation Updates](#-documentation-updates)
-
-#### **Refactoring Patterns & Best Practices**
-- [Large-Scale Codebase Refactoring Methodology](#large-scale-codebase-refactoring-methodology)
-- [Pre-Refactoring Analysis](#1-pre-refactoring-analysis)
-- [Directory Structure Design Principles](#2-directory-structure-design-principles)
-- [Include Path Update Strategy](#3-include-path-update-strategy)
-- [CMakeLists.txt Update Strategy](#4-cmakeliststxt-update-strategy)
-- [Build Verification Strategy](#5-build-verification-strategy)
-- [Git Integration Strategy](#6-git-integration-strategy)
-- [Documentation Update Strategy](#7-documentation-update-strategy)
-- [Quality Assurance Strategy](#8-quality-assurance-strategy)
-- [Rollback Strategy](#9-rollback-strategy)
-- [Post-Refactoring Validation](#10-post-refactoring-validation)
-- [Refactoring Anti-Patterns to Avoid](#refactoring-anti-patterns-to-avoid)
-
-#### **Architecture Patterns**
-- [New Refactored Architecture Patterns](#new-refactored-architecture-patterns)
-- [Core Component Centralization Pattern](#core-component-centralization-pattern)
-- [Functional Grouping Pattern](#functional-grouping-pattern)
-- [Include Path Consistency Pattern](#include-path-consistency-pattern)
-- [CMakeLists.txt Organization Pattern](#cmakeliststxt-organization-pattern)
-- [Engine Initialization Pattern](#engine-initialization-pattern)
-- [Parameter Attachment Safety Pattern](#parameter-attachment-safety-pattern)
-- [Parameter ID Consistency Pattern](#parameter-id-consistency-pattern)
-
-### **🎛️ CORE SYSTEMS DETAILS**
-#### **Phase Alignment System**
-- [Phase System Objectives Achieved](#-phase-system-objectives-achieved)
-- [Technical Implementation](#-technical-implementation)
-- [UI Implementation](#-ui-implementation)
-- [DSP Processing Chain](#-dsp-processing-chain)
-- [Integration Metrics](#-integration-metrics)
-- [Processing Modes](#-processing-modes)
-- [Integration with Field Plugin](#-integration-with-field-plugin)
-- [Quality Assurance Achievements](#-quality-assurance-achievements)
-- [Benefits Realized](#-benefits-realized)
-- [Documentation Coverage](#-documentation-coverage)
-- [Future Development Guidelines](#-future-development-guidelines)
-
-#### **Band Control System**
-- [Band System Objectives Achieved](#-band-system-objectives-achieved)
-- [Technical Implementation](#-technical-implementation)
-- [Visual Integration](#-visual-integration)
-- [Control Hierarchy](#-control-hierarchy)
-- [Integration Points](#-integration-points)
-- [Performance Characteristics](#-performance-characteristics)
-- [Quality Assurance](#-quality-assurance)
-
-#### **Dynamic EQ System**
-- [Dynamic EQ System Objectives Achieved](#-dynamic-eq-system-objectives-achieved)
-- [Technical Architecture](#-technical-architecture)
-- [DSP Architecture](#-dsp-architecture)
-- [UI Architecture](#-ui-architecture)
-- [Color System & Theming](#-color-system--theming)
-- [Integration Points](#-integration-points)
-- [Advanced Features](#-advanced-features)
-- [Quality Assurance](#-quality-assurance)
-
-### **🎨 UI COMPONENTS & VISUALS DETAILS**
-#### **ShadeOverlay Component**
-- [Interactive Shade Overlay System](#interactive-shade-overlay-system)
-- [Technical Implementation](#-technical-implementation)
-- [Visual Design System](#-visual-design-system)
-- [Performance Optimization](#-performance-optimization)
-- [Integration Patterns](#-integration-patterns)
-- [Maintenance Guidelines](#-maintenance-guidelines)
-
-#### **FIELD Logo System**
-- [Logo System Objectives Achieved](#-logo-system-objectives-achieved)
-- [Technical Implementation](#-technical-implementation)
-- [Visual Design System](#-visual-design-system)
-- [Performance Optimization](#-performance-optimization)
-- [Integration Patterns](#-integration-patterns)
-- [Maintenance Guidelines](#-maintenance-guidelines)
-
-### **🔧 DEVELOPMENT & DEBUGGING DETAILS**
-#### **Critical Crash Prevention**
-- [Plugin Close Crash Solution](#plugin-close-crash---the-ultimate-solution)
-- [Control Pane Destructors](#1-always-add-destructors-to-control-panes)
-- [Tab Component Destructors](#2-always-add-destructors-to-tab-components)
-- [Timer-Based Components](#3-timer-based-components-must-stop-timers)
-- [AsyncUpdater Cancellation](#4-asyncupdater-must-be-cancelled)
-
-#### **Debugging Systems**
-- [Crash Logging System](#crash-logging-system)
-- [Build Verification System](#build-verification-system)
-
-#### **Common Pitfalls**
-- [Missing Parameter Definitions](#1-missing-parameter-definitions)
-- [Parameter ID Mismatches](#2-parameter-id-mismatches)
-- [Missing Destructors](#3-missing-destructors)
-- [Timer Not Stopped](#4-timer-not-stopped)
-- [AsyncUpdater Not Cancelled](#5-asyncupdater-not-cancelled)
-
-#### **Development Checklist**
-- [Before Adding New UI Components](#before-adding-new-ui-components)
-- [Before Committing Changes](#before-committing-changes)
-- [When Debugging Crashes](#when-debugging-crashes)
-
-### **📊 TECHNICAL SPECIFICATIONS DETAILS**
-#### **Parameter Systems**
-- [APVTS Integration](#parameter-schema-apvts)
-- [Parameter ID Management](#parameter-id-consistency-pattern)
-- [Parameter Attachment Safety](#parameter-attachment-safety-pattern)
-
-#### **DSP Architecture**
-- [Custom vs JUCE DSP Components](#custom-vs-juce-dsp-components)
-- [Engine Initialization](#engine-initialization-pattern)
-- [Processing Pipeline](#processing-pipeline)
-
-#### **State Management**
-- [ValueTree Serialization](#state-model)
-- [Parameter State Persistence](#parameter-state-persistence)
-- [Migration Handling](#migration-handling)
-
-#### **Performance Optimization**
-- [CPU Efficiency](#cpu-efficiency)
-- [Memory Management](#memory-management)
-- [Real-time Processing](#real-time-processing)
-- [Latency Management](#latency-management)
-
-### **🎯 SYSTEM INTEGRATION DETAILS**
-#### **Signal Chain Integration**
-- [Default Processing Order](#signal-chain-integration)
-- [Per-Band Detector Taps](#per-band-detector-taps)
-- [Optional Placements](#optional-placements)
-
-#### **UI Architecture**
-- [Tab Structure](#tab-structure)
-- [Visual System](#visual-system)
-- [Interaction Design](#interaction-design)
-
-#### **Color System & Theming**
-- [Theme-Driven Palette](#theme-driven-palette)
-- [Meter Color System](#-meter-color-system)
-- [Visual Feedback](#visual-feedback)
-- [Consistency Guidelines](#consistency-guidelines)
-
-#### **Integration Points**
-- [System Integration](#system-integration)
-- [Performance Characteristics](#performance-characteristics)
-- [Quality Assurance](#quality-assurance)
-
-### **📈 SUCCESS METRICS & VALIDATION DETAILS**
-#### **Success Metrics**
-- [Plugin Stability Indicators](#plugin-stability-indicators)
-- [Development Efficiency Indicators](#development-efficiency-indicators)
-- [Refactoring Success Metrics](#refactoring-success-metrics-september-2025)
-
-#### **Architecture Improvements**
-- [Centralized Core Components](#-architecture-improvements)
-- [Logical System Grouping](#-architecture-improvements)
-- [Improved Build Performance](#-performance-improvements)
-- [Enhanced Developer Experience](#-developer-experience-improvements)
-
-#### **Quantitative Achievements**
-- [Files Reorganized](#-quantitative-achievements)
-- [Include Paths Updated](#-quantitative-achievements)
-- [Build Time Improvement](#-quantitative-achievements)
-- [Directory Structure](#-quantitative-achievements)
-
-#### **Quality Assurance Achievements**
-- [Build Verification](#-quality-assurance-achievements)
-- [Include Path Validation](#-quality-assurance-achievements)
-- [CMakeLists Integration](#-quality-assurance-achievements)
-- [Git Integration](#-quality-assurance-achievements)
-
-#### **Documentation Achievements**
-- [README.md Updates](#-documentation-achievements)
-- [FIELD_MASTER_GUIDE.md Updates](#-documentation-achievements)
-- [Build Instructions](#-documentation-achievements)
-- [Developer Notes](#-documentation-achievements)
-
-#### **Long-term Benefits**
-- [Faster Navigation](#-long-term-benefits-realized)
-- [Easier Maintenance](#-long-term-benefits-realized)
-- [Better Collaboration](#-long-term-benefits-realized)
-- [Cleaner Git History](#-long-term-benefits-realized)
-
----
 
 ## 🚀 QUICK REFERENCE GUIDE
 
@@ -280,7 +88,7 @@
 ## 🎯 Overview
 This guide documents critical architectural decisions, debugging processes, and solutions discovered during the development of the Field audio plugin. This knowledge base prevents repeating complex debugging sessions and ensures consistent development practices.
 
-## 🚀 MAJOR REFACTORING ACHIEVEMENT (September 2025)
+## 🚀 MAJOR REFACTORING ACHIEVEMENT (December 2024)
 
 ### **Complete Codebase Reorganization - The Ultimate Architecture Improvement**
 
@@ -288,7 +96,7 @@ FIELD has undergone the most significant architectural refactoring in its histor
 
 #### **🎯 Refactoring Objectives Achieved**
 
-1. **Centralized Core Components**: All essential plugin files now live in `Source/Core/`
+1. **Centralized Core Components**: All essential plugin files now live in `Source/shared/Core/`
 2. **Logical System Grouping**: Related components organized by functionality
 3. **Improved Build Performance**: ~30% faster compilation times
 4. **Enhanced Developer Experience**: Intuitive navigation and easier maintenance
@@ -306,25 +114,25 @@ FIELD has undergone the most significant architectural refactoring in its histor
 #### **🔧 Technical Achievements**
 
 **Core System Centralization**
-- `PluginProcessor.h/cpp` → `Source/Core/`
-- `PluginEditor.h/cpp` → `Source/Core/`
-- `FieldLookAndFeel.h/cpp` → `Source/Core/`
-- `IconSystem.h/cpp` → `Source/Core/`
-- `Layout.h` → `Source/Core/` (main) + `Source/ui/` (UI-specific)
+- `PluginProcessor.h/cpp` → `Source/shared/Core/`
+- `PluginEditor.h/cpp` → `Source/shared/Core/`
+- `FieldLookAndFeel.h/cpp` → `Source/shared/Core/`
+- `IconSystem.h/cpp` → `Source/shared/Core/`
+- `Layout.h` → `Source/shared/Core/` (main) + `Source/shared/ui/` (UI-specific)
 
 **UI Component Organization**
-- All UI components → `Source/ui/` with logical subdirectories
-- Reusable components → `Source/ui/Components/`
-- Specialized UI → `Source/ui/delay/`, `Source/ui/machine/`, etc.
-- Tab implementations → `Source/ui/Tabs/`
-- Pane implementations → `Source/ui/Panes/`
+- All UI components → `Source/shared/ui/` with logical subdirectories
+- Reusable components → `Source/shared/ui/Components/`
+- Feature-specific UI → `Source/features/[feature]/` directories
+- Tab implementations → `Source/features/[feature]/[Feature]Tab.h`
+- Pane implementations → `Source/features/[feature]/[Feature]ControlsPane.h`
 
 **DSP Engine Organization**
-- Audio processing engines → `Source/dsp/`
-- Specialized processing → `Source/dsp/Delay/`, `Source/dsp/DynamicEQ/`, etc.
-- Motion processing → `Source/motion/`
-- Reverb processing → `Source/reverb/`
-- Preset system → `Source/Presets/`
+- Audio processing engines → `Source/shared/dsp/`
+- Specialized processing → `Source/shared/dsp/Delay/`, `Source/shared/dsp/DynamicEQ/`, etc.
+- Motion processing → `Source/features/motion/`
+- Reverb processing → `Source/features/reverb/`
+- Preset system → `Source/shared/Presets/`
 
 #### **✅ Quality Assurance**
 
@@ -400,31 +208,31 @@ find Source/ -name "*.h" -o -name "*.cpp" | xargs grep -l "#include" > file_rela
 #### **2. Directory Structure Design Principles**
 
 **Core Components First**
-- Essential plugin files → `Source/Core/`
-- Main processor and editor → `Source/Core/`
-- Look & Feel system → `Source/Core/`
-- Icon system → `Source/Core/`
+- Essential plugin files → `Source/shared/Core/`
+- Main processor and editor → `Source/shared/Core/`
+- Look & Feel system → `Source/shared/Core/`
+- Icon system → `Source/shared/Core/`
 
 **Functional Grouping**
-- UI components → `Source/ui/`
-- DSP engines → `Source/dsp/`
-- Specialized systems → `Source/[system]/`
-- Shared resources → appropriate subdirectories
+- UI components → `Source/shared/ui/`
+- DSP engines → `Source/shared/dsp/`
+- Feature systems → `Source/features/[feature]/`
+- Shared resources → `Source/shared/` subdirectories
 
 **Subdirectory Organization**
-- Reusable components → `Components/`
-- Specialized UI → `[system]/`
-- Tab implementations → `Tabs/`
-- Pane implementations → `Panes/`
+- Reusable components → `shared/ui/Components/`
+- Feature-specific UI → `features/[feature]/`
+- Tab implementations → `features/[feature]/[Feature]Tab.h`
+- Pane implementations → `features/[feature]/[Feature]ControlsPane.h`
 
 #### **3. Include Path Update Strategy**
 
 **Systematic Path Updates**
 ```bash
 # Update include paths systematically
-sed -i 's|#include "FieldLookAndFeel.h"|#include "Core/FieldLookAndFeel.h"|g' Source/**/*.cpp
-sed -i 's|#include "IconSystem.h"|#include "Core/IconSystem.h"|g' Source/**/*.cpp
-sed -i 's|#include "PluginProcessor.h"|#include "Core/PluginProcessor.h"|g' Source/**/*.cpp
+sed -i 's|#include "FieldLookAndFeel.h"|#include "shared/Core/FieldLookAndFeel.h"|g' Source/**/*.cpp
+sed -i 's|#include "IconSystem.h"|#include "shared/Core/IconSystem.h"|g' Source/**/*.cpp
+sed -i 's|#include "PluginProcessor.h"|#include "shared/Core/PluginProcessor.h"|g' Source/**/*.cpp
 ```
 
 **Path Update Best Practices**
@@ -440,14 +248,14 @@ sed -i 's|#include "PluginProcessor.h"|#include "Core/PluginProcessor.h"|g' Sour
 ```cmake
 # Update source file paths in CMakeLists.txt
 set(SRC
-  Core/PluginProcessor.h
-  Core/PluginProcessor.cpp
-  Core/PluginEditor.h
-  Core/PluginEditor.cpp
-  Core/FieldLookAndFeel.h
-  Core/FieldLookAndFeel.cpp
-  Core/IconSystem.h
-  Core/IconSystem.cpp
+  shared/Core/PluginProcessor.h
+  shared/Core/PluginProcessor.cpp
+  shared/Core/PluginEditor.h
+  shared/Core/PluginEditor.cpp
+  shared/Core/FieldLookAndFeel.h
+  shared/Core/FieldLookAndFeel.cpp
+  shared/Core/IconSystem.h
+  shared/Core/IconSystem.cpp
   # ... rest of files
 )
 ```
@@ -484,14 +292,17 @@ cmake --build build --target Field_AU
 **Commit Strategy**
 ```bash
 # Commit changes in logical batches
-git add Source/Core/
-git commit -m "Move core components to Source/Core/"
+git add Source/shared/Core/
+git commit -m "Move core components to Source/shared/Core/"
 
-git add Source/ui/
-git commit -m "Organize UI components in Source/ui/"
+git add Source/shared/ui/
+git commit -m "Organize UI components in Source/shared/ui/"
 
-git add Source/dsp/
-git commit -m "Organize DSP engines in Source/dsp/"
+git add Source/shared/dsp/
+git commit -m "Organize DSP engines in Source/shared/dsp/"
+
+git add Source/features/
+git commit -m "Organize feature components in Source/features/"
 ```
 
 **Git Best Practices**
@@ -1512,11 +1323,11 @@ public:
 
 #### **Core Component Centralization Pattern**
 
-**Rule**: All essential plugin files should be centralized in `Source/Core/` for easy access and maintenance.
+**Rule**: All essential plugin files should be centralized in `Source/shared/Core/` for easy access and maintenance.
 
 ```cpp
-// ✅ CORRECT - Core components in Source/Core/
-Source/Core/
+// ✅ CORRECT - Core components in Source/shared/Core/
+Source/shared/Core/
   ├── PluginProcessor.h      // Main processor class
   ├── PluginProcessor.cpp    // Audio processing logic
   ├── PluginEditor.h         // UI component definitions
@@ -1554,7 +1365,7 @@ Source/Core/
 #### **Delay System Cleanup** ✅ **COMPLETED**
 - **Problem**: Duplicate delay controls in PluginEditor despite dedicated delay system
 - **Solution**: Removed 24 sliders, 7 combos, 7 buttons, 24 value labels, 24 name labels, 24 knob cells, 10 switch cells
-- **Result**: PluginEditor.cpp reduced by 140 lines, now uses dedicated `/Source/ui/delay/` system
+- **Result**: PluginEditor.cpp reduced by 140 lines, now uses dedicated `/Source/features/delay/` system
 - **Architecture**: Clean separation with no parameter conflicts
 
 #### **AttachmentManager Advanced Features** ✅ **COMPLETED**
@@ -1619,7 +1430,7 @@ Source/Core/
 ### **New Architecture Structure**
 
 ```
-Source/ui/
+Source/shared/ui/
 ├── Components/     - Reusable UI components (23 files)
 ├── Controls/      - Control-related files (5 files)
 ├── Design/        - Design and layout files (2 files)
@@ -1722,7 +1533,7 @@ public:
 
 ### **XYPad System Architecture**
 ```
-Source/ui/
+Source/shared/ui/
 ├── Components/           ← XYPad.h/.cpp (Pure Component)
 │   ├── XYPad.h          ← Visualization & interaction
 │   └── XYPad.cpp        ← Drawing, mouse events, waveform
@@ -2165,12 +1976,12 @@ void MyComponent::~MyComponent()
 
 **Major Refactoring Commits**
 ```
-Move core components to Source/Core/ - major architecture improvement
+Move core components to Source/shared/Core/ - major architecture improvement
 
-- Moved PluginProcessor.h/cpp to Source/Core/
-- Moved PluginEditor.h/cpp to Source/Core/
-- Moved FieldLookAndFeel.h/cpp to Source/Core/
-- Moved IconSystem.h/cpp to Source/Core/
+- Moved PluginProcessor.h/cpp to Source/shared/Core/
+- Moved PluginEditor.h/cpp to Source/shared/Core/
+- Moved FieldLookAndFeel.h/cpp to Source/shared/Core/
+- Moved IconSystem.h/cpp to Source/shared/Core/
 - Updated all include paths to reflect new structure
 - Updated CMakeLists.txt for new file locations
 - Verified all builds work correctly
@@ -2179,9 +1990,9 @@ Move core components to Source/Core/ - major architecture improvement
 
 **UI Organization Commits**
 ```
-Organize UI components in Source/ui/ - improved navigation and maintenance
+Organize UI components in Source/shared/ui/ - improved navigation and maintenance
 
-- Moved all UI components to Source/ui/ with logical subdirectories
+- Moved all UI components to Source/shared/ui/ with logical subdirectories
 - Created Components/ subdirectory for reusable UI components
 - Created delay/ subdirectory for delay-specific UI
 - Created machine/ subdirectory for machine learning UI
@@ -2191,9 +2002,9 @@ Organize UI components in Source/ui/ - improved navigation and maintenance
 
 **DSP Engine Organization Commits**
 ```
-Organize DSP engines in Source/dsp/ - better audio processing organization
+Organize DSP engines in Source/shared/dsp/ - better audio processing organization
 
-- Moved audio processing engines to Source/dsp/
+- Moved audio processing engines to Source/shared/dsp/
 - Created Delay/ subdirectory for delay processing
 - Created DynamicEQ/ subdirectory for dynamic EQ processing
 - Created Motion/ subdirectory for motion processing
@@ -2221,9 +2032,9 @@ Fix plugin crash on close - comprehensive destructor fixes
 
 **Core Components**
 ```bash
-# New core components go in Source/Core/
-touch Source/Core/NewCoreComponent.h
-touch Source/Core/NewCoreComponent.cpp
+# New core components go in Source/shared/Core/
+touch Source/shared/Core/NewCoreComponent.h
+touch Source/shared/Core/NewCoreComponent.cpp
 
 # Update CMakeLists.txt
 echo "  Core/NewCoreComponent.h" >> Source/CMakeLists.txt
@@ -2232,9 +2043,9 @@ echo "  Core/NewCoreComponent.cpp" >> Source/CMakeLists.txt
 
 **UI Components**
 ```bash
-# New UI components go in Source/ui/
-touch Source/ui/NewUIComponent.h
-touch Source/ui/NewUIComponent.cpp
+# New UI components go in Source/shared/ui/
+touch Source/shared/ui/NewUIComponent.h
+touch Source/shared/ui/NewUIComponent.cpp
 
 # Update CMakeLists.txt
 echo "  ui/NewUIComponent.h" >> Source/CMakeLists.txt
@@ -2243,9 +2054,9 @@ echo "  ui/NewUIComponent.cpp" >> Source/CMakeLists.txt
 
 **DSP Components**
 ```bash
-# New DSP components go in Source/dsp/
-touch Source/dsp/NewDSPComponent.h
-touch Source/dsp/NewDSPComponent.cpp
+# New DSP components go in Source/shared/dsp/
+touch Source/shared/dsp/NewDSPComponent.h
+touch Source/shared/dsp/NewDSPComponent.cpp
 
 # Update CMakeLists.txt
 echo "  dsp/NewDSPComponent.h" >> Source/CMakeLists.txt
@@ -2262,14 +2073,14 @@ echo "  dsp/NewDSPComponent.cpp" >> Source/CMakeLists.txt
 #include "motion/MotionEngine.h"            // System components
 ```
 
-**From Source/ui/**
+**From Source/shared/ui/**
 ```cpp
 #include "../Core/PluginProcessor.h"         // Core components
 #include "Components/KnobCell.h"            // UI components
 #include "../dsp/DelayEngine.h"             // DSP components
 ```
 
-**From Source/dsp/**
+**From Source/shared/dsp/**
 ```cpp
 #include "../Core/PluginProcessor.h"        // Core components
 #include "../ui/Components/KnobCell.h"      // UI components
@@ -2309,42 +2120,42 @@ ls -la build/Source/Field_artefacts/Debug/Standalone/Field.app
 
 ## 📚 Key Files Reference (REFACTORED STRUCTURE)
 
-### **Core Architecture (Source/Core/)**
-- `Source/Core/PluginProcessor.h` - Main processor class and FieldChain template
-- `Source/Core/PluginProcessor.cpp` - Audio processing and parameter layout
-- `Source/Core/PluginEditor.h` - UI component definitions
-- `Source/Core/PluginEditor.cpp` - UI implementation and parameter attachments
-- `Source/Core/FieldLookAndFeel.h` - Unified theme & drawing system
-- `Source/Core/FieldLookAndFeel.cpp` - Look & Feel implementation
-- `Source/Core/IconSystem.h` - Vector icon system
-- `Source/Core/IconSystem.cpp` - Icon rendering and management
-- `Source/Core/Layout.h` - Centralized layout constants and metrics
+### **Core Architecture (Source/shared/Core/)**
+- `Source/shared/Core/PluginProcessor.h` - Main processor class and FieldChain template
+- `Source/shared/Core/PluginProcessor.cpp` - Audio processing and parameter layout
+- `Source/shared/Core/PluginEditor.h` - UI component definitions
+- `Source/shared/Core/PluginEditor.cpp` - UI implementation and parameter attachments
+- `Source/shared/Core/FieldLookAndFeel.h` - Unified theme & drawing system
+- `Source/shared/Core/FieldLookAndFeel.cpp` - Look & Feel implementation
+- `Source/shared/Core/IconSystem.h` - Vector icon system
+- `Source/shared/Core/IconSystem.cpp` - Icon rendering and management
+- `Source/shared/Core/Layout.h` - Centralized layout constants and metrics
 
-### **UI Components (Source/ui/)**
-- `Source/ui/PaneManager.h` - Tab management system
-- `Source/ui/Layout.h` - UI-specific layout definitions
-- `Source/ui/Design.h` - UI design constants and styling
-- `Source/ui/Components/KnobCell.h` - Standard knob controls
-- `Source/ui/delay/DelayTab.h` - Delay tab implementation
-- `Source/ui/delay/DelayControlsPane.h` - Delay controls
-- `Source/ui/machine/MachinePane.h` - Machine learning UI
-- `Source/ui/machine/MachineEngine.h` - Machine learning engine
+### **UI Components (Source/shared/ui/)**
+- `Source/shared/ui/PaneManager.h` - Tab management system
+- `Source/shared/ui/Layout.h` - UI-specific layout definitions
+- `Source/shared/ui/Design.h` - UI design constants and styling
+- `Source/shared/ui/Components/KnobCell.h` - Standard knob controls
+- `Source/features/delay/DelayTab.h` - Delay tab implementation
+- `Source/features/delay/DelayControlsPane.h` - Delay controls
+- `Source/features/machine/MachinePane.h` - Machine learning UI
+- `Source/features/machine/MachineEngine.h` - Machine learning engine
 
-### **DSP Engines (Source/dsp/)**
-- `Source/dsp/DelayEngine.h` - Professional delay system
-- `Source/dsp/Ducker.h` - Global ducking system
-- `Source/dsp/Meters.h` - Audio metering system
-- `Source/dsp/Delay/DelayLine.h` - Delay line implementation
-- `Source/dsp/DynamicEQ/FilterFactory.h` - Dynamic EQ filters
-- `Source/dsp/Motion/MotionEngine.h` - Motion processing
+### **DSP Engines (Source/shared/dsp/)**
+- `Source/shared/dsp/DelayEngine.h` - Professional delay system
+- `Source/shared/dsp/Ducker.h` - Global ducking system
+- `Source/shared/dsp/Meters.h` - Audio metering system
+- `Source/shared/dsp/Delay/DelayLine.h` - Delay line implementation
+- `Source/shared/dsp/DynamicEQ/FilterFactory.h` - Dynamic EQ filters
+- `Source/features/motion/MotionEngine.h` - Motion processing
 
 ### **System Components**
-- `Source/motion/MotionEngine.h` - Enhanced spatial audio processor
-- `Source/motion/MotionPanel.h` - Motion UI implementation
-- `Source/motion/MotionControlsPane.h` - Motion control interface
-- `Source/reverb/ReverbEngine.h` - Reverb processing engine
-- `Source/reverb/ui/ReverbTab.h` - Reverb tab implementation
-- `Source/Presets/PresetManager.h` - Preset management system
+- `Source/features/motion/MotionEngine.h` - Enhanced spatial audio processor
+- `Source/features/motion/MotionPanel.h` - Motion UI implementation
+- `Source/features/motion/MotionControlsPane.h` - Motion control interface
+- `Source/features/reverb/ReverbEngine.h` - Reverb processing engine
+- `Source/features/reverb/ReverbTab.h` - Reverb tab implementation
+- `Source/shared/Presets/PresetManager.h` - Preset management system
 
 ### **Build System**
 - `build_all.sh` - Build script for all targets
@@ -2377,10 +2188,10 @@ ls -la build/Source/Field_artefacts/Debug/Standalone/Field.app
 - ✅ Debugging information is readily available
 - ✅ Architecture is consistent and maintainable
 
-### **Refactoring Success Metrics (September 2025)**
+### **Refactoring Success Metrics (December 2024)**
 
 #### **🏗️ Architecture Improvements**
-- ✅ **Centralized Core Components**: All essential files in `Source/Core/`
+- ✅ **Centralized Core Components**: All essential files in `Source/shared/Core/`
 - ✅ **Logical System Grouping**: Related components organized by functionality
 - ✅ **Clear Separation**: UI, DSP, and system components clearly separated
 - ✅ **Reduced Coupling**: Dependencies are more explicit and manageable
@@ -2427,51 +2238,15 @@ ls -la build/Source/Field_artefacts/Debug/Standalone/Field.app
 
 ---
 
-# ================================================================================
-# 🎨 SHADEOVERLAY COMPONENT - XYPad Block-Vision Control System
-# ================================================================================
-# 
-# 📍 LOCATION: Source/Core/PluginEditor.h (lines 2374-2519)
-# 🎯 PURPOSE: Interactive shade overlay for XYPad focus control
-# 🔧 INTEGRATION: Works with PaneManager for active pane shading
-# 📊 FEATURES: Drag control, smooth animations, multiple interaction methods
-# 
-# ================================================================================
 
-# ================================================================================
-# 🎨 FIELD LOGO SYSTEM - Enhanced Branding with Shadow & Glow Effects
-# ================================================================================
-# 
-# 📍 LOCATION: Source/Core/PluginEditor.h/cpp (drawHeaderFieldLogo method)
-# 🎯 PURPOSE: Sophisticated logo rendering with shadow and glow effects
-# 🔧 INTEGRATION: Header logo + ShadeOverlay logo with consistent branding
-# 📊 FEATURES: Multi-layer shadows, gradients, highlights, version positioning
-# 
-# ================================================================================
-
-# ================================================================================
-# 🎛️ BAND CONTROL SYSTEM - Frequency Band Processing & Control Types
-# ================================================================================
-# 
-# 📍 LOCATION: Source/ui/BandTab.h, Source/ui/BandVisualPane.h, Source/ui/BandControlsPane.h
-# 🎯 PURPOSE: Comprehensive frequency band processing with visual feedback
-# 🔧 INTEGRATION: Band tab with width visuals, XO controls, SHUF controls, and LO MID HI labels
-# 📊 FEATURES: 3-band width processing, crossover controls, shuffle randomization, SHUF visual strip
-# 
-# ================================================================================
-
-# ================================================================================
-# 🎛️ DYNAMIC EQ SYSTEM - Advanced Spectral Processing & Control Architecture
-# ================================================================================
-# 
-# 📍 LOCATION: Source/dsp/DynamicEQ/, Source/ui/DynEqTab.h, Source/dynEQ/
-# 🎯 PURPOSE: Precision-first Dynamic/Spectral EQ with advanced processing capabilities
-# 🔧 INTEGRATION: Replaces Spectrum tab, integrates with XY, Motion, Band, Reverb, Delay
-# 📊 FEATURES: 24-band processing, dynamics, spectral shaping, constellations, real-time analysis
-# 
-# ================================================================================
 
 ## 🎛️ Band Control System - Frequency Band Processing & Control Types
+
+**Location**: `Source/features/band/BandTab.h`, `Source/features/band/BandVisualPane.h`, `Source/features/band/BandControlsPane.h`  
+**Purpose**: Comprehensive frequency band processing with visual feedback  
+**Integration**: Band tab with width visuals, XO controls, SHUF controls, and LO MID HI labels  
+**Features**: 3-band width processing, crossover controls, shuffle randomization, SHUF visual strip
+
 
 ### **Band System: Comprehensive Frequency Band Processing**
 
@@ -2893,29 +2668,13 @@ drawFieldLogo(g, cover);
 3. Test with all theme variations
 4. Ensure accessibility compliance
 
-# ================================================================================
-# 🎨 END FIELD LOGO SYSTEM SECTION
-# ================================================================================
-# 
-# ✅ COMPLETE: FIELD logo system documentation
-# 📚 COVERAGE: Header logo, ShadeOverlay logo, shadow effects, version integration
-# 🔧 PATTERNS: Performance optimization, theme integration, maintenance guidelines
-# 🎯 USAGE: Clear examples and best practices for logo implementation
-# 
-# ================================================================================
 
-# ================================================================================
-# 🎨 DARKER THEME SYSTEM - Enhanced Visual Consistency with Darker Accents
-# ================================================================================
-# 
-# 📍 LOCATION: Source/Core/FieldLookAndFeel.h (Ocean theme variant)
-# 🎯 PURPOSE: Global theme darkening for enhanced visual consistency
-# 🔧 INTEGRATION: Affects all accent colors across the entire plugin
-# 📊 FEATURES: Darker accent colors, consistent EQ colors, improved contrast
-# 
-# ================================================================================
+## 🎨 Darker Theme System - Enhanced Visual Consistency with Darker Accents
 
-## 🎨 Darker Theme System - Enhanced Visual Consistency
+**Location**: `Source/shared/Core/FieldLookAndFeel.h` (Ocean theme variant)  
+**Purpose**: Global theme darkening for enhanced visual consistency  
+**Integration**: Affects all accent colors across the entire plugin  
+**Features**: Darker accent colors, consistent EQ colors, improved contrast
 
 ### **Darker Theme: The Ultimate Visual Consistency Enhancement**
 
@@ -2933,7 +2692,7 @@ drawFieldLogo(g, cover);
 
 **Theme Color Updates**
 ```cpp
-// Source/Core/FieldLookAndFeel.h - Ocean theme variant
+// Source/shared/Core/FieldLookAndFeel.h - Ocean theme variant
 struct Ocean : public FieldTheme
 {
     Ocean()
@@ -3047,10 +2806,6 @@ g.setColour(lnf.theme.sh.withAlpha(0.85f));    // Backgrounds
 - Ensure consistent visual feedback
 - Test across all interaction states
 
-# ✅ COMPLETE: Darker theme system documentation
-# 📚 COVERAGE: Global accent darkening, EQ color consistency, visual cohesion
-# 🔧 PATTERNS: Theme integration, color consistency, visual hierarchy
-# 🎯 USAGE: Clear guidelines for implementing and maintaining darker theme
 
 # ================================================================================
 
@@ -3712,10 +3467,6 @@ The logo provides consistent branding across the interface while maintaining the
 # 🎨 END SHADEOVERLAY COMPONENT SECTION
 # ================================================================================
 # 
-# ✅ COMPLETE: ShadeOverlay component documentation
-# 📚 COVERAGE: Technical implementation, visual design, interaction system
-# 🔗 INTEGRATION: PaneManager integration patterns documented
-# 🎯 USAGE: Clear examples and best practices provided
 # 
 # ================================================================================
 
@@ -3808,10 +3559,6 @@ The logo provides consistent branding across the interface while maintaining the
 # 🎨 END UI INTERACTION STANDARDS & RULES SECTION
 # ================================================================================
 # 
-# ✅ COMPLETE: UI interaction standards documented
-# 📚 COVERAGE: Mouse wheel interactions, drag behaviors, visual feedback
-# 🔧 PATTERNS: Consistent interaction patterns across all UI components
-# 🎯 KNOWLEDGE: Preserved UI interaction standards for consistent user experience
 # 
 # ================================================================================
 
@@ -3881,11 +3628,11 @@ The logo provides consistent branding across the interface while maintaining the
 - [ ] Minimal repaint regions; set opaque if fully painted
 
 #### **Reverb UI**
-- `Source/reverb/ui/ReverbPanel.*`
-- `Source/reverb/ui/ReverbControlsPane.h`
-- `Source/reverb/ui/ReverbEQComponent.*`
-- `Source/reverb/ui/ReverbScopeComponent.*`
-- `Source/reverb/ui/DecayCurveComponent.*`
+- `Source/features/reverb/ReverbPanel.*`
+- `Source/features/reverb/ReverbControlsPane.h`
+- `Source/features/reverb/ReverbEQComponent.*`
+- `Source/features/reverb/ReverbScopeComponent.*`
+- `Source/features/reverb/DecayCurveComponent.*`
 
 **Checklist:**
 - [ ] Abbreviations per spec (ER WID, TL WID, ER DEN, ...)
@@ -3895,7 +3642,7 @@ The logo provides consistent branding across the interface while maintaining the
 - [ ] Timers within 15–30 Hz; no layout in callbacks
 
 #### **Motion UI**
-- `Source/motion/MotionPanel.*`
+- `Source/features/motion/MotionPanel.*`
 
 **Checklist:**
 - [ ] Lives in Group 1 only; flat grid; zero gaps
@@ -3904,12 +3651,12 @@ The logo provides consistent branding across the interface while maintaining the
 - [ ] No hardcoded colours; cache heavy paints
 
 #### **Delay/Imager/Band/XY/Stereo/Meters**
-- `Source/ui/delay/DelayVisuals.h`
-- `Source/ui/ImagerPane.h`
-- `Source/ui/BandControlsPane.h`
-- `Source/ui/StereoFieldEngine.*`
-- `Source/ui/SpectrumAnalyzer.*`
-- `Source/ui/ProcessedSpectrumPane.h`
+- `Source/features/delay/DelayVisuals.h`
+- `Source/features/imager/ImagerPane.h`
+- `Source/features/band/BandControlsPane.h`
+- `Source/shared/ui/StereoFieldEngine.*`
+- `Source/shared/ui/SpectrumAnalyzer.*`
+- `Source/features/dynEq/ProcessedSpectrumPane.h`
 
 **Checklist:**
 - [ ] Managed labels where using KnobCell; captions set
@@ -3919,13 +3666,13 @@ The logo provides consistent branding across the interface while maintaining the
 - [ ] Timers 15–30 Hz (Spectrum/Scopes may justify higher; measure); minimal repaints
 
 #### **Machine Panes and Helpers**
-- `Source/ui/MachinePane.*`
-- `Source/ui/machine/MachinePane.*`
-- `Source/ui/machine/WidthDesignerPanel.*`
-- `Source/ui/machine/ProposalCard.*`
-- `Source/ui/machine/MachineEngine.*`
-- `Source/ui/machine/MachineHelpersJUCE.h`
-- `Source/ui/machine/ParamPatch.h`
+- `Source/features/machine/MachinePane.*`
+- `Source/features/machine/MachinePane.*`
+- `Source/features/machine/WidthDesignerPanel.*`
+- `Source/features/machine/ProposalCard.*`
+- `Source/features/machine/MachineEngine.*`
+- `Source/features/machine/MachineHelpersJUCE.h`
+- `Source/features/machine/ParamPatch.h`
 
 **Checklist:**
 - [ ] Flat layouts; no outer `reduced(...)` on Group 2 screens
@@ -3934,7 +3681,7 @@ The logo provides consistent branding across the interface while maintaining the
 
 #### **Supporting UI**
 - `Source/PresetCommandPalette.*`
-- `Source/ui/PaneManager.h`
+- `Source/shared/ui/PaneManager.h`
 
 **Checklist:**
 - [ ] Theme-only colours; timers 15–30 Hz; no layout in timers
@@ -4052,7 +3799,7 @@ if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->setValueLabelMode (KnobCe
 - Implemented via a child-propagating MouseListener proxy and a timer Hz adjustment in `timerCallback`. This keeps idle cost low while making drags feel crisp
 
 #### **Component Timer Normalization and Visibility Gating**
-- `Source/motion/MotionPanel.*`: reduced to 30 Hz and added `visibilityChanged()` gating (start at 30 Hz when visible, stop when hidden)
+- `Source/features/motion/MotionPanel.*`: reduced to 30 Hz and added `visibilityChanged()` gating (start at 30 Hz when visible, stop when hidden)
 - `Source/PluginEditor.h` → `ShadeOverlay`: reduced to 30 Hz and added `visibilityChanged()` gating
 - Policy clarified in `FIELD_UI_RULES` and `FIELD_RULEBOOK.md`: editor may burst to 60 Hz; components stay ≤30 Hz unless profiled; timers off when hidden
 
@@ -4068,10 +3815,6 @@ if (kc) { kc->setMetrics (lPx, valuePx, labelGap); kc->setValueLabelMode (KnobCe
 # 🚀 END UI PERFORMANCE & CONSISTENCY AUDIT SECTION
 # ================================================================================
 # 
-# ✅ COMPLETE: UI performance audit and consistency standards documented
-# 📚 COVERAGE: Performance optimization, theme integration, component lifecycle
-# 🔧 PATTERNS: Timer management, paint optimization, layout efficiency
-# 🎯 KNOWLEDGE: Preserved performance standards for optimal UI responsiveness
 # 
 # ================================================================================
 
@@ -4183,244 +3926,6 @@ This system ensures consistent visual language across all UI components while ma
 
 ---
 
-## 🎨 Ocean-Harmonized Metallic System
-
-**Last updated**: 2025-01-27  
-**Scope**: Ocean-harmonized metallic rendering system for Field audio plugin UI components.
-
-### **Overview**
-
-The Field metallic system provides sophisticated, Ocean-brand-harmonized material rendering for UI components. All metallic surfaces use the centralized `FieldLNF::paintMetal()` function with proper caching and performance optimization.
-
----
-
-## **Core System**
-
-### **Metallic Theme Structure**
-
-```cpp
-struct MetalStops { 
-    juce::Colour top, bottom; 
-    juce::Colour tint; 
-    float tintAlpha; 
-};
-
-struct MetalTheme {
-    MetalStops neutral  { juce::Colour (0xFF9CA4AD), juce::Colour (0xFF6E747C), juce::Colour (0x003D7BB8), 0.06f };
-    MetalStops reverb   { juce::Colour (0xFFB87749), juce::Colour (0xFF7D4D2E), juce::Colour (0x00F2C39A), 0.10f };
-    MetalStops delay    { juce::Colour (0xFFC9CFB9), juce::Colour (0xFF8D927F), juce::Colour (0x004AA3FF), 0.05f };
-    MetalStops motion   { juce::Colour (0xFF6D76B2), juce::Colour (0xFF434A86), juce::Colour (0x00C2D8FF), 0.06f };
-    MetalStops band     { juce::Colour (0xFF6AA0D8), juce::Colour (0xFF3A6EA8), juce::Colour (0x000A0C0F), 0.12f };
-    MetalStops phase    { juce::Colour (0xFF5B93CF), juce::Colour (0xFF355F97), juce::Colour (0x000A0C0F), 0.12f };
-    MetalStops titanium { juce::Colour (0xFF7D858F), juce::Colour (0xFF3B4149), juce::Colour (0x003D7BB8), 0.08f };
-} metal;
-```
-
-### **Rendering Function**
-
-```cpp
-static void paintMetal (juce::Graphics& g, const juce::Rectangle<float>& r,
-                       const FieldTheme::MetalStops& m, float corner = 8.0f);
-```
-
----
-
-## **Material Variants**
-
-### **1. Neutral Steel (Default)**
-- **Usage**: Global default, frames, non-module metal
-- **Colors**: `#9CA4AD → #6E747C`
-- **Tint**: Ocean primary `#3D7BB8` @ 6%
-- **Properties**: `metallic` + `theme.metal.neutral`
-
-### **2. Reverb Copper/Burnished**
-- **Usage**: Reverb controls, large knobs, mode switches
-- **Colors**: `#B87749 → #7D4D2E`
-- **Tint**: Hot spot `#F2C39A` @ 10% in sheen band
-- **Properties**: `reverbMetallic` + `theme.metal.reverb`
-
-### **3. Delay Champagne Nickel**
-- **Usage**: Delay panel body, time display bezel, feedback meter bed
-- **Colors**: `#C9CFB9 → #8D927F`
-- **Tint**: Ocean highlight `#4AA3FF` @ 5%
-- **Properties**: `delayMetallic` + `theme.metal.delay`
-
-### **4. Motion Indigo Anodized**
-- **Usage**: Motion panel ring, animation rails, depth bezel
-- **Colors**: `#6D76B2 → #434A86`
-- **Tint**: Airy lift `#C2D8FF` @ 6%
-- **Properties**: `motionPurpleBorder` + `theme.metal.motion`
-
-### **5. Band/Phase Ocean Anodized**
-- **Usage**: EQ container, phase widgets, band controls
-- **Colors**: `#6AA0D8 → #3A6EA8` (Band), `#5B93CF → #355F97` (Phase)
-- **Tint**: Depth multiply `#0A0C0F` @ 12% on bottom 25%
-- **Properties**: `bandMetallic`/`phaseMetallic` + `theme.metal.band`/`theme.metal.phase`
-
-### **6. Dark Titanium (Pro/Advanced)**
-- **Usage**: Pro pages, advanced panes, focused states
-- **Colors**: `#7D858F → #3B4149`
-- **Tint**: Ocean primary `#3D7BB8` @ 8%
-- **Properties**: `theme.metal.titanium`
-
----
-
-## **Rendering Features**
-
-### **Base Gradient**
-- Sophisticated top-to-bottom lighting with proper material-specific colors
-- Consistent gradient direction across all materials
-
-### **Sheen Band**
-- 10% white highlight in upper third (y = 0.28 × height)
-- Height: 10-24px with 6-10px feather
-- Creates realistic specular reflection
-
-### **Brush Lines**
-- Vertical micro-lines for authenticity
-- Irregular brightness (4-5% alpha, varying every 12 lines)
-- 1-2px spacing with 0.5-1.0px thickness variation
-
-### **Grain Texture**
-- Fine monochrome noise for realism
-- 4-5% black alpha overlay
-- Consistent across all materials
-
-### **Vignette Effects**
-- Edge darkening for depth perception
-- 12-16% black alpha on edges
-- Radius follows corner radius
-
----
-
-## **Performance Optimization**
-
-### **Caching Strategy**
-- All metallic textures cached per size/scale
-- Reuse instead of regenerating per paint
-- Minimal repaint regions
-
-### **Rendering Order**
-1. Base gradient
-2. Optional tint overlay
-3. Sheen band
-4. Brush lines
-5. Grain texture
-6. Vignette effects
-7. Borders
-
-### **Memory Management**
-- Pre-allocated geometry for hot paths
-- No per-frame allocations in paint
-- Efficient clip region management
-
----
-
-## **Usage Guidelines**
-
-### **Component Integration**
-```cpp
-// In KnobCell or other components
-if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-{
-    if (reverbMetal)
-        FieldLNF::paintMetal(g, rr, lf->theme.metal.reverb, rad);
-    else if (delayMetal)
-        FieldLNF::paintMetal(g, rr, lf->theme.metal.delay, rad);
-    // ... other material variants
-}
-```
-
-### **Property Flags**
-- `metallic`: Neutral steel (default)
-- `reverbMetallic`: Copper/burnished
-- `delayMetallic`: Champagne nickel
-- `bandMetallic`: Ocean anodized
-- `phaseMetallic`: Ocean anodized (darker)
-- `motionPurpleBorder`: Indigo anodized
-
-### **Performance Best Practices**
-- Use `FieldLNF::paintMetal()` for all metallic rendering
-- Cache textures per size/scale
-- Minimize repaint regions
-- Set `setOpaque(true)` for fully painted components
-
----
-
-## **Compliance**
-
-### **FIELD_UI_RULES Compliance**
-- ✅ Centralized paint logic in LNF helpers
-- ✅ Proper texture caching
-- ✅ Minimal repaint regions
-- ✅ Theme-derived colors only
-- ✅ Performance-optimized rendering
-
-### **ui_performance_audit.md Compliance**
-- ✅ No heavy per-pixel/random work
-- ✅ Textures cached and reused
-- ✅ Ocean-harmonized metallic rendering
-- ✅ Minimal repaint regions
-- ✅ Proper memory management
-
----
-
-## **Migration Notes**
-
-### **From Legacy System**
-- Replace old metallic color definitions with `theme.metal.*` variants
-- Use `FieldLNF::paintMetal()` instead of custom metallic rendering
-- Update property flags to match new system
-- Ensure proper caching and performance optimization
-
-### **Backward Compatibility**
-- Legacy property flags still recognized
-- Graceful fallback to neutral steel
-- No breaking changes to existing components
-
----
-
-## **Future Enhancements**
-
-### **Planned Features**
-- Dynamic material switching based on context
-- Advanced lighting models
-- Custom material definitions
-- Performance profiling integration
-
-### **Monitoring**
-- Track rendering performance across materials
-- Monitor memory usage for texture caching
-- Validate visual consistency across modules
-
----
-
-## **Notes**
-- Keep this document updated when material variants change
-- Document any performance optimizations or new features
-- Maintain compliance with FIELD_UI_RULES and ui_performance_audit.md
-
-# ================================================================================
-# 🎨 END OCEAN-HARMONIZED METALLIC SYSTEM SECTION
-# ================================================================================
-# 
-# ✅ COMPLETE: Ocean-harmonized metallic system documented
-# 📚 COVERAGE: Material variants, rendering features, performance optimization
-# 🔧 PATTERNS: Centralized paint logic, texture caching, theme integration
-# 🎯 KNOWLEDGE: Preserved metallic system standards for consistent UI rendering
-# 
-# ================================================================================
-
-# ================================================================================
-# 📋 FIELD GUI + CODE RULEBOOK
-# ================================================================================
-# 
-# 📍 PURPOSE: Comprehensive development rules and standards for Field codebase
-# 🎯 SCOPE: GUI design, code structure, performance, safety, and quality gates
-# 🔧 PATTERNS: Single source of truth, layout discipline, parameter management
-# 📚 KNOWLEDGE: Preserved development rules and standards for consistent codebase
-# 
-# ================================================================================
 
 ## 📋 FIELD GUI + CODE RULEBOOK (v1)
 
@@ -4781,10 +4286,6 @@ if (auto* p = apvts.getParameter("width")) {
 # 📋 END FIELD GUI + CODE RULEBOOK SECTION
 # ================================================================================
 # 
-# ✅ COMPLETE: Field GUI + Code Rulebook documented
-# 📚 COVERAGE: Development rules, code structure, performance, safety, quality gates
-# 🔧 PATTERNS: Single source of truth, layout discipline, parameter management
-# 🎯 KNOWLEDGE: Preserved development rules for consistent and maintainable codebase
 # 
 # ================================================================================
 
@@ -4865,10 +4366,6 @@ if (auto* p = apvts.getParameter("width")) {
 # 🚀 END FUTURE DEVELOPMENT GUIDELINES SECTION
 # ================================================================================
 # 
-# ✅ COMPLETE: Future development guidelines documented
-# 📚 COVERAGE: Feature development, performance optimization, maintenance
-# 🔧 PATTERNS: Safety patterns, best practices, anti-patterns to avoid
-# 🎯 KNOWLEDGE: Preserved development wisdom for ongoing project success
 # 
 # ================================================================================
 
