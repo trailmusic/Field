@@ -233,7 +233,7 @@ void ReverbGraphics::setViewMode(ViewMode mode)
 
 void ReverbGraphics::paintRays(juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat().reduced(10.0f);
+    auto bounds = getLocalBounds().toFloat();
     auto center = bounds.getCentre();
     
     // Get current parameters for ray properties
@@ -274,7 +274,7 @@ void ReverbGraphics::paintRays(juce::Graphics& g)
 
 void ReverbGraphics::paintWaterfall(juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat().reduced(10.0f);
+    auto bounds = getLocalBounds().toFloat();
     
     // Get current levels
     auto erLevel = getErRms ? getErRms() : 0.0f;
@@ -307,7 +307,7 @@ void ReverbGraphics::paintWaterfall(juce::Graphics& g)
 
 void ReverbGraphics::paintSpectral(juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat().reduced(10.0f);
+    auto bounds = getLocalBounds().toFloat();
     
     // Get current levels
     auto erLevel = getErRms ? getErRms() : 0.0f;
@@ -477,6 +477,10 @@ void ReverbGraphics::VisualizationControlPanel::paint(juce::Graphics& g)
     // Inner highlight for recessed effect
     g.setColour(th.sh.withAlpha(0.2f));
     g.drawRoundedRectangle(bounds.reduced(1.0f), cr - 1.0f, 1.0f);
+    
+    // Thin border around visualization container for better visibility
+    g.setColour(th.text.withAlpha(0.3f));
+    g.drawRoundedRectangle(bounds, cr, 1.0f);
     
     // Title
     g.setColour(th.text);
