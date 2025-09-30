@@ -2,6 +2,7 @@
 #include "PluginEditor.h"
 #include "features/dynEq/FilterFactory.h"
 #include "features/reverb/ReverbParameters.h"
+#include "features/reverb/ReverbEQParamIDs.h"
 #include "features/dynEq/DynamicEqParamIDs.h"
 
 // =========================
@@ -1463,6 +1464,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     
     // Append new Reverb parameters
     addReverbParameters (params);
+        // ReverbEQ::addReverbEQParameters (params); // Temporarily disabled
     
     // Reverb parameters added
 

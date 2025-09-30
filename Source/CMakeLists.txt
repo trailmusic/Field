@@ -85,6 +85,11 @@ set(SRC
     features/reverb/ReverbGraphics.cpp
     features/reverb/DuckingFloat.h
     features/reverb/DuckingFloat.cpp
+    features/reverb/ReverbEQParamIDs.h
+    # features/reverb/ReverbEQ.h
+    # features/reverb/ReverbEQ.cpp
+    # features/reverb/DecayRateEQ.h
+    # features/reverb/DecayRateEQ.cpp
     features/reverb/ReverbDynEQPane.h
     features/reverb/ReverbControlsPane.h
     features/reverb/ReverbTab.h

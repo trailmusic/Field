@@ -4,8 +4,7 @@
 #include "ReverbGraphics.h"
 #include "ReverbControlsPane.h"
 #include "shared/ui/Controls/ControlGridMetrics.h"
-
-class MyPluginAudioProcessor; // fwd
+#include "shared/Core/PluginProcessor.h"
 
 // Composite Reverb tab: canvas + 2x16 grid controls
 class ReverbTab : public juce::Component
@@ -15,7 +14,7 @@ public:
         : proc (p)
     {
         // Visuals-only Reverb pane (existing component)
-        reverbPanel = std::make_unique<ReverbGraphics>(p.apvts,
+        reverbPanel = std::make_unique<ReverbGraphics>(p, p.apvts,
             [&p]{ return p.getReverbErRms(); },
             [&p]{ return p.getReverbTailRms(); },
             [&p]{ return p.getReverbDuckGrDb(); },

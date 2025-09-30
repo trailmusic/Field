@@ -1,12 +1,15 @@
 #include "ReverbGraphics.h"
 #include "shared/Core/FieldLookAndFeel.h"
+#include "shared/Core/PluginProcessor.h"
 
-ReverbGraphics::ReverbGraphics (juce::AudioProcessorValueTreeState& s,
+ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
+                          juce::AudioProcessorValueTreeState& s,
                           std::function<float()> getEr,
                           std::function<float()> getTail,
                           std::function<float()> getDuckDb,
                           std::function<float()> getWidthNow)
-    : state (s),
+    : proc(p),
+      state (s),
       getErRms(getEr),
       getTailRms(getTail),
       getDuckGrDb(getDuckDb),
@@ -18,6 +21,13 @@ ReverbGraphics::ReverbGraphics (juce::AudioProcessorValueTreeState& s,
     // Create ducking float
     duckingFloat = std::make_unique<DuckingFloat>(state);
     addAndMakeVisible(*duckingFloat);
+    
+    // Create EQ panels (temporarily disabled)
+    // reverbEQ = std::make_unique<ReverbEQ>(proc, &getLookAndFeel());
+    // addAndMakeVisible(*reverbEQ);
+    
+    // decayRateEQ = std::make_unique<DecayRateEQ>(proc, &getLookAndFeel());
+    // addAndMakeVisible(*decayRateEQ);
     
     // Setup view mode buttons
     setupViewModeButtons();
@@ -85,6 +95,23 @@ void ReverbGraphics::resized()
     raysButton.setBounds(buttonArea.removeFromLeft(60));
     waterfallButton.setBounds(buttonArea.removeFromLeft(70));
     spectralButton.setBounds(buttonArea.removeFromLeft(70));
+    
+    // Vertical split: EQ panels on left (60%), visualizations on right (40%)
+    auto leftArea = bounds.removeFromLeft(bounds.getWidth() * 0.6f);
+    auto rightArea = bounds;
+    
+    // Left side: EQ panels (temporarily disabled)
+    // if (reverbEQ && decayRateEQ)
+    // {
+    //     auto toneArea = leftArea.removeFromTop(leftArea.getHeight() * 0.5f);
+    //     auto decayArea = leftArea;
+    //     
+    //     reverbEQ->setBounds(toneArea);
+    //     decayRateEQ->setBounds(decayArea);
+    // }
+    
+    // Right side: Visualization area (for future use)
+    // The visualization content is drawn in paint() method
 }
 
 void ReverbGraphics::setupViewModeButtons()
@@ -281,6 +308,36 @@ void ReverbGraphics::timerCallback()
     
     // Repaint for animation
     repaint();
+}
+
+void ReverbGraphics::setSampleRate(double sr)
+{
+    // if (reverbEQ) reverbEQ->setSampleRate(sr);
+    // if (decayRateEQ) decayRateEQ->setSampleRate(sr);
+}
+
+void ReverbGraphics::pause()
+{
+    // if (reverbEQ) reverbEQ->pause();
+    // if (decayRateEQ) decayRateEQ->pause();
+}
+
+void ReverbGraphics::resume()
+{
+    // if (reverbEQ) reverbEQ->resume();
+    // if (decayRateEQ) decayRateEQ->resume();
+}
+
+void ReverbGraphics::pushBlock(const float* L, const float* R, int n)
+{
+    // if (reverbEQ) reverbEQ->pushBlock(L, R, n);
+    // if (decayRateEQ) decayRateEQ->pushBlock(L, R, n);
+}
+
+void ReverbGraphics::pushBlockPre(const float* L, const float* R, int n)
+{
+    // if (reverbEQ) reverbEQ->pushBlockPre(L, R, n);
+    // if (decayRateEQ) decayRateEQ->pushBlockPre(L, R, n);
 }
 
 
