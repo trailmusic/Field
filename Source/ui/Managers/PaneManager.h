@@ -4,7 +4,7 @@
 #include "xy/XYTab.h"
 #include "imager/ImagerTab.h"
 #include "band/BandTab.h"
-#include "../Tabs/MachineTab.h"
+#include "machine/MachineTab.h"
 #include "Core/IconSystem.h"
 #include "../../motion/MotionTab.h"
 #include "../../motion/MotionVisual.h"

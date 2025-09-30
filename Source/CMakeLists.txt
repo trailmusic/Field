@@ -92,6 +92,7 @@ set(SRC
     delay/DelayControlsPane.h
     delay/DelayTab.h
     dynEq/DynEqTab.h
+    dynEq/ProcessedSpectrumPane.h
     dynEQ/DynamicEqParamIDs.h
     dynEQ/DynamicEqState.h
     dynEQ/DynamicEqState.cpp
@@ -115,8 +116,8 @@ set(SRC
     machine/ProposalCard.cpp
     machine/MachineEngine.h
     machine/MachineEngine.cpp
-    ui/Tabs/MachineTab.h
-    ui/Tabs/MachineTab.cpp
+    machine/MachineTab.h
+    machine/MachineTab.cpp
     
     motion/MotionEngine.h
     motion/MotionGraphics.h

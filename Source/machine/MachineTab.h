@@ -2,9 +2,9 @@
 #include <JuceHeader.h>
 #include "machine/MachineEngine.h"
 #include "machine/ProposalCard.h"
-#include "../../Core/FieldLookAndFeel.h"
-#include "../../Core/FieldMetallic.h"
-#include "../../Core/IconSystem.h"
+#include "Core/FieldLookAndFeel.h"
+#include "Core/FieldMetallic.h"
+#include "Core/IconSystem.h"
 
 class MyPluginAudioProcessor; // fwd
 

@@ -1,8 +1,8 @@
 #include "MachineTab.h"
-#include "../../Core/FieldLookAndFeel.h"
-#include "../../Core/FieldMetallic.h"
-#include "../../Core/IconSystem.h"
-#include "../../Core/PluginProcessor.h"
+#include "Core/FieldLookAndFeel.h"
+#include "Core/FieldMetallic.h"
+#include "Core/IconSystem.h"
+#include "Core/PluginProcessor.h"
 
 MachineTab::MachineTab (MyPluginAudioProcessor& p, juce::ValueTree& state, juce::LookAndFeel* lnf)
     : proc (p), vt (state), engine (p, p.apvts), toneCard(*dynamic_cast<FieldLNF*>(lnf)), spaceCard(*dynamic_cast<FieldLNF*>(lnf)), clarityCard(*dynamic_cast<FieldLNF*>(lnf))

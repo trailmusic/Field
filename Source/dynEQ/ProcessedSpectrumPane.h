@@ -1,6 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
-#include "SpectrumAnalyzer.h"
+#include "ui/Engines/SpectrumAnalyzer.h"
 
 // Minimal pane wrapper around SpectrumAnalyzer
 class ProcessedSpectrumPane : public juce::Component
