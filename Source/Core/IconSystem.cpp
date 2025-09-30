@@ -145,21 +145,21 @@ juce::Path IconSystem::createCogWheelIcon (float size)
 {
     juce::Path path;
     const float scale   = size / 16.0f;
-    const float cx      = 8 * scale;
-    const float cy      = 8 * scale;
-    const float radius  = 6 * scale;
+    const float cx      = 8 * scale;  // Horizontal center (8 is center of 16x16 grid)
+    const float cy      = 8 * scale;  // Vertical center
+    const float radius  = 3 * scale; // Further reduced from 4 to 3 for better button fit
 
     path.addEllipse (cx - radius, cy - radius, radius * 2, radius * 2);
 
     for (int i = 0; i < 8; ++i)
     {
         const float angle = i * juce::MathConstants<float>::pi / 4.0f;
-        const float x     = cx + (radius + 1.5f * scale) * std::cos (angle);
-        const float y     = cy + (radius + 1.5f * scale) * std::sin (angle);
-        path.addEllipse (x - 1.5f * scale, y - 1.5f * scale, 3 * scale, 3 * scale);
+        const float x     = cx + (radius + 0.8f * scale) * std::cos (angle); // Further reduced from 1.0f to 0.8f
+        const float y     = cy + (radius + 0.8f * scale) * std::sin (angle);
+        path.addEllipse (x - 0.8f * scale, y - 0.8f * scale, 1.6f * scale, 1.6f * scale); // Further reduced from 1.0f to 0.8f and 2 to 1.6f
     }
 
-    path.addEllipse (cx - 2 * scale, cy - 2 * scale, 4 * scale, 4 * scale);
+    // Center hole removed for cleaner look
     return path;
 }
 

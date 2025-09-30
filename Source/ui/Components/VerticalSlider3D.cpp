@@ -4,7 +4,7 @@
 VerticalSlider3D::VerticalSlider3D()
 {
     setSliderStyle (juce::Slider::LinearVertical);
-    setTextBoxStyle (juce::Slider::TextBoxBelow, false, 40, 20);
+    setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
     setRange (-60.0, 12.0, 0.1);
     setValue (0.0);
     setColour (juce::Slider::textBoxTextColourId, juce::Colours::white);
@@ -47,9 +47,9 @@ void VerticalSlider3D::paint (juce::Graphics& g)
     }
     drawMetallicBackground (g, extendedBounds);
     
-    // Draw track (shortened with room for labels at bottom)
+    // Draw track (full height since no text boxes)
     const float trackTop = 20.0f; // Start track lower
-    const float trackBottom = bounds.getHeight() - 60.0f; // Leave 60px room for labels at bottom
+    const float trackBottom = bounds.getHeight() - 20.0f; // Leave small margin at bottom
     const float trackHeight = trackBottom - trackTop;
     auto trackRect = juce::Rectangle<float> (bounds.getCentreX() - trackWidth/2, trackTop, trackWidth, trackHeight);
     drawMetallicTrack (g, trackRect);
@@ -69,10 +69,6 @@ void VerticalSlider3D::paint (juce::Graphics& g)
     // Standard border treatment: accent border (reduced brightness for sliders)
     g.setColour (accentColor.withAlpha (0.3f));
     g.drawRoundedRectangle (bounds, 6.0f, 1.0f);
-    
-    // Peak line (thicker bottom border like meters)
-    g.setColour (accentColor.withAlpha (0.6f));
-    g.fillRect (juce::Rectangle<float> (bounds.getX(), bounds.getBottom() - 1.0f, bounds.getWidth(), 2.0f));
 }
 
 void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> handleRect)
@@ -102,13 +98,13 @@ void VerticalSlider3D::draw3DHandle (juce::Graphics& g, juce::Rectangle<float> h
     g.setGradientFill (gradient);
     g.fillRoundedRectangle (handleRect, 4.0f);
     
-    // Draw darker interior for better text visibility
-    g.setColour (accent.darker (0.4f));
-    g.fillRoundedRectangle (handleRect.reduced (3), 2.0f);
-    
-    // Draw subtle highlight
-    g.setColour (accent.brighter (0.2f));
+    // Draw interior fill using theme dark grey
+    g.setColour (lf->theme.meters.panelDark);
     g.fillRoundedRectangle (handleRect.reduced (4), 1.0f);
+    
+    // Draw interior frame using accent color
+    g.setColour (accent);
+    g.fillRoundedRectangle (handleRect.reduced (3), 2.0f);
     
     // Draw rim
     g.setColour (accent.darker (0.2f));
@@ -184,10 +180,6 @@ void VerticalSlider3D::drawMarkers (juce::Graphics& g, juce::Rectangle<float> tr
         const float labelX = tickX + tickLength + 3.0f;
         const float labelY = markerY - 6.0f;
         g.drawText (markerLabel, labelX, labelY, 40.0f, 12.0f, juce::Justification::left);
-        
-        // Debug: Force font size to be very small to test
-        g.setFont (juce::Font (5.0f, juce::Font::bold));
-        g.drawText (markerLabel + "!", labelX, labelY + 15, 40.0f, 12.0f, juce::Justification::left);
         
         // Add subtle accent highlight for key values
         if (markerValue == 0.0f || markerValue == 50.0f || markerValue == 100.0f) {

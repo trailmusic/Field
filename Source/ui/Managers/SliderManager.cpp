@@ -24,7 +24,7 @@ void SliderManager::initializeSliders()
 void SliderManager::layoutSliders(juce::Rectangle<int> slidersArea)
 {
     // Layout the individual sliders horizontally within the container with gaps
-    const int gap = 2; // Small gap between sliders
+    const int gap = 4; // Double the gap between sliders
     const int totalGaps = gap * 2; // Two gaps between three sliders
     const int sliderWidth = (slidersArea.getWidth() - totalGaps) / 3;
     

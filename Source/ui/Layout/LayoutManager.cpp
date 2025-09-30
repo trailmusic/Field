@@ -193,8 +193,8 @@ void LayoutManager::layoutMainControls()
                                          juce::roundToInt(r.getWidth() * 0.25f));
     
     // 2) Calculate sliders width (smaller)
-    const int slidersWidth = juce::jlimit(Layout::dp(40, s), Layout::dp(60, s), 
-                                         juce::roundToInt(r.getWidth() * 0.08f));
+    const int slidersWidth = juce::jlimit(Layout::dp(50, s), Layout::dp(80, s), 
+                                         juce::roundToInt(r.getWidth() * 0.12f));
     
     // 3) Layout meters container on the left with padding
     const int metersPadding = Layout::dp(Layout::GAP, s); // Add gap between meters and content
