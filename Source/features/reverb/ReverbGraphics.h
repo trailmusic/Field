@@ -48,6 +48,9 @@ public:
     
     // Timer callback for animation
     void timerCallback() override;
+    
+    // Ducking module control
+    void updateDuckingModuleVisibility();
 
 private:
     void setupViewModeButtons();

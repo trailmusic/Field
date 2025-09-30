@@ -41,10 +41,13 @@ DuckingFloat::~DuckingFloat()
 
 void DuckingFloat::setupComponents()
 {
-    // Expand button
+    // Expand button with enhanced styling
     addAndMakeVisible(expandButton);
     expandButton.setButtonText("DUCKING");
     expandButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF2D2D2D));
+    expandButton.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xFF4A4A4A));
+    expandButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFFFFFFFF));
+    expandButton.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFCCCCCC));
     expandButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFFFFFFFF));
     expandButton.onClick = [this] { setExpanded(!expanded); };
     
@@ -102,63 +105,60 @@ void DuckingFloat::setupComponents()
     addAndMakeVisible(modeLabel);
     addAndMakeVisible(detectorLabel);
     
-    // Configure sliders
-    depthSlider.setRange(0.0, 20.0, 0.1);
-    depthSlider.setValue(6.0);
-    depthSlider.setTextValueSuffix(" dB");
+    // Configure sliders with enhanced styling
+    auto configureSlider = [](juce::Slider& slider, double min, double max, double step, double val, const juce::String& suffix) {
+        slider.setRange(min, max, step);
+        slider.setValue(val);
+        slider.setTextValueSuffix(suffix);
+        slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
+        slider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF4A90E2));
+        slider.setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colour(0xFF333333));
+        slider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFFFFFFF));
+        slider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFCCCCCC));
+        slider.setColour(juce::Slider::textBoxBackgroundColourId, juce::Colour(0xFF2D2D2D));
+        slider.setColour(juce::Slider::textBoxOutlineColourId, juce::Colour(0xFF555555));
+    };
     
-    thresholdSlider.setRange(-40.0, 0.0, 0.1);
-    thresholdSlider.setValue(-12.0);
-    thresholdSlider.setTextValueSuffix(" dB");
+    configureSlider(depthSlider, 0.0, 20.0, 0.1, 6.0, " dB");
+    configureSlider(thresholdSlider, -40.0, 0.0, 0.1, -12.0, " dB");
+    configureSlider(ratioSlider, 1.0, 10.0, 0.1, 3.0, ":1");
+    configureSlider(kneeSlider, 0.0, 10.0, 0.1, 2.0, " dB");
+    configureSlider(attackSlider, 0.1, 100.0, 0.1, 10.0, " ms");
+    configureSlider(releaseSlider, 10.0, 1000.0, 1.0, 100.0, " ms");
+    configureSlider(bandFreqSlider, 80.0, 8000.0, 1.0, 1000.0, " Hz");
+    configureSlider(bandQSlider, 0.1, 10.0, 0.1, 1.0, " Q");
     
-    ratioSlider.setRange(1.0, 10.0, 0.1);
-    ratioSlider.setValue(3.0);
-    ratioSlider.setTextValueSuffix(":1");
+    // Configure labels with enhanced styling
+    auto configureLabel = [](juce::Label& label, const juce::String& text) {
+        label.setText(text, juce::dontSendNotification);
+        label.setJustificationType(juce::Justification::centred);
+        label.setColour(juce::Label::textColourId, juce::Colour(0xFFE0E0E0));
+        label.setFont(juce::FontOptions(11.0f).withStyle("bold"));
+    };
     
-    kneeSlider.setRange(0.0, 10.0, 0.1);
-    kneeSlider.setValue(2.0);
-    kneeSlider.setTextValueSuffix(" dB");
+    configureLabel(depthLabel, "Depth");
+    configureLabel(thresholdLabel, "Threshold");
+    configureLabel(ratioLabel, "Ratio");
+    configureLabel(kneeLabel, "Knee");
+    configureLabel(attackLabel, "Attack");
+    configureLabel(releaseLabel, "Release");
+    configureLabel(bandFreqLabel, "Band Freq");
+    configureLabel(bandQLabel, "Band Q");
+    configureLabel(modeLabel, "Mode");
+    configureLabel(detectorLabel, "Detector");
     
-    attackSlider.setRange(0.1, 100.0, 0.1);
-    attackSlider.setValue(10.0);
-    attackSlider.setTextValueSuffix(" ms");
+    // Enhanced combo box styling
+    auto configureComboBox = [](juce::ComboBox& combo) {
+        combo.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF2D2D2D));
+        combo.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFE0E0E0));
+        combo.setColour(juce::ComboBox::arrowColourId, juce::Colour(0xFF4A90E2));
+        combo.setColour(juce::ComboBox::buttonColourId, juce::Colour(0xFF4A4A4A));
+        combo.setColour(juce::ComboBox::outlineColourId, juce::Colour(0xFF555555));
+    };
     
-    releaseSlider.setRange(10.0, 1000.0, 1.0);
-    releaseSlider.setValue(100.0);
-    releaseSlider.setTextValueSuffix(" ms");
-    
-    bandFreqSlider.setRange(80.0, 8000.0, 1.0);
-    bandFreqSlider.setValue(1000.0);
-    bandFreqSlider.setTextValueSuffix(" Hz");
-    
-    bandQSlider.setRange(0.1, 10.0, 0.1);
-    bandQSlider.setValue(1.0);
-    bandQSlider.setTextValueSuffix(" Q");
-    
-    // Configure labels
-    depthLabel.setJustificationType(juce::Justification::centred);
-    thresholdLabel.setJustificationType(juce::Justification::centred);
-    ratioLabel.setJustificationType(juce::Justification::centred);
-    kneeLabel.setJustificationType(juce::Justification::centred);
-    attackLabel.setJustificationType(juce::Justification::centred);
-    releaseLabel.setJustificationType(juce::Justification::centred);
-    bandFreqLabel.setJustificationType(juce::Justification::centred);
-    bandQLabel.setJustificationType(juce::Justification::centred);
-    modeLabel.setJustificationType(juce::Justification::centred);
-    detectorLabel.setJustificationType(juce::Justification::centred);
-    
-    // Set label colors
-    auto labelColor = juce::Colour(0xFFCCCCCC);
-    depthLabel.setColour(juce::Label::textColourId, labelColor);
-    thresholdLabel.setColour(juce::Label::textColourId, labelColor);
-    ratioLabel.setColour(juce::Label::textColourId, labelColor);
-    kneeLabel.setColour(juce::Label::textColourId, labelColor);
-    attackLabel.setColour(juce::Label::textColourId, labelColor);
-    releaseLabel.setColour(juce::Label::textColourId, labelColor);
-    bandFreqLabel.setColour(juce::Label::textColourId, labelColor);
-    bandQLabel.setColour(juce::Label::textColourId, labelColor);
-    modeLabel.setColour(juce::Label::textColourId, labelColor);
-    detectorLabel.setColour(juce::Label::textColourId, labelColor);
+    configureComboBox(modeSelector);
+    configureComboBox(detectorSelector);
 }
 
 void DuckingFloat::setExpanded(bool shouldExpand)
@@ -259,62 +259,115 @@ void DuckingFloat::paint(juce::Graphics& g)
 void DuckingFloat::paintCollapsed(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
     
-    // Pill-style background
-    g.setColour(juce::Colour(0xFF2D2D2D));
-    g.fillRoundedRectangle(bounds, PILL_CORNER_RADIUS);
+    // Pill-style background with elevation shadow
+    const float cr = PILL_CORNER_RADIUS;
     
-    // Border
-    g.setColour(juce::Colour(0xFF555555));
-    g.drawRoundedRectangle(bounds, PILL_CORNER_RADIUS, 1.0f);
+    // Elevation shadow
+    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.3f));
+    else g.setColour(juce::Colour(0x40000000));
+    g.fillRoundedRectangle(bounds.translated(1.0f, 1.0f), cr);
     
-    // GR meter
+    // Main background
+    g.setColour(th.meters.panelDark);
+    g.fillRoundedRectangle(bounds, cr);
+    
+    // Border with subtle highlight
+    g.setColour(th.sh.withAlpha(0.6f));
+    g.drawRoundedRectangle(bounds, cr, 1.0f);
+    
+    // GR meter with enhanced styling
     paintGrMeter(g, bounds.removeFromRight(80).reduced(5));
 }
 
 void DuckingFloat::paintExpanded(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
+    
+    const float cr = 8.0f;
+    
+    // Elevation shadow
+    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
+    else g.setColour(juce::Colour(0x40000000));
+    g.fillRoundedRectangle(bounds.translated(1.5f, 1.5f), cr);
     
     // Main background
-    g.setColour(juce::Colour(0xFF1A1A1A));
-    g.fillRoundedRectangle(bounds, 8.0f);
+    g.setColour(th.meters.panelDark);
+    g.fillRoundedRectangle(bounds, cr);
     
     // Border
-    g.setColour(juce::Colour(0xFF444444));
-    g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
+    g.setColour(th.sh);
+    g.drawRoundedRectangle(bounds, cr, 1.0f);
     
-    // Header background
+    // Header background with subtle gradient
     auto headerArea = bounds.removeFromTop(40.0f);
-    g.setColour(juce::Colour(0xFF2D2D2D));
-    g.fillRoundedRectangle(headerArea, 8.0f);
+    juce::ColourGradient headerGradient(th.meters.panelDark, 0, 0, 
+                                       th.meters.panelDark.darker(0.1f), 0, headerArea.getHeight(), false);
+    g.setGradientFill(headerGradient);
+    g.fillRoundedRectangle(headerArea, cr);
     
-    // GR meter in header
+    // Header border
+    g.setColour(th.sh.withAlpha(0.3f));
+    g.drawRoundedRectangle(headerArea, cr, 0.5f);
+    
+    // GR meter in header with enhanced styling
     auto grArea = headerArea.removeFromRight(80).reduced(5);
     paintGrMeter(g, grArea);
 }
 
 void DuckingFloat::paintGrMeter(juce::Graphics& g, juce::Rectangle<float> bounds)
 {
-    // Background
-    g.setColour(juce::Colour(0xFF333333));
-    g.fillRoundedRectangle(bounds, 4.0f);
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
     
-    // GR level bar
+    const float cr = 4.0f;
+    
+    // Background with subtle gradient
+    juce::ColourGradient bgGradient(th.meters.panelDark.darker(0.2f), 0, 0,
+                                   th.meters.panelDark.darker(0.4f), 0, bounds.getHeight(), false);
+    g.setGradientFill(bgGradient);
+    g.fillRoundedRectangle(bounds, cr);
+    
+    // GR level bar with smooth gradient
     auto grLevel = juce::jmap(currentGrDb, -20.0f, 0.0f, 0.0f, 1.0f);
     auto grBar = bounds.removeFromLeft(bounds.getWidth() * grLevel);
     
-    // Color based on GR level
-    if (currentGrDb > -3.0f)
-        g.setColour(juce::Colour(0xFFFF0000)); // Red for heavy GR
-    else if (currentGrDb > -6.0f)
-        g.setColour(juce::Colour(0xFFFF8800)); // Orange for moderate GR
-    else
-        g.setColour(juce::Colour(0xFF00FF00)); // Green for light GR
+    // Enhanced color scheme based on GR level
+    juce::Colour startColor, endColor;
+    if (currentGrDb > -3.0f) {
+        // Red for heavy GR
+        startColor = juce::Colour(0xFFFF4444);
+        endColor = juce::Colour(0xFFCC0000);
+    } else if (currentGrDb > -6.0f) {
+        // Orange for moderate GR
+        startColor = juce::Colour(0xFFFFAA44);
+        endColor = juce::Colour(0xFFCC6600);
+    } else {
+        // Green for light GR
+        startColor = juce::Colour(0xFF44FF44);
+        endColor = juce::Colour(0xFF00CC00);
+    }
     
-    g.fillRoundedRectangle(grBar, 4.0f);
+    juce::ColourGradient grGradient(startColor, 0, 0, endColor, 0, grBar.getHeight(), false);
+    g.setGradientFill(grGradient);
+    g.fillRoundedRectangle(grBar, cr);
     
-    // Border
-    g.setColour(juce::Colour(0xFF666666));
-    g.drawRoundedRectangle(bounds, 4.0f, 1.0f);
+    // Subtle inner highlight
+    g.setColour(juce::Colours::white.withAlpha(0.2f));
+    g.drawRoundedRectangle(grBar.reduced(0.5f), cr - 0.5f, 0.5f);
+    
+    // Border with theme integration
+    g.setColour(th.sh.withAlpha(0.8f));
+    g.drawRoundedRectangle(bounds, cr, 1.0f);
+    
+    // GR value text overlay
+    if (grBar.getWidth() > 20) {
+        g.setColour(juce::Colours::white.withAlpha(0.9f));
+        g.setFont(10.0f);
+        g.drawText(juce::String(currentGrDb, 1) + " dB", grBar, juce::Justification::centred);
+    }
 }

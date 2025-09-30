@@ -1,6 +1,7 @@
 #include "ReverbGraphics.h"
 #include "shared/Core/FieldLookAndFeel.h"
 #include "shared/Core/PluginProcessor.h"
+#include "ReverbParamIDs.h"
 
 ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
                           juce::AudioProcessorValueTreeState& s,
@@ -21,6 +22,9 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     // Create ducking float
     duckingFloat = std::make_unique<DuckingFloat>(state);
     addAndMakeVisible(*duckingFloat);
+    
+    // Initially hide ducking float (will be shown when DUCK toggle is on)
+    duckingFloat->setVisible(false);
     
         // Create EQ panels
         reverbEQ = std::make_unique<ReverbToneEQ>(proc, &getLookAndFeel());
@@ -299,6 +303,9 @@ void ReverbGraphics::timerCallback()
     if (animationTime > juce::MathConstants<float>::twoPi)
         animationTime -= juce::MathConstants<float>::twoPi;
     
+    // Update ducking module visibility based on DUCK toggle
+    updateDuckingModuleVisibility();
+    
     // Update ducking float GR meter
     if (duckingFloat && getDuckGrDb)
     {
@@ -338,6 +345,28 @@ void ReverbGraphics::pushBlockPre(const float* L, const float* R, int n)
 {
     if (reverbEQ) reverbEQ->pushBlockPre(L, R, n);
     if (decayRateEQ) decayRateEQ->pushBlockPre(L, R, n);
+}
+
+void ReverbGraphics::updateDuckingModuleVisibility()
+{
+    if (!duckingFloat) return;
+    
+    // Check the DUCK toggle state from the APVTS
+    auto duckOnParam = state.getRawParameterValue(ReverbParamIDs::duckOn);
+    bool duckEnabled = duckOnParam ? (*duckOnParam > 0.5f) : false;
+    
+    // Show/hide ducking module based on DUCK toggle
+    bool shouldBeVisible = duckEnabled;
+    if (duckingFloat->isVisible() != shouldBeVisible)
+    {
+        duckingFloat->setVisible(shouldBeVisible);
+        
+        // If showing, bring to front
+        if (shouldBeVisible)
+        {
+            duckingFloat->toFront(false);
+        }
+    }
 }
 
 
