@@ -1,9 +1,9 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "../Panes/XYControlsPane.h"
-#include "../Controls/ControlGridMetrics.h"
-#include "../Components/XYPad.h"
+#include "XYControlsPane.h"
+#include "ui/Controls/ControlGridMetrics.h"
+#include "XYPad.h"
 
 class MyPluginAudioProcessor;
 

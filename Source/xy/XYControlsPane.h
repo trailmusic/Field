@@ -1,11 +1,11 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "../Components/KnobCell.h"
-#include "../Components/KnobCellWithAux.h"
-#include "../Components/UpwardComboBox.h"
-#include "../Controls/SimpleSwitchCell.h"
-#include "../Design/Layout.h"
+#include "ui/Components/KnobCell.h"
+#include "ui/Components/KnobCellWithAux.h"
+#include "ui/Components/UpwardComboBox.h"
+#include "ui/Controls/SimpleSwitchCell.h"
+#include "ui/Design/Layout.h"
 #include "Core/FieldLookAndFeel.h"
 #include "Core/FieldMetallic.h"
 #include "Core/IconSystem.h"

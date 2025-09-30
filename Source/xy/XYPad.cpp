@@ -1,6 +1,6 @@
 #include "XYPad.h"
-#include "../../Core/FieldLookAndFeel.h"
-#include "VizEQ.h"
+#include "Core/FieldLookAndFeel.h"
+#include "ui/Components/VizEQ.h"
 
 void XYPad::pushWaveformSample (double l, double r)
 {

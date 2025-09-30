@@ -1,7 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "../Tabs/DynEqTab.h"
-#include "../Tabs/XYTab.h"
+#include "xy/XYTab.h"
 #include "../Tabs/ImagerTab.h"
 #include "../Tabs/BandTab.h"
 #include "../Tabs/MachineTab.h"

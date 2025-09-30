@@ -2,7 +2,7 @@
 #include "PluginEditor.h"
 #include "ui/Managers/PaneManager.h"
 #include "ui/Managers/ButtonManager.h"
-#include "ui/Components/XYPad.h"
+#include "xy/XYPad.h"
 #include "reverb/ReverbParamIDs.h"
 #include "ui/Design/Layout.h"
 #include "dsp/DelayPresetLibrary.h"

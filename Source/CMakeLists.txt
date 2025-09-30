@@ -27,8 +27,8 @@ set(SRC
     ui/Components/TooltipBubble.h
     ui/Components/VerticalDivider.h
     ui/Components/HorizontalDivider.h
-    ui/Components/XYPad.h
-    ui/Components/XYPad.cpp
+    xy/XYPad.h
+    xy/XYPad.cpp
     ui/Components/VerticalSlider3D.h
     ui/Components/VerticalSlider3D.cpp
     ui/Components/ToggleSwitch.h
@@ -99,8 +99,8 @@ set(SRC
     ui/Panes/ImagerControlsPane.h
     ui/Panes/BandControlsPane.h
     ui/Tabs/ImagerTab.h
-    ui/Panes/XYControlsPane.h
-    ui/Tabs/XYTab.h
+    xy/XYControlsPane.h
+    xy/XYTab.h
     ui/Tabs/BandTab.h
     ui/Panes/BandGraphics.h
     ui/Panes/BandGraphics.cpp
