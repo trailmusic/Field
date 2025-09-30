@@ -67,6 +67,78 @@ private:
     juce::Colour bandColourFor(int bandIdx) const;
     float bandDbAtForPaint(const BandPoint& b, float hz) const;
     
+    // Per-band modules (based on Dynamic EQ pattern)
+    void positionOverlay();
+    void positionBadgeFor(int idx);
+    
+    // Floating band editor overlay
+    class BandOverlay : public juce::Component
+    {
+    public:
+        std::function<void(float)> onGainChanged;
+        std::function<void(float)> onQChanged;
+        std::function<void(float)> onFreqChanged;
+        std::function<void(int)> onTypeChanged;
+        std::function<void(bool)> onDragAny;
+        
+        BandOverlay();
+        ~BandOverlay() override;
+        
+        void paint(juce::Graphics& g) override;
+        void resized() override;
+        
+        void setValues(float gain, float q, float freq, int type);
+        void setAccentColour(juce::Colour c);
+        
+    private:
+        juce::Slider gain, q, freq;
+        juce::Label gainLabel, qLabel, freqLabel;
+        juce::ComboBox typeCb;
+        juce::Label typeLabel;
+        
+        bool updating = false;
+        juce::Colour accentColour = juce::Colours::deepskyblue;
+    };
+    
+    // Compact per-band badge
+    class BandBadge : public juce::Component
+    {
+    public:
+        std::function<void()> onDelete;
+        std::function<void(bool)> onBypass;
+        std::function<void(int)> onSetType;
+        std::function<void(float)> onSetFreq;
+        std::function<void(float)> onSetQ;
+        std::function<void(float)> onSetGain;
+        
+        BandBadge();
+        ~BandBadge() override;
+        
+        void paint(juce::Graphics& g) override;
+        void resized() override;
+        
+        void setValues(float gr, float freq, int type, bool bypass);
+        void setDetails(float q, float gain, bool dynOn, bool dynUp, float dynRange, bool specOn, const juce::String& channel, int slopeDb, const juce::String& tap);
+        void setAccentColour(juce::Colour c);
+        
+    private:
+        juce::TextButton deleteBtn, bypassBtn, typeBtn;
+        juce::Label freqLabel, gainLabel, qLabel;
+        juce::Label grLabel, dynLabel, specLabel;
+        
+        juce::Colour accentColour = juce::Colours::deepskyblue;
+        float currentGr = 0.0f;
+        float currentFreq = 1000.0f;
+        float currentGain = 0.0f;
+        float currentQ = 0.707f;
+        int currentType = 0;
+        bool currentBypass = false;
+    };
+    
+    // Per-band module instances
+    BandOverlay overlay;
+    BandBadge badge;
+    
     
     MyPluginAudioProcessor& proc;
     SpectrumAnalyzer analyzer;
@@ -78,6 +150,7 @@ private:
     bool hoverInPane = false;
     juce::Point<int> hoverPos{0, 0};
     float hoverHz = 0.0f;
+    int badgeFor = -1;
     
     juce::Path eqPath;
     std::vector<juce::Path> bandPaths;

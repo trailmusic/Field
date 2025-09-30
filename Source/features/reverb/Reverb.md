@@ -483,3 +483,35 @@ All reverb controls use:
 3. **Apply Metallic Styling**: Ensure all components use `setAreaMetallicForCell(*component, MetallicKind::Reverb)`
 4. **Maintain Grid Layout**: Keep the 2x16 grid structure with proper positioning
 5. **Value Labels**: Ensure all KnobCell controls have proper value labels with appropriate decimal places
+
+## ✅ SMART POSITIONING IMPROVEMENTS (January 2025)
+
+### Applied to Reverb EQs
+- **ReverbToneEQ**: Smart positioning prevents BandOverlay/BandBadge overlap with band points
+- **DecayRateEQ**: Smart positioning prevents BandOverlay/BandBadge overlap with band points
+- **Band Limits**: 4-band limit for Tone EQ, 3-band limit for Decay-Rate EQ
+
+### Applied to Main Dynamic EQ
+- **DynEqTab**: Smart positioning prevents BandOverlay/BandBadge overlap with band points
+- **Consistent Logic**: Same smart positioning algorithm across all EQs
+
+### Smart Positioning Algorithm
+1. **Overlap Detection**: Check if UI element would overlap with band point (12px radius + 20px margin)
+2. **Fallback Positions**: Try right → left → above → below
+3. **Bounds Checking**: Ensure elements stay within component bounds
+4. **Consistent Behavior**: Same logic applied to all EQ implementations
+
+### Future EQ Positioning Notes
+- **Template Pattern**: Consider creating a base class for smart positioning
+- **Configurable Margins**: Make band radius and margin configurable per EQ type
+- **Animation Support**: Add smooth transitions when repositioning elements
+- **Multi-Element Avoidance**: Extend to avoid overlap with multiple band points
+- **Context-Aware Positioning**: Consider EQ type and frequency range for optimal placement
+
+## ✅ SMART POSITIONING APPLIED (January 2025)
+
+### Reverb EQ System
+- **ReverbToneEQ**: Smart positioning prevents BandOverlay/BandBadge overlap with band points
+- **DecayRateEQ**: Smart positioning prevents BandOverlay/BandBadge overlap with band points
+- **Band Limits**: 4-band limit for Tone EQ, 3-band limit for Decay-Rate EQ
+- **Algorithm**: 12px band radius + 20px margin with fallback positioning (right → left → above → below)

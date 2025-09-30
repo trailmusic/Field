@@ -1483,15 +1483,58 @@ private:
             overlay.toFront (false);
             return;
         }
-        const float x = mapHzToX (points[(size_t) selected].hz);
+        
+        const auto& pt = points[(size_t) selected];
+        const float x = mapHzToX (pt.hz);
+        const float y = mapDbToY (pt.db);
         auto pane = getLocalBounds();
         const int w = 360, h = 132;
-        // Fixed Y higher up to avoid Hz units; X follows the point's latitude
-        int oy = pane.getBottom() - h - 60; // Moved up 48px to clear Hz units
-        // Center overlay around the point's X, clamped within pane
+        
+        // Start with band point position
         int ox = (int) x - (w / 2);
+        int oy = pane.getBottom() - h - 60; // Fixed Y higher up to avoid Hz units
+        
+        // Smart positioning to avoid overlap with band point
+        const int bandRadius = 12; // Band point click radius
+        const int margin = 20; // Additional margin from band point
+        
+        // Check if overlay would overlap with band point
+        bool overlapsBand = (ox <= x + bandRadius + margin &&
+                           ox + w >= x - bandRadius - margin &&
+                           oy <= y + bandRadius + margin &&
+                           oy + h >= y - bandRadius - margin);
+        
+        if (overlapsBand)
+        {
+            // Position overlay to the right of band point
+            ox = (int) x + bandRadius + margin;
+            
+            // If that goes off screen, try to the left
+            if (ox + w > pane.getRight())
+            {
+                ox = (int) x - w - bandRadius - margin;
+            }
+            
+            // If still off screen, try above
+            if (ox < pane.getX() || ox + w > pane.getRight())
+            {
+                ox = (int) x - w/2;
+                oy = (int) y - h - bandRadius - margin;
+            }
+            
+            // If still off screen, try below
+            if (oy < pane.getY())
+            {
+                oy = (int) y + bandRadius + margin;
+            }
+        }
+        
+        // Final bounds checking
         if (ox < pane.getX()) ox = pane.getX() + 12;
         if (ox + w > pane.getRight()) ox = pane.getRight() - w - 12;
+        if (oy < pane.getY()) oy = pane.getY() + 12;
+        if (oy + h > pane.getBottom()) oy = pane.getBottom() - h - 12;
+        
         overlayLastBounds = juce::Rectangle<int> (ox, oy, w, h);
         overlay.setBounds (overlayLastBounds);
         overlay.toFront (false);
@@ -1504,10 +1547,54 @@ private:
         const float x = mapHzToX (pt.hz);
         const float y = mapDbToY (pt.db);
         const int w = 212, h = 40;
-        int ox = (int) x + 14, oy = (int) y - h - 8;
         auto pane = getLocalBounds();
-        if (ox + w > pane.getRight()) ox = (int) x - w - 14;
-        if (oy < pane.getY()) oy = (int) y + 8;
+        
+        // Start with band point position
+        int ox = (int) x + 14;
+        int oy = (int) y - h - 8;
+        
+        // Smart positioning to avoid overlap with band point
+        const int bandRadius = 12; // Band point click radius
+        const int margin = 20; // Additional margin from band point
+        
+        // Check if badge would overlap with band point
+        bool overlapsBand = (ox <= x + bandRadius + margin &&
+                           ox + w >= x - bandRadius - margin &&
+                           oy <= y + bandRadius + margin &&
+                           oy + h >= y - bandRadius - margin);
+        
+        if (overlapsBand)
+        {
+            // Position badge to the right of band point
+            ox = (int) x + bandRadius + margin;
+            oy = (int) y - h/2;
+            
+            // If that goes off screen, try to the left
+            if (ox + w > pane.getRight())
+            {
+                ox = (int) x - w - bandRadius - margin;
+            }
+            
+            // If still off screen, try above
+            if (ox < pane.getX() || ox + w > pane.getRight())
+            {
+                ox = (int) x - w/2;
+                oy = (int) y - h - bandRadius - margin;
+            }
+            
+            // If still off screen, try below
+            if (oy < pane.getY())
+            {
+                oy = (int) y + bandRadius + margin;
+            }
+        }
+        
+        // Final bounds checking
+        if (ox < pane.getX()) ox = pane.getX() + 12;
+        if (ox + w > pane.getRight()) ox = pane.getRight() - w - 12;
+        if (oy < pane.getY()) oy = pane.getY() + 12;
+        if (oy + h > pane.getBottom()) oy = pane.getBottom() - h - 12;
+        
         badge.setBounds (ox, oy, w, h);
         badge.setVisible (true);
         // Approx details for badge

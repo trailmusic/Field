@@ -21,6 +21,76 @@ DecayRateEQ::DecayRateEQ(MyPluginAudioProcessor& p, juce::LookAndFeel* lnf)
     prm.fps = 30; 
     analyzer.setParams(prm);
     analyzer.setDrawGridHorizontal(false); // we'll draw our own multiplier units
+    
+    // Add per-band modules
+    addAndMakeVisible(overlay);
+    overlay.setVisible(false);
+    addAndMakeVisible(badge);
+    badge.setVisible(false);
+    
+    // Setup overlay callbacks
+    overlay.onMultChanged = [this](float m) {
+        if (selected >= 0 && selected < (int)points.size()) {
+            points[(size_t)selected].mult = juce::jlimit(0.5f, 2.0f, m);
+            if (points[(size_t)selected].bandIdx >= 0)
+                setBandParam(points[(size_t)selected].bandIdx, ReverbEQParams::DecayBand::decayMult, m);
+            rebuildEqPath(); repaint();
+        }
+    };
+    
+    overlay.onQChanged = [this](float q) {
+        if (selected >= 0 && selected < (int)points.size()) {
+            points[(size_t)selected].q = juce::jlimit(0.1f, 36.0f, q);
+            if (points[(size_t)selected].bandIdx >= 0)
+                setBandParam(points[(size_t)selected].bandIdx, ReverbEQParams::DecayBand::q, q);
+            rebuildEqPath(); repaint();
+        }
+    };
+    
+    overlay.onFreqChanged = [this](float f) {
+        if (selected >= 0 && selected < (int)points.size()) {
+            points[(size_t)selected].hz = juce::jlimit(20.f, 20000.f, f);
+            if (points[(size_t)selected].bandIdx >= 0)
+                setBandParam(points[(size_t)selected].bandIdx, ReverbEQParams::DecayBand::freqHz, f);
+            rebuildEqPath(); repaint();
+        }
+    };
+    
+    overlay.onTypeChanged = [this](int t) {
+        if (selected >= 0 && selected < (int)points.size()) {
+            points[(size_t)selected].type = juce::jlimit(0, 2, t);
+            if (points[(size_t)selected].bandIdx >= 0)
+                setBandParam(points[(size_t)selected].bandIdx, ReverbEQParams::DecayBand::dynAmt, (float)t);
+            rebuildEqPath(); repaint();
+        }
+    };
+    
+    // Setup badge callbacks
+    badge.onDelete = [this] {
+        if (selected >= 0 && selected < (int)points.size()) {
+            const int bandIdx = points[(size_t)selected].bandIdx;
+            if (bandIdx >= 0) setBandParam(bandIdx, ReverbEQParams::DecayBand::active, 0.0f);
+            points.erase(points.begin() + selected);
+            selected = -1; rebuildEqPath(); repaint(); overlay.setVisible(false); badge.setVisible(false);
+        }
+    };
+    
+    badge.onBypass = [this](bool off) {
+        if (selected >= 0 && selected < (int)points.size()) {
+            const int bandIdx = points[(size_t)selected].bandIdx;
+            if (bandIdx >= 0) setBandParam(bandIdx, ReverbEQParams::DecayBand::active, off ? 0.0f : 1.0f);
+        }
+    };
+    
+    badge.onSetType = [this](int tp) {
+        const int idx = (badgeFor >= 0 ? badgeFor : selected);
+        if (idx >= 0 && idx < (int)points.size()) {
+            auto& p = points[(size_t)idx];
+            p.type = juce::jlimit(0, 2, tp);
+            if (p.bandIdx >= 0) setBandParam(p.bandIdx, ReverbEQParams::DecayBand::dynAmt, (float)p.type);
+            rebuildEqPath(); repaint(); positionBadgeFor(idx);
+        }
+    };
 }
 
 DecayRateEQ::~DecayRateEQ()
@@ -207,9 +277,25 @@ void DecayRateEQ::drawUnits(juce::Graphics& g)
 // Mouse interaction
 void DecayRateEQ::mouseDown(const juce::MouseEvent& e)
 {
-    selected = hitTestPoint(e.getPosition());
-    if (selected < 0 && !e.mods.isPopupMenu())
+    const int h = hitTestPoint(e.getPosition());
+    if (h >= 0)
     {
+        selected = h;
+        auto& pt = points[(size_t)selected];
+        overlay.setValues(pt.mult, pt.q, pt.hz, pt.type);
+        overlay.setVisible(true);
+        positionOverlay();
+        positionBadgeFor(selected);
+    }
+    else if (!e.mods.isPopupMenu())
+    {
+        // Check band limit (3 bands max for Decay-Rate EQ)
+        if (points.size() >= 3)
+        {
+            // Show tooltip or visual feedback that limit is reached
+            return;
+        }
+        
         // Create new band
         DecayBandPoint bp; 
         bp.hz = juce::jlimit(20.f, 20000.f, mapXToHz(e.getPosition().x)); 
@@ -229,8 +315,17 @@ void DecayRateEQ::mouseDown(const juce::MouseEvent& e)
         }
         points.push_back(bp);
         selected = (int)points.size() - 1;
+        overlay.setValues(bp.mult, bp.q, bp.hz, bp.type);
+        overlay.setVisible(true);
+        positionOverlay();
+        positionBadgeFor(selected);
         rebuildEqPath(); 
         repaint();
+    }
+    else
+    {
+        overlay.setVisible(false);
+        badge.setVisible(false);
     }
 }
 
@@ -414,4 +509,337 @@ float DecayRateEQ::bandMultAtForPaint(const DecayBandPoint& b, float hz) const
         }
         default: return 1.0f;
     }
+}
+
+// Per-band module implementations
+void DecayRateEQ::positionOverlay()
+{
+    if (selected < 0 || selected >= (int)points.size()) return;
+    
+    auto r = getLocalBounds();
+    const int w = 200, h = 120;
+    
+    // Get the selected band point position
+    const auto& pt = points[(size_t)selected];
+    const float bandX = mapHzToX(pt.hz);
+    const float bandY = mapMultToY(pt.mult);
+    
+    // Start with band point position
+    int ox = (int)bandX - w/2;
+    int oy = (int)bandY - h/2;
+    
+    // Smart positioning to avoid overlap with band point
+    const int bandRadius = 12; // Band point click radius
+    const int margin = 20; // Additional margin from band point
+    
+    // Check if overlay would overlap with band point
+    bool overlapsBand = (ox <= bandX + bandRadius + margin && 
+                        ox + w >= bandX - bandRadius - margin &&
+                        oy <= bandY + bandRadius + margin && 
+                        oy + h >= bandY - bandRadius - margin);
+    
+    if (overlapsBand)
+    {
+        // Position overlay to the right of band point
+        ox = (int)bandX + bandRadius + margin;
+        oy = (int)bandY - h/2;
+        
+        // If that goes off screen, try to the left
+        if (ox + w > r.getRight())
+        {
+            ox = (int)bandX - w - bandRadius - margin;
+        }
+        
+        // If still off screen, try above
+        if (ox < r.getX() || ox + w > r.getRight())
+        {
+            ox = (int)bandX - w/2;
+            oy = (int)bandY - h - bandRadius - margin;
+        }
+        
+        // If still off screen, try below
+        if (oy < r.getY())
+        {
+            oy = (int)bandY + bandRadius + margin;
+        }
+    }
+    
+    // Final bounds checking
+    if (ox < r.getX()) ox = r.getX() + 10;
+    if (ox + w > r.getRight()) ox = r.getRight() - w - 10;
+    if (oy < r.getY()) oy = r.getY() + 10;
+    if (oy + h > r.getBottom()) oy = r.getBottom() - h - 10;
+    
+    overlay.setBounds(ox, oy, w, h);
+    overlay.setVisible(true);
+}
+
+void DecayRateEQ::positionBadgeFor(int idx)
+{
+    if (idx < 0 || idx >= (int)points.size()) return;
+    const auto& pt = points[(size_t)idx];
+    const float x = mapHzToX(pt.hz);
+    const float y = mapMultToY(pt.mult);
+    
+    const int w = 120, h = 60;
+    auto pane = analyzer.getBounds();
+    
+    // Smart positioning to avoid overlap with band point
+    const int bandRadius = 12;
+    const int margin = 15;
+    
+    // Try positioning to the right first
+    int ox = (int)x + bandRadius + margin;
+    int oy = (int)y - h/2;
+    
+    // If that goes off screen, try to the left
+    if (ox + w > pane.getRight())
+    {
+        ox = (int)x - w - bandRadius - margin;
+    }
+    
+    // If still off screen, try above
+    if (ox < pane.getX())
+    {
+        ox = (int)x - w/2;
+        oy = (int)y - h - bandRadius - margin;
+    }
+    
+    // If still off screen, try below
+    if (oy < pane.getY())
+    {
+        oy = (int)y + bandRadius + margin;
+    }
+    
+    // Final bounds checking
+    if (ox < pane.getX()) ox = pane.getX() + 5;
+    if (ox + w > pane.getRight()) ox = pane.getRight() - w - 5;
+    if (oy < pane.getY()) oy = pane.getY() + 5;
+    if (oy + h > pane.getBottom()) oy = pane.getBottom() - h - 5;
+    
+    badge.setBounds(ox, oy, w, h);
+    badge.setVisible(true);
+    badge.setValues(pt.mult, pt.hz, pt.type, false);
+    badge.setDetails(pt.q, pt.mult, false, false, 0.0f, false, "St", 0, "Pre");
+    
+    // Per-band accent color
+    juce::Colour accent = bandColourFor(idx);
+    badge.setAccentColour(accent);
+    overlay.setAccentColour(accent);
+    badge.toFront(true);
+}
+
+// BandOverlay implementation for DecayRateEQ
+DecayRateEQ::BandOverlay::BandOverlay()
+{
+    setInterceptsMouseClicks(true, true);
+    
+    // Setup sliders
+    mult.setSliderStyle(juce::Slider::LinearHorizontal);
+    mult.setTextBoxStyle(juce::Slider::TextBoxRight, false, 48, 18);
+    mult.setRange(0.5, 2.0, 0.01);
+    mult.onValueChange = [this] { if (!updating && onMultChanged) onMultChanged((float)mult.getValue()); };
+    mult.onDragStart = [this] { if (onDragAny) onDragAny(true); };
+    mult.onDragEnd = [this] { if (onDragAny) onDragAny(false); };
+    addAndMakeVisible(mult);
+    
+    q.setSliderStyle(juce::Slider::LinearHorizontal);
+    q.setTextBoxStyle(juce::Slider::TextBoxRight, false, 48, 18);
+    q.setRange(0.1, 36.0, 0.01);
+    q.onValueChange = [this] { if (!updating && onQChanged) onQChanged((float)q.getValue()); };
+    q.onDragStart = [this] { if (onDragAny) onDragAny(true); };
+    q.onDragEnd = [this] { if (onDragAny) onDragAny(false); };
+    addAndMakeVisible(q);
+    
+    freq.setSliderStyle(juce::Slider::LinearHorizontal);
+    freq.setTextBoxStyle(juce::Slider::TextBoxRight, false, 64, 18);
+    freq.setRange(20.0, 20000.0, 0.01);
+    freq.setSkewFactorFromMidPoint(1000.0);
+    freq.onValueChange = [this] { if (!updating && onFreqChanged) onFreqChanged((float)freq.getValue()); };
+    freq.onDragStart = [this] { if (onDragAny) onDragAny(true); };
+    freq.onDragEnd = [this] { if (onDragAny) onDragAny(false); };
+    addAndMakeVisible(freq);
+    
+    // Setup labels
+    multLabel.setText("MULT", juce::dontSendNotification);
+    multLabel.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(multLabel);
+    
+    qLabel.setText("Q", juce::dontSendNotification);
+    qLabel.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(qLabel);
+    
+    freqLabel.setText("FREQ", juce::dontSendNotification);
+    freqLabel.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(freqLabel);
+    
+    // Setup type combo
+    typeCb.addItemList(juce::StringArray{"Bell", "TiltLo", "TiltHi"}, 1);
+    typeCb.onChange = [this] { if (!updating && onTypeChanged) onTypeChanged(typeCb.getSelectedItemIndex()); };
+    addAndMakeVisible(typeCb);
+    
+    typeLabel.setText("TYPE", juce::dontSendNotification);
+    typeLabel.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(typeLabel);
+}
+
+DecayRateEQ::BandOverlay::~BandOverlay() {}
+
+void DecayRateEQ::BandOverlay::paint(juce::Graphics& g)
+{
+    auto r = getLocalBounds().toFloat();
+    
+    // Background with accent
+    juce::Colour bg = juce::Colours::darkgrey.darker(0.20f);
+    g.setColour(bg.withAlpha(0.96f));
+    g.fillRoundedRectangle(r, 8.0f);
+    
+    // Accent border
+    g.setColour(accentColour.withAlpha(0.8f));
+    g.drawRoundedRectangle(r, 8.0f, 2.0f);
+    
+    // Accent strip
+    juce::Rectangle<float> strip = r.removeFromLeft(3.0f).reduced(0.5f, 2.0f);
+    g.setColour(accentColour);
+    g.fillRoundedRectangle(strip, 1.5f);
+}
+
+void DecayRateEQ::BandOverlay::resized()
+{
+    auto r = getLocalBounds().reduced(8);
+    const int labelW = 40, sliderH = 20, gap = 4;
+    
+    // Mult row
+    multLabel.setBounds(r.removeFromTop(sliderH).removeFromLeft(labelW));
+    mult.setBounds(r.removeFromTop(sliderH));
+    r.removeFromTop(gap);
+    
+    // Q row
+    qLabel.setBounds(r.removeFromTop(sliderH).removeFromLeft(labelW));
+    q.setBounds(r.removeFromTop(sliderH));
+    r.removeFromTop(gap);
+    
+    // Freq row
+    freqLabel.setBounds(r.removeFromTop(sliderH).removeFromLeft(labelW));
+    freq.setBounds(r.removeFromTop(sliderH));
+    r.removeFromTop(gap);
+    
+    // Type row
+    typeLabel.setBounds(r.removeFromTop(sliderH).removeFromLeft(labelW));
+    typeCb.setBounds(r.removeFromTop(sliderH));
+}
+
+void DecayRateEQ::BandOverlay::setValues(float multVal, float qVal, float freqVal, int type)
+{
+    updating = true;
+    mult.setValue(multVal, juce::dontSendNotification);
+    q.setValue(qVal, juce::dontSendNotification);
+    freq.setValue(freqVal, juce::dontSendNotification);
+    typeCb.setSelectedItemIndex(type, juce::dontSendNotification);
+    updating = false;
+}
+
+void DecayRateEQ::BandOverlay::setAccentColour(juce::Colour c)
+{
+    accentColour = c;
+    repaint();
+}
+
+// BandBadge implementation for DecayRateEQ
+DecayRateEQ::BandBadge::BandBadge()
+{
+    setInterceptsMouseClicks(true, true);
+    
+    // Setup buttons
+    deleteBtn.setButtonText("×");
+    deleteBtn.onClick = [this] { if (onDelete) onDelete(); };
+    addAndMakeVisible(deleteBtn);
+    
+    bypassBtn.setButtonText("BYP");
+    bypassBtn.onClick = [this] { if (onBypass) onBypass(bypassBtn.getToggleState()); };
+    addAndMakeVisible(bypassBtn);
+    
+    typeBtn.setButtonText("Bell");
+    typeBtn.onClick = [this] { if (onSetType) onSetType(0); };
+    addAndMakeVisible(typeBtn);
+    
+    // Setup labels
+    freqLabel.setText("1.0k", juce::dontSendNotification);
+    freqLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(freqLabel);
+    
+    multLabel.setText("1.0x", juce::dontSendNotification);
+    multLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(multLabel);
+    
+    qLabel.setText("0.7", juce::dontSendNotification);
+    qLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(qLabel);
+}
+
+DecayRateEQ::BandBadge::~BandBadge() {}
+
+void DecayRateEQ::BandBadge::paint(juce::Graphics& g)
+{
+    auto r = getLocalBounds().toFloat();
+    
+    // Background
+    juce::Colour bg = juce::Colours::darkgrey.darker(0.30f);
+    g.setColour(bg.withAlpha(0.95f));
+    g.fillRoundedRectangle(r, 6.0f);
+    
+    // Accent border
+    g.setColour(accentColour.withAlpha(0.9f));
+    g.drawRoundedRectangle(r, 6.0f, 1.5f);
+    
+    // Accent strip
+    juce::Rectangle<float> strip = r.removeFromLeft(2.0f).reduced(0.5f, 1.0f);
+    g.setColour(accentColour);
+    g.fillRoundedRectangle(strip, 1.0f);
+}
+
+void DecayRateEQ::BandBadge::resized()
+{
+    auto r = getLocalBounds().reduced(4);
+    const int btnW = 24, btnH = 16;
+    
+    // Top row: buttons
+    deleteBtn.setBounds(r.removeFromTop(btnH).removeFromLeft(btnW));
+    bypassBtn.setBounds(r.removeFromTop(btnH).removeFromLeft(btnW));
+    typeBtn.setBounds(r.removeFromTop(btnH).removeFromLeft(btnW));
+    
+    // Bottom row: labels
+    freqLabel.setBounds(r.removeFromTop(btnH));
+    multLabel.setBounds(r.removeFromTop(btnH));
+    qLabel.setBounds(r.removeFromTop(btnH));
+}
+
+void DecayRateEQ::BandBadge::setValues(float mult, float freq, int type, bool bypass)
+{
+    currentMult = mult;
+    currentFreq = freq;
+    currentType = type;
+    currentBypass = bypass;
+    
+    freqLabel.setText(juce::String(freq, freq >= 1000.0f ? 1 : 0) + (freq >= 1000.0f ? "k" : ""), juce::dontSendNotification);
+    multLabel.setText(juce::String(mult, 1) + "x", juce::dontSendNotification);
+    bypassBtn.setToggleState(bypass, juce::dontSendNotification);
+    
+    const char* typeNames[] = {"Bell", "TiltLo", "TiltHi"};
+    typeBtn.setButtonText(typeNames[juce::jlimit(0, 2, type)]);
+}
+
+void DecayRateEQ::BandBadge::setDetails(float q, float mult, bool dynOn, bool dynUp, float dynRange, bool specOn, const juce::String& channel, int slopeDb, const juce::String& tap)
+{
+    currentQ = q;
+    currentMult = mult;
+    
+    multLabel.setText(juce::String(mult, 1) + "x", juce::dontSendNotification);
+    qLabel.setText(juce::String(q, 2), juce::dontSendNotification);
+}
+
+void DecayRateEQ::BandBadge::setAccentColour(juce::Colour c)
+{
+    accentColour = c;
+    repaint();
 }
