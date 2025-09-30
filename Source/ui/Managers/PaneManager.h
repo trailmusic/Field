@@ -596,7 +596,7 @@ public:
                 {
                     g.setColour (txtCol);
                     // Slightly larger font for Machine tab
-                    juce::Font f (juce::FontOptions (on ? 18.0f : 17.0f).withStyle ("Bold"));
+                    juce::Font f (juce::FontOptions (on ? 20.0f : 19.0f).withStyle ("Bold"));
                     f.setTypefaceName ("Impact");
                     f.setTypefaceStyle ("Bold");
                     f.setExtraKerningFactor (0.20f);
@@ -605,14 +605,14 @@ public:
                 else
                 {
                     g.setColour (txtCol);
-                    juce::Font f (juce::FontOptions (on ? 14.5f : 13.5f).withStyle ("Bold"));
+                    juce::Font f (juce::FontOptions (on ? 16.5f : 15.5f).withStyle ("Bold"));
                     f.setExtraKerningFactor (0.0f);
                     g.setFont (f);
                 }
                 const float pad = (id == PaneID::Machine) ? 2.0f : 4.0f; // Reduced padding for 9 tabs
                 const float iconSz = (id == PaneID::Machine)
-                                      ? juce::jmin (rr.getHeight() - 6.0f, rr.getHeight() - 6.0f)
-                                      : juce::jmin (rr.getHeight() - 8.0f, 18.0f);
+                                      ? juce::jmin (rr.getHeight() - 4.0f, rr.getHeight() - 4.0f)
+                                      : juce::jmin (rr.getHeight() - 6.0f, 22.0f);
                 juce::Rectangle<float> content = rr.reduced (6.0f, 2.0f);
                 juce::String drawLabel = (id == PaneID::DynEQ ? juce::String ("Dynamic EQ") : label);
                 drawLabel = drawLabel.toUpperCase();
