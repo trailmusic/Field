@@ -43,9 +43,13 @@
 #include "shared/Core/FieldLookAndFeel.h"
 #include "shared/Core/FieldMetallic.h"
 
-KnobCell::KnobCell(juce::Slider& knobToHost, juce::Label& valueLabelToHost, const juce::String&)
+KnobCell::KnobCell(juce::Slider& knobToHost, juce::Label& valueLabelToHost, const juce::String& caption)
     : knob(knobToHost), valueLabel(valueLabelToHost)
 {
+    // Set caption property for display
+    if (caption.isNotEmpty())
+        getProperties().set("caption", caption);
+    
     // Let the children handle interactions
     setWantsKeyboardFocus (false);
     

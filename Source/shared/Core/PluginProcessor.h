@@ -142,6 +142,8 @@ namespace IDs {
     static constexpr const char* delayDuckLinkGlobal = "delay_duck_link_global";
     static constexpr const char* delayPreDelayMs = "delay_pre_delay_ms";
     static constexpr const char* delayFilterType = "delay_filter_type";
+    // Phase Mode for EQ/Tone filtering (NOT Phase Alignment Engine)
+    static constexpr const char* phaseMode = "phase_mode";  // 0=Zero, 1=Natural, 2=Hybrid, 3=Full Linear
     // Width Designer additions
     static constexpr const char* widthMode          = "width_mode";            // 0=Classic, 1=Designer
     static constexpr const char* widthSideTiltDbOct = "width_side_tilt_db_oct";

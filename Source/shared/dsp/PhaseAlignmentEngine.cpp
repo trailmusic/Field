@@ -669,8 +669,8 @@ void PhaseAlignmentEngine::DynamicPhase::prepare(double sampleRate, int maximumB
     
     for (int i = 0; i < numChannels; ++i)
     {
-        // Simple envelope follower implementation
-        // envelopeFollowers[i] is a Gain<float>, so we'll use a different approach
+        envelopeFollowers[i].setAttackTime(1.0f);  // 1ms attack
+        envelopeFollowers[i].setReleaseTime(10.0f); // 10ms release
         reductionFactors[i] = 1.0f;
     }
 }
@@ -718,7 +718,7 @@ void PhaseAlignmentEngine::DynamicPhase::processChannel(float* channelData, int 
     
     for (int i = 0; i < numSamples; ++i)
     {
-        const float envelope = follower.processSample(std::abs(channelData[i]));
+        const float envelope = follower.processSample(channelData[i]);
         const float dynamicReduction = 1.0f - (1.0f - reductionFactor) * envelope;
         
         channelData[i] *= dynamicReduction;

@@ -251,6 +251,7 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.duckLookaheadMs = getParam(apvts, IDs::duckLAms);
     p.duckTarget      = (int) apvts.getParameterAsValue (IDs::duckTarget).getValue();
     p.osMode   = (int) apvts.getParameterAsValue (IDs::osMode).getValue();
+    p.phaseMode = (int) apvts.getParameterAsValue (IDs::phaseMode).getValue();
     p.splitMode= (bool) apvts.getParameterAsValue (IDs::splitMode).getValue();
     // Read quality/precision (if UI wants to branch inside chain later)
     // int quality = (int) apvts.getParameterAsValue (IDs::quality).getValue();
@@ -988,6 +989,10 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
         userOsOverride.store (true);
         osFollowQuality.store (false);
     }
+    if (parameterID == IDs::phaseMode)
+    {
+        updateLatencyForPhaseMode();
+    }
     // Phase alignment handled by PhaseAlignmentEngine
     
     // No auto-seeding of P2 from P1 – both panners share identical factory defaults by layout
@@ -1139,6 +1144,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::quality, 1 },   "Quality",   juce::StringArray { "Eco", "Standard", "High" }, 1));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::precision, 1 }, "Precision", juce::StringArray { "Auto (Host)", "Force 32-bit", "Force 64-bit" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osMode, 1 }, "Oversampling", juce::StringArray { "Off", "2x", "4x", "8x", "16x" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::phaseMode, 1 }, "Phase Mode", juce::StringArray { "Zero", "Natural", "Hybrid", "Full Linear" }, 1));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::splitMode, 1 }, "Split Mode", false));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::tiltFreq, 1 },  "Tilt Frequency", juce::NormalisableRange<float> (100.0f, 1000.0f, 1.0f, 0.5f), 500.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::scoopFreq, 1 }, "Scoop Frequency", juce::NormalisableRange<float> (200.0f, 2000.0f, 1.0f, 0.5f), 800.0f));

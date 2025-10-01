@@ -74,6 +74,11 @@ private:
     void paintSpectral(juce::Graphics& g);
     void paintGrOverlay(juce::Graphics& g);
     
+    // Visualization paint methods with bounds
+    void paintRaysInBounds(juce::Graphics& g, juce::Rectangle<float> bounds);
+    void paintWaterfallInBounds(juce::Graphics& g, juce::Rectangle<float> bounds);
+    void paintSpectralInBounds(juce::Graphics& g, juce::Rectangle<float> bounds);
+    
     MyPluginAudioProcessor& proc;
     juce::AudioProcessorValueTreeState& state;
     

@@ -66,15 +66,18 @@ void ButtonManager::showQualityModeMenu()
 void ButtonManager::setPhaseMode(int mode)
 {
     // Set phase mode parameter (0=Zero, 1=Natural, 2=Hybrid, 3=Full Linear)
-    // Note: This should be connected to the appropriate parameter when available
-    // For now, we'll store the mode and update button appearance
+    if (auto* param = editor.proc.apvts.getParameter("phase_mode"))
+    {
+        if (auto* choiceParam = dynamic_cast<juce::AudioParameterChoice*>(param))
+        {
+            float normalizedValue = (float)mode / 3.0f; // Convert to 0.0-1.0 range (4 modes: 0,1,2,3)
+            choiceParam->setValueNotifyingHost(normalizedValue);
+        }
+    }
     
     // Update button appearance to show current mode
     phaseModeButton.setToggleState(mode > 0, juce::dontSendNotification);
     phaseModeButton.repaint();
-    
-    // TODO: Connect to actual phase mode parameter when available
-    // editor.proc.apvts.getParameterAsValue("phase_mode").setValue(mode);
 }
 
 void ButtonManager::setQualityMode(int mode)

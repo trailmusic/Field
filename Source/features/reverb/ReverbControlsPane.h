@@ -132,6 +132,11 @@ private:
             }
             
             b.setName (cap);
+            
+            // CRITICAL: Assign FieldLNF LookAndFeel to the button BEFORE setting metallic properties
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                b.setLookAndFeel(lf);
+            
             // Apply Reverb metallic styling
             setAreaMetallicForCell (b, MetallicKind::Reverb);
             
@@ -161,6 +166,10 @@ private:
                 c.addItem ("ER", 3);
                 c.addItem ("Tail", 4);
             }
+            
+            // CRITICAL: Assign FieldLNF LookAndFeel to the ComboBox BEFORE setting metallic properties
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+                c.setLookAndFeel(lf);
             
             // Apply Reverb metallic styling
             setAreaMetallicForCell (c, MetallicKind::Reverb);

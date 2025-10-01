@@ -138,16 +138,19 @@ void ReverbGraphics::paint(juce::Graphics& g)
     g.setOrigin(visualizationArea.getX(), visualizationArea.getY());
     g.reduceClipRegion(0, 0, visualizationArea.getWidth(), visualizationArea.getHeight());
     
+    // Create a temporary graphics context with the correct bounds
+    auto tempBounds = juce::Rectangle<int>(0, 0, visualizationArea.getWidth(), visualizationArea.getHeight());
+    
     switch (currentViewMode)
     {
         case ViewMode::Rays:
-            paintRays(g);
+            paintRaysInBounds(g, tempBounds.toFloat());
             break;
         case ViewMode::Waterfall:
-            paintWaterfall(g);
+            paintWaterfallInBounds(g, tempBounds.toFloat());
             break;
         case ViewMode::Spectral:
-            paintSpectral(g);
+            paintSpectralInBounds(g, tempBounds.toFloat());
             break;
     }
     
@@ -367,13 +370,24 @@ void ReverbGraphics::updateLabelColors()
 
 void ReverbGraphics::paintRays(juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat();
+    paintRaysInBounds(g, getLocalBounds().toFloat());
+}
+
+void ReverbGraphics::paintRaysInBounds(juce::Graphics& g, juce::Rectangle<float> bounds)
+{
     auto center = bounds.getCentre();
     
     // Get current parameters for ray properties
     auto erLevel = getErRms ? getErRms() : 0.0f;
     auto tailLevel = getTailRms ? getTailRms() : 0.0f;
     auto width = getWidthNow ? getWidthNow() : 0.5f;
+    
+    // Use default levels if no audio signal
+    if (erLevel == 0.0f && tailLevel == 0.0f)
+    {
+        erLevel = 0.4f;  // Default ER level for visualization
+        tailLevel = 0.3f; // Default tail level for visualization
+    }
     
     // Number of rays based on density
     int numRays = 20 + (int)(erLevel * 30);
@@ -408,11 +422,21 @@ void ReverbGraphics::paintRays(juce::Graphics& g)
 
 void ReverbGraphics::paintWaterfall(juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat();
-    
+    paintWaterfallInBounds(g, getLocalBounds().toFloat());
+}
+
+void ReverbGraphics::paintWaterfallInBounds(juce::Graphics& g, juce::Rectangle<float> bounds)
+{
     // Get current levels
     auto erLevel = getErRms ? getErRms() : 0.0f;
     auto tailLevel = getTailRms ? getTailRms() : 0.0f;
+    
+    // Use default levels if no audio signal
+    if (erLevel == 0.0f && tailLevel == 0.0f)
+    {
+        erLevel = 0.3f;  // Default ER level for visualization
+        tailLevel = 0.2f; // Default tail level for visualization
+    }
     
     // Create gradient bands
     juce::ColourGradient gradient;
@@ -441,11 +465,21 @@ void ReverbGraphics::paintWaterfall(juce::Graphics& g)
 
 void ReverbGraphics::paintSpectral(juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat();
-    
+    paintSpectralInBounds(g, getLocalBounds().toFloat());
+}
+
+void ReverbGraphics::paintSpectralInBounds(juce::Graphics& g, juce::Rectangle<float> bounds)
+{
     // Get current levels
     auto erLevel = getErRms ? getErRms() : 0.0f;
     auto tailLevel = getTailRms ? getTailRms() : 0.0f;
+    
+    // Use default levels if no audio signal
+    if (erLevel == 0.0f && tailLevel == 0.0f)
+    {
+        erLevel = 0.4f;  // Default ER level for visualization
+        tailLevel = 0.3f; // Default tail level for visualization
+    }
     
     // Draw frequency response curves
     juce::Path erPath, tailPath;

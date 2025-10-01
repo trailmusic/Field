@@ -2,6 +2,39 @@
 #include <JuceHeader.h>
 
 /**
+ * Simple Envelope Follower for Dynamic Phase
+ */
+class EnvelopeFollower
+{
+public:
+    EnvelopeFollower() : envelope(0.0f), attackTime(0.01f), releaseTime(0.1f) {}
+    
+    void setAttackTime(float timeMs) { attackTime = timeMs; }
+    void setReleaseTime(float timeMs) { releaseTime = timeMs; }
+    
+    float processSample(float input)
+    {
+        const float inputAbs = std::abs(input);
+        const float attackCoeff = std::exp(-1.0f / (attackTime * 0.001f * 48000.0f));
+        const float releaseCoeff = std::exp(-1.0f / (releaseTime * 0.001f * 48000.0f));
+        
+        if (inputAbs > envelope)
+            envelope = inputAbs + attackCoeff * (envelope - inputAbs);
+        else
+            envelope = inputAbs + releaseCoeff * (envelope - inputAbs);
+            
+        return envelope;
+    }
+    
+    void reset() { envelope = 0.0f; }
+    
+private:
+    float envelope;
+    float attackTime;
+    float releaseTime;
+};
+
+/**
  * Phase Alignment DSP Engine
  * 
  * Provides comprehensive time/phase alignment capabilities including:
@@ -289,7 +322,7 @@ public:
 private:
     enum class DynamicMode { Off, Light, Med, Hard };
     
-    std::vector<juce::dsp::Gain<float>> envelopeFollowers;
+    std::vector<EnvelopeFollower> envelopeFollowers;
     std::vector<float> reductionFactors;
     
     double sampleRate = 48000.0;
