@@ -176,6 +176,12 @@ void DuckingFloat::setVisible(bool shouldBeVisible)
     }
 }
 
+void DuckingFloat::lookAndFeelChanged()
+{
+    // Force repaint to update colors when theme changes
+    repaint();
+}
+
 void DuckingFloat::resized()
 {
     updateLayout();
@@ -199,6 +205,18 @@ void DuckingFloat::updateLayout()
     releaseSlider.setEnabled(componentsEnabled);
     bandFreqSlider.setEnabled(componentsEnabled);
     bandQSlider.setEnabled(componentsEnabled);
+    
+    // Disable labels when greyed out
+    depthLabel.setEnabled(componentsEnabled);
+    thresholdLabel.setEnabled(componentsEnabled);
+    ratioLabel.setEnabled(componentsEnabled);
+    kneeLabel.setEnabled(componentsEnabled);
+    attackLabel.setEnabled(componentsEnabled);
+    releaseLabel.setEnabled(componentsEnabled);
+    bandFreqLabel.setEnabled(componentsEnabled);
+    bandQLabel.setEnabled(componentsEnabled);
+    modeLabel.setEnabled(componentsEnabled);
+    detectorLabel.setEnabled(componentsEnabled);
     
     if (expanded)
     {
@@ -258,11 +276,11 @@ void DuckingFloat::paint(juce::Graphics& g)
     if (greyedOut || !active)
     {
         auto bounds = getLocalBounds().toFloat();
-        g.setColour(juce::Colour(0x80000000)); // Semi-transparent black overlay
+        g.setColour(juce::Colour(0x40000000)); // Lighter semi-transparent black overlay
         g.fillRoundedRectangle(bounds, 8.0f);
         
         // Add "INACTIVE" text
-        g.setColour(juce::Colour(0xFF666666));
+        g.setColour(juce::Colour(0xFF999999)); // Lighter grey text
         g.setFont(juce::FontOptions(12.0f).withStyle("bold"));
         g.drawText("INACTIVE", bounds, juce::Justification::centred);
     }
@@ -318,6 +336,10 @@ void DuckingFloat::paintExpanded(juce::Graphics& g)
     g.setColour(th.accent.withAlpha(0.9f));
     g.drawRoundedRectangle(bounds.reduced(1.0f), cr - 1.0f, 1.5f);
     
+    // Additional thin theme border for better visibility
+    g.setColour(th.text.withAlpha(0.3f));
+    g.drawRoundedRectangle(bounds.reduced(0.5f), cr - 0.5f, 0.5f);
+    
     // Header area for GR meter
     auto headerArea = bounds.removeFromTop(50.0f);
     
@@ -356,52 +378,70 @@ void DuckingFloat::paintGrMeter(juce::Graphics& g, juce::Rectangle<float> bounds
     g.setColour(lf->theme.accent.withAlpha(0.3f));
     g.drawRoundedRectangle(meterArea, cr, 1.0f);
     
-    // GR level bar with smooth gradient
-    auto grLevel = juce::jmap(currentGrDb, -20.0f, 0.0f, 0.0f, 1.0f);
-    auto grBar = juce::Rectangle<float>(meterArea.getX(), meterArea.getY(), meterArea.getWidth() * grLevel, meterArea.getHeight());
-    
-    // Enhanced color scheme based on GR level (using Field theme colors)
-    juce::Colour startColor, endColor;
-    if (currentGrDb > -3.0f) {
-        // Error zone - softer red
-        startColor = th.meters.error.withAlpha(0.60f);
-        endColor = th.meters.error.withAlpha(0.75f);
-    } else if (currentGrDb > -6.0f) {
-        // Warning zone - amber
-        startColor = th.meters.warning.withAlpha(0.70f);
-        endColor = th.meters.warning.withAlpha(0.90f);
-    } else if (currentGrDb > -12.0f) {
-        // Safe zone - blue
-        startColor = th.meters.safe.withAlpha(0.55f);
-        endColor = th.meters.safe.withAlpha(0.85f);
-    } else {
-        // Calm default state - neutral gray when no GR (including 0.0 dB)
-        startColor = th.meters.trackBase.withAlpha(0.3f);
-        endColor = th.meters.trackBase.withAlpha(0.5f);
+    // Draw inactive state indicator when ducking is disabled
+    if (!active || greyedOut) {
+        // Inactive state - more visible line at the bottom
+        auto inactiveArea = juce::Rectangle<float>(meterArea.getX(), meterArea.getBottom() - 2.0f, meterArea.getWidth(), 2.0f);
+        g.setColour(th.accent.withAlpha(0.3f));
+        g.fillRoundedRectangle(inactiveArea, 1.0f);
+    }
+    // Draw ready state indicator when ducking is enabled but no GR yet
+    else if (active && !greyedOut && currentGrDb >= -0.1f) {
+        // Subtle ready state - thin line at the bottom
+        auto readyArea = juce::Rectangle<float>(meterArea.getX(), meterArea.getBottom() - 2.0f, meterArea.getWidth(), 2.0f);
+        g.setColour(th.accent.withAlpha(0.4f));
+        g.fillRoundedRectangle(readyArea, 1.0f);
     }
     
-    juce::ColourGradient grGradient(startColor, grBar.getX(), grBar.getY(), endColor, grBar.getX(), grBar.getBottom(), false);
-    g.setFillType(juce::FillType(grGradient));
-    g.fillRoundedRectangle(grBar, cr - 1.0f);
-    g.setFillType(juce::FillType());
-    
-    // Peak line (thicker bottom border like LR meters)
-    juce::Colour peakColor;
-    if (currentGrDb > -3.0f) {
-        peakColor = th.meters.error;
-    } else if (currentGrDb > -12.0f) {
-        peakColor = lf->theme.accent;
-    } else {
-        peakColor = th.meters.trackBase.withAlpha(0.6f);
-    }
-    g.setColour(peakColor);
-    g.fillRect(juce::Rectangle<float>(grBar.getX(), grBar.getBottom() - 2.0f, grBar.getWidth(), 2.0f));
-    
-    // GR value text overlay
-    if (grBar.getWidth() > 20) {
-        g.setColour(juce::Colours::white.withAlpha(0.9f));
-        g.setFont(juce::FontOptions(10.0f).withStyle("bold"));
-        g.drawText(juce::String(currentGrDb, 1) + " dB", grBar, juce::Justification::centred);
+    // Only draw GR bar if there's actual gain reduction (more than -0.1 dB)
+    if (currentGrDb < -0.1f) {
+        // GR level bar with smooth gradient
+        auto grLevel = juce::jmap(currentGrDb, -20.0f, 0.0f, 0.0f, 1.0f);
+        auto grBar = juce::Rectangle<float>(meterArea.getX(), meterArea.getY(), meterArea.getWidth() * grLevel, meterArea.getHeight());
+        
+        // Enhanced color scheme based on GR level (using Field theme colors)
+        juce::Colour startColor, endColor;
+        if (currentGrDb > -3.0f) {
+            // Error zone - softer red
+            startColor = th.meters.error.withAlpha(0.60f);
+            endColor = th.meters.error.withAlpha(0.75f);
+        } else if (currentGrDb > -6.0f) {
+            // Warning zone - amber
+            startColor = th.meters.warning.withAlpha(0.70f);
+            endColor = th.meters.warning.withAlpha(0.90f);
+        } else if (currentGrDb > -12.0f) {
+            // Safe zone - blue
+            startColor = th.meters.safe.withAlpha(0.55f);
+            endColor = th.meters.safe.withAlpha(0.85f);
+        } else {
+            // Calm default state - neutral gray when no GR (including 0.0 dB)
+            startColor = th.meters.trackBase.withAlpha(0.3f);
+            endColor = th.meters.trackBase.withAlpha(0.5f);
+        }
+        
+        juce::ColourGradient grGradient(startColor, grBar.getX(), grBar.getY(), endColor, grBar.getX(), grBar.getBottom(), false);
+        g.setFillType(juce::FillType(grGradient));
+        g.fillRoundedRectangle(grBar, cr - 1.0f);
+        g.setFillType(juce::FillType());
+        
+        // Peak line (thicker bottom border like LR meters)
+        juce::Colour peakColor;
+        if (currentGrDb > -3.0f) {
+            peakColor = th.meters.error;
+        } else if (currentGrDb > -12.0f) {
+            peakColor = lf->theme.accent;
+        } else {
+            peakColor = th.meters.trackBase.withAlpha(0.6f);
+        }
+        g.setColour(peakColor);
+        g.fillRect(juce::Rectangle<float>(grBar.getX(), grBar.getBottom() - 2.0f, grBar.getWidth(), 2.0f));
+        
+        // GR value text overlay
+        if (grBar.getWidth() > 20) {
+            g.setColour(juce::Colours::white.withAlpha(0.9f));
+            g.setFont(juce::FontOptions(10.0f).withStyle("bold"));
+            g.drawText(juce::String(currentGrDb, 1) + " dB", grBar, juce::Justification::centred);
+        }
     }
     
     // Meter label and units

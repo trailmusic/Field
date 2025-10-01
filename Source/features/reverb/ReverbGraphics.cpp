@@ -126,10 +126,7 @@ void ReverbGraphics::resized()
         duckingFloat->setBounds(duckingArea);
     }
     
-    // Position visualization label and panel in bottom half
-    auto visualizationLabelArea = visualizationArea.removeFromTop(25);
-    visualizationLabel.setBounds(visualizationLabelArea);
-    
+    // Position visualization panel in bottom half (no label needed)
     visualizationControlPanel.setBounds(visualizationArea);
     
     // Layout buttons in horizontal row centered with title
@@ -219,7 +216,7 @@ void ReverbGraphics::setupEQLabels()
     addAndMakeVisible(toneEqLabel);
     addAndMakeVisible(decayRateEqLabel);
     addAndMakeVisible(duckingLabel);
-    addAndMakeVisible(visualizationLabel);
+    // Visualization label removed - not needed
     
     // Configure tone EQ label
     toneEqLabel.setText("TONE EQ", juce::dontSendNotification);
@@ -236,16 +233,12 @@ void ReverbGraphics::setupEQLabels()
     duckingLabel.setJustificationType(juce::Justification::centred);
     duckingLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
     
-    // Configure visualization label
-    visualizationLabel.setText("VISUALIZATION", juce::dontSendNotification);
-    visualizationLabel.setJustificationType(juce::Justification::centred);
-    visualizationLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
+    // Visualization label configuration removed - not needed
     
     // Remove any hardcoded colors - let LNF handle them
     toneEqLabel.removeColour(juce::Label::textColourId);
     decayRateEqLabel.removeColour(juce::Label::textColourId);
     duckingLabel.removeColour(juce::Label::textColourId);
-    visualizationLabel.removeColour(juce::Label::textColourId);
 }
 
 void ReverbGraphics::setViewMode(ViewMode mode)
@@ -275,6 +268,12 @@ void ReverbGraphics::lookAndFeelChanged()
         decayRateEQ->repaint();
     }
     
+    // Force repaint of ducking module to update its colors
+    if (duckingFloat) {
+        duckingFloat->lookAndFeelChanged();
+        duckingFloat->repaint();
+    }
+    
     repaint();
 }
 
@@ -289,7 +288,6 @@ void ReverbGraphics::updateLabelColors()
         toneEqLabel.setColour(juce::Label::textColourId, accentColor);
         decayRateEqLabel.setColour(juce::Label::textColourId, accentColor);
         duckingLabel.setColour(juce::Label::textColourId, accentColor);
-        visualizationLabel.setColour(juce::Label::textColourId, accentColor);
     }
 }
 

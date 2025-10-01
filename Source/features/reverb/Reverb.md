@@ -728,6 +728,45 @@ All reverb controls use:
 - **✅ Cleaner Design**: More space for actual ducking controls
 - **✅ Better UX**: Single point of control eliminates confusion
 
+## ✅ DUCKING MODULE THEME COMPLIANCE & VISUAL ENHANCEMENTS (January 2025)
+
+### **🎯 Complete Theme Integration & Three-State Visual System**
+
+**Theme Compliance Implementation**
+- **✅ LookAndFeel Integration**: Added `lookAndFeelChanged()` method to DuckingFloat
+- **✅ Theme Propagation**: ReverbGraphics now calls ducking module's theme change handler
+- **✅ Dynamic Color Updates**: All colors update immediately when theme changes
+- **✅ Consistent Theming**: Ducking module now matches EQs for theme compliance
+
+**Three-State Visual System**
+- **✅ Inactive State**: When DUCK toggle is OFF - subtle accent-colored indicator
+- **✅ Ready State**: When DUCK toggle is ON but no gain reduction - accent-colored ready indicator
+- **✅ Active State**: When actively ducking - full color-coded GR meter with gradients
+- **✅ Smart State Detection**: Proper state management based on active/greyedOut/GR levels
+
+**Enhanced Visual Feedback**
+- **✅ GR Meter States**: Clean neutral background until ducking is active
+- **✅ Ready State Indicator**: Shows when ducking is enabled but not yet active
+- **✅ Inactive State Indicator**: Visible but subtle when ducking is disabled
+- **✅ Color-Coded Feedback**: Red/Orange/Green GR meter based on gain reduction level
+
+**Improved Greyed Out State**
+- **✅ Lighter Overlay**: Reduced from 50% to 25% black overlay for better visibility
+- **✅ Brighter Text**: "INACTIVE" text changed from dark grey to light grey
+- **✅ Complete Component Control**: All sliders, labels, and combo boxes respect greyed out state
+- **✅ Professional Appearance**: Enhanced visual hierarchy and state indication
+
+**Technical Implementation**
+- **✅ Theme Change Propagation**: DuckingFloat responds to theme changes like EQs
+- **✅ State-Based Rendering**: GR meter shows appropriate state based on active/greyedOut/GR
+- **✅ Component State Management**: All UI elements properly enabled/disabled based on state
+- **✅ Enhanced Visibility**: Thin theme border for better definition against dark backgrounds
+
+**Visual Hierarchy**
+- **Inactive State**: Accent-colored line (2px, 30% opacity) - visible but subtle
+- **Ready State**: Accent-colored line (2px, 40% opacity) - clearly indicates readiness  
+- **Active State**: Full color-coded GR bar with smooth gradients - maximum visual feedback
+
 **Technical Cleanup**
 - **✅ Code Removal**: Removed all expandButton references and functionality
 - **✅ Layout Simplification**: Simplified layout methods without expand/collapse logic

@@ -86,7 +86,7 @@ private:
     VisualizationControlPanel visualizationControlPanel;
     
     // EQ labels for visual separation
-    juce::Label toneEqLabel, decayRateEqLabel, duckingLabel, visualizationLabel;
+    juce::Label toneEqLabel, decayRateEqLabel, duckingLabel;
     
     // Ducking float
     std::unique_ptr<DuckingFloat> duckingFloat;
