@@ -1299,11 +1299,23 @@ private:
         // Show/update overlay when a band is selected
         if (selected >= 0 && selected < (int) points.size())
         {
-            auto& pt = points[(size_t) selected];
-            overlay.setValues (pt.db, pt.q, pt.hz, pt.type, pt.phase, pt.channel, pt.dynOn, pt.specOn);
-            overlay.setVisible (true);
-            positionOverlay();
-            positionBadgeFor (selected);
+            // Check if clicking on already selected point - toggle controls visibility
+            if (selected == hitTestPoint (e.getPosition()) && overlay.isVisible())
+            {
+                // Toggle off controls
+                overlay.setVisible (false);
+                badge.setVisible (false);
+                selected = -1;
+            }
+            else
+            {
+                // Select point and show controls
+                auto& pt = points[(size_t) selected];
+                overlay.setValues (pt.db, pt.q, pt.hz, pt.type, pt.phase, pt.channel, pt.dynOn, pt.specOn);
+                overlay.setVisible (true);
+                positionOverlay();
+                positionBadgeFor (selected);
+            }
         }
         else
         {

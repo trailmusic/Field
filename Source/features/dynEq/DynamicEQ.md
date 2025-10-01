@@ -48,6 +48,41 @@
 ### Build Status
 - ✅ **Compilation**: All dynamic EQ components compile successfully
 - ✅ **Linking**: All symbols resolved, no undefined references
+
+## ✅ EQ BAND POINT TOGGLE FUNCTIONALITY (January 2025)
+
+### **🎯 Enhanced EQ Interaction System**
+
+**Toggle Behavior Implementation**
+- **✅ Dynamic EQ**: Single-click on selected point toggles controls visibility
+- **✅ Reverb Tone EQ**: Single-click on selected point toggles controls visibility
+- **✅ Decay Rate EQ**: Single-click on selected point toggles controls visibility
+- **✅ Consistent UX**: Same interaction pattern across all EQ types
+
+**User Interaction Flow**
+- **First Click on Point**: Selects point and shows controls/badge
+- **Second Click on Same Point**: Hides controls/badge and deselects
+- **Click on Different Point**: Switches selection to new point
+- **Click on Empty Area**: Creates new band point
+- **Double-Click on Point**: Deletes the point (unchanged behavior)
+
+**Technical Implementation**
+- **Smart Detection**: Checks if clicking on already selected point with visible controls
+- **Toggle Logic**: Hides overlay/badge and deselects when toggling off
+- **State Management**: Properly manages `selected` index and visibility states
+- **Consistent Behavior**: Same logic applied to all three EQ types
+
+**Enhanced User Experience**
+- **Intuitive Controls**: Single-click to show/hide band controls
+- **Clean Interface**: Easy way to dismiss controls without losing band points
+- **Efficient Workflow**: Quick access to band controls when needed
+- **Professional Feel**: Smooth interaction pattern matches industry standards
+
+**Files Modified**
+- **DynEqTab.h**: Enhanced `mouseDown()` method with toggle logic
+- **ReverbEQ.cpp**: Enhanced `mouseDown()` method with toggle logic
+- **DecayRateEQ.cpp**: Enhanced `mouseDown()` method with toggle logic
+- **Result**: All EQs now support intuitive band point control toggling
 - ✅ **Integration**: Dynamic EQ components properly integrated
 - ✅ **Smart Positioning**: Applied to prevent UI overlap
 - ✅ **Performance**: Optimized for real-time processing

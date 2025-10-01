@@ -41,3 +41,38 @@ void DelayToneEQ::paint(juce::Graphics& g) {
 - **✅ Clean Architecture**: No LNF injection, no color caching
 - **✅ Dynamic Colors**: All colors queried fresh on every paint call
 - **✅ Performance**: No performance impact from dynamic color querying
+
+## ✅ EQ BAND POINT TOGGLE FUNCTIONALITY (January 2025)
+
+### **🎯 Enhanced EQ Interaction System**
+
+**Toggle Behavior Implementation**
+- **✅ Reverb Tone EQ**: Single-click on selected point toggles controls visibility
+- **✅ Decay Rate EQ**: Single-click on selected point toggles controls visibility
+- **✅ Dynamic EQ**: Single-click on selected point toggles controls visibility
+- **✅ Consistent UX**: Same interaction pattern across all EQ types
+
+**User Interaction Flow**
+- **First Click on Point**: Selects point and shows controls/badge
+- **Second Click on Same Point**: Hides controls/badge and deselects
+- **Click on Different Point**: Switches selection to new point
+- **Click on Empty Area**: Creates new band point
+- **Double-Click on Point**: Deletes the point (unchanged behavior)
+
+**Technical Implementation**
+- **Smart Detection**: Checks if clicking on already selected point with visible controls
+- **Toggle Logic**: Hides overlay/badge and deselects when toggling off
+- **State Management**: Properly manages `selected` index and visibility states
+- **Consistent Behavior**: Same logic applied to all three EQ types
+
+**Enhanced User Experience**
+- **Intuitive Controls**: Single-click to show/hide band controls
+- **Clean Interface**: Easy way to dismiss controls without losing band points
+- **Efficient Workflow**: Quick access to band controls when needed
+- **Professional Feel**: Smooth interaction pattern matches industry standards
+
+**Reference Implementation:**
+- **Reverb.md**: See "EQ BAND POINT TOGGLE FUNCTIONALITY" section for complete implementation
+- **Files Modified**: `ReverbEQ.cpp`, `DecayRateEQ.cpp`, `DynEqTab.h`
+- **Method**: Enhanced `mouseDown()` methods with toggle logic
+- **Result**: All EQs now support intuitive band point control toggling

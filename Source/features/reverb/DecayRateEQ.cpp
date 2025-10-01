@@ -413,12 +413,24 @@ void DecayRateEQ::mouseDown(const juce::MouseEvent& e)
     const int h = hitTestPoint(e.getPosition());
     if (h >= 0)
     {
-        selected = h;
-        auto& pt = points[(size_t)selected];
-        overlay.setValues(pt.mult, pt.q, pt.hz, pt.type);
-        overlay.setVisible(true);
-        positionOverlay();
-        positionBadgeFor(selected);
+        // Check if clicking on already selected point - toggle controls visibility
+        if (h == selected && overlay.isVisible())
+        {
+            // Toggle off controls
+            overlay.setVisible(false);
+            badge.setVisible(false);
+            selected = -1;
+        }
+        else
+        {
+            // Select point and show controls
+            selected = h;
+            auto& pt = points[(size_t)selected];
+            overlay.setValues(pt.mult, pt.q, pt.hz, pt.type);
+            overlay.setVisible(true);
+            positionOverlay();
+            positionBadgeFor(selected);
+        }
     }
     else if (!e.mods.isPopupMenu())
     {

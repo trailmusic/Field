@@ -767,6 +767,35 @@ All reverb controls use:
 - **Ready State**: Accent-colored line (2px, 40% opacity) - clearly indicates readiness  
 - **Active State**: Full color-coded GR bar with smooth gradients - maximum visual feedback
 
+## ✅ EQ BAND POINT TOGGLE FUNCTIONALITY (January 2025)
+
+### **🎯 Enhanced EQ Interaction System**
+
+**Toggle Behavior Implementation**
+- **✅ Reverb Tone EQ**: Single-click on selected point toggles controls visibility
+- **✅ Decay Rate EQ**: Single-click on selected point toggles controls visibility
+- **✅ Dynamic EQ**: Single-click on selected point toggles controls visibility
+- **✅ Consistent UX**: Same interaction pattern across all EQ types
+
+**User Interaction Flow**
+- **First Click on Point**: Selects point and shows controls/badge
+- **Second Click on Same Point**: Hides controls/badge and deselects
+- **Click on Different Point**: Switches selection to new point
+- **Click on Empty Area**: Creates new band point
+- **Double-Click on Point**: Deletes the point (unchanged behavior)
+
+**Technical Implementation**
+- **Smart Detection**: Checks if clicking on already selected point with visible controls
+- **Toggle Logic**: Hides overlay/badge and deselects when toggling off
+- **State Management**: Properly manages `selected` index and visibility states
+- **Consistent Behavior**: Same logic applied to all three EQ types
+
+**Enhanced User Experience**
+- **Intuitive Controls**: Single-click to show/hide band controls
+- **Clean Interface**: Easy way to dismiss controls without losing band points
+- **Efficient Workflow**: Quick access to band controls when needed
+- **Professional Feel**: Smooth interaction pattern matches industry standards
+
 **Technical Cleanup**
 - **✅ Code Removal**: Removed all expandButton references and functionality
 - **✅ Layout Simplification**: Simplified layout methods without expand/collapse logic
