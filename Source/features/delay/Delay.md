@@ -1,49 +1,43 @@
 # Delay Feature Development Notes
 
-## ✅ SMART POSITIONING APPLIED (January 2025)
+## Theme Change Fix Reference (January 2025)
 
-### Delay EQ System
-- **DelayToneEQ**: Smart positioning prevents BandOverlay/BandBadge overlap with band points
-- **DelayModEQ**: Smart positioning prevents BandOverlay/BandBadge overlap with band points
-- **Band Limits**: 4-band limit for Tone EQ, 3-band limit for Mod EQ
-- **Algorithm**: 12px band radius + 20px margin with fallback positioning (right → left → above → below)
+### **🎯 EQ Theme Compliance Solution**
 
-### Smart Positioning Algorithm
-1. **Overlap Detection**: Check if UI element would overlap with band point (12px radius + 20px margin)
-2. **Fallback Positions**: Try right → left → above → below
-3. **Bounds Checking**: Ensure elements stay within component bounds
-4. **Consistent Behavior**: Same logic applied to all EQ implementations
+**Reference Implementation:**
+- **Reverb.md**: See "THEME CHANGE FIX IMPLEMENTATION" section for complete solution
+- **Problem**: EQs not responding to theme changes due to LookAndFeel pointer pinning
+- **Solution**: Remove LNF injection, eliminate color caching, use dynamic color querying
+- **Result**: EQs now properly respond to theme changes with clean architecture
 
-### Future EQ Positioning Notes
-- **Template Pattern**: Consider creating a base class for smart positioning
-- **Configurable Margins**: Make band radius and margin configurable per EQ type
-- **Animation Support**: Add smooth transitions when repositioning elements
-- **Multi-Element Avoidance**: Extend to avoid overlap with multiple band points
-- **Context-Aware Positioning**: Consider EQ type and frequency range for optimal placement
+**Key Principles for Delay EQs:**
+1. **No LookAndFeel Injection**: Don't pass `&getLookAndFeel()` to EQ constructors
+2. **No Color Caching**: Don't store colors in member variables
+3. **Dynamic Querying**: Query colors fresh in `paint()` methods using `lf.findColour()`
+4. **Theme Integration**: Use `FieldLNF` color IDs for consistent theming
 
-## Delay Feature Overview
+**Implementation Pattern:**
+```cpp
+// EQ Constructor - NO LNF parameter
+DelayToneEQ::DelayToneEQ(MyPluginAudioProcessor& p) : proc(p) { }
 
-### Current Implementation Status
-- **DelayTab**: Main delay tab component with 2x16 control grid
-- **DelayVisuals**: Visual feedback system for delay parameters
-- **DelayControlsPane**: Control interface with parameter attachments
-- **Smart Positioning**: Applied to prevent UI element overlap
+// Paint Method - Dynamic color querying
+void DelayToneEQ::paint(juce::Graphics& g) {
+    auto& lf = getLookAndFeel();
+    auto accent = lf.findColour(FieldLNF::eqLabelTextColourId);
+    auto border = lf.findColour(FieldLNF::eqBorderColourId);
+    // ... use colors dynamically
+}
+```
 
-### Technical Features
-- **Parameter System**: Complete APVTS integration
-- **Visual Feedback**: Real-time delay visualization
-- **Control Grid**: 2x16 layout with consistent styling
-- **EQ Integration**: Tone and modulation EQ systems
-- **Smart Positioning**: Prevents UI overlap issues
+**Files to Reference:**
+- `Source/features/reverb/Reverb.md` - Complete theme fix implementation
+- `Source/features/reverb/ReverbToneEQ.h/.cpp` - Example implementation
+- `Source/features/reverb/DecayRateEQ.h/.cpp` - Example implementation
+- `Source/shared/Core/FieldLookAndFeel.h` - Color ID definitions
 
-### Build Status
-- ✅ **Compilation**: All delay components compile successfully
-- ✅ **Linking**: All symbols resolved, no undefined references
-- ✅ **Integration**: Delay components properly integrated
-- ✅ **Smart Positioning**: Applied to prevent UI overlap
-
-### Next Steps
-- **Visual Enhancements**: Improve delay visualization quality
-- **EQ Integration**: Add tone and modulation EQ systems
-- **Performance**: Optimize real-time processing
-- **User Experience**: Enhance control responsiveness
+**Build Status:**
+- **✅ Theme Compliance**: Reverb EQs now properly respond to theme changes
+- **✅ Clean Architecture**: No LNF injection, no color caching
+- **✅ Dynamic Colors**: All colors queried fresh on every paint call
+- **✅ Performance**: No performance impact from dynamic color querying

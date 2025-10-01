@@ -61,6 +61,14 @@ public:
         if (controls && controls->isVisible()) controls->setBounds (controlsArea);
     }
     
+    void lookAndFeelChanged() override
+    {
+        // Forward theme changes to ReverbGraphics
+        if (reverbPanel) {
+            reverbPanel->lookAndFeelChanged();
+        }
+    }
+    
     // Public getter for graphics container
     ReverbGraphics* getReverbCanvas() const { return reverbPanel.get(); }
 

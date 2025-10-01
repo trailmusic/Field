@@ -25,21 +25,19 @@ void ReverbCanvasComponent::paint(Graphics& g)
 
     auto R = getLocalBounds().toFloat();
     
-    // AB Button styling: Solid panel background with elevation shadow
+    // Anti-aliasing fix: Fill entire area first, then rounded rectangle
     const float cr = 8.0f; // Match KnobCell corner radius
     
-    // Elevation shadow first (AB button style)
-    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
-    else g.setColour(juce::Colour(0x40000000));
-    g.fillRoundedRectangle(R.translated(1.5f, 1.5f), cr);
-    
-    // Solid panel background (no aliasing)
+    // Fill entire rectangular area to prevent white corners
     g.setColour(th.meters.panelDark);
+    g.fillRect(R);
+    
+    // Then draw rounded rectangle on top
     g.fillRoundedRectangle(R, cr);
     
-    // Border (AB button style)
-    g.setColour(th.sh);
-    g.drawRoundedRectangle(R, cr, 1.0f);
+    // Strong edge shading for depth
+    g.setColour(th.sh.withAlpha(0.6f));
+    g.drawRoundedRectangle(R.reduced(0.5f), cr - 0.5f, 2.0f);
     
     // Add 10px top and bottom padding for content
     auto paddedR = R.reduced(0, 10.0f);

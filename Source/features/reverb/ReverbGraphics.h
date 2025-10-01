@@ -32,6 +32,10 @@ public:
     void setViewMode(ViewMode mode);
     ViewMode getViewMode() const { return currentViewMode; }
     
+    // Theme color updates
+    void lookAndFeelChanged() override;
+    void updateLabelColors();
+    
     // Ducking float access
     DuckingFloat* getDuckingFloat() { return duckingFloat.get(); }
     
@@ -82,7 +86,7 @@ private:
     VisualizationControlPanel visualizationControlPanel;
     
     // EQ labels for visual separation
-    juce::Label toneEqLabel, decayRateEqLabel;
+    juce::Label toneEqLabel, decayRateEqLabel, duckingLabel, visualizationLabel;
     
     // Ducking float
     std::unique_ptr<DuckingFloat> duckingFloat;

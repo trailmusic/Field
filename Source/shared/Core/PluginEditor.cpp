@@ -330,12 +330,16 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
 
         idx = (idx + 1) % 5;
 
-        lnf.setTheme (order[idx]);
+        lnf.applyTheme (order[idx]);
         colorModeButton.setTooltip (ThemeManager::getThemeName (order[idx]));
 
         const bool greenNow = (order[idx] == ThemeVariant::Green);
         if (auto* xyTab = panes->getXYTab()) xyTab->setGreenMode (greenNow);
 
+        // Force lookAndFeelChanged() down the entire component tree
+        // even though the LNF instance didn't change:
+        this->sendLookAndFeelChange();
+        
         repaint();
     };
 

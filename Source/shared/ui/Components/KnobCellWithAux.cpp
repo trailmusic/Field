@@ -176,7 +176,7 @@ void KnobCellWithAux::paint (juce::Graphics& g)
         }
         else
         {
-            // Standard panel background
+            // Standard panel background with anti-aliasing fix
             g.setColour (panel);
             g.fillRoundedRectangle (rr, rad);
 

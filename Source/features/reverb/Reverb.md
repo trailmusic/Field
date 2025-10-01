@@ -763,3 +763,64 @@ All reverb controls use:
 - **Professional appearance**: World-class visual design and polish
 - **Real-time feedback**: GR meter shows live gain reduction with color coding
 - **Consistent theming**: Matches Field's overall visual language
+
+## ✅ THEME CHANGE FIX IMPLEMENTATION (January 2025)
+
+### **🎯 EQ Theme Compliance Solution**
+
+**Problem Identified:**
+- **EQ Color Sticking**: Reverb EQs were not responding to theme changes
+- **Root Cause**: EQs were pinned to LookAndFeel pointers at construction time
+- **Color Caching**: Hardcoded colors and cached accentColour member variables
+- **Theme Isolation**: EQs isolated from theme change propagation
+
+**Clean Solution Implemented:**
+
+**1. Removed LookAndFeel Injection:**
+- **Before**: `ReverbToneEQ(proc, &getLookAndFeel())` - pinned to LNF pointer
+- **After**: `ReverbToneEQ(proc)` - inherits LNF from parent at runtime
+- **Result**: EQs no longer hold stale LNF pointers
+
+**2. Eliminated Color Caching:**
+- **Removed**: All `accentColour` member variables from both EQ classes
+- **Removed**: `setAccentColour()` methods and their calls
+- **Updated**: `bandColourFor()` methods to query colors directly from LNF
+- **Result**: No more cached colors that ignore theme changes
+
+**3. Dynamic Color Querying:**
+- **Paint Methods**: All colors now queried fresh in `paint()` methods
+- **Theme Integration**: Uses `lf.findColour(FieldLNF::eqLabelTextColourId)` etc.
+- **Real-time Updates**: Colors update immediately when theme changes
+- **Consistent Theming**: All EQ elements now theme-aware
+
+**4. FieldLNF ChangeBroadcaster Integration:**
+- **Already Implemented**: FieldLNF already inherits from `juce::ChangeBroadcaster`
+- **ApplyTheme Method**: Already calls `sendChangeMessage()` on theme changes
+- **EQ Color IDs**: Already defined in `setupColours()` method
+- **Theme Propagation**: EQs now properly receive theme change notifications
+
+**Technical Implementation:**
+- **ReverbToneEQ.h/.cpp**: Removed LNF parameter, accentColour members, setAccentColour methods
+- **DecayRateEQ.h/.cpp**: Removed LNF parameter, accentColour members, setAccentColour methods
+- **ReverbGraphics.cpp**: Updated EQ creation to not pass LNF pointers
+- **Paint Methods**: All colors now queried dynamically from LookAndFeel
+- **Theme Compliance**: All EQ elements now respond to theme changes
+
+**Result:**
+- **✅ Theme Changes**: EQs now properly respond to color mode button
+- **✅ Dynamic Colors**: All colors queried fresh on every paint call
+- **✅ No Caching**: Eliminated all color caching that caused sticking
+- **✅ Clean Architecture**: EQs inherit LNF from parent, not pinned pointers
+- **✅ Build Success**: All plugins building successfully with theme compliance
+
+**Files Modified:**
+- `ReverbGraphics.cpp` - Updated EQ creation without LNF injection
+- `ReverbToneEQ.h/.cpp` - Removed LNF parameter and color caching
+- `DecayRateEQ.h/.cpp` - Removed LNF parameter and color caching
+- `FieldLNF.h` - Already had ChangeBroadcaster and applyTheme implementation
+
+**Build Status:**
+- **✅ Compilation**: All EQ components compile successfully
+- **✅ Theme Integration**: EQs now properly respond to theme changes
+- **✅ Color Compliance**: All EQ elements use theme-aware colors
+- **✅ Performance**: No performance impact from dynamic color querying

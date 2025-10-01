@@ -42,20 +42,7 @@ void DuckingFloat::setupComponents()
 {
     // No expand button needed - module is always expanded
     
-    // GR meter
-    addAndMakeVisible(grMeter);
-    grMeter.setRange(-20.0, 0.0, 0.1);
-    grMeter.setValue(0.0);
-    grMeter.setSliderStyle(juce::Slider::LinearHorizontal);
-    grMeter.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-    grMeter.setColour(juce::Slider::trackColourId, juce::Colour(0xFF4A4A4A));
-    grMeter.setColour(juce::Slider::thumbColourId, juce::Colour(0xFF00FF00));
-    
-    // GR label
-    addAndMakeVisible(grLabel);
-    grLabel.setText("GR", juce::dontSendNotification);
-    grLabel.setJustificationType(juce::Justification::centred);
-    grLabel.setColour(juce::Label::textColourId, juce::Colour(0xFFFFFFFF));
+    // Old GR meter components removed - now using custom paintGrMeter
     
     // Mode selector
     addAndMakeVisible(modeSelector);
@@ -162,7 +149,7 @@ void DuckingFloat::setExpanded(bool shouldExpand)
 void DuckingFloat::updateGrMeter(float grDb)
 {
     currentGrDb = juce::jlimit(-20.0f, 0.0f, grDb);
-    grMeter.setValue(currentGrDb);
+    // Custom GR meter painted in paintGrMeter method
     repaint();
 }
 
@@ -201,7 +188,7 @@ void DuckingFloat::updateLayout()
     // Set component enabled state based on active and greyed out state
     bool componentsEnabled = active && !greyedOut;
     
-    grMeter.setEnabled(componentsEnabled);
+    // Old GR meter removed - using custom paintGrMeter
     modeSelector.setEnabled(componentsEnabled);
     detectorSelector.setEnabled(componentsEnabled);
     depthSlider.setEnabled(componentsEnabled);
@@ -218,10 +205,7 @@ void DuckingFloat::updateLayout()
         // Expanded layout
         auto headerArea = bounds.removeFromTop(40.0f);
         
-        // Header with GR meter
-        auto grArea = headerArea.removeFromLeft(80);
-        grLabel.setBounds(grArea.removeFromTop(15).toNearestInt());
-        grMeter.setBounds(grArea.toNearestInt());
+        // Header area for custom GR meter (painted in paintExpanded)
         
         // Mode and detector selectors
         auto selectorArea = bounds.removeFromTop(30);
@@ -259,10 +243,7 @@ void DuckingFloat::updateLayout()
     }
     else
     {
-        // Collapsed layout - just header
-        auto grArea = bounds.removeFromLeft(80);
-        grLabel.setBounds(grArea.removeFromTop(15).toNearestInt());
-        grMeter.setBounds(grArea.toNearestInt());
+        // Collapsed layout - custom GR meter painted in paintCollapsed
     }
 }
 
@@ -293,24 +274,25 @@ void DuckingFloat::paintCollapsed(juce::Graphics& g)
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
     
-    // Pill-style background with elevation shadow
+    // Anti-aliasing fix: Fill entire area first, then rounded rectangle
     const float cr = PILL_CORNER_RADIUS;
     
-    // Elevation shadow
-    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.3f));
-    else g.setColour(juce::Colour(0x40000000));
-    g.fillRoundedRectangle(bounds.translated(1.0f, 1.0f), cr);
-    
-    // Main background
+    // Fill entire rectangular area to prevent white corners
     g.setColour(th.meters.panelDark);
+    g.fillRect(bounds);
+    
+    // Then draw rounded rectangle on top
     g.fillRoundedRectangle(bounds, cr);
     
-    // Border with subtle highlight
+    // Strong edge shading for depth
     g.setColour(th.sh.withAlpha(0.6f));
-    g.drawRoundedRectangle(bounds, cr, 1.0f);
+    g.drawRoundedRectangle(bounds.reduced(0.5f), cr - 0.5f, 2.0f);
     
-    // GR meter with enhanced styling
-    paintGrMeter(g, bounds.removeFromRight(80).reduced(5));
+    // Border for definition
+    g.setColour(th.accent.withAlpha(0.9f));
+    g.drawRoundedRectangle(bounds.reduced(1.0f), cr - 1.0f, 1.5f);
+    
+    // GR meter removed - now handled in paintExpanded only
 }
 
 void DuckingFloat::paintExpanded(juce::Graphics& g)
@@ -321,32 +303,26 @@ void DuckingFloat::paintExpanded(juce::Graphics& g)
     
     const float cr = 8.0f;
     
-    // Elevation shadow
-    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
-    else g.setColour(juce::Colour(0x40000000));
-    g.fillRoundedRectangle(bounds.translated(1.5f, 1.5f), cr);
-    
-    // Main background
+    // Anti-aliasing fix: Fill entire area first, then rounded rectangle
     g.setColour(th.meters.panelDark);
+    g.fillRect(bounds);
+    
+    // Then draw rounded rectangle on top
     g.fillRoundedRectangle(bounds, cr);
     
-    // Border
-    g.setColour(th.sh);
-    g.drawRoundedRectangle(bounds, cr, 1.0f);
+    // Strong edge shading for depth
+    g.setColour(th.sh.withAlpha(0.6f));
+    g.drawRoundedRectangle(bounds.reduced(0.5f), cr - 0.5f, 2.0f);
     
-    // Header background with subtle gradient
-    auto headerArea = bounds.removeFromTop(40.0f);
-    juce::ColourGradient headerGradient(th.meters.panelDark, 0, 0, 
-                                       th.meters.panelDark.darker(0.1f), 0, headerArea.getHeight(), false);
-    g.setGradientFill(headerGradient);
-    g.fillRoundedRectangle(headerArea, cr);
+    // Border for definition
+    g.setColour(th.accent.withAlpha(0.9f));
+    g.drawRoundedRectangle(bounds.reduced(1.0f), cr - 1.0f, 1.5f);
     
-    // Header border
-    g.setColour(th.sh.withAlpha(0.3f));
-    g.drawRoundedRectangle(headerArea, cr, 0.5f);
+    // Header area for GR meter
+    auto headerArea = bounds.removeFromTop(50.0f);
     
-    // GR meter in header with enhanced styling
-    auto grArea = headerArea.removeFromRight(80).reduced(5);
+    // GR meter spanning full header width
+    auto grArea = headerArea.reduced(10, 5);
     paintGrMeter(g, grArea);
 }
 
@@ -356,49 +332,98 @@ void DuckingFloat::paintGrMeter(juce::Graphics& g, juce::Rectangle<float> bounds
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
     
     const float cr = 4.0f;
+    const float meterHeight = 20.0f;
     
-    // Background with subtle gradient
-    juce::ColourGradient bgGradient(th.meters.panelDark.darker(0.2f), 0, 0,
-                                   th.meters.panelDark.darker(0.4f), 0, bounds.getHeight(), false);
-    g.setGradientFill(bgGradient);
-    g.fillRoundedRectangle(bounds, cr);
+    // Create meter area with proper height
+    auto meterArea = bounds.removeFromBottom(meterHeight);
+    
+    // Track background (like other Field meters)
+    g.setColour(th.meters.trackBase);
+    g.fillRoundedRectangle(meterArea, cr);
+    
+    // Track with gradient (like other Field meters)
+    {
+        juce::Colour base = th.meters.trackBase;
+        juce::Colour base2 = th.meters.trackActive;
+        juce::ColourGradient grad(base, meterArea.getX(), meterArea.getY(), base2, meterArea.getX(), meterArea.getBottom(), false);
+        juce::FillType ft(grad);
+        g.setFillType(ft);
+        g.fillRoundedRectangle(meterArea.reduced(1.0f), cr - 1.0f);
+        g.setFillType(juce::FillType());
+    }
+    
+    // Standard border treatment: accent border (reduced brightness for meters)
+    g.setColour(lf->theme.accent.withAlpha(0.3f));
+    g.drawRoundedRectangle(meterArea, cr, 1.0f);
     
     // GR level bar with smooth gradient
     auto grLevel = juce::jmap(currentGrDb, -20.0f, 0.0f, 0.0f, 1.0f);
-    auto grBar = bounds.removeFromLeft(bounds.getWidth() * grLevel);
+    auto grBar = juce::Rectangle<float>(meterArea.getX(), meterArea.getY(), meterArea.getWidth() * grLevel, meterArea.getHeight());
     
-    // Enhanced color scheme based on GR level
+    // Enhanced color scheme based on GR level (using Field theme colors)
     juce::Colour startColor, endColor;
     if (currentGrDb > -3.0f) {
-        // Red for heavy GR
-        startColor = juce::Colour(0xFFFF4444);
-        endColor = juce::Colour(0xFFCC0000);
+        // Error zone - softer red
+        startColor = th.meters.error.withAlpha(0.60f);
+        endColor = th.meters.error.withAlpha(0.75f);
     } else if (currentGrDb > -6.0f) {
-        // Orange for moderate GR
-        startColor = juce::Colour(0xFFFFAA44);
-        endColor = juce::Colour(0xFFCC6600);
+        // Warning zone - amber
+        startColor = th.meters.warning.withAlpha(0.70f);
+        endColor = th.meters.warning.withAlpha(0.90f);
+    } else if (currentGrDb > -12.0f) {
+        // Safe zone - blue
+        startColor = th.meters.safe.withAlpha(0.55f);
+        endColor = th.meters.safe.withAlpha(0.85f);
     } else {
-        // Green for light GR
-        startColor = juce::Colour(0xFF44FF44);
-        endColor = juce::Colour(0xFF00CC00);
+        // Calm default state - neutral gray when no GR (including 0.0 dB)
+        startColor = th.meters.trackBase.withAlpha(0.3f);
+        endColor = th.meters.trackBase.withAlpha(0.5f);
     }
     
-    juce::ColourGradient grGradient(startColor, 0, 0, endColor, 0, grBar.getHeight(), false);
-    g.setGradientFill(grGradient);
-    g.fillRoundedRectangle(grBar, cr);
+    juce::ColourGradient grGradient(startColor, grBar.getX(), grBar.getY(), endColor, grBar.getX(), grBar.getBottom(), false);
+    g.setFillType(juce::FillType(grGradient));
+    g.fillRoundedRectangle(grBar, cr - 1.0f);
+    g.setFillType(juce::FillType());
     
-    // Subtle inner highlight
-    g.setColour(juce::Colours::white.withAlpha(0.2f));
-    g.drawRoundedRectangle(grBar.reduced(0.5f), cr - 0.5f, 0.5f);
-    
-    // Border with theme integration
-    g.setColour(th.sh.withAlpha(0.8f));
-    g.drawRoundedRectangle(bounds, cr, 1.0f);
+    // Peak line (thicker bottom border like LR meters)
+    juce::Colour peakColor;
+    if (currentGrDb > -3.0f) {
+        peakColor = th.meters.error;
+    } else if (currentGrDb > -12.0f) {
+        peakColor = lf->theme.accent;
+    } else {
+        peakColor = th.meters.trackBase.withAlpha(0.6f);
+    }
+    g.setColour(peakColor);
+    g.fillRect(juce::Rectangle<float>(grBar.getX(), grBar.getBottom() - 2.0f, grBar.getWidth(), 2.0f));
     
     // GR value text overlay
     if (grBar.getWidth() > 20) {
         g.setColour(juce::Colours::white.withAlpha(0.9f));
-        g.setFont(10.0f);
+        g.setFont(juce::FontOptions(10.0f).withStyle("bold"));
         g.drawText(juce::String(currentGrDb, 1) + " dB", grBar, juce::Justification::centred);
+    }
+    
+    // Meter label and units
+    auto labelArea = bounds.removeFromTop(15.0f);
+    g.setColour(th.text.withAlpha(0.8f));
+    g.setFont(juce::FontOptions(11.0f).withStyle("bold"));
+    g.drawText("GR", labelArea.removeFromLeft(20), juce::Justification::centred);
+    
+    // Units and scale
+    g.setColour(th.text.withAlpha(0.6f));
+    g.setFont(juce::FontOptions(9.0f));
+    g.drawText("dB", labelArea.removeFromRight(15), juce::Justification::centred);
+    
+    // Scale markers
+    auto scaleArea = labelArea.reduced(5, 0);
+    g.setColour(th.text.withAlpha(0.4f));
+    g.setFont(juce::FontOptions(8.0f));
+    
+    // Draw scale markers: -20, -15, -10, -5, 0
+    for (int i = 0; i <= 4; ++i) {
+        float db = -20.0f + (i * 5.0f);
+        float x = scaleArea.getX() + (i * scaleArea.getWidth() / 4.0f);
+        g.drawText(juce::String(db, 0), juce::Rectangle<float>(x - 10, scaleArea.getY(), 20, scaleArea.getHeight()), juce::Justification::centred);
     }
 }

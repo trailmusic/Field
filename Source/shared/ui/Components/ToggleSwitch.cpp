@@ -43,8 +43,9 @@ void ToggleSwitch::paint (juce::Graphics& g)
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
     const auto accent = th.accent;
 
-    // track
+    // track (fill entire area first to prevent white corners)
     g.setColour (th.sh);
+    g.fillRect(b);
     g.fillRoundedRectangle (b, rad);
     g.setColour (th.hl);
     g.drawRoundedRectangle (b, rad, 2.0f);

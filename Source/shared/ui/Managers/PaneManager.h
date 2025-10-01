@@ -438,6 +438,20 @@ public:
         for (auto* c : { (juce::Component*) phase.get(), (juce::Component*) xyTab.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
             if (c) c->setBounds (paneR);
     }
+    
+    void lookAndFeelChanged() override
+    {
+        // Forward theme changes to all child tabs
+        if (phase) phase->lookAndFeelChanged();
+        if (xyTab) xyTab->lookAndFeelChanged();
+        if (band) band->lookAndFeelChanged();
+        if (motion) motion->lookAndFeelChanged();
+        if (reverb) reverb->lookAndFeelChanged();
+        if (delay) delay->lookAndFeelChanged();
+        if (dyneq) dyneq->lookAndFeelChanged();
+        if (imgr) imgr->lookAndFeelChanged();
+        if (mach) mach->lookAndFeelChanged();
+    }
 
     struct Tabs : public juce::Component, private juce::Timer
     {

@@ -13,6 +13,8 @@ void CorrelationMeter::paint (juce::Graphics& g)
     r = r.withY (r.getY() + 2.0f).withHeight (r.getHeight() - 2.0f + 2.0f);
     
     g.setColour (lnf.theme.meters.trackBase);
+    // Fill entire area first to prevent white corners
+    g.fillRect(r);
     g.fillRoundedRectangle (r, 6.0f);
     
     // Standard border treatment: accent border (reduced brightness for meters)

@@ -20,14 +20,16 @@ struct BandPoint
 };
 
 // Stripped Pro-Q style EQ for reverb tone shaping (4 bands)
-class ReverbToneEQ : public juce::Component, private juce::Timer
+class ReverbToneEQ : public juce::Component, private juce::Timer, private juce::ChangeListener
 {
 public:
-    ReverbToneEQ(MyPluginAudioProcessor& p, juce::LookAndFeel* lnf);
+    ReverbToneEQ(MyPluginAudioProcessor& p);
     ~ReverbToneEQ() override;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    void lookAndFeelChanged() override;
+    void parentHierarchyChanged() override;
     
     // Analyzer control
     void setSampleRate(double sr) { analyzer.setSampleRate(sr); }
@@ -40,6 +42,9 @@ private:
     void timerCallback() override;
     void rebuildEqPath();
     void drawUnits(juce::Graphics& g);
+    
+    // ChangeListener callback
+    void changeListenerCallback(juce::ChangeBroadcaster* src) override;
     
     // Mouse interaction
     void mouseDown(const juce::MouseEvent& e) override;
@@ -89,7 +94,6 @@ private:
         void resized() override;
         
         void setValues(float gain, float q, float freq, int type);
-        void setAccentColour(juce::Colour c);
         
     private:
         juce::Slider gain, q, freq;
@@ -98,7 +102,6 @@ private:
         juce::Label typeLabel;
         
         bool updating = false;
-        juce::Colour accentColour = juce::Colours::deepskyblue;
     };
     
     // Compact per-band badge
@@ -120,14 +123,12 @@ private:
         
         void setValues(float gr, float freq, int type, bool bypass);
         void setDetails(float q, float gain, bool dynOn, bool dynUp, float dynRange, bool specOn, const juce::String& channel, int slopeDb, const juce::String& tap);
-        void setAccentColour(juce::Colour c);
         
     private:
         juce::TextButton deleteBtn, bypassBtn, typeBtn;
         juce::Label freqLabel, gainLabel, qLabel;
         juce::Label grLabel, dynLabel, specLabel;
         
-        juce::Colour accentColour = juce::Colours::deepskyblue;
         float currentGr = 0.0f;
         float currentFreq = 1000.0f;
         float currentGain = 0.0f;
@@ -161,6 +162,9 @@ private:
     // Drag state
     bool dragging = false;
     juce::Point<int> dragStart;
+    
+    // Theme change listening
+    FieldLNF* listeningTo = nullptr;
     
     static constexpr int kMaxBands = 4;
     static juce::String bandId(const char* base, int idx) { return juce::String(base) + "_" + juce::String(idx); }

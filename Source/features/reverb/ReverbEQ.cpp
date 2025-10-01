@@ -3,11 +3,10 @@
 #include "features/dynEq/FilterFactory.h"
 #include "shared/Core/PluginProcessor.h"
 
-ReverbToneEQ::ReverbToneEQ(MyPluginAudioProcessor& p, juce::LookAndFeel* lnf)
+ReverbToneEQ::ReverbToneEQ(MyPluginAudioProcessor& p)
     : proc(p)
 {
     setOpaque(true);
-    setLookAndFeel(lnf);
     startTimerHz(30);
     
     // Initialize zoom state
@@ -271,27 +270,64 @@ void ReverbToneEQ::mouseDoubleClick(const juce::MouseEvent& e)
     }
 }
 
+void ReverbToneEQ::lookAndFeelChanged()
+{
+    // LNF object changed → reattach listener and repaint
+    parentHierarchyChanged();
+    repaint();
+}
+
+void ReverbToneEQ::parentHierarchyChanged()
+{
+    // Re-wire listener whenever LNF or parent changes
+    if (auto* old = listeningTo) old->removeChangeListener(this);
+    listeningTo = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    if (listeningTo) {
+        listeningTo->addChangeListener(this);
+        juce::Logger::writeToLog("ReverbToneEQ: Connected to FieldLNF ChangeBroadcaster");
+    } else {
+        juce::Logger::writeToLog("ReverbToneEQ: Failed to connect to FieldLNF ChangeBroadcaster");
+    }
+}
+
+void ReverbToneEQ::changeListenerCallback(juce::ChangeBroadcaster* src)
+{
+    // If the active LNF is our FieldLNF, repaint on its change signals
+    if (src == dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+    {
+        juce::Logger::writeToLog("ReverbToneEQ: ChangeListener callback triggered!");
+        repaint();
+    }
+}
+
 void ReverbToneEQ::paint(juce::Graphics& g)
 {
     auto r = getLocalBounds().toFloat();
-    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
+    auto& lf = getLookAndFeel();
     
-    // Background with elevation shadow
+    // Get theme colors from LNF
+    auto border = lf.findColour(FieldLNF::eqBorderColourId);
+    auto panel = lf.findColour(juce::ResizableWindow::backgroundColourId);
+    auto accent = lf.findColour(FieldLNF::eqLabelTextColourId);
+    auto zeroLine = lf.findColour(FieldLNF::eqZeroLineColourId);
+    auto gridLine = lf.findColour(FieldLNF::eqGridLineColourId);
+    auto handle = lf.findColour(FieldLNF::eqBandHandleColourId);
+    auto handleActive = lf.findColour(FieldLNF::eqBandHandleActiveId);
+    auto trace = lf.findColour(FieldLNF::eqAnalyzerTraceColourId);
+    
+    // Anti-aliasing fix: Fill entire area first, then rounded rectangle
     const float cr = 8.0f;
     
-    // Elevation shadow
-    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
-    else g.setColour(juce::Colour(0x40000000));
-    g.fillRoundedRectangle(r.translated(1.5f, 1.5f), cr);
+    // Fill entire rectangular area to prevent white corners
+    g.setColour(panel);
+    g.fillRect(r);
     
-    // Main background
-    g.setColour(th.meters.panelDark);
+    // Then draw rounded rectangle on top
     g.fillRoundedRectangle(r, cr);
     
-    // Border
-    g.setColour(th.sh);
-    g.drawRoundedRectangle(r, cr, 1.0f);
+    // Border for definition
+    g.setColour(border);
+    g.drawRoundedRectangle(r.reduced(1.0f), cr - 1.0f, 1.5f);
     
     // Draw units and grid
     drawUnits(g);
@@ -301,7 +337,7 @@ void ReverbToneEQ::paint(juce::Graphics& g)
     if (!rA.isEmpty())
     {
         // Combined EQ curve (macro) slightly more prominent
-        g.setColour(th.accent.withAlpha(0.95f));
+        g.setColour(accent.withAlpha(0.95f));
         g.strokePath(eqPath, juce::PathStrokeType(3.0f));
         
         // Per-band curves
@@ -313,7 +349,7 @@ void ReverbToneEQ::paint(juce::Graphics& g)
         }
         
         // Draw band points
-        g.setColour(juce::Colours::yellow.withAlpha(0.95f));
+        g.setColour(accent.withAlpha(0.95f));
         for (const auto& pt : points)
         {
             const float x = mapHzToX(pt.hz);
@@ -327,7 +363,7 @@ void ReverbToneEQ::paint(juce::Graphics& g)
             const auto& pt = points[(size_t)selected];
             const float x = mapHzToX(pt.hz);
             const float y = mapDbToY(pt.db);
-            g.setColour(juce::Colours::black.withAlpha(0.6f));
+            g.setColour(border.withAlpha(0.6f));
             g.drawEllipse(x-12, y-12, 24, 24, 1.6f);
         }
         
@@ -344,35 +380,35 @@ void ReverbToneEQ::paint(juce::Graphics& g)
             const float aGhost= 0.34f; // when ghost is on
             float alpha = ghostOn ? aGhost : aMove;
             float alphaFade = ghostOn ? 0.12f : 0.06f;
-            g.setColour (juce::Colours::white.withAlpha (alpha));
+            g.setColour (accent.withAlpha (alpha));
             const float x = (float) hoverPos.x;
             // Main center line
             g.drawLine (x, rGuide.getY(), x, rGuide.getBottom(), ghostOn ? 1.4f : 1.0f);
             // Side fades
-            g.setColour (juce::Colours::white.withAlpha (alphaFade));
+            g.setColour (accent.withAlpha (alphaFade));
             g.drawLine (x-12.0f, rGuide.getY(), x-12.0f, rGuide.getBottom(), ghostOn ? 1.0f : 0.8f);
             g.drawLine (x+12.0f, rGuide.getY(), x+12.0f, rGuide.getBottom(), ghostOn ? 1.0f : 0.8f);
-            g.setColour (juce::Colours::white.withAlpha (alphaFade * 0.6f));
+            g.setColour (accent.withAlpha (alphaFade * 0.6f));
             g.drawLine (x-24.0f, rGuide.getY(), x-24.0f, rGuide.getBottom(), 0.8f);
             g.drawLine (x+24.0f, rGuide.getY(), x+24.0f, rGuide.getBottom(), 0.8f);
 
             // Hz readout near bottom and top (follow cursor)
-            g.setColour (juce::Colours::white.withAlpha (0.60f));
+            g.setColour (accent.withAlpha (0.60f));
             juce::String hzText;
             if (hoverHz >= 1000.0f && hoverHz < 10000.0f) hzText = juce::String (hoverHz / 1000.0f, 1) + "k";
             else if (hoverHz >= 10000.0f) hzText = juce::String ((int) std::round (hoverHz/1000.0f)) + "k";
             else hzText = juce::String ((int) hoverHz);
             juce::String lbl = hzText + " Hz";
             auto tb = juce::Rectangle<float> ((float) hoverPos.x - 32.0f, rA.getBottom() - 20.0f, 64.0f, 14.0f);
-            g.setColour (juce::Colours::black.withAlpha (0.45f));
+            g.setColour (border.withAlpha (0.45f));
             g.fillRoundedRectangle (tb, 4.0f);
-            g.setColour (juce::Colours::white.withAlpha (0.80f));
+            g.setColour (accent.withAlpha (0.80f));
             g.drawFittedText (lbl, tb.toNearestInt(), juce::Justification::centred, 1);
             // Top badge
             auto tt = juce::Rectangle<float> ((float) hoverPos.x - 28.0f, rA.getY() + 6.0f, 56.0f, 14.0f);
-            g.setColour (juce::Colours::black.withAlpha (0.40f));
+            g.setColour (border.withAlpha (0.40f));
             g.fillRoundedRectangle (tt, 4.0f);
-            g.setColour (juce::Colours::white.withAlpha (0.85f));
+            g.setColour (accent.withAlpha (0.85f));
             g.drawFittedText (lbl, tt.toNearestInt(), juce::Justification::centred, 1);
 
             // Predictive ghost: show faint HP/LP in low/high zones, else Bell
@@ -410,7 +446,7 @@ void ReverbToneEQ::paint(juce::Graphics& g)
                 juce::Path clipped; clipped.addEllipse ((float) hoverPos.x - rA.getWidth()*0.05f, (float) hoverPos.y - rA.getHeight()*0.15f, rA.getWidth()*0.10f, rA.getHeight()*0.30f);
                 juce::Graphics::ScopedSaveState ss (g);
                 g.reduceClipRegion (clipped);
-                g.setColour (juce::Colours::white.withAlpha (0.16f));
+                g.setColour (accent.withAlpha (0.16f));
                 g.strokePath (ghost, juce::PathStrokeType (1.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
                 }
             }
@@ -493,9 +529,13 @@ void ReverbToneEQ::drawUnits(juce::Graphics& g)
     auto r = analyzer.getBounds().toFloat();
     if (r.isEmpty()) return;
     
+    // Get theme colors from LNF
+    auto& lf = getLookAndFeel();
+    auto gridCol = lf.findColour(FieldLNF::eqGridLineColourId);
+    auto textCol = lf.findColour(FieldLNF::eqLabelTextColourId).withAlpha(0.45f);
+    auto zeroCol = lf.findColour(FieldLNF::eqZeroLineColourId);
+    
     g.setFont(12.0f);
-    auto gridCol = juce::Colours::white.withAlpha(0.10f);
-    auto textCol = juce::Colours::white.withAlpha(0.45f);
     g.setColour(gridCol);
 
     // dB ticks
@@ -505,8 +545,16 @@ void ReverbToneEQ::drawUnits(juce::Graphics& g)
     {
         if (dbv > halfRange || dbv < -halfRange) continue;
         const float y = mapDbToY(dbv);
-        g.setColour(gridCol);
-        g.drawLine(r.getX(), y, r.getRight(), y, dbv == 0 ? 1.2f : 0.6f);
+        
+        // Use special color for 0 dB line
+        if (dbv == 0) {
+            g.setColour(zeroCol);
+            g.drawLine(r.getX(), y, r.getRight(), y, 1.2f);
+        } else {
+            g.setColour(gridCol);
+            g.drawLine(r.getX(), y, r.getRight(), y, 0.6f);
+        }
+        
         g.setColour(textCol);
         juce::String lbl = juce::String((int)dbv) + " dB";
         g.drawFittedText(lbl, juce::Rectangle<int>((int)r.getX()+4, (int)y-8, 44, 16), juce::Justification::centredLeft, 1);
@@ -611,9 +659,8 @@ float ReverbToneEQ::getBandParamFloat(int bandIdx, const char* baseId, float fal
 // Visual helpers
 juce::Colour ReverbToneEQ::bandColourFor(int bandIdx) const
 {
-    juce::Colour accent = juce::Colours::deepskyblue;
-    if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-        accent = lf->theme.accent;
+    auto& lf = getLookAndFeel();
+    auto accent = lf.findColour(FieldLNF::eqLabelTextColourId);
     const float baseHue = accent.getHue();
     const float baseSat = juce::jlimit(0.25f, 0.95f, accent.getSaturation());
     const float baseBrt = juce::jlimit(0.35f, 0.95f, accent.getBrightness());
@@ -766,8 +813,6 @@ void ReverbToneEQ::positionBadgeFor(int idx)
     
     // Per-band accent color
     juce::Colour accent = bandColourFor(idx);
-    badge.setAccentColour(accent);
-    overlay.setAccentColour(accent);
     badge.toFront(true);
 }
 
@@ -831,18 +876,23 @@ void ReverbToneEQ::BandOverlay::paint(juce::Graphics& g)
 {
     auto r = getLocalBounds().toFloat();
     
+    // Get theme colors from LNF
+    auto& lf = getLookAndFeel();
+    auto accent = lf.findColour(FieldLNF::eqLabelTextColourId);
+    auto panel = lf.findColour(juce::ResizableWindow::backgroundColourId);
+    
     // Background with accent
-    juce::Colour bg = juce::Colours::darkgrey.darker(0.20f);
+    juce::Colour bg = panel.darker(0.20f);
     g.setColour(bg.withAlpha(0.96f));
     g.fillRoundedRectangle(r, 8.0f);
     
     // Accent border
-    g.setColour(accentColour.withAlpha(0.8f));
+    g.setColour(accent.withAlpha(0.8f));
     g.drawRoundedRectangle(r, 8.0f, 2.0f);
     
     // Accent strip
     juce::Rectangle<float> strip = r.removeFromLeft(3.0f).reduced(0.5f, 2.0f);
-    g.setColour(accentColour);
+    g.setColour(accent);
     g.fillRoundedRectangle(strip, 1.5f);
 }
 
@@ -881,11 +931,6 @@ void ReverbToneEQ::BandOverlay::setValues(float gainVal, float qVal, float freqV
     updating = false;
 }
 
-void ReverbToneEQ::BandOverlay::setAccentColour(juce::Colour c)
-{
-    accentColour = c;
-    repaint();
-}
 
 // BandBadge implementation
 ReverbToneEQ::BandBadge::BandBadge()
@@ -925,18 +970,23 @@ void ReverbToneEQ::BandBadge::paint(juce::Graphics& g)
 {
     auto r = getLocalBounds().toFloat();
     
+    // Get theme colors from LNF
+    auto& lf = getLookAndFeel();
+    auto accent = lf.findColour(FieldLNF::eqLabelTextColourId);
+    auto panel = lf.findColour(juce::ResizableWindow::backgroundColourId);
+    
     // Background
-    juce::Colour bg = juce::Colours::darkgrey.darker(0.30f);
+    juce::Colour bg = panel.darker(0.30f);
     g.setColour(bg.withAlpha(0.95f));
     g.fillRoundedRectangle(r, 6.0f);
     
     // Accent border
-    g.setColour(accentColour.withAlpha(0.9f));
+    g.setColour(accent.withAlpha(0.9f));
     g.drawRoundedRectangle(r, 6.0f, 1.5f);
     
     // Accent strip
     juce::Rectangle<float> strip = r.removeFromLeft(2.0f).reduced(0.5f, 1.0f);
-    g.setColour(accentColour);
+    g.setColour(accent);
     g.fillRoundedRectangle(strip, 1.0f);
 }
 
@@ -977,10 +1027,4 @@ void ReverbToneEQ::BandBadge::setDetails(float q, float gain, bool dynOn, bool d
     
     gainLabel.setText(juce::String(gain, 1), juce::dontSendNotification);
     qLabel.setText(juce::String(q, 2), juce::dontSendNotification);
-}
-
-void ReverbToneEQ::BandBadge::setAccentColour(juce::Colour c)
-{
-    accentColour = c;
-    repaint();
 }

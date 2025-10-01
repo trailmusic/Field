@@ -18,14 +18,16 @@ struct DecayBandPoint
 };
 
 // Decay-Rate EQ for reverb decay shaping (3 bands)
-class DecayRateEQ : public juce::Component, private juce::Timer
+class DecayRateEQ : public juce::Component, private juce::Timer, private juce::ChangeListener
 {
 public:
-    DecayRateEQ(MyPluginAudioProcessor& p, juce::LookAndFeel* lnf);
+    DecayRateEQ(MyPluginAudioProcessor& p);
     ~DecayRateEQ() override;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    void lookAndFeelChanged() override;
+    void parentHierarchyChanged() override;
     
     // Analyzer control
     void setSampleRate(double sr) { analyzer.setSampleRate(sr); }
@@ -38,6 +40,9 @@ private:
     void timerCallback() override;
     void rebuildEqPath();
     void drawUnits(juce::Graphics& g);
+    
+    // ChangeListener callback
+    void changeListenerCallback(juce::ChangeBroadcaster* src) override;
     
     // Mouse interaction
     void mouseDown(const juce::MouseEvent& e) override;
@@ -87,7 +92,6 @@ private:
         void resized() override;
         
         void setValues(float mult, float q, float freq, int type);
-        void setAccentColour(juce::Colour c);
         
     private:
         juce::Slider mult, q, freq;
@@ -96,7 +100,6 @@ private:
         juce::Label typeLabel;
         
         bool updating = false;
-        juce::Colour accentColour = juce::Colours::orange;
     };
     
     // Compact per-band badge
@@ -118,14 +121,12 @@ private:
         
         void setValues(float mult, float freq, int type, bool bypass);
         void setDetails(float q, float mult, bool dynOn, bool dynUp, float dynRange, bool specOn, const juce::String& channel, int slopeDb, const juce::String& tap);
-        void setAccentColour(juce::Colour c);
         
     private:
         juce::TextButton deleteBtn, bypassBtn, typeBtn;
         juce::Label freqLabel, multLabel, qLabel;
         juce::Label grLabel, dynLabel, specLabel;
         
-        juce::Colour accentColour = juce::Colours::orange;
         float currentMult = 1.0f;
         float currentFreq = 1000.0f;
         float currentQ = 0.707f;
@@ -158,6 +159,9 @@ private:
     // Drag state
     bool dragging = false;
     juce::Point<int> dragStart;
+    
+    // Theme change listening
+    FieldLNF* listeningTo = nullptr;
     
     static constexpr int kMaxBands = 3;
     static juce::String bandId(const char* base, int idx) { return juce::String(base) + "_" + juce::String(idx); }

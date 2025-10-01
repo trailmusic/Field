@@ -7,9 +7,21 @@
 // FieldLookAndFeel - Core Look and Feel class
 // Reorganized for better maintainability and separation of concerns
 
-class FieldLNF : public juce::LookAndFeel_V4
+class FieldLNF : public juce::LookAndFeel_V4, public juce::ChangeBroadcaster
 {
 public:
+    // EQ-specific color IDs for consistent theming
+    enum ColourIds
+    {
+        eqLabelTextColourId     = 0x6101001,
+        eqBorderColourId        = 0x6101002,
+        eqZeroLineColourId      = 0x6101003,
+        eqGridLineColourId      = 0x6101004,
+        eqBandHandleColourId    = 0x6101005,
+        eqBandHandleActiveId    = 0x6101006,
+        eqAnalyzerTraceColourId = 0x6101007,
+    };
+
     // Expose theme alias for compatibility
     using Theme = FieldTheme;
 
@@ -28,6 +40,17 @@ public:
         setupColours();
     }
 
+    // Apply theme and broadcast changes
+    void applyTheme(ThemeVariant variant)
+    {
+        juce::Logger::writeToLog("FieldLNF: applyTheme called with variant " + juce::String((int)variant));
+        ThemeManager::applyTheme(theme, variant);
+        currentVariant = variant;
+        setupColours();
+        sendChangeMessage(); // Notify listeners that colours changed
+        juce::Logger::writeToLog("FieldLNF: sendChangeMessage() called");
+    }
+
     // Legacy compatibility - redirects to new theme system
     void setGreenMode(bool enabled)
     {
@@ -43,6 +66,15 @@ public:
         setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
         setColour(juce::PopupMenu::backgroundColourId, theme.panel);
         setColour(juce::PopupMenu::textColourId, theme.text);
+        
+        // Set EQ-specific colors
+        setColour(eqLabelTextColourId, theme.accent);
+        setColour(eqBorderColourId, theme.accent.withAlpha(0.90f));
+        setColour(eqZeroLineColourId, theme.accent.withAlpha(0.35f));
+        setColour(eqGridLineColourId, theme.accent.withAlpha(0.12f));
+        setColour(eqBandHandleColourId, theme.text.withAlpha(0.70f));
+        setColour(eqBandHandleActiveId, theme.accent);
+        setColour(eqAnalyzerTraceColourId, theme.text.withAlpha(0.30f));
     }
 
     // Popup menu per-item tinting support
@@ -150,11 +182,25 @@ public:
     void drawNeoPanel(juce::Graphics& g, juce::Rectangle<float> r, float radius = 16.0f) const;
     void paintCellPanel(juce::Graphics& g, juce::Component& c, bool showBorder, bool hover) const;
 
+    // Theme change broadcasting
+    static void broadcastThemeChanged(juce::Component& root)
+    {
+        // Call lookAndFeelChanged() on the whole subtree so everyone refreshes
+        std::function<void(juce::Component*)> walk = [&](juce::Component* c)
+        {
+            if (!c) return;
+            c->lookAndFeelChanged();
+            for (int i = 0; i < c->getNumChildComponents(); ++i)
+                walk(c->getChildComponent(i));
+        };
+        walk(&root);
+    }
+
     // Special rendering
     void drawRotationPad(juce::Graphics& g, juce::Rectangle<float> bounds, float rotationDeg, float asymmetry,
                         juce::Colour accent, juce::Colour text, juce::Colour panel) const;
     void drawGainSlider(juce::Graphics& g, int x, int y, int w, int h, float sliderPosProportional,
-                       float rotaryStartAngle, float rotaryEndAngle, float gainDb);
+                   float rotaryStartAngle, float rotaryEndAngle, float gainDb);
     void drawKnobLabel(juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& text);
     void drawTabPill(juce::Graphics& g, juce::Rectangle<float> r, bool active, bool hover = false) const;
 

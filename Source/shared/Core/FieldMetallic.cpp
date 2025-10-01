@@ -17,7 +17,8 @@ void MetallicRenderer::paintMetal(juce::Graphics& g, const juce::Rectangle<float
     }
     
     g.setGradientFill(gradient);
-    g.fillRoundedRectangle(r, corner);
+    g.fillRect(r);  // Fill entire area first
+    g.fillRoundedRectangle(r, corner);  // Then draw rounded rectangle
     
     // Add subtle border
     g.setColour(metal.bottom.darker(0.2f));
@@ -31,7 +32,8 @@ void MetallicRenderer::paintPhaseMetal(juce::Graphics& g, const juce::Rectangle<
     juce::ColourGradient gradient(metal.top, r.getX(), r.getY(),
                                  metal.bottom, r.getX(), r.getBottom(), false);
     g.setGradientFill(gradient);
-    g.fillRoundedRectangle(r, corner);
+    g.fillRect(r);  // Fill entire area first
+    g.fillRoundedRectangle(r, corner);  // Then draw rounded rectangle
     
     // Airy tint overlay
     if (metal.airyAlpha > 0.0f)

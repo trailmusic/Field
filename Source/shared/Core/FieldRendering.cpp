@@ -35,6 +35,7 @@ namespace FieldRendering
         auto r = c.getLocalBounds().toFloat();
         const float rad = 8.0f;
 
+        // Panel background
         g.setColour(theme.panel);
         g.fillRoundedRectangle(r.reduced(3.0f), rad);
 
@@ -43,26 +44,9 @@ namespace FieldRendering
         ds1.drawForRectangle(g, r.reduced(3.0f).getSmallestIntegerContainer());
         ds2.drawForRectangle(g, r.reduced(3.0f).getSmallestIntegerContainer());
 
-        g.setColour(theme.sh.withAlpha(0.18f));
-        g.drawRoundedRectangle(r.reduced(4.0f), rad - 1.0f, 0.8f);
-
-        if (showBorder)
-        {
-            auto border = r.reduced(2.0f);
-            g.setColour(theme.accent);
-            if (hover)
-            {
-                for (int i = 1; i <= 6; ++i)
-                {
-                    const float t = (float)i / 6.0f;
-                    const float expand = 2.0f + t * 8.0f;
-                    g.setColour(theme.accent.withAlpha((1.0f - t) * 0.22f));
-                    g.drawRoundedRectangle(border.expanded(expand), rad + expand * 0.35f, 2.0f);
-                }
-            }
-            g.setColour(theme.accent);
-            g.drawRoundedRectangle(border, rad, 1.0f);
-        }
+        // Strong edge shading for depth
+        g.setColour(theme.sh.withAlpha(0.6f));
+        g.drawRoundedRectangle(r.reduced(2.0f), rad - 2.0f, 2.0f);
     }
 
     // Button rendering methods
@@ -196,7 +180,7 @@ namespace FieldRendering
         if (isButtonDown) fill = fill.darker(0.25f);
         else if (isMouseOver) fill = fill.brighter(0.10f);
 
-        // Fill square/rounded rect
+        // Fill square/rounded rect with anti-aliasing fix
         const float cr = 4.0f;
         g.setColour(fill);
         g.fillRoundedRectangle(r, cr);
@@ -811,7 +795,8 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
     void drawPopupMenuBackground(juce::Graphics& g, int width, int height, const FieldTheme& theme)
     {
         g.setColour(theme.panel);
-        g.fillRoundedRectangle(0, 0, width, height, 4.0f);
+        g.fillRect(0, 0, width, height);  // Fill entire area first
+        g.fillRoundedRectangle(0, 0, width, height, 4.0f);  // Then draw rounded rectangle
     }
 
     void drawPopupMenuSeparator(juce::Graphics& g, const juce::Rectangle<int>& area, const FieldTheme& theme)

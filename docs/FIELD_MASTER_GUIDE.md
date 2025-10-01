@@ -20,6 +20,7 @@
 - [Ocean-Harmonized Metallic System](#-ocean-harmonized-metallic-system-january-2025)
 
 ### **🎨 UI COMPONENTS & VISUALS**
+- [Anti-Aliasing Fix System (January 2025)](#-anti-aliasing-fix-system-january-2025)
 - [VerticalSlider3D System](#-verticalslider3d-system---professional-slider-implementation)
 - [ShadeOverlay Component](#-shadeoverlay-component---xypad-block-vision-control-system)
 - [FIELD Logo System](#-field-logo-system---enhanced-branding-with-shadow--glow-effects)

@@ -8,6 +8,8 @@ void BottomChevronLNF::drawButtonBackground (juce::Graphics& g, juce::Button& bu
     auto top = theme.panel.brighter (0.10f);
     auto bot = theme.panel.darker   (0.10f);
     g.setGradientFill (juce::ColourGradient (top, r.getX(), r.getY(), bot, r.getX(), r.getBottom(), false));
+    // Fill entire area first to prevent white corners
+    g.fillRect(r);
     g.fillRoundedRectangle (r, 6.0f);
     g.setColour (theme.sh);
     g.drawRoundedRectangle (r, 6.0f, 1.0f);

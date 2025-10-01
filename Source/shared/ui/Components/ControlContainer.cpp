@@ -20,7 +20,8 @@ void ControlContainer::paint (juce::Graphics& g)
         // Use custom background color if set, otherwise use theme panel color
         juce::Colour bgColor = useCustomBackgroundColour ? backgroundColour : panel;
         g.setColour (bgColor);
-        g.fillRoundedRectangle (r.reduced (3.0f), rad);
+        g.fillRect(r.reduced(3.0f));  // Fill entire area first
+        g.fillRoundedRectangle (r.reduced (3.0f), rad);  // Then draw rounded rectangle
 
         // depth
         juce::DropShadow ds1 ((lf ? lf->theme.shadowDark  : juce::Colour (0xFF1A1C20)).withAlpha (0.6f), 20, { -2, -2 });
@@ -29,26 +30,9 @@ void ControlContainer::paint (juce::Graphics& g)
         ds1.drawForRectangle (g, ri);
         ds2.drawForRectangle (g, ri);
 
-        // inner rim
-        g.setColour ((lf ? lf->theme.sh : juce::Colour (0xFF2A2C30)).withAlpha (0.3f));
-        g.drawRoundedRectangle (r.reduced (4.0f), rad - 1.0f, 1.0f);
-    }
-
-    if (showBorder)
-    {
-        auto border = r.reduced (3.0f);
-        // hover halo
-        const bool over = isMouseOverOrDragging();
-        if (over || hoverActive)
-        {
-            g.setColour (accent.withAlpha (0.5f));
-            g.drawRoundedRectangle (border.expanded (2.0f), rad, 2.0f);
-        }
-
-        // Use custom border color if set, otherwise use theme accent
-        juce::Colour borderColor = useCustomBorderColour ? borderColour : accent;
-        g.setColour (borderColor.withAlpha (0.4f));
-        g.drawRoundedRectangle (border, rad, 1.0f);
+        // Strong edge shading for depth
+        g.setColour ((lf ? lf->theme.sh : juce::Colour (0xFF2A2C30)).withAlpha (0.6f));
+        g.drawRoundedRectangle (r.reduced (2.0f), rad - 2.0f, 2.0f);
     }
 
     // title

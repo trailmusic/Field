@@ -29,10 +29,10 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     duckingFloat->setGreyedOut(true);
     
         // Create EQ panels
-        reverbEQ = std::make_unique<ReverbToneEQ>(proc, &getLookAndFeel());
+        reverbEQ = std::make_unique<ReverbToneEQ>(proc);
         addAndMakeVisible(*reverbEQ);
         
-        decayRateEQ = std::make_unique<DecayRateEQ>(proc, &getLookAndFeel());
+        decayRateEQ = std::make_unique<DecayRateEQ>(proc);
         addAndMakeVisible(*decayRateEQ);
     
     // Setup visualization control panel
@@ -40,6 +40,9 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     
     // Setup EQ labels
     setupEQLabels();
+    
+    // Set initial label colors
+    updateLabelColors();
     
     // Start animation timer
     startTimerHz(30);
@@ -51,21 +54,19 @@ void ReverbGraphics::paint(juce::Graphics& g)
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
     
-    // Background with elevation shadow
+    // Anti-aliasing fix: Fill entire area first, then rounded rectangle
     const float cr = 8.0f;
     
-    // Elevation shadow
-    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.25f));
-    else g.setColour(juce::Colour(0x40000000));
-    g.fillRoundedRectangle(r.translated(1.5f, 1.5f), cr);
-    
-    // Main background
+    // Fill entire rectangular area to prevent white corners
     g.setColour(th.meters.panelDark);
+    g.fillRect(r);
+    
+    // Then draw rounded rectangle on top
     g.fillRoundedRectangle(r, cr);
     
-    // Border
-    g.setColour(th.sh);
-    g.drawRoundedRectangle(r, cr, 1.0f);
+    // Strong edge shading for depth
+    g.setColour(th.sh.withAlpha(0.6f));
+    g.drawRoundedRectangle(r.reduced(0.5f), cr - 0.5f, 2.0f);
     
     // Content area
     auto contentR = r.reduced(10.0f);
@@ -116,13 +117,19 @@ void ReverbGraphics::resized()
     auto duckingArea = rightArea.removeFromTop(rightArea.getHeight() * 0.5f);
     auto visualizationArea = rightArea;
     
-    // Position ducking float in top half
+    // Position ducking label and module
+    auto duckingLabelArea = duckingArea.removeFromTop(25);
+    duckingLabel.setBounds(duckingLabelArea);
+    
     if (duckingFloat)
     {
-        duckingFloat->setBounds(duckingArea.reduced(10));
+        duckingFloat->setBounds(duckingArea);
     }
     
-    // Position visualization control panel in bottom half
+    // Position visualization label and panel in bottom half
+    auto visualizationLabelArea = visualizationArea.removeFromTop(25);
+    visualizationLabel.setBounds(visualizationLabelArea);
+    
     visualizationControlPanel.setBounds(visualizationArea);
     
     // Layout buttons in horizontal row centered with title
@@ -143,22 +150,22 @@ void ReverbGraphics::resized()
     waterfallButton.setBounds(buttonStartX + buttonWidth + buttonSpacing, buttonRow.getY(), buttonWidth, buttonHeight);
     spectralButton.setBounds(buttonStartX + (buttonWidth + buttonSpacing) * 2, buttonRow.getY(), buttonWidth, buttonHeight);
     
-        // Left side: EQ panels with labels
+        // Left side: EQ panels with labels (50/50 split like right side)
         if (reverbEQ && decayRateEQ)
         {
-            // Tone EQ section
-            auto toneLabelArea = leftArea.removeFromTop(25);
+            // Split left area into two equal halves
+            auto topLeftArea = leftArea.removeFromTop(leftArea.getHeight() * 0.5f);
+            auto bottomLeftArea = leftArea;
+            
+            // Top half: Tone EQ
+            auto toneLabelArea = topLeftArea.removeFromTop(25);
             toneEqLabel.setBounds(toneLabelArea);
+            reverbEQ->setBounds(topLeftArea);
             
-            auto toneArea = leftArea.removeFromTop(leftArea.getHeight() * 0.5f);
-            reverbEQ->setBounds(toneArea);
-            
-            // Decay Rate EQ section
-            auto decayLabelArea = leftArea.removeFromTop(25);
+            // Bottom half: Decay Rate EQ
+            auto decayLabelArea = bottomLeftArea.removeFromTop(25);
             decayRateEqLabel.setBounds(decayLabelArea);
-            
-            auto decayArea = leftArea;
-            decayRateEQ->setBounds(decayArea);
+            decayRateEQ->setBounds(bottomLeftArea);
         }
     
     // Right side: Visualization area (for future use)
@@ -211,18 +218,34 @@ void ReverbGraphics::setupEQLabels()
     // Add EQ labels as visible components
     addAndMakeVisible(toneEqLabel);
     addAndMakeVisible(decayRateEqLabel);
+    addAndMakeVisible(duckingLabel);
+    addAndMakeVisible(visualizationLabel);
     
     // Configure tone EQ label
     toneEqLabel.setText("TONE EQ", juce::dontSendNotification);
     toneEqLabel.setJustificationType(juce::Justification::centred);
-    toneEqLabel.setColour(juce::Label::textColourId, juce::Colour(0xFF4A90E2));
     toneEqLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
     
     // Configure decay rate EQ label
     decayRateEqLabel.setText("DECAY-RATE EQ", juce::dontSendNotification);
     decayRateEqLabel.setJustificationType(juce::Justification::centred);
-    decayRateEqLabel.setColour(juce::Label::textColourId, juce::Colour(0xFF4A90E2));
     decayRateEqLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
+    
+    // Configure ducking label
+    duckingLabel.setText("DUCKING", juce::dontSendNotification);
+    duckingLabel.setJustificationType(juce::Justification::centred);
+    duckingLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
+    
+    // Configure visualization label
+    visualizationLabel.setText("VISUALIZATION", juce::dontSendNotification);
+    visualizationLabel.setJustificationType(juce::Justification::centred);
+    visualizationLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
+    
+    // Remove any hardcoded colors - let LNF handle them
+    toneEqLabel.removeColour(juce::Label::textColourId);
+    decayRateEqLabel.removeColour(juce::Label::textColourId);
+    duckingLabel.removeColour(juce::Label::textColourId);
+    visualizationLabel.removeColour(juce::Label::textColourId);
 }
 
 void ReverbGraphics::setViewMode(ViewMode mode)
@@ -235,6 +258,39 @@ void ReverbGraphics::setViewMode(ViewMode mode)
     spectralButton.setToggleState(mode == ViewMode::Spectral, juce::dontSendNotification);
     
     repaint();
+}
+
+void ReverbGraphics::lookAndFeelChanged()
+{
+    // Update label colors to match current theme
+    updateLabelColors();
+    
+    // Force repaint of EQ components to update their colors
+    if (reverbEQ) {
+        reverbEQ->lookAndFeelChanged();
+        reverbEQ->repaint();
+    }
+    if (decayRateEQ) {
+        decayRateEQ->lookAndFeelChanged();
+        decayRateEQ->repaint();
+    }
+    
+    repaint();
+}
+
+void ReverbGraphics::updateLabelColors()
+{
+    // Get current theme colors from LookAndFeel
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    if (lf) {
+        auto accentColor = lf->findColour(FieldLNF::eqLabelTextColourId);
+        
+        // Update all label colors
+        toneEqLabel.setColour(juce::Label::textColourId, accentColor);
+        decayRateEqLabel.setColour(juce::Label::textColourId, accentColor);
+        duckingLabel.setColour(juce::Label::textColourId, accentColor);
+        visualizationLabel.setColour(juce::Label::textColourId, accentColor);
+    }
 }
 
 void ReverbGraphics::paintRays(juce::Graphics& g)
@@ -389,17 +445,18 @@ void ReverbGraphics::timerCallback()
     animationTime += ANIMATION_SPEED;
     if (animationTime > juce::MathConstants<float>::twoPi)
         animationTime -= juce::MathConstants<float>::twoPi;
-    
+
     // Update ducking module visibility based on DUCK toggle
     updateDuckingModuleVisibility();
-    
+
     // Update ducking float GR meter
     if (duckingFloat && getDuckGrDb)
     {
         auto grDb = getDuckGrDb();
         duckingFloat->updateGrMeter(grDb);
     }
-    
+
+
     // Repaint for animation
     repaint();
 }
@@ -457,28 +514,20 @@ void ReverbGraphics::VisualizationControlPanel::paint(juce::Graphics& g)
     
     const float cr = 8.0f;
     
-    // Recessed effect - inner shadow
-    if (lf) g.setColour(lf->theme.shadowDark.withAlpha(0.4f));
-    else g.setColour(juce::Colour(0x60000000));
+    // Anti-aliasing fix: Fill entire area first, then rounded rectangle
+    g.setColour(th.meters.panelDark);
+    g.fillRect(bounds);
+    
+    // Then draw rounded rectangle on top
     g.fillRoundedRectangle(bounds, cr);
     
-    // Main background with recessed gradient (darker on top, lighter on bottom)
-    juce::ColourGradient bgGradient(th.meters.panelDark.darker(0.3f), 0, 0,
-                                   th.meters.panelDark.darker(0.1f), 0, bounds.getHeight(), false);
-    g.setGradientFill(bgGradient);
-    g.fillRoundedRectangle(bounds, cr);
+    // Strong edge shading for depth
+    g.setColour(th.sh.withAlpha(0.6f));
+    g.drawRoundedRectangle(bounds.reduced(0.5f), cr - 0.5f, 2.0f);
     
-    // Inner border for recessed effect
-    g.setColour(th.sh.withAlpha(0.8f));
-    g.drawRoundedRectangle(bounds, cr, 1.0f);
-    
-    // Inner highlight for recessed effect
-    g.setColour(th.sh.withAlpha(0.2f));
-    g.drawRoundedRectangle(bounds.reduced(1.0f), cr - 1.0f, 1.0f);
-    
-    // Thin border around visualization container for better visibility
-    g.setColour(th.text.withAlpha(0.3f));
-    g.drawRoundedRectangle(bounds, cr, 1.0f);
+    // Border for definition
+    g.setColour(th.accent.withAlpha(0.9f));
+    g.drawRoundedRectangle(bounds.reduced(1.0f), cr - 1.0f, 1.5f);
     
     // Title
     g.setColour(th.text);
