@@ -2537,6 +2537,12 @@ ls -la build/Source/Field_artefacts/Debug/Standalone/Field.app
 - **Dynamic Visualization**: Intensified gradients for dynamic/spectral states
 - **Consistency**: All colors derive from FieldLNF::theme, no hardcoded values
 
+**Color Mode Persistence (January 2025)**
+- **User Preference Memory**: Color mode selection (Ocean/Green/Pink/Yellow/Grey) is automatically saved and restored
+- **PropertiesFile Integration**: Uses existing UI preferences system for seamless persistence
+- **Startup Restoration**: App returns to user's preferred color mode on launch
+- **Real-time Saving**: Color mode changes are saved immediately when user cycles through themes
+
 **Visual Feedback**
 - **Band Contribution Curves**: Individual band responses with optional area fills
 - **Macro EQ Curve**: Composite response of all active bands

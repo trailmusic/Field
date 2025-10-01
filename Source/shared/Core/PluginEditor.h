@@ -323,6 +323,11 @@ public:
     void pasteState (bool pasteToA);
     void updatePresetDisplay();
     
+    // Color mode persistence
+    void saveColorMode();
+    void loadColorMode();
+    juce::PropertiesFile::Options getColorModePropsOptions();
+    
     // ShadeOverlay initialization
     void initializeShadeOverlay();
 
