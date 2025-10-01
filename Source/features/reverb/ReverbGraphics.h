@@ -5,6 +5,7 @@
 #include "DecayRateEQ.h"
 #include "BandIdFinder.h"
 #include "BandCounter.h"
+#include "ReverbVisuals.h"
 #include "shared/ui/Utilities/SafetySentinels.h"
 
 class MyPluginAudioProcessor; // fwd
@@ -112,6 +113,9 @@ private:
     };
     
     std::unique_ptr<TestContainer> testContainer;
+    
+    // Visualization component
+    std::unique_ptr<ReverbVisuals> reverbVisuals;
     
     // Visualization control container
     class VisualizationControlPanel : public juce::Component

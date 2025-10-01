@@ -72,15 +72,17 @@ public:
     void resized() override
     {
         auto r = getLocalBounds();
-        DBG("🔧 ReverbTab::resized() called - bounds: " << r.toString());
-        
         auto m = ControlGridMetrics::compute (r.getWidth(), r.getHeight());
         if (controls) { controls->setCellMetrics (m.knobPx, m.valuePx, m.labelGapPx, m.colW); controls->setRowHeightPx (m.rowH); }
         auto controlsArea = r.removeFromBottom (m.controlsH);
         
         if (reverbPanel) reverbPanel->setBounds (r);
         if (controls && controls->isVisible()) controls->setBounds (controlsArea);
+        
+        // Bring ReverbGraphics to the front to ensure it's not covered by controls
+        if (reverbPanel) reverbPanel->toFront(false);
     }
+    
     
     void lookAndFeelChanged() override
     {

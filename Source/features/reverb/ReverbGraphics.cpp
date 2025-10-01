@@ -107,6 +107,10 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     addAndMakeVisible(*testContainer);
     DBG("🔧 Test container created and added to ReverbGraphics");
     
+    // Create visualization component
+    reverbVisuals = std::make_unique<ReverbVisuals>(proc, state, getErRms, getTailRms, getDuckGrDb, getWidthNow);
+    addAndMakeVisible(*reverbVisuals);
+    
     // Setup EQ labels
     setupEQLabels();
     
@@ -284,6 +288,15 @@ void ReverbGraphics::resized()
         DBG("🔧 Test container positioned below buttons with 5px top padding: " << testArea.toString());
     }
     
+    // Position visualization component in the same area as test container
+    if (reverbVisuals)
+    {
+        auto vizArea = juce::Rectangle<int>(visualizationArea.getX() + 10, buttonRow.getY() + buttonHeight + 15, 
+                                          visualizationArea.getWidth() - 20, 
+                                          visualizationArea.getBottom() - (buttonRow.getY() + buttonHeight + 15) - 10);
+        reverbVisuals->setBounds(vizArea);
+    }
+    
         // Left side: EQ panels with labels (50/50 split like right side)
         if (reverbEQ && decayRateEQ)
         {
@@ -337,14 +350,17 @@ void ReverbGraphics::setupVisualizationControlPanel()
     // Set up button callbacks
     raysButton.onClick = [this] { 
         setViewMode(ViewMode::Rays); 
+        if (reverbVisuals) reverbVisuals->setViewMode(ReverbVisuals::ViewMode::Rays);
         DBG("✨ Rays visualization activated");
     };
     waterfallButton.onClick = [this] { 
         setViewMode(ViewMode::Waterfall); 
+        if (reverbVisuals) reverbVisuals->setViewMode(ReverbVisuals::ViewMode::Waterfall);
         DBG("🌊 Waterfall visualization activated - showing theme grey waterfall");
     };
     spectralButton.onClick = [this] { 
         setViewMode(ViewMode::Spectral); 
+        if (reverbVisuals) reverbVisuals->setViewMode(ReverbVisuals::ViewMode::Spectral);
         DBG("📊 Spectral visualization activated");
     };
     
