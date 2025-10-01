@@ -119,6 +119,14 @@ public:
                 button->getProperties().set("iconType", (int)IconSystem::HP);
             else if (buttonName.contains("lp") || buttonText.contains("lp"))
                 button->getProperties().set("iconType", (int)IconSystem::LP);
+            else if (buttonName.contains("commit") || buttonText.contains("commit"))
+                button->getProperties().set("iconType", (int)IconSystem::Save);
+            else if (buttonName.contains("phase") || buttonName.contains("rec") || buttonText.contains("phase") || buttonText.contains("rec"))
+                button->getProperties().set("iconType", (int)IconSystem::Retrig);
+            else if (buttonName.contains("apply") || buttonName.contains("load") || buttonText.contains("apply") || buttonText.contains("load"))
+                button->getProperties().set("iconType", (int)IconSystem::LeftArrow);
+            else if (buttonName.contains("random") || buttonName.contains("seed") || buttonText.contains("random") || buttonText.contains("seed"))
+                button->getProperties().set("iconType", (int)IconSystem::Delta);
         }
     }
 
