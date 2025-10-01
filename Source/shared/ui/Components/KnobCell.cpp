@@ -519,8 +519,8 @@ void KnobCell::paint (juce::Graphics& g)
             // Calculate knob bounds to align label with knob, not full cell
             auto knobBounds = knob.getBounds().toFloat();
             auto labelBounds = knobBounds;
-            labelBounds.setY(knobBounds.getY() - 20); // Position above knob
-            labelBounds.setHeight(20); // Height for label area
+            labelBounds.setY(knobBounds.getY() - 12); // Position closer to knob
+            labelBounds.setHeight(12); // Height for label area
             lf->drawKnobLabel (g, labelBounds, caption);
         }
     }
