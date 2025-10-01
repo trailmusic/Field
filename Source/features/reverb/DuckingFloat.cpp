@@ -90,8 +90,15 @@ void DuckingFloat::setupComponents()
         slider.setTextValueSuffix(suffix);
         slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
         slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
+        // Set proper rotary parameters for Field styling
+        slider.setRotaryParameters(juce::MathConstants<float>::pi,
+                                   juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
+                                   true);
         // Apply Field LookAndFeel to all sliders
         slider.setLookAndFeel(&getLookAndFeel());
+        // Ensure sliders are enabled and visible
+        slider.setEnabled(true);
+        slider.setVisible(true);
     };
     
     configureSlider(depthSlider, 0.0, 20.0, 0.1, 6.0, " dB");
@@ -130,6 +137,10 @@ void DuckingFloat::setupComponents()
     
     configureComboBox(modeSelector);
     configureComboBox(detectorSelector);
+    
+    // Ensure all components are properly enabled after setup
+    setActive(true);
+    setGreyedOut(false);
 }
 
 void DuckingFloat::setExpanded(bool shouldExpand)
@@ -186,6 +197,13 @@ void DuckingFloat::updateLayout()
     
     // Set component enabled state based on active and greyed out state
     bool componentsEnabled = active && !greyedOut;
+    
+    // Ensure sliders are properly configured for Field LookAndFeel
+    for (auto* slider : {&depthSlider, &thresholdSlider, &ratioSlider, &kneeSlider, 
+                        &attackSlider, &releaseSlider, &bandFreqSlider, &bandQSlider}) {
+        // Always reapply LookAndFeel to ensure proper styling
+        slider->setLookAndFeel(&getLookAndFeel());
+    }
     
     // Old GR meter removed - using custom paintGrMeter
     modeSelector.setEnabled(componentsEnabled);
