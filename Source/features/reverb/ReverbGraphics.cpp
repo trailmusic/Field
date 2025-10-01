@@ -17,7 +17,9 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
       getWidthNow(getWidthNow),
       raysButton("Rays"),
       waterfallButton("Waterfall"),
-      spectralButton("Spectral")
+      spectralButton("Spectral"),
+      toneEqIndicator(4),
+      decayRateEqIndicator(3)
 {
     // Create ducking float
     duckingFloat = std::make_unique<DuckingFloat>(state);
@@ -27,6 +29,61 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     duckingFloat->setVisible(true);
     duckingFloat->setActive(false);
     duckingFloat->setGreyedOut(true);
+    
+    // Add band indicators to the component
+    addAndMakeVisible(toneEqIndicator);
+    addAndMakeVisible(decayRateEqIndicator);
+    
+    // Discover parameter IDs for band detection
+    // Tone EQ: tb_active_0, tb_active_1, tb_active_2, tb_active_3
+    // Decay-Rate EQ: db_active_0, db_active_1, db_active_2
+    toneEnabledIds = BandIdFinder::findEnabledIds(state, "tb_active_", "");
+    decayEnabledIds = BandIdFinder::findEnabledIds(state, "db_active_", "");
+    
+    // Debug: Log discovered parameters
+    DBG("--- Discovered Tone EQ Parameters: " << toneEnabledIds.size() << " ---");
+    for (auto& id : toneEnabledIds)
+        DBG("Tone: " << id);
+    
+    DBG("--- Discovered Decay-Rate EQ Parameters: " << decayEnabledIds.size() << " ---");
+    for (auto& id : decayEnabledIds)
+        DBG("Decay: " << id);
+    
+    // Set up band counters for reliable detection
+    if (!toneEnabledIds.isEmpty())
+    {
+        toneCounter.reset(new BandCounter(state, toneEnabledIds, 
+            [this](int n) { 
+                toneEqIndicator.setActiveBands(n); 
+                repaint(); 
+            }));
+    }
+    else
+    {
+        DBG("No Tone EQ parameters found - using fallback approach");
+        // Fallback: Set initial values to 0
+        toneEqIndicator.setActiveBands(0);
+    }
+    
+    // Test: Set some initial values to verify indicators are visible
+    DBG("Setting test values: Tone=2, Decay=1");
+    toneEqIndicator.setActiveBands(2);
+    decayRateEqIndicator.setActiveBands(1);
+    
+    if (!decayEnabledIds.isEmpty())
+    {
+        decayCounter.reset(new BandCounter(state, decayEnabledIds, 
+            [this](int n) { 
+                decayRateEqIndicator.setActiveBands(n); 
+                repaint(); 
+            }));
+    }
+    else
+    {
+        DBG("No Decay-Rate EQ parameters found - using fallback approach");
+        // Fallback: Set initial values to 0
+        decayRateEqIndicator.setActiveBands(0);
+    }
     
         // Create EQ panels
         reverbEQ = std::make_unique<ReverbToneEQ>(proc);
@@ -126,7 +183,9 @@ void ReverbGraphics::resized()
         duckingFloat->setBounds(duckingArea);
     }
     
-    // Position visualization panel in bottom half (no label needed)
+    // Position visualization label and panel in bottom half
+    auto visualizationLabelArea = visualizationArea.removeFromTop(25);
+    visualizationLabel.setBounds(visualizationLabelArea);
     visualizationControlPanel.setBounds(visualizationArea);
     
     // Layout buttons in horizontal row centered with title
@@ -156,12 +215,22 @@ void ReverbGraphics::resized()
             
             // Top half: Tone EQ
             auto toneLabelArea = topLeftArea.removeFromTop(25);
+            
+            // Position band indicator and label on the same row
+            auto indicatorArea = toneLabelArea.removeFromLeft(60).translated(12, 10); // 12px left padding, 10px down
+            toneEqIndicator.setBounds(indicatorArea);
             toneEqLabel.setBounds(toneLabelArea);
+            
             reverbEQ->setBounds(topLeftArea);
             
             // Bottom half: Decay Rate EQ
             auto decayLabelArea = bottomLeftArea.removeFromTop(25);
+            
+            // Position band indicator and label on the same row
+            auto decayIndicatorArea = decayLabelArea.removeFromLeft(45).translated(12, 10); // 12px left padding, 10px down
+            decayRateEqIndicator.setBounds(decayIndicatorArea);
             decayRateEqLabel.setBounds(decayLabelArea);
+            
             decayRateEQ->setBounds(bottomLeftArea);
         }
     
@@ -216,7 +285,7 @@ void ReverbGraphics::setupEQLabels()
     addAndMakeVisible(toneEqLabel);
     addAndMakeVisible(decayRateEqLabel);
     addAndMakeVisible(duckingLabel);
-    // Visualization label removed - not needed
+    addAndMakeVisible(visualizationLabel);
     
     // Configure tone EQ label
     toneEqLabel.setText("TONE EQ", juce::dontSendNotification);
@@ -233,12 +302,16 @@ void ReverbGraphics::setupEQLabels()
     duckingLabel.setJustificationType(juce::Justification::centred);
     duckingLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
     
-    // Visualization label configuration removed - not needed
+    // Configure visualization label
+    visualizationLabel.setText("VISUALIZATION", juce::dontSendNotification);
+    visualizationLabel.setJustificationType(juce::Justification::centred);
+    visualizationLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
     
     // Remove any hardcoded colors - let LNF handle them
     toneEqLabel.removeColour(juce::Label::textColourId);
     decayRateEqLabel.removeColour(juce::Label::textColourId);
     duckingLabel.removeColour(juce::Label::textColourId);
+    visualizationLabel.removeColour(juce::Label::textColourId);
 }
 
 void ReverbGraphics::setViewMode(ViewMode mode)
@@ -288,6 +361,7 @@ void ReverbGraphics::updateLabelColors()
         toneEqLabel.setColour(juce::Label::textColourId, accentColor);
         decayRateEqLabel.setColour(juce::Label::textColourId, accentColor);
         duckingLabel.setColour(juce::Label::textColourId, accentColor);
+        visualizationLabel.setColour(juce::Label::textColourId, accentColor);
     }
 }
 
@@ -446,6 +520,13 @@ void ReverbGraphics::timerCallback()
 
     // Update ducking module visibility based on DUCK toggle
     updateDuckingModuleVisibility();
+    
+    // Band indicators now update automatically via BandCounter listeners
+    // Fallback: Manual update if automatic detection failed
+    if (toneEnabledIds.isEmpty() || decayEnabledIds.isEmpty())
+    {
+        updateBandIndicatorsManually();
+    }
 
     // Update ducking float GR meter
     if (duckingFloat && getDuckGrDb)
@@ -503,6 +584,86 @@ void ReverbGraphics::updateDuckingModuleVisibility()
     duckingFloat->setGreyedOut(!duckEnabled);
 }
 
+// Manual band indicator update method
+void ReverbGraphics::updateBandIndicatorsManually()
+{
+    // Manual fallback: count active bands by checking parameters directly
+    int activeToneBands = 0;
+    int activeDecayBands = 0;
+    
+    // Check Tone EQ bands (4 bands)
+    for (int i = 0; i < 4; ++i)
+    {
+        auto paramName = "tb_active_" + juce::String(i);
+        auto activeParam = state.getRawParameterValue(paramName);
+        if (activeParam && activeParam->load() > 0.5f)
+        {
+            activeToneBands++;
+        }
+    }
+    
+    // Check Decay-Rate EQ bands (3 bands)
+    for (int i = 0; i < 3; ++i)
+    {
+        auto paramName = "db_active_" + juce::String(i);
+        auto activeParam = state.getRawParameterValue(paramName);
+        if (activeParam && activeParam->load() > 0.5f)
+        {
+            activeDecayBands++;
+        }
+    }
+    
+    toneEqIndicator.setActiveBands(activeToneBands);
+    decayRateEqIndicator.setActiveBands(activeDecayBands);
+    repaint();
+}
+
+// BandIndicator implementation
+ReverbGraphics::BandIndicator::BandIndicator(int maxBands) : maxBands(maxBands), activeBands(0)
+{
+    setSize((int)(maxBands * circleSpacing), (int)circleSize);
+}
+
+void ReverbGraphics::BandIndicator::paint(juce::Graphics& g)
+{
+    auto bounds = getLocalBounds().toFloat();
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
+    
+    g.setColour(th.accent);
+    
+    for (int i = 0; i < maxBands; ++i)
+    {
+        auto circleBounds = juce::Rectangle<float>(i * circleSpacing, 0, circleSize, circleSize);
+        
+        if (i < activeBands)
+        {
+            // Filled circle for active bands
+            g.fillEllipse(circleBounds);
+        }
+        else
+        {
+            // Empty circle with border for inactive bands
+            g.drawEllipse(circleBounds, 1.5f);
+        }
+    }
+    
+    // Debug background removed - indicators should now be working
+}
+
+void ReverbGraphics::BandIndicator::setActiveBands(int count)
+{
+    activeBands = juce::jlimit(0, maxBands, count);
+    repaint();
+}
+
+void ReverbGraphics::BandIndicator::setMaxBands(int max)
+{
+    maxBands = max;
+    setSize((int)(maxBands * circleSpacing), (int)circleSize);
+    repaint();
+}
+
 // VisualizationControlPanel paint implementation
 void ReverbGraphics::VisualizationControlPanel::paint(juce::Graphics& g)
 {
@@ -527,10 +688,7 @@ void ReverbGraphics::VisualizationControlPanel::paint(juce::Graphics& g)
     g.setColour(th.accent.withAlpha(0.9f));
     g.drawRoundedRectangle(bounds.reduced(1.0f), cr - 1.0f, 1.5f);
     
-    // Title
-    g.setColour(th.text);
-    g.setFont(juce::FontOptions(14.0f).withStyle("bold"));
-    g.drawText("Visualization", bounds.removeFromTop(25).reduced(10, 0), juce::Justification::centredLeft);
+    // Title removed - not needed
 }
 
 

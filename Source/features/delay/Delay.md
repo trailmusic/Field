@@ -76,3 +76,33 @@ void DelayToneEQ::paint(juce::Graphics& g) {
 - **Files Modified**: `ReverbEQ.cpp`, `DecayRateEQ.cpp`, `DynEqTab.h`
 - **Method**: Enhanced `mouseDown()` methods with toggle logic
 - **Result**: All EQs now support intuitive band point control toggling
+
+## EQ BAND INDICATOR SYSTEM (January 2025)
+
+### Overview
+Visual indicator system showing the number of active EQ bands for both Tone EQ (4 bands max) and Decay-Rate EQ (3 bands max) in the Reverb module.
+
+### Features
+- **Visual Indicators**: Small circles that fill when bands are active, empty when inactive
+- **Real-time Updates**: Automatically updates when bands are added/removed
+- **Theme Integration**: Uses Field theme accent colors for consistency
+- **Positioning**: Located to the left of their respective EQ labels
+
+### Technical Implementation
+- **BandIndicator Component**: Custom JUCE component for rendering circles
+- **Parameter Detection**: Uses `BandIdFinder` and `BandCounter` for reliable parameter monitoring
+- **Fallback System**: Manual parameter checking as backup
+- **Critical Dependency**: Requires `ReverbEQParams::addReverbEQParameters(params)` in PluginProcessor.cpp
+
+### Modified Files
+- `Source/features/reverb/ReverbGraphics.h` - BandIndicator class and integration
+- `Source/features/reverb/ReverbGraphics.cpp` - Implementation and positioning
+- `Source/features/reverb/BandIdFinder.h` - Parameter discovery utility
+- `Source/features/reverb/BandCounter.h` - Parameter change listener
+- `Source/shared/Core/PluginProcessor.cpp` - Re-enabled EQ parameter creation
+
+### Reference Implementation
+- **Reverb.md**: See "EQ BAND INDICATOR SYSTEM" section for complete implementation details
+- **Files Created**: `BandIdFinder.h`, `BandCounter.h` for parameter detection
+- **Integration**: Full integration into `ReverbGraphics` with theme compliance
+- **Result**: Real-time visual feedback for EQ band usage

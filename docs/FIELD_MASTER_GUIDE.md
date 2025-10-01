@@ -94,6 +94,32 @@ The reverb parameter system has been completely migrated from the legacy `Reverb
 #### **🚀 Next Phase Ready**
 The parameter system migration is complete and the build is working. The foundation is now solid for implementing the reverb visual system as outlined in the `Reverb.md` development guide.
 
+### **🎯 EQ BAND INDICATOR SYSTEM (January 2025)**
+
+#### **Visual Band Usage Indicators**
+- **System Overview**: Small circles showing active EQ band count for Tone EQ (4 max) and Decay-Rate EQ (3 max)
+- **Real-time Updates**: Automatically updates when bands are added/removed
+- **Theme Integration**: Uses Field theme accent colors for consistency
+- **Smart Positioning**: Located to the left of their respective EQ labels
+
+#### **Technical Implementation**
+- **BandIndicator Component**: Custom JUCE component for rendering filled/empty circles
+- **Parameter Detection**: Uses `BandIdFinder` and `BandCounter` for reliable parameter monitoring
+- **Fallback System**: Manual parameter checking as backup when automatic detection fails
+- **Critical Dependency**: Requires `ReverbEQParams::addReverbEQParameters(params)` in PluginProcessor.cpp
+
+#### **Files Created/Modified**
+- `Source/features/reverb/BandIdFinder.h` - Parameter discovery utility
+- `Source/features/reverb/BandCounter.h` - Parameter change listener
+- `Source/features/reverb/ReverbGraphics.h/.cpp` - BandIndicator integration
+- `Source/shared/Core/PluginProcessor.cpp` - Re-enabled EQ parameter creation
+
+#### **Build Status**
+- **✅ Compilation**: All components compile successfully
+- **✅ Parameter Detection**: Automatic parameter discovery working
+- **✅ Visual Updates**: Indicators update in real-time
+- **✅ Theme Integration**: Uses Field theme colors consistently
+
 ---
 
 ## 🚀 QUICK REFERENCE GUIDE

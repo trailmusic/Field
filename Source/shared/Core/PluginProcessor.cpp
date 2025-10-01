@@ -1464,7 +1464,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     
     // Append new Reverb parameters
     addReverbParameters (params);
-        // ReverbEQ::addReverbEQParameters (params); // Temporarily disabled
+    ReverbEQParams::addReverbEQParameters (params); // Re-enabled for band indicators
+    // NOTE: This line is CRITICAL for band indicator functionality
+    // DO NOT comment out - required for EQ band point detection in ReverbGraphics
     
     // Reverb parameters added
 

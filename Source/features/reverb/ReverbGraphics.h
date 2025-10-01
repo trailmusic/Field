@@ -3,6 +3,8 @@
 #include "DuckingFloat.h"
 #include "ReverbEQ.h"
 #include "DecayRateEQ.h"
+#include "BandIdFinder.h"
+#include "BandCounter.h"
 
 class MyPluginAudioProcessor; // fwd
 class ReverbToneEQ; // fwd
@@ -56,6 +58,9 @@ public:
     // Ducking module control
     void updateDuckingModuleVisibility();
     
+    // Band indicators now update automatically via BandCounter listeners
+    void updateBandIndicatorsManually();
+    
     // Visualization control panel setup
     void setupVisualizationControlPanel();
     
@@ -85,8 +90,31 @@ private:
     
     VisualizationControlPanel visualizationControlPanel;
     
+    // Band indicator component for showing EQ band usage
+    class BandIndicator : public juce::Component
+    {
+    public:
+        BandIndicator(int maxBands);
+        void paint(juce::Graphics& g) override;
+        void setActiveBands(int count);
+        void setMaxBands(int max);
+        
+    private:
+        int maxBands = 0;
+        int activeBands = 0;
+        static constexpr float circleSize = 8.0f;
+        static constexpr float circleSpacing = 12.0f;
+    };
+    
     // EQ labels for visual separation
-    juce::Label toneEqLabel, decayRateEqLabel, duckingLabel;
+    juce::Label toneEqLabel, decayRateEqLabel, duckingLabel, visualizationLabel;
+    
+    // Band indicators for showing EQ usage
+    BandIndicator toneEqIndicator, decayRateEqIndicator;
+    
+    // Band counters for reliable parameter detection
+    std::unique_ptr<BandCounter> toneCounter, decayCounter;
+    juce::StringArray toneEnabledIds, decayEnabledIds;
     
     // Ducking float
     std::unique_ptr<DuckingFloat> duckingFloat;
