@@ -516,9 +516,12 @@ void KnobCell::paint (juce::Graphics& g)
             caption = getProperties()["caption"].toString();
         if (caption.isNotEmpty())
         {
-            auto r = getLocalBounds().toFloat();
-            r.removeFromBottom (juce::jmax (2, V + G)); // leave space for value label band
-            lf->drawKnobLabel (g, r, caption);
+            // Calculate knob bounds to align label with knob, not full cell
+            auto knobBounds = knob.getBounds().toFloat();
+            auto labelBounds = knobBounds;
+            labelBounds.setY(knobBounds.getY() - 20); // Position above knob
+            labelBounds.setHeight(20); // Height for label area
+            lf->drawKnobLabel (g, labelBounds, caption);
         }
     }
 
