@@ -127,6 +127,8 @@ public:
                 button->getProperties().set("iconType", (int)IconSystem::LeftArrow);
             else if (buttonName.contains("random") || buttonName.contains("seed") || buttonText.contains("random") || buttonText.contains("seed"))
                 button->getProperties().set("iconType", (int)IconSystem::Delta);
+            else if (buttonName.contains("follow") || buttonText.contains("follow"))
+                button->getProperties().set("iconType", (int)IconSystem::Link);
         }
     }
 

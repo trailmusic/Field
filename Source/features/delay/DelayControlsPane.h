@@ -153,28 +153,43 @@ private:
         makeDelayComboCell (delayDuckSource, "Source", "delay_duck_source");
         makeDelayComboCell (delayFilterType, "Filter", "delay_filter_type");
 
-        // Apply Delay metallic styling to ToggleButtons
-        for (juce::ToggleButton* button : { &delayEnabled, &delaySync, &delayKillDry, &delayFreeze, &delayPingpong, &delayDuckPost })
+        // Define makeToggleCell function for Delay controls
+        auto makeToggleCell = [&](juce::ToggleButton& b, const juce::String& cap, const char* pid)
         {
+            if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr)
+            {
+                return;
+            }
+            
+            b.setName (cap);
+            
             // CRITICAL: Assign FieldLNF LookAndFeel to the button BEFORE setting metallic properties
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
-                button->setLookAndFeel(lf);
-                
-            setAreaMetallicForCell (*button, MetallicKind::Delay);
-        }
+                b.setLookAndFeel(lf);
+            
+            // Apply Delay metallic styling
+            setAreaMetallicForCell (b, MetallicKind::Delay);
+            
+            // Wrap in SimpleSwitchCell for consistent styling and labels
+            auto cell = std::make_unique<SimpleSwitchCell> (b);
+            cell->setCaption (cap);
+            cell->setShowBorder (true);
+            addAndMakeVisible (*cell);
+            switchCells.emplace_back (cell.get());
+            ownedSwitches.emplace_back (std::move (cell));
+            btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, pid, b));
+        };
+
+        // Apply Delay metallic styling to ToggleButtons using makeToggleCell
+        makeToggleCell (delayEnabled, "Enable", "delay_enabled");
+        makeToggleCell (delaySync, "Sync", "delay_sync");
+        makeToggleCell (delayKillDry, "Kill Dry", "delay_kill_dry");
+        makeToggleCell (delayFreeze, "Freeze", "delay_freeze");
+        makeToggleCell (delayPingpong, "Pingpong", "delay_pingpong");
+        makeToggleCell (delayDuckPost, "Duck Post", "delay_duck_post");
 
         // ComboBoxes are now wrapped in SimpleSwitchCell, so no direct styling needed
-
-        btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, "delay_enabled",      delayEnabled));
-        cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, "delay_mode",       delayMode));
-        btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, "delay_sync",         delaySync));
-        cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, "delay_grid_flavor", delayGridFlavor));
-        btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, "delay_kill_dry",    delayKillDry));
-        btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, "delay_freeze",      delayFreeze));
-        btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, "delay_pingpong",    delayPingpong));
-        cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, "delay_duck_source", delayDuckSource));
-        btnAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment> (apvts, "delay_duck_post",    delayDuckPost));
-        cmbAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (apvts, "delay_filter_type", delayFilterType));
+        // Button attachments are now handled by makeToggleCell above
 
         // Knobs + cells
         auto makeCell = [&](juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid)
@@ -247,14 +262,14 @@ private:
         // Compose 2x16 grid order (Row A 1..16, Row B 17..32)
         auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
         // Row A (switch/combos then knobs)
-        push (&delayEnabled);
-        push (switchCells[0]); // delayMode
-        push (&delaySync);
-        push (switchCells[1]); // delayGridFlavor
-        push (&delayPingpong);
-        push (&delayFreeze);
-        push (switchCells[2]); // delayFilterType
-        push (&delayKillDry);
+        push (switchCells[0]); // delayEnabled
+        push (switchCells[1]); // delayMode
+        push (switchCells[2]); // delaySync
+        push (switchCells[3]); // delayGridFlavor
+        push (switchCells[4]); // delayPingpong
+        push (switchCells[5]); // delayFreeze
+        push (switchCells[6]); // delayFilterType
+        push (switchCells[7]); // delayKillDry
         push (ownedCells[0].get()); // TIME
         push (ownedCells[1].get()); // FB
         push (ownedCells[2].get()); // WET
@@ -272,8 +287,8 @@ private:
         push (ownedCells[13].get()); // TILT
         push (ownedCells[14].get()); // WOW
         push (ownedCells[15].get()); // JITTER
-        push (switchCells[3]); // delayDuckSource
-        push (&delayDuckPost);
+        push (switchCells[8]); // delayDuckSource
+        push (switchCells[9]); // delayDuckPost
         push (ownedCells[16].get()); // THR
         push (ownedCells[17].get()); // DEPTH
         push (ownedCells[18].get()); // ATT
