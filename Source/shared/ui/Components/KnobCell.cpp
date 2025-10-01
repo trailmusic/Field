@@ -376,6 +376,10 @@ void KnobCell::paint (juce::Graphics& g)
     auto r = getLocalBounds().toFloat();
     const float rad = 8.0f;
 
+    // Check for greyout state
+    bool isGreyedOut = getProperties().getWithDefault("greyedOut", false);
+    float greyoutAlpha = getProperties().getWithDefault("greyoutAlpha", 0.4f);
+
     // Panel fill (optional) with metallic mode
     const auto metallicKind = metallicFromProps (getProperties());
     const bool metallic = (metallicKind != MetallicKind::None);
@@ -388,22 +392,35 @@ void KnobCell::paint (juce::Graphics& g)
         {
             if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
             {
-                switch (metallicKind)
+                // Apply greyout alpha to metallic colors
+                auto metalColors = [&]() -> FieldTheme::MetalStops {
+                    switch (metallicKind)
+                    {
+                        case MetallicKind::Reverb:  return lf->theme.metal.reverb;
+                        case MetallicKind::Delay:   return lf->theme.metal.delay;
+                        case MetallicKind::Band:    return lf->theme.metal.band;
+                        case MetallicKind::Phase:   return lf->theme.metal.phase;
+                        case MetallicKind::Motion:  return lf->theme.metal.motion;
+                        case MetallicKind::XY:      return lf->theme.metal.xy;
+                        case MetallicKind::Neutral: return lf->theme.metal.neutral;
+                        default:                    return lf->theme.metal.neutral;
+                    }
+                }();
+                
+                if (isGreyedOut)
                 {
-                    case MetallicKind::Reverb:  MetallicRenderer::paintMetal(g, rr, lf->theme.metal.reverb,  rad); break;
-                    case MetallicKind::Delay:   MetallicRenderer::paintMetal(g, rr, lf->theme.metal.delay,   rad); break;
-                    case MetallicKind::Band:    MetallicRenderer::paintMetal(g, rr, lf->theme.metal.band,    rad); break;
-                    case MetallicKind::Phase:   MetallicRenderer::paintMetal(g, rr, lf->theme.metal.phase,   rad); break;
-                    case MetallicKind::Motion:  MetallicRenderer::paintMetal(g, rr, lf->theme.metal.motion,  rad); break;
-                    case MetallicKind::XY:      MetallicRenderer::paintMetal(g, rr, lf->theme.metal.xy,      rad); break;
-                    case MetallicKind::Neutral: MetallicRenderer::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
-                    default:                    MetallicRenderer::paintMetal(g, rr, lf->theme.metal.neutral, rad); break;
+                    // Apply greyout alpha to metallic colors
+                    metalColors.top = metalColors.top.withAlpha(greyoutAlpha);
+                    metalColors.bottom = metalColors.bottom.withAlpha(greyoutAlpha);
                 }
+                
+                MetallicRenderer::paintMetal(g, rr, metalColors, rad);
             }
         }
         else
         {
-            g.setColour (getPanelColour());
+            auto panelColor = isGreyedOut ? getPanelColour().withAlpha(greyoutAlpha) : getPanelColour();
+            g.setColour (panelColor);
             g.fillRoundedRectangle (rr, rad);
         }
     }

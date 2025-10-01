@@ -449,6 +449,10 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         auto centre = bounds.getCentre();
         auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.5f;
         
+        // Check for greyout state
+        bool isGreyedOut = slider.getProperties().getWithDefault("greyedOut", false);
+        float greyoutAlpha = slider.getProperties().getWithDefault("greyoutAlpha", 0.4f);
+        
         // Check for hover state and apply raise effect
         bool isHovered = slider.isMouseOver();
         float hoverOffset = isHovered ? 2.0f : 0.0f;
@@ -485,11 +489,13 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
                              innerShadowRadius * 2, innerShadowRadius * 2);
         
         // Heavy shadow - only around the track ring (reduced intensity)
-        g.setColour(theme.shadowDark.withAlpha(isHovered ? 0.2f : 0.1f));
+        auto shadowAlpha = isGreyedOut ? (isHovered ? 0.2f : 0.1f) * greyoutAlpha : (isHovered ? 0.2f : 0.1f);
+        g.setColour(theme.shadowDark.withAlpha(shadowAlpha));
         g.fillPath(shadowRing);
         
         // Light shadow overlay - only around the track ring (reduced intensity)
-        g.setColour(theme.shadowLight.withAlpha(isHovered ? 0.1f : 0.05f));
+        auto lightShadowAlpha = isGreyedOut ? (isHovered ? 0.1f : 0.05f) * greyoutAlpha : (isHovered ? 0.1f : 0.05f);
+        g.setColour(theme.shadowLight.withAlpha(lightShadowAlpha));
         g.fillPath(shadowRing);
         
         // Flash effect overlay (if double-clicked)
@@ -502,12 +508,14 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         }
         
         // Track background
-        g.setColour(theme.panel.darker(0.1f));
+        auto trackColor = isGreyedOut ? theme.panel.darker(0.1f).withAlpha(greyoutAlpha) : theme.panel.darker(0.1f);
+        g.setColour(trackColor);
         g.drawEllipse(centre.x - trackRadius, centre.y - trackRadius, 
                      trackRadius * 2, trackRadius * 2, trackThickness);
         
         // Track highlight
-        g.setColour(theme.hl);
+        auto highlightColor = isGreyedOut ? theme.hl.withAlpha(greyoutAlpha) : theme.hl;
+        g.setColour(highlightColor);
         g.drawEllipse(centre.x - trackRadius, centre.y - trackRadius, 
                      trackRadius * 2, trackRadius * 2, 1.0f);
         
@@ -529,7 +537,8 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             auto tickY = centre.y + tickRadius * std::sin(angle - juce::MathConstants<float>::halfPi);
             
             // Quarter tick dots - accent color dots on the knob arc
-            g.setColour(theme.accent);
+            auto tickColor = isGreyedOut ? theme.accent.withAlpha(greyoutAlpha) : theme.accent;
+            g.setColour(tickColor);
             g.fillEllipse(tickX - 2, tickY - 2, 4, 4);  // Smaller size: 4x4 instead of 16x16
         }
         
@@ -540,8 +549,10 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
                              0.0f, rotaryStartAngle, valueAngle, true);
         
         // Value arc with gradient
-        juce::ColourGradient gradient(theme.accent, centre.x, centre.y,
-                                     theme.accent.brighter(0.3f), 
+        auto accentColor = isGreyedOut ? theme.accent.withAlpha(greyoutAlpha) : theme.accent;
+        auto accentBrighter = isGreyedOut ? theme.accent.brighter(0.3f).withAlpha(greyoutAlpha) : theme.accent.brighter(0.3f);
+        juce::ColourGradient gradient(accentColor, centre.x, centre.y,
+                                     accentBrighter, 
                                      centre.x + trackRadius * 0.5f, centre.y + trackRadius * 0.5f, true);
         g.setGradientFill(gradient);
         g.strokePath(valueArc, juce::PathStrokeType(trackThickness));
@@ -552,15 +563,18 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         auto thumbY = centre.y + thumbRadius * std::sin(currentAngle - juce::MathConstants<float>::halfPi);
         
         // Thumb shadow
-        g.setColour(theme.shadowDark.withAlpha(0.3f));
+        auto thumbShadowAlpha = isGreyedOut ? 0.3f * greyoutAlpha : 0.3f;
+        g.setColour(theme.shadowDark.withAlpha(thumbShadowAlpha));
         g.fillEllipse(thumbX - 4, thumbY - 4, 8, 8);  // Reduced from 12x12 to 8x8
         
         // Thumb body
-        g.setColour(theme.accent);
+        auto thumbBodyColor = isGreyedOut ? theme.accent.withAlpha(greyoutAlpha) : theme.accent;
+        g.setColour(thumbBodyColor);
         g.fillEllipse(thumbX - 3, thumbY - 3, 6, 6);  // Reduced from 10x10 to 6x6
         
         // Thumb highlight
-        g.setColour(theme.accent.brighter(0.4f));
+        auto thumbHighlightColor = isGreyedOut ? theme.accent.brighter(0.4f).withAlpha(greyoutAlpha) : theme.accent.brighter(0.4f);
+        g.setColour(thumbHighlightColor);
         g.fillEllipse(thumbX - 2, thumbY - 2, 4, 4);  // Reduced from 6x6 to 4x4
     }
 

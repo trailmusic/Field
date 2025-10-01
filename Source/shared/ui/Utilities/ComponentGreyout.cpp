@@ -19,6 +19,29 @@ void ComponentGreyout::setGreyedOut(juce::Component& component, bool greyedOut, 
         }
     }
     
+    // Special handling for specific component types
+    if (auto* slider = dynamic_cast<juce::Slider*>(&component))
+    {
+        // Sliders need special greyout handling
+        slider->setEnabled(!greyedOut);
+        slider->getProperties().set("greyedOut", greyedOut);
+        slider->getProperties().set("greyoutAlpha", alpha);
+    }
+    else if (auto* label = dynamic_cast<juce::Label*>(&component))
+    {
+        // Labels need special greyout handling
+        label->setEnabled(!greyedOut);
+        label->getProperties().set("greyedOut", greyedOut);
+        label->getProperties().set("greyoutAlpha", alpha);
+    }
+    else if (auto* comboBox = dynamic_cast<juce::ComboBox*>(&component))
+    {
+        // ComboBoxes need special greyout handling
+        comboBox->setEnabled(!greyedOut);
+        comboBox->getProperties().set("greyedOut", greyedOut);
+        comboBox->getProperties().set("greyoutAlpha", alpha);
+    }
+    
     // Force repaint to update visual state
     component.repaint();
 }
