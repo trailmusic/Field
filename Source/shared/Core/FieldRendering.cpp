@@ -993,7 +993,16 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         // Draw the text
         g.setColour(theme.text);
         g.setFont(labelFont);
-        g.drawText(displayText, bounds, juce::Justification::centred);
+        
+        // Use drawMultiLineText for proper line break handling
+        if (displayText.contains("\n"))
+        {
+            g.drawMultiLineText(displayText, bounds.getX(), bounds.getY(), bounds.getWidth(), juce::Justification::centred);
+        }
+        else
+        {
+            g.drawText(displayText, bounds, juce::Justification::centred);
+        }
     }
 
     void drawLabel(juce::Graphics& g, juce::Label& label, const FieldTheme& theme)
