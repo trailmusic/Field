@@ -813,6 +813,30 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
 
 MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
 {
+    // ========================================================================
+    // 🛡️ CRITICAL PLUGIN LIFECYCLE MANAGEMENT - DO NOT REMOVE OR MODIFY
+    // ========================================================================
+    // 
+    // This destructor implements bulletproof plugin lifecycle management
+    // to prevent crashes in Ableton Live and other hosts during add/remove/quit cycles.
+    // 
+    // CRITICAL: The order of operations here is essential for preventing:
+    // - "Over-release of an object" crashes
+    // - Use-after-free errors
+    // - Memory leaks
+    // - Audio thread violations
+    //
+    // DO NOT CHANGE THE ORDER OR REMOVE ANY OF THESE OPERATIONS:
+    // 1. Remove component listeners FIRST (before destroying components)
+    // 2. Reset panes (PaneManager handles its own cleanup)
+    // 3. Perform systematic cleanup via CleanupManager
+    //
+    // This system was implemented in January 2025 to solve critical
+    // destruction issues that caused crashes in Ableton Live.
+    // 
+    // See: FIELD_MASTER_GUIDE.md - Plugin Lifecycle Management section
+    // ========================================================================
+    
     // Clean destructor with proper listener teardown order
     // Remove listeners BEFORE destroying components to prevent use-after-free
     
