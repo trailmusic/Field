@@ -100,13 +100,6 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     // Setup visualization control panel
     setupVisualizationControlPanel();
     
-    // DEBUG: Create test container with yellow border
-    testContainer = std::make_unique<TestContainer>();
-    testContainer->setOpaque(true);
-    testContainer->setPaintingIsUnclipped(true);
-    addAndMakeVisible(*testContainer);
-    DBG("🔧 Test container created and added to ReverbGraphics");
-    
     // Create visualization component
     reverbVisuals = std::make_unique<ReverbVisuals>(proc, state, getErRms, getTailRms, getDuckGrDb, getWidthNow);
     addAndMakeVisible(*reverbVisuals);
@@ -126,8 +119,6 @@ ReverbGraphics::~ReverbGraphics()
     // Stop timer before destruction to prevent use-after-free
     stopTimer();
     
-    // DEBUG: Clean up test container
-    testContainer.reset();
 }
 
 void ReverbGraphics::visibilityChanged()
@@ -148,9 +139,6 @@ void ReverbGraphics::paint(juce::Graphics& g)
 {
     auto r = getLocalBounds().toFloat();
     
-    // DEBUG: Paint entire component with bright background to test visibility
-    g.setColour(juce::Colour(0xFF00FF00)); // Bright green background
-    g.fillRoundedRectangle(r, 8.0f);
     
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
@@ -278,17 +266,7 @@ void ReverbGraphics::resized()
     waterfallButton.setBounds(buttonStartX + buttonWidth + buttonSpacing, buttonRow.getY(), buttonWidth, buttonHeight);
     spectralButton.setBounds(buttonStartX + (buttonWidth + buttonSpacing) * 2, buttonRow.getY(), buttonWidth, buttonHeight);
     
-    // DEBUG: Position test container below the buttons - full width and remaining height with 5px top padding, 10px other sides
-    if (testContainer)
-    {
-        auto testArea = juce::Rectangle<int>(visualizationArea.getX() + 10, buttonRow.getY() + buttonHeight + 15, 
-                                           visualizationArea.getWidth() - 20, 
-                                           visualizationArea.getBottom() - (buttonRow.getY() + buttonHeight + 15) - 10);
-        testContainer->setBounds(testArea);
-        DBG("🔧 Test container positioned below buttons with 5px top padding: " << testArea.toString());
-    }
-    
-    // Position visualization component in the same area as test container
+    // Position visualization component below the buttons
     if (reverbVisuals)
     {
         auto vizArea = juce::Rectangle<int>(visualizationArea.getX() + 10, buttonRow.getY() + buttonHeight + 15, 
