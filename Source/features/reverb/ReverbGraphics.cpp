@@ -65,10 +65,8 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
         toneEqIndicator.setActiveBands(0);
     }
     
-    // Test: Set some initial values to verify indicators are visible
-    DBG("Setting test values: Tone=2, Decay=1");
-    toneEqIndicator.setActiveBands(2);
-    decayRateEqIndicator.setActiveBands(1);
+    // Initialize indicators with actual band counts
+    updateBandIndicatorsManually();
     
     if (!decayEnabledIds.isEmpty())
     {
