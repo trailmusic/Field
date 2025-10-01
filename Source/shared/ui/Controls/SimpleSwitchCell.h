@@ -133,6 +133,8 @@ public:
                 button->getProperties().set("iconType", (int)IconSystem::Link);
             else if (buttonName.contains("wet") || buttonName.contains("wetonly") || buttonText.contains("wet") || buttonText.contains("wet only"))
                 button->getProperties().set("iconType", (int)IconSystem::Speaker);
+            else if (buttonName.contains("kill") || buttonName.contains("dry") || buttonText.contains("kill") || buttonText.contains("dry"))
+                button->getProperties().set("iconType", (int)IconSystem::Speaker);
         }
     }
 
