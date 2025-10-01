@@ -34,6 +34,13 @@ Field is a professional spatial audio processor with three build targets:
 
 This builds all three targets and ensures they are identical and up to date.
 
+### Build with Auto-Test (Enhanced)
+```bash
+./build_all.sh && pkill -f "Field.app" 2>/dev/null || true && sleep 1 && open "/Users/grantedwards/Library/Audio/Plug-Ins/Components/Field.component" 2>/dev/null || open "/Users/grantedwards/Desktop/Field/build/Source/Field_artefacts/Standalone/Field.app" 2>/dev/null
+```
+
+This builds all targets and automatically closes/reopens the app for testing.
+
 ### Build All (one-liner from build/)
 ```bash
 cmake --build . --target Field_Standalone Field_AU Field_VST3 --config Debug -- -j 8

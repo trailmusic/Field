@@ -33,19 +33,9 @@ public:
     
     ~DelayTab() override
     {
-        // Add crash logging for debugging
-        juce::File f = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("Field_CrashLog.txt");
-        f.appendText("DelayTab Destructor: STARTED\n", false, false, "\n");
-        
-        // Destroy controls first
+        // Clean destructor - no logging needed
         controls.reset();
-        f.appendText("DelayTab Destructor: Controls destroyed\n", false, false, "\n");
-        
-        // Destroy visuals
         visuals.reset();
-        f.appendText("DelayTab Destructor: Visuals destroyed\n", false, false, "\n");
-        
-        f.appendText("DelayTab Destructor: COMPLETE\n", false, false, "\n");
     }
 
     void setControlsVisible (bool on)

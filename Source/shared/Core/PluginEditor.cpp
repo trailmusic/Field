@@ -813,12 +813,8 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
 
 MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
 {
-    juce::File f = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory).getChildFile ("Field_CrashLog.txt");
-    f.appendText ("Editor Destructor: STARTED\n", false, false, "\n");
-
+    // Clean destructor - no logging needed
     if (cleanupManager) cleanupManager->performCleanup();
-
-    f.appendText ("Editor Destructor: COMPLETE\n", false, false, "\n");
 }
 
 void MyPluginAudioProcessorEditor::paint (juce::Graphics& g)
