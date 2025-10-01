@@ -1,5 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
+#include "shared/ui/Components/KnobCell.h"
 
 class DuckingFloat : public juce::Component
 {
@@ -26,6 +27,9 @@ public:
     bool isActive() const { return active; }
     void setGreyedOut(bool greyedOut);
     bool isGreyedOut() const { return greyedOut; }
+    
+    // LookAndFeel management
+    void setLookAndFeel(juce::LookAndFeel* newLookAndFeel);
 
 private:
     void setupComponents();
@@ -53,6 +57,14 @@ private:
     juce::Label bandFreqLabel, bandQLabel;
     juce::Label modeLabel, detectorLabel;
     
+    // Value labels for sliders (like other knobs in the plugin)
+    juce::Label depthValue, thresholdValue, ratioValue, kneeValue;
+    juce::Label attackValue, releaseValue, bandFreqValue, bandQValue;
+    
+    // KnobCell components to display values inside knobs
+    std::unique_ptr<KnobCell> depthKnobCell, thresholdKnobCell, ratioKnobCell, kneeKnobCell;
+    std::unique_ptr<KnobCell> attackKnobCell, releaseKnobCell, bandFreqKnobCell, bandQKnobCell;
+    
     // APVTS attachments
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> expandAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> modeAttachment;
@@ -71,6 +83,7 @@ private:
     bool active = true;
     bool greyedOut = false;
     float currentGrDb = 0.0f;
+    juce::Rectangle<float> grMeterBounds;
     
     // Constants
     static constexpr float COLLAPSED_HEIGHT = 40.0f;

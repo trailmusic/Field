@@ -24,7 +24,15 @@ DuckingFloat::DuckingFloat(juce::AudioProcessorValueTreeState& apvts)
       bandFreqLabel("bandFreqLabel", "Band Freq"),
       bandQLabel("bandQLabel", "Band Q"),
       modeLabel("modeLabel", "Mode"),
-      detectorLabel("detectorLabel", "Detector")
+      detectorLabel("detectorLabel", "Detector"),
+      depthValue("depthValue", "6.0"),
+      thresholdValue("thresholdValue", "-12.0"),
+      ratioValue("ratioValue", "3.0"),
+      kneeValue("kneeValue", "2.0"),
+      attackValue("attackValue", "10.0"),
+      releaseValue("releaseValue", "100.0"),
+      bandFreqValue("bandFreqValue", "1000.0"),
+      bandQValue("bandQValue", "1.0")
 {
     setupComponents();
     
@@ -71,17 +79,59 @@ void DuckingFloat::setupComponents()
     addAndMakeVisible(bandFreqSlider);
     addAndMakeVisible(bandQSlider);
     
-    // Labels
-    addAndMakeVisible(depthLabel);
-    addAndMakeVisible(thresholdLabel);
-    addAndMakeVisible(ratioLabel);
-    addAndMakeVisible(kneeLabel);
-    addAndMakeVisible(attackLabel);
-    addAndMakeVisible(releaseLabel);
-    addAndMakeVisible(bandFreqLabel);
-    addAndMakeVisible(bandQLabel);
+    // Labels (only mode and detector labels are visible)
     addAndMakeVisible(modeLabel);
     addAndMakeVisible(detectorLabel);
+    
+    // Hide the knob labels since KnobCell components handle their own labels
+    depthLabel.setVisible(false);
+    thresholdLabel.setVisible(false);
+    ratioLabel.setVisible(false);
+    kneeLabel.setVisible(false);
+    attackLabel.setVisible(false);
+    releaseLabel.setVisible(false);
+    bandFreqLabel.setVisible(false);
+    bandQLabel.setVisible(false);
+    
+    // Create KnobCell components to display values inside knobs
+    depthKnobCell = std::make_unique<KnobCell>(depthSlider, depthValue, "Depth");
+    thresholdKnobCell = std::make_unique<KnobCell>(thresholdSlider, thresholdValue, "Threshold");
+    ratioKnobCell = std::make_unique<KnobCell>(ratioSlider, ratioValue, "Ratio");
+    kneeKnobCell = std::make_unique<KnobCell>(kneeSlider, kneeValue, "Knee");
+    attackKnobCell = std::make_unique<KnobCell>(attackSlider, attackValue, "Attack");
+    releaseKnobCell = std::make_unique<KnobCell>(releaseSlider, releaseValue, "Release");
+    bandFreqKnobCell = std::make_unique<KnobCell>(bandFreqSlider, bandFreqValue, "Band Freq");
+    bandQKnobCell = std::make_unique<KnobCell>(bandQSlider, bandQValue, "Band Q");
+    
+    // Set value label mode to Managed so KnobCell positions the labels correctly
+    depthKnobCell->setValueLabelMode(KnobCell::ValueLabelMode::Managed);
+    thresholdKnobCell->setValueLabelMode(KnobCell::ValueLabelMode::Managed);
+    ratioKnobCell->setValueLabelMode(KnobCell::ValueLabelMode::Managed);
+    kneeKnobCell->setValueLabelMode(KnobCell::ValueLabelMode::Managed);
+    attackKnobCell->setValueLabelMode(KnobCell::ValueLabelMode::Managed);
+    releaseKnobCell->setValueLabelMode(KnobCell::ValueLabelMode::Managed);
+    bandFreqKnobCell->setValueLabelMode(KnobCell::ValueLabelMode::Managed);
+    bandQKnobCell->setValueLabelMode(KnobCell::ValueLabelMode::Managed);
+    
+    // Make KnobCells metallic compliant
+    depthKnobCell->getProperties().set("reverbMetallic", true);
+    thresholdKnobCell->getProperties().set("reverbMetallic", true);
+    ratioKnobCell->getProperties().set("reverbMetallic", true);
+    kneeKnobCell->getProperties().set("reverbMetallic", true);
+    attackKnobCell->getProperties().set("reverbMetallic", true);
+    releaseKnobCell->getProperties().set("reverbMetallic", true);
+    bandFreqKnobCell->getProperties().set("reverbMetallic", true);
+    bandQKnobCell->getProperties().set("reverbMetallic", true);
+    
+    // Add KnobCell components to the layout
+    addAndMakeVisible(*depthKnobCell);
+    addAndMakeVisible(*thresholdKnobCell);
+    addAndMakeVisible(*ratioKnobCell);
+    addAndMakeVisible(*kneeKnobCell);
+    addAndMakeVisible(*attackKnobCell);
+    addAndMakeVisible(*releaseKnobCell);
+    addAndMakeVisible(*bandFreqKnobCell);
+    addAndMakeVisible(*bandQKnobCell);
     
     // Configure sliders with Field LookAndFeel
     auto configureSlider = [this](juce::Slider& slider, double min, double max, double step, double val, const juce::String& suffix) {
@@ -89,7 +139,7 @@ void DuckingFloat::setupComponents()
         slider.setValue(val);
         slider.setTextValueSuffix(suffix);
         slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
+        slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0); // No text box like other knobs
         // Set proper rotary parameters for Field styling
         slider.setRotaryParameters(juce::MathConstants<float>::pi,
                                    juce::MathConstants<float>::pi + juce::MathConstants<float>::twoPi,
@@ -138,6 +188,8 @@ void DuckingFloat::setupComponents()
     configureComboBox(modeSelector);
     configureComboBox(detectorSelector);
     
+    // KnobCell components handle their own value display internally
+    
     // Ensure all components are properly enabled after setup
     setActive(true);
     setGreyedOut(false);
@@ -184,6 +236,45 @@ void DuckingFloat::lookAndFeelChanged()
 {
     // Force repaint to update colors when theme changes
     repaint();
+}
+
+void DuckingFloat::setLookAndFeel(juce::LookAndFeel* newLookAndFeel)
+{
+    juce::Component::setLookAndFeel(newLookAndFeel);
+    
+    // Apply LookAndFeel to all child components
+    modeSelector.setLookAndFeel(newLookAndFeel);
+    detectorSelector.setLookAndFeel(newLookAndFeel);
+    depthSlider.setLookAndFeel(newLookAndFeel);
+    thresholdSlider.setLookAndFeel(newLookAndFeel);
+    ratioSlider.setLookAndFeel(newLookAndFeel);
+    kneeSlider.setLookAndFeel(newLookAndFeel);
+    attackSlider.setLookAndFeel(newLookAndFeel);
+    releaseSlider.setLookAndFeel(newLookAndFeel);
+    bandFreqSlider.setLookAndFeel(newLookAndFeel);
+    bandQSlider.setLookAndFeel(newLookAndFeel);
+    
+    // Apply to labels
+    depthLabel.setLookAndFeel(newLookAndFeel);
+    thresholdLabel.setLookAndFeel(newLookAndFeel);
+    ratioLabel.setLookAndFeel(newLookAndFeel);
+    kneeLabel.setLookAndFeel(newLookAndFeel);
+    attackLabel.setLookAndFeel(newLookAndFeel);
+    releaseLabel.setLookAndFeel(newLookAndFeel);
+    bandFreqLabel.setLookAndFeel(newLookAndFeel);
+    bandQLabel.setLookAndFeel(newLookAndFeel);
+    modeLabel.setLookAndFeel(newLookAndFeel);
+    detectorLabel.setLookAndFeel(newLookAndFeel);
+    
+    // Apply to KnobCell components
+    if (depthKnobCell) depthKnobCell->setLookAndFeel(newLookAndFeel);
+    if (thresholdKnobCell) thresholdKnobCell->setLookAndFeel(newLookAndFeel);
+    if (ratioKnobCell) ratioKnobCell->setLookAndFeel(newLookAndFeel);
+    if (kneeKnobCell) kneeKnobCell->setLookAndFeel(newLookAndFeel);
+    if (attackKnobCell) attackKnobCell->setLookAndFeel(newLookAndFeel);
+    if (releaseKnobCell) releaseKnobCell->setLookAndFeel(newLookAndFeel);
+    if (bandFreqKnobCell) bandFreqKnobCell->setLookAndFeel(newLookAndFeel);
+    if (bandQKnobCell) bandQKnobCell->setLookAndFeel(newLookAndFeel);
 }
 
 void DuckingFloat::resized()
@@ -243,32 +334,38 @@ void DuckingFloat::updateLayout()
         detectorLabel.setBounds(selectorArea.removeFromLeft(60).toNearestInt());
         detectorSelector.setBounds(selectorArea.removeFromLeft(80).toNearestInt());
         
-        // Ducking controls in 2 rows
+        // Ducking controls: vertical layout with GR meter on right
         auto controlArea = bounds;
-        auto row1 = controlArea.removeFromTop(controlArea.getHeight() * 0.5f);
-        auto row2 = controlArea;
         
-        // Row 1: Depth, Threshold, Ratio, Knee
-        auto cellWidth = row1.getWidth() / 4.0f;
-        depthLabel.setBounds(row1.removeFromLeft(cellWidth).removeFromTop(15).toNearestInt());
-        depthSlider.setBounds(row1.removeFromLeft(cellWidth).toNearestInt());
-        thresholdLabel.setBounds(row1.removeFromLeft(cellWidth).removeFromTop(15).toNearestInt());
-        thresholdSlider.setBounds(row1.removeFromLeft(cellWidth).toNearestInt());
-        ratioLabel.setBounds(row1.removeFromLeft(cellWidth).removeFromTop(15).toNearestInt());
-        ratioSlider.setBounds(row1.removeFromLeft(cellWidth).toNearestInt());
-        kneeLabel.setBounds(row1.removeFromLeft(cellWidth).removeFromTop(15).toNearestInt());
-        kneeSlider.setBounds(row1.removeFromLeft(cellWidth).toNearestInt());
+        // Reserve space for GR meter on the right (30% of width)
+        auto grMeterArea = controlArea.removeFromRight(controlArea.getWidth() * 0.3f);
+        auto knobArea = controlArea;
         
-        // Row 2: Attack, Release, Band Freq, Band Q
-        cellWidth = row2.getWidth() / 4.0f;
-        attackLabel.setBounds(row2.removeFromLeft(cellWidth).removeFromTop(15).toNearestInt());
-        attackSlider.setBounds(row2.removeFromLeft(cellWidth).toNearestInt());
-        releaseLabel.setBounds(row2.removeFromLeft(cellWidth).removeFromTop(15).toNearestInt());
-        releaseSlider.setBounds(row2.removeFromLeft(cellWidth).toNearestInt());
-        bandFreqLabel.setBounds(row2.removeFromLeft(cellWidth).removeFromTop(15).toNearestInt());
-        bandFreqSlider.setBounds(row2.removeFromLeft(cellWidth).toNearestInt());
-        bandQLabel.setBounds(row2.removeFromLeft(cellWidth).removeFromTop(15).toNearestInt());
-        bandQSlider.setBounds(row2.removeFromLeft(cellWidth).toNearestInt());
+        // Store GR meter area for painting
+        grMeterBounds = grMeterArea.toFloat();
+        
+        // Position Mode and Detector selectors at the top (no labels needed)
+        auto selectorArea2 = knobArea.removeFromTop(30);
+        modeSelector.setBounds(selectorArea2.removeFromLeft(selectorArea2.getWidth() * 0.5f).reduced(2).toNearestInt());
+        detectorSelector.setBounds(selectorArea2.reduced(2).toNearestInt());
+        
+        // Position 8 knobs vertically in 2 columns
+        auto leftColumn = knobArea.removeFromLeft(knobArea.getWidth() * 0.5f);
+        auto rightColumn = knobArea;
+        
+        // Left column: Depth, Threshold, Ratio, Knee
+        auto cellHeight = leftColumn.getHeight() / 4.0f;
+        depthKnobCell->setBounds(leftColumn.removeFromTop(cellHeight).toNearestInt());
+        thresholdKnobCell->setBounds(leftColumn.removeFromTop(cellHeight).toNearestInt());
+        ratioKnobCell->setBounds(leftColumn.removeFromTop(cellHeight).toNearestInt());
+        kneeKnobCell->setBounds(leftColumn.removeFromTop(cellHeight).toNearestInt());
+        
+        // Right column: Attack, Release, Band Freq, Band Q
+        cellHeight = rightColumn.getHeight() / 4.0f;
+        attackKnobCell->setBounds(rightColumn.removeFromTop(cellHeight).toNearestInt());
+        releaseKnobCell->setBounds(rightColumn.removeFromTop(cellHeight).toNearestInt());
+        bandFreqKnobCell->setBounds(rightColumn.removeFromTop(cellHeight).toNearestInt());
+        bandQKnobCell->setBounds(rightColumn.removeFromTop(cellHeight).toNearestInt());
     }
     else
     {
@@ -351,12 +448,11 @@ void DuckingFloat::paintExpanded(juce::Graphics& g)
     g.setColour(th.text.withAlpha(0.3f));
     g.drawRoundedRectangle(bounds.reduced(0.5f), cr - 0.5f, 0.5f);
     
-    // Header area for GR meter
-    auto headerArea = bounds.removeFromTop(50.0f);
-    
-    // GR meter spanning full header width
-    auto grArea = headerArea.reduced(10, 5);
-    paintGrMeter(g, grArea);
+    // Draw GR meter in the reserved area (spans full vertical height)
+    if (grMeterBounds.getWidth() > 0 && grMeterBounds.getHeight() > 0)
+    {
+        paintGrMeter(g, grMeterBounds);
+    }
 }
 
 void DuckingFloat::paintGrMeter(juce::Graphics& g, juce::Rectangle<float> bounds)

@@ -25,10 +25,15 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     duckingFloat = std::make_unique<DuckingFloat>(state);
     addAndMakeVisible(*duckingFloat);
     
+    // Set the proper LookAndFeel for the ducking float after it's added to the hierarchy
+    // This ensures getLookAndFeel() returns a valid pointer
+    
     // Initially show ducking float but greyed out (will be active when DUCK toggle is on)
     duckingFloat->setVisible(true);
     duckingFloat->setActive(false);
     duckingFloat->setGreyedOut(true);
+    
+    // LookAndFeel will be set in lookAndFeelChanged() method
     
     // Add band indicators to the component
     addAndMakeVisible(toneEqIndicator);
@@ -163,17 +168,22 @@ void ReverbGraphics::resized()
     auto bounds = getLocalBounds();
     
     
-    // Horizontal split: EQ panels on left (60%), right side split into ducking (top) and visualization (bottom)
-    auto leftArea = bounds.removeFromLeft(bounds.getWidth() * 0.6f);
-    auto rightArea = bounds;
+    // Horizontal split: EQ panels on left (50%), visualization in middle (40%), ducking on right (10%)
+    auto leftArea = bounds.removeFromLeft(bounds.getWidth() * 0.5f);
+    auto middleArea = bounds.removeFromLeft(bounds.getWidth() * 0.8f); // 40% of total width
+    auto rightArea = bounds; // 10% of total width
     
-    // Add gap between EQs and right side
-    leftArea.removeFromRight(15); // 15px gap
-    rightArea.removeFromLeft(15);  // 15px gap
+    // Add gaps between areas
+    leftArea.removeFromRight(10); // 10px gap
+    middleArea.removeFromLeft(5);  // 5px gap
+    middleArea.removeFromRight(5); // 5px gap
+    rightArea.removeFromLeft(5);   // 5px gap
     
-    // Split right side: top half for ducking, bottom half for visualization
-    auto duckingArea = rightArea.removeFromTop(rightArea.getHeight() * 0.5f);
-    auto visualizationArea = rightArea;
+    // Visualization takes the middle area
+    auto visualizationArea = middleArea;
+    
+    // Ducking takes the right area (vertical strip)
+    auto duckingArea = rightArea;
     
     // Position ducking label and module
     auto duckingLabelArea = duckingArea.removeFromTop(25);
@@ -344,6 +354,8 @@ void ReverbGraphics::lookAndFeelChanged()
     
     // Force repaint of ducking module to update its colors
     if (duckingFloat) {
+        // Set the proper LookAndFeel for the ducking float
+        duckingFloat->setLookAndFeel(&getLookAndFeel());
         duckingFloat->lookAndFeelChanged();
         duckingFloat->repaint();
     }
