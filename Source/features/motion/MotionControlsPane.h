@@ -303,7 +303,8 @@ private:
     std::vector<std::unique_ptr<juce::Label>> ownedLabels;
     std::vector<juce::Component*> gridOrder;
 
-    int knobPx = 52, valuePx = 14, labelGapPx = 4, colW = 56, rowH = 0; // Increased knob size from 50 to 52
+    // Metrics - now set via setCellMetrics() from centralized ControlGridMetrics
+    int knobPx = 60, valuePx = 16, labelGapPx = 4, colW = 56, rowH = 0; // Default values, overridden by setCellMetrics()
 };
 
 

@@ -365,9 +365,9 @@ private:
     std::vector<std::unique_ptr<juce::Slider>> blankSliders;
     std::vector<std::unique_ptr<juce::Label>>  blankLabels;
 
-    // Metrics
-    int knobPx     = 52; // Increased knob size from 50 to 52
-    int valuePx    = 14;
+    // Metrics - now set via setCellMetrics() from centralized ControlGridMetrics
+    int knobPx     = 60; // Default values, overridden by setCellMetrics()
+    int valuePx    = 16;
     int labelGapPx = 4;
     int colW       = 56;
     int rowH       = 0;

@@ -5,19 +5,19 @@
 // Responsive metrics for 2x16 control grids, avoiding per-tab hardcoding
 struct ControlGridMetrics
 {
-    int knobPx { 56 };
-    int valuePx { 16 };
-    int labelGapPx { 4 };
-    int colW { 64 };
-    int rowH { 76 };
-    int controlsH { 152 }; // rowH * 2
+    int knobPx { 60 };     // Default knob size
+    int valuePx { 16 };     // Default value label size  
+    int labelGapPx { 4 };   // Default gap between knob and label
+    int colW { 64 };        // Default column width
+    int rowH { 76 };        // Default row height
+    int controlsH { 152 };  // rowH * 2
 
     static ControlGridMetrics compute (int availableWidthPx, int /*availableHeightPx*/)
     {
         ControlGridMetrics m;
         const int cols = 16;
         const int padding = 8; // per-cell inner padding budget
-        const int minKnob = 56; // upscale baseline to make controls larger
+        const int minKnob = 60; // upscale baseline to make controls larger
         const int maxKnob = 120;
 
         const int col = juce::jmax (1, availableWidthPx / cols);

@@ -516,16 +516,16 @@ void KnobCell::paint (juce::Graphics& g)
             caption = getProperties()["caption"].toString();
         if (caption.isNotEmpty())
         {
-            // Calculate label position dynamically based on knob size and available space
+            // Calculate label position dynamically based on knob size
             auto knobBounds = knob.getBounds().toFloat();
             auto knobSize = knobBounds.getWidth(); // Use knob diameter for proportional spacing
             
-            // Calculate label area above knob with proportional spacing
+            // Calculate label area with proportional spacing
             auto labelHeight = juce::jmax(8.0f, knobSize * 0.12f); // 12% of knob size, minimum 8px
-            auto labelSpacing = juce::jmax(2.0f, knobSize * 0.05f); // 5% of knob size, minimum 2px
             
             auto labelBounds = knobBounds;
-            labelBounds.setY(knobBounds.getY() - labelHeight - labelSpacing);
+            // Position labels at 45% down from the top of the knob for both single and two-word labels
+            labelBounds.setY(knobBounds.getY() + knobBounds.getHeight() * 0.45f);
             labelBounds.setHeight(labelHeight);
             lf->drawKnobLabel (g, labelBounds, caption);
         }

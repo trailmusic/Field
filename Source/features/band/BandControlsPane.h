@@ -196,6 +196,7 @@ private:
     std::vector<juce::Component*> gridOrder;
     std::vector<std::unique_ptr<juce::Slider>> blankSliders;
     std::vector<std::unique_ptr<juce::Label>>  blankLabels;
-    int knobPx = 52, valuePx = 14, labelGapPx = 4, colW = 56, rowH = 0; // Increased knob size from 50 to 52
+    // Metrics - now set via setCellMetrics() from centralized ControlGridMetrics
+    int knobPx = 60, valuePx = 16, labelGapPx = 4, colW = 56, rowH = 0; // Default values, overridden by setCellMetrics()
 };
 

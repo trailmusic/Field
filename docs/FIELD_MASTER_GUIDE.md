@@ -4273,6 +4273,7 @@ if (auto* p = apvts.getParameter("width")) {
 ### **Grid Metrics**
 - **Zero gaps**: All control grids use zero column and row gaps for clean appearance.
 - **Responsive layout**: Grid adapts to container width with proper component sizing.
+- **Centralized Sizing System**: All control panes use `ControlGridMetrics::compute()` for consistent, responsive sizing. No hardcoded values in individual files - sizing is calculated based on available space and applied via `setCellMetrics()`.
 - **Performance**: Efficient rendering with minimal repaints during interactions.
 - **Visual consistency**: All features use consistent styling and theming.
 
