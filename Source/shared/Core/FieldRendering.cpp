@@ -1050,7 +1050,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             }
         }
         
-        // Draw the text
+        // Draw the text (greyout support will be handled by the component's properties)
         g.setColour(theme.text);
         g.setFont(labelFont);
         
@@ -1068,7 +1068,19 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
     void drawLabel(juce::Graphics& g, juce::Label& label, const FieldTheme& theme)
     {
         g.fillAll(juce::Colours::transparentBlack);
-        g.setColour(theme.textMuted);
+        
+        // Check for greyout state
+        bool isGreyedOut = label.getProperties().getWithDefault("greyedOut", false);
+        float greyoutAlpha = label.getProperties().getWithDefault("greyoutAlpha", 0.4f);
+        
+        if (isGreyedOut)
+        {
+            g.setColour(theme.textMuted.withAlpha(greyoutAlpha));
+        }
+        else
+        {
+            g.setColour(theme.textMuted);
+        }
         g.setFont(12.0f);
         g.drawFittedText(label.getText(), label.getLocalBounds(), juce::Justification::centred, 1);
     }

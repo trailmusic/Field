@@ -72,6 +72,8 @@ set(SRC
     shared/ui/Managers/SliderManager.cpp
     shared/ui/Managers/ButtonManager.h
     shared/ui/Managers/ButtonManager.cpp
+    shared/ui/Utilities/ComponentGreyout.h
+    shared/ui/Utilities/ComponentGreyout.cpp
     shared/Core/IconSystem.h
     shared/Core/IconSystem.cpp
     features/reverb/ReverbParamIDs.h

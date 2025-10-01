@@ -1,6 +1,7 @@
 #include "DuckingFloat.h"
 #include "ReverbParamIDs.h"
 #include "shared/Core/FieldLookAndFeel.h"
+#include "shared/ui/Utilities/ComponentGreyout.h"
 
 DuckingFloat::DuckingFloat(juce::AudioProcessorValueTreeState& apvts)
     : grLabel("grLabel", "GR"),
@@ -300,36 +301,15 @@ void DuckingFloat::updateLayout()
     // Set component enabled state based on active and greyed out state
     bool componentsEnabled = active && !greyedOut;
     
+    // Apply greyout to all components using the utility
+    ComponentGreyout::setGreyedOut(*this, !componentsEnabled, 0.4f);
+    
     // Ensure sliders are properly configured for Field LookAndFeel
     for (auto* slider : {&depthSlider, &thresholdSlider, &ratioSlider, &kneeSlider, 
                         &attackSlider, &releaseSlider, &bandFreqSlider, &bandQSlider}) {
         // Always reapply LookAndFeel to ensure proper styling
         slider->setLookAndFeel(&getLookAndFeel());
     }
-    
-    // Old GR meter removed - using custom paintGrMeter
-    modeSelector.setEnabled(componentsEnabled);
-    detectorSelector.setEnabled(componentsEnabled);
-    depthSlider.setEnabled(componentsEnabled);
-    thresholdSlider.setEnabled(componentsEnabled);
-    ratioSlider.setEnabled(componentsEnabled);
-    kneeSlider.setEnabled(componentsEnabled);
-    attackSlider.setEnabled(componentsEnabled);
-    releaseSlider.setEnabled(componentsEnabled);
-    bandFreqSlider.setEnabled(componentsEnabled);
-    bandQSlider.setEnabled(componentsEnabled);
-    
-    // Disable labels when greyed out
-    depthLabel.setEnabled(componentsEnabled);
-    thresholdLabel.setEnabled(componentsEnabled);
-    ratioLabel.setEnabled(componentsEnabled);
-    kneeLabel.setEnabled(componentsEnabled);
-    attackLabel.setEnabled(componentsEnabled);
-    releaseLabel.setEnabled(componentsEnabled);
-    bandFreqLabel.setEnabled(componentsEnabled);
-    bandQLabel.setEnabled(componentsEnabled);
-    modeLabel.setEnabled(componentsEnabled);
-    detectorLabel.setEnabled(componentsEnabled);
     
     if (expanded)
     {
@@ -380,13 +360,7 @@ void DuckingFloat::paint(juce::Graphics& g)
     if (greyedOut || !active)
     {
         auto bounds = getLocalBounds().toFloat();
-        g.setColour(juce::Colour(0x40000000)); // Lighter semi-transparent black overlay
-        g.fillRoundedRectangle(bounds, 8.0f);
-        
-        // Add "INACTIVE" text
-        g.setColour(juce::Colour(0xFF999999)); // Lighter grey text
-        g.setFont(juce::FontOptions(12.0f).withStyle("bold"));
-        g.drawText("INACTIVE", bounds, juce::Justification::centred);
+        ComponentGreyout::paintGreyoutOverlay(g, bounds, 0.4f, 8.0f);
     }
 }
 
