@@ -926,3 +926,37 @@ All reverb controls use:
 - **✅ Parameter Detection**: Automatic parameter discovery working
 - **✅ Visual Updates**: Indicators update in real-time
 - **✅ Theme Integration**: Uses Field theme colors consistently
+
+## ✅ GR METER ENHANCEMENTS (January 2025)
+
+### **🎯 Professional GR Meter Implementation**
+
+**Layout Improvements:**
+- **✅ Top Positioning**: GR meter moved to the very top of the Ducking container
+- **✅ Units Display**: Added "GR dB" units at the top of the meter for clarity
+- **✅ Space Reclamation**: Units display eliminates need for separate labels elsewhere
+- **✅ Increased Height**: Meter area increased to 35px to accommodate units
+
+**Visual Design Enhancements:**
+- **✅ Transparent Background**: Removed dark background for clean, transparent appearance
+- **✅ Clean Meter**: Removed peak lines and text overlays that created dark label boxes
+- **✅ Internal Scale Markers**: Added 0, -5, -10, -15, -20 dB markers inside the meter
+- **✅ Border Clearance**: Reduced meter width by 5px on each side to prevent border conflicts
+
+**Scale Marker Positioning:**
+- **✅ No Clipping**: Added 6px padding to prevent scale markers from being cut off at edges
+- **✅ Proper Spacing**: Scale markers positioned within padded area for full visibility
+- **✅ Theme Integration**: Uses Field theme colors with proper alpha transparency
+- **✅ Professional Appearance**: Clean, readable scale markers with optimal positioning
+
+**Technical Implementation:**
+- **✅ Width Reduction**: `meterArea.reduced(5.0f, 0.0f)` for border clearance
+- **✅ Scale Padding**: `paddedMeterArea.reduced(6.0f, 0.0f)` for marker positioning
+- **✅ Clean Rendering**: Removed conflicting dark elements and peak lines
+- **✅ Theme Compliance**: All colors use Field theme system consistently
+
+**Build Status:**
+- ✅ **Compilation**: All GR meter enhancements compile successfully
+- ✅ **Visual Polish**: Professional appearance with proper spacing and clarity
+- ✅ **No Conflicts**: Scale markers fully visible without edge clipping
+- ✅ **Theme Integration**: Consistent with Field's overall design language

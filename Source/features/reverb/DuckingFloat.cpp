@@ -333,32 +333,17 @@ void DuckingFloat::updateLayout()
     
     if (expanded)
     {
-        // Expanded layout
-        auto headerArea = bounds.removeFromTop(40.0f);
-        
-        // Header area for custom GR meter (painted in paintExpanded)
-        
-        // Mode and detector selectors
-        auto selectorArea = bounds.removeFromTop(30);
-        modeLabel.setBounds(selectorArea.removeFromLeft(60).toNearestInt());
-        modeSelector.setBounds(selectorArea.removeFromLeft(80).toNearestInt());
-        detectorLabel.setBounds(selectorArea.removeFromLeft(60).toNearestInt());
-        detectorSelector.setBounds(selectorArea.removeFromLeft(80).toNearestInt());
-        
-        // Ducking controls: horizontal GR meter at top, knobs below
-        auto controlArea = bounds;
-        
-        // Reserve space for horizontal GR meter at the top
-        auto grMeterArea = controlArea.removeFromTop(30);
-        auto knobArea = controlArea;
-        
-        // Store GR meter area for painting (horizontal)
+        // Expanded layout - GR meter at the very top
+        auto grMeterArea = bounds.removeFromTop(35.0f); // Increased height for units
         grMeterBounds = grMeterArea.toFloat();
         
-        // Position Mode and Detector selectors below GR meter
-        auto selectorArea2 = knobArea.removeFromTop(30);
-        modeSelector.setBounds(selectorArea2.removeFromLeft(selectorArea2.getWidth() * 0.5f).reduced(2).toNearestInt());
-        detectorSelector.setBounds(selectorArea2.reduced(2).toNearestInt());
+        // Mode and detector selectors below GR meter
+        auto selectorArea = bounds.removeFromTop(30);
+        modeSelector.setBounds(selectorArea.removeFromLeft(selectorArea.getWidth() * 0.5f).reduced(2).toNearestInt());
+        detectorSelector.setBounds(selectorArea.reduced(2).toNearestInt());
+        
+        // Knobs area below selectors
+        auto knobArea = bounds;
         
         // Position 8 knobs vertically in 2 columns
         auto leftColumn = knobArea.removeFromLeft(knobArea.getWidth() * 0.5f);
@@ -473,24 +458,16 @@ void DuckingFloat::paintGrMeter(juce::Graphics& g, juce::Rectangle<float> bounds
     
     const float cr = 4.0f;
     const float meterHeight = 20.0f;
+    const float unitsHeight = 12.0f;
     
-    // Create meter area with proper height
+    // Reserve space for units at the top
+    auto unitsArea = bounds.removeFromTop(unitsHeight);
     auto meterArea = bounds.removeFromBottom(meterHeight);
     
-    // Track background (like other Field meters)
-    g.setColour(th.meters.trackBase);
-    g.fillRoundedRectangle(meterArea, cr);
+    // Reduce meter width by 5px on each side to avoid border conflict
+    meterArea = meterArea.reduced(5.0f, 0.0f);
     
-    // Track with gradient (like other Field meters)
-    {
-        juce::Colour base = th.meters.trackBase;
-        juce::Colour base2 = th.meters.trackActive;
-        juce::ColourGradient grad(base, meterArea.getX(), meterArea.getY(), base2, meterArea.getX(), meterArea.getBottom(), false);
-        juce::FillType ft(grad);
-        g.setFillType(ft);
-        g.fillRoundedRectangle(meterArea.reduced(1.0f), cr - 1.0f);
-        g.setFillType(juce::FillType());
-    }
+    // No background - transparent track
     
     // Standard border treatment: accent border (reduced brightness for meters)
     g.setColour(lf->theme.accent.withAlpha(0.3f));
@@ -542,46 +519,24 @@ void DuckingFloat::paintGrMeter(juce::Graphics& g, juce::Rectangle<float> bounds
         g.fillRoundedRectangle(grBar, cr - 1.0f);
         g.setFillType(juce::FillType());
         
-        // Peak line (thicker bottom border like LR meters)
-        juce::Colour peakColor;
-        if (currentGrDb > -3.0f) {
-            peakColor = th.meters.error;
-        } else if (currentGrDb > -12.0f) {
-            peakColor = lf->theme.accent;
-        } else {
-            peakColor = th.meters.trackBase.withAlpha(0.6f);
-        }
-        g.setColour(peakColor);
-        g.fillRect(juce::Rectangle<float>(grBar.getX(), grBar.getBottom() - 2.0f, grBar.getWidth(), 2.0f));
-        
-        // GR value text overlay
-        if (grBar.getWidth() > 20) {
-            g.setColour(juce::Colours::white.withAlpha(0.9f));
-            g.setFont(juce::FontOptions(10.0f).withStyle("bold"));
-            g.drawText(juce::String(currentGrDb, 1) + " dB", grBar, juce::Justification::centred);
-        }
+        // No peak line or text overlay - clean meter with just colors
     }
     
-    // Meter label and units
-    auto labelArea = bounds.removeFromTop(15.0f);
-    g.setColour(th.text.withAlpha(0.8f));
-    g.setFont(juce::FontOptions(11.0f).withStyle("bold"));
-    g.drawText("GR", labelArea.removeFromLeft(20), juce::Justification::centred);
-    
-    // Units and scale
-    g.setColour(th.text.withAlpha(0.6f));
-    g.setFont(juce::FontOptions(9.0f));
-    g.drawText("dB", labelArea.removeFromRight(15), juce::Justification::centred);
-    
-    // Scale markers
-    auto scaleArea = labelArea.reduced(5, 0);
+    // Draw scale markers inside the meter (0, -5, -10, -15, -20 dB)
     g.setColour(th.text.withAlpha(0.4f));
     g.setFont(juce::FontOptions(8.0f));
     
-    // Draw scale markers: -20, -15, -10, -5, 0
+    // Add padding to prevent labels from being cut off at the edges
+    auto paddedMeterArea = meterArea.reduced(6.0f, 0.0f); // 6px padding on each side
+    
     for (int i = 0; i <= 4; ++i) {
-        float db = -20.0f + (i * 5.0f);
-        float x = scaleArea.getX() + (i * scaleArea.getWidth() / 4.0f);
-        g.drawText(juce::String(db, 0), juce::Rectangle<float>(x - 10, scaleArea.getY(), 20, scaleArea.getHeight()), juce::Justification::centred);
+        float db = i * -5.0f; // 0, -5, -10, -15, -20
+        float x = paddedMeterArea.getX() + (i * paddedMeterArea.getWidth() / 4.0f);
+        g.drawText(juce::String(db, 0), juce::Rectangle<float>(x - 8, meterArea.getY() + 2, 16, meterArea.getHeight() - 4), juce::Justification::centred);
     }
+    
+    // Draw units at the top
+    g.setColour(th.text.withAlpha(0.8f)); // Use brighter text color with slight transparency
+    g.setFont(juce::FontOptions(9.0f));
+    g.drawText("GR dB", unitsArea, juce::Justification::centred);
 }
