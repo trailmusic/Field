@@ -1122,3 +1122,23 @@ void ReverbGraphics::visibilityChanged()
 - `PaneManager.h` - Added leak detection
 
 **Status**: ✅ **BULLETPROOF** - Plugin now has comprehensive lifecycle management suitable for production use in Ableton Live and other hosts.
+
+## WATERFALL VISUALIZATION CONSOLE OUTPUT ADDED
+
+**Date**: January 2025  
+**Status**: ✅ COMPLETED
+
+### Problem
+User requested console output when using the Waterfall button to help with debugging and understanding the visualization system.
+
+### Solution Implemented
+Added console output to all visualization button handlers:
+- **Rays**: `DBG("✨ Rays visualization activated");`
+- **Waterfall**: `DBG("🌊 Waterfall visualization activated - showing theme grey waterfall");`
+- **Spectral**: `DBG("📊 Spectral visualization activated");`
+
+### Result
+- ✅ Console output now shows when visualization modes are activated
+- ✅ Helps with debugging and understanding the visualization system
+- ✅ User can see when Waterfall button is used in console
+- ✅ All visualization modes now have descriptive console output

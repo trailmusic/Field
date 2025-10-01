@@ -301,9 +301,18 @@ void ReverbGraphics::setupVisualizationControlPanel()
     spectralButton.setButtonText("Spectral");
     
     // Set up button callbacks
-    raysButton.onClick = [this] { setViewMode(ViewMode::Rays); };
-    waterfallButton.onClick = [this] { setViewMode(ViewMode::Waterfall); };
-    spectralButton.onClick = [this] { setViewMode(ViewMode::Spectral); };
+    raysButton.onClick = [this] { 
+        setViewMode(ViewMode::Rays); 
+        DBG("✨ Rays visualization activated");
+    };
+    waterfallButton.onClick = [this] { 
+        setViewMode(ViewMode::Waterfall); 
+        DBG("🌊 Waterfall visualization activated - showing theme grey waterfall");
+    };
+    spectralButton.onClick = [this] { 
+        setViewMode(ViewMode::Spectral); 
+        DBG("📊 Spectral visualization activated");
+    };
     
     // Set initial button states
     raysButton.setToggleState(true, juce::dontSendNotification);
