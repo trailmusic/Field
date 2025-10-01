@@ -36,10 +36,14 @@ This builds all three targets and ensures they are identical and up to date.
 
 ### Build with Auto-Test (Enhanced)
 ```bash
-./build_all.sh && pkill -f "Field.app" 2>/dev/null || true && sleep 1 && open "/Users/grantedwards/Library/Audio/Plug-Ins/Components/Field.component" 2>/dev/null || open "/Users/grantedwards/Desktop/Field/build/Source/Field_artefacts/Standalone/Field.app" 2>/dev/null
+./build_and_test.sh
 ```
 
-This builds all targets and automatically closes/reopens the app for testing.
+This builds all targets and automatically manages the Field app:
+- **If Field is running**: Closes it and reopens with the new build
+- **If Field is not running**: Simply launches the new build
+- **Smart detection**: Checks for both AU plugin and Standalone app
+- **Fallback handling**: Tries AU plugin first, then Standalone app
 
 ### Build All (one-liner from build/)
 ```bash
