@@ -129,6 +129,10 @@ public:
                 button->getProperties().set("iconType", (int)IconSystem::Delta);
             else if (buttonName.contains("follow") || buttonText.contains("follow"))
                 button->getProperties().set("iconType", (int)IconSystem::Link);
+            else if (buttonName.contains("sync") || buttonText.contains("sync"))
+                button->getProperties().set("iconType", (int)IconSystem::Link);
+            else if (buttonName.contains("wet") || buttonName.contains("wetonly") || buttonText.contains("wet") || buttonText.contains("wet only"))
+                button->getProperties().set("iconType", (int)IconSystem::Speaker);
         }
     }
 
