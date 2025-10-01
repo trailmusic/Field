@@ -521,8 +521,8 @@ void KnobCell::paint (juce::Graphics& g)
             auto knobSize = knobBounds.getWidth(); // Use knob diameter for proportional spacing
             
             // Calculate label area above knob with proportional spacing
-            auto labelHeight = juce::jmax(8.0f, knobSize * 0.15f); // 15% of knob size, minimum 8px
-            auto labelSpacing = juce::jmax(4.0f, knobSize * 0.1f); // 10% of knob size, minimum 4px
+            auto labelHeight = juce::jmax(8.0f, knobSize * 0.12f); // 12% of knob size, minimum 8px
+            auto labelSpacing = juce::jmax(2.0f, knobSize * 0.05f); // 5% of knob size, minimum 2px
             
             auto labelBounds = knobBounds;
             labelBounds.setY(knobBounds.getY() - labelHeight - labelSpacing);
