@@ -89,10 +89,16 @@ private:
 
         auto makeCell = [&](juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid)
         {
-            // Safety check: ensure parameter exists before creating attachment
-            if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr)
+            // Safety check: ensure parameter ID is valid and parameter exists
+            if (pid == nullptr)
             {
-                // Skip this cell if parameter doesn't exist
+                DBG("❌ CRITICAL: Null parameter ID passed to makeCell for: " << cap);
+                return;
+            }
+            
+            if (apvts.getParameter(juce::String(pid)) == nullptr)
+            {
+                DBG("❌ CRITICAL: Parameter not found in APVTS: " << juce::String(pid) << " for: " << cap);
                 return;
             }
             
@@ -115,6 +121,14 @@ private:
             // Initialize and live-update value labels
             auto applyLabel = [&]()
             {
+                // Safety check: ensure pid is not null before creating String
+                if (pid == nullptr)
+                {
+                    DBG("❌ CRITICAL: Null pid in applyLabel for: " << cap);
+                    v.setText("ERROR", juce::dontSendNotification);
+                    return;
+                }
+                
                 int decimals = 2;
                 juce::String id (pid);
                 if (id.containsIgnoreCase ("_hz")) decimals = 0;
@@ -130,8 +144,15 @@ private:
 
         auto makeToggleCell = [&](juce::ToggleButton& b, const juce::String& cap, const char* pid)
         {
-            if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr)
+            if (pid == nullptr)
             {
+                DBG("❌ CRITICAL: Null parameter ID passed to makeToggleCell for: " << cap);
+                return;
+            }
+            
+            if (apvts.getParameter(juce::String(pid)) == nullptr)
+            {
+                DBG("❌ CRITICAL: Parameter not found in APVTS: " << juce::String(pid) << " for: " << cap);
                 return;
             }
             
@@ -158,8 +179,15 @@ private:
 
         auto makeComboCell = [&](juce::ComboBox& c, const juce::String& cap, const char* pid)
         {
-            if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr)
+            if (pid == nullptr)
             {
+                DBG("❌ CRITICAL: Null parameter ID passed to makeComboCell for: " << cap);
+                return;
+            }
+            
+            if (apvts.getParameter(juce::String(pid)) == nullptr)
+            {
+                DBG("❌ CRITICAL: Parameter not found in APVTS: " << juce::String(pid) << " for: " << cap);
                 return;
             }
             

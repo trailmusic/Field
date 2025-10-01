@@ -49,8 +49,17 @@ void ReverbVisuals::paint(juce::Graphics& g)
     float tail = getTailRms ? getTailRms() : 0.0f;
     
     // Get parameter states
-    const bool enabled = *state.getRawParameterValue(ReverbParamIDs::enabled) > 0.5f;
-    const bool frozen = *state.getRawParameterValue(ReverbParamIDs::freeze) > 0.5f;
+    auto* enabledParam = state.getRawParameterValue(ReverbParamIDs::enabled);
+    auto* freezeParam = state.getRawParameterValue(ReverbParamIDs::freeze);
+    
+    if (!enabledParam || !freezeParam)
+    {
+        DBG("❌ CRITICAL: Reverb parameters not found in APVTS!");
+        return;
+    }
+    
+    const bool enabled = *enabledParam > 0.5f;
+    const bool frozen = *freezeParam > 0.5f;
     bool hostBypassed = false;
     if (auto* bp = proc.getBypassParameter()) hostBypassed = (bp->getValue() > 0.5f);
     
