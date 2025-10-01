@@ -196,22 +196,22 @@ private:
         makeCell (density, densityV, "DENS", ReverbParamIDs::densityPct);
         makeCell (md,   mdV,   "MOD DEP",   ReverbParamIDs::modDepthCents);
         makeCell (mr,   mrV,   "MOD RATE",  ReverbParamIDs::modRateHz);
-        makeCell (w,    wV,    "WIDTH",     ReverbParamIDs::widthPct);
+        makeCell (w,    wV,    "WID",       ReverbParamIDs::widthPct);
         makeCell (rotation, rotationV, "ROT", ReverbParamIDs::rotationDeg);
         makeCell (size, sizeV, "SIZE",      ReverbParamIDs::sizePct);
-        makeCell (dec,  decV,  "DECAY",     ReverbParamIDs::decaySec);
+        makeCell (dec,  decV,  "Dec",       ReverbParamIDs::decaySec);
         makeToggleCell (killDry, "WET ONLY", ReverbParamIDs::killDry);
 
         // Row 2 (16 controls) - Final 2×16 grid map
         makeCell (wet,  wetV,  "WET",       ReverbParamIDs::wetMix01);
-        makeCell (bloom,bloomV,"BLOOM",     ReverbParamIDs::bloomPct);
+        makeCell (bloom,bloomV,"BLM",        ReverbParamIDs::bloomPct);
         makeCell (distance, distanceV, "DIST", ReverbParamIDs::distancePct);
         makeToggleCell (freeze, "FREEZE", ReverbParamIDs::freeze);
         makeCell (shimmerAmt, shimmerAmtV, "SHIM AMT", ReverbParamIDs::shimmerAmtPct);
         makeCell (shimmerInt, shimmerIntV, "SHIM INT", ReverbParamIDs::shimmerInt);
         makeCell (gateAmt, gateAmtV, "GATE", ReverbParamIDs::gateAmtPct);
-        makeCell (dreqXoverLo, dreqXoverLoV, "DREQ XO LO", ReverbParamIDs::dreqXoverLoHz);
-        makeCell (dreqXoverHi, dreqXoverHiV, "DREQ XO HI", ReverbParamIDs::dreqXoverHiHz);
+        makeCell (dreqXoverLo, dreqXoverLoV, "DR XO LO", ReverbParamIDs::dreqXoverLoHz);
+        makeCell (dreqXoverHi, dreqXoverHiV, "DR XO HI", ReverbParamIDs::dreqXoverHiHz);
         makeComboCell (dreqApply, "EQ APPLY", ReverbParamIDs::dreqApply);
         makeToggleCell (followWidth, "FOLLOW W", ReverbParamIDs::followWidth);
         makeCell (followWidthAmt, followWidthAmtV, "W AMT", ReverbParamIDs::followWidthAmt);

@@ -85,6 +85,14 @@
 - **Build System**: Fixed compilation issues, all targets (Standalone, AU, VST3) built successfully
 - **Functionality Verified**: All Machine learning features restored and working correctly
 
+### **Enable Button Text Case Fix** ✅ **COMPLETED**
+- **Issue**: Enable button showing "Enable" (mixed case) instead of "ENABLE" (all caps) like other toggle buttons
+- **Solution**: Changed caption from "Enable" to "ENABLE" in ReverbControlsPane.h
+- **Result**: Enable button now displays "ENABLE" in all caps with Power icon
+- **Files Modified**: `Source/features/reverb/ReverbControlsPane.h`
+- **Build Success**: All targets compile and link successfully
+- **Visual Consistency**: Enable button now matches styling of other toggle buttons
+
 ### **Component Extraction Phase 2** ✅ **COMPLETED**
 - **VerticalSlider3D Extraction**: Beautiful 3D vertical slider with metallic treatment (266 lines extracted)
 - **ToggleSwitch Extraction**: Compact toggle switch with smooth animation (88 lines extracted)
@@ -320,6 +328,15 @@ PluginEditor (Lightweight Coordinator)
 - **File Reduction**: Deleted unused files to reduce build time
 
 ## 🔧 **CURRENT ISSUES & DEBUGGING**
+
+### **ComboBox Abbreviation System** 🔍 **IN PROGRESS**
+- **Issue**: ComboBox abbreviations not displaying correctly in Ducking UI
+- **Goal**: Show abbreviations (G, V, DB, etc.) in ComboBox display while keeping full names in menu
+- **Implementation**: Added abbreviation logic in `FieldRendering.cpp` using `getItemText()` method
+- **Status**: Logic implemented but not working as expected - ComboBoxes still showing full words
+- **Files Modified**: `Source/shared/Core/FieldRendering.cpp`, `Source/features/reverb/DuckingFloat.cpp`
+- **Next Steps**: Debug why abbreviation conversion isn't taking effect
+- **Priority**: Medium - UI consistency issue
 
 ### **Slider Unit Labels Font Size Debug** 🔍 **IN PROGRESS**
 - **Issue**: Unit labels (dB, %) in VerticalSlider3D sliders not taking 7.0f font size adjustment

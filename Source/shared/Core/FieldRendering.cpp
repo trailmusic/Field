@@ -603,6 +603,41 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         auto* parent = box.getParentComponent();
         auto metallicKind = metallicFromProps(box.getProperties());
         
+        // Check for chevron-only mode
+        bool chevronOnly = box.getProperties().getWithDefault("chevronOnly", false);
+        
+        // Check for abbreviation mode and get the correct display text
+        bool abbreviationMode = box.getProperties().getWithDefault("abbreviationMode", false);
+        juce::String displayText;
+        
+        if (abbreviationMode)
+        {
+            // Get the full text from the selected item, then abbreviate it
+            if (box.getSelectedId() > 0)
+            {
+                juce::String fullText = box.getItemText(box.getSelectedItemIndex());
+                // Convert full names to abbreviations for display
+                if (fullText == "General") displayText = "G";
+                else if (fullText == "Vocal") displayText = "V";
+                else if (fullText == "DrumBus") displayText = "DB";
+                else if (fullText == "Guitar") displayText = "GT";
+                else if (fullText == "Keys") displayText = "K";
+                else if (fullText == "Dry") displayText = "D";
+                else if (fullText == "ER") displayText = "ER";
+                else if (fullText == "Tail") displayText = "TL";
+                else if (fullText == "Wet Sum") displayText = "WS";
+                else displayText = fullText; // fallback to full text
+            }
+            else
+            {
+                displayText = box.getText(); // placeholder text
+            }
+        }
+        else
+        {
+            displayText = box.getText();
+        }
+        
         // Check for hover state
         bool isMouseOver = box.isMouseOver();
         
@@ -707,9 +742,9 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             }
         }
 
-        // Arrow - only show if no item is selected or if ComboBox is focused
+        // Arrow/Chevron - always show in chevron-only mode, otherwise show based on selection
         bool hasSelection = box.getSelectedId() > 0;
-        bool shouldShowArrow = !hasSelection || box.hasKeyboardFocus(true);
+        bool shouldShowArrow = chevronOnly || !hasSelection || box.hasKeyboardFocus(true);
         
         if (shouldShowArrow)
         {
@@ -717,8 +752,27 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             p.addTriangle(r.getCentreX() - 4, r.getCentreY() - 2,
                          r.getCentreX() + 4, r.getCentreY() - 2,
                          r.getCentreX(), r.getCentreY() + 2);
-            g.setColour(accent);
-            g.fillPath(p);
+            
+            // Enhanced chevron styling for chevron-only mode
+            if (chevronOnly)
+            {
+                // Use theme-compliant colors with hover effects
+                auto chevronColor = isMouseOver ? theme.accent.brighter(0.3f) : theme.accent;
+                g.setColour(chevronColor);
+                g.fillPath(p);
+                
+                // Add subtle glow effect on hover
+                if (isMouseOver)
+                {
+                    g.setColour(theme.accent.withAlpha(0.3f));
+                    g.strokePath(p, juce::PathStrokeType(1.5f));
+                }
+            }
+            else
+            {
+                g.setColour(accent);
+                g.fillPath(p);
+            }
         }
     }
 
@@ -773,10 +827,20 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         auto* parent = box.getParentComponent();
         auto metallicKind = metallicFromProps(box.getProperties());
         
+        // Check for abbreviation mode
+        bool abbreviationMode = box.getProperties().getWithDefault("abbreviationMode", false);
+        
         if (parent && dynamic_cast<SimpleSwitchCell*>(parent) && metallicKind != MetallicKind::None)
         {
             // For metallic ComboBoxes in SimpleSwitchCell, use full bounds to match KnobCell
             label.setBounds(box.getLocalBounds());
+        }
+        else if (abbreviationMode)
+        {
+            // For abbreviation mode, center the text with proper spacing for chevron
+            auto bounds = box.getLocalBounds();
+            // Leave space for chevron on the right
+            label.setBounds(bounds.removeFromLeft(bounds.getWidth() * 0.7f));
         }
         else
         {
@@ -784,11 +848,19 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             label.setBounds(box.getLocalBounds().reduced(4));
         }
         
-        // Enable text wrapping for two-word labels
-        label.setJustificationType(juce::Justification::centred);
-        
-        // Apply text wrapping logic immediately to prevent flashing
-        applyTextWrapping(box, label);
+        // Enable text wrapping for two-word labels (but not for abbreviations)
+        if (!abbreviationMode)
+        {
+            label.setJustificationType(juce::Justification::centred);
+            // Apply text wrapping logic immediately to prevent flashing
+            applyTextWrapping(box, label);
+        }
+        else
+        {
+            // For abbreviations, use centered single-line text
+            label.setJustificationType(juce::Justification::centred);
+            label.setFont(juce::Font(12.0f, juce::Font::bold)); // Bold for abbreviations
+        }
     }
 
     // PopupMenu rendering methods (simplified)

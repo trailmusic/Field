@@ -52,7 +52,7 @@ void DuckingFloat::setupComponents()
     
     // Old GR meter components removed - now using custom paintGrMeter
     
-    // Mode selector
+    // Mode selector - full names in menu, abbreviations in display
     addAndMakeVisible(modeSelector);
     modeSelector.addItem("General", 1);
     modeSelector.addItem("Vocal", 2);
@@ -60,14 +60,18 @@ void DuckingFloat::setupComponents()
     modeSelector.addItem("Guitar", 4);
     modeSelector.addItem("Keys", 5);
     modeSelector.setSelectedId(1);
+    modeSelector.setTextWhenNothingSelected("");
+    modeSelector.setTextWhenNoChoicesAvailable("");
     
-    // Detector selector
+    // Detector selector - full names in menu, abbreviations in display
     addAndMakeVisible(detectorSelector);
     detectorSelector.addItem("Dry", 1);
     detectorSelector.addItem("ER", 2);
     detectorSelector.addItem("Tail", 3);
     detectorSelector.addItem("Wet Sum", 4);
     detectorSelector.setSelectedId(1);
+    detectorSelector.setTextWhenNothingSelected("");
+    detectorSelector.setTextWhenNoChoicesAvailable("");
     
     // Ducking controls
     addAndMakeVisible(depthSlider);
@@ -79,9 +83,9 @@ void DuckingFloat::setupComponents()
     addAndMakeVisible(bandFreqSlider);
     addAndMakeVisible(bandQSlider);
     
-    // Labels (only mode and detector labels are visible)
-    addAndMakeVisible(modeLabel);
-    addAndMakeVisible(detectorLabel);
+    // Labels (mode and detector labels hidden - chevron only)
+    modeLabel.setVisible(false);
+    detectorLabel.setVisible(false);
     
     // Hide the knob labels since KnobCell components handle their own labels
     depthLabel.setVisible(false);
@@ -94,14 +98,14 @@ void DuckingFloat::setupComponents()
     bandQLabel.setVisible(false);
     
     // Create KnobCell components to display values inside knobs
-    depthKnobCell = std::make_unique<KnobCell>(depthSlider, depthValue, "Depth");
-    thresholdKnobCell = std::make_unique<KnobCell>(thresholdSlider, thresholdValue, "Threshold");
-    ratioKnobCell = std::make_unique<KnobCell>(ratioSlider, ratioValue, "Ratio");
-    kneeKnobCell = std::make_unique<KnobCell>(kneeSlider, kneeValue, "Knee");
-    attackKnobCell = std::make_unique<KnobCell>(attackSlider, attackValue, "Attack");
-    releaseKnobCell = std::make_unique<KnobCell>(releaseSlider, releaseValue, "Release");
-    bandFreqKnobCell = std::make_unique<KnobCell>(bandFreqSlider, bandFreqValue, "Band Freq");
-    bandQKnobCell = std::make_unique<KnobCell>(bandQSlider, bandQValue, "Band Q");
+    depthKnobCell = std::make_unique<KnobCell>(depthSlider, depthValue, "DEP");
+    thresholdKnobCell = std::make_unique<KnobCell>(thresholdSlider, thresholdValue, "THR");
+    ratioKnobCell = std::make_unique<KnobCell>(ratioSlider, ratioValue, "RAT");
+    kneeKnobCell = std::make_unique<KnobCell>(kneeSlider, kneeValue, "KNE");
+    attackKnobCell = std::make_unique<KnobCell>(attackSlider, attackValue, "ATK");
+    releaseKnobCell = std::make_unique<KnobCell>(releaseSlider, releaseValue, "REL");
+    bandFreqKnobCell = std::make_unique<KnobCell>(bandFreqSlider, bandFreqValue, "FREQ");
+    bandQKnobCell = std::make_unique<KnobCell>(bandQSlider, bandQValue, "Q");
     
     // Set value label mode to Managed so KnobCell positions the labels correctly
     depthKnobCell->setValueLabelMode(KnobCell::ValueLabelMode::Managed);
@@ -179,10 +183,17 @@ void DuckingFloat::setupComponents()
     configureLabel(modeLabel, "Mode");
     configureLabel(detectorLabel, "Detector");
     
-    // Apply Field LookAndFeel to combo boxes
+    // Apply Field LookAndFeel to combo boxes with chevron styling
     auto configureComboBox = [this](juce::ComboBox& combo) {
         // Apply Field LookAndFeel to all combo boxes
         combo.setLookAndFeel(&getLookAndFeel());
+        // Set properties for chevron-only styling with abbreviations
+        combo.getProperties().set("chevronOnly", true);
+        combo.getProperties().set("themeCompliant", true);
+        combo.getProperties().set("hoverEffects", true);
+        combo.getProperties().set("abbreviationMode", true);
+        // Ensure text is centered and properly sized for abbreviations
+        combo.setJustificationType(juce::Justification::centred);
     };
     
     configureComboBox(modeSelector);
@@ -334,17 +345,17 @@ void DuckingFloat::updateLayout()
         detectorLabel.setBounds(selectorArea.removeFromLeft(60).toNearestInt());
         detectorSelector.setBounds(selectorArea.removeFromLeft(80).toNearestInt());
         
-        // Ducking controls: vertical layout with GR meter on right
+        // Ducking controls: horizontal GR meter at top, knobs below
         auto controlArea = bounds;
         
-        // Reserve space for GR meter on the right (30% of width)
-        auto grMeterArea = controlArea.removeFromRight(controlArea.getWidth() * 0.3f);
+        // Reserve space for horizontal GR meter at the top
+        auto grMeterArea = controlArea.removeFromTop(30);
         auto knobArea = controlArea;
         
-        // Store GR meter area for painting
+        // Store GR meter area for painting (horizontal)
         grMeterBounds = grMeterArea.toFloat();
         
-        // Position Mode and Detector selectors at the top (no labels needed)
+        // Position Mode and Detector selectors below GR meter
         auto selectorArea2 = knobArea.removeFromTop(30);
         modeSelector.setBounds(selectorArea2.removeFromLeft(selectorArea2.getWidth() * 0.5f).reduced(2).toNearestInt());
         detectorSelector.setBounds(selectorArea2.reduced(2).toNearestInt());

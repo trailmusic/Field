@@ -25,7 +25,8 @@ public:
             auto buttonText = button->getButtonText().toLowerCase();
             
             // Set icons based on button name or text
-            if (buttonName.contains("enable") || buttonName.contains("on") || buttonText.contains("enable"))
+            if (buttonName.contains("enable") || buttonName.contains("on") || buttonText.contains("enable") || 
+                buttonName == "en" || buttonText == "en" || buttonName == "EN" || buttonText == "EN")
                 button->getProperties().set("iconType", (int)IconSystem::Power);
             else if (buttonName.contains("wet") || buttonName.contains("wetonly") || buttonText.contains("wet"))
                 button->getProperties().set("iconType", (int)IconSystem::Speaker);
