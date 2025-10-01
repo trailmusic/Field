@@ -343,12 +343,16 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.rvWidthPct      = apvts.getRawParameterValue (ReverbParamIDs::widthPct)->load();
     p.rvWet01         = apvts.getRawParameterValue (ReverbParamIDs::wetMix01)->load();
     // Reverb ducking ingress
+    p.rvDuckMode      = (int) apvts.getRawParameterValue (ReverbParamIDs::duckMode)->load();
+    p.rvDuckDetector  = (int) apvts.getRawParameterValue (ReverbParamIDs::duckDetectorSrc)->load();
     p.rvDuckDepthDb   = apvts.getRawParameterValue (ReverbParamIDs::duckDepthDb)->load();
     p.rvDuckThrDb     = apvts.getRawParameterValue (ReverbParamIDs::duckThrDb)->load();
     p.rvDuckKneeDb    = apvts.getRawParameterValue (ReverbParamIDs::duckKneeDb)->load();
     p.rvDuckRatio     = apvts.getRawParameterValue (ReverbParamIDs::duckRatio)->load();
     p.rvDuckAtkMs     = apvts.getRawParameterValue (ReverbParamIDs::duckAtkMs)->load();
     p.rvDuckRelMs     = apvts.getRawParameterValue (ReverbParamIDs::duckRelMs)->load();
+    p.rvDuckBandHz    = apvts.getRawParameterValue (ReverbParamIDs::duckBandHz)->load();
+    p.rvDuckBandQ     = apvts.getRawParameterValue (ReverbParamIDs::duckBandQ)->load();
     p.rvOutTrimDb     = apvts.getRawParameterValue (ReverbParamIDs::outTrimDb)->load();
     
     // Dynamic EQ parameters
@@ -1669,12 +1673,16 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.rvEnabled      = hp.rvEnabled;
     params.rvDuckOn       = hp.rvDuckOn;
     params.rvWet01        = (Sample) hp.rvWet01;
+    params.rvDuckMode     = hp.rvDuckMode;
+    params.rvDuckDetector = hp.rvDuckDetector;
     params.rvDuckDepthDb  = (Sample) hp.rvDuckDepthDb;
     params.rvDuckThrDb    = (Sample) hp.rvDuckThrDb;
     params.rvDuckKneeDb   = (Sample) hp.rvDuckKneeDb;
     params.rvDuckRatio    = (Sample) hp.rvDuckRatio;
     params.rvDuckAtkMs    = (Sample) hp.rvDuckAtkMs;
     params.rvDuckRelMs    = (Sample) hp.rvDuckRelMs;
+    params.rvDuckBandHz   = (Sample) hp.rvDuckBandHz;
+    params.rvDuckBandQ    = (Sample) hp.rvDuckBandQ;
     // Push smoothed targets
     tiltDbSm.setTargetValue   (params.tiltDb);
     tiltFreqSm.setTargetValue (juce::jlimit ((Sample) 50,  (Sample) 5000, params.tiltFreq));
@@ -1818,6 +1826,8 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.rvEnabled       = hp.rvEnabled;
     params.rvKillDry       = hp.rvKillDry;
     params.rvDuckOn        = hp.rvDuckOn;
+    params.rvDuckMode      = hp.rvDuckMode;
+    params.rvDuckDetector  = hp.rvDuckDetector;
     params.rvPreDelayMs    = (Sample) hp.rvPreDelayMs;
     params.rvDecaySec      = (Sample) hp.rvDecaySec;
     params.rvDensityPct    = (Sample) hp.rvDensityPct;
@@ -2845,11 +2855,17 @@ void FieldChain<Sample>::process (Block block)
         rvParams.diffusion = params.rvDiffusionPct;
         rvParams.modDepthCents = params.rvModDepthCents;
         rvParams.modRateHz = params.rvModRateHz;
-        rvParams.duckDepthDb = params.rvDuckDepth;
-        rvParams.duckAtkMs = params.rvDuckAttackMs;
-        rvParams.duckRelMs = params.rvDuckReleaseMs;
-        rvParams.duckThrDb = params.rvDuckThresholdDb;
+        rvParams.duckMode = params.rvDuckMode;
+        rvParams.duckDetector = params.rvDuckDetector;
+        rvParams.duckDepthDb = params.rvDuckDepthDb;
+        rvParams.duckThrDb = params.rvDuckThrDb;
+        rvParams.duckKneeDb = params.rvDuckKneeDb;
         rvParams.duckRatio = params.rvDuckRatio;
+        rvParams.duckAtkMs = params.rvDuckAtkMs;
+        rvParams.duckRelMs = params.rvDuckRelMs;
+        rvParams.duckBandHz = params.rvDuckBandHz;
+        rvParams.duckBandQ = params.rvDuckBandQ;
+        rvParams.duckOn = params.rvDuckOn;
         reverbEngine.setParams(rvParams);
         
         // Process reverb

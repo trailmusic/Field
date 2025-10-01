@@ -22,6 +22,7 @@ public:
     void attachDelayParameters();
     void attachEQParameters();
     void attachBypassParameters();
+    void attachMotionParameters();
     
     // Parameter detachment
     void detachAllParameters();

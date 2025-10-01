@@ -125,6 +125,77 @@ private:
     } earlyReflections;
 
     std::atomic<float> duckGrDb { 0.f }, erRms { 0.f }, tailRms { 0.f };
+    
+    // Ducking system
+    struct DuckingSystem
+    {
+        // Mode-based lookahead and RMS parameters
+        struct DuckingMode {
+            float lookaheadMs;
+            float rmsWindowMs;
+        };
+        
+        static constexpr std::array<DuckingMode, 5> duckingModes = {{
+            {8.0f, 20.0f},   // General
+            {16.0f, 25.0f},  // Vocal  
+            {4.5f, 9.0f},    // DrumBus
+            {7.5f, 20.0f},   // Guitar
+            {7.5f, 20.0f}    // Keys
+        }};
+        
+        // Detection and processing buffers
+        juce::AudioBuffer<float> detectorBuffer, lookaheadBuffer, rmsBuffer;
+        std::vector<float> rmsHistory;
+        std::vector<float> lookaheadHistory;
+        
+        // Compressor state
+        float envelope = 0.0f;
+        float rmsLevel = 0.0f;
+        float lookaheadLevel = 0.0f;
+        
+        // Band filter for focused ducking
+        ERFilter bandFilter;
+        
+        // Parameters
+        int currentMode = 0;
+        int detectorSource = 0;
+        float depthDb = 0.0f;
+        float thresholdDb = -12.0f;
+        float ratio = 3.0f;
+        float kneeDb = 2.0f;
+        float attackMs = 10.0f;
+        float releaseMs = 100.0f;
+        float bandFreqHz = 1000.0f;
+        float bandQ = 1.0f;
+        bool enabled = false;
+        
+        // Internal state
+        int rmsWindowSamples = 0;
+        int lookaheadSamples = 0;
+        int rmsIndex = 0;
+        int lookaheadIndex = 0;
+        double sampleRate = 48000.0;
+        
+        void prepare(double sr, int maxBlock, int channels);
+        void reset();
+        void setParams(int mode, int detector, float depth, float threshold, 
+                      float ratio, float knee, float attack, float release,
+                      float bandFreq, float bandQ, bool enabled);
+        void process(juce::AudioBuffer<float>& wet, 
+                    const juce::AudioBuffer<float>& dry,
+                    const juce::AudioBuffer<float>& er,
+                    const juce::AudioBuffer<float>& tail);
+        
+    private:
+        float calculateRMS(const juce::AudioBuffer<float>& buffer);
+        float calculateGainReduction(float detectorLevel);
+        float smoothEnvelope(float target, float current, float attack, float release);
+        juce::AudioBuffer<float> getDetectorSignal(int source,
+                                                  const juce::AudioBuffer<float>& dry,
+                                                  const juce::AudioBuffer<float>& er,
+                                                  const juce::AudioBuffer<float>& tail,
+                                                  const juce::AudioBuffer<float>& wet);
+    } ducking;
 };
 
 // Lightweight parameter bundle for the engine (filled from APVTS in processor)
@@ -136,8 +207,10 @@ struct ReverbParams
     float dreqLowX{}, dreqMidX{}, dreqHighX{};
     float widthPct{}, widthStartPct{}, widthEndPct{}, widthCurve{};
     float rotStartDeg{}, rotEndDeg{}, rotCurve{};
-    int   duckMode{}; float duckDepthDb{}, duckThrDb{}, duckKneeDb{}, duckRatio{};
-    float duckAtkMs{}, duckRelMs{}, duckLaMs{}, duckRmsMs{}, duckBandHz{}, duckBandQ{};
+    int   duckMode{}, duckDetector{}; 
+    float duckDepthDb{}, duckThrDb{}, duckKneeDb{}, duckRatio{};
+    float duckAtkMs{}, duckRelMs{}, duckBandHz{}, duckBandQ{};
+    bool  duckOn{};
     bool  freeze{}; float gateAmtPct{}, shimmerAmtPct{}; int shimmerIntervalMode{};
     // Old Post-EQ removed - now handled by DynEQ pane
 };

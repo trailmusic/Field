@@ -756,12 +756,16 @@ private:
         Sample rvWet01{};
         Sample rvOutTrimDb{};
         // Reverb ducking (Sample domain)
+        int    rvDuckMode{};
+        int    rvDuckDetector{};
         Sample rvDuckDepthDb{};
         Sample rvDuckThrDb{};
         Sample rvDuckKneeDb{};
         Sample rvDuckRatio{};
         Sample rvDuckAtkMs{};
         Sample rvDuckRelMs{};
+        Sample rvDuckBandHz{};
+        Sample rvDuckBandQ{};
         
         // Additional reverb ducking parameters
         Sample rvDuckDepth{};
@@ -868,12 +872,16 @@ struct HostParams
     double rvWet01{};
     double rvOutTrimDb{};
     // Reverb ducking
+    int    rvDuckMode{};
+    int    rvDuckDetector{};
     double rvDuckDepthDb{};
     double rvDuckThrDb{};
     double rvDuckKneeDb{};
     double rvDuckRatio{};
     double rvDuckAtkMs{};
     double rvDuckRelMs{};
+    double rvDuckBandHz{};
+    double rvDuckBandQ{};
         
     // Delay parameters
     bool   delayEnabled{};

@@ -11,10 +11,15 @@ void ReverbEngine::prepare (double sr, int maxBlock, int channels)
     
     // Prepare Early Reflections system
     earlyReflections.prepare (chans, sampleRate);
+    
+    // Prepare Ducking system
+    ducking.prepare (sampleRate, maxSamples, chans);
 }
 
 void ReverbEngine::reset ()
 {
+    earlyReflections.reset();
+    ducking.reset();
 }
 
 void ReverbEngine::setParams (const ReverbParams& p)
@@ -22,6 +27,10 @@ void ReverbEngine::setParams (const ReverbParams& p)
     // Configure Early Reflections
     earlyReflections.setParams(p.erTimeMs, p.erDensity, p.erWidthPct, p.erLevelDb);
     
+    // Configure Ducking system
+    ducking.setParams(p.duckMode, p.duckDetector, p.duckDepthDb, p.duckThrDb,
+                     p.duckRatio, p.duckKneeDb, p.duckAtkMs, p.duckRelMs,
+                     p.duckBandHz, p.duckBandQ, p.duckOn);
 }
 
 void ReverbEngine::processWet (AudioBuffer<float>& wet, const AudioBuffer<float>& sidechain)
@@ -52,7 +61,14 @@ void ReverbEngine::processWet (AudioBuffer<float>& wet, const AudioBuffer<float>
 
     // Sum ER+Tail into wet
     wet.makeCopyOf (tailBuf);
-    duckGrDb.store (0.f);
+    
+    // Process ducking if enabled
+    if (ducking.enabled) {
+        ducking.process(wet, sidechain, erBuf, tailBuf);
+        duckGrDb.store(ducking.envelope);
+    } else {
+        duckGrDb.store(0.f);
+    }
 }
 
 // ================================================================
@@ -196,6 +212,183 @@ void ReverbEngine::EarlyReflections::generateERTaps()
     for (auto& line : delayLines)
     {
         line.resize(maxDelaySamples, 0.0f);
+    }
+}
+
+// ================================================================
+// Ducking System Implementation
+// ================================================================
+
+void ReverbEngine::DuckingSystem::prepare(double sr, int maxBlock, int channels)
+{
+    sampleRate = sr;
+    
+    // Initialize buffers
+    detectorBuffer.setSize(channels, maxBlock);
+    lookaheadBuffer.setSize(channels, maxBlock);
+    rmsBuffer.setSize(channels, maxBlock);
+    
+    // Initialize history buffers
+    rmsHistory.resize(maxBlock, 0.0f);
+    lookaheadHistory.resize(maxBlock, 0.0f);
+    
+    // Initialize band filter
+    bandFilter = ERFilter::makePeaking(sr, bandFreqHz, bandQ, 0.0f);
+    bandFilter.resize(channels);
+    
+    // Reset state
+    envelope = 0.0f;
+    rmsLevel = 0.0f;
+    lookaheadLevel = 0.0f;
+    rmsIndex = 0;
+    lookaheadIndex = 0;
+}
+
+void ReverbEngine::DuckingSystem::reset()
+{
+    envelope = 0.0f;
+    rmsLevel = 0.0f;
+    lookaheadLevel = 0.0f;
+    rmsIndex = 0;
+    lookaheadIndex = 0;
+    
+    // Clear history buffers
+    std::fill(rmsHistory.begin(), rmsHistory.end(), 0.0f);
+    std::fill(lookaheadHistory.begin(), lookaheadHistory.end(), 0.0f);
+    
+    // Reset band filter
+    bandFilter.resize(0);
+}
+
+void ReverbEngine::DuckingSystem::setParams(int mode, int detector, float depth, float threshold, 
+                                           float ratio, float knee, float attack, float release,
+                                           float bandFreq, float bandQ, bool enabled)
+{
+    currentMode = jlimit(0, 4, mode);
+    detectorSource = jlimit(0, 3, detector);
+    depthDb = depth;
+    thresholdDb = threshold;
+    this->ratio = ratio;
+    kneeDb = knee;
+    attackMs = attack;
+    releaseMs = release;
+    bandFreqHz = bandFreq;
+    this->bandQ = bandQ;
+    this->enabled = enabled;
+    
+    // Update mode-based parameters
+    const auto& modeParams = duckingModes[currentMode];
+    lookaheadSamples = static_cast<int>(modeParams.lookaheadMs * sampleRate / 1000.0);
+    rmsWindowSamples = static_cast<int>(modeParams.rmsWindowMs * sampleRate / 1000.0);
+    
+    // Update band filter
+    bandFilter = ERFilter::makePeaking(sampleRate, bandFreqHz, this->bandQ, 0.0f);
+    bandFilter.resize(detectorBuffer.getNumChannels());
+}
+
+void ReverbEngine::DuckingSystem::process(AudioBuffer<float>& wet, 
+                                         const AudioBuffer<float>& dry,
+                                         const AudioBuffer<float>& er,
+                                         const AudioBuffer<float>& tail)
+{
+    if (!enabled) return;
+    
+    const int numSamples = wet.getNumSamples();
+    const int numChannels = wet.getNumChannels();
+    
+    // Get detector signal based on source
+    auto detector = getDetectorSignal(detectorSource, dry, er, tail, wet);
+    
+    // Apply band filtering if needed
+    if (bandFreqHz > 0.0f) {
+        bandFilter.processInPlace(detector);
+    }
+    
+    // Calculate RMS level
+    rmsLevel = calculateRMS(detector);
+    
+    // Calculate gain reduction
+    float targetGain = calculateGainReduction(rmsLevel);
+    
+    // Apply attack/release smoothing
+    float attackCoeff = std::exp(-1.0f / (attackMs * sampleRate / 1000.0f));
+    float releaseCoeff = std::exp(-1.0f / (releaseMs * sampleRate / 1000.0f));
+    envelope = smoothEnvelope(targetGain, envelope, attackCoeff, releaseCoeff);
+    
+    // Apply gain reduction to wet signal
+    for (int ch = 0; ch < numChannels; ++ch) {
+        float* wetData = wet.getWritePointer(ch);
+        for (int i = 0; i < numSamples; ++i) {
+            wetData[i] *= envelope;
+        }
+    }
+}
+
+float ReverbEngine::DuckingSystem::calculateRMS(const AudioBuffer<float>& buffer)
+{
+    const int numSamples = buffer.getNumSamples();
+    const int numChannels = buffer.getNumChannels();
+    
+    if (numSamples == 0) return 0.0f;
+    
+    // Calculate RMS over the buffer
+    long double sum = 0.0;
+    for (int ch = 0; ch < numChannels; ++ch) {
+        const float* data = buffer.getReadPointer(ch);
+        for (int i = 0; i < numSamples; ++i) {
+            sum += static_cast<long double>(data[i]) * static_cast<long double>(data[i]);
+        }
+    }
+    
+    return static_cast<float>(std::sqrt(sum / (numChannels * numSamples)));
+}
+
+float ReverbEngine::DuckingSystem::calculateGainReduction(float detectorLevel)
+{
+    // Convert detector level to dB
+    float detectorDb = Decibels::gainToDecibels(detectorLevel);
+    
+    // Calculate how much we're over threshold
+    float overThreshold = detectorDb - thresholdDb;
+    
+    if (overThreshold <= 0.0f) {
+        return 1.0f; // No gain reduction needed
+    }
+    
+    // Apply knee
+    float kneeFactor = 1.0f;
+    if (kneeDb > 0.0f && overThreshold < kneeDb) {
+        kneeFactor = overThreshold / kneeDb;
+    }
+    
+    // Calculate gain reduction
+    float gainReductionDb = overThreshold * kneeFactor / ratio;
+    float gainReduction = Decibels::decibelsToGain(-gainReductionDb);
+    
+    // Apply depth scaling
+    float depthScale = Decibels::decibelsToGain(-depthDb);
+    
+    return jlimit(0.0f, 1.0f, gainReduction * depthScale);
+}
+
+float ReverbEngine::DuckingSystem::smoothEnvelope(float target, float current, float attack, float release)
+{
+    float coeff = (target < current) ? attack : release;
+    return current + coeff * (target - current);
+}
+
+AudioBuffer<float> ReverbEngine::DuckingSystem::getDetectorSignal(int source,
+                                                                 const AudioBuffer<float>& dry,
+                                                                 const AudioBuffer<float>& er,
+                                                                 const AudioBuffer<float>& tail,
+                                                                 const AudioBuffer<float>& wet)
+{
+    switch (source) {
+        case 0: return dry;      // Dry input
+        case 1: return er;       // ER only
+        case 2: return tail;       // Tail only
+        case 3: return wet;       // Wet sum
+        default: return dry;
     }
 }
 

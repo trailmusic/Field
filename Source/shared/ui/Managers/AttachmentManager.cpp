@@ -264,3 +264,11 @@ void AttachmentManager::logAttachmentStatus() const
         DBG("  ComboBox: " << info.parameterID);
     }
 }
+
+void AttachmentManager::attachMotionParameters()
+{
+    // Motion parameters are handled by MotionControlsPane through direct attachment
+    // This method is a placeholder for future centralized motion parameter management
+    // Currently, MotionControlsPane manages its own attachments to avoid conflicts
+    DBG("Motion parameters are managed by MotionControlsPane directly");
+}
