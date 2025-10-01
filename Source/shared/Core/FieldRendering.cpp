@@ -960,13 +960,12 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         
         // Apply text wrapping logic similar to ComboBox
         juce::String displayText = text;
-        juce::Font labelFont;
+        juce::Font labelFont = juce::Font(juce::FontOptions(11.0f).withStyle("Bold")); // Same font size for all labels
         
         // Check if text contains line breaks (already formatted for two lines)
         if (text.contains("\n"))
         {
-            // Text already has line breaks, use smaller font for two lines
-            labelFont = juce::Font(juce::FontOptions(9.0f).withStyle("Bold"));
+            // Text already has line breaks, keep same font size
         }
         else if (text.contains(" "))
         {
@@ -976,18 +975,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             {
                 // Create two-line text with line break
                 displayText = words[0] + "\n" + words[1];
-                labelFont = juce::Font(juce::FontOptions(9.0f).withStyle("Bold")); // Smaller font for two lines
             }
-            else
-            {
-                // Single word, use normal font
-                labelFont = juce::Font(juce::FontOptions(11.0f).withStyle("Bold"));
-            }
-        }
-        else
-        {
-            // Single word, use normal font
-            labelFont = juce::Font(juce::FontOptions(11.0f).withStyle("Bold"));
         }
         
         // Draw the text
