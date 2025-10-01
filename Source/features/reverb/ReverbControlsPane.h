@@ -103,6 +103,10 @@ private:
             cell->setValueLabelGap (labelGapPx);
             // Apply Reverb metallic styling
             setAreaMetallicForCell (*cell, MetallicKind::Reverb);
+            // Enable accent border for KnobCells in 2x16 grid
+            cell->setShowBorder (true);
+            // Set reverb maroon border property for proper border color
+            cell->getProperties().set("reverbMaroonBorder", true);
             addAndMakeVisible (*cell);
             knobCells.emplace_back (cell.get());
             ownedCells.emplace_back (std::move (cell));
@@ -144,6 +148,8 @@ private:
             auto cell = std::make_unique<SimpleSwitchCell> (b);
             cell->setCaption (cap);
             cell->setShowBorder (true);
+            // Apply metallic styling to SimpleSwitchCell itself for border rendering
+            setAreaMetallicForCell (*cell, MetallicKind::Reverb);
             addAndMakeVisible (*cell);
             switchCells.emplace_back (cell.get());
             ownedSwitches.emplace_back (std::move (cell));
@@ -178,6 +184,8 @@ private:
             auto cell = std::make_unique<SimpleSwitchCell> (c);
             cell->setCaption (cap);
             cell->setShowBorder (true);
+            // Apply metallic styling to SimpleSwitchCell itself for border rendering
+            setAreaMetallicForCell (*cell, MetallicKind::Reverb);
             addAndMakeVisible (*cell);
             switchCells.emplace_back (cell.get());
             ownedSwitches.emplace_back (std::move (cell));
@@ -273,6 +281,10 @@ private:
             cell->setShowKnob (false);
             // Use new enum-based metallic system
             setAreaMetallicForCell (*cell, MetallicKind::Reverb);
+            // Enable accent border for blank KnobCells in 2x16 grid
+            cell->setShowBorder (true);
+            // Set reverb maroon border property for proper border color
+            cell->getProperties().set("reverbMaroonBorder", true);
             addAndMakeVisible (*cell);
             knobCells.emplace_back (cell.get());
             blankSliders.emplace_back (std::move (sl));

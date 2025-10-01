@@ -544,7 +544,7 @@ void KnobCell::paint (juce::Graphics& g)
             // Position labels at 45% down from the top of the knob for both single and two-word labels
             labelBounds.setY(knobBounds.getY() + knobBounds.getHeight() * 0.45f);
             labelBounds.setHeight(labelHeight);
-            lf->drawKnobLabel (g, labelBounds, caption);
+            lf->drawKnobLabel (g, labelBounds, caption, this);
         }
     }
 

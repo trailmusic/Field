@@ -172,13 +172,15 @@ public:
             // For ComboBoxes, show caption to maintain title and button window format
             if (auto* combo = dynamic_cast<juce::ComboBox*>(&child))
             {
-                // Use full cell area for metallic ComboBoxes (no padding)
-                auto b = getLocalBounds(); // Use full cell area, no padding
+                // Constrain ComboBox to same size as KnobCell (K parameter)
+                auto cellBounds = getLocalBounds();
+                auto knobArea = juce::Rectangle<int>(0, 0, K, K);
+                knobArea = knobArea.withCentre(cellBounds.getCentre());
                 
                 if (capH > 0)
                 {
                     caption.setVisible (true);
-                    caption.setBounds (b.removeFromTop (capH));
+                    caption.setBounds (cellBounds.removeFromTop (capH));
                     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
                         caption.setColour (juce::Label::textColourId, lf->theme.textMuted);
                     // Ensure caption is always on top for metallic ComboBoxes
@@ -188,19 +190,21 @@ public:
                 {
                     caption.setVisible (false);
                 }
-                // Give ComboBox the remaining space after caption
-                child.setBounds (b);
+                // Give ComboBox the constrained knob area
+                child.setBounds (knobArea);
                 return;
             }
             else
             {
-                // For metallic buttons, show caption above the button
-                auto b = getLocalBounds(); // Use full cell area for metallic buttons
+                // For metallic buttons, constrain to same size as KnobCell (K parameter)
+                auto cellBounds = getLocalBounds();
+                auto knobArea = juce::Rectangle<int>(0, 0, K, K);
+                knobArea = knobArea.withCentre(cellBounds.getCentre());
                 
                 if (capH > 0)
                 {
                     caption.setVisible (true);
-                    caption.setBounds (b.removeFromTop (capH));
+                    caption.setBounds (cellBounds.removeFromTop (capH));
                     if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
                         caption.setColour (juce::Label::textColourId, lf->theme.textMuted);
                     // Ensure caption is always on top for metallic buttons
@@ -211,8 +215,8 @@ public:
                     caption.setVisible (false);
                 }
                 
-                // Give button the remaining space after caption
-                child.setBounds (b);
+                // Give button the constrained knob area
+                child.setBounds (knobArea);
                 
                 // LookAndFeel assignment is now handled at the source (in control panes)
                 return;
@@ -279,30 +283,23 @@ public:
         }
         
         // Non-metallic components use the standard SimpleSwitchCell rendering
-        if (delayTheme)
+        if (metallicKind == MetallicKind::None)
         {
-            panel  = panel.brighter (0.10f);
-            border = lf ? lf->theme.text : border;
-        }
-        g.setColour (panel);
-        g.fillRoundedRectangle (r, rad);
-        if (showBorder)
-        {
-            g.setColour (reverbMaroon ? juce::Colour (0xFF8E3A2F) : border);
-            g.drawRoundedRectangle (r, rad, 1.5f);
-        }
-        
-        // For metallic ComboBoxes, draw the frame on top after ComboBox renders
-        if (metallicKind != MetallicKind::None && dynamic_cast<juce::ComboBox*>(&child))
-        {
+            if (delayTheme)
+            {
+                panel  = panel.brighter (0.10f);
+                border = lf ? lf->theme.text : border;
+            }
+            g.setColour (panel);
+            g.fillRoundedRectangle (r, rad);
             if (showBorder)
             {
                 g.setColour (reverbMaroon ? juce::Colour (0xFF8E3A2F) : border);
                 g.drawRoundedRectangle (r, rad, 1.5f);
             }
-            
-            // Caption positioning is handled in resized() method
         }
+        // For metallic components, let FieldRendering handle all border drawing
+        // No additional borders needed here
     }
 
 private:

@@ -30,9 +30,9 @@ void FieldLNF::drawGainSlider(juce::Graphics& g, int x, int y, int w, int h, flo
     FieldRendering::drawGainSlider(g, x, y, w, h, sliderPosProportional, rotaryStartAngle, rotaryEndAngle, gainDb, theme);
 }
 
-void FieldLNF::drawKnobLabel(juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& text)
+void FieldLNF::drawKnobLabel(juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& text, juce::Component* component)
 {
-    FieldRendering::drawKnobLabel(g, bounds, text, theme);
+    FieldRendering::drawKnobLabel(g, bounds, text, theme, component);
 }
 
 void FieldLNF::drawTabPill(juce::Graphics& g, juce::Rectangle<float> r, bool active, bool hover) const

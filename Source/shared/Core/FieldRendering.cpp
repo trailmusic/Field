@@ -89,20 +89,18 @@ namespace FieldRendering
                 ds1.drawForRectangle(g, ri);
                 ds2.drawForRectangle(g, ri);
                 
-                // Add inner rim like KnobCell
-                g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
-                g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
+                // Remove dark inner rim - user requested removal
                 
                 // Add KnobCell-style border with hover enhancement
                 auto borderAlpha = isMouseOver ? 0.8f : 0.6f;
-                g.setColour(theme.accent.withAlpha(borderAlpha));
-                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.0f);
+                g.setColour(theme.accentSecondary.withAlpha(borderAlpha));
+                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
                 
-                // Add hover glow effect
+                // Add intensified hover glow effect
                 if (isMouseOver)
                 {
-                    g.setColour(theme.accent.withAlpha(0.15f));
-                    g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 1.5f);
+                    g.setColour(theme.accentSecondary.withAlpha(0.4f));
+                    g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 2.0f);
                 }
             }
             else
@@ -128,20 +126,18 @@ namespace FieldRendering
                 ds1.drawForRectangle(g, ri);
                 ds2.drawForRectangle(g, ri);
                 
-                // Add inner rim like KnobCell
-                g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
-                g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
+                // Remove dark inner rim - user requested removal
                 
                 // Add KnobCell-style border with hover enhancement
                 auto borderAlpha = isMouseOver ? 0.8f : 0.6f;
-                g.setColour(theme.accent.withAlpha(borderAlpha));
-                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.0f);
+                g.setColour(theme.accentSecondary.withAlpha(borderAlpha));
+                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
                 
-                // Add hover glow effect
+                // Add intensified hover glow effect
                 if (isMouseOver)
                 {
-                    g.setColour(theme.accent.withAlpha(0.15f));
-                    g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 1.5f);
+                    g.setColour(theme.accentSecondary.withAlpha(0.4f));
+                    g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 2.0f);
                 }
             }
             
@@ -258,20 +254,18 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
                 ds1.drawForRectangle(g, ri);
                 ds2.drawForRectangle(g, ri);
                 
-                // Add inner rim like KnobCell
-                g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
-                g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
+                // Remove dark inner rim - user requested removal
                 
                 // Add KnobCell-style border with hover enhancement
                 auto borderAlpha = isMouseOver ? 0.8f : 0.6f;
-                g.setColour(theme.accent.withAlpha(borderAlpha));
-                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.0f);
+                g.setColour(theme.accentSecondary.withAlpha(borderAlpha));
+                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
                 
-                // Add hover glow effect
+                // Add intensified hover glow effect
                 if (isMouseOver)
                 {
-                    g.setColour(theme.accent.withAlpha(0.15f));
-                    g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 1.5f);
+                    g.setColour(theme.accentSecondary.withAlpha(0.4f));
+                    g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 2.0f);
                 }
                 
                 // Render icon on top of metallic background
@@ -338,20 +332,18 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
                 ds1.drawForRectangle(g, ri);
                 ds2.drawForRectangle(g, ri);
                 
-                // Add inner rim like KnobCell
-                g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
-                g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
+                // Remove dark inner rim - user requested removal
                 
                 // Add KnobCell-style border with hover enhancement
                 auto borderAlpha = isMouseOver ? 0.8f : 0.6f;
-                g.setColour(theme.accent.withAlpha(borderAlpha));
-                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.0f);
+                g.setColour(theme.accentSecondary.withAlpha(borderAlpha));
+                g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
                 
-                // Add hover glow effect
+                // Add intensified hover glow effect
                 if (isMouseOver)
                 {
-                    g.setColour(theme.accent.withAlpha(0.15f));
-                    g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 1.5f);
+                    g.setColour(theme.accentSecondary.withAlpha(0.4f));
+                    g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 2.0f);
                 }
                 
                 // Render icon on top of metallic background
@@ -399,9 +391,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             ds2.drawForRectangle(g, ri);
             ds3.drawForRectangle(g, ri);
             
-            // Enhanced inner rim with gradient effect
-            g.setColour(juce::Colour(0xFF51565D).withAlpha(0.20f));
-            g.drawRoundedRectangle(r.reduced(3.0f), cr - 1.0f, 1.0f);
+            // Remove dark inner rim - user requested removal
             
             // Enhanced border with accent color
             g.setColour(theme.accent.withAlpha(0.7f));
@@ -410,7 +400,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             // Additional accent glow for active state
             if (button.getToggleState())
             {
-                g.setColour(theme.accent.withAlpha(0.15f));
+                g.setColour(theme.accentSecondary.withAlpha(0.15f));
                 g.drawRoundedRectangle(r.expanded(1.0f), cr + 1.0f, 1.5f);
             }
         }
@@ -423,9 +413,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             ds1.drawForRectangle(g, ri);
             ds2.drawForRectangle(g, ri);
 
-            // Add inner rim like KnobCell
-            g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
-            g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
+            // Remove dark inner rim - user requested removal
 
             // Border - use KnobCell styling for all buttons
             g.setColour(theme.accent.withAlpha(0.6f)); // Match KnobCell border color
@@ -691,20 +679,18 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             ds1.drawForRectangle(g, ri);
             ds2.drawForRectangle(g, ri);
             
-            // Add inner rim like KnobCell
-            g.setColour(juce::Colour(0xFF51565D).withAlpha(0.16f));
-            g.drawRoundedRectangle(r.reduced(4.0f), 8.0f - 1.0f, 0.8f);
+            // Remove dark inner rim - user requested removal
             
             // Add KnobCell-style border with hover enhancement
             auto borderAlpha = isMouseOver ? 0.8f : 0.6f;
-            g.setColour(theme.accent.withAlpha(borderAlpha));
-            g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.0f);
+            g.setColour(theme.accentSecondary.withAlpha(borderAlpha));
+            g.drawRoundedRectangle(r.reduced(2.0f), 8.0f, 1.5f);
             
-            // Add hover glow effect
+            // Add intensified hover glow effect
             if (isMouseOver)
             {
-                g.setColour(theme.accent.withAlpha(0.15f));
-                g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 1.5f);
+                g.setColour(theme.accentSecondary.withAlpha(0.4f));
+                g.drawRoundedRectangle(r.reduced(1.0f), 8.0f, 2.0f);
             }
             
             // Create recessed button window effect for metallic ComboBoxes
@@ -745,14 +731,14 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             // For metallic ComboBoxes in SimpleSwitchCell, draw KnobCell-style border with hover effects
             auto border = r.reduced(2.0f);
             auto borderAlpha = isMouseOver ? 0.8f : 0.6f;
-            g.setColour(theme.accent.withAlpha(borderAlpha)); // Match KnobCell accent color
-            g.drawRoundedRectangle(border, 8.0f, 1.0f); // Match KnobCell border thickness
+            g.setColour(theme.accentSecondary.withAlpha(borderAlpha)); // Match KnobCell accentSecondary color
+            g.drawRoundedRectangle(border, 8.0f, 1.5f); // Match KnobCell border thickness
             
-            // Add hover glow effect
+            // Add intensified hover glow effect
             if (isMouseOver)
             {
-                g.setColour(theme.accent.withAlpha(0.15f));
-                g.drawRoundedRectangle(border.reduced(1.0f), 8.0f, 1.5f);
+                g.setColour(theme.accentSecondary.withAlpha(0.4f));
+                g.drawRoundedRectangle(border.reduced(1.0f), 8.0f, 2.0f);
             }
         }
 
@@ -995,7 +981,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
                 g.fillRoundedRectangle(r, corner);
                 
                 // Glow effect
-                g.setColour(theme.accent.withAlpha(0.15f));
+                g.setColour(theme.accentSecondary.withAlpha(0.15f));
                 g.drawRoundedRectangle(r.reduced(1.0f), corner, 1.5f);
             }
             
@@ -1040,7 +1026,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         }
     }
 
-    void drawKnobLabel(juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& text, const FieldTheme& theme)
+    void drawKnobLabel(juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& text, const FieldTheme& theme, juce::Component* component)
     {
         if (text.isEmpty()) return;
         
@@ -1064,8 +1050,22 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             }
         }
         
-        // Draw the text (greyout support will be handled by the component's properties)
-        g.setColour(theme.text);
+        // Draw the text with greyout support
+        juce::Colour textColor = theme.text;
+        
+        // Check for greyout state if component is provided
+        if (component)
+        {
+            bool isGreyedOut = component->getProperties().getWithDefault("greyedOut", false);
+            float greyoutAlpha = component->getProperties().getWithDefault("greyoutAlpha", 0.4f);
+            
+            if (isGreyedOut)
+            {
+                textColor = textColor.withAlpha(greyoutAlpha);
+            }
+        }
+        
+        g.setColour(textColor);
         g.setFont(labelFont);
         
         // Use drawMultiLineText for proper line break handling

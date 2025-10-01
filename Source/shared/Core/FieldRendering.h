@@ -49,7 +49,7 @@ namespace FieldRendering
     void drawRotationPad(juce::Graphics& g, juce::Rectangle<float> bounds, float rotationDeg, float asymmetry,
                         juce::Colour accent, juce::Colour text, juce::Colour panel);
     void drawTabPill(juce::Graphics& g, juce::Rectangle<float> r, bool active, bool hover, const FieldTheme& theme);
-    void drawKnobLabel(juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& text, const FieldTheme& theme);
+    void drawKnobLabel(juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& text, const FieldTheme& theme, juce::Component* component = nullptr);
 
     // Label rendering
     void drawLabel(juce::Graphics& g, juce::Label& label, const FieldTheme& theme);

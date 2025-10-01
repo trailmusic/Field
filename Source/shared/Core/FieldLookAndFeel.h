@@ -201,7 +201,7 @@ public:
                         juce::Colour accent, juce::Colour text, juce::Colour panel) const;
     void drawGainSlider(juce::Graphics& g, int x, int y, int w, int h, float sliderPosProportional,
                    float rotaryStartAngle, float rotaryEndAngle, float gainDb);
-    void drawKnobLabel(juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& text);
+    void drawKnobLabel(juce::Graphics& g, juce::Rectangle<float> bounds, const juce::String& text, juce::Component* component = nullptr);
     void drawTabPill(juce::Graphics& g, juce::Rectangle<float> r, bool active, bool hover = false) const;
 
     // Metallic rendering (delegate to MetallicRenderer)
