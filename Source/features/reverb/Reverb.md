@@ -1142,3 +1142,45 @@ Added console output to all visualization button handlers:
 - ✅ Helps with debugging and understanding the visualization system
 - ✅ User can see when Waterfall button is used in console
 - ✅ All visualization modes now have descriptive console output
+
+## TEST CONTAINER DEBUG IMPLEMENTATION
+
+**Date**: January 2025  
+**Status**: ✅ COMPLETED
+
+### Purpose
+Added a debug test container to help with layout debugging and visualization area testing in the ReverbGraphics component.
+
+### Implementation Details
+- **Location**: `ReverbGraphics.cpp` - TestContainer class defined as inner class
+- **Positioning**: Below the visualization buttons (Rays, Waterfall, Spectral)
+- **Coordinates**: 
+  - X: `visualizationArea.getX() + 10` (10px left padding)
+  - Y: `buttonRow.getY() + buttonHeight + 15` (15px below buttons)
+  - Width: `visualizationArea.getWidth() - 20` (full width minus 20px total padding)
+  - Height: `visualizationArea.getBottom() - (buttonRow.getY() + buttonHeight + 15) - 10` (remaining height minus 10px bottom padding)
+
+### Padding Configuration
+- **Top**: 15px (5px reduced from original 20px)
+- **Left/Right**: 10px each
+- **Bottom**: 10px
+- **Total**: Asymmetric padding optimized for layout testing
+
+### Visual Design
+- **Background**: Bright yellow (`0xFFFFFF00`) for high visibility
+- **Text**: "TEST CONTAINER" in black, centered
+- **Shape**: Rectangular (no rounded corners for debugging clarity)
+
+### Button Layout Optimization
+- **Button Top Padding**: 15px (5px base + 10px additional)
+- **Button Spacing**: 8px between buttons
+- **Button Dimensions**: 80px width × 30px height
+- **Total Button Row**: 264px width (3 buttons + 2 spacings)
+
+### Files Modified
+- `ReverbGraphics.h` - Added TestContainer class definition
+- `ReverbGraphics.cpp` - Added TestContainer creation, positioning, and cleanup
+- `ReverbTab.h` - Removed old test container implementation
+
+### Status
+✅ **ACTIVE DEBUG TOOL** - Test container provides visual feedback for layout debugging and helps verify visualization area positioning.

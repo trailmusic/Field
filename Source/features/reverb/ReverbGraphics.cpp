@@ -100,6 +100,13 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     // Setup visualization control panel
     setupVisualizationControlPanel();
     
+    // DEBUG: Create test container with yellow border
+    testContainer = std::make_unique<TestContainer>();
+    testContainer->setOpaque(true);
+    testContainer->setPaintingIsUnclipped(true);
+    addAndMakeVisible(*testContainer);
+    DBG("🔧 Test container created and added to ReverbGraphics");
+    
     // Setup EQ labels
     setupEQLabels();
     
@@ -114,6 +121,9 @@ ReverbGraphics::~ReverbGraphics()
 {
     // Stop timer before destruction to prevent use-after-free
     stopTimer();
+    
+    // DEBUG: Clean up test container
+    testContainer.reset();
 }
 
 void ReverbGraphics::visibilityChanged()
@@ -133,6 +143,11 @@ void ReverbGraphics::visibilityChanged()
 void ReverbGraphics::paint(juce::Graphics& g)
 {
     auto r = getLocalBounds().toFloat();
+    
+    // DEBUG: Paint entire component with bright background to test visibility
+    g.setColour(juce::Colour(0xFF00FF00)); // Bright green background
+    g.fillRoundedRectangle(r, 8.0f);
+    
     auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
     
@@ -166,15 +181,21 @@ void ReverbGraphics::paint(juce::Graphics& g)
     // Create a temporary graphics context with the correct bounds
     auto tempBounds = juce::Rectangle<int>(0, 0, visualizationArea.getWidth(), visualizationArea.getHeight());
     
+    // DEBUG: Log current view mode
+    DBG("🎨 Current view mode: " << (int)currentViewMode << " (0=Rays, 1=Waterfall, 2=Spectral)");
+    
     switch (currentViewMode)
     {
         case ViewMode::Rays:
+            DBG("✨ Painting Rays visualization");
             paintRaysInBounds(g, tempBounds.toFloat());
             break;
         case ViewMode::Waterfall:
+            DBG("🌊 Painting Waterfall visualization");
             paintWaterfallInBounds(g, tempBounds.toFloat());
             break;
         case ViewMode::Spectral:
+            DBG("📊 Painting Spectral visualization");
             paintSpectralInBounds(g, tempBounds.toFloat());
             break;
     }
@@ -215,6 +236,9 @@ void ReverbGraphics::resized()
     // Visualization takes the middle area
     auto visualizationArea = middleArea;
     
+    // DEBUG: Log visualization area bounds
+    DBG("🎨 Visualization area bounds: " << visualizationArea.toString());
+    
     // Ducking takes the right area (vertical strip)
     auto duckingArea = rightArea;
     
@@ -232,10 +256,10 @@ void ReverbGraphics::resized()
     visualizationLabel.setBounds(visualizationLabelArea);
     visualizationControlPanel.setBounds(visualizationArea);
     
-    // Layout buttons in horizontal row centered with title
+    // Layout buttons in horizontal row centered with 15px top padding
     auto panelBounds = visualizationControlPanel.getBounds();
-    auto titleArea = panelBounds.removeFromTop(30); // Space for title
-    auto buttonArea = panelBounds.reduced(15);
+    auto buttonArea = panelBounds.reduced(5); // 5px padding on all sides
+    buttonArea.removeFromTop(10); // Additional 10px top padding (5px + 10px = 15px total)
     
     auto buttonHeight = 30;
     auto buttonWidth = 80;
@@ -249,6 +273,16 @@ void ReverbGraphics::resized()
     raysButton.setBounds(buttonStartX, buttonRow.getY(), buttonWidth, buttonHeight);
     waterfallButton.setBounds(buttonStartX + buttonWidth + buttonSpacing, buttonRow.getY(), buttonWidth, buttonHeight);
     spectralButton.setBounds(buttonStartX + (buttonWidth + buttonSpacing) * 2, buttonRow.getY(), buttonWidth, buttonHeight);
+    
+    // DEBUG: Position test container below the buttons - full width and remaining height with 5px top padding, 10px other sides
+    if (testContainer)
+    {
+        auto testArea = juce::Rectangle<int>(visualizationArea.getX() + 10, buttonRow.getY() + buttonHeight + 15, 
+                                           visualizationArea.getWidth() - 20, 
+                                           visualizationArea.getBottom() - (buttonRow.getY() + buttonHeight + 15) - 10);
+        testContainer->setBounds(testArea);
+        DBG("🔧 Test container positioned below buttons with 5px top padding: " << testArea.toString());
+    }
     
         // Left side: EQ panels with labels (50/50 split like right side)
         if (reverbEQ && decayRateEQ)
@@ -479,6 +513,9 @@ void ReverbGraphics::paintWaterfall(juce::Graphics& g)
 
 void ReverbGraphics::paintWaterfallInBounds(juce::Graphics& g, juce::Rectangle<float> bounds)
 {
+    // DEBUG: Log when waterfall is being painted
+    DBG("🌊 paintWaterfallInBounds called - bounds: " << bounds.toString());
+    
     // Get current levels
     auto erLevel = getErRms ? getErRms() : 0.0f;
     auto tailLevel = getTailRms ? getTailRms() : 0.0f;
@@ -515,6 +552,10 @@ void ReverbGraphics::paintWaterfallInBounds(juce::Graphics& g, juce::Rectangle<f
     
     g.setGradientFill(gradient);
     g.fillRoundedRectangle(bounds, 8.0f);
+    
+    // DEBUG: Add bright yellow border to make waterfall visible
+    g.setColour(juce::Colour(0xFFFF0000)); // Bright yellow
+    g.drawRoundedRectangle(bounds, 8.0f, 3.0f);
     
     // Add subtle texture overlay using theme colors
     g.setColour(th.textMuted.withAlpha(0.08f));

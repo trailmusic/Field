@@ -54,7 +54,7 @@ public:
         delay  = std::make_unique<DelayTab>(p);
 
         for (auto* c : { (juce::Component*) phase.get(), (juce::Component*) xyTab.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
-            addChildComponent (c);
+            if (c) addChildComponent (c);
 
         addAndMakeVisible (tabs);
         tabs.onSelect = [this](PaneID id){ setActive (id, true); };

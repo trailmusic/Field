@@ -92,6 +92,27 @@ private:
     juce::TextButton raysButton, waterfallButton, spectralButton;
     ViewMode currentViewMode = ViewMode::Rays;
     
+    // DEBUG: Test container
+    class TestContainer : public juce::Component
+    {
+    public:
+        void paint(juce::Graphics& g) override
+        {
+            auto bounds = getLocalBounds().toFloat();
+            
+            // Fill with bright yellow (no rounded corners)
+            g.setColour(juce::Colour(0xFFFFFF00));
+            g.fillRect(bounds);
+            
+            // Add text
+            g.setColour(juce::Colour(0xFF000000));
+            g.setFont(16.0f);
+            g.drawText("TEST CONTAINER", bounds, juce::Justification::centred);
+        }
+    };
+    
+    std::unique_ptr<TestContainer> testContainer;
+    
     // Visualization control container
     class VisualizationControlPanel : public juce::Component
     {
