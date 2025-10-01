@@ -16,6 +16,15 @@ public:
         controls = std::make_unique<BandControlsPane>(p.apvts);
         addAndMakeVisible (*controls);
     }
+    
+    ~BandTab() override
+    {
+        // CRITICAL: Ensure proper destruction order to prevent crashes
+        // Clear controls first (which clears parameter attachments)
+        controls.reset();
+        // Then clear visuals
+        visuals.reset();
+    }
 
     void resized() override
     {

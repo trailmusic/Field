@@ -10,6 +10,13 @@ class ImagerControlsPane : public juce::Component
 public:
     explicit ImagerControlsPane (juce::AudioProcessorValueTreeState& s)
         : apvts (s) { buildControls(); applyMetricsToAll(); }
+    
+    ~ImagerControlsPane() override
+    {
+        // CRITICAL: Clear parameter attachments before destruction to prevent crashes
+        // This prevents the "Over-release of an object" crash when removing plugin from track
+        sAtts.clear();
+    }
 
     void setCellMetrics (int knobDiameterPx, int valueBandPx, int labelGapPxIn, int columnWidthPx)
     {

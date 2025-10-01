@@ -23,6 +23,15 @@ public:
         // CRITICAL: Pass the LookAndFeel to the ImagerPane
         visuals->setLookAndFeel(lnf);
     }
+    
+    ~ImagerTab() override
+    {
+        // CRITICAL: Ensure proper destruction order to prevent crashes
+        // Clear visuals first
+        visuals.reset();
+        // Reset LookAndFeel to prevent dangling references
+        setLookAndFeel(nullptr);
+    }
     // Mirror legacy callbacks so PaneManager integrations continue to work
 public:
     std::function<void(const juce::String&, const juce::var&)> onUiChange;

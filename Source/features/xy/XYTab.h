@@ -22,6 +22,15 @@ public:
         controls = std::make_unique<XYControlsPane>(p.apvts);
         this->juce::Component::addAndMakeVisible (controls.get());
     }
+    
+    ~XYTab() override
+    {
+        // CRITICAL: Ensure proper destruction order to prevent crashes
+        // Clear controls first (which clears parameter attachments)
+        controls.reset();
+        // Then clear visuals
+        xyPad.reset();
+    }
 
     void resized() override
     {

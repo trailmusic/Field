@@ -12,6 +12,13 @@ class BandControlsPane : public juce::Component
 public:
     explicit BandControlsPane (juce::AudioProcessorValueTreeState& s)
         : apvts (s) { buildControls(); applyMetricsToAll(); }
+    
+    ~BandControlsPane() override
+    {
+        // CRITICAL: Clear parameter attachments before destruction to prevent crashes
+        // This prevents the "Over-release of an object" crash when removing plugin from track
+        sAtts.clear();
+    }
 
     void setCellMetrics (int knobDiameterPx, int valueBandPx, int labelGapPxIn, int columnWidthPx)
     {
