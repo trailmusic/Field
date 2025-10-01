@@ -83,19 +83,15 @@ void DuckingFloat::setupComponents()
     addAndMakeVisible(modeLabel);
     addAndMakeVisible(detectorLabel);
     
-    // Configure sliders with enhanced styling
-    auto configureSlider = [](juce::Slider& slider, double min, double max, double step, double val, const juce::String& suffix) {
+    // Configure sliders with Field LookAndFeel
+    auto configureSlider = [this](juce::Slider& slider, double min, double max, double step, double val, const juce::String& suffix) {
         slider.setRange(min, max, step);
         slider.setValue(val);
         slider.setTextValueSuffix(suffix);
         slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
         slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
-        slider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xFF4A90E2));
-        slider.setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colour(0xFF333333));
-        slider.setColour(juce::Slider::thumbColourId, juce::Colour(0xFFFFFFFF));
-        slider.setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFCCCCCC));
-        slider.setColour(juce::Slider::textBoxBackgroundColourId, juce::Colour(0xFF2D2D2D));
-        slider.setColour(juce::Slider::textBoxOutlineColourId, juce::Colour(0xFF555555));
+        // Apply Field LookAndFeel to all sliders
+        slider.setLookAndFeel(&getLookAndFeel());
     };
     
     configureSlider(depthSlider, 0.0, 20.0, 0.1, 6.0, " dB");
@@ -107,12 +103,12 @@ void DuckingFloat::setupComponents()
     configureSlider(bandFreqSlider, 80.0, 8000.0, 1.0, 1000.0, " Hz");
     configureSlider(bandQSlider, 0.1, 10.0, 0.1, 1.0, " Q");
     
-    // Configure labels with enhanced styling
-    auto configureLabel = [](juce::Label& label, const juce::String& text) {
+    // Configure labels with Field LookAndFeel
+    auto configureLabel = [this](juce::Label& label, const juce::String& text) {
         label.setText(text, juce::dontSendNotification);
         label.setJustificationType(juce::Justification::centred);
-        label.setColour(juce::Label::textColourId, juce::Colour(0xFFE0E0E0));
-        label.setFont(juce::FontOptions(11.0f).withStyle("bold"));
+        // Apply Field LookAndFeel to all labels
+        label.setLookAndFeel(&getLookAndFeel());
     };
     
     configureLabel(depthLabel, "Depth");
@@ -126,13 +122,10 @@ void DuckingFloat::setupComponents()
     configureLabel(modeLabel, "Mode");
     configureLabel(detectorLabel, "Detector");
     
-    // Enhanced combo box styling
-    auto configureComboBox = [](juce::ComboBox& combo) {
-        combo.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF2D2D2D));
-        combo.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFE0E0E0));
-        combo.setColour(juce::ComboBox::arrowColourId, juce::Colour(0xFF4A90E2));
-        combo.setColour(juce::ComboBox::buttonColourId, juce::Colour(0xFF4A4A4A));
-        combo.setColour(juce::ComboBox::outlineColourId, juce::Colour(0xFF555555));
+    // Apply Field LookAndFeel to combo boxes
+    auto configureComboBox = [this](juce::ComboBox& combo) {
+        // Apply Field LookAndFeel to all combo boxes
+        combo.setLookAndFeel(&getLookAndFeel());
     };
     
     configureComboBox(modeSelector);
