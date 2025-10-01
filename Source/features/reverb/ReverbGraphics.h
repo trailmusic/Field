@@ -5,6 +5,7 @@
 #include "DecayRateEQ.h"
 #include "BandIdFinder.h"
 #include "BandCounter.h"
+#include "shared/ui/Utilities/SafetySentinels.h"
 
 class MyPluginAudioProcessor; // fwd
 class ReverbToneEQ; // fwd
@@ -12,6 +13,8 @@ class DecayRateEQ; // fwd
 
 class ReverbGraphics : public juce::Component, public juce::Timer
 {
+    JUCE_LEAK_DETECTOR(ReverbGraphics)
+    
 public:
     enum class ViewMode
     {
@@ -27,8 +30,11 @@ public:
                     std::function<float()> getDuckDb,
                     std::function<float()> getWidthNow);
 
+    ~ReverbGraphics() override;
+
     void resized() override;
     void paint(juce::Graphics& g) override;
+    void visibilityChanged() override;
     
     // View mode control
     void setViewMode(ViewMode mode);
@@ -134,6 +140,9 @@ private:
     // Animation
     float animationTime = 0.0f;
     static constexpr float ANIMATION_SPEED = 0.02f;
+    
+    // Debug safety sentinel (temporarily disabled for compilation)
+    // TimerSentinel timerSentinel;
 };
 
 

@@ -34,6 +34,8 @@ static inline const char* paneKey (PaneID id)
 
 class PaneManager : public juce::Component, private juce::Timer
 {
+    JUCE_LEAK_DETECTOR(PaneManager)
+    
 public:
     // Keep-warm option removed
 

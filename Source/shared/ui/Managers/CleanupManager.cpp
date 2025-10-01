@@ -2,6 +2,7 @@
 #include "../../Core/PluginEditor.h"
 #include "AttachmentManager.h"
 #include "features/motion/MotionIDs.h"
+#include "../Utilities/SafetySentinels.h"
 
 CleanupManager::CleanupManager(MyPluginAudioProcessorEditor& editor)
     : editor(editor)
@@ -10,7 +11,14 @@ CleanupManager::CleanupManager(MyPluginAudioProcessorEditor& editor)
 
 void CleanupManager::performCleanup()
 {
-    // Perform all cleanup operations in order
+    // 1. Suspend audio processing to prevent audio thread from touching dying objects
+    editor.proc.suspendProcessing(true);
+    
+    // 2. Dismiss any active modals/popups to prevent dangling OS windows
+    juce::PopupMenu::dismissAllActiveMenus();
+    juce::ModalComponentManager::getInstance()->cancelAllModalComponents();
+    
+    // 3. Perform all cleanup operations in order
     cleanupParameterAttachments();
     cleanupTimersAndListeners();
     cleanupAudioCallbacks();
@@ -18,6 +26,22 @@ void CleanupManager::performCleanup()
     cleanupUIListeners();
     cleanupState();
     cleanupLookAndFeel();
+    
+    // 4. Debug assertions (only in debug builds)
+    #if JUCE_DEBUG
+    jassert(juce::MessageManager::getInstance()->isThisTheMessageThread());
+    
+    // Verify all timers and listeners are properly cleaned up (temporarily disabled)
+    // if (TimerSentinel::getLiveCount() > 0)
+    // {
+    //     DBG("WARNING: " << TimerSentinel::getLiveCount() << " timer components still active after cleanup!");
+    // }
+    
+    // if (ListenerSentinel::getLiveCount() > 0)
+    // {
+    //     DBG("WARNING: " << ListenerSentinel::getLiveCount() << " listener components still active after cleanup!");
+    // }
+    #endif
 }
 
 void CleanupManager::cleanupParameterAttachments()

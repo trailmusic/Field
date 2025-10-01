@@ -813,7 +813,17 @@ void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
 
 MyPluginAudioProcessorEditor::~MyPluginAudioProcessorEditor()
 {
-    // Clean destructor - no logging needed
+    // Clean destructor with proper listener teardown order
+    // Remove listeners BEFORE destroying components to prevent use-after-free
+    
+    // Remove any component listeners first
+    if (panes)
+    {
+        // PaneManager handles its own listener cleanup
+        panes.reset();
+    }
+    
+    // Then perform systematic cleanup
     if (cleanupManager) cleanupManager->performCleanup();
 }
 

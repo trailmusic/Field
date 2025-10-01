@@ -2,6 +2,7 @@
 #include "shared/Core/FieldLookAndFeel.h"
 #include "shared/Core/PluginProcessor.h"
 #include "ReverbParamIDs.h"
+#include "shared/ui/Utilities/SafetySentinels.h"
 
 ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
                           juce::AudioProcessorValueTreeState& s,
@@ -20,6 +21,7 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
       spectralButton("Spectral"),
       toneEqIndicator(4),
       decayRateEqIndicator(3)
+      // timerSentinel() // Debug timer tracking (temporarily disabled)
 {
     // Create ducking float
     duckingFloat = std::make_unique<DuckingFloat>(state);
@@ -108,6 +110,26 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     startTimerHz(30);
 }
 
+ReverbGraphics::~ReverbGraphics()
+{
+    // Stop timer before destruction to prevent use-after-free
+    stopTimer();
+}
+
+void ReverbGraphics::visibilityChanged()
+{
+    // Stop timer when component becomes invisible to prevent background processing
+    if (!isVisible())
+    {
+        stopTimer();
+    }
+    else if (isVisible() && !isTimerRunning())
+    {
+        // Restart timer when component becomes visible again
+        startTimerHz(30);
+    }
+}
+
 void ReverbGraphics::paint(juce::Graphics& g)
 {
     auto r = getLocalBounds().toFloat();
@@ -170,8 +192,19 @@ void ReverbGraphics::resized()
     
     // Horizontal split: EQ panels on left (50%), visualization in middle (40%), ducking on right (10%)
     auto leftArea = bounds.removeFromLeft(bounds.getWidth() * 0.5f);
-    auto middleArea = bounds.removeFromLeft(bounds.getWidth() * 0.8f); // 40% of total width
-    auto rightArea = bounds; // 10% of total width
+    auto middleArea = bounds.removeFromLeft(bounds.getWidth() * 0.8f); // 40% of remaining 50% = 20% of total
+    auto rightArea = bounds; // 30% of total width
+    
+    // Fix: Calculate percentages of total width, not remaining width
+    auto totalWidth = getLocalBounds().getWidth();
+    auto totalHeight = getLocalBounds().getHeight();
+    
+    // Safety checks to prevent crashes
+    if (totalWidth <= 0 || totalHeight <= 0) return;
+    
+    leftArea = juce::Rectangle<int>(0, 0, (int)(totalWidth * 0.5f), totalHeight);
+    middleArea = juce::Rectangle<int>((int)(totalWidth * 0.5f), 0, (int)(totalWidth * 0.4f), totalHeight);
+    rightArea = juce::Rectangle<int>((int)(totalWidth * 0.9f), 0, (int)(totalWidth * 0.1f), totalHeight);
     
     // Add gaps between areas
     leftArea.removeFromRight(10); // 10px gap
@@ -441,35 +474,53 @@ void ReverbGraphics::paintWaterfallInBounds(juce::Graphics& g, juce::Rectangle<f
     auto erLevel = getErRms ? getErRms() : 0.0f;
     auto tailLevel = getTailRms ? getTailRms() : 0.0f;
     
-    // Use default levels if no audio signal
-    if (erLevel == 0.0f && tailLevel == 0.0f)
-    {
-        erLevel = 0.3f;  // Default ER level for visualization
-        tailLevel = 0.2f; // Default tail level for visualization
-    }
+    // Get theme colors for grey waterfall
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
     
     // Create gradient bands
     juce::ColourGradient gradient;
     gradient.point1 = bounds.getTopLeft();
     gradient.point2 = bounds.getBottomLeft();
     
-    // Color stops based on levels
-    auto baseColor = juce::Colour::fromHSV(0.3f, 0.6f, 0.2f, 0.8f);
-    auto highlightColor = juce::Colour::fromHSV(0.3f, 0.8f, 0.6f, 0.9f);
+    // Use theme greys for default waterfall
+    auto baseColor = th.meters.panelDark.withAlpha(0.8f);           // Dark grey base
+    auto midColor = th.meters.panelMedium.withAlpha(0.7f);          // Medium grey
+    auto highlightColor = th.meters.panelLight.withAlpha(0.6f);    // Light grey highlight
     
+    // If there's actual audio signal, use the levels to modulate the greys
+    if (erLevel > 0.0f || tailLevel > 0.0f)
+    {
+        // Modulate grey intensity based on audio levels
+        float intensity = juce::jmax(erLevel, tailLevel);
+        baseColor = th.meters.panelDark.withAlpha(0.6f + intensity * 0.3f);
+        midColor = th.meters.panelMedium.withAlpha(0.5f + intensity * 0.4f);
+        highlightColor = th.meters.panelLight.withAlpha(0.4f + intensity * 0.5f);
+    }
+    
+    // Create waterfall gradient with multiple stops for depth
     gradient.addColour(0.0f, baseColor);
-    gradient.addColour(erLevel, highlightColor);
+    gradient.addColour(0.3f, midColor);
+    gradient.addColour(0.7f, highlightColor);
     gradient.addColour(1.0f, baseColor);
     
     g.setGradientFill(gradient);
     g.fillRoundedRectangle(bounds, 8.0f);
     
-    // Add texture overlay
-    g.setColour(juce::Colours::white.withAlpha(0.1f));
+    // Add subtle texture overlay using theme colors
+    g.setColour(th.textMuted.withAlpha(0.08f));
     for (int i = 0; i < 20; ++i)
     {
         float y = bounds.getY() + (float)i / 20.0f * bounds.getHeight();
         g.drawHorizontalLine((int)y, bounds.getX(), bounds.getRight());
+    }
+    
+    // Add vertical texture lines for waterfall effect
+    g.setColour(th.textMuted.withAlpha(0.05f));
+    for (int i = 0; i < 15; ++i)
+    {
+        float x = bounds.getX() + (float)i / 15.0f * bounds.getWidth();
+        g.drawVerticalLine((int)x, bounds.getY(), bounds.getBottom());
     }
 }
 
@@ -557,6 +608,10 @@ void ReverbGraphics::paintGrOverlay(juce::Graphics& g)
 
 void ReverbGraphics::timerCallback()
 {
+    // Safety check: Don't process if component is not visible or not in the component tree
+    if (!isVisible() || !isShowing() || getParentComponent() == nullptr)
+        return;
+    
     // Update animation time
     animationTime += ANIMATION_SPEED;
     if (animationTime > juce::MathConstants<float>::twoPi)
@@ -578,7 +633,6 @@ void ReverbGraphics::timerCallback()
         auto grDb = getDuckGrDb();
         duckingFloat->updateGrMeter(grDb);
     }
-
 
     // Repaint for animation
     repaint();
