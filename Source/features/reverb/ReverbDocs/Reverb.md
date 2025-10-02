@@ -64,6 +64,7 @@ Field's Reverb system delivers a modern, musical reverb with a pro UI, robust du
   * ER taps with per-tap filters; ducking compressor with mode presets.
   * **Phase 2 FDN tank** with 8 delay lines, Hadamard feedback matrix, per-cycle feedback gains.
   * **Real decay-rate shaping** with mathematically correct T60 mapping.
+  * **Ducking latency reporting** for proper PDC compensation (host-visible).
   * Metering (ER RMS, Tail RMS, Duck GR).
 * **Infra:**
 
@@ -199,6 +200,13 @@ Input → (PreDelay) → EarlyReflections → FDN Tank (Phase 2)
 
 * Mode-based lookahead/RMS; soft knee; threshold/ratio; depth cap; band focus via peaking filter.
 * Detector sources: Dry/ER/Tail/Wet; envelope smoothing via attack/release exponentials.
+* **Latency Reporting**: Ducking look-ahead latency is automatically reported to host for proper PDC compensation.
+  - **Source of Truth**: Latency comes from ducking FIFO `gaAhead` (in samples), not attack time
+  - **Mode-Dependent**: Each ducking mode has specific look-ahead times (8-16ms)
+  - **SR-Aware**: Look-ahead scales correctly with sample rate changes
+  - **Parameter Updates**: Latency refreshes on `duckOn`, `duckMode`, `duckDetectorSrc` changes
+  - **Bypass Handling**: Reports 0 latency when ducking disabled or plugin bypassed
+  - **Future-Proof**: Architecture ready for oversampling latency addition
 
 ### 6.4 EQ Placement
 
@@ -222,7 +230,7 @@ Input → (PreDelay) → EarlyReflections → FDN Tank (Phase 2)
 * **Denormal Safety**: `juce::ScopedNoDenormals` in FDN hot loop
 * **Thread Safety**: Double-buffered runtime with atomic parameter updates
 * **Output Safety**: Soft clipper prevents spikes in extreme presets
-* **Latency**: PDC reporting for FDN tank (Phase 2)
+* **Latency**: PDC reporting for ducking look-ahead (host-visible, parameter-aware)
 
 ---
 
