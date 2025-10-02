@@ -220,6 +220,7 @@ namespace IDs {
     static constexpr const char* osOffline          = "oversampling_offline";
     static constexpr const char* osFilterType        = "oversampling_filter_type";
     static constexpr const char* tpSafe              = "true_peak_safe";
+    static constexpr const char* forceOffline        = "force_offline_mode";
 }
 // Delay UI bridge
 #include "features/delay/DelayUiBridge.h"
@@ -1085,22 +1086,49 @@ private:
     // Quality/precision application
     void applyQualityFromParams();
     
-    // Runtime config parameter handlers
-    void onQualityChanged(int quality);
-    void onOSChanged(int os);
-    void onPhaseChanged(int phase);
-    void onOSRealtimeChanged(int os);
-    void onOSOfflineChanged(int os);
-    void onOSFilterTypeChanged(int type);
-    void onTPSafeChanged(bool enabled);
-    void resetManualOverrides();
-    void scheduleDspRebuildIfNeeded(const DspRuntimeConfig& cfg);
+    // ================================================================
+    // 🎛️ QUALITY SYSTEM PARAMETER HANDLERS (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: These methods implement Gold Clip parity for oversampling.
+    // They handle SR-aware OS, realtime/offline separation, and manual overrides.
+    // DO NOT REMOVE or modify without understanding the quality system.
+    // ================================================================
     
-    // DSP rebuild methods
+    // Core quality system handlers
+    void onQualityChanged(int quality);           // Quality macro (Eco/Standard/High)
+    void onOSChanged(int os);                     // Legacy OS parameter
+    void onPhaseChanged(int phase);               // Phase mode (Zero/Hybrid/FullLinear)
+    
+    // SR-aware oversampling handlers (Gold Clip parity)
+    void onOSRealtimeChanged(int os);             // Realtime OS setting
+    void onOSOfflineChanged(int os);             // Offline OS setting  
+    void onOSFilterTypeChanged(int type);        // Linear vs Minimum phase
+    void onTPSafeChanged(bool enabled);          // True-Peak anti-overshoot
+    
+    // Quality system utilities
+    void resetManualOverrides();                 // Reset to quality defaults
+    void scheduleDspRebuildIfNeeded(const DspRuntimeConfig& cfg); // Thread-safe rebuild
+    
+    // ================================================================
+    // 🎛️ QUALITY SYSTEM DSP REBUILD METHODS (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: These methods handle glitch-free DSP topology changes.
+    // They implement SR-aware oversampling, phase processing, and crossfade.
+    // DO NOT REMOVE or modify without understanding the quality system.
+    // ================================================================
+    
+    // DSP rebuild methods (thread-safe, glitch-free)
     template <typename Sample>
     void rebuildDspForConfig(const DspRuntimeConfig& cfg, juce::AudioBuffer<Sample>& buffer);
-    inline int osLatencySamples(int factor);
-    void startTopologyCrossfadeMs(float ms);
+    inline int osLatencySamples(int factor);     // OS latency calculation
+    void startTopologyCrossfadeMs(float ms);      // Crossfade for topology changes
+    
+    // Realtime/Offline detection
+    bool isNonRealtime() const;                  // Detect offline/render mode
+    
+    // True-Peak anti-overshoot protection
+    template <typename Sample>
+    void applyTruePeakProtection(juce::AudioBuffer<Sample>& buffer, bool enabled);
 
     // Optional host sync hooks (stubs in .cpp)
     void syncWithHostParameters();
@@ -1188,19 +1216,39 @@ public:
     std::array<ClockSnapshot, 256> clockRing;
     std::atomic<ClockSnapshot*> lastClockForUI { nullptr }; // fast path
 
-    // DSP Runtime Configuration
+    // ================================================================
+    // 🎛️ QUALITY SYSTEM INFRASTRUCTURE (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: This system implements Gold Clip parity for oversampling
+    // and phase processing. DO NOT REMOVE without consulting the team.
+    //
+    // Features implemented:
+    // - SR-aware oversampling (4×@44.1, 2×@96, 1×@192)
+    // - Realtime vs Offline separation
+    // - Linear vs Minimum phase filter selection
+    // - True-Peak anti-overshoot protection
+    // - Quality macro with manual override protection
+    // - Glitch-free topology switching with crossfade
+    //
+    // Documentation: See docs/audits/PluginProcessor_Audit.md
+    // Implementation Plan: docs/audits/Quality_System_Implementation_Plan.md
+    // ================================================================
+    
+    // DSP Runtime Configuration - Thread-safe parameter management
     std::atomic<DspRuntimeConfig> rtCfg;
     std::atomic<bool> needsDspRebuild { false };
     DspRuntimeConfig pendingCfg;
     
     // Oversampling objects (separate for float/double)
+    // These are rebuilt when quality/OS/phase settings change
     std::unique_ptr<juce::dsp::Oversampling<float>>  osF;
     std::unique_ptr<juce::dsp::Oversampling<double>> osD;
     
-    // Phase processing banks
+    // Phase processing banks for different phase modes
+    // Zero/Hybrid/FullLinear processing paths
     PhaseBanks phaseBanksF, phaseBanksD;
     
-    // Crossfade for topology changes
+    // Crossfade for topology changes (prevents clicks during rebuild)
     int topologyXfadeSamplesLeft { 0 };
     int topologyXfadeTotal { 0 };
 
@@ -1220,6 +1268,24 @@ private:
             lastClockForUI.store(&clockRing[(size_t)s1], std::memory_order_release); 
         }
         clockFifo.finishedWrite (n1 + n2);
+    }
+
+    // ================================================================
+    // 🎛️ LATENCY DISCIPLINE HELPERS (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: These helpers ensure accurate latency reporting and
+    // visual alignment for meters, clock, and UI elements.
+    // ================================================================
+    
+    // Calculate latency-compensated time for visuals
+    inline double visSeconds(double samplePos, double sr, int latencySamples) const {
+        return std::max(0.0, (samplePos - latencySamples) / std::max(1.0, sr));
+    }
+    
+    // Get current total latency from runtime config
+    inline int getCurrentLatencySamples() const {
+        auto cfg = rtCfg.load(std::memory_order_acquire);
+        return cfg.latencySamples;
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)

@@ -203,8 +203,43 @@ target_link_libraries(Field PRIVATE
     juce::juce_gui_basics
     juce::juce_core)
 
+# ================================================================
+# 🎛️ QUALITY SYSTEM BUILD PREREQUISITES (JANUARY 2025)
+# ================================================================
+# CRITICAL: These compiler flags are required for professional-grade
+# oversampling and phase processing. DO NOT REMOVE without consulting the team.
+# ================================================================
+
 if (MSVC)
-  target_compile_options(Field PRIVATE /W4 /permissive-)
-else()
-  target_compile_options(Field PRIVATE -Wall -Wextra -Wshadow -Wpedantic)
-endif() 
+  # MSVC optimization flags for professional audio processing
+  target_compile_options(Field PRIVATE 
+    /W4 /permissive-
+    /O2 /fp:fast /arch:AVX2 /Oi /Ot
+    /D_USE_MATH_DEFINES
+  )
+  # Enable DAZ/FTZ for denormal handling
+  target_compile_definitions(Field PRIVATE 
+    JUCE_DISABLE_DENORMALS=1
+  )
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  # Clang/GCC optimization flags for professional audio processing
+  target_compile_options(Field PRIVATE 
+    -Wall -Wextra -Wshadow -Wpedantic
+    -O3 -ffast-math -fno-math-errno -funroll-loops
+    -mavx2 -mfma
+    -D_USE_MATH_DEFINES
+  )
+  # Enable DAZ/FTZ for denormal handling
+  target_compile_definitions(Field PRIVATE 
+    JUCE_DISABLE_DENORMALS=1
+  )
+  
+  # ARM optimization for Apple Silicon
+  if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+    target_compile_options(Field PRIVATE -mcpu=native)
+  endif()
+endif()
+
+# ================================================================
+# 🎛️ END QUALITY SYSTEM BUILD PREREQUISITES
+# ================================================================ 

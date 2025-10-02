@@ -66,10 +66,8 @@ struct DspRuntimeConfig
     }
     
     // Get active OS factor based on realtime/offline mode
-    int getActiveOSFactor() const {
-        int targetOS = osRealtime; // Default to realtime
-        // TODO: Add isNonRealtime() detection
-        // if (isNonRealtime()) targetOS = osOffline;
+    int getActiveOSFactor(bool isOffline = false) const {
+        int targetOS = isOffline ? osOffline : osRealtime;
         
         if (targetOS == 0) { // Auto by Quality
             return resolveOSFactor(sampleRate, quality);
