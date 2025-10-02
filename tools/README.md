@@ -1,6 +1,14 @@
 # Min-Phase FIR Toolchain
 
+![Build](https://img.shields.io/github/actions/workflow/status/trailmusic/Field/tools-ci.yml?branch=feature)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-666)
+
 This directory contains the complete min-phase FIR toolchain for generating professional-quality minimum-phase filters from linear-phase designs.
+
+> **What is this?**
+> These tools convert textbook-clean **linear-phase** filters into punchier **minimum-phase** versions with the *same tone* (same frequency shape) but **no pre-echo**. You can preview impulse/step/magnitude, compare with a baseline, then export headers your plugin uses for **oversampling/anti-alias** stages.
+> TL;DR — it helps your reverbs, saturators, and dynamics sound clean at high quality **without** eating your CPU.
 
 ## 📁 Directory Structure
 
@@ -43,11 +51,14 @@ tools/
 
 ## 📚 Documentation
 
-- **[Complete User Manual](docs/README.md)** - Comprehensive guide to the toolchain
-- **[Quick Start Guide](docs/QUICKSTART.md)** - Get up and running quickly
-- **[CI/CD Setup](docs/CI_SETUP.md)** - Automated testing and validation
-- **[Desktop UI Specification](docs/UI_SPECIFICATION.md)** - JUCE application design
-- **[Field Plugin Integration](docs/UI_INTEGRATION_NOTES.md)** - UI integration guide
+- **User Manual:** [`docs/README.md`](docs/README.md)
+- **Quick Start:** [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
+- **UI Spec (Desktop Tool):** [`docs/UI_SPECIFICATION.md`](docs/UI_SPECIFICATION.md)
+- **Field Plugin UI Integration:** [`docs/UI_INTEGRATION_NOTES.md`](docs/UI_INTEGRATION_NOTES.md)
+- **CI/CD Setup:** [`docs/CI_SETUP.md`](docs/CI_SETUP.md)
+- **Glossary:** [`docs/GLOSSARY.md`](docs/GLOSSARY.md)
+- **Troubleshooting:** [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md)
+- **Changelog:** [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
 
 ## 🛠️ Tools
 

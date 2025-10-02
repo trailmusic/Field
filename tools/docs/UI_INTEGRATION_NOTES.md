@@ -280,4 +280,19 @@ button.getProperties().set("a11yName", "Enable");
 
 ---
 
+### Theme invariants
+- Components must query colors at paint-time via `findColour(FieldLNF::<id>, true)`.
+- No color caching in members (only cache geometry/path).
+- On theme change, `FieldLNF::applyTheme()` → `sendChangeMessage()` must trigger:
+  - `ReverbToneEQ`/`DecayRateEQ` repaint
+  - Combo/Buttons re-layout (chevron lane)
+  - Visualization area repaint (uses theme.meters)
+
+### ComboBox policy
+- Abbreviation visible in closed state, full names in popup.
+- Right chevron lane reserved: `max(18px, height/3)`.
+- Shared mapping: `FieldRendering::mapAbbrev()`.
+
+---
+
 If you want, I can also package these patches as **diffs against your files** (by path/line) or provide a **minimal test harness** (`Component` with combos/buttons) that toggles abbreviation/chevrons, flips themes, and screenshots states for QA.

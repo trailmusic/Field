@@ -2,6 +2,11 @@
 
 ## 🚀 Get Started in 5 Minutes
 
+### Five-Minute Path
+1. **Build CLI**
+2. **Convert `examples/HB63_linear.csv`**
+3. **Open UI, compare baseline, export bank**
+
 ### 1. Build the Tools
 
 ```bash

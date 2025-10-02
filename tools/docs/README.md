@@ -2,6 +2,25 @@
 
 This document provides comprehensive guidance for the min-phase FIR toolchain, including console tools, desktop applications, CI/CD automation, and Field plugin integration.
 
+> **What is this?**
+> These tools convert textbook-clean **linear-phase** filters into punchier **minimum-phase** versions with the *same tone* (same frequency shape) but **no pre-echo**. You can preview impulse/step/magnitude, compare with a baseline, then export headers your plugin uses for **oversampling/anti-alias** stages.
+> TL;DR — it helps your reverbs, saturators, and dynamics sound clean at high quality **without** eating your CPU.
+
+## Table of Contents
+
+* [1. Prerequisites](#1-prerequisites)
+* [2. Directory layout](#2-directory-layout)
+* [3. Build (KissFFT backend)](#3-build-kissfft-backend)
+* [4. Usage](#4-usage)
+* [5. Output formats](#5-output-formats)
+* [6. Plotting (Python)](#6-plotting-python)
+* [7. Integration in plugin](#7-integration-in-plugin)
+* [8. Troubleshooting](#8-troubleshooting)
+* [9. JUCE-FFT variant (optional)](#9-jucefft-variant-optional)
+* [10. FAQ](#10-faq)
+* [11. Desktop UI (Optional)](#11-desktop-ui-optional)
+* [12. Field Plugin UI Integration](#12-field-plugin-ui-integration)
+
 * `minphase` – converts **one** linear CSV → minimum-phase CSV + header
 * `batch_minphase` – converts **many** linear CSVs → per-design CSVs + a combined `MinPhaseBank.h` (with a tiny registry: order → (pointer, length))
 
