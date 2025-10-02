@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Ranger Badge with Compass -->
+  <defs>
+    <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2E6B5A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1A4A3A;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="compassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFA500;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Shield Background -->
+  <path d="M32 4 L56 16 L56 40 L32 60 L8 40 L8 16 Z" 
+        fill="url(#shieldGradient)" 
+        stroke="#1A4A3A" 
+        stroke-width="2"/>
+  
+  <!-- Compass Needle (45 degrees) -->
+  <g transform="translate(32, 32)">
+    <!-- Compass Circle -->
+    <circle cx="0" cy="0" r="12" fill="none" stroke="#FFD700" stroke-width="1.5"/>
+    
+    <!-- North Needle -->
+    <path d="M0 -8 L-2 0 L0 2 L2 0 Z" fill="url(#compassGradient)"/>
+    
+    <!-- South Needle -->
+    <path d="M0 8 L-2 0 L0 -2 L2 0 Z" fill="#FFD700" opacity="0.6"/>
+    
+    <!-- Compass Center -->
+    <circle cx="0" cy="0" r="2" fill="#FFD700"/>
+  </g>
+  
+  <!-- Ranger Badge Border -->
+  <path d="M32 4 L56 16 L56 40 L32 60 L8 40 L8 16 Z" 
+        fill="none" 
+        stroke="#FFD700" 
+        stroke-width="1.5"/>
+</svg>

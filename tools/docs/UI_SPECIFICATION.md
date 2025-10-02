@@ -61,30 +61,30 @@
 ## 3) Component Tree (JUCE)
 
 ```
-FieldRangerMainWindow (DocumentWindow, FieldLNF)
-└── AppRoot (Component, Focus Traversal, FieldLNF)
-    ├── LeftPanel: FilePane (FieldLNF styling)
+RangerWindow (DocumentWindow, FieldLNF)
+└── RangerDesigner (Component, Focus Traversal, FieldLNF)
+    ├── LeftPanel: RangerFilePane (FieldLNF styling)
     │   ├── FileDropTarget (FieldRendering::drawButtonBackground)
     │   ├── LoadedFilesList (TableListBox, FieldLNF colors)
     │   ├── BaselineFolderRow (FieldRendering::drawButton, FieldRendering::drawLabel)
     │   └── BatchQueueList (optional, FieldLNF styling)
-    ├── CenterPanel: PlotPane (FieldLNF colors, FieldRendering plots)
+    ├── CenterPanel: RangerPlotPane (FieldLNF colors, FieldRendering plots)
     │   ├── PlotToolbar (FieldRendering::drawButton, FieldRendering::drawComboBox)
     │   ├── PlotTabs (TabbedComponent, FieldLNF tab styling)
     │   │   ├── ImpulsePlot  (Component, FieldRendering::drawPath)
     │   │   ├── StepPlot     (Component, FieldRendering::drawPath)
     │   │   └── MagnitudePlot(Component, FieldRendering::drawPath)
     │   └── Legend/Overlays (FieldRendering::drawLabel, FieldLNF colors)
-    └── RightPanel: SettingsPane (FieldLNF styling)
+    └── RightPanel: RangerSettingsPane (FieldLNF styling)
         ├── Normalization (FieldRendering::drawButton, FieldRendering::drawLabel)
         ├── FFT Pad (FieldRendering::drawComboBox)
         ├── Output Prefix (FieldRendering::drawTextEditor)
         ├── Emit CSV (FieldRendering::drawToggleButton)
         ├── Diff thresholds (FieldRendering::drawSlider, FieldRendering::drawLabel)
         ├── Buttons:
-        │   ├── Generate (FieldRendering::drawButton)
-        │   ├── Generate All (FieldRendering::drawButton)
-        │   └── Export MinPhaseBank.h (FieldRendering::drawButton)
+        │   ├── Convert → Min-Phase (FieldRendering::drawButton)
+        │   ├── Compare (FieldRendering::drawButton)
+        │   └── Export Bank (FieldRendering::drawButton)
         └── Status Hints (FieldRendering::drawLabel, FieldLNF colors)
 ```
 
@@ -288,28 +288,63 @@ Persist to a small JSON in user settings.
 
   * deps: `libminphase_core` (shared with CLI), JUCE modules (`juce_gui_basics`, `juce_graphics`, `juce_dsp` if JUCE-FFT)
   * **Field Integration**: Links against Field's `FieldLNF` and `FieldRendering` for consistent theming
+  * **Namespace**: `trail::field::ranger`
+  * **App bundle**: macOS: `Field Ranger.app`, Win: `FieldRanger.exe`
 * `libminphase_core` (static)
 
   * exports: converter + normalization + FFT adapter
 * Reuse `fft_real.h` if keeping KissFFT; otherwise compile JUCE-FFT adapter.
 * **Field Look & Feel**: Integrate with Field's existing theming system for seamless visual consistency.
+* **CLI**: `ranger` (subcommands: `convert`, `batch`, `verify`, `emit-bank`)
+  * Examples: `ranger convert HB63.csv --norm dc --out HB63_min.csv`
+  * Examples: `ranger batch ./examples --emit-bank MinPhaseBank.h`
 
 ---
 
 ## 17) Strings (copy)
 
-* "**Field Ranger** - Patrol quality, phase, and oversampling"
-* "Drop linear-phase CSV files here or **Open…**"
+* **App title**: "Field Ranger"
+* **Short tab/left-nav label**: "Ranger"
+* **Tooltip/desc**: "Design and export oversampling & phase-safe filter banks."
+* **One-liner (about)**: "Field Ranger maps your path from linear to minimum-phase, with true-peak-safe oversampling."
+* **Header**: "Ranger"
+* **Subheader**: "Map. Audition. Export."
+* **Buttons**: "Open taps", "Convert → Min-Phase", "Compare", "Export Bank", "Verify TP-Safe"
+* **Empty-state**: "Drop a linear FIR (.csv) to begin" / "Or load examples from /tools/examples"
 * "Baseline: Not set" / "Baseline: …/tools/baseline (3 matches)"
 * "Generated (DC, auto FFT)"
 * "Exported **MinPhaseBank.h** to /path/out/"
 * "PASS: |Δsample| ≤ 1e-6 and |Δmag| ≤ 0.10 dB"
 * "FAIL: exceeds thresholds (see Plots)"
-* "**Field Integration**: Using Field's Look & Feel system"
+* **Accessibility name (icons-only)**: "Ranger"; description: "Filter design and oversampling toolkit."
 
 ---
 
-## 18) Laymen explanation (for the help/about panel)
+## 18) Icon & Visual Identity
+
+### **Icon Design**
+- **Glyph**: Ranger badge (shield) with compass needle at 45° (accent color)
+- **Alternative**: Cairn (3 stacked stones) with waypoint dot above
+- **Size**: Readable at 16px
+- **Colors**: Reuse `theme.accent` or deep spruce `#2E6B5A`
+
+### **Wordmark**
+- **UI Chrome**: "FIELD RANGER"
+- **Documentation**: "Field Ranger"
+- **Consistent with Field branding**
+
+### **Visual Integration**
+- **Field Look & Feel**: Seamless integration with Field's existing theming
+- **Theme Propagation**: Automatic theme switching with Field's theme system
+- **Component Styling**: Uses `FieldLNF` and `FieldRendering` for consistency
+
+---
+
+## 19) Laymen explanation (for the help/about panel)
+
+> **Field Ranger** by Trail
+> Map your route from pristine linear filters to punchy minimum-phase banks.
+> True-peak-safe oversampling, export-ready headers, and side-by-side audition.
 
 **Field Ranger** converts **linear-phase** filter taps (perfectly even, great for parallel) into **minimum-phase** taps with the same frequency shape but **no pre-echo**, which often feels more **punchy**. You can **see** the impulse and step responses, and **compare** with a baseline. Then export a single header to use in your **Field plugin's** oversampling.
 

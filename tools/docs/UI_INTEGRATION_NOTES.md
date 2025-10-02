@@ -294,6 +294,13 @@ button.getProperties().set("a11yName", "Enable");
 - Right chevron lane reserved: `max(18px, height/3)`.
 - Shared mapping: `FieldRendering::mapAbbrev()`.
 
+### Ranger Export Integration
+- **Ranger Export**: When talking about `MinPhaseBank.h` generation
+- **Field Integration**: Seamless theming with Field's Look & Feel system
+- **Namespace**: Use `trail::field::ranger` for Ranger-specific components
+- **Component Classes**: `RangerWindow`, `RangerDesigner`, `RangerPlotPane`
+- **Settings**: `RangerPrefs`, `RangerRecentFiles`
+
 ---
 
 If you want, I can also package these patches as **diffs against your files** (by path/line) or provide a **minimal test harness** (`Component` with combos/buttons) that toggles abbreviation/chevrons, flips themes, and screenshots states for QA.

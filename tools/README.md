@@ -66,8 +66,8 @@ tools/
 
 - **`minphase`** - Convert single linear-phase FIR to minimum-phase
 - **`batch_minphase`** - Generate `MinPhaseBank.h` from multiple designs
+- **Ranger** - Desktop application for visual filter design and export
 - **CI/CD Pipeline** - Automated testing, validation, and artifact generation
-- **Desktop Application** - Visual interface for drag-and-drop conversion
 - **Plugin Integration** - Seamless integration with Field's UI system
 
 ## 🎯 Features
