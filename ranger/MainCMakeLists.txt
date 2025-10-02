@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 3.18)
+project(FieldRanger LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Console Tools (Min-Phase FIR Toolchain)
+add_subdirectory(console)
+
+# Field Ranger Desktop Application
+add_subdirectory(.)

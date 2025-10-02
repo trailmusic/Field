@@ -2,6 +2,8 @@
 
 **Patrol quality, phase, and oversampling.**
 
+Field Ranger is the professional desktop application and console toolchain for designing minimum-phase FIR filters for the Field audio plugin.
+
 ![Build](https://img.shields.io/github/actions/workflow/status/trailmusic/Field/tools-ci.yml?branch=feature)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-666)
