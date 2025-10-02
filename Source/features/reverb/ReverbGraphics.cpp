@@ -1,836 +1,743 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// ReverbGraphics.cpp  —  Visualization + EQ wrapper for the Reverb section
+// ----------------------------------------------------------------------------
+// DEV NOTES
+// - Responsibilities:
+//   * Owns Tone EQ (4-band) + Decay-Rate EQ (3-band) subpanels and their labels.
+//   * Hosts the Visualization Control Panel and a visualization mode toggle row.
+//   * Manages a "ducking" float module displayed as a right vertical strip.
+//   * Renders optional in-panel visual backgrounds and a ducking GR overlay.
+//
+// - Layout:
+//   * Left 50%: Tone EQ (top) and Decay-Rate EQ (bottom), each with label + band indicator.
+//   * Middle 40%: Visualization panel with Rays / Waterfall / Spectral buttons.
+//   * Right 10%: Ducking module column (always visible; greyed when DUCK==off).
+//
+// - Band Indicators:
+//   * Auto-update via BandCounter when tb_active_*/db_active_* params are present.
+//   * Fallback manual scan runs in timer if params aren't discoverable.
+//
+// - Debugging & Logs:
+//   * DBG statements compiled only in JUCE_DEBUG.
+//   * Waterfall's debug border is yellow only in JUCE_DEBUG.
+//   * Consider removing parent-drawn visualization (paintRays/Waterfall/Spectral) once
+//     ReverbVisuals fully covers the view. See kPaintParentVisualization.
+//
+// - Styling:
+//   * All colors come from FieldLNF theme. No hardcoded text colors.
+//   * Rounded panel shells with subtle shadow/outline consistent with app.
+//
+// - TODO (optional):
+//   [ ] Decide single source of truth for visuals: parent vs child (ReverbVisuals).
+//   [ ] Add keyboard shortcuts (1/2/3) for view mode toggle.
+//   [ ] Persist last selected view mode in state.
+//
+// ----------------------------------------------------------------------------
+
 #include "ReverbGraphics.h"
 #include "shared/Core/FieldLookAndFeel.h"
 #include "shared/Core/PluginProcessor.h"
 #include "ReverbParamIDs.h"
 #include "shared/ui/Utilities/SafetySentinels.h"
 
-ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
-                          juce::AudioProcessorValueTreeState& s,
-                          std::function<float()> getEr,
-                          std::function<float()> getTail,
-                          std::function<float()> getDuckDb,
-                          std::function<float()> getWidthNow)
-    : proc(p),
-      state (s),
-      getErRms(getEr),
-      getTailRms(getTail),
-      getDuckGrDb(getDuckDb),
-      getWidthNow(getWidthNow),
-      raysButton("Rays"),
-      waterfallButton("Waterfall"),
-      spectralButton("Spectral"),
-      toneEqIndicator(4),
-      decayRateEqIndicator(3)
-      // timerSentinel() // Debug timer tracking (temporarily disabled)
+// ─────────────────────────────────────────────────────────────────────────────
+// File-local constants
+// ─────────────────────────────────────────────────────────────────────────────
+namespace
 {
-    // Create ducking float
-    duckingFloat = std::make_unique<DuckingFloat>(state);
-    addAndMakeVisible(*duckingFloat);
-    
-    // Set the proper LookAndFeel for the ducking float after it's added to the hierarchy
-    // This ensures getLookAndFeel() returns a valid pointer
-    
-    // Initially show ducking float but greyed out (will be active when DUCK toggle is on)
-    duckingFloat->setVisible(true);
-    duckingFloat->setActive(false);
-    duckingFloat->setGreyedOut(true);
-    
-    // LookAndFeel will be set in lookAndFeelChanged() method
-    
-    // Add band indicators to the component
-    addAndMakeVisible(toneEqIndicator);
-    addAndMakeVisible(decayRateEqIndicator);
-    
-    // Discover parameter IDs for band detection
-    // Tone EQ: tb_active_0, tb_active_1, tb_active_2, tb_active_3
-    // Decay-Rate EQ: db_active_0, db_active_1, db_active_2
-    toneEnabledIds = BandIdFinder::findEnabledIds(state, "tb_active_", "");
-    decayEnabledIds = BandIdFinder::findEnabledIds(state, "db_active_", "");
-    
-    // Debug: Log discovered parameters
-    DBG("--- Discovered Tone EQ Parameters: " << toneEnabledIds.size() << " ---");
-    for (auto& id : toneEnabledIds)
-        DBG("Tone: " << id);
-    
-    DBG("--- Discovered Decay-Rate EQ Parameters: " << decayEnabledIds.size() << " ---");
-    for (auto& id : decayEnabledIds)
-        DBG("Decay: " << id);
-    
-    // Set up band counters for reliable detection
+    // Percent widths of the three primary columns.
+    constexpr float kLeftPct   = 0.50f;
+    constexpr float kMiddlePct = 0.40f;
+    constexpr float kRightPct  = 0.10f;
+
+    // Panel chrome
+    constexpr float kCornerRadius     = 8.0f;
+    constexpr float kEdgeOutlineThick = 2.0f;
+    constexpr float kOuterShadowAlpha = 0.60f;
+
+    // Spacing
+    constexpr int   kOuterPad       = 10;
+    constexpr int   kInterGapLarge  = 10;
+    constexpr int   kInterGapSmall  = 5;
+    constexpr int   kLabelHeight    = 25;
+    constexpr int   kButtonsHeight  = 30;
+    constexpr int   kButtonsWidth   = 80;
+    constexpr int   kButtonsSpacing = 8;
+
+    // Animation / timer
+    constexpr int   kFps = 30;
+    constexpr float kTwoPi = juce::MathConstants<float>::twoPi;
+
+    // Visualization: choose whether parent paints decorative visuals
+    // (set false to let the child `ReverbVisuals` own everything visual).
+    constexpr bool  kPaintParentVisualization = true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Constructor / Destructor
+// ─────────────────────────────────────────────────────────────────────────────
+
+ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
+                                juce::AudioProcessorValueTreeState& s,
+                                std::function<float()> getEr,
+                                std::function<float()> getTail,
+                                std::function<float()> getDuckDb,
+                                std::function<float()> getWidthNow)
+    : proc (p),
+      state (s),
+      getErRms (std::move (getEr)),
+      getTailRms (std::move (getTail)),
+      getDuckGrDb (std::move (getDuckDb)),
+      getWidthNow (std::move (getWidthNow)),
+      raysButton ("Rays"),
+      waterfallButton ("Waterfall"),
+      spectralButton ("Spectral"),
+      toneEqIndicator (4),
+      decayRateEqIndicator (3)
+{
+    // Ducking module
+    duckingFloat = std::make_unique<DuckingFloat> (state);
+    addAndMakeVisible (*duckingFloat);
+    duckingFloat->setVisible (true);
+    duckingFloat->setActive (false);
+    duckingFloat->setGreyedOut (true);
+
+    // Band indicators (visible UI)
+    addAndMakeVisible (toneEqIndicator);
+    addAndMakeVisible (decayRateEqIndicator);
+
+    // Discover param IDs for tb_active_* / db_active_* if present
+    toneEnabledIds  = BandIdFinder::findEnabledIds (state, "tb_active_", "");
+    decayEnabledIds = BandIdFinder::findEnabledIds (state, "db_active_", "");
+
+   #if JUCE_DEBUG
+    DBG ("--- Discovered Tone EQ Parameters: " << toneEnabledIds.size () << " ---");
+    for (auto& id : toneEnabledIds) DBG ("Tone: " << id);
+    DBG ("--- Discovered Decay-Rate EQ Parameters: " << decayEnabledIds.size () << " ---");
+    for (auto& id : decayEnabledIds) DBG ("Decay: " << id);
+   #endif
+
     if (!toneEnabledIds.isEmpty())
     {
-        toneCounter.reset(new BandCounter(state, toneEnabledIds, 
-            [this](int n) { 
-                toneEqIndicator.setActiveBands(n); 
-                repaint(); 
+        toneCounter.reset (new BandCounter (
+            state, toneEnabledIds,
+            [this] (int n)
+            {
+                toneEqIndicator.setActiveBands (n);
+                repaint ();
             }));
     }
     else
     {
-        DBG("No Tone EQ parameters found - using fallback approach");
-        // Fallback: Set initial values to 0
-        toneEqIndicator.setActiveBands(0);
+        toneEqIndicator.setActiveBands (0); // Fallback
     }
-    
-    // Initialize indicators with actual band counts
-    updateBandIndicatorsManually();
-    
+
     if (!decayEnabledIds.isEmpty())
     {
-        decayCounter.reset(new BandCounter(state, decayEnabledIds, 
-            [this](int n) { 
-                decayRateEqIndicator.setActiveBands(n); 
-                repaint(); 
+        decayCounter.reset (new BandCounter (
+            state, decayEnabledIds,
+            [this] (int n)
+            {
+                decayRateEqIndicator.setActiveBands (n);
+                repaint ();
             }));
     }
     else
     {
-        DBG("No Decay-Rate EQ parameters found - using fallback approach");
-        // Fallback: Set initial values to 0
-        decayRateEqIndicator.setActiveBands(0);
+        decayRateEqIndicator.setActiveBands (0); // Fallback
     }
-    
-        // Create EQ panels
-        reverbEQ = std::make_unique<ReverbToneEQ>(proc);
-        addAndMakeVisible(*reverbEQ);
-        
-        decayRateEQ = std::make_unique<DecayRateEQ>(proc);
-        addAndMakeVisible(*decayRateEQ);
-    
-    // Setup visualization control panel
-    setupVisualizationControlPanel();
-    
-    // Create visualization component
-    reverbVisuals = std::make_unique<ReverbVisuals>(proc, state, getErRms, getTailRms, getDuckGrDb, getWidthNow);
-    addAndMakeVisible(*reverbVisuals);
-    
-    // Setup EQ labels
-    setupEQLabels();
-    
-    // Set initial label colors
-    updateLabelColors();
-    
-    // Start animation timer
-    startTimerHz(30);
+
+    // EQ Panels
+    reverbEQ    = std::make_unique<ReverbToneEQ> (proc);
+    decayRateEQ = std::make_unique<DecayRateEQ> (proc);
+    addAndMakeVisible (*reverbEQ);
+    addAndMakeVisible (*decayRateEQ);
+
+    // Visualization controls + buttons
+    setupVisualizationControlPanel ();
+
+    // Visualization child component (primary visual renderer)
+    reverbVisuals = std::make_unique<ReverbVisuals> (proc, state, getErRms, getTailRms, getDuckGrDb, getWidthNow);
+    addAndMakeVisible (*reverbVisuals);
+
+    // Labels (Tone/Decay/Ducking/Visualization)
+    setupEQLabels ();
+    updateLabelColors (); // sync to theme
+
+    startTimerHz (kFps);
 }
 
-ReverbGraphics::~ReverbGraphics()
+ReverbGraphics::~ReverbGraphics ()
 {
-    // Stop timer before destruction to prevent use-after-free
-    stopTimer();
-    
+    stopTimer ();
 }
 
-void ReverbGraphics::visibilityChanged()
+// ─────────────────────────────────────────────────────────────────────────────
+// Component lifecycle
+// ─────────────────────────────────────────────────────────────────────────────
+
+void ReverbGraphics::visibilityChanged ()
 {
-    // Stop timer when component becomes invisible to prevent background processing
-    if (!isVisible())
-    {
-        stopTimer();
-    }
-    else if (isVisible() && !isTimerRunning())
-    {
-        // Restart timer when component becomes visible again
-        startTimerHz(30);
-    }
+    if (! isVisible ())
+        stopTimer ();
+    else if (! isTimerRunning ())
+        startTimerHz (kFps);
 }
 
-void ReverbGraphics::paint(juce::Graphics& g)
+// ─────────────────────────────────────────────────────────────────────────────
+// Paint
+// ─────────────────────────────────────────────────────────────────────────────
+
+void ReverbGraphics::paint (juce::Graphics& g)
 {
-    auto r = getLocalBounds().toFloat();
-    
-    
-    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    const auto r  = getLocalBounds ().toFloat ();
+    auto* lf      = dynamic_cast<FieldLNF*> (&getLookAndFeel ());
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
-    
-    // Anti-aliasing fix: Fill entire area first, then rounded rectangle
-    const float cr = 8.0f;
-    
-    // Fill entire rectangular area to prevent white corners
-    g.setColour(th.meters.panelDark);
-    g.fillRect(r);
-    
-    // Then draw rounded rectangle on top
-    g.fillRoundedRectangle(r, cr);
-    
-    // Strong edge shading for depth
-    g.setColour(th.sh.withAlpha(0.6f));
-    g.drawRoundedRectangle(r.reduced(0.5f), cr - 0.5f, 2.0f);
-    
-    // Content area
-    auto contentR = r.reduced(10.0f);
-    
-    // Paint visualization in the visualization control panel
-    auto panelBounds = visualizationControlPanel.getBounds();
-    auto visualizationArea = panelBounds.reduced(15);
-    visualizationArea.removeFromTop(60); // Space for title and buttons
-    
-    // Paint visualization based on current mode in the panel area
-    g.saveState();
-    g.setOrigin(visualizationArea.getX(), visualizationArea.getY());
-    g.reduceClipRegion(0, 0, visualizationArea.getWidth(), visualizationArea.getHeight());
-    
-    // Create a temporary graphics context with the correct bounds
-    auto tempBounds = juce::Rectangle<int>(0, 0, visualizationArea.getWidth(), visualizationArea.getHeight());
-    
-    // DEBUG: Log current view mode
-    DBG("🎨 Current view mode: " << (int)currentViewMode << " (0=Rays, 1=Waterfall, 2=Spectral)");
-    
-    switch (currentViewMode)
+
+    // Panel base fill + rounded shell
+    g.setColour (th.meters.panelDark);
+    g.fillRect (r);
+    g.fillRoundedRectangle (r, kCornerRadius);
+
+    // Outer shadow + crisp edge
+    g.setColour (th.sh.withAlpha (kOuterShadowAlpha));
+    g.drawRoundedRectangle (r.reduced (0.5f), kCornerRadius - 0.5f, kEdgeOutlineThick);
+
+    // Decorative parent-level visualization paint (optional)
+    if constexpr (kPaintParentVisualization)
     {
-        case ViewMode::Rays:
-            DBG("✨ Painting Rays visualization");
-            paintRaysInBounds(g, tempBounds.toFloat());
-            break;
-        case ViewMode::Waterfall:
-            DBG("🌊 Painting Waterfall visualization");
-            paintWaterfallInBounds(g, tempBounds.toFloat());
-            break;
-        case ViewMode::Spectral:
-            DBG("📊 Painting Spectral visualization");
-            paintSpectralInBounds(g, tempBounds.toFloat());
-            break;
+        // Use the same inner area the child component occupies for a subtle background
+        const auto vizPanel = visualizationControlPanel.getBounds ().toFloat ()
+                                .reduced (15.0f).withTrimmedTop (60.0f);
+
+       #if JUCE_DEBUG
+        DBG ("🎨 Current view mode: " << (int) currentViewMode << " (0=Rays, 1=Waterfall, 2=Spectral)");
+       #endif
+
+        g.saveState ();
+        g.reduceClipRegion (vizPanel.toNearestInt ());
+        g.setOrigin (vizPanel.getX (), vizPanel.getY ());
+
+        switch (currentViewMode)
+        {
+            case ViewMode::Rays:       paintRaysInBounds      (g, vizPanel.withPosition (0, 0)); break;
+            case ViewMode::Waterfall:  paintWaterfallInBounds (g, vizPanel.withPosition (0, 0)); break;
+            case ViewMode::Spectral:   paintSpectralInBounds  (g, vizPanel.withPosition (0, 0)); break;
+        }
+        g.restoreState ();
     }
-    
-    g.restoreState();
-    
-    // Paint GR overlay
-    paintGrOverlay(g);
+
+    // Global ducking GR overlay (renders over everything)
+    paintGrOverlay (g);
 }
 
-void ReverbGraphics::resized()
+// ─────────────────────────────────────────────────────────────────────────────
+// Layout
+// ─────────────────────────────────────────────────────────────────────────────
+
+void ReverbGraphics::resized ()
 {
-    auto bounds = getLocalBounds();
-    
-    
-    // Horizontal split: EQ panels on left (50%), visualization in middle (40%), ducking on right (10%)
-    auto leftArea = bounds.removeFromLeft(bounds.getWidth() * 0.5f);
-    auto middleArea = bounds.removeFromLeft(bounds.getWidth() * 0.8f); // 40% of remaining 50% = 20% of total
-    auto rightArea = bounds; // 30% of total width
-    
-    // Fix: Calculate percentages of total width, not remaining width
-    auto totalWidth = getLocalBounds().getWidth();
-    auto totalHeight = getLocalBounds().getHeight();
-    
-    // Safety checks to prevent crashes
-    if (totalWidth <= 0 || totalHeight <= 0) return;
-    
-    leftArea = juce::Rectangle<int>(0, 0, (int)(totalWidth * 0.5f), totalHeight);
-    middleArea = juce::Rectangle<int>((int)(totalWidth * 0.5f), 0, (int)(totalWidth * 0.4f), totalHeight);
-    rightArea = juce::Rectangle<int>((int)(totalWidth * 0.9f), 0, (int)(totalWidth * 0.1f), totalHeight);
-    
-    // Add gaps between areas
-    leftArea.removeFromRight(10); // 10px gap
-    middleArea.removeFromLeft(5);  // 5px gap
-    middleArea.removeFromRight(5); // 5px gap
-    rightArea.removeFromLeft(5);   // 5px gap
-    
-    // Visualization takes the middle area
-    auto visualizationArea = middleArea;
-    
-    // DEBUG: Log visualization area bounds
-    DBG("🎨 Visualization area bounds: " << visualizationArea.toString());
-    
-    // Ducking takes the right area (vertical strip)
-    auto duckingArea = rightArea;
-    
-    // Position ducking label and module
-    auto duckingLabelArea = duckingArea.removeFromTop(25);
-    duckingLabel.setBounds(duckingLabelArea);
-    
+    const auto total = getLocalBounds ();
+    const int  W     = total.getWidth ();
+    const int  H     = total.getHeight ();
+    if (W <= 0 || H <= 0) return;
+
+    // Column rectangles derived from total width (no "removeFrom..." cascading)
+    auto leftArea   = juce::Rectangle<int> (0, 0, (int) (W * kLeftPct),  H);
+    auto middleArea = juce::Rectangle<int> ((int) (W * kLeftPct), 0, (int) (W * kMiddlePct), H);
+    auto rightArea  = juce::Rectangle<int> ((int) (W * (1.0f - kRightPct)), 0, (int) (W * kRightPct), H);
+
+    // Add gutters
+    leftArea.removeFromRight   (kInterGapLarge);
+    middleArea = middleArea.reduced (kInterGapSmall, 0);
+    rightArea.removeFromLeft   (kInterGapSmall);
+
+    // Middle column: Visualization label, panel, buttons row, child visuals
+    {
+        auto vizArea = middleArea;
+        auto vizLabel = vizArea.removeFromTop (kLabelHeight);
+        visualizationLabel.setBounds (vizLabel);
+
+        visualizationControlPanel.setBounds (vizArea);
+
+        // Buttons row (centered)
+        auto buttonsRow      = vizArea.removeFromTop (kButtonsHeight).reduced (kInterGapSmall, 0);
+        const int totalBtnW  = (kButtonsWidth * 3) + (kButtonsSpacing * 2);
+        const int startX     = buttonsRow.getX () + (buttonsRow.getWidth () - totalBtnW) / 2;
+
+        raysButton.setBounds      (startX,                              buttonsRow.getY (), kButtonsWidth, kButtonsHeight);
+        waterfallButton.setBounds (startX + kButtonsWidth + kButtonsSpacing,
+                                   buttonsRow.getY (), kButtonsWidth, kButtonsHeight);
+        spectralButton.setBounds  (startX + (kButtonsWidth + kButtonsSpacing) * 2,
+                                   buttonsRow.getY (), kButtonsWidth, kButtonsHeight);
+
+        // Child visuals below buttons
+        if (reverbVisuals)
+        {
+            const int top = buttonsRow.getBottom () + 15;
+            auto child = juce::Rectangle<int> (vizArea.getX () + kOuterPad,
+                                               top,
+                                               vizArea.getWidth () - 2 * kOuterPad,
+                                               vizArea.getBottom () - top - kOuterPad);
+            reverbVisuals->setBounds (child);
+        }
+    }
+
+    // Left column: Tone EQ (top) + Decay-Rate EQ (bottom), each with band indicator + label
+    if (reverbEQ && decayRateEQ)
+    {
+        auto toneArea  = leftArea.removeFromTop (leftArea.getHeight () / 2);
+        auto toneLabel = toneArea.removeFromTop (kLabelHeight);
+        auto toneDots  = toneLabel.removeFromLeft (60).translated (12, 10);
+
+        toneEqIndicator.setBounds (toneDots);
+        toneEqLabel.setBounds     (toneLabel);
+        reverbEQ->setBounds       (toneArea);
+
+        auto decayArea  = leftArea; // remaining half
+        auto decayLabel = decayArea.removeFromTop (kLabelHeight);
+        auto decayDots  = decayLabel.removeFromLeft (45).translated (12, 10);
+
+        decayRateEqIndicator.setBounds (decayDots);
+        decayRateEqLabel.setBounds     (decayLabel);
+        decayRateEQ->setBounds         (decayArea);
+    }
+
+    // Right column: Ducking label + ducking module
+    {
+        auto duckLabel = rightArea.removeFromTop (kLabelHeight);
+        duckingLabel.setBounds (duckLabel);
+
+        if (duckingFloat)
+            duckingFloat->setBounds (rightArea);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Visualization panel + buttons
+// ─────────────────────────────────────────────────────────────────────────────
+
+void ReverbGraphics::setupVisualizationControlPanel ()
+{
+    addAndMakeVisible (visualizationControlPanel);
+
+    addAndMakeVisible (raysButton);
+    addAndMakeVisible (waterfallButton);
+    addAndMakeVisible (spectralButton);
+
+    visualizationControlPanel.setOpaque (true);
+
+    // Button labels
+    raysButton.setButtonText ("Rays");
+    waterfallButton.setButtonText ("Waterfall");
+    spectralButton.setButtonText ("Spectral");
+
+    // Toggle callbacks
+    raysButton.onClick = [this]
+    {
+        setViewMode (ViewMode::Rays);
+        if (reverbVisuals) reverbVisuals->setViewMode (ReverbVisuals::ViewMode::Rays);
+       #if JUCE_DEBUG
+        DBG ("✨ Rays visualization activated");
+       #endif
+    };
+
+    waterfallButton.onClick = [this]
+    {
+        setViewMode (ViewMode::Waterfall);
+        if (reverbVisuals) reverbVisuals->setViewMode (ReverbVisuals::ViewMode::Waterfall);
+       #if JUCE_DEBUG
+        DBG ("🌊 Waterfall visualization activated");
+       #endif
+    };
+
+    spectralButton.onClick = [this]
+    {
+        setViewMode (ViewMode::Spectral);
+        if (reverbVisuals) reverbVisuals->setViewMode (ReverbVisuals::ViewMode::Spectral);
+       #if JUCE_DEBUG
+        DBG ("📊 Spectral visualization activated");
+       #endif
+    };
+
+    // Initial states
+    raysButton.setToggleState (true,  juce::dontSendNotification);
+    waterfallButton.setToggleState (false, juce::dontSendNotification);
+    spectralButton.setToggleState (false, juce::dontSendNotification);
+
+    // Minimal button theming (primary handled by LookAndFeel)
+    auto style = [] (juce::TextButton& b)
+    {
+        b.setColour (juce::TextButton::buttonColourId,    juce::Colour (0xFF2D2D2D));
+        b.setColour (juce::TextButton::buttonOnColourId,  juce::Colour (0xFF4A90E2));
+        b.setColour (juce::TextButton::textColourOnId,    juce::Colour (0xFFFFFFFF));
+        b.setColour (juce::TextButton::textColourOffId,   juce::Colour (0xFFCCCCCC));
+    };
+    style (raysButton);
+    style (waterfallButton);
+    style (spectralButton);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Labels
+// ─────────────────────────────────────────────────────────────────────────────
+
+void ReverbGraphics::setupEQLabels ()
+{
+    addAndMakeVisible (toneEqLabel);
+    addAndMakeVisible (decayRateEqLabel);
+    addAndMakeVisible (duckingLabel);
+    addAndMakeVisible (visualizationLabel);
+
+    auto setLabel = [] (juce::Label& L, const juce::String& text)
+    {
+        L.setText (text, juce::dontSendNotification);
+        L.setJustificationType (juce::Justification::centred);
+        L.setFont (juce::Font (12.0f, juce::Font::bold));
+        L.removeColour (juce::Label::textColourId); // Let LNF drive colours
+    };
+
+    setLabel (toneEqLabel,          "TONE EQ");
+    setLabel (decayRateEqLabel,     "DECAY-RATE EQ");
+    setLabel (duckingLabel,         "DUCKING");
+    setLabel (visualizationLabel,   "VISUALIZATION");
+}
+
+void ReverbGraphics::updateLabelColors ()
+{
+    if (auto* lf = dynamic_cast<FieldLNF*> (&getLookAndFeel ()))
+    {
+        const auto c = lf->findColour (FieldLNF::eqLabelTextColourId);
+        toneEqLabel.setColour        (juce::Label::textColourId, c);
+        decayRateEqLabel.setColour   (juce::Label::textColourId, c);
+        duckingLabel.setColour       (juce::Label::textColourId, c);
+        visualizationLabel.setColour (juce::Label::textColourId, c);
+    }
+}
+
+void ReverbGraphics::lookAndFeelChanged ()
+{
+    updateLabelColors ();
+
+    if (reverbEQ)    { reverbEQ->lookAndFeelChanged ();    reverbEQ->repaint (); }
+    if (decayRateEQ) { decayRateEQ->lookAndFeelChanged (); decayRateEQ->repaint (); }
+
     if (duckingFloat)
     {
-        duckingFloat->setBounds(duckingArea);
+        duckingFloat->setLookAndFeel (&getLookAndFeel ());
+        duckingFloat->lookAndFeelChanged ();
+        duckingFloat->repaint ();
     }
-    
-    // Position visualization label and panel in bottom half
-    auto visualizationLabelArea = visualizationArea.removeFromTop(25);
-    visualizationLabel.setBounds(visualizationLabelArea);
-    visualizationControlPanel.setBounds(visualizationArea);
-    
-    // Layout buttons in horizontal row centered with 15px top padding
-    auto panelBounds = visualizationControlPanel.getBounds();
-    auto buttonArea = panelBounds.reduced(5); // 5px padding on all sides
-    buttonArea.removeFromTop(10); // Additional 10px top padding (5px + 10px = 15px total)
-    
-    auto buttonHeight = 30;
-    auto buttonWidth = 80;
-    auto buttonSpacing = 8;
-    auto totalButtonWidth = (buttonWidth * 3) + (buttonSpacing * 2);
-    
-    // Center buttons in the available space
-    auto buttonRow = buttonArea.removeFromTop(buttonHeight);
-    auto buttonStartX = buttonRow.getX() + (buttonRow.getWidth() - totalButtonWidth) / 2;
-    
-    raysButton.setBounds(buttonStartX, buttonRow.getY(), buttonWidth, buttonHeight);
-    waterfallButton.setBounds(buttonStartX + buttonWidth + buttonSpacing, buttonRow.getY(), buttonWidth, buttonHeight);
-    spectralButton.setBounds(buttonStartX + (buttonWidth + buttonSpacing) * 2, buttonRow.getY(), buttonWidth, buttonHeight);
-    
-    // Position visualization component below the buttons
-    if (reverbVisuals)
-    {
-        auto vizArea = juce::Rectangle<int>(visualizationArea.getX() + 10, buttonRow.getY() + buttonHeight + 15, 
-                                          visualizationArea.getWidth() - 20, 
-                                          visualizationArea.getBottom() - (buttonRow.getY() + buttonHeight + 15) - 10);
-        reverbVisuals->setBounds(vizArea);
-    }
-    
-        // Left side: EQ panels with labels (50/50 split like right side)
-        if (reverbEQ && decayRateEQ)
-        {
-            // Split left area into two equal halves
-            auto topLeftArea = leftArea.removeFromTop(leftArea.getHeight() * 0.5f);
-            auto bottomLeftArea = leftArea;
-            
-            // Top half: Tone EQ
-            auto toneLabelArea = topLeftArea.removeFromTop(25);
-            
-            // Position band indicator and label on the same row
-            auto indicatorArea = toneLabelArea.removeFromLeft(60).translated(12, 10); // 12px left padding, 10px down
-            toneEqIndicator.setBounds(indicatorArea);
-            toneEqLabel.setBounds(toneLabelArea);
-            
-            reverbEQ->setBounds(topLeftArea);
-            
-            // Bottom half: Decay Rate EQ
-            auto decayLabelArea = bottomLeftArea.removeFromTop(25);
-            
-            // Position band indicator and label on the same row
-            auto decayIndicatorArea = decayLabelArea.removeFromLeft(45).translated(12, 10); // 12px left padding, 10px down
-            decayRateEqIndicator.setBounds(decayIndicatorArea);
-            decayRateEqLabel.setBounds(decayLabelArea);
-            
-            decayRateEQ->setBounds(bottomLeftArea);
-        }
-    
-    // Right side: Visualization area (for future use)
-    // The visualization content is drawn in paint() method
+
+    repaint ();
 }
 
-void ReverbGraphics::setupVisualizationControlPanel()
-{
-    // Add the visualization control panel as a child component
-    addAndMakeVisible(visualizationControlPanel);
-    
-    // Add buttons to the main component (not the control panel)
-    addAndMakeVisible(raysButton);
-    addAndMakeVisible(waterfallButton);
-    addAndMakeVisible(spectralButton);
-    
-    // Set up custom paint for the control panel
-    visualizationControlPanel.setOpaque(true);
-    
-    // Configure button text and styling
-    raysButton.setButtonText("Rays");
-    waterfallButton.setButtonText("Waterfall");
-    spectralButton.setButtonText("Spectral");
-    
-    // Set up button callbacks
-    raysButton.onClick = [this] { 
-        setViewMode(ViewMode::Rays); 
-        if (reverbVisuals) reverbVisuals->setViewMode(ReverbVisuals::ViewMode::Rays);
-        DBG("✨ Rays visualization activated");
-    };
-    waterfallButton.onClick = [this] { 
-        setViewMode(ViewMode::Waterfall); 
-        if (reverbVisuals) reverbVisuals->setViewMode(ReverbVisuals::ViewMode::Waterfall);
-        DBG("🌊 Waterfall visualization activated - showing theme grey waterfall");
-    };
-    spectralButton.onClick = [this] { 
-        setViewMode(ViewMode::Spectral); 
-        if (reverbVisuals) reverbVisuals->setViewMode(ReverbVisuals::ViewMode::Spectral);
-        DBG("📊 Spectral visualization activated");
-    };
-    
-    // Set initial button states
-    raysButton.setToggleState(true, juce::dontSendNotification);
-    waterfallButton.setToggleState(false, juce::dontSendNotification);
-    spectralButton.setToggleState(false, juce::dontSendNotification);
-    
-    // Style the buttons with Field theme
-    auto styleButton = [](juce::TextButton& button) {
-        button.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF2D2D2D));
-        button.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xFF4A90E2));
-        button.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFFFFFFFF));
-        button.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFCCCCCC));
-    };
-    
-    styleButton(raysButton);
-    styleButton(waterfallButton);
-    styleButton(spectralButton);
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// View mode
+// ─────────────────────────────────────────────────────────────────────────────
 
-void ReverbGraphics::setupEQLabels()
-{
-    // Add EQ labels as visible components
-    addAndMakeVisible(toneEqLabel);
-    addAndMakeVisible(decayRateEqLabel);
-    addAndMakeVisible(duckingLabel);
-    addAndMakeVisible(visualizationLabel);
-    
-    // Configure tone EQ label
-    toneEqLabel.setText("TONE EQ", juce::dontSendNotification);
-    toneEqLabel.setJustificationType(juce::Justification::centred);
-    toneEqLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
-    
-    // Configure decay rate EQ label
-    decayRateEqLabel.setText("DECAY-RATE EQ", juce::dontSendNotification);
-    decayRateEqLabel.setJustificationType(juce::Justification::centred);
-    decayRateEqLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
-    
-    // Configure ducking label
-    duckingLabel.setText("DUCKING", juce::dontSendNotification);
-    duckingLabel.setJustificationType(juce::Justification::centred);
-    duckingLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
-    
-    // Configure visualization label
-    visualizationLabel.setText("VISUALIZATION", juce::dontSendNotification);
-    visualizationLabel.setJustificationType(juce::Justification::centred);
-    visualizationLabel.setFont(juce::FontOptions(12.0f).withStyle("bold"));
-    
-    // Remove any hardcoded colors - let LNF handle them
-    toneEqLabel.removeColour(juce::Label::textColourId);
-    decayRateEqLabel.removeColour(juce::Label::textColourId);
-    duckingLabel.removeColour(juce::Label::textColourId);
-    visualizationLabel.removeColour(juce::Label::textColourId);
-}
-
-void ReverbGraphics::setViewMode(ViewMode mode)
+void ReverbGraphics::setViewMode (ViewMode mode)
 {
     currentViewMode = mode;
-    
-    // Update button states
-    raysButton.setToggleState(mode == ViewMode::Rays, juce::dontSendNotification);
-    waterfallButton.setToggleState(mode == ViewMode::Waterfall, juce::dontSendNotification);
-    spectralButton.setToggleState(mode == ViewMode::Spectral, juce::dontSendNotification);
-    
-    repaint();
+
+    raysButton.setToggleState      (mode == ViewMode::Rays,      juce::dontSendNotification);
+    waterfallButton.setToggleState (mode == ViewMode::Waterfall, juce::dontSendNotification);
+    spectralButton.setToggleState  (mode == ViewMode::Spectral,  juce::dontSendNotification);
+
+    repaint ();
 }
 
-void ReverbGraphics::lookAndFeelChanged()
-{
-    // Update label colors to match current theme
-    updateLabelColors();
-    
-    // Force repaint of EQ components to update their colors
-    if (reverbEQ) {
-        reverbEQ->lookAndFeelChanged();
-        reverbEQ->repaint();
-    }
-    if (decayRateEQ) {
-        decayRateEQ->lookAndFeelChanged();
-        decayRateEQ->repaint();
-    }
-    
-    // Force repaint of ducking module to update its colors
-    if (duckingFloat) {
-        // Set the proper LookAndFeel for the ducking float
-        duckingFloat->setLookAndFeel(&getLookAndFeel());
-        duckingFloat->lookAndFeelChanged();
-        duckingFloat->repaint();
-    }
-    
-    repaint();
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Parent-level visual paint helpers (decorative; child owns main visuals)
+// ─────────────────────────────────────────────────────────────────────────────
 
-void ReverbGraphics::updateLabelColors()
-{
-    // Get current theme colors from LookAndFeel
-    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    if (lf) {
-        auto accentColor = lf->findColour(FieldLNF::eqLabelTextColourId);
-        
-        // Update all label colors
-        toneEqLabel.setColour(juce::Label::textColourId, accentColor);
-        decayRateEqLabel.setColour(juce::Label::textColourId, accentColor);
-        duckingLabel.setColour(juce::Label::textColourId, accentColor);
-        visualizationLabel.setColour(juce::Label::textColourId, accentColor);
-    }
-}
+void ReverbGraphics::paintRays (juce::Graphics& g)              { paintRaysInBounds (g, getLocalBounds ().toFloat ()); }
+void ReverbGraphics::paintWaterfall (juce::Graphics& g)         { paintWaterfallInBounds (g, getLocalBounds ().toFloat ()); }
+void ReverbGraphics::paintSpectral (juce::Graphics& g)          { paintSpectralInBounds (g, getLocalBounds ().toFloat ()); }
 
-void ReverbGraphics::paintRays(juce::Graphics& g)
+void ReverbGraphics::paintRaysInBounds (juce::Graphics& g, juce::Rectangle<float> bounds)
 {
-    paintRaysInBounds(g, getLocalBounds().toFloat());
-}
+    const auto center = bounds.getCentre ();
 
-void ReverbGraphics::paintRaysInBounds(juce::Graphics& g, juce::Rectangle<float> bounds)
-{
-    auto center = bounds.getCentre();
-    
-    // Get current parameters for ray properties
-    auto erLevel = getErRms ? getErRms() : 0.0f;
-    auto tailLevel = getTailRms ? getTailRms() : 0.0f;
-    auto width = getWidthNow ? getWidthNow() : 0.5f;
-    
-    // Use default levels if no audio signal
-    if (erLevel == 0.0f && tailLevel == 0.0f)
-    {
-        erLevel = 0.4f;  // Default ER level for visualization
-        tailLevel = 0.3f; // Default tail level for visualization
-    }
-    
-    // Number of rays based on density
-    int numRays = 20 + (int)(erLevel * 30);
-    numRays = juce::jlimit(10, 50, numRays);
-    
-    // Ray properties
-    float rayLength = bounds.getWidth() * 0.3f;
-    float rayThickness = 2.0f;
-    
-    // Color based on tail level
-    auto rayColor = juce::Colour::fromHSV(0.6f, 0.8f, 0.3f + tailLevel * 0.7f, 0.8f);
-    g.setColour(rayColor);
-    
-    // Draw rays with random jitter
-    juce::Random random;
+    auto erLevel = getErRms   ? getErRms ()   : 0.0f;
+    auto tail    = getTailRms ? getTailRms () : 0.0f;
+
+    if (erLevel == 0.0f && tail == 0.0f) { erLevel = 0.4f; tail = 0.3f; }
+
+    const int numRays = juce::jlimit (10, 50, 20 + (int) (erLevel * 30));
+    const float rayLength   = bounds.getWidth () * 0.30f;
+    const float baseThick   = 2.0f;
+    const auto rayColour    = juce::Colour::fromHSV (0.60f, 0.80f, 0.30f + tail * 0.70f, 0.80f);
+
+    g.setColour (rayColour);
+    juce::Random rng;
     for (int i = 0; i < numRays; ++i)
     {
-        // Random angle with some clustering
-        float angle = (float)i / numRays * juce::MathConstants<float>::twoPi;
-        angle += random.nextFloat() * 0.2f - 0.1f; // Jitter
-        
-        // Ray start and end points
-        auto start = center;
-        auto end = center + juce::Point<float>(rayLength * cosf(angle), rayLength * sinf(angle));
-        
-        // Vary thickness based on density
-        float currentThickness = rayThickness * (0.5f + erLevel * 0.5f);
-        
-        g.drawLine(start.x, start.y, end.x, end.y, currentThickness);
+        float a = (float) i / (float) numRays * kTwoPi;
+        a += rng.nextFloat () * 0.2f - 0.1f;
+
+        const auto end = center + juce::Point<float> (rayLength * std::cos (a), rayLength * std::sin (a));
+        const float t  = baseThick * (0.5f + erLevel * 0.5f);
+
+        g.drawLine (center.x, center.y, end.x, end.y, t);
     }
 }
 
-void ReverbGraphics::paintWaterfall(juce::Graphics& g)
+void ReverbGraphics::paintWaterfallInBounds (juce::Graphics& g, juce::Rectangle<float> bounds)
 {
-    paintWaterfallInBounds(g, getLocalBounds().toFloat());
-}
+   #if JUCE_DEBUG
+    DBG ("🌊 paintWaterfallInBounds bounds=" << bounds.toString ());
+   #endif
 
-void ReverbGraphics::paintWaterfallInBounds(juce::Graphics& g, juce::Rectangle<float> bounds)
-{
-    // DEBUG: Log when waterfall is being painted
-    DBG("🌊 paintWaterfallInBounds called - bounds: " << bounds.toString());
-    
-    // Get current levels
-    auto erLevel = getErRms ? getErRms() : 0.0f;
-    auto tailLevel = getTailRms ? getTailRms() : 0.0f;
-    
-    // Get theme colors for grey waterfall
-    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    auto erLevel = getErRms   ? getErRms ()   : 0.0f;
+    auto tail    = getTailRms ? getTailRms () : 0.0f;
+
+    auto* lf      = dynamic_cast<FieldLNF*> (&getLookAndFeel ());
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
-    
-    // Create gradient bands
-    juce::ColourGradient gradient;
-    gradient.point1 = bounds.getTopLeft();
-    gradient.point2 = bounds.getBottomLeft();
-    
-    // Use theme greys for default waterfall
-    auto baseColor = th.meters.panelDark.withAlpha(0.8f);           // Dark grey base
-    auto midColor = th.meters.panelMedium.withAlpha(0.7f);          // Medium grey
-    auto highlightColor = th.meters.panelLight.withAlpha(0.6f);    // Light grey highlight
-    
-    // If there's actual audio signal, use the levels to modulate the greys
-    if (erLevel > 0.0f || tailLevel > 0.0f)
+
+    juce::ColourGradient grad;
+    grad.point1 = bounds.getTopLeft ();
+    grad.point2 = bounds.getBottomLeft ();
+
+    auto base = th.meters.panelDark.withAlpha (0.80f);
+    auto mid  = th.meters.panelMedium.withAlpha (0.70f);
+    auto hi   = th.meters.panelLight.withAlpha (0.60f);
+
+    if (erLevel > 0.0f || tail > 0.0f)
     {
-        // Modulate grey intensity based on audio levels
-        float intensity = juce::jmax(erLevel, tailLevel);
-        baseColor = th.meters.panelDark.withAlpha(0.6f + intensity * 0.3f);
-        midColor = th.meters.panelMedium.withAlpha(0.5f + intensity * 0.4f);
-        highlightColor = th.meters.panelLight.withAlpha(0.4f + intensity * 0.5f);
+        const float k = juce::jmax (erLevel, tail);
+        base = th.meters.panelDark  .withAlpha (0.60f + 0.30f * k);
+        mid  = th.meters.panelMedium.withAlpha (0.50f + 0.40f * k);
+        hi   = th.meters.panelLight .withAlpha (0.40f + 0.50f * k);
     }
-    
-    // Create waterfall gradient with multiple stops for depth
-    gradient.addColour(0.0f, baseColor);
-    gradient.addColour(0.3f, midColor);
-    gradient.addColour(0.7f, highlightColor);
-    gradient.addColour(1.0f, baseColor);
-    
-    g.setGradientFill(gradient);
-    g.fillRoundedRectangle(bounds, 8.0f);
-    
-    // DEBUG: Add bright yellow border to make waterfall visible
-    g.setColour(juce::Colour(0xFFFF0000)); // Bright yellow
-    g.drawRoundedRectangle(bounds, 8.0f, 3.0f);
-    
-    // Add subtle texture overlay using theme colors
-    g.setColour(th.textMuted.withAlpha(0.08f));
+
+    grad.addColour (0.00f, base);
+    grad.addColour (0.30f, mid);
+    grad.addColour (0.70f, hi);
+    grad.addColour (1.00f, base);
+
+    g.setGradientFill (grad);
+    g.fillRoundedRectangle (bounds, kCornerRadius);
+
+   #if JUCE_DEBUG
+    // Yellow debug border to verify visibility (off in Release)
+    g.setColour (juce::Colour (0xFFFFFF00));
+    g.drawRoundedRectangle (bounds, kCornerRadius, 3.0f);
+   #endif
+
+    // Subtle texture
+    g.setColour (th.textMuted.withAlpha (0.08f));
     for (int i = 0; i < 20; ++i)
     {
-        float y = bounds.getY() + (float)i / 20.0f * bounds.getHeight();
-        g.drawHorizontalLine((int)y, bounds.getX(), bounds.getRight());
+        const float y = bounds.getY () + (float) i / 20.0f * bounds.getHeight ();
+        g.drawHorizontalLine ((int) y, bounds.getX (), bounds.getRight ());
     }
-    
-    // Add vertical texture lines for waterfall effect
-    g.setColour(th.textMuted.withAlpha(0.05f));
+
+    g.setColour (th.textMuted.withAlpha (0.05f));
     for (int i = 0; i < 15; ++i)
     {
-        float x = bounds.getX() + (float)i / 15.0f * bounds.getWidth();
-        g.drawVerticalLine((int)x, bounds.getY(), bounds.getBottom());
+        const float x = bounds.getX () + (float) i / 15.0f * bounds.getWidth ();
+        g.drawVerticalLine ((int) x, bounds.getY (), bounds.getBottom ());
     }
 }
 
-void ReverbGraphics::paintSpectral(juce::Graphics& g)
+void ReverbGraphics::paintSpectralInBounds (juce::Graphics& g, juce::Rectangle<float> bounds)
 {
-    paintSpectralInBounds(g, getLocalBounds().toFloat());
-}
+    auto erLevel = getErRms   ? getErRms ()   : 0.0f;
+    auto tail    = getTailRms ? getTailRms () : 0.0f;
+    if (erLevel == 0.0f && tail == 0.0f) { erLevel = 0.4f; tail = 0.3f; }
 
-void ReverbGraphics::paintSpectralInBounds(juce::Graphics& g, juce::Rectangle<float> bounds)
-{
-    // Get current levels
-    auto erLevel = getErRms ? getErRms() : 0.0f;
-    auto tailLevel = getTailRms ? getTailRms() : 0.0f;
-    
-    // Use default levels if no audio signal
-    if (erLevel == 0.0f && tailLevel == 0.0f)
-    {
-        erLevel = 0.4f;  // Default ER level for visualization
-        tailLevel = 0.3f; // Default tail level for visualization
-    }
-    
-    // Draw frequency response curves
     juce::Path erPath, tailPath;
-    
-    // ER curve (higher frequencies)
-    erPath.startNewSubPath(bounds.getX(), bounds.getBottom());
-    for (int i = 0; i < bounds.getWidth(); i += 2)
+
+    // ER: gently falling with frequency
+    erPath.startNewSubPath (bounds.getX (), bounds.getBottom ());
+    for (int i = 0; i < bounds.getWidth (); i += 2)
     {
-        float x = bounds.getX() + i;
-        float freq = juce::jmap((float)i, 0.0f, bounds.getWidth(), 20.0f, 20000.0f);
-        float response = erLevel * (1.0f - (freq - 1000.0f) / 19000.0f);
-        float y = bounds.getBottom() - response * bounds.getHeight() * 0.5f;
-        erPath.lineTo(x, y);
+        const float x    = bounds.getX () + (float) i;
+        const float f    = juce::jmap ((float) i, 0.0f, bounds.getWidth (), 20.0f, 20000.0f);
+        const float resp = erLevel * (1.0f - (f - 1000.0f) / 19000.0f);
+        const float y    = bounds.getBottom () - resp * bounds.getHeight () * 0.5f;
+        erPath.lineTo (x, y);
     }
-    erPath.lineTo(bounds.getRight(), bounds.getBottom());
-    erPath.closeSubPath();
-    
-    // Tail curve (lower frequencies)
-    tailPath.startNewSubPath(bounds.getX(), bounds.getBottom());
-    for (int i = 0; i < bounds.getWidth(); i += 2)
+    erPath.lineTo (bounds.getRight (), bounds.getBottom ());
+    erPath.closeSubPath ();
+
+    // Tail: rises toward LF
+    tailPath.startNewSubPath (bounds.getX (), bounds.getBottom ());
+    for (int i = 0; i < bounds.getWidth (); i += 2)
     {
-        float x = bounds.getX() + i;
-        float freq = juce::jmap((float)i, 0.0f, bounds.getWidth(), 20.0f, 20000.0f);
-        float response = tailLevel * (freq / 1000.0f);
-        float y = bounds.getBottom() - response * bounds.getHeight() * 0.3f;
-        tailPath.lineTo(x, y);
+        const float x    = bounds.getX () + (float) i;
+        const float f    = juce::jmap ((float) i, 0.0f, bounds.getWidth (), 20.0f, 20000.0f);
+        const float resp = tail * (f / 1000.0f);
+        const float y    = bounds.getBottom () - resp * bounds.getHeight () * 0.3f;
+        tailPath.lineTo (x, y);
     }
-    tailPath.lineTo(bounds.getRight(), bounds.getBottom());
-    tailPath.closeSubPath();
-    
-    // Fill paths
-    g.setColour(juce::Colour::fromHSV(0.6f, 0.7f, 0.4f, 0.6f));
-    g.fillPath(erPath);
-    
-    g.setColour(juce::Colour::fromHSV(0.1f, 0.7f, 0.4f, 0.6f));
-    g.fillPath(tailPath);
-    
-    // Draw outlines
-    g.setColour(juce::Colour::fromHSV(0.6f, 0.8f, 0.8f, 0.9f));
-    g.strokePath(erPath, juce::PathStrokeType(2.0f));
-    
-    g.setColour(juce::Colour::fromHSV(0.1f, 0.8f, 0.8f, 0.9f));
-    g.strokePath(tailPath, juce::PathStrokeType(2.0f));
+    tailPath.lineTo (bounds.getRight (), bounds.getBottom ());
+    tailPath.closeSubPath ();
+
+    g.setColour (juce::Colour::fromHSV (0.60f, 0.70f, 0.40f, 0.60f)); g.fillPath (erPath);
+    g.setColour (juce::Colour::fromHSV (0.10f, 0.70f, 0.40f, 0.60f)); g.fillPath (tailPath);
+
+    g.setColour (juce::Colour::fromHSV (0.60f, 0.80f, 0.80f, 0.90f)); g.strokePath (erPath,   juce::PathStrokeType (2.0f));
+    g.setColour (juce::Colour::fromHSV (0.10f, 0.80f, 0.80f, 0.90f)); g.strokePath (tailPath, juce::PathStrokeType (2.0f));
 }
 
-void ReverbGraphics::paintGrOverlay(juce::Graphics& g)
+// ─────────────────────────────────────────────────────────────────────────────
+// Ducking overlay, timer, and live updates
+// ─────────────────────────────────────────────────────────────────────────────
+
+void ReverbGraphics::paintGrOverlay (juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat();
-    
-    // Get current GR level
-    auto grDb = getDuckGrDb ? getDuckGrDb() : 0.0f;
-    
-    if (grDb < -0.1f) // Only show if there's actual gain reduction
-    {
-        // Semi-transparent overlay
-        g.setColour(juce::Colours::red.withAlpha(0.3f));
-        g.fillRoundedRectangle(bounds, 8.0f);
-        
-        // GR text
-        g.setColour(juce::Colours::white);
-        g.setFont(16.0f);
-        g.drawText(juce::String(grDb, 1) + " dB GR", bounds, juce::Justification::centred);
-    }
+    const auto b = getLocalBounds ().toFloat ();
+    const float grDb = getDuckGrDb ? getDuckGrDb () : 0.0f;
+    if (grDb >= -0.1f) return;
+
+    g.setColour (juce::Colours::red.withAlpha (0.30f));
+    g.fillRoundedRectangle (b, kCornerRadius);
+
+    g.setColour (juce::Colours::white);
+    g.setFont (16.0f);
+    g.drawText (juce::String (grDb, 1) + " dB GR", b, juce::Justification::centred);
 }
 
-void ReverbGraphics::timerCallback()
+void ReverbGraphics::timerCallback ()
 {
-    // Safety check: Don't process if component is not visible or not in the component tree
-    if (!isVisible() || !isShowing() || getParentComponent() == nullptr)
+    if (! isVisible () || ! isShowing () || getParentComponent () == nullptr)
         return;
-    
-    // Update animation time
-    animationTime += ANIMATION_SPEED;
-    if (animationTime > juce::MathConstants<float>::twoPi)
-        animationTime -= juce::MathConstants<float>::twoPi;
 
-    // Update ducking module visibility based on DUCK toggle
-    updateDuckingModuleVisibility();
-    
-    // Band indicators now update automatically via BandCounter listeners
-    // Fallback: Manual update if automatic detection failed
-    if (toneEnabledIds.isEmpty() || decayEnabledIds.isEmpty())
-    {
-        updateBandIndicatorsManually();
-    }
+    animationTime += kAnimationSpeed;
+    if (animationTime > kTwoPi) animationTime -= kTwoPi;
 
-    // Update ducking float GR meter
+    updateDuckingModuleVisibility ();
+
+    if (toneEnabledIds.isEmpty () || decayEnabledIds.isEmpty ())
+        updateBandIndicatorsManually ();
+
     if (duckingFloat && getDuckGrDb)
-    {
-        auto grDb = getDuckGrDb();
-        duckingFloat->updateGrMeter(grDb);
-    }
+        duckingFloat->updateGrMeter (getDuckGrDb ());
 
-    // Repaint for animation
-    repaint();
+    repaint ();
 }
 
-void ReverbGraphics::setSampleRate(double sr)
+// ─────────────────────────────────────────────────────────────────────────────
+// DSP hooks passthrough
+// ─────────────────────────────────────────────────────────────────────────────
+
+void ReverbGraphics::setSampleRate (double sr)
 {
-    if (reverbEQ) reverbEQ->setSampleRate(sr);
-    if (decayRateEQ) decayRateEQ->setSampleRate(sr);
+    if (reverbEQ)    reverbEQ->setSampleRate (sr);
+    if (decayRateEQ) decayRateEQ->setSampleRate (sr);
 }
 
-void ReverbGraphics::pause()
+void ReverbGraphics::pause  () { if (reverbEQ) reverbEQ->pause  (); if (decayRateEQ) decayRateEQ->pause  (); }
+void ReverbGraphics::resume () { if (reverbEQ) reverbEQ->resume (); if (decayRateEQ) decayRateEQ->resume (); }
+
+void ReverbGraphics::pushBlock    (const float* L, const float* R, int n)
 {
-    if (reverbEQ) reverbEQ->pause();
-    if (decayRateEQ) decayRateEQ->pause();
+    if (reverbEQ)    reverbEQ->pushBlock    (L, R, n);
+    if (decayRateEQ) decayRateEQ->pushBlock (L, R, n);
+}
+void ReverbGraphics::pushBlockPre (const float* L, const float* R, int n)
+{
+    if (reverbEQ)    reverbEQ->pushBlockPre    (L, R, n);
+    if (decayRateEQ) decayRateEQ->pushBlockPre (L, R, n);
 }
 
-void ReverbGraphics::resume()
+// ─────────────────────────────────────────────────────────────────────────────
+// Ducking + Band Indicator helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+void ReverbGraphics::updateDuckingModuleVisibility ()
 {
-    if (reverbEQ) reverbEQ->resume();
-    if (decayRateEQ) decayRateEQ->resume();
+    if (! duckingFloat) return;
+
+    const auto* duckOnParam = state.getRawParameterValue (ReverbParamIDs::duckOn);
+    const bool enabled = duckOnParam ? (duckOnParam->load () > 0.5f) : false;
+
+    duckingFloat->setVisible (true);
+    duckingFloat->setActive (enabled);
+    duckingFloat->setGreyedOut (! enabled);
 }
 
-void ReverbGraphics::pushBlock(const float* L, const float* R, int n)
+void ReverbGraphics::updateBandIndicatorsManually ()
 {
-    if (reverbEQ) reverbEQ->pushBlock(L, R, n);
-    if (decayRateEQ) decayRateEQ->pushBlock(L, R, n);
-}
+    int activeTone  = 0;
+    int activeDecay = 0;
 
-void ReverbGraphics::pushBlockPre(const float* L, const float* R, int n)
-{
-    if (reverbEQ) reverbEQ->pushBlockPre(L, R, n);
-    if (decayRateEQ) decayRateEQ->pushBlockPre(L, R, n);
-}
-
-void ReverbGraphics::updateDuckingModuleVisibility()
-{
-    if (!duckingFloat) return;
-    
-    // Check the DUCK toggle state from the APVTS
-    auto duckOnParam = state.getRawParameterValue(ReverbParamIDs::duckOn);
-    bool duckEnabled = duckOnParam ? (*duckOnParam > 0.5f) : false;
-    
-    // Always show the ducking module, but control its active/greyed out state
-    duckingFloat->setVisible(true);
-    duckingFloat->setActive(duckEnabled);
-    duckingFloat->setGreyedOut(!duckEnabled);
-}
-
-// Manual band indicator update method
-void ReverbGraphics::updateBandIndicatorsManually()
-{
-    // Manual fallback: count active bands by checking parameters directly
-    int activeToneBands = 0;
-    int activeDecayBands = 0;
-    
-    // Check Tone EQ bands (4 bands)
     for (int i = 0; i < 4; ++i)
     {
-        auto paramName = "tb_active_" + juce::String(i);
-        auto activeParam = state.getRawParameterValue(paramName);
-        if (activeParam && activeParam->load() > 0.5f)
-        {
-            activeToneBands++;
-        }
+        const auto id = "tb_active_" + juce::String (i);
+        if (auto* p = state.getRawParameterValue (id))
+            if (p->load () > 0.5f) ++activeTone;
     }
-    
-    // Check Decay-Rate EQ bands (3 bands)
     for (int i = 0; i < 3; ++i)
     {
-        auto paramName = "db_active_" + juce::String(i);
-        auto activeParam = state.getRawParameterValue(paramName);
-        if (activeParam && activeParam->load() > 0.5f)
-        {
-            activeDecayBands++;
-        }
+        const auto id = "db_active_" + juce::String (i);
+        if (auto* p = state.getRawParameterValue (id))
+            if (p->load () > 0.5f) ++activeDecay;
     }
-    
-    toneEqIndicator.setActiveBands(activeToneBands);
-    decayRateEqIndicator.setActiveBands(activeDecayBands);
-    repaint();
+
+    toneEqIndicator.setActiveBands (activeTone);
+    decayRateEqIndicator.setActiveBands (activeDecay);
+    repaint ();
 }
 
-// BandIndicator implementation
-ReverbGraphics::BandIndicator::BandIndicator(int maxBands) : maxBands(maxBands), activeBands(0)
+// ─────────────────────────────────────────────────────────────────────────────
+// BandIndicator (inline component)
+// ─────────────────────────────────────────────────────────────────────────────
+
+ReverbGraphics::BandIndicator::BandIndicator (int max)
+    : maxBands (max), activeBands (0)
 {
-    setSize((int)(maxBands * circleSpacing), (int)circleSize);
+    setSize ((int) (maxBands * kCircleSpacing), (int) kCircleSize);
 }
 
-void ReverbGraphics::BandIndicator::paint(juce::Graphics& g)
+void ReverbGraphics::BandIndicator::paint (juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat();
-    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    auto* lf      = dynamic_cast<FieldLNF*> (&getLookAndFeel ());
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
-    
-    g.setColour(th.accent);
-    
+
+    g.setColour (th.accent);
+
     for (int i = 0; i < maxBands; ++i)
     {
-        auto circleBounds = juce::Rectangle<float>(i * circleSpacing, 0, circleSize, circleSize);
-        
-        if (i < activeBands)
-        {
-            // Filled circle for active bands
-            g.fillEllipse(circleBounds);
-        }
-        else
-        {
-            // Empty circle with border for inactive bands
-            g.drawEllipse(circleBounds, 1.5f);
-        }
+        auto circle = juce::Rectangle<float> (i * kCircleSpacing, 0.0f, kCircleSize, kCircleSize);
+
+        if (i < activeBands) g.fillEllipse (circle);
+        else                 g.drawEllipse (circle, 1.5f);
     }
-    
-    // Debug background removed - indicators should now be working
 }
 
-void ReverbGraphics::BandIndicator::setActiveBands(int count)
+void ReverbGraphics::BandIndicator::setActiveBands (int count)
 {
-    activeBands = juce::jlimit(0, maxBands, count);
-    repaint();
+    activeBands = juce::jlimit (0, maxBands, count);
+    repaint ();
 }
 
-void ReverbGraphics::BandIndicator::setMaxBands(int max)
+void ReverbGraphics::BandIndicator::setMaxBands (int max)
 {
     maxBands = max;
-    setSize((int)(maxBands * circleSpacing), (int)circleSize);
-    repaint();
+    setSize ((int) (maxBands * kCircleSpacing), (int) kCircleSize);
+    repaint ();
 }
 
-// VisualizationControlPanel paint implementation
-void ReverbGraphics::VisualizationControlPanel::paint(juce::Graphics& g)
+// ─────────────────────────────────────────────────────────────────────────────
+// VisualizationControlPanel chrome
+// ─────────────────────────────────────────────────────────────────────────────
+
+void ReverbGraphics::VisualizationControlPanel::paint (juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().toFloat();
-    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    const auto b  = getLocalBounds ().toFloat ();
+    auto* lf      = dynamic_cast<FieldLNF*> (&getLookAndFeel ());
     FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
-    
-    const float cr = 8.0f;
-    
-    // Anti-aliasing fix: Fill entire area first, then rounded rectangle
-    g.setColour(th.meters.panelDark);
-    g.fillRect(bounds);
-    
-    // Then draw rounded rectangle on top
-    g.fillRoundedRectangle(bounds, cr);
-    
-    // Strong edge shading for depth
-    g.setColour(th.sh.withAlpha(0.6f));
-    g.drawRoundedRectangle(bounds.reduced(0.5f), cr - 0.5f, 2.0f);
-    
-    // Border for definition
-    g.setColour(th.accent.withAlpha(0.9f));
-    g.drawRoundedRectangle(bounds.reduced(1.0f), cr - 1.0f, 1.5f);
-    
-    // Title removed - not needed
+
+    g.setColour (th.meters.panelDark);
+    g.fillRect (b);
+    g.fillRoundedRectangle (b, kCornerRadius);
+
+    g.setColour (th.sh.withAlpha (kOuterShadowAlpha));
+    g.drawRoundedRectangle (b.reduced (0.5f), kCornerRadius - 0.5f, kEdgeOutlineThick);
+
+    g.setColour (th.accent.withAlpha (0.90f));
+    g.drawRoundedRectangle (b.reduced (1.0f), kCornerRadius - 1.0f, 1.5f);
 }
-
-

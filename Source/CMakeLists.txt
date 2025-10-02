@@ -96,7 +96,6 @@ set(SRC
     features/reverb/ReverbEQ.cpp
     features/reverb/DecayRateEQ.h
     features/reverb/DecayRateEQ.cpp
-    features/reverb/ReverbDynEQPane.h
     features/reverb/ReverbControlsPane.h
     features/reverb/ReverbTab.h
     shared/ui/Engines/SpectrumAnalyzer.h
