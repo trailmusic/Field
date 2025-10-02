@@ -22,7 +22,6 @@ The `ReverbGraphics` component was missing its own `paint()` method, causing the
 - **Kept**: Background paint method for consistent dark panel styling
 - **Removed**: 
   - ReverbCanvasComponent (decay curves, heatmaps, etc.)
-  - DecayCurveComponent
   - ReverbScopeComponent  
   - All ducking strip controls
   - All visual attachments and components
