@@ -15,6 +15,24 @@ SliderManager::SliderManager(MyPluginAudioProcessorEditor& editor)
 
 void SliderManager::initializeSliders()
 {
+    // Configure Input slider
+    inputSlider.setRange(-60.0, 12.0, 0.1);
+    inputSlider.setValue(0.0);
+    inputSlider.setName("input_gain");
+    inputSlider.setTextValueSuffix(" dB");
+    
+    // Configure Output slider
+    outputSlider.setRange(-60.0, 12.0, 0.1);
+    outputSlider.setValue(0.0);
+    outputSlider.setName("output_gain");
+    outputSlider.setTextValueSuffix(" dB");
+    
+    // Configure Mix slider
+    mixSlider.setRange(0.0, 100.0, 0.1);
+    mixSlider.setValue(100.0);
+    mixSlider.setName("mix");
+    mixSlider.setTextValueSuffix(" %");
+    
     // Add sliders to their container
     rightSlidersContainer.addAndMakeVisible(inputSlider);
     rightSlidersContainer.addAndMakeVisible(outputSlider);

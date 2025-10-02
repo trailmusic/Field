@@ -71,9 +71,9 @@ private:
     // Parameter ID constants
     struct ParameterIDs {
         // Main controls
-        static constexpr const char* gain = "gain";
-        static constexpr const char* inputGain = "input_gain";
-        static constexpr const char* outputGain = "output_gain";
+        static constexpr const char* gain = "gain_db";
+        static constexpr const char* inputGain = "input_gain_db";
+        static constexpr const char* outputGain = "output_gain_db";
         static constexpr const char* mix = "mix";
         static constexpr const char* width = "width";
         static constexpr const char* tilt = "tilt";
