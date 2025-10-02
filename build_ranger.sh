@@ -16,7 +16,7 @@ fi
 
 # Build Field Ranger console tools
 echo "🔨 Building Field Ranger console tools..."
-cd ranger/console && ./build_tools.sh
+cd Ranger/console && ./build_tools.sh
 echo "✅ Console tools built successfully"
 
 # Check if Field Ranger app exists (placeholder for now)
@@ -59,9 +59,9 @@ echo "   Field Ranger tools are ready for use."
 # Show available tools
 echo ""
 echo "🛠️  Available Field Ranger Tools:"
-echo "   • Console Tools: /Users/grantedwards/Desktop/Field/ranger/console/build/"
-echo "   • Documentation: /Users/grantedwards/Desktop/Field/ranger/docs/"
-echo "   • Examples: /Users/grantedwards/Desktop/Field/ranger/console/examples/"
+echo "   • Console Tools: /Users/grantedwards/Desktop/Field/Ranger/console/build/"
+echo "   • Documentation: /Users/grantedwards/Desktop/Field/Ranger/docs/"
+echo "   • Examples: /Users/grantedwards/Desktop/Field/Ranger/console/examples/"
 echo ""
 echo "🎯 Next Steps:"
 echo "   1. Test console tools with example files"
