@@ -1,3 +1,84 @@
+/*
+====================================================================================================
+ DecayRateEQ.cpp — Implementation Overview
+ ---------------------------------------------------------------------------------------------------
+ Rendering Pipeline
+    paint()
+      ├─ drawUnits(g)                       : grid, Hz ticks, multiplier ticks; 1.0× line emphasized
+      ├─ rebuildEqPath()                    : (on size changes / edits) samples response across log-Hz
+      │    • Combined path: product of per-band multipliers (starts at 1.0× everywhere)
+      │    • Per-band paths: thin colored overlays for visual attribution
+      └─ Points & selection/hover           : band handles, selection ring, hover guides, ghost preview
+
+ Path Sampling Details
+    • N = max(128, analyzer width in px); log-spaced Hz from 20..20k.
+    • Combined value = Π bandMultAtForPaint(bi, hz).
+    • Bell uses Gaussian (log-domain distance); Tilts use logistic to bias low or high region.
+    • Rebuild is triggered in resized() and after param/point changes.
+
+ Mouse / Overlay / Badge Lifecycle
+    • mouseDown:
+         - Hit point → select (toggle overlay if clicked again)
+         - Empty → add band (limit 3). The type heuristic:
+             <~50 Hz  → TiltLo
+             >~10 kHz → TiltHi
+             else     → Bell
+         - New band writes APVTS: db_active=1, db_freqHz, db_q, db_decayMult.
+    • mouseDrag:
+         - Moves selected point → writes db_freqHz and db_decayMult.
+    • mouseWheel:
+         - Changes Q multiplicatively (Shift for finer steps) → writes db_q.
+    • mouseDoubleClick:
+         - Deletes band → sets db_active=0 in that slot, removes local point, updates paths.
+    • Hover:
+         - Shows vertical guides and Hz badges; after ~220 ms idle, shows a "ghost" preview curve at
+           the cursor (Bell/Tilt by region; sign based on cursor above/below 1.0× line).
+
+ APVTS Bridging
+    • bandId(base, idx)    : "base_idx" naming (e.g., "db_q_1").
+    • allocateBandSlot()   : scans 0..kMaxBands-1; first with db_active<0.5 is free.
+    • setBandParam(...)    : convertTo0to1 + setValueNotifyingHost — host automation safe.
+    • getBandParamFloat(...) provided for future "syncFromParameters()".
+
+ Theme Reactivity
+    • FieldLNF ChangeBroadcaster is observed; lookAndFeelChanged() → parentHierarchyChanged() re-wires
+      listener; repaint() on theme change. Color IDs used:
+        - eqBorderColourId, eqLabelTextColourId, eqZeroLineColourId, eqGridLineColourId,
+          eqBandHandleColourId, eqBandHandleActiveId, eqAnalyzerTraceColourId
+
+ Coordinate Maps
+    • mapHzToX / mapXToHz           : log scale map (20..20k).
+    • mapMultToY / mapYToMult       : 2.0× (top) → 0.5× (bottom), 1.0× emphasized by zeroCol.
+
+ Anti-aliasing Note
+    • To avoid rounded-corner fringe artifacts, the component fills the full rect, then draws the
+      rounded rectangle and the border.
+
+ Performance & Safety
+    • A 30 Hz timer drives hover/ghost UX and lightweight repaints (no heavy allocations in timer).
+    • Path sampling preallocates and uses stack functors; cost scales ~O(width).
+    • UI thread only; APVTS setValueNotifyingHost is used for automation correctness.
+
+ Gaps / TODOs (intentional)
+    • "Type" persistence:
+         The UI's type (Bell/TiltLo/TiltHi) is currently *not* persisted. If required, either:
+         (1) add ReverbEQParams::DecayBand::type to the param set, or
+         (2) explicitly store in db_dynAmt and treat it as an enum (document this contract).
+         Right now onTypeChanged() writes to db_dynAmt only if you choose that path.
+    • State hydration on open:
+         Provide a `syncFromParameters()` to read existing db_* slots (0..2) and rebuild `points`.
+         Call it from your owning editor after APVTS is fully initialized.
+
+ Consistency with DSP
+    • Ensure the DSP uses the same band shapes (Bell/Tilt logistic), Q semantics, and multiplier
+      interpretation (product at frequency) to match visuals. If DSP differs, consider sharing a
+      small shape helper to keep math identical.
+
+ Limits
+    • kMaxBands = 3 (UI enforced).
+====================================================================================================
+*/
+
 #include "DecayRateEQ.h"
 #include "shared/Core/FieldLookAndFeel.h"
 #include "features/dynEq/FilterFactory.h"

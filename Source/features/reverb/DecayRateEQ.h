@@ -1,3 +1,78 @@
+/*
+====================================================================================================
+ DecayRateEQ — UI for Reverb Decay-Rate Shaping (3 bands)
+ ---------------------------------------------------------------------------------------------------
+ Purpose
+    Visual, interactive editor that shapes the *decay time multiplier* versus frequency for the
+    reverb tail. Each band scales decay locally (Bell) or with a tilt bias (TiltLo / TiltHi).
+    The y-axis is multiplier (0.5× … 2.0×), with 1.0× as the neutral line.
+
+ Public API (hosted component)
+    - setSampleRate(double) / pushBlock(L,R,n) / pushBlockPre(L,R,n) : drive the spectrum analyzer.
+    - pause() / resume()                                           : analyzer control.
+    (Note: The EQ curves shown here are *visual only*; the DSP must read the same APVTS values.)
+
+ Parameters & Wiring (APVTS)
+    Decay Band (per-band, X = 0..2):
+      • db_active_X     : bool (0/1) — UI treats "inactive" as an empty slot for allocation.
+      • db_freqHz_X     : float 20–20k
+      • db_q_X          : float 0.1–36
+      • db_decayMult_X  : float 0.5–2.0 (1.0 = neutral)
+      • db_dynAmt_X     : float 0–100 (free field; NOT used by this UI unless you choose to)
+    NOTE: There is no persisted "type" (Bell/TiltLo/TiltHi) parameter in DecayBand. The UI maintains
+          `DecayBandPoint::type` in memory. If you want persistence, either:
+          (a) add DecayBand::type to ReverbEQParamIDs, or
+          (b) agree on using db_dynAmt_X as a storage proxy (documented contract).
+
+ Data Model (UI)
+    struct DecayBandPoint {
+        float hz, mult, q;
+        int   type;    // 0=Bell, 1=TiltLo, 2=TiltHi (UI-only unless persisted)
+        int   bandIdx; // APVTS slot index (0..2), -1 if not bound yet
+    }
+    • `bandIdx` maps the on-screen point to a concrete APVTS band (db_*_bandIdx).
+
+ Coordinate Mapping
+    • X (freq): logarithmic 20 Hz → 20 kHz.
+    • Y (mult): top=2.0×, center=~1.0×, bottom=0.5×.
+    • zoomState is prepared around a 0.5–2.0× visual range; 1.0× is drawn as the "zero line".
+
+ Interactions
+    • Click empty space        → add a band (Bell in mid, TiltLo <~50 Hz, TiltHi >~10 kHz), allocates a
+                                 free APVTS slot and writes initial values.
+    • Click point              → select; shows floating BandOverlay (MULT / Q / FREQ / TYPE).
+    • Drag point               → updates freq & multiplier in APVTS.
+    • Mouse wheel (on point)   → adjusts Q multiplicatively (with Shift for fine).
+    • Double-click point       → removes it and clears that APVTS slot (db_active = 0).
+    • Hover                    → vertical guide + a faint "ghost" preview of what adding a band *here*
+                                 would look like (Bell/Tilt decided by region).
+
+ Rendering
+    • Uses SpectrumAnalyzer background; draws grid/ticks (Hz & multipliers), 1.0× line emphasized.
+    • Renders combined response path (thicker) and per-band paths (thin, colored).
+    • Anti-aliasing white-corner fix: fill full rect first, then rounded rect.
+
+ Theme & LNF
+    • Colors are read from FieldLNF (eq* ColourIds). The component observes FieldLNF via a
+      ChangeListener and repaints on theme changes.
+
+ Limits & Constants
+    • kMaxBands = 3 (UI and allocator enforce 3 active bands max).
+    • Ghost preview fade timing ~220 ms of mouse idle.
+
+ Integration Tips
+    • On plugin/editor open, if you want points to auto-appear from existing APVTS values, provide a
+      small "syncFromParameters()" that scans 0..2 slots and pushes DecayBandPoint structs into
+      `points`. Otherwise the user will add bands explicitly.
+    • Ensure DSP reads the same APVTS ids (db_*_X) so visual curves match the sound.
+
+ Known Considerations
+    • "Type" persistence: add a DecayBand::type parameter if you want the TYPE combo to survive
+      session reloads. Using db_dynAmt as a proxy is possible but should be formalized.
+    • This is a UI-only envelope; performance-oriented enough (path sampled at ~pixel density).
+====================================================================================================
+*/
+
 #pragma once
 #include <JuceHeader.h>
 #include "shared/ui/Engines/SpectrumAnalyzer.h"
