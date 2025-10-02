@@ -97,6 +97,12 @@ set(SRC
     features/reverb/ReverbControlsPane.h
     features/reverb/ReverbControlsPane.cpp
     features/reverb/ReverbTab.h
+    features/reverb/FieldReverbConfig.h
+    features/reverb/ReverbFDN.h
+    features/reverb/ReverbProcessorGlue.h
+    features/reverb/ReverbProcessorGlue.cpp
+    features/reverb/ReverbIRExportTest.cpp
+    features/reverb/SimdBiquad.h
     shared/ui/Engines/SpectrumAnalyzer.h
     shared/ui/Engines/SpectrumAnalyzer.cpp
     features/delay/DelayUiBridge.h
