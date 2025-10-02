@@ -783,7 +783,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         {
             // Keep single-line text, no wrapping
             label.setJustificationType(juce::Justification::centred);
-            label.setFont(juce::Font(12.0f)); // Normal font size for single line
+            label.setFont(juce::Font(juce::FontOptions(12.0f))); // Normal font size for single line
             return;
         }
         
@@ -793,7 +793,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         {
             // Text already has line breaks, just set up formatting
             label.setJustificationType(juce::Justification::centred);
-            label.setFont(juce::Font(10.0f)); // Slightly smaller font for two lines
+            label.setFont(juce::Font(juce::FontOptions(10.0f))); // Slightly smaller font for two lines
         }
         else if (text.contains(" "))
         {
@@ -809,7 +809,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
             // Enable multi-line text for two-word labels
             label.setJustificationType(juce::Justification::centred);
             // Set font size to accommodate two lines
-            label.setFont(juce::Font(10.0f)); // Slightly smaller font for two lines
+            label.setFont(juce::Font(juce::FontOptions(10.0f))); // Slightly smaller font for two lines
         }
         
         // For metallic ComboBoxes, ensure text color is visible over metallic background
@@ -859,7 +859,7 @@ void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::C
         {
             // For abbreviations, use centered single-line text
             label.setJustificationType(juce::Justification::centred);
-            label.setFont(juce::Font(12.0f, juce::Font::bold)); // Bold for abbreviations
+            label.setFont(juce::Font(juce::FontOptions(12.0f).withStyle("Bold"))); // Bold for abbreviations
         }
     }
 

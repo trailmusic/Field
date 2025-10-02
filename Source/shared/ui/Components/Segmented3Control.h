@@ -95,7 +95,7 @@ private:
         }
         else if (feelIndex == 2)
         {
-            g.setFont (juce::Font (10.0f, juce::Font::bold));
+            g.setFont (juce::Font (juce::FontOptions (10.0f).withStyle ("Bold")));
             float tx = stemX + 2.0f;
             float ty = headY - 6.0f;
             g.drawSingleLineText ("3", (int) tx, (int) ty);

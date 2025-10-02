@@ -83,8 +83,6 @@ set(SRC
     features/reverb/ReverbParameters.cpp
     features/reverb/ReverbEngine.h
     features/reverb/ReverbEngine.cpp
-    features/reverb/ReverbCanvasComponent.h
-    features/reverb/ReverbCanvasComponent.cpp
     features/reverb/ReverbGraphics.h
     features/reverb/ReverbGraphics.cpp
     features/reverb/ReverbVisuals.h

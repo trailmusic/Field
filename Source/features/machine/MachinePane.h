@@ -253,7 +253,7 @@ private:
 
             auto header = bg.removeFromTop (44.0f);
             header = header.reduced (10.0f, 0.0f);
-            g.setFont (juce::Font (15.0f, juce::Font::bold));
+            g.setFont (juce::Font (juce::FontOptions (15.0f).withStyle ("Bold")));
             g.setColour (juce::Colours::white.withAlpha (0.92f));
             g.drawText (title, header.removeFromLeft (header.getWidth() - 120.0f).toNearestInt(), juce::Justification::centredLeft);
 

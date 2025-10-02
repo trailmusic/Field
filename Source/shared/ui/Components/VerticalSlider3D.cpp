@@ -123,7 +123,7 @@ void VerticalSlider3D::drawMarkers (juce::Graphics& g, juce::Rectangle<float> tr
     const auto accentColor = lf->theme.accent;
     
     g.setColour (textColor);
-    g.setFont (juce::Font (9.0f, juce::Font::bold));
+    g.setFont (juce::Font (juce::FontOptions (9.0f).withStyle ("Bold")));
     
     // Determine marker values based on slider range
     std::vector<float> markerValues;
@@ -167,7 +167,7 @@ void VerticalSlider3D::drawMarkers (juce::Graphics& g, juce::Rectangle<float> tr
         
         // Draw label
         g.setColour (textColor);
-        g.setFont (juce::Font (7.0f, juce::Font::bold));
+        g.setFont (juce::Font (juce::FontOptions (7.0f).withStyle ("Bold")));
         const float labelX = tickX + tickLength + 3.0f;
         const float labelY = markerY - 6.0f;
         g.drawText (markerLabel, labelX, labelY, 40.0f, 12.0f, juce::Justification::left);
@@ -272,7 +272,7 @@ void VerticalSlider3D::drawBottomLabel (juce::Graphics& g, juce::Rectangle<float
     
     const auto textColor = lf->theme.textMuted;
     g.setColour (textColor);
-    g.setFont (juce::Font (9.0f, juce::Font::bold));
+    g.setFont (juce::Font (juce::FontOptions (9.0f).withStyle ("Bold")));
     
     // Format the current value based on slider type
     juce::String valueText;

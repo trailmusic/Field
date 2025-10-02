@@ -365,7 +365,7 @@ void DuckingFloat::paintGrMeter(juce::Graphics& g, juce::Rectangle<float> bounds
 
     // Scale ticks: 0, -5, -10, -15, -20
     g.setColour(th.text.withAlpha(0.45f));
-    g.setFont(juce::FontOptions(9.0f));
+    g.setFont(juce::Font(9.0f));
 
     auto tickArea = meterArea.reduced(6.0f, 0.0f);
     for (int i = 0; i <= 4; ++i)
@@ -378,7 +378,7 @@ void DuckingFloat::paintGrMeter(juce::Graphics& g, juce::Rectangle<float> bounds
 
     // Units
     g.setColour(th.text.withAlpha(0.80f));
-    g.setFont(juce::FontOptions(9.0f));
+    g.setFont(juce::Font(9.0f));
     g.drawText("GR dB", meterArea.removeFromTop(0).withHeight(12.0f).translated(0, -14.0f),
                juce::Justification::centred);
 }
