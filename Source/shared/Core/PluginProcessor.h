@@ -217,6 +217,9 @@ namespace IDs {
 }
 // Delay UI bridge
 #include "features/delay/DelayUiBridge.h"
+#include "FloatShim.h"
+#include "DspRuntimeConfig.h"
+#include "PhaseBanks.h"
 // ==================================
 // Visualization Bus (lock-free SPSC)
 // ==================================
@@ -454,6 +457,9 @@ private:
     juce::AudioBuffer<Sample>            dryBusBuf;
     juce::AudioBuffer<Sample>            wetBusBuf;
     juce::AudioBuffer<Sample>            delayWetBuf; // delay wet-only bus
+    // Float scratch buffers for double precision reverb processing
+    juce::AudioBuffer<float>             wetFloatScratch;
+    juce::AudioBuffer<float>             dryFloatScratch;
     // Smoothed wet mix (per-sample ramp)
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> wetMixSmoothed;
 
@@ -1072,6 +1078,19 @@ private:
 
     // Quality/precision application
     void applyQualityFromParams();
+    
+    // Runtime config parameter handlers
+    void onQualityChanged(int quality);
+    void onOSChanged(int os);
+    void onPhaseChanged(int phase);
+    void resetManualOverrides();
+    void scheduleDspRebuildIfNeeded(const DspRuntimeConfig& cfg);
+    
+    // DSP rebuild methods
+    template <typename Sample>
+    void rebuildDspForConfig(const DspRuntimeConfig& cfg, juce::AudioBuffer<Sample>& buffer);
+    inline int osLatencySamples(int factor);
+    void startTopologyCrossfadeMs(float ms);
 
     // Optional host sync hooks (stubs in .cpp)
     void syncWithHostParameters();
@@ -1141,9 +1160,57 @@ private:
     int    watchdogSamplesAcc       { 0 };
     int    watchdogWindowSamples    { 0 };      // ~100 ms at current SR
 
+public:
+    // Clock system for UI display
+    struct ClockSnapshot {
+        bool  playing = false;
+        bool  looping = false;
+        int64_t samplePos = 0;        // timeInSamples if available
+        double sampleRate = 48000.0;
+        double bpm = 120.0;
+        int numerator = 4, denominator = 4;
+        int64_t latencySamples = 0;   // getLatencySamples()
+    };
+
+public:
+    // Clock system members (needed by EventManager)
+    juce::AbstractFifo clockFifo { 256 };
+    std::array<ClockSnapshot, 256> clockRing;
+    std::atomic<ClockSnapshot*> lastClockForUI { nullptr }; // fast path
+
+    // DSP Runtime Configuration
+    std::atomic<DspRuntimeConfig> rtCfg;
+    std::atomic<bool> needsDspRebuild { false };
+    DspRuntimeConfig pendingCfg;
+    
+    // Oversampling objects (separate for float/double)
+    std::unique_ptr<juce::dsp::Oversampling<float>>  osF;
+    std::unique_ptr<juce::dsp::Oversampling<double>> osD;
+    
+    // Phase processing banks
+    PhaseBanks phaseBanksF, phaseBanksD;
+    
+    // Crossfade for topology changes
+    int topologyXfadeSamplesLeft { 0 };
+    int topologyXfadeTotal { 0 };
+
+private:
+
     // Phase Alignment Engine
     std::unique_ptr<PhaseAlignmentEngine> phaseAlignmentEngine;
     juce::AudioBuffer<float> phaseDryBuffer; // For audition blend
+
+    // Clock system methods
+    inline void pushClockSnapshot (const ClockSnapshot& s)
+    {
+        int s1, n1, s2, n2;
+        clockFifo.prepareToWrite (1, s1, n1, s2, n2);
+        if (n1 > 0) { 
+            clockRing[(size_t)s1] = s; 
+            lastClockForUI.store(&clockRing[(size_t)s1], std::memory_order_release); 
+        }
+        clockFifo.finishedWrite (n1 + n2);
+    }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)
 };

@@ -99,20 +99,15 @@ void LayoutManager::layoutHeader()
     sizeBtn(editor.linkButton, Layout::dp(40, s));
     sizeBtn(editor.snapButton, Layout::dp(40, s));
     
-    // Transport clock label styling and sizing (larger, right-aligned)
+    // Transport clock component styling and sizing (larger, right-aligned)
     {
-        if (editor.transportClockLabel.getParentComponent() != &editor) editor.addAndMakeVisible(editor.transportClockLabel);
-        editor.transportClockLabel.setJustificationType(juce::Justification::centredRight);
-        editor.transportClockLabel.setInterceptsMouseClicks(false, false);
-        editor.transportClockLabel.setText("00:00.000", juce::dontSendNotification);
-        if (auto* lf = dynamic_cast<FieldLNF*>(&editor.getLookAndFeel()))
+        if (!editor.transportClock)
         {
-            editor.transportClockLabel.setColour(juce::Label::textColourId, lf->theme.text);
+            editor.transportClock = std::make_unique<TransportClock>(editor.proc);
+            editor.addAndMakeVisible(*editor.transportClock);
         }
-        // Larger font
-        editor.transportClockLabel.setFont(juce::Font(juce::FontOptions(18.0f * s).withStyle("Bold")));
         const int clockW = Layout::dp(176, s);
-        editor.transportClockLabel.setSize(clockW, h);
+        editor.transportClock->setSize(clockW, h);
     }
     
     sizeBtn(editor.colorModeButton, Layout::dp(40, s));
@@ -135,7 +130,7 @@ void LayoutManager::layoutHeader()
         juce::GridItem(editor.splitToggle),
         juce::GridItem(editor.linkButton),
         juce::GridItem(), // spacer before right utilities
-        juce::GridItem(editor.transportClockLabel),
+        juce::GridItem(*editor.transportClock),
         juce::GridItem(editor.colorModeButton),
         juce::GridItem(editor.tooltipsButton),
         juce::GridItem(editor.fullScreenButton),

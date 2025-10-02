@@ -55,6 +55,13 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
     
     // Phase Alignment Engine
     phaseAlignmentEngine = std::make_unique<PhaseAlignmentEngine>();
+    
+    // Initialize runtime config with defaults
+    DspRuntimeConfig defaultCfg;
+    defaultCfg.quality = 1; // Standard
+    defaultCfg.os = 1; // 2x oversampling
+    defaultCfg.phase = 2; // Hybrid
+    rtCfg.store(defaultCfg);
 
     // Keep existing smoothers if declared in the header (no harm if unused here)
     // Reset smoothers
@@ -71,6 +78,8 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
     // Listen for quality/precision changes
     apvts.addParameterListener (IDs::quality,   this);
     apvts.addParameterListener (IDs::precision, this);
+    apvts.addParameterListener (IDs::osMode,    this);
+    apvts.addParameterListener (IDs::phaseMode, this);
     
     // Constructor completed
 }
@@ -410,6 +419,13 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
 
     // Emergency safety: hard passthrough to confirm architecture vs. processing
     if (getSafePassthrough()) return;
+    
+    // Check for DSP rebuild needed
+    auto cfg = rtCfg.load(std::memory_order_acquire);
+    if (needsDspRebuild.exchange(false, std::memory_order_acq_rel))
+    {
+        rebuildDspForConfig<float>(cfg, buffer);
+    }
 
     // Optional internal 64f hop on 32f hosts based on Precision parameter
     const int pMode = precisionMode.load(); // 0 Auto, 1 Force32, 2 Force64
@@ -459,19 +475,45 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
     {
         double bpm = 120.0;
+        ClockSnapshot snap;
+        snap.sampleRate = currentSR;
+        snap.latencySamples = getLatencySamples();
+        
         if (auto* ph = getPlayHead())
         {
-            if (auto pos = ph->getPosition())
-            {
-                if (auto bpmOpt = pos->getBpm())
-                    bpm = *bpmOpt > 0.0 ? *bpmOpt : bpm;
+            juce::AudioPlayHead::CurrentPositionInfo pos {};
+            ph->getCurrentPosition (pos);
 
-                const bool isPlaying = pos->getIsPlaying();
-                if (auto tOpt = pos->getTimeInSeconds())
-                    transportTimeSeconds.store (*tOpt);
-                transportIsPlaying.store (isPlaying);
-            }
+            snap.playing   = pos.isPlaying;
+            snap.looping   = pos.isLooping;
+            snap.bpm       = pos.bpm > 0 ? pos.bpm : snap.bpm;
+            snap.numerator = pos.timeSigNumerator   > 0 ? pos.timeSigNumerator   : snap.numerator;
+            snap.denominator = pos.timeSigDenominator > 0 ? pos.timeSigDenominator : snap.denominator;
+            
+            if (pos.timeInSamples >= 0)        
+                snap.samplePos = pos.timeInSamples;
+            else if (pos.timeInSeconds > 0.0)  
+                snap.samplePos = (int64) juce::roundToInt (pos.timeInSeconds * snap.sampleRate);
+            else                                
+                snap.samplePos += buffer.getNumSamples(); // advance locally as fallback
+
+            // Legacy transport tracking for existing code
+            if (pos.timeInSeconds > 0.0)
+                transportTimeSeconds.store (pos.timeInSeconds);
+            transportIsPlaying.store (pos.isPlaying);
+            
+            bpm = snap.bpm;
         }
+        else {
+            // No playhead — advance locally if playing flag you track says true
+            if (transportIsPlaying.load())
+                snap.samplePos += buffer.getNumSamples();
+            snap.playing = transportIsPlaying.load();
+        }
+        
+        // Push clock snapshot for UI
+        pushClockSnapshot (snap);
+        
         hp.tempoBpm = bpm;
     }
     chainF->setParameters (hp);     // cast/copy inside chain
@@ -503,7 +545,12 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     }
     // Update Motion host sync so Sync mode rates are correct
     motion::HostInfo hinfo; hinfo.bpm = hp.tempoBpm; hinfo.playing = transportIsPlaying.load();
-    if (auto* ph = getPlayHead()) { if (auto pos = ph->getPosition()) { if (auto ppq = pos->getPpqPosition()) hinfo.ppqPosition = *ppq; if (auto bar = pos->getPpqPositionOfLastBarStart()) hinfo.ppqBarStart = *bar; }}
+    if (auto* ph = getPlayHead()) { 
+        if (auto pos = ph->getPosition()) { 
+            if (auto ppq = pos->getPpqPosition()) hinfo.ppqPosition = *ppq; 
+            if (auto bar = pos->getPpqPositionOfLastBarStart()) hinfo.ppqBarStart = *bar; 
+        } 
+    }
     hinfo.samplesPerBeat = (currentSR > 0.0 ? currentSR * 60.0 / juce::jmax (1e-6, hp.tempoBpm) : 0.0);
     
     // Motion Engine is now handled by FieldChain template
@@ -726,24 +773,57 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
 
     // Emergency safety: hard passthrough to confirm architecture vs. processing
     if (getSafePassthrough()) return;
+    
+    // Check for DSP rebuild needed
+    auto cfg = rtCfg.load(std::memory_order_acquire);
+    if (needsDspRebuild.exchange(false, std::memory_order_acq_rel))
+    {
+        rebuildDspForConfig<double>(cfg, buffer);
+    }
 
     auto hp = makeHostParams (apvts);
     hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
     {
         double bpm = 120.0;
+        ClockSnapshot snap;
+        snap.sampleRate = currentSR;
+        snap.latencySamples = getLatencySamples();
+        
         if (auto* ph = getPlayHead())
         {
-            if (auto pos = ph->getPosition())
-            {
-                if (auto bpmOpt = pos->getBpm())
-                    bpm = *bpmOpt > 0.0 ? *bpmOpt : bpm;
+            juce::AudioPlayHead::CurrentPositionInfo pos {};
+            ph->getCurrentPosition (pos);
 
-                const bool isPlaying = pos->getIsPlaying();
-                if (auto tOpt = pos->getTimeInSeconds())
-                    transportTimeSeconds.store (*tOpt);
-                transportIsPlaying.store (isPlaying);
-            }
+            snap.playing   = pos.isPlaying;
+            snap.looping   = pos.isLooping;
+            snap.bpm       = pos.bpm > 0 ? pos.bpm : snap.bpm;
+            snap.numerator = pos.timeSigNumerator   > 0 ? pos.timeSigNumerator   : snap.numerator;
+            snap.denominator = pos.timeSigDenominator > 0 ? pos.timeSigDenominator : snap.denominator;
+            
+            if (pos.timeInSamples >= 0)        
+                snap.samplePos = pos.timeInSamples;
+            else if (pos.timeInSeconds > 0.0)  
+                snap.samplePos = (int64) juce::roundToInt (pos.timeInSeconds * snap.sampleRate);
+            else                                
+                snap.samplePos += buffer.getNumSamples(); // advance locally as fallback
+
+            // Legacy transport tracking for existing code
+            if (pos.timeInSeconds > 0.0)
+                transportTimeSeconds.store (pos.timeInSeconds);
+            transportIsPlaying.store (pos.isPlaying);
+            
+            bpm = snap.bpm;
         }
+        else {
+            // No playhead — advance locally if playing flag you track says true
+            if (transportIsPlaying.load())
+                snap.samplePos += buffer.getNumSamples();
+            snap.playing = transportIsPlaying.load();
+        }
+        
+        // Push clock snapshot for UI
+        pushClockSnapshot (snap);
+        
         hp.tempoBpm = bpm;
     }
     chainD->setParameters (hp);
@@ -771,7 +851,12 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     }
     // Update Motion host sync for double path as well
     motion::HostInfo hinfoD; hinfoD.bpm = hp.tempoBpm; hinfoD.playing = transportIsPlaying.load();
-    if (auto* ph2 = getPlayHead()) { if (auto pos = ph2->getPosition()) { if (auto ppq = pos->getPpqPosition()) hinfoD.ppqPosition = *ppq; if (auto bar = pos->getPpqPositionOfLastBarStart()) hinfoD.ppqBarStart = *bar; }}
+    if (auto* ph2 = getPlayHead()) { 
+        if (auto pos = ph2->getPosition()) { 
+            if (auto ppq = pos->getPpqPosition()) hinfoD.ppqPosition = *ppq; 
+            if (auto bar = pos->getPpqPositionOfLastBarStart()) hinfoD.ppqBarStart = *bar; 
+        } 
+    }
     hinfoD.samplesPerBeat = (currentSR > 0.0 ? currentSR * 60.0 / juce::jmax (1e-6, hp.tempoBpm) : 0.0);
     
     // Motion Engine is now handled by FieldChain template
@@ -997,6 +1082,20 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
     {
         updateLatencyForPhaseMode();
     }
+    
+    // New runtime config parameter handling
+    if (parameterID == IDs::quality)
+    {
+        onQualityChanged(static_cast<int>(newValue * 2.0f)); // Convert 0-1 to 0-2
+    }
+    else if (parameterID == IDs::osMode)
+    {
+        onOSChanged(static_cast<int>(newValue * 4.0f)); // Convert 0-1 to 0-4
+    }
+    else if (parameterID == IDs::phaseMode)
+    {
+        onPhaseChanged(static_cast<int>(newValue * 3.0f)); // Convert 0-1 to 0-3
+    }
     // Phase alignment handled by PhaseAlignmentEngine
     
     // No auto-seeding of P2 from P1 – both panners share identical factory defaults by layout
@@ -1096,16 +1195,141 @@ void MyPluginAudioProcessor::applyQualityFromParams()
 
     // Recommend values per quality
     int recOs = 0; // Off by default
-    int recPhase = 3; // Prefer Full Linear by default
     switch (q)
     {
-        case 0: /* Eco    */ recOs = 0; recPhase = 0; break;
-        case 2: /* High   */ recOs = 2; recPhase = 3; break; // 4x OS, Full Linear
-        default:/* Standard*/ recOs = 1; recPhase = 2; break; // 2x OS, Hybrid Linear
+        case 0: /* Eco    */ recOs = 0; break;
+        case 2: /* High   */ recOs = 2; break; // 4x OS, Full Linear
+        default:/* Standard*/ recOs = 1; break; // 2x OS, Hybrid Linear
     }
 
     if (osFollowQuality.load())    setChoiceIndex (IDs::osMode,    recOs);
     // Phase alignment handled by PhaseAlignmentEngine
+}
+
+// =========================
+// Runtime Config Parameter Handlers
+// =========================
+
+void MyPluginAudioProcessor::onQualityChanged(int quality)
+{
+    auto cfg = rtCfg.load();
+    cfg.quality = juce::jlimit(0, 2, quality);
+    
+    if (!cfg.userOverrodeOS) cfg.os = DspRuntimeConfig::kQMap[cfg.quality].os;
+    if (!cfg.userOverrodePhase) cfg.phase = DspRuntimeConfig::kQMap[cfg.quality].phase;
+    
+    scheduleDspRebuildIfNeeded(cfg);
+    rtCfg.store(cfg);
+}
+
+void MyPluginAudioProcessor::onOSChanged(int os)
+{
+    auto cfg = rtCfg.load();
+    cfg.os = juce::jlimit(0, 4, os);
+    cfg.userOverrodeOS = true;
+    scheduleDspRebuildIfNeeded(cfg);
+    rtCfg.store(cfg);
+}
+
+void MyPluginAudioProcessor::onPhaseChanged(int phase)
+{
+    auto cfg = rtCfg.load();
+    cfg.phase = phase; // 0,2,3
+    cfg.userOverrodePhase = true;
+    scheduleDspRebuildIfNeeded(cfg);
+    rtCfg.store(cfg);
+}
+
+void MyPluginAudioProcessor::resetManualOverrides()
+{
+    auto cfg = rtCfg.load();
+    cfg.resetOverrides();
+    scheduleDspRebuildIfNeeded(cfg);
+    rtCfg.store(cfg);
+}
+
+void MyPluginAudioProcessor::scheduleDspRebuildIfNeeded(const DspRuntimeConfig& cfg)
+{
+    pendingCfg = cfg;
+    needsDspRebuild.store(true, std::memory_order_release);
+}
+
+template <typename Sample>
+void MyPluginAudioProcessor::rebuildDspForConfig(const DspRuntimeConfig& cfg, juce::AudioBuffer<Sample>& buffer)
+{
+    // 1) Rebuild OS with correct factor and stages
+    const int factor = (cfg.os == 0 ? 1 : (1 << cfg.os)); // 1,2,4,8,16
+    
+    // Calculate latency
+    int latencySamples = 0;
+    
+    if constexpr (std::is_same_v<Sample, float>)
+    {
+        if (factor == 1) 
+        {
+            osF.reset();
+        }
+        else 
+        {
+            const int stages = juce::roundToInt(std::log2(factor));
+            osF = std::make_unique<juce::dsp::Oversampling<float>>(
+                juce::jmin(2, buffer.getNumChannels()), stages,
+                juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR,
+                true, true);
+            osF->reset();
+        }
+        phaseBanksF.prepare(getSampleRate() * factor, getBlockSize() * factor, buffer.getNumChannels(), cfg.phase);
+        latencySamples = (cfg.os ? osLatencySamples(factor) : 0) + phaseBanksF.latencyFor(cfg.phase);
+    }
+    else
+    {
+        if (factor == 1) 
+        {
+            osD.reset();
+        }
+        else 
+        {
+            const int stages = juce::roundToInt(std::log2(factor));
+            osD = std::make_unique<juce::dsp::Oversampling<double>>(
+                juce::jmin(2, buffer.getNumChannels()), stages,
+                juce::dsp::Oversampling<double>::filterHalfBandPolyphaseIIR,
+                true, true);
+            osD->reset();
+        }
+        phaseBanksD.prepare(getSampleRate() * factor, getBlockSize() * factor, buffer.getNumChannels(), cfg.phase);
+        latencySamples = (cfg.os ? osLatencySamples(factor) : 0) + phaseBanksD.latencyFor(cfg.phase);
+    }
+    
+    // 2) Report latency to host
+    setLatencySamples(latencySamples);
+    
+    // 3) Create updated config with latency and commit
+    DspRuntimeConfig updatedCfg = cfg;
+    updatedCfg.latencySamples = latencySamples;
+    rtCfg.store(updatedCfg, std::memory_order_release);
+    
+    // 4) Start a short wet crossfade so user doesn't hear topology change
+    startTopologyCrossfadeMs(15.0f);
+}
+
+inline int MyPluginAudioProcessor::osLatencySamples(int factor)
+{
+    // JUCE half-band polyphase adds group delay; use measured value or conservative table
+    switch (factor) 
+    { 
+        case 2: return 32; 
+        case 4: return 64; 
+        case 8: return 96; 
+        case 16: return 128; 
+        default: return 0; 
+    }
+}
+
+void MyPluginAudioProcessor::startTopologyCrossfadeMs(float ms)
+{
+    const int samples = juce::roundToInt(ms * getSampleRate() * 0.001f);
+    topologyXfadeTotal = juce::jlimit(32, 256, samples);
+    topologyXfadeSamplesLeft = topologyXfadeTotal;
 }
 
 // =========================
@@ -1148,7 +1372,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::quality, 1 },   "Quality",   juce::StringArray { "Eco", "Standard", "High" }, 1));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::precision, 1 }, "Precision", juce::StringArray { "Auto (Host)", "Force 32-bit", "Force 64-bit" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osMode, 1 }, "Oversampling", juce::StringArray { "Off", "2x", "4x", "8x", "16x" }, 0));
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::phaseMode, 1 }, "Phase Mode", juce::StringArray { "Zero", "Natural", "Hybrid", "Full Linear" }, 1));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::phaseMode, 1 }, "Phase Mode", juce::StringArray { "Zero", "Natural", "Hybrid", "Full Linear" }, 3));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::splitMode, 1 }, "Split Mode", false));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::tiltFreq, 1 },  "Tilt Frequency", juce::NormalisableRange<float> (100.0f, 1000.0f, 1.0f, 0.5f), 500.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::scoopFreq, 1 }, "Scoop Frequency", juce::NormalisableRange<float> (200.0f, 2000.0f, 1.0f, 0.5f), 800.0f));
@@ -1575,6 +1799,9 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     // Reverb: preallocate buses and init smoothed wet
     dryBusBuf.setSize ((int) spec.numChannels, (int) spec.maximumBlockSize);
     wetBusBuf.setSize ((int) spec.numChannels, (int) spec.maximumBlockSize);
+    // Float scratch buffers for double precision reverb processing
+    wetFloatScratch.setSize ((int) spec.numChannels, (int) spec.maximumBlockSize);
+    dryFloatScratch.setSize ((int) spec.numChannels, (int) spec.maximumBlockSize);
     const double smoothMs = 0.02;
     wetMixSmoothed.reset (sr, smoothMs);
 
@@ -2868,13 +3095,27 @@ void FieldChain<Sample>::process (Block block)
         rvParams.duckOn = params.rvDuckOn;
         reverbEngine.setParams(rvParams);
         
-        // Process reverb
-        // Note: ReverbEngine only supports float, so we need to convert if using double precision
+        // Process reverb with double precision shim
         if constexpr (std::is_same_v<Sample, float>) {
+            // Native float path
             reverbEngine.processWet(wetBusBuf, dryBusBuf);
         } else {
-            // For double precision, we need to convert to float buffers
-            // This is a limitation - reverb processing is float-only
+            // Double path → run reverb in float via shim
+            const int chs = wetBusBuf.getNumChannels();
+            const int n   = wetBusBuf.getNumSamples();
+
+            if (wetFloatScratch.getNumChannels() < chs || wetFloatScratch.getNumSamples() < n)
+                wetFloatScratch.setSize (chs, n, false, false, true);
+            if (dryFloatScratch.getNumChannels() < chs || dryFloatScratch.getNumSamples() < n)
+                dryFloatScratch.setSize (chs, n, false, false, true);
+
+            copyDoubleToFloat (wetBusBuf, wetFloatScratch);
+            copyDoubleToFloat (dryBusBuf, dryFloatScratch);
+
+            reverbEngine.processWet(wetFloatScratch, dryFloatScratch);
+
+            copyFloatToDouble (wetFloatScratch, wetBusBuf);
+            // dryBusBuf is your dry tap; keep it as-is for mix math below
         }
     }
     

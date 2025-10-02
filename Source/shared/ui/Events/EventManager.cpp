@@ -507,6 +507,8 @@ void EventManager::handleTimerCallback()
             }
         }
     }
+    
+    // Transport clock is now handled by TransportClock component
 }
 
 void EventManager::handleResizeStarted()
@@ -659,3 +661,4 @@ void EventManager::routeComboBoxEvent(juce::ComboBox* comboBox, const std::funct
     // Route combo box events
     if (handler) handler();
 }
+

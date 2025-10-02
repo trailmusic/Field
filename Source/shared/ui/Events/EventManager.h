@@ -58,6 +58,7 @@ public:
     void handleXYPadDrag(const juce::Point<float>& position);
     void handleXYPadClick(const juce::Point<float>& position);
     
+    
 private:
     MyPluginAudioProcessorEditor& editor;
     

@@ -25,6 +25,7 @@
 #include "shared/ui/Components/ShadeOverlay.h"
 #include "shared/ui/Components/VerticalLRMeters.h"
 #include "shared/ui/Components/IOGainMeters.h"
+#include "shared/ui/Components/TransportClock.h"
 #include "shared/ui/Managers/MeterManager.h"
 #include "shared/ui/Managers/SliderManager.h"
 #include "shared/ui/Components/SwitchCell.h"
@@ -199,8 +200,11 @@ public:
     ABButton abButtonA { true }, abButtonB { false };
     PresetArrowButton prevPresetButton { true }, nextPresetButton { false };
     juce::TextButton presetField;
-    juce::Label presetNameLabel, transportClockLabel;
+    juce::Label presetNameLabel;
     juce::Component headerLeftGroup;
+
+    // Transport clock component
+    std::unique_ptr<TransportClock> transportClock;
 
     // Split-pan container
     juce::Component panSplitContainer;

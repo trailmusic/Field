@@ -51,6 +51,8 @@ set(SRC
     shared/ui/Components/ControlContainer.cpp
     shared/ui/Components/VizEQ.h
     shared/ui/Components/VizEQ.cpp
+    shared/ui/Components/TransportClock.h
+    shared/ui/Components/TransportClock.cpp
     shared/ui/Components/TintMenuLNFEx.h
     shared/ui/Components/TintMenuLNFEx.cpp
     shared/ui/Components/UIHelpers.h
