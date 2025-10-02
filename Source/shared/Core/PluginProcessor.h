@@ -214,6 +214,12 @@ namespace IDs {
     static constexpr const char* centerPunchMode     = "center_punch_mode";     // 0 toSides, 1 toCenter
     static constexpr const char* centerLockOn        = "center_lock_on";        // bool
     static constexpr const char* centerLockDb        = "center_lock_db";        // 0..6 dB cap
+    
+    // SR-aware oversampling parameters
+    static constexpr const char* osRealtime         = "oversampling_realtime";
+    static constexpr const char* osOffline          = "oversampling_offline";
+    static constexpr const char* osFilterType        = "oversampling_filter_type";
+    static constexpr const char* tpSafe              = "true_peak_safe";
 }
 // Delay UI bridge
 #include "features/delay/DelayUiBridge.h"
@@ -1083,6 +1089,10 @@ private:
     void onQualityChanged(int quality);
     void onOSChanged(int os);
     void onPhaseChanged(int phase);
+    void onOSRealtimeChanged(int os);
+    void onOSOfflineChanged(int os);
+    void onOSFilterTypeChanged(int type);
+    void onTPSafeChanged(bool enabled);
     void resetManualOverrides();
     void scheduleDspRebuildIfNeeded(const DspRuntimeConfig& cfg);
     

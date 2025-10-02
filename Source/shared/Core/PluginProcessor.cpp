@@ -61,6 +61,11 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
     defaultCfg.quality = 1; // Standard
     defaultCfg.os = 1; // 2x oversampling
     defaultCfg.phase = 2; // Hybrid
+    defaultCfg.sampleRate = getSampleRate();
+    defaultCfg.osRealtime = 0; // Auto by Quality
+    defaultCfg.osOffline = 1;  // Auto by Quality (one tier higher)
+    defaultCfg.osFilterType = 0; // Linear Phase
+    defaultCfg.tpSafe = true; // True-Peak Safe enabled
     rtCfg.store(defaultCfg);
 
     // Keep existing smoothers if declared in the header (no harm if unused here)
@@ -80,6 +85,12 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
     apvts.addParameterListener (IDs::precision, this);
     apvts.addParameterListener (IDs::osMode,    this);
     apvts.addParameterListener (IDs::phaseMode, this);
+    
+    // SR-aware oversampling parameter listeners
+    apvts.addParameterListener (IDs::osRealtime,  this);
+    apvts.addParameterListener (IDs::osOffline,  this);
+    apvts.addParameterListener (IDs::osFilterType, this);
+    apvts.addParameterListener (IDs::tpSafe,     this);
     
     // Constructor completed
 }
@@ -1096,6 +1107,22 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
     {
         onPhaseChanged(static_cast<int>(newValue * 3.0f)); // Convert 0-1 to 0-3
     }
+    else if (parameterID == IDs::osRealtime)
+    {
+        onOSRealtimeChanged(static_cast<int>(newValue * 5.0f)); // Convert 0-1 to 0-5
+    }
+    else if (parameterID == IDs::osOffline)
+    {
+        onOSOfflineChanged(static_cast<int>(newValue * 5.0f)); // Convert 0-1 to 0-5
+    }
+    else if (parameterID == IDs::osFilterType)
+    {
+        onOSFilterTypeChanged(static_cast<int>(newValue)); // 0 or 1
+    }
+    else if (parameterID == IDs::tpSafe)
+    {
+        onTPSafeChanged(newValue > 0.5f); // Boolean
+    }
     // Phase alignment handled by PhaseAlignmentEngine
     
     // No auto-seeding of P2 from P1 – both panners share identical factory defaults by layout
@@ -1214,8 +1241,16 @@ void MyPluginAudioProcessor::onQualityChanged(int quality)
 {
     auto cfg = rtCfg.load();
     cfg.quality = juce::jlimit(0, 2, quality);
+    cfg.sampleRate = getSampleRate();
     
-    if (!cfg.userOverrodeOS) cfg.os = DspRuntimeConfig::kQMap[cfg.quality].os;
+    // Apply SR-aware OS if using Auto mode
+    if (cfg.osRealtime == 0) { // Auto by Quality
+        cfg.os = DspRuntimeConfig::resolveOSFactor(cfg.sampleRate, cfg.quality);
+    }
+    if (cfg.osOffline == 0) { // Auto by Quality
+        cfg.os = DspRuntimeConfig::resolveOSFactor(cfg.sampleRate, cfg.quality);
+    }
+    
     if (!cfg.userOverrodePhase) cfg.phase = DspRuntimeConfig::kQMap[cfg.quality].phase;
     
     scheduleDspRebuildIfNeeded(cfg);
@@ -1240,6 +1275,40 @@ void MyPluginAudioProcessor::onPhaseChanged(int phase)
     rtCfg.store(cfg);
 }
 
+void MyPluginAudioProcessor::onOSRealtimeChanged(int os)
+{
+    auto cfg = rtCfg.load();
+    cfg.osRealtime = juce::jlimit(0, 5, os);
+    cfg.userOverrodeOS = true;
+    scheduleDspRebuildIfNeeded(cfg);
+    rtCfg.store(cfg);
+}
+
+void MyPluginAudioProcessor::onOSOfflineChanged(int os)
+{
+    auto cfg = rtCfg.load();
+    cfg.osOffline = juce::jlimit(0, 5, os);
+    cfg.userOverrodeOS = true;
+    scheduleDspRebuildIfNeeded(cfg);
+    rtCfg.store(cfg);
+}
+
+void MyPluginAudioProcessor::onOSFilterTypeChanged(int type)
+{
+    auto cfg = rtCfg.load();
+    cfg.osFilterType = juce::jlimit(0, 1, type);
+    scheduleDspRebuildIfNeeded(cfg);
+    rtCfg.store(cfg);
+}
+
+void MyPluginAudioProcessor::onTPSafeChanged(bool enabled)
+{
+    auto cfg = rtCfg.load();
+    cfg.tpSafe = enabled;
+    scheduleDspRebuildIfNeeded(cfg);
+    rtCfg.store(cfg);
+}
+
 void MyPluginAudioProcessor::resetManualOverrides()
 {
     auto cfg = rtCfg.load();
@@ -1257,8 +1326,12 @@ void MyPluginAudioProcessor::scheduleDspRebuildIfNeeded(const DspRuntimeConfig& 
 template <typename Sample>
 void MyPluginAudioProcessor::rebuildDspForConfig(const DspRuntimeConfig& cfg, juce::AudioBuffer<Sample>& buffer)
 {
-    // 1) Rebuild OS with correct factor and stages
-    const int factor = (cfg.os == 0 ? 1 : (1 << cfg.os)); // 1,2,4,8,16
+    // 1) Get active OS factor (SR-aware + realtime/offline)
+    const int factor = cfg.getActiveOSFactor();
+    
+    // 2) Get filter type (currently using same filter type for both)
+    // TODO: Implement proper Linear vs Minimum phase filter selection
+    auto filterType = juce::dsp::Oversampling<Sample>::filterHalfBandPolyphaseIIR;
     
     // Calculate latency
     int latencySamples = 0;
@@ -1274,8 +1347,7 @@ void MyPluginAudioProcessor::rebuildDspForConfig(const DspRuntimeConfig& cfg, ju
             const int stages = juce::roundToInt(std::log2(factor));
             osF = std::make_unique<juce::dsp::Oversampling<float>>(
                 juce::jmin(2, buffer.getNumChannels()), stages,
-                juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR,
-                true, true);
+                filterType, true, true);
             osF->reset();
         }
         phaseBanksF.prepare(getSampleRate() * factor, getBlockSize() * factor, buffer.getNumChannels(), cfg.phase);
@@ -1292,8 +1364,7 @@ void MyPluginAudioProcessor::rebuildDspForConfig(const DspRuntimeConfig& cfg, ju
             const int stages = juce::roundToInt(std::log2(factor));
             osD = std::make_unique<juce::dsp::Oversampling<double>>(
                 juce::jmin(2, buffer.getNumChannels()), stages,
-                juce::dsp::Oversampling<double>::filterHalfBandPolyphaseIIR,
-                true, true);
+                filterType, true, true);
             osD->reset();
         }
         phaseBanksD.prepare(getSampleRate() * factor, getBlockSize() * factor, buffer.getNumChannels(), cfg.phase);
@@ -1373,6 +1444,12 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::precision, 1 }, "Precision", juce::StringArray { "Auto (Host)", "Force 32-bit", "Force 64-bit" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osMode, 1 }, "Oversampling", juce::StringArray { "Off", "2x", "4x", "8x", "16x" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::phaseMode, 1 }, "Phase Mode", juce::StringArray { "Zero", "Natural", "Hybrid", "Full Linear" }, 3));
+    
+    // SR-aware oversampling parameters
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osRealtime, 1 }, "Oversampling Realtime", juce::StringArray { "Auto by Quality", "Off", "2x", "4x", "8x", "16x" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osOffline, 1 }, "Oversampling Offline", juce::StringArray { "Auto by Quality", "Off", "2x", "4x", "8x", "16x" }, 1));
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osFilterType, 1 }, "Oversampling Type", juce::StringArray { "Linear Phase", "Minimum Phase" }, 0));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::tpSafe, 1 }, "True-Peak Safe", true));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::splitMode, 1 }, "Split Mode", false));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::tiltFreq, 1 },  "Tilt Frequency", juce::NormalisableRange<float> (100.0f, 1000.0f, 1.0f, 0.5f), 500.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::scoopFreq, 1 }, "Scoop Frequency", juce::NormalisableRange<float> (200.0f, 2000.0f, 1.0f, 0.5f), 800.0f));

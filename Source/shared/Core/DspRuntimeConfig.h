@@ -11,6 +11,13 @@ struct DspRuntimeConfig
     int quality = 1;              // 0..2
     int latencySamples = 0;       // reported latency (phase/OS dependent)
     
+    // SR-aware oversampling
+    double sampleRate = 48000.0;
+    int osRealtime = 0;    // 0=Auto, 1-5=Off,2x,4x,8x,16x
+    int osOffline = 1;     // 0=Auto, 1-5=Off,2x,4x,8x,16x
+    int osFilterType = 0;  // 0=Linear, 1=Minimum
+    bool tpSafe = true;    // True-peak safe mode
+    
     // Quality mapping
     struct QualityMap { int os; int phase; };
     static constexpr QualityMap kQMap[] = {
@@ -34,5 +41,39 @@ struct DspRuntimeConfig
     void applyQualityDefaults() {
         if (!userOverrodeOS) os = kQMap[quality].os;
         if (!userOverrodePhase) phase = kQMap[quality].phase;
+    }
+    
+    // SR-aware oversampling resolver (Gold Clip parity)
+    static int resolveOSFactor(double sr, int qualityTier) {
+        const bool loSR = (sr <= 48000.0);
+        const bool midSR = (sr > 48000.0 && sr <= 96000.0);
+        
+        switch (qualityTier) {
+            case 0: // Eco/High
+                if (loSR)  return 4;  // 4× @ 44.1/48
+                if (midSR) return 2;  // 2× @ 88.2/96
+                return 1;             // 1× @ 192+
+            case 1: // Standard/Pristine
+                if (loSR)  return 8;  // 8× @ 44.1/48
+                if (midSR) return 4;  // 4× @ 88.2/96
+                return 2;             // 2× @ 192+
+            case 2: // High/Extra Pristine
+                if (loSR)  return 16; // 16× @ 44.1/48
+                if (midSR) return 8;  // 8× @ 88.2/96
+                return 4;             // 4× @ 192+
+            default: return 1;
+        }
+    }
+    
+    // Get active OS factor based on realtime/offline mode
+    int getActiveOSFactor() const {
+        int targetOS = osRealtime; // Default to realtime
+        // TODO: Add isNonRealtime() detection
+        // if (isNonRealtime()) targetOS = osOffline;
+        
+        if (targetOS == 0) { // Auto by Quality
+            return resolveOSFactor(sampleRate, quality);
+        }
+        return targetOS; // Manual override
     }
 };
