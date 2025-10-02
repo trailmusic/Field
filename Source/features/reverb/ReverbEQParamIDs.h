@@ -38,14 +38,19 @@ inline void addReverbEQParameters(std::vector<std::unique_ptr<juce::RangedAudioP
     // --- Pretty formatters (host-visible labels only) ---
     auto fmtHz = [] (float v, int)
     {
-        if (v >= 10000.0f) return String (roundToInt (v / 1000.0f)) + " kHz";
-        if (v >= 1000.0f)  return String (v / 1000.0f, 1) + " kHz";
-        return String (roundToInt (v)) + " Hz";
+        if (v >= 1000.0f)
+            return String (v / 1000.0f, (v >= 10000.0f) ? 0 : 1) + " kHz";
+        return String ((int) std::round (v)) + " Hz";
     };
-    auto fmtDb   = [] (float v, int) { return String (v, 1) + " dB"; };
-    auto fmtQ    = [] (float v, int) { return "Q " + String (v, (v < 1.0f ? 2 : 1)); };
-    auto fmtMult = [] (float v, int) { return String (v, (v < 1.0f ? 2 : 1)) + "×"; };
-    auto fmtPct  = [] (float v, int) { return String (roundToInt (v)) + " %"; };
+    auto fmtDb = [] (float v, int)
+    {
+        String s; if (v > 0) s << "+";
+        s << String (v, 1) << " dB";
+        return s;
+    };
+    auto fmtQ = [] (float v, int) { return String (v, 2); };
+    auto fmtMult = [] (float v, int) { return String (v, 1) + String::charToString (0x00D7); }; // "×"
+    auto fmtPct = [] (float v, int) { return String (v, 0) + " %"; };
 
     auto choice = [] (const String& id, const String& nm, const StringArray& opts, int def)
     {
@@ -58,7 +63,7 @@ inline void addReverbEQParameters(std::vector<std::unique_ptr<juce::RangedAudioP
 
     // Convenience creator for AudioParameterFloat with formatter
     auto floatpFmt = [] (const String& id, const String& nm, NormalisableRange<float> r, float def,
-                         std::function<String(float, int)> pretty, const String& label = String())
+                         std::function<String(float, int)> pretty)
     {
         AudioParameterFloatAttributes attrs;
         attrs = attrs.withStringFromValueFunction (std::move (pretty));
@@ -68,8 +73,8 @@ inline void addReverbEQParameters(std::vector<std::unique_ptr<juce::RangedAudioP
     // ─────────────────────────────────────────────────────────────────────
     // Tone EQ global
     params.push_back (boolp  (IDs::toneEnabled,    "Reverb Tone EQ", true));
-    params.push_back (choice (IDs::toneQuality,    "Reverb Tone Quality",   StringArray{ "Zero", "Natural", "Linear" }, 1));
-    params.push_back (choice (IDs::toneOversample, "Reverb Tone Oversample", StringArray{ "1x", "2x", "4x", "8x" }, 0));
+    params.push_back (choice (IDs::toneQuality,    "Reverb Tone Quality",   StringArray{ "Zero", "Natural", "Linear" }, 1)); // tqNatural
+    params.push_back (choice (IDs::toneOversample, "Reverb Tone Oversample", StringArray{ "1x", "2x", "4x", "8x" }, 0)); // os1x
 
     // ─────────────────────────────────────────────────────────────────────
     // Tone EQ bands (4 bands)
@@ -78,21 +83,18 @@ inline void addReverbEQParameters(std::vector<std::unique_ptr<juce::RangedAudioP
         auto S = [i](const char* base) { return juce::String (base) + "_" + juce::String (i); };
 
         params.push_back (boolp  (S (ToneBand::active), "Tone Band Active", false));
-        params.push_back (choice (S (ToneBand::type),   "Tone Band Type",   StringArray{ "Bell", "LowShelf", "HighShelf", "HP", "LP" }, 0));
+        params.push_back (choice (S (ToneBand::type),   "Tone Band Type",   StringArray{ "Bell", "LowShelf", "HighShelf", "HP", "LP" }, 0)); // ttBell
 
         params.push_back (floatpFmt (S (ToneBand::freqHz), "Tone Band Freq",
-                                     { 20.f, 20000.f, 0.f, 0.25f }, 1000.f,
-                                     fmtHz /*→ shows Hz/kHz nicely*/, "Hz"));
+                                     { 20.f, 20000.f, 0.f, 0.25f }, 1000.f, fmtHz));
 
         params.push_back (floatpFmt (S (ToneBand::gainDb), "Tone Band Gain",
-                                     { -24.f, 24.f, 0.f }, 0.f,
-                                     fmtDb /*→ "x.x dB"*/, "dB"));
+                                     { -24.f, 24.f, 0.f }, 0.f, fmtDb));
 
         params.push_back (floatpFmt (S (ToneBand::q), "Tone Band Q",
-                                     { 0.1f, 36.0f, 0.f, 0.3f }, 0.707f,
-                                     fmtQ /*→ "Q 0.71"*/));
+                                     { 0.1f, 36.0f, 0.f, 0.3f }, 0.707f, fmtQ));
 
-        params.push_back (choice (S (ToneBand::phase), "Tone Band Phase", StringArray{ "Zero", "Natural", "Linear" }, 1));
+        params.push_back (choice (S (ToneBand::phase), "Tone Band Phase", StringArray{ "Zero", "Natural", "Linear" }, 1)); // tpNatural
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -104,20 +106,16 @@ inline void addReverbEQParameters(std::vector<std::unique_ptr<juce::RangedAudioP
         params.push_back (boolp (S (DecayBand::active), "Decay Band Active", false));
 
         params.push_back (floatpFmt (S (DecayBand::freqHz), "Decay Band Freq",
-                                     { 20.f, 20000.f, 0.f, 0.25f }, 1000.f,
-                                     fmtHz, "Hz"));
+                                     { 20.f, 20000.f, 0.f, 0.25f }, 1000.f, fmtHz));
 
         params.push_back (floatpFmt (S (DecayBand::q), "Decay Band Q",
-                                     { 0.1f, 36.0f, 0.f, 0.3f }, 0.707f,
-                                     fmtQ));
+                                     { 0.1f, 36.0f, 0.f, 0.3f }, 0.707f, fmtQ));
 
         params.push_back (floatpFmt (S (DecayBand::decayMult), "Decay Multiplier",
-                                     { 0.1f, 2.0f, 0.f }, 1.0f,
-                                     fmtMult /*→ "1.2×"*/));
+                                     { 0.1f, 2.0f, 0.f }, 1.0f, fmtMult));
 
         params.push_back (floatpFmt (S (DecayBand::dynAmt), "Decay Dyn Amount",
-                                     { 0.f, 100.f, 0.f }, 0.f,
-                                     fmtPct /*→ "80 %"*/, "%"));
+                                     { 0.f, 100.f, 0.f }, 0.f, fmtPct));
     }
 }
 }
