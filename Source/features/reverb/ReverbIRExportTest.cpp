@@ -26,19 +26,25 @@ class ReverbIRExportTest : public juce::UnitTest
 public:
     ReverbIRExportTest() : juce::UnitTest ("Reverb IR Export", "Audio") {}
     
-    // T60 measurement function
+    // T60 measurement function (amplitude-based)
     static float fitT60Sec(const std::vector<float>& mono, double fs, double t0=0.5, double t1=3.5)
     {
-        const int i0 = (int)std::round(t0*fs), i1 = (int)std::round(t1*fs);
+        const int N = (int) mono.size();
+        const int i0 = juce::jlimit(0, N, (int) std::round(t0 * fs));
+        const int i1 = juce::jlimit(0, N, (int) std::round(t1 * fs));
+        if (i1 - i0 < 1024) return 0.0f; // too short for reliable fit
+
         double sx=0, sy=0, sxx=0, sxy=0, n=0;
-        for (int i=i0; i<i1 && i<(int)mono.size(); ++i) {
+        for (int i = i0; i < i1; ++i) {
             const double t = i / fs;
-            const double y = std::log10(std::max(1e-12f, std::fabs(mono[i])));
+            const double y = std::log10((double) juce::jmax(1e-12f, std::abs(mono[i])));
             sx += t; sy += y; sxx += t*t; sxy += t*y; n += 1.0;
         }
-        const double m = (n*sxy - sx*sy) / std::max(1e-12, n*sxx - sx*sx); // slope (log10 amplitude / s)
-        // 60 dB drop means -6 decades in log10 amplitude. T60 = Δdecades / |slope| = 6 / |m|
-        return (float)(6.0 / std::abs(m));
+        const double den = juce::jmax(1e-12, n*sxx - sx*sx);
+        const double m   = (n*sxy - sx*sy) / den; // slope (log10 amplitude / s)
+
+        // 60 dB amplitude drop = 3 decades in log10(amplitude)
+        return (float)(3.0 / std::abs(m));
     }
 
     void runTest() override
@@ -47,7 +53,7 @@ public:
 
         const double sr = 48000.0;
         const int block = 256;
-        const int secs  = FIELD_REVERB_DEFAULT_IR_SECONDS;
+        const int secs  = 10; // Default IR length (fallback if FIELD_REVERB_DEFAULT_IR_SECONDS not defined)
         const int total = (int) (sr * secs);
 
         // Create a minimal processor for APVTS
@@ -76,12 +82,17 @@ public:
         layout.add (std::make_unique<juce::AudioParameterFloat>("decay_sec", "Decay", 0.2f, 20.0f, 2.4f));
         layout.add (std::make_unique<juce::AudioParameterFloat>("er_level_db","ER Lvl", -60.f, 0.f, -10.f));
         layout.add (std::make_unique<juce::AudioParameterBool> ("duck_on", "Duck", false));
+        layout.add (std::make_unique<juce::AudioParameterBool> ("wet_only", "Wet Only", true)); // Force wet-only for clean IR
         DummyProcessor dummy;
         juce::AudioProcessorValueTreeState apvts (dummy, nullptr, "ReverbTest", std::move (layout));
 
         ReverbEngine engine;
         ReverbProcessorGlue glue (apvts, engine);
         glue.prepareToPlay (sr, block, 2);
+        
+        // Force wet-only mode for unambiguous IR
+        if (auto* p = apvts.getParameter("wet_only")) 
+            p->setValueNotifyingHost(1.0f);
 
         juce::AudioBuffer<float> tail (2, total);
         tail.clear();
@@ -99,7 +110,7 @@ public:
                 for (int c=0;c<io.getNumChannels();++c)
                     io.setSample (c, 0, 1.0f);
 
-            io.setSize (2, n, true, true, true);
+            // Keep buffer size constant, just process first n samples
             glue.processBlock (io, midi);
 
             for (int c=0;c<2;++c)
@@ -108,9 +119,18 @@ public:
             rendered += n;
         }
 
-        // write wav
+        // write wav with descriptive filename
+        const auto now = std::chrono::system_clock::now();
+        const auto time_t = std::chrono::system_clock::to_time_t(now);
+        const auto tm = *std::localtime(&time_t);
+        const juce::String timestamp = juce::String::formatted("%04d-%02d-%02d", 
+                                                               tm.tm_year + 1900, 
+                                                               tm.tm_mon + 1, 
+                                                               tm.tm_mday);
+        const juce::String filename = juce::String::formatted("FIELD_Reverb_IR_%dk_%ds_%s.wav", 
+                                                              (int)(sr/1000), secs, timestamp.toRawUTF8());
         juce::File out = juce::File::getSpecialLocation (juce::File::userDesktopDirectory)
-                         .getChildFile ("FIELD_Reverb_IR.wav");
+                         .getChildFile (filename);
         juce::WavAudioFormat wav;
         std::unique_ptr<juce::FileOutputStream> fos (out.createOutputStream());
         expect (fos != nullptr);
@@ -136,8 +156,8 @@ public:
         }
         
         const float measuredT60 = fitT60Sec(mono, sr, 0.5, 3.5);
-        const float expectedT60 = 1.8f; // Default decay time
-        const float tolerance = 0.1f; // ±5% tolerance
+        const float expectedT60 = 2.4f; // Match APVTS default decay_sec parameter
+        const float tolerance = 0.12f; // ±5% tolerance (0.12s at 2.4s)
         
         logMessage ("Measured T60: " + juce::String(measuredT60, 2) + "s, Expected: " + juce::String(expectedT60, 2) + "s");
         expect (std::abs(measuredT60 - expectedT60) < tolerance, "T60 measurement failed");
@@ -145,22 +165,24 @@ public:
         // Stereo decorrelation check
         beginTest ("Stereo decorrelation validation");
         
-        // Compute cross-correlation
+        // Compute cross-correlation with proper window counting
         double correlation = 0.0;
+        int numWins = 0;
         const int windowSize = 1024;
-        for (int i = 0; i < total - windowSize; i += windowSize) {
-            double sumL = 0.0, sumR = 0.0, sumLR = 0.0, sumLL = 0.0, sumRR = 0.0;
+        for (int i = 0; i <= total - windowSize; i += windowSize) {
+            double sumLR = 0.0, sumLL = 0.0, sumRR = 0.0;
             for (int j = 0; j < windowSize; ++j) {
                 const float l = tail.getSample(0, i + j);
                 const float r = tail.getSample(1, i + j);
-                sumL += l; sumR += r; sumLR += l * r; sumLL += l * l; sumRR += r * r;
+                sumLR += l * r; sumLL += l * l; sumRR += r * r;
             }
             const double denom = std::sqrt(sumLL * sumRR);
-            if (denom > 1e-12) {
-                correlation += std::abs(sumLR / denom);
+            if (denom > 1e-12) { 
+                correlation += std::abs(sumLR / denom); 
+                ++numWins;
             }
         }
-        correlation /= (total / windowSize);
+        if (numWins > 0) correlation /= (double) numWins;
         
         logMessage ("Cross-correlation: " + juce::String(correlation, 3));
         expect (correlation < 0.6, "Stereo decorrelation failed (correlation too high)");
@@ -199,6 +221,9 @@ private:
         
         auto start = std::chrono::high_resolution_clock::now();
         
+        // Disable logging during timing to prevent skewing microbenchmarks
+        juce::Logger::setCurrentLogger(nullptr);
+        
         for (int i = 0; i < testSamples; i += block) {
             buffer.clear();
             if (i == 0) buffer.setSample(0, 0, 1.0f); // Impulse
@@ -208,6 +233,9 @@ private:
         
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        
+        // Re-enable logging after timing
+        juce::Logger::setCurrentLogger(juce::Logger::getCurrentLogger());
         
         const double cpuTimeMs = duration.count() / 1000.0;
         const double realTimeMs = (testSamples / sr) * 1000.0;
