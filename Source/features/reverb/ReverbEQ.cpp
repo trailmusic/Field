@@ -3,288 +3,142 @@
 #include "features/dynEq/FilterFactory.h"
 #include "shared/Core/PluginProcessor.h"
 
-ReverbToneEQ::ReverbToneEQ(MyPluginAudioProcessor& p)
-    : proc(p)
+using namespace juce;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ReverbToneEQ
+// ─────────────────────────────────────────────────────────────────────────────
+
+ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
+    : proc (p)
 {
-    setOpaque(true);
-    startTimerHz(30);
-    
-    // Initialize zoom state
-    zoomState.prepare(60.0);
-    
-    addAndMakeVisible(analyzer);
-    analyzer.setInterceptsMouseClicks(false, false);
-    analyzer.setAutoHeadroomEnabled(true);
-    analyzer.setHeadroomTargetFill(0.70f);
-    SpectrumAnalyzer::Params prm; 
-    prm.fps = 30; 
-    analyzer.setParams(prm);
-    analyzer.setDrawGridHorizontal(false); // we'll draw our own dB units
-    
-    // Add per-band modules
-    addAndMakeVisible(overlay);
-    overlay.setVisible(false);
-    addAndMakeVisible(badge);
-    badge.setVisible(false);
-    
-    // Setup overlay callbacks
-    overlay.onGainChanged = [this](float g) {
-        if (selected >= 0 && selected < (int)points.size()) {
-            points[(size_t)selected].db = juce::jlimit(-24.f, 24.f, g);
-            if (points[(size_t)selected].bandIdx >= 0)
-                setBandParam(points[(size_t)selected].bandIdx, ReverbEQParams::ToneBand::gainDb, g);
+    setOpaque (true);
+
+    // Analyzer setup
+    zoomState.prepare (60.0); // ±dB half-range
+    addAndMakeVisible (analyzer);
+    analyzer.setInterceptsMouseClicks (false, false);
+    analyzer.setAutoHeadroomEnabled   (true);
+    analyzer.setHeadroomTargetFill    (0.70f);
+    SpectrumAnalyzer::Params prm; prm.fps = 30;
+    analyzer.setParams (prm);
+    analyzer.setDrawGridHorizontal (false); // we draw our own dB grid
+
+    // Overlay + badge (initially hidden)
+    addAndMakeVisible (overlay); overlay.setVisible (false);
+    addAndMakeVisible (badge);   badge.setVisible   (false);
+
+    // Overlay callbacks
+    overlay.onGainChanged = [this] (float g)
+    {
+        if (selected >= 0 && selected < (int) points.size())
+        {
+            auto& bp = points[(size_t) selected];
+            bp.db = jlimit (kMinGainDb, kMaxGainDb, g);
+            if (bp.bandIdx >= 0)
+                setBandParam (bp.bandIdx, ReverbEQParams::ToneBand::gainDb, bp.db);
             rebuildEqPath(); repaint();
         }
     };
-    
-    overlay.onQChanged = [this](float q) {
-        if (selected >= 0 && selected < (int)points.size()) {
-            points[(size_t)selected].q = juce::jlimit(0.1f, 36.0f, q);
-            if (points[(size_t)selected].bandIdx >= 0)
-                setBandParam(points[(size_t)selected].bandIdx, ReverbEQParams::ToneBand::q, q);
+
+    overlay.onQChanged = [this] (float qVal)
+    {
+        if (selected >= 0 && selected < (int) points.size())
+        {
+            auto& bp = points[(size_t) selected];
+            bp.q = jlimit (kMinQ, kMaxQ, qVal);
+            if (bp.bandIdx >= 0)
+                setBandParam (bp.bandIdx, ReverbEQParams::ToneBand::q, bp.q);
             rebuildEqPath(); repaint();
         }
     };
-    
-    overlay.onFreqChanged = [this](float f) {
-        if (selected >= 0 && selected < (int)points.size()) {
-            points[(size_t)selected].hz = juce::jlimit(20.f, 20000.f, f);
-            if (points[(size_t)selected].bandIdx >= 0)
-                setBandParam(points[(size_t)selected].bandIdx, ReverbEQParams::ToneBand::freqHz, f);
+
+    overlay.onFreqChanged = [this] (float f)
+    {
+        if (selected >= 0 && selected < (int) points.size())
+        {
+            auto& bp = points[(size_t) selected];
+            bp.hz = jlimit (kMinHz, kMaxHz, f);
+            if (bp.bandIdx >= 0)
+                setBandParam (bp.bandIdx, ReverbEQParams::ToneBand::freqHz, bp.hz);
             rebuildEqPath(); repaint();
         }
     };
-    
-    overlay.onTypeChanged = [this](int t) {
-        if (selected >= 0 && selected < (int)points.size()) {
-            points[(size_t)selected].type = juce::jlimit(0, 2, t);
-            if (points[(size_t)selected].bandIdx >= 0)
-                setBandParam(points[(size_t)selected].bandIdx, ReverbEQParams::ToneBand::type, (float)t);
+
+    overlay.onTypeChanged = [this] (int t)
+    {
+        if (selected >= 0 && selected < (int) points.size())
+        {
+            auto& bp = points[(size_t) selected];
+            bp.type = jlimit (0, 2, t);
+            if (bp.bandIdx >= 0)
+                setBandParam (bp.bandIdx, ReverbEQParams::ToneBand::type, (float) bp.type);
+            rebuildEqPath(); repaint(); positionBadgeFor (selected);
+        }
+    };
+
+    // Badge callbacks
+    badge.onDelete = [this]
+    {
+        if (selected >= 0 && selected < (int) points.size())
+        {
+            const int bandIdx = points[(size_t) selected].bandIdx;
+            if (bandIdx >= 0)
+                setBandParam (bandIdx, ReverbEQParams::ToneBand::active, 0.0f);
+
+            points.erase (points.begin() + selected);
+            selected = -1;
             rebuildEqPath(); repaint();
+            overlay.setVisible (false);
+            badge.setVisible   (false);
         }
     };
-    
-    // Setup badge callbacks
-    badge.onDelete = [this] {
-        if (selected >= 0 && selected < (int)points.size()) {
-            const int bandIdx = points[(size_t)selected].bandIdx;
-            if (bandIdx >= 0) setBandParam(bandIdx, ReverbEQParams::ToneBand::active, 0.0f);
-            points.erase(points.begin() + selected);
-            selected = -1; rebuildEqPath(); repaint(); overlay.setVisible(false); badge.setVisible(false);
+
+    badge.onBypass = [this] (bool off)
+    {
+        if (selected >= 0 && selected < (int) points.size())
+        {
+            const int bandIdx = points[(size_t) selected].bandIdx;
+            if (bandIdx >= 0)
+                setBandParam (bandIdx, ReverbEQParams::ToneBand::active, off ? 0.0f : 1.0f);
         }
     };
-    
-    badge.onBypass = [this](bool off) {
-        if (selected >= 0 && selected < (int)points.size()) {
-            const int bandIdx = points[(size_t)selected].bandIdx;
-            if (bandIdx >= 0) setBandParam(bandIdx, ReverbEQParams::ToneBand::active, off ? 0.0f : 1.0f);
-        }
-    };
-    
-    badge.onSetType = [this](int tp) {
+
+    badge.onSetType = [this] (int tp)
+    {
         const int idx = (badgeFor >= 0 ? badgeFor : selected);
-        if (idx >= 0 && idx < (int)points.size()) {
-            auto& p = points[(size_t)idx];
-            p.type = juce::jlimit(0, 2, tp);
-            if (p.bandIdx >= 0) setBandParam(p.bandIdx, ReverbEQParams::ToneBand::type, (float)p.type);
-            rebuildEqPath(); repaint(); positionBadgeFor(idx);
+        if (idx >= 0 && idx < (int) points.size())
+        {
+            auto& bp = points[(size_t) idx];
+            bp.type = jlimit (0, 2, tp);
+            if (bp.bandIdx >= 0)
+                setBandParam (bp.bandIdx, ReverbEQParams::ToneBand::type, (float) bp.type);
+            rebuildEqPath(); repaint(); positionBadgeFor (idx);
         }
     };
+
+    // Start the UI timer only when the component is visible
+    if (isShowing()) startTimerHz (30);
 }
 
 ReverbToneEQ::~ReverbToneEQ()
 {
     stopTimer();
+    if (auto* old = listeningTo) old->removeChangeListener (this);
 }
 
-void ReverbToneEQ::timerCallback()
-{
-    // Drive delayed ghost repaint and hover HUD updates at 30Hz
-    repaint();
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Lifecycle
+// ─────────────────────────────────────────────────────────────────────────────
 
-// Mouse interaction methods
-void ReverbToneEQ::mouseDown(const juce::MouseEvent& e)
+void ReverbToneEQ::visibilityChanged()
 {
-    const int h = hitTestPoint(e.getPosition());
-    if (h >= 0)
-    {
-        // Check if clicking on already selected point - toggle controls visibility
-        if (h == selected && overlay.isVisible())
-        {
-            // Toggle off controls
-            overlay.setVisible(false);
-            badge.setVisible(false);
-            selected = -1;
-        }
-        else
-        {
-            // Select point and show controls
-            selected = h;
-            auto& pt = points[(size_t)selected];
-            overlay.setValues(pt.db, pt.q, pt.hz, pt.type);
-            overlay.setVisible(true);
-            positionOverlay();
-            positionBadgeFor(selected);
-        }
-    }
-    else if (!e.mods.isPopupMenu())
-    {
-        // Check band limit (4 bands max for Tone EQ)
-        if (points.size() >= 4)
-        {
-            // Show tooltip or visual feedback that limit is reached
-            return;
-        }
-        
-        // Create new band
-        BandPoint bp; 
-        bp.hz = juce::jlimit(20.f, 20000.f, mapXToHz(e.getPosition().x)); 
-        bp.db = juce::jlimit(-24.f, 24.f, mapYToDb(e.getPosition().y));
-        if (bp.hz <= 50.0f) { bp.type = 1; bp.db = -12.0f; } // Low Shelf
-        else if (bp.hz >= 10000.0f) { bp.type = 2; bp.db = -12.0f; } // High Shelf
-        else { bp.type = 0; } // Bell
-        
-        const int slot = allocateBandSlot();
-        if (slot >= 0)
-        {
-            bp.bandIdx = slot;
-            setBandParam(slot, ReverbEQParams::ToneBand::active, 1.0f);
-            setBandParam(slot, ReverbEQParams::ToneBand::freqHz, bp.hz);
-            setBandParam(slot, ReverbEQParams::ToneBand::gainDb, bp.db);
-            setBandParam(slot, ReverbEQParams::ToneBand::q, bp.q);
-            setBandParam(slot, ReverbEQParams::ToneBand::type, (float)bp.type);
-            setBandParam(slot, ReverbEQParams::ToneBand::phase, (float)bp.phase);
-        }
-        points.push_back(bp);
-        selected = (int)points.size() - 1;
-        overlay.setValues(bp.db, bp.q, bp.hz, bp.type);
-        overlay.setVisible(true);
-        positionOverlay();
-        positionBadgeFor(selected);
-        rebuildEqPath();
-        repaint();
-    }
-    else
-    {
-        overlay.setVisible(false);
-        badge.setVisible(false);
-    }
-}
-
-void ReverbToneEQ::mouseDrag(const juce::MouseEvent& e)
-{
-    if (selected >= 0 && selected < (int)points.size())
-    {
-        auto& pt = points[(size_t)selected];
-        pt.hz = juce::jlimit(20.f, 20000.f, mapXToHz(e.getPosition().x));
-        pt.db = juce::jlimit(-24.f, 24.f, mapYToDb(e.getPosition().y));
-        if (pt.bandIdx >= 0)
-        {
-            setBandParam(pt.bandIdx, ReverbEQParams::ToneBand::freqHz, pt.hz);
-            setBandParam(pt.bandIdx, ReverbEQParams::ToneBand::gainDb, pt.db);
-        }
-        rebuildEqPath();
-        repaint();
-    }
-}
-
-void ReverbToneEQ::mouseUp(const juce::MouseEvent&)
-{
-    // Update overlay values after drag
-    if (selected >= 0 && selected < (int)points.size())
-    {
-        auto& pt = points[(size_t)selected];
-        overlay.setValues(pt.db, pt.q, pt.hz, pt.type);
-        positionOverlay();
-        positionBadgeFor(selected);
-    }
-}
-
-void ReverbToneEQ::mouseMove(const juce::MouseEvent& e)
-{
-    const int h = hitTestPoint(e.getPosition());
-    if (h != hover)
-    {
-        hover = h;
-        if (selected < 0)
-        {
-            if (hover >= 0) positionBadgeFor(hover);
-            else badge.setVisible(false);
-        }
-        else
-        {
-            if (hover >= 0) positionBadgeFor(hover);
-            else positionBadgeFor(selected);
-        }
-    }
-    hoverPos = e.getPosition();
-    auto r = analyzer.getBounds();
-    hoverInPane = r.contains(hoverPos);
-    if (hoverInPane)
-        hoverHz = juce::jlimit(20.0f, 20000.0f, mapXToHz(hoverPos.x));
-    lastMouseMoveMs = (juce::int64) juce::Time::getMillisecondCounterHiRes();
-    repaint();
-}
-
-void ReverbToneEQ::mouseExit(const juce::MouseEvent&)
-{
-    if (selected < 0) badge.setVisible(false);
-    hover = -1;
-    hoverInPane = false;
-    repaint();
-}
-
-void ReverbToneEQ::mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel)
-{
-    if (selected >= 0 && selected < (int)points.size())
-    {
-        auto& pt = points[(size_t)selected];
-        pt.q = juce::jlimit(0.1f, 36.0f, pt.q + wheel.deltaY * 0.1f);
-        if (pt.bandIdx >= 0)
-            setBandParam(pt.bandIdx, ReverbEQParams::ToneBand::q, pt.q);
-        rebuildEqPath();
-        overlay.setValues(pt.db, pt.q, pt.hz, pt.type);
-        positionOverlay();
-        positionBadgeFor(selected);
-        repaint();
-    }
-}
-
-void ReverbToneEQ::mouseDoubleClick(const juce::MouseEvent& e)
-{
-    const int idx = hitTestPoint(e.getPosition());
-    if (idx >= 0 && idx < (int)points.size())
-    {
-        // Double-click on an existing point deletes it
-        const int bandIdx = points[(size_t)idx].bandIdx;
-        if (bandIdx >= 0)
-            setBandParam(bandIdx, ReverbEQParams::ToneBand::active, 0.0f);
-        points.erase(points.begin() + idx);
-        if (selected == idx) selected = -1; 
-        else if (selected > idx) --selected;
-        rebuildEqPath();
-        repaint();
-        if (selected < 0) 
-        {
-            overlay.setVisible(false);
-            badge.setVisible(false);
-        }
-        else 
-        {
-            auto& pt2 = points[(size_t)selected];
-            overlay.setValues(pt2.db, pt2.q, pt2.hz, pt2.type);
-            overlay.setVisible(true);
-            positionOverlay();
-            positionBadgeFor(selected);
-        }
-        return;
-    }
+    if (isVisible()) startTimerHz (30);
+    else             stopTimer();
 }
 
 void ReverbToneEQ::lookAndFeelChanged()
 {
-    // LNF object changed → reattach listener and repaint
     parentHierarchyChanged();
     repaint();
 }
@@ -292,175 +146,371 @@ void ReverbToneEQ::lookAndFeelChanged()
 void ReverbToneEQ::parentHierarchyChanged()
 {
     // Re-wire listener whenever LNF or parent changes
-    if (auto* old = listeningTo) old->removeChangeListener(this);
-    listeningTo = dynamic_cast<FieldLNF*>(&getLookAndFeel());
-    if (listeningTo) {
-        listeningTo->addChangeListener(this);
-        juce::Logger::writeToLog("ReverbToneEQ: Connected to FieldLNF ChangeBroadcaster");
-    } else {
-        juce::Logger::writeToLog("ReverbToneEQ: Failed to connect to FieldLNF ChangeBroadcaster");
-    }
+    if (auto* old = listeningTo) old->removeChangeListener (this);
+    listeningTo = dynamic_cast<FieldLNF*> (&getLookAndFeel());
+    if (listeningTo) listeningTo->addChangeListener (this);
 }
 
-void ReverbToneEQ::changeListenerCallback(juce::ChangeBroadcaster* src)
+void ReverbToneEQ::changeListenerCallback (ChangeBroadcaster* src)
 {
-    // If the active LNF is our FieldLNF, repaint on its change signals
-    if (src == dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+    if (src == dynamic_cast<FieldLNF*> (&getLookAndFeel()))
+        repaint();
+}
+
+void ReverbToneEQ::timerCallback()
+{
+    // Drive hover HUD / ghost and spectrum redraws at ~30Hz
+    if (isShowing()) repaint();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Interaction
+// ─────────────────────────────────────────────────────────────────────────────
+
+void ReverbToneEQ::mouseDown (const MouseEvent& e)
+{
+    const int h = hitTestPoint (e.getPosition());
+    if (h >= 0)
     {
-        juce::Logger::writeToLog("ReverbToneEQ: ChangeListener callback triggered!");
+        // Toggle overlay if clicking the already selected point
+        if (h == selected && overlay.isVisible())
+        {
+            overlay.setVisible (false);
+            badge.setVisible   (false);
+            selected = -1;
+        }
+        else
+        {
+            selected = h;
+            auto& pt = points[(size_t) selected];
+            overlay.setValues (pt.db, pt.q, pt.hz, pt.type);
+            overlay.setVisible (true);
+            positionOverlay();
+            positionBadgeFor (selected);
+        }
+        return;
+    }
+
+    if (e.mods.isPopupMenu())
+    {
+        overlay.setVisible (false);
+        badge.setVisible   (false);
+        return;
+    }
+
+    // Add new band (max 4)
+    if (points.size() >= (size_t) kMaxBands)
+        return;
+
+    BandPoint bp;
+    bp.hz = jlimit (kMinHz, kMaxHz, mapXToHz (e.getPosition().x));
+    bp.db = jlimit (kMinGainDb, kMaxGainDb, mapYToDb (e.getPosition().y));
+
+    // Predict shelves in extremes
+    if      (bp.hz <= 50.0f)    { bp.type = 1; bp.db = -12.0f; }   // LowShelf
+    else if (bp.hz >= 10000.0f) { bp.type = 2; bp.db = -12.0f; }   // HighShelf
+    else                        { bp.type = 0; }                   // Bell
+
+    const int slot = allocateBandSlot();
+    if (slot >= 0)
+    {
+        bp.bandIdx = slot;
+        setBandParam (slot, ReverbEQParams::ToneBand::active, 1.0f);
+        setBandParam (slot, ReverbEQParams::ToneBand::freqHz, bp.hz);
+        setBandParam (slot, ReverbEQParams::ToneBand::gainDb, bp.db);
+        setBandParam (slot, ReverbEQParams::ToneBand::q,      bp.q);
+        setBandParam (slot, ReverbEQParams::ToneBand::type,   (float) bp.type);
+        setBandParam (slot, ReverbEQParams::ToneBand::phase,  (float) bp.phase);
+    }
+
+    points.push_back (bp);
+    selected = (int) points.size() - 1;
+
+    overlay.setValues (bp.db, bp.q, bp.hz, bp.type);
+    overlay.setVisible (true);
+    positionOverlay();
+    positionBadgeFor (selected);
+    rebuildEqPath();
+    repaint();
+}
+
+void ReverbToneEQ::mouseDrag (const MouseEvent& e)
+{
+    if (selected >= 0 && selected < (int) points.size())
+    {
+        auto& pt = points[(size_t) selected];
+        pt.hz = jlimit (kMinHz, kMaxHz, mapXToHz (e.getPosition().x));
+        pt.db = jlimit (kMinGainDb, kMaxGainDb, mapYToDb (e.getPosition().y));
+
+        if (pt.bandIdx >= 0)
+        {
+            setBandParam (pt.bandIdx, ReverbEQParams::ToneBand::freqHz, pt.hz);
+            setBandParam (pt.bandIdx, ReverbEQParams::ToneBand::gainDb, pt.db);
+        }
+
+        rebuildEqPath();
         repaint();
     }
 }
 
-void ReverbToneEQ::paint(juce::Graphics& g)
+void ReverbToneEQ::mouseUp (const MouseEvent&)
 {
-    auto r = getLocalBounds().toFloat();
-    auto& lf = getLookAndFeel();
-    
-    // Get theme colors from LNF
-    auto border = lf.findColour(FieldLNF::eqBorderColourId);
-    auto panel = lf.findColour(juce::ResizableWindow::backgroundColourId);
-    auto accent = lf.findColour(FieldLNF::eqLabelTextColourId);
-    auto zeroLine = lf.findColour(FieldLNF::eqZeroLineColourId);
-    auto gridLine = lf.findColour(FieldLNF::eqGridLineColourId);
-    auto handle = lf.findColour(FieldLNF::eqBandHandleColourId);
-    auto handleActive = lf.findColour(FieldLNF::eqBandHandleActiveId);
-    auto trace = lf.findColour(FieldLNF::eqAnalyzerTraceColourId);
-    
-    // Anti-aliasing fix: Fill entire area first, then rounded rectangle
-    const float cr = 8.0f;
-    
-    // Fill entire rectangular area to prevent white corners
-    g.setColour(panel);
-    g.fillRect(r);
-    
-    // Then draw rounded rectangle on top
-    g.fillRoundedRectangle(r, cr);
-    
-    // Border for definition
-    g.setColour(border);
-    g.drawRoundedRectangle(r.reduced(1.0f), cr - 1.0f, 1.5f);
-    
-    // Draw units and grid
-    drawUnits(g);
-    
-    // Draw EQ curves
-    auto rA = analyzer.getBounds().toFloat();
-    if (!rA.isEmpty())
+    if (selected >= 0 && selected < (int) points.size())
     {
-        // Combined EQ curve (macro) slightly more prominent
-        g.setColour(accent.withAlpha(0.95f));
-        g.strokePath(eqPath, juce::PathStrokeType(3.0f));
-        
-        // Per-band curves
-        for (size_t i = 0; i < bandPaths.size(); ++i)
-        {
-            juce::Colour base = bandColourFor((int)i);
-            g.setColour(base.withAlpha(0.90f));
-            g.strokePath(bandPaths[i], juce::PathStrokeType(1.2f));
-        }
-        
-        // Draw band points
-        g.setColour(accent.withAlpha(0.95f));
-        for (const auto& pt : points)
-        {
-            const float x = mapHzToX(pt.hz);
-            const float y = mapDbToY(pt.db);
-            g.fillEllipse(x-8, y-8, 16, 16);
-        }
-        
-        // Selected point highlight
-        if (selected >= 0 && selected < (int)points.size())
-        {
-            const auto& pt = points[(size_t)selected];
-            const float x = mapHzToX(pt.hz);
-            const float y = mapDbToY(pt.db);
-            g.setColour(border.withAlpha(0.6f));
-            g.drawEllipse(x-12, y-12, 24, 24, 1.6f);
-        }
-        
-        // Hover readout and predictive ghost
-        if (hoverInPane)
-        {
-            // Vertical guide lines that track the cursor (soft when moving, stronger when ghost reveals)
-            const juce::int64 nowMs = (juce::int64) juce::Time::getMillisecondCounterHiRes();
-            const bool ghostOn = (nowMs - lastMouseMoveMs) >= (juce::int64) ghostDelayMs;
-            auto rGuide = rA;
-            // Smooth fade for center line based on time since last move
-            const float tSince = (float) juce::jlimit<juce::int64> (0, ghostDelayMs, nowMs - lastMouseMoveMs);
-            const float aMove = juce::jmap (tSince, 0.0f, (float) ghostDelayMs, 0.26f, 0.18f); // while moving
-            const float aGhost= 0.34f; // when ghost is on
-            float alpha = ghostOn ? aGhost : aMove;
-            float alphaFade = ghostOn ? 0.12f : 0.06f;
-            g.setColour (accent.withAlpha (alpha));
-            const float x = (float) hoverPos.x;
-            // Main center line
-            g.drawLine (x, rGuide.getY(), x, rGuide.getBottom(), ghostOn ? 1.4f : 1.0f);
-            // Side fades
-            g.setColour (accent.withAlpha (alphaFade));
-            g.drawLine (x-12.0f, rGuide.getY(), x-12.0f, rGuide.getBottom(), ghostOn ? 1.0f : 0.8f);
-            g.drawLine (x+12.0f, rGuide.getY(), x+12.0f, rGuide.getBottom(), ghostOn ? 1.0f : 0.8f);
-            g.setColour (accent.withAlpha (alphaFade * 0.6f));
-            g.drawLine (x-24.0f, rGuide.getY(), x-24.0f, rGuide.getBottom(), 0.8f);
-            g.drawLine (x+24.0f, rGuide.getY(), x+24.0f, rGuide.getBottom(), 0.8f);
+        const auto& pt = points[(size_t) selected];
+        overlay.setValues (pt.db, pt.q, pt.hz, pt.type);
+        positionOverlay();
+        positionBadgeFor (selected);
+    }
+}
 
-            // Hz readout near bottom and top (follow cursor)
-            g.setColour (accent.withAlpha (0.60f));
-            juce::String hzText;
-            if (hoverHz >= 1000.0f && hoverHz < 10000.0f) hzText = juce::String (hoverHz / 1000.0f, 1) + "k";
-            else if (hoverHz >= 10000.0f) hzText = juce::String ((int) std::round (hoverHz/1000.0f)) + "k";
-            else hzText = juce::String ((int) hoverHz);
-            juce::String lbl = hzText + " Hz";
-            auto tb = juce::Rectangle<float> ((float) hoverPos.x - 32.0f, rA.getBottom() - 20.0f, 64.0f, 14.0f);
+void ReverbToneEQ::mouseWheelMove (const MouseEvent&, const MouseWheelDetails& wheel)
+{
+    if (selected >= 0 && selected < (int) points.size())
+    {
+        auto& pt = points[(size_t) selected];
+        pt.q = jlimit (kMinQ, kMaxQ, pt.q + wheel.deltaY * 0.1f);
+
+        if (pt.bandIdx >= 0)
+            setBandParam (pt.bandIdx, ReverbEQParams::ToneBand::q, pt.q);
+
+        rebuildEqPath();
+        overlay.setValues (pt.db, pt.q, pt.hz, pt.type);
+        positionOverlay();
+        positionBadgeFor (selected);
+        repaint();
+    }
+}
+
+void ReverbToneEQ::mouseDoubleClick (const MouseEvent& e)
+{
+    const int idx = hitTestPoint (e.getPosition());
+    if (idx >= 0 && idx < (int) points.size())
+    {
+        const int bandIdx = points[(size_t) idx].bandIdx;
+        if (bandIdx >= 0)
+            setBandParam (bandIdx, ReverbEQParams::ToneBand::active, 0.0f);
+
+        points.erase (points.begin() + idx);
+
+        if      (selected == idx) selected = -1;
+        else if (selected  > idx) --selected;
+
+        rebuildEqPath();
+        repaint();
+
+        if (selected < 0)
+        {
+            overlay.setVisible (false);
+            badge.setVisible   (false);
+            return;
+        }
+
+        const auto& pt2 = points[(size_t) selected];
+        overlay.setValues (pt2.db, pt2.q, pt2.hz, pt2.type);
+        overlay.setVisible (true);
+        positionOverlay();
+        positionBadgeFor (selected);
+    }
+}
+
+void ReverbToneEQ::mouseMove (const MouseEvent& e)
+{
+    const int h = hitTestPoint (e.getPosition());
+    if (h != hover)
+    {
+        hover = h;
+        if (selected < 0)
+        {
+            if (hover >= 0) positionBadgeFor (hover);
+            else            badge.setVisible (false);
+        }
+        else
+        {
+            if (hover >= 0) positionBadgeFor (hover);
+            else            positionBadgeFor (selected);
+        }
+    }
+
+    hoverPos   = e.getPosition();
+    auto r     = analyzer.getBounds();
+    hoverInPane= r.contains (hoverPos);
+    if (hoverInPane)
+        hoverHz = jlimit (kMinHz, kMaxHz, mapXToHz (hoverPos.x));
+
+    lastMouseMoveMs = (int64) Time::getMillisecondCounterHiRes();
+    repaint();
+}
+
+void ReverbToneEQ::mouseExit (const MouseEvent&)
+{
+    if (selected < 0)
+        badge.setVisible (false);
+
+    hover       = -1;
+    hoverInPane = false;
+    repaint();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Painting
+// ─────────────────────────────────────────────────────────────────────────────
+
+void ReverbToneEQ::paint (Graphics& g)
+{
+    auto r  = getLocalBounds().toFloat();
+    auto& lf= getLookAndFeel();
+
+    // Theme colours
+    const auto border      = lf.findColour (FieldLNF::eqBorderColourId);
+    const auto panel       = lf.findColour (ResizableWindow::backgroundColourId);
+    const auto accent      = lf.findColour (FieldLNF::eqLabelTextColourId);
+    const auto zeroLine    = lf.findColour (FieldLNF::eqZeroLineColourId);
+    const auto gridLine    = lf.findColour (FieldLNF::eqGridLineColourId);
+    const auto accentTrace = lf.findColour (FieldLNF::eqAnalyzerTraceColourId);
+
+    const float cr = 8.0f;
+
+    // Panel with rounded border
+    g.setColour (panel);            g.fillRect (r);
+    g.setColour (panel);            g.fillRoundedRectangle (r, cr);
+    g.setColour (border);           g.drawRoundedRectangle (r.reduced (1.0f), cr - 1.0f, 1.5f);
+
+    // Units/grid
+    drawUnits (g);
+
+    // Curves + points
+    const auto rA = analyzer.getBounds().toFloat();
+    if (rA.isEmpty())
+        return;
+
+    // Combined curve
+    g.setColour (accent.withAlpha (0.95f));
+    g.strokePath (eqPath, PathStrokeType (3.0f));
+
+    // Per-band curves
+    for (size_t i = 0; i < bandPaths.size(); ++i)
+    {
+        const Colour base = bandColourFor ((int) i);
+        g.setColour (base.withAlpha (0.90f));
+        g.strokePath (bandPaths[i], PathStrokeType (1.2f));
+    }
+
+    // Band handles
+    g.setColour (accent.withAlpha (0.95f));
+    for (const auto& pt : points)
+    {
+        const float x = mapHzToX (pt.hz);
+        const float y = mapDbToY (pt.db);
+        g.fillEllipse (x - 8.0f, y - 8.0f, 16.0f, 16.0f);
+    }
+
+    // Selected highlight
+    if (selected >= 0 && selected < (int) points.size())
+    {
+        const auto& pt = points[(size_t) selected];
+        const float x  = mapHzToX (pt.hz);
+        const float y  = mapDbToY (pt.db);
+        g.setColour (border.withAlpha (0.6f));
+        g.drawEllipse (x - 12.0f, y - 12.0f, 24.0f, 24.0f, 1.6f);
+    }
+
+    // Hover guide + predictive ghost
+    if (hoverInPane)
+    {
+        const int64 nowMs    = (int64) Time::getMillisecondCounterHiRes();
+        const bool  ghostOn  = (nowMs - lastMouseMoveMs) >= (int64) ghostDelayMs;
+
+        // Center guide with soft fades
+        const float x = (float) hoverPos.x;
+        {
+            Graphics::ScopedSaveState ss (g);
+            const float aMove  = jmap (float (jlimit<int64> (0, ghostDelayMs, nowMs - lastMouseMoveMs)),
+                                       0.0f, float (ghostDelayMs), 0.26f, 0.18f);
+            const float aGhost = 0.34f;
+            const float alpha  = ghostOn ? aGhost : aMove;
+
+            g.setColour (accent.withAlpha (alpha));
+            g.drawLine (x, rA.getY(), x, rA.getBottom(), ghostOn ? 1.4f : 1.0f);
+
+            g.setColour (accent.withAlpha ((ghostOn ? 0.12f : 0.06f)));
+            g.drawLine (x - 12.0f, rA.getY(), x - 12.0f, rA.getBottom(), ghostOn ? 1.0f : 0.8f);
+            g.drawLine (x + 12.0f, rA.getY(), x + 12.0f, rA.getBottom(), ghostOn ? 1.0f : 0.8f);
+            g.setColour (accent.withAlpha ((ghostOn ? 0.072f : 0.036f)));
+            g.drawLine (x - 24.0f, rA.getY(), x - 24.0f, rA.getBottom(), 0.8f);
+            g.drawLine (x + 24.0f, rA.getY(), x + 24.0f, rA.getBottom(), 0.8f);
+        }
+
+        // Hz readouts (top/bottom)
+        String hzText;
+        if      (hoverHz >= 10000.0f) hzText = String ((int) std::round (hoverHz / 1000.0f)) + "k";
+        else if (hoverHz >= 1000.0f)  hzText = String (hoverHz / 1000.0f, 1) + "k";
+        else                          hzText = String ((int) hoverHz);
+
+        const String lbl = hzText + " Hz";
+
+        {
+            auto tb = Rectangle<float> (x - 32.0f, rA.getBottom() - 20.0f, 64.0f, 14.0f);
             g.setColour (border.withAlpha (0.45f));
             g.fillRoundedRectangle (tb, 4.0f);
             g.setColour (accent.withAlpha (0.80f));
-            g.drawFittedText (lbl, tb.toNearestInt(), juce::Justification::centred, 1);
-            // Top badge
-            auto tt = juce::Rectangle<float> ((float) hoverPos.x - 28.0f, rA.getY() + 6.0f, 56.0f, 14.0f);
+            g.drawFittedText (lbl, tb.toNearestInt(), Justification::centred, 1);
+        }
+        {
+            auto tt = Rectangle<float> (x - 28.0f, rA.getY() + 6.0f, 56.0f, 14.0f);
             g.setColour (border.withAlpha (0.40f));
             g.fillRoundedRectangle (tt, 4.0f);
             g.setColour (accent.withAlpha (0.85f));
-            g.drawFittedText (lbl, tt.toNearestInt(), juce::Justification::centred, 1);
+            g.drawFittedText (lbl, tt.toNearestInt(), Justification::centred, 1);
+        }
 
-            // Predictive ghost: show faint HP/LP in low/high zones, else Bell
-            const bool showGhost = ghostOn;
-            if (showGhost)
+        // Predictive ghost (shelving at extremes, bell otherwise)
+        if (ghostOn)
+        {
+            // Avoid ghost when too close to an existing handle
+            bool nearPoint = false;
+            for (const auto& pt : points)
             {
-                // Suppress ghost if near an existing point (avoid conflicts)
-                const float suppressRadiusPx = 24.0f;
-                bool nearPoint = false;
-                for (const auto& pt : points)
+                if (Point<float> (mapHzToX (pt.hz), mapDbToY (pt.db))
+                        .getDistanceFrom (hoverPos.toFloat()) <= 24.0f)
+                { nearPoint = true; break; }
+            }
+
+            if (! nearPoint)
+            {
+                Path ghost;
+                const bool mouseAbove0 = (mapYToDb (hoverPos.y) > 0.0f);
+
+                auto addGhost = [&] (int type, float amtDb)
                 {
-                    if (juce::Point<float> (mapHzToX (pt.hz), mapDbToY (pt.db)).getDistanceFrom (hoverPos.toFloat()) <= suppressRadiusPx)
-                    { nearPoint = true; break; }
-                }
-                if (! nearPoint)
-                {
-                // Build full ghost
-                juce::Path ghost;
-                const bool mouseAbove0 = mapYToDb (hoverPos.y) > 0.0f;
-                auto makeGhost = [&](int type, float amtDb){ BandPoint b; b.type = type; b.hz = hoverHz; b.db = amtDb; b.q = 0.9f; const int N = juce::jmax (64, (int) rA.getWidth()); for (int i=0;i<N;++i){ const double minHz=20.0, maxHz=20000.0; const double t=(double)i/(double)(N-1); const double a=std::log10(minHz), bL=std::log10(maxHz); const double logF=juce::jmap(t,0.0,1.0,a,bL); const double hz=std::pow(10.0, logF); const float x=rA.getX() + (float) i/(float)(N-1)*rA.getWidth(); const float y=mapDbToY (bandDbAtForPaint (b, (float) hz)); if (i==0) ghost.startNewSubPath (x, y); else ghost.lineTo (x, y);} };
-                // Predictive: shelves in low/high, bell elsewhere; sign by mouse Y
-                if (hoverHz <= 50.0f)
-                {
-                    makeGhost (1 /*LowShelf*/, mouseAbove0 ? +3.0f : -3.0f);
-                }
-                else if (hoverHz >= 10000.0f)
-                {
-                    makeGhost (2 /*HighShelf*/, mouseAbove0 ? +3.0f : -3.0f);
-                }
-                else
-                {
-                    makeGhost (0 /*Bell*/, mouseAbove0 ? +3.0f : -3.0f);
-                }
-                // Radial fade around cursor to softly reveal only local part
-                juce::Path clipped; clipped.addEllipse ((float) hoverPos.x - rA.getWidth()*0.05f, (float) hoverPos.y - rA.getHeight()*0.15f, rA.getWidth()*0.10f, rA.getHeight()*0.30f);
-                juce::Graphics::ScopedSaveState ss (g);
-                g.reduceClipRegion (clipped);
+                    BandPoint b; b.type = type; b.hz = hoverHz; b.db = amtDb; b.q = 0.9f;
+                    const int N = jmax (64, (int) rA.getWidth());
+                    for (int i = 0; i < N; ++i)
+                    {
+                        const double t    = (double) i / (double) (N - 1);
+                        const double a    = std::log10 (kMinHz), bL = std::log10 (kMaxHz);
+                        const double logF = jmap (t, 0.0, 1.0, a, bL);
+                        const double hz   = std::pow (10.0, logF);
+                        const float  xPos = rA.getX() + (float) i / (float) (N - 1) * rA.getWidth();
+                        const float  yPos = mapDbToY (bandDbAtForPaint (b, (float) hz));
+                        if (i == 0) ghost.startNewSubPath (xPos, yPos);
+                        else        ghost.lineTo          (xPos, yPos);
+                    }
+                };
+
+                if      (hoverHz <= 50.0f)    addGhost (1, mouseAbove0 ? +3.0f : -3.0f); // LS
+                else if (hoverHz >= 10000.0f) addGhost (2, mouseAbove0 ? +3.0f : -3.0f); // HS
+                else                          addGhost (0, mouseAbove0 ? +3.0f : -3.0f); // Bell
+
+                // Reveal only near the cursor with a soft elliptical clip
+                Graphics::ScopedSaveState ss (g);
+                Path clip; clip.addEllipse (x - rA.getWidth() * 0.05f,
+                                            (float) hoverPos.y - rA.getHeight() * 0.15f,
+                                            rA.getWidth() * 0.10f,
+                                            rA.getHeight()* 0.30f);
+                g.reduceClipRegion (clip);
                 g.setColour (accent.withAlpha (0.16f));
-                g.strokePath (ghost, juce::PathStrokeType (1.0f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
-                }
+                g.strokePath (ghost, PathStrokeType (1.0f, PathStrokeType::curved, PathStrokeType::rounded));
             }
         }
     }
@@ -468,575 +518,558 @@ void ReverbToneEQ::paint(juce::Graphics& g)
 
 void ReverbToneEQ::resized()
 {
-    auto r = getLocalBounds().reduced(6);
-    analyzer.setBounds(r);
+    const auto r = getLocalBounds().reduced (6);
+    analyzer.setBounds (r);
     rebuildEqPath();
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Curves / grid
+// ─────────────────────────────────────────────────────────────────────────────
 
 void ReverbToneEQ::rebuildEqPath()
 {
     eqPath.clear();
     bandPaths.clear();
-    auto r = analyzer.getBounds().toFloat();
-    if (r.isEmpty()) return;
 
-    const int N = juce::jmax(128, (int)r.getWidth());
-    
-    // Build combined EQ curve
-    auto totalDbAt = [this](double hz)
+    const auto r = analyzer.getBounds().toFloat();
+    if (r.isEmpty())
+        return;
+
+    const int N = jmax (128, (int) r.getWidth());
+
+    // Combined EQ curve
+    auto totalDbAt = [this] (double hz)
     {
         float s = 0.0f;
-        for (const auto& b : points) 
-        {
-            s += bandDbAtForPaint(b, (float)hz);
-        }
+        for (const auto& b : points)
+            s += bandDbAtForPaint (b, (float) hz);
         return s;
     };
-    
-    auto mapX = [&](int i)
+
+    auto mapX = [&] (int i)
     {
-        const double minHz = 20.0, maxHz = 20000.0;
-        const double t = (double)i / (double)(N - 1);
-        const double a = std::log10(minHz), b = std::log10(maxHz);
-        const double logF = juce::jmap(t, 0.0, 1.0, a, b);
-        const double hz = std::pow(10.0, logF);
-        return std::pair<float,float>((float)hz, mapDbToY(totalDbAt(hz)));
+        const double t    = (double) i / (double) (N - 1);
+        const double a    = std::log10 (kMinHz), b = std::log10 (kMaxHz);
+        const double logF = jmap (t, 0.0, 1.0, a, b);
+        const double hz   = std::pow (10.0, logF);
+        return std::pair<float, float> ((float) hz, mapDbToY (totalDbAt (hz)));
     };
 
-    auto p0 = mapX(0); 
-    eqPath.startNewSubPath(r.getX(), p0.second);
+    const auto p0 = mapX (0);
+    eqPath.startNewSubPath (r.getX(), p0.second);
+
     for (int i = 1; i < N; ++i)
     {
-        auto p = mapX(i);
-        const float x = r.getX() + (float)i / (float)(N - 1) * r.getWidth();
-        eqPath.lineTo(x, p.second);
+        const auto p = mapX (i);
+        const float x = r.getX() + (float) i / (float) (N - 1) * r.getWidth();
+        eqPath.lineTo (x, p.second);
     }
-    
+
     // Per-band paths
-    bandPaths.resize(points.size());
+    bandPaths.resize (points.size());
     for (size_t bi = 0; bi < points.size(); ++bi)
     {
         auto& bp = bandPaths[bi];
-        auto mapBand = [&](int i){
-            const double minHz = 20.0, maxHz = 20000.0;
-            const double t = (double)i / (double)(N - 1);
-            const double a = std::log10(minHz), b = std::log10(maxHz);
-            const double logF = juce::jmap(t, 0.0, 1.0, a, b);
-            const double hz = std::pow(10.0, logF);
-            return std::pair<float,float>((float)hz, mapDbToY(bandDbAtForPaint(points[bi], (float)hz)));
+
+        auto mapBand = [&] (int i)
+        {
+            const double t    = (double) i / (double) (N - 1);
+            const double a    = std::log10 (kMinHz), bL = std::log10 (kMaxHz);
+            const double logF = jmap (t, 0.0, 1.0, a, bL);
+            const double hz   = std::pow (10.0, logF);
+            return std::pair<float, float> ((float) hz, mapDbToY (bandDbAtForPaint (points[bi], (float) hz)));
         };
-        auto q0 = mapBand(0); 
-        bp.startNewSubPath(r.getX(), q0.second);
+
+        const auto q0 = mapBand (0);
+        bp.startNewSubPath (r.getX(), q0.second);
+
         for (int i = 1; i < N; ++i)
         {
-            auto q = mapBand(i);
-            const float x = r.getX() + (float)i / (float)(N - 1) * r.getWidth();
-            bp.lineTo(x, q.second);
+            const auto q = mapBand (i);
+            const float x = r.getX() + (float) i / (float) (N - 1) * r.getWidth();
+            bp.lineTo (x, q.second);
         }
     }
 }
 
-void ReverbToneEQ::drawUnits(juce::Graphics& g)
+void ReverbToneEQ::drawUnits (Graphics& g)
 {
-    auto r = analyzer.getBounds().toFloat();
+    const auto r = analyzer.getBounds().toFloat();
     if (r.isEmpty()) return;
-    
-    // Get theme colors from LNF
-    auto& lf = getLookAndFeel();
-    auto gridCol = lf.findColour(FieldLNF::eqGridLineColourId);
-    auto textCol = lf.findColour(FieldLNF::eqLabelTextColourId).withAlpha(0.45f);
-    auto zeroCol = lf.findColour(FieldLNF::eqZeroLineColourId);
-    
-    g.setFont(12.0f);
-    g.setColour(gridCol);
+
+    auto& lf   = getLookAndFeel();
+    auto grid  = lf.findColour (FieldLNF::eqGridLineColourId);
+    auto text  = lf.findColour (FieldLNF::eqLabelTextColourId).withAlpha (0.45f);
+    auto zero  = lf.findColour (FieldLNF::eqZeroLineColourId);
+
+    g.setFont (12.0f);
 
     // dB ticks
+    g.setColour (grid);
     const float halfRange = zoomState.getCurrent();
-    const float dbVals[] = { 18, 12, 6, 0, -6, -12, -18, -24, -30, -36 };
+    const float dbVals[]  = { +18, +12, +6, 0, -6, -12, -18, -24, -30, -36 };
+
     for (float dbv : dbVals)
     {
         if (dbv > halfRange || dbv < -halfRange) continue;
-        const float y = mapDbToY(dbv);
-        
-        // Use special color for 0 dB line
-        if (dbv == 0) {
-            g.setColour(zeroCol);
-            g.drawLine(r.getX(), y, r.getRight(), y, 1.2f);
-        } else {
-            g.setColour(gridCol);
-            g.drawLine(r.getX(), y, r.getRight(), y, 0.6f);
+
+        const float y = mapDbToY (dbv);
+
+        if (dbv == 0.0f)
+        {
+            g.setColour (zero);
+            g.drawLine  (r.getX(), y, r.getRight(), y, 1.2f);
         }
-        
-        g.setColour(textCol);
-        juce::String lbl = juce::String((int)dbv) + " dB";
-        g.drawFittedText(lbl, juce::Rectangle<int>((int)r.getX()+4, (int)y-8, 44, 16), juce::Justification::centredLeft, 1);
+        else
+        {
+            g.setColour (grid);
+            g.drawLine  (r.getX(), y, r.getRight(), y, 0.6f);
+        }
+
+        g.setColour (text);
+        g.drawFittedText (String ((int) dbv) + " dB",
+                          Rectangle<int> ((int) r.getX() + 4, (int) y - 8, 44, 16),
+                          Justification::centredLeft, 1);
     }
 
     // Hz ticks
-    const double hzTicks[] = { 20, 50, 100, 200, 500, 1000, 1500, 2000, 3000, 4000, 5000, 7000, 8000, 10000, 20000 };
+    g.setColour (grid);
+    const double hzTicks[] = { 20, 50, 100, 200, 500, 1000, 1500, 2000, 3000, 4000,
+                               5000, 7000, 8000, 10000, 20000 };
+
     for (double hz : hzTicks)
     {
-        const float x = mapHzToX((float)hz);
-        g.setColour(gridCol);
-        g.drawLine(x, r.getBottom()-16.0f, x, r.getBottom(), 0.8f);
-        g.setColour(textCol);
-        juce::String lbl;
-        if (hz >= 1000.0 && hz < 10000.0) lbl = juce::String(hz/1000.0, 1) + "k";
-        else if (hz >= 10000.0) lbl = juce::String((int)std::round(hz/1000.0)) + "k";
-        else lbl = juce::String((int)hz);
-        g.drawFittedText(lbl, juce::Rectangle<int>((int)x-18, (int)r.getBottom()-30, 36, 14), juce::Justification::centred, 1);
+        const float x = mapHzToX ((float) hz);
+        g.drawLine (x, r.getBottom() - 16.0f, x, r.getBottom(), 0.8f);
+
+        String lbl;
+        if      (hz >= 10000.0) lbl = String ((int) std::round (hz / 1000.0)) + "k";
+        else if (hz >= 1000.0)  lbl = String (hz / 1000.0, 1) + "k";
+        else                    lbl = String ((int) hz);
+
+        g.setColour (text);
+        g.drawFittedText (lbl,
+                          Rectangle<int> ((int) x - 18, (int) r.getBottom() - 30, 36, 14),
+                          Justification::centred, 1);
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Mapping & hit-testing
+// ─────────────────────────────────────────────────────────────────────────────
 
-// Mapping helpers
-float ReverbToneEQ::mapHzToX(float hz) const
+float ReverbToneEQ::mapHzToX (float hz) const
 {
-    auto r = analyzer.getBounds().toFloat();
-    const float minHz = 20.f, maxHz = 20000.f;
-    const float t = (float)(std::log10(juce::jlimit(minHz, maxHz, hz) / minHz) / std::log10(maxHz / minHz));
+    const auto r = analyzer.getBounds().toFloat();
+    const float t = (float) (std::log10 (jlimit (kMinHz, kMaxHz, hz) / kMinHz)
+                           / std::log10 (kMaxHz / kMinHz));
     return r.getX() + t * r.getWidth();
 }
 
-float ReverbToneEQ::mapDbToY(float dB) const
+float ReverbToneEQ::mapDbToY (float dB) const
 {
-    auto r = analyzer.getBounds().toFloat();
-    const float top = r.getY()+8.f, bottom = r.getBottom()-8.f;
+    const auto r = analyzer.getBounds().toFloat();
+    const float top = r.getY() + 8.0f, bottom = r.getBottom() - 8.0f;
     const float halfRange = zoomState.getCurrent();
-    return juce::jmap(dB, +halfRange, -halfRange, top, bottom);
+    return jmap (dB, +halfRange, -halfRange, top, bottom);
 }
 
-float ReverbToneEQ::mapXToHz(int px) const
+float ReverbToneEQ::mapXToHz (int px) const
 {
-    auto r = analyzer.getBounds();
-    const float minHz = 20.f, maxHz = 20000.f;
-    const float t = juce::jlimit(0.0f, 1.0f, (px - (float)r.getX()) / (float)r.getWidth());
-    const float a = std::log10(minHz), b = std::log10(maxHz);
-    return std::pow(10.0f, juce::jmap(t, 0.0f, 1.0f, a, b));
+    const auto r = analyzer.getBounds();
+    const float t = jlimit (0.0f, 1.0f, (px - (float) r.getX()) / (float) r.getWidth());
+    const float a = std::log10 (kMinHz), b = std::log10 (kMaxHz);
+    return std::pow (10.0f, jmap (t, 0.0f, 1.0f, a, b));
 }
 
-float ReverbToneEQ::mapYToDb(int py) const
+float ReverbToneEQ::mapYToDb (int py) const
 {
-    auto r = analyzer.getBounds();
+    const auto r = analyzer.getBounds();
     const float halfRange = zoomState.getCurrent();
-    return juce::jmap((float)py, (float)r.getY(), (float)r.getBottom(), +halfRange, -halfRange);
+    return jmap ((float) py, (float) r.getY(), (float) r.getBottom(), +halfRange, -halfRange);
 }
 
-// Hit testing
-int ReverbToneEQ::hitTestPoint(juce::Point<int> p) const
+int ReverbToneEQ::hitTestPoint (Point<int> p) const
 {
-    const float radius = 12.0f;
-    for (int i = (int)points.size()-1; i >= 0; --i)
+    for (int i = (int) points.size() - 1; i >= 0; --i)
     {
-        const float x = mapHzToX(points[(size_t)i].hz);
-        const float y = mapDbToY(points[(size_t)i].db);
-        if (juce::Point<float>(x, y).getDistanceFrom(p.toFloat()) <= radius)
+        const float x = mapHzToX (points[(size_t) i].hz);
+        const float y = mapDbToY (points[(size_t) i].db);
+        if (Point<float> (x, y).getDistanceFrom (p.toFloat()) <= kHandleRadius)
             return i;
     }
     return -1;
 }
 
-// Band management
+// ─────────────────────────────────────────────────────────────────────────────
+// Band management & paint helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
 int ReverbToneEQ::allocateBandSlot()
 {
     for (int i = 0; i < kMaxBands; ++i)
     {
-        auto id = bandId(ReverbEQParams::ToneBand::active, i);
-        if (auto* v = proc.apvts.getRawParameterValue(id))
-        {
+        const auto id = bandId (ReverbEQParams::ToneBand::active, i);
+        if (auto* v = proc.apvts.getRawParameterValue (id))
             if (v->load() < 0.5f)
                 return i;
-        }
     }
     return -1;
 }
 
-void ReverbToneEQ::setBandParam(int bandIdx, const char* baseId, float value)
+void ReverbToneEQ::setBandParam (int bandIdx, const char* baseId, float value)
 {
-    auto id = bandId(baseId, bandIdx);
-    if (auto* p = proc.apvts.getParameter(id))
-    {
-        const float norm = p->convertTo0to1(value);
-        p->setValueNotifyingHost(norm);
-    }
+    const auto id = bandId (baseId, bandIdx);
+    if (auto* p = proc.apvts.getParameter (id))
+        p->setValueNotifyingHost (p->convertTo0to1 (value));
 }
 
-float ReverbToneEQ::getBandParamFloat(int bandIdx, const char* baseId, float fallback) const
+float ReverbToneEQ::getBandParamFloat (int bandIdx, const char* baseId, float fallback) const
 {
-    auto id = bandId(baseId, bandIdx);
-    if (auto* v = proc.apvts.getRawParameterValue(id)) return v->load();
+    const auto id = bandId (baseId, bandIdx);
+    if (auto* v = proc.apvts.getRawParameterValue (id))
+        return v->load();
     return fallback;
 }
 
-// Visual helpers
-juce::Colour ReverbToneEQ::bandColourFor(int bandIdx) const
+Colour ReverbToneEQ::bandColourFor (int bandIdx) const
 {
-    auto& lf = getLookAndFeel();
-    auto accent = lf.findColour(FieldLNF::eqLabelTextColourId);
-    const float baseHue = accent.getHue();
-    const float baseSat = juce::jlimit(0.25f, 0.95f, accent.getSaturation());
-    const float baseBrt = juce::jlimit(0.35f, 0.95f, accent.getBrightness());
-    const float golden = 0.61803398875f;
-    float hue = std::fmod(baseHue + golden * (float)(bandIdx + 1), 1.0f);
-    hue = juce::jlimit(0.0f, 1.0f, 0.65f * hue + 0.35f * baseHue);
-    float sat = juce::jlimit(0.30f, 0.95f, baseSat * 0.9f + 0.1f);
-    float brt = juce::jlimit(0.40f, 0.95f, baseBrt * 0.9f + 0.1f);
-    return juce::Colour::fromHSV(hue, sat, brt, 1.0f);
+    auto& lf      = getLookAndFeel();
+    const auto ac = lf.findColour (FieldLNF::eqLabelTextColourId);
+    const float baseHue = ac.getHue();
+    const float baseSat = jlimit (0.25f, 0.95f, ac.getSaturation());
+    const float baseBrt = jlimit (0.35f, 0.95f, ac.getBrightness());
+    const float golden  = 0.61803398875f;
+
+    float hue = std::fmod (baseHue + golden * (float) (bandIdx + 1), 1.0f);
+    hue       = jlimit (0.0f, 1.0f, 0.65f * hue + 0.35f * baseHue);
+    float sat = jlimit (0.30f, 0.95f, baseSat * 0.9f + 0.1f);
+    float brt = jlimit (0.40f, 0.95f, baseBrt * 0.9f + 0.1f);
+    return Colour::fromHSV (hue, sat, brt, 1.0f);
 }
 
-float ReverbToneEQ::bandDbAtForPaint(const BandPoint& b, float hz) const
+float ReverbToneEQ::bandDbAtForPaint (const BandPoint& b, float hz) const
 {
-    const double logHz = std::log10(juce::jlimit(20.0f, 20000.0f, hz));
-    const double logC = std::log10(juce::jlimit(20.0f, 20000.0f, b.hz));
-    const double q = juce::jlimit(0.1, 36.0, (double)b.q);
-    const double width = juce::jlimit(0.02, 0.50, 0.22 / q);
-    const double d = (logHz - logC) / width;
-    
+    const double logHz = std::log10 (jlimit (double (kMinHz), double (kMaxHz), (double) hz));
+    const double logC  = std::log10 (jlimit (double (kMinHz), double (kMaxHz), (double) b.hz));
+    const double q     = jlimit (0.1, 36.0, (double) b.q);
+    const double width = jlimit (0.02, 0.50, 0.22 / q);
+    const double d     = (logHz - logC) / width;
+
     switch (b.type)
     {
-        case 0: { // Bell
-            const float w = (float)std::exp(-0.5 * d * d);
+        case 0: // Bell
+        {
+            const float w = (float) std::exp (-0.5 * d * d);
             return b.db * w;
         }
-        case 1: { // Low Shelf
-            const double k = 8.0 * juce::jlimit(0.2, 3.0, q * 0.25);
-            const double s = 1.0 / (1.0 + std::exp(-k * (logHz - logC)));
-            return (float)(b.db * s);
+        case 1: // Low Shelf
+        {
+            const double k = 8.0 * jlimit (0.2, 3.0, q * 0.25);
+            const double s = 1.0 / (1.0 + std::exp (-k * (logHz - logC)));
+            return (float) (b.db * s);
         }
-        case 2: { // High Shelf
-            const double k = 8.0 * juce::jlimit(0.2, 3.0, q * 0.25);
-            const double s = 1.0 / (1.0 + std::exp(-k * (logHz - logC)));
-            return (float)(b.db * (1.0 - s));
+        case 2: // High Shelf
+        {
+            const double k = 8.0 * jlimit (0.2, 3.0, q * 0.25);
+            const double s = 1.0 / (1.0 + std::exp (-k * (logHz - logC)));
+            return (float) (b.db * (1.0 - s));
         }
         default: return 0.0f;
     }
 }
 
-// Per-band module implementations
-void ReverbToneEQ::positionOverlay()
-{
-    if (selected < 0 || selected >= (int)points.size()) return;
-    
-    auto r = getLocalBounds();
-    const int w = 200, h = 120;
-    
-    // Get the selected band point position
-    const auto& pt = points[(size_t)selected];
-    const float bandX = mapHzToX(pt.hz);
-    const float bandY = mapDbToY(pt.db);
-    
-    // Start with band point position
-    int ox = (int)bandX - w/2;
-    int oy = (int)bandY - h/2;
-    
-    // Smart positioning to avoid overlap with band point
-    const int bandRadius = 12; // Band point click radius
-    const int margin = 20; // Additional margin from band point
-    
-    // Check if overlay would overlap with band point
-    bool overlapsBand = (ox <= bandX + bandRadius + margin && 
-                        ox + w >= bandX - bandRadius - margin &&
-                        oy <= bandY + bandRadius + margin && 
-                        oy + h >= bandY - bandRadius - margin);
-    
-    if (overlapsBand)
-    {
-        // Position overlay to the right of band point
-        ox = (int)bandX + bandRadius + margin;
-        oy = (int)bandY - h/2;
-        
-        // If that goes off screen, try to the left
-        if (ox + w > r.getRight())
-        {
-            ox = (int)bandX - w - bandRadius - margin;
-        }
-        
-        // If still off screen, try above
-        if (ox < r.getX() || ox + w > r.getRight())
-        {
-            ox = (int)bandX - w/2;
-            oy = (int)bandY - h - bandRadius - margin;
-        }
-        
-        // If still off screen, try below
-        if (oy < r.getY())
-        {
-            oy = (int)bandY + bandRadius + margin;
-        }
-    }
-    
-    // Final bounds checking
-    if (ox < r.getX()) ox = r.getX() + 10;
-    if (ox + w > r.getRight()) ox = r.getRight() - w - 10;
-    if (oy < r.getY()) oy = r.getY() + 10;
-    if (oy + h > r.getBottom()) oy = r.getBottom() - h - 10;
-    
-    overlay.setBounds(ox, oy, w, h);
-    overlay.setVisible(true);
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Overlay
+// ─────────────────────────────────────────────────────────────────────────────
 
-void ReverbToneEQ::positionBadgeFor(int idx)
-{
-    if (idx < 0 || idx >= (int)points.size()) return;
-    const auto& pt = points[(size_t)idx];
-    const float x = mapHzToX(pt.hz);
-    const float y = mapDbToY(pt.db);
-    
-    const int w = 120, h = 60;
-    auto pane = analyzer.getBounds();
-    
-    // Smart positioning to avoid overlap with band point
-    const int bandRadius = 12;
-    const int margin = 15;
-    
-    // Try positioning to the right first
-    int ox = (int)x + bandRadius + margin;
-    int oy = (int)y - h/2;
-    
-    // If that goes off screen, try to the left
-    if (ox + w > pane.getRight())
-    {
-        ox = (int)x - w - bandRadius - margin;
-    }
-    
-    // If still off screen, try above
-    if (ox < pane.getX())
-    {
-        ox = (int)x - w/2;
-        oy = (int)y - h - bandRadius - margin;
-    }
-    
-    // If still off screen, try below
-    if (oy < pane.getY())
-    {
-        oy = (int)y + bandRadius + margin;
-    }
-    
-    // Final bounds checking
-    if (ox < pane.getX()) ox = pane.getX() + 5;
-    if (ox + w > pane.getRight()) ox = pane.getRight() - w - 5;
-    if (oy < pane.getY()) oy = pane.getY() + 5;
-    if (oy + h > pane.getBottom()) oy = pane.getBottom() - h - 5;
-    
-    badge.setBounds(ox, oy, w, h);
-    badge.setVisible(true);
-    badge.setValues(0.0f, pt.hz, pt.type, false);
-    badge.setDetails(pt.q, pt.db, false, false, 0.0f, false, "St", 0, "Pre");
-    
-    // Per-band accent color
-    juce::Colour accent = bandColourFor(idx);
-    badge.toFront(true);
-}
-
-// BandOverlay implementation
 ReverbToneEQ::BandOverlay::BandOverlay()
 {
-    setInterceptsMouseClicks(true, true);
-    
-    // Setup sliders
-    gain.setSliderStyle(juce::Slider::LinearHorizontal);
-    gain.setTextBoxStyle(juce::Slider::TextBoxRight, false, 48, 18);
-    gain.setRange(-24.0, 24.0, 0.1);
-    gain.onValueChange = [this] { if (!updating && onGainChanged) onGainChanged((float)gain.getValue()); };
-    gain.onDragStart = [this] { if (onDragAny) onDragAny(true); };
-    gain.onDragEnd = [this] { if (onDragAny) onDragAny(false); };
-    addAndMakeVisible(gain);
-    
-    q.setSliderStyle(juce::Slider::LinearHorizontal);
-    q.setTextBoxStyle(juce::Slider::TextBoxRight, false, 48, 18);
-    q.setRange(0.1, 36.0, 0.01);
-    q.onValueChange = [this] { if (!updating && onQChanged) onQChanged((float)q.getValue()); };
-    q.onDragStart = [this] { if (onDragAny) onDragAny(true); };
-    q.onDragEnd = [this] { if (onDragAny) onDragAny(false); };
-    addAndMakeVisible(q);
-    
-    freq.setSliderStyle(juce::Slider::LinearHorizontal);
-    freq.setTextBoxStyle(juce::Slider::TextBoxRight, false, 64, 18);
-    freq.setRange(20.0, 20000.0, 0.01);
-    freq.setSkewFactorFromMidPoint(1000.0);
-    freq.onValueChange = [this] { if (!updating && onFreqChanged) onFreqChanged((float)freq.getValue()); };
-    freq.onDragStart = [this] { if (onDragAny) onDragAny(true); };
-    freq.onDragEnd = [this] { if (onDragAny) onDragAny(false); };
-    addAndMakeVisible(freq);
-    
-    // Setup labels
-    gainLabel.setText("GAIN", juce::dontSendNotification);
-    gainLabel.setJustificationType(juce::Justification::centredLeft);
-    addAndMakeVisible(gainLabel);
-    
-    qLabel.setText("Q", juce::dontSendNotification);
-    qLabel.setJustificationType(juce::Justification::centredLeft);
-    addAndMakeVisible(qLabel);
-    
-    freqLabel.setText("FREQ", juce::dontSendNotification);
-    freqLabel.setJustificationType(juce::Justification::centredLeft);
-    addAndMakeVisible(freqLabel);
-    
-    // Setup type combo
-    typeCb.addItemList(juce::StringArray{"Bell", "LowShelf", "HighShelf"}, 1);
-    typeCb.onChange = [this] { if (!updating && onTypeChanged) onTypeChanged(typeCb.getSelectedItemIndex()); };
-    addAndMakeVisible(typeCb);
-    
-    typeLabel.setText("TYPE", juce::dontSendNotification);
-    typeLabel.setJustificationType(juce::Justification::centredLeft);
-    addAndMakeVisible(typeLabel);
+    setInterceptsMouseClicks (true, true);
+
+    // Sliders
+    gain.setSliderStyle (Slider::LinearHorizontal);
+    gain.setTextBoxStyle (Slider::TextBoxRight, false, 56, 18);
+    gain.setRange (kMinGainDb, kMaxGainDb, 0.1);
+    gain.onValueChange = [this] { if (! updating && onGainChanged) onGainChanged ((float) gain.getValue()); };
+    gain.onDragStart   = [this] { if (onDragAny) onDragAny (true);  };
+    gain.onDragEnd     = [this] { if (onDragAny) onDragAny (false); };
+    addAndMakeVisible (gain);
+
+    q.setSliderStyle (Slider::LinearHorizontal);
+    q.setTextBoxStyle (Slider::TextBoxRight, false, 56, 18);
+    q.setRange (kMinQ, kMaxQ, 0.01);
+    q.onValueChange = [this] { if (! updating && onQChanged) onQChanged ((float) q.getValue()); };
+    q.onDragStart   = [this] { if (onDragAny) onDragAny (true);  };
+    q.onDragEnd     = [this] { if (onDragAny) onDragAny (false); };
+    addAndMakeVisible (q);
+
+    freq.setSliderStyle (Slider::LinearHorizontal);
+    freq.setTextBoxStyle (Slider::TextBoxRight, false, 72, 18);
+    freq.setRange (kMinHz, kMaxHz, 0.01);
+    freq.setSkewFactorFromMidPoint (1000.0);
+    freq.onValueChange = [this] { if (! updating && onFreqChanged) onFreqChanged ((float) freq.getValue()); };
+    freq.onDragStart   = [this] { if (onDragAny) onDragAny (true);  };
+    freq.onDragEnd     = [this] { if (onDragAny) onDragAny (false); };
+    addAndMakeVisible (freq);
+
+    // Labels
+    gainLabel.setText ("GAIN", dontSendNotification);
+    gainLabel.setJustificationType (Justification::centredLeft);
+    addAndMakeVisible (gainLabel);
+
+    qLabel.setText ("Q", dontSendNotification);
+    qLabel.setJustificationType (Justification::centredLeft);
+    addAndMakeVisible (qLabel);
+
+    freqLabel.setText ("FREQ", dontSendNotification);
+    freqLabel.setJustificationType (Justification::centredLeft);
+    addAndMakeVisible (freqLabel);
+
+    // Type combo
+    typeCb.addItemList (StringArray { "Bell", "LowShelf", "HighShelf" }, 1);
+    typeCb.onChange = [this] { if (! updating && onTypeChanged) onTypeChanged (typeCb.getSelectedItemIndex()); };
+    addAndMakeVisible (typeCb);
+
+    typeLabel.setText ("TYPE", dontSendNotification);
+    typeLabel.setJustificationType (Justification::centredLeft);
+    addAndMakeVisible (typeLabel);
 }
 
-ReverbToneEQ::BandOverlay::~BandOverlay() {}
-
-void ReverbToneEQ::BandOverlay::paint(juce::Graphics& g)
+void ReverbToneEQ::BandOverlay::paint (Graphics& g)
 {
     auto r = getLocalBounds().toFloat();
-    
-    // Get theme colors from LNF
     auto& lf = getLookAndFeel();
-    auto accent = lf.findColour(FieldLNF::eqLabelTextColourId);
-    auto panel = lf.findColour(juce::ResizableWindow::backgroundColourId);
-    
-    // Background with accent
-    juce::Colour bg = panel.darker(0.20f);
-    g.setColour(bg.withAlpha(0.96f));
-    g.fillRoundedRectangle(r, 8.0f);
-    
-    // Accent border
-    g.setColour(accent.withAlpha(0.8f));
-    g.drawRoundedRectangle(r, 8.0f, 2.0f);
-    
+    const auto accent = lf.findColour (FieldLNF::eqLabelTextColourId);
+    const auto panel  = lf.findColour (ResizableWindow::backgroundColourId);
+
+    // Background + accent border
+    g.setColour (panel.darker (0.20f).withAlpha (0.96f)); g.fillRoundedRectangle (r, 8.0f);
+    g.setColour (accent.withAlpha (0.8f));                 g.drawRoundedRectangle (r, 8.0f, 2.0f);
+
     // Accent strip
-    juce::Rectangle<float> strip = r.removeFromLeft(3.0f).reduced(0.5f, 2.0f);
-    g.setColour(accent);
-    g.fillRoundedRectangle(strip, 1.5f);
+    auto strip = r.removeFromLeft (3.0f).reduced (0.5f, 2.0f);
+    g.setColour (accent); g.fillRoundedRectangle (strip, 1.5f);
 }
 
 void ReverbToneEQ::BandOverlay::resized()
 {
-    auto r = getLocalBounds().reduced(8);
-    const int labelW = 40, sliderH = 20, gap = 4;
-    
-    // Gain row
-    gainLabel.setBounds(r.removeFromTop(sliderH).removeFromLeft(labelW));
-    gain.setBounds(r.removeFromTop(sliderH));
-    r.removeFromTop(gap);
-    
-    // Q row
-    qLabel.setBounds(r.removeFromTop(sliderH).removeFromLeft(labelW));
-    q.setBounds(r.removeFromTop(sliderH));
-    r.removeFromTop(gap);
-    
-    // Freq row
-    freqLabel.setBounds(r.removeFromTop(sliderH).removeFromLeft(labelW));
-    freq.setBounds(r.removeFromTop(sliderH));
-    r.removeFromTop(gap);
-    
-    // Type row
-    typeLabel.setBounds(r.removeFromTop(sliderH).removeFromLeft(labelW));
-    typeCb.setBounds(r.removeFromTop(sliderH));
+    auto r = getLocalBounds().reduced (8);
+    constexpr int labelW = 44, sliderH = 20, gap = 4;
+
+    // Gain
+    gainLabel.setBounds (r.removeFromTop (sliderH).removeFromLeft (labelW));
+    gain.setBounds      (r.removeFromTop (sliderH));
+    r.removeFromTop (gap);
+
+    // Q
+    qLabel.setBounds (r.removeFromTop (sliderH).removeFromLeft (labelW));
+    q.setBounds      (r.removeFromTop (sliderH));
+    r.removeFromTop (gap);
+
+    // Freq
+    freqLabel.setBounds (r.removeFromTop (sliderH).removeFromLeft (labelW));
+    freq.setBounds      (r.removeFromTop (sliderH));
+    r.removeFromTop (gap);
+
+    // Type
+    typeLabel.setBounds (r.removeFromTop (sliderH).removeFromLeft (labelW));
+    typeCb.setBounds    (r.removeFromTop (sliderH));
 }
 
-void ReverbToneEQ::BandOverlay::setValues(float gainVal, float qVal, float freqVal, int type)
+void ReverbToneEQ::BandOverlay::setValues (float gainVal, float qVal, float freqVal, int type)
 {
     updating = true;
-    gain.setValue(gainVal, juce::dontSendNotification);
-    q.setValue(qVal, juce::dontSendNotification);
-    freq.setValue(freqVal, juce::dontSendNotification);
-    typeCb.setSelectedItemIndex(type, juce::dontSendNotification);
+    gain.setValue (gainVal, dontSendNotification);
+    q.setValue    (qVal,    dontSendNotification);
+    freq.setValue (freqVal, dontSendNotification);
+    typeCb.setSelectedItemIndex (jlimit (0, 2, type), dontSendNotification);
     updating = false;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Badge
+// ─────────────────────────────────────────────────────────────────────────────
 
-// BandBadge implementation
 ReverbToneEQ::BandBadge::BandBadge()
 {
-    setInterceptsMouseClicks(true, true);
-    
-    // Setup buttons
-    deleteBtn.setButtonText("×");
+    setInterceptsMouseClicks (true, true);
+
+    deleteBtn.setButtonText ("×");
     deleteBtn.onClick = [this] { if (onDelete) onDelete(); };
-    addAndMakeVisible(deleteBtn);
-    
-    bypassBtn.setButtonText("BYP");
-    bypassBtn.onClick = [this] { if (onBypass) onBypass(bypassBtn.getToggleState()); };
-    addAndMakeVisible(bypassBtn);
-    
-    typeBtn.setButtonText("Bell");
-    typeBtn.onClick = [this] { if (onSetType) onSetType(0); };
-    addAndMakeVisible(typeBtn);
-    
-    // Setup labels
-    freqLabel.setText("1.0k", juce::dontSendNotification);
-    freqLabel.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(freqLabel);
-    
-    gainLabel.setText("0.0", juce::dontSendNotification);
-    gainLabel.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(gainLabel);
-    
-    qLabel.setText("0.7", juce::dontSendNotification);
-    qLabel.setJustificationType(juce::Justification::centred);
-    addAndMakeVisible(qLabel);
+    addAndMakeVisible (deleteBtn);
+
+    bypassBtn.setButtonText ("BYP");
+    bypassBtn.onClick = [this] { if (onBypass) onBypass (bypassBtn.getToggleState()); };
+    addAndMakeVisible (bypassBtn);
+
+    typeBtn.setButtonText ("Bell");
+    typeBtn.onClick = [this] { if (onSetType) onSetType (0); };
+    addAndMakeVisible (typeBtn);
+
+    freqLabel.setText ("1.0k", dontSendNotification);
+    freqLabel.setJustificationType (Justification::centred);
+    addAndMakeVisible (freqLabel);
+
+    gainLabel.setText ("0.0", dontSendNotification);
+    gainLabel.setJustificationType (Justification::centred);
+    addAndMakeVisible (gainLabel);
+
+    qLabel.setText ("0.7", dontSendNotification);
+    qLabel.setJustificationType (Justification::centred);
+    addAndMakeVisible (qLabel);
 }
 
-ReverbToneEQ::BandBadge::~BandBadge() {}
-
-void ReverbToneEQ::BandBadge::paint(juce::Graphics& g)
+void ReverbToneEQ::BandBadge::paint (Graphics& g)
 {
-    auto r = getLocalBounds().toFloat();
-    
-    // Get theme colors from LNF
+    auto r   = getLocalBounds().toFloat();
     auto& lf = getLookAndFeel();
-    auto accent = lf.findColour(FieldLNF::eqLabelTextColourId);
-    auto panel = lf.findColour(juce::ResizableWindow::backgroundColourId);
-    
-    // Background
-    juce::Colour bg = panel.darker(0.30f);
-    g.setColour(bg.withAlpha(0.95f));
-    g.fillRoundedRectangle(r, 6.0f);
-    
-    // Accent border
-    g.setColour(accent.withAlpha(0.9f));
-    g.drawRoundedRectangle(r, 6.0f, 1.5f);
-    
-    // Accent strip
-    juce::Rectangle<float> strip = r.removeFromLeft(2.0f).reduced(0.5f, 1.0f);
-    g.setColour(accent);
-    g.fillRoundedRectangle(strip, 1.0f);
+    const auto accent = lf.findColour (FieldLNF::eqLabelTextColourId);
+    const auto panel  = lf.findColour (ResizableWindow::backgroundColourId);
+
+    g.setColour (panel.darker (0.30f).withAlpha (0.95f));
+    g.fillRoundedRectangle (r, 6.0f);
+
+    g.setColour (accent.withAlpha (0.9f));
+    g.drawRoundedRectangle (r, 6.0f, 1.5f);
+
+    auto strip = r.removeFromLeft (2.0f).reduced (0.5f, 1.0f);
+    g.setColour (accent);
+    g.fillRoundedRectangle (strip, 1.0f);
 }
 
 void ReverbToneEQ::BandBadge::resized()
 {
-    auto r = getLocalBounds().reduced(4);
-    const int btnW = 24, btnH = 16;
-    
-    // Top row: buttons
-    deleteBtn.setBounds(r.removeFromTop(btnH).removeFromLeft(btnW));
-    bypassBtn.setBounds(r.removeFromTop(btnH).removeFromLeft(btnW));
-    typeBtn.setBounds(r.removeFromTop(btnH).removeFromLeft(btnW));
-    
-    // Bottom row: labels
-    freqLabel.setBounds(r.removeFromTop(btnH));
-    gainLabel.setBounds(r.removeFromTop(btnH));
-    qLabel.setBounds(r.removeFromTop(btnH));
+    auto r = getLocalBounds().reduced (4);
+    constexpr int btnW = 24, btnH = 16;
+
+    // Top row
+    deleteBtn.setBounds (r.removeFromTop (btnH).removeFromLeft (btnW));
+    bypassBtn.setBounds (r.removeFromTop (btnH).removeFromLeft (btnW));
+    typeBtn.setBounds   (r.removeFromTop (btnH).removeFromLeft (btnW));
+
+    // Bottom row
+    freqLabel.setBounds (r.removeFromTop (btnH));
+    gainLabel.setBounds (r.removeFromTop (btnH));
+    qLabel.setBounds    (r.removeFromTop (btnH));
 }
 
-void ReverbToneEQ::BandBadge::setValues(float gr, float freq, int type, bool bypass)
+void ReverbToneEQ::BandBadge::setValues (float gr, float freq, int type, bool bypass)
 {
-    currentGr = gr;
-    currentFreq = freq;
-    currentType = type;
+    currentGr     = gr;
+    currentFreq   = freq;
+    currentType   = type;
     currentBypass = bypass;
-    
-    freqLabel.setText(juce::String(freq, freq >= 1000.0f ? 1 : 0) + (freq >= 1000.0f ? "k" : ""), juce::dontSendNotification);
-    bypassBtn.setToggleState(bypass, juce::dontSendNotification);
-    
-    const char* typeNames[] = {"Bell", "LS", "HS"};
-    typeBtn.setButtonText(typeNames[juce::jlimit(0, 2, type)]);
+
+    if      (freq >= 10000.0f) freqLabel.setText (String ((int) std::round (freq / 1000.0f)) + "k", dontSendNotification);
+    else if (freq >= 1000.0f)  freqLabel.setText (String (freq / 1000.0f, 1) + "k",                dontSendNotification);
+    else                       freqLabel.setText (String ((int) freq),                             dontSendNotification);
+
+    bypassBtn.setToggleState (bypass, dontSendNotification);
+
+    static const char* typeNames[] = { "Bell", "LS", "HS" };
+    typeBtn.setButtonText (typeNames [jlimit (0, 2, type)]);
 }
 
-void ReverbToneEQ::BandBadge::setDetails(float q, float gain, bool dynOn, bool dynUp, float dynRange, bool specOn, const juce::String& channel, int slopeDb, const juce::String& tap)
+void ReverbToneEQ::BandBadge::setDetails (float q, float gain, bool /*dynOn*/, bool /*dynUp*/, float /*dynRange*/,
+                                          bool /*specOn*/, const String& /*channel*/, int /*slopeDb*/, const String& /*tap*/)
 {
-    currentQ = q;
+    currentQ    = q;
     currentGain = gain;
-    
-    gainLabel.setText(juce::String(gain, 1), juce::dontSendNotification);
-    qLabel.setText(juce::String(q, 2), juce::dontSendNotification);
+
+    gainLabel.setText (String (gain, 1), dontSendNotification);
+    qLabel.setText    (String (q, 2),    dontSendNotification);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Positioning helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+void ReverbToneEQ::positionOverlay()
+{
+    if (selected < 0 || selected >= (int) points.size())
+        return;
+
+    const auto r  = getLocalBounds();
+    constexpr int w = 200, h = 120;
+
+    const auto& pt = points[(size_t) selected];
+    const float bandX = mapHzToX (pt.hz);
+    const float bandY = mapDbToY (pt.db);
+
+    // Start centered on the handle
+    int ox = (int) bandX - w / 2;
+    int oy = (int) bandY - h / 2;
+
+    // Avoid handle overlap (radius + margin)
+    constexpr int bandRadius = 12;
+    constexpr int margin     = 20;
+
+    auto overlaps = [&] { return (ox <= bandX + bandRadius + margin && ox + w >= bandX - bandRadius - margin
+                               && oy <= bandY + bandRadius + margin && oy + h >= bandY - bandRadius - margin); };
+
+    if (overlaps())
+    {
+        // Try right
+        ox = (int) bandX + bandRadius + margin;
+        oy = (int) bandY - h / 2;
+
+        // Then left
+        if (ox + w > r.getRight())
+            ox = (int) bandX - w - bandRadius - margin;
+
+        // Then above
+        if (ox < r.getX() || ox + w > r.getRight())
+        {
+            ox = (int) bandX - w / 2;
+            oy = (int) bandY - h - bandRadius - margin;
+        }
+
+        // Then below
+        if (oy < r.getY())
+            oy = (int) bandY + bandRadius + margin;
+    }
+
+    // Bounds clamp
+    ox = jlimit (r.getX() + 10, r.getRight() - w - 10, ox);
+    oy = jlimit (r.getY() + 10, r.getBottom() - h - 10, oy);
+
+    overlay.setBounds (ox, oy, w, h);
+    overlay.setVisible (true);
+}
+
+void ReverbToneEQ::positionBadgeFor (int idx)
+{
+    if (idx < 0 || idx >= (int) points.size()) return;
+
+    const auto& pt = points[(size_t) idx];
+    const float x  = mapHzToX (pt.hz);
+    const float y  = mapDbToY (pt.db);
+
+    constexpr int w = 120, h = 60;
+    const auto pane = analyzer.getBounds();
+
+    constexpr int bandRadius = 12;
+    constexpr int margin     = 15;
+
+    int ox = (int) x + bandRadius + margin;
+    int oy = (int) y - h / 2;
+
+    if (ox + w > pane.getRight()) ox = (int) x - w - bandRadius - margin;
+    if (ox < pane.getX())         { ox = (int) x - w / 2; oy = (int) y - h - bandRadius - margin; }
+    if (oy < pane.getY())         oy = (int) y + bandRadius + margin;
+
+    // Clamp to pane bounds with small padding
+    ox = jlimit (pane.getX() + 5, pane.getRight() - w - 5, ox);
+    oy = jlimit (pane.getY() + 5, pane.getBottom() - h - 5, oy);
+
+    badge.setBounds (ox, oy, w, h);
+    badge.setVisible (true);
+    badge.setValues (0.0f, pt.hz, pt.type, false);
+    badge.setDetails (pt.q, pt.db, false, false, 0.0f, false, "St", 0, "Pre");
+
+    // Per-band accent
+    const Colour ac = bandColourFor (idx);
+    badge.toFront (true);
 }

@@ -1,65 +1,168 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// ReverbParameters.cpp — APVTS layout + choice lists (labels + pretty strings)
+// ----------------------------------------------------------------------------
+
 #include "ReverbParameters.h"
+#include "ReverbParamIDs.h"
+#include <juce_audio_processors/juce_audio_processors.h>
+
 using namespace juce;
 using namespace ReverbParamIDs;
 
-StringArray ReverbParameters::dreqApplyChoices()      { return {"Pre","Post","ER-Only","Tail-Only"}; }
-StringArray ReverbParameters::duckModeChoices()       { return {"General","Vocal","DrumBus","Guitar","Keys"}; }
-StringArray ReverbParameters::duckDetectorChoices()   { return {"Dry In","ER Only","Tail Only","Wet Sum"}; }
+namespace
+{
+    // JUCE ParameterID version — bump only if you truly need to remap
+    constexpr int kParamVersion = 1;
+
+    // Helpers for parameter creation
+    inline std::unique_ptr<AudioParameterFloat> makeFloat (const String& id,
+                                                           const String& name,
+                                                           NormalisableRange<float> range,
+                                                           float def,
+                                                           const String& label = {},
+                                                           int ver = kParamVersion)
+    {
+        return std::make_unique<AudioParameterFloat> (ParameterID { id, ver }, name, range, def, label);
+    }
+
+    inline std::unique_ptr<AudioParameterBool> makeBool (const String& id,
+                                                         const String& name,
+                                                         bool def,
+                                                         int ver = kParamVersion)
+    {
+        return std::make_unique<AudioParameterBool> (ParameterID { id, ver }, name, def);
+    }
+
+    inline std::unique_ptr<AudioParameterChoice> makeChoice (const String& id,
+                                                             const String& name,
+                                                             const StringArray& choices,
+                                                             int defIndex,
+                                                             int ver = kParamVersion)
+    {
+        return std::make_unique<AudioParameterChoice> (ParameterID { id, ver }, name, choices, defIndex);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Choice lists
+// ─────────────────────────────────────────────────────────────────────────────
+
+StringArray ReverbParameters::dreqApplyChoices ()
+{
+    return { "Pre", "Post", "Early", "Tail" };
+}
+
+StringArray ReverbParameters::duckModeChoices ()
+{
+    return { "General", "Vocal", "Drum Bus", "Guitar", "Keys" };
+}
+
+StringArray ReverbParameters::duckDetectorChoices ()
+{
+    return { "Dry", "ER", "Tail", "Wet" };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Factory — APVTS layout
+// ─────────────────────────────────────────────────────────────────────────────
 
 void ReverbParameters::addParameters (AudioProcessorValueTreeState::ParameterLayout& layout)
 {
-    auto norm = [](float v) { return NormalisableRange<float> (v, v, 0.0f); }; // helper when creating bools or lists
+    // Core routing
+    layout.add (makeBool (enabled,  "Reverb Enable", true));
+    layout.add (makeBool (killDry,  "Wet Only",      false));
 
-    layout.add (std::make_unique<AudioParameterBool>   (enabled,     "Enable", true));
-    layout.add (std::make_unique<AudioParameterBool>   (killDry,     "Wet Only", false));
+    // Structure / space
+    layout.add (makeFloat (preDelayMs, "Pre",
+                           { 0.f, 200.f, 0.1f },                         0.f,   "ms"));
+    layout.add (makeFloat (decaySec, "Decay",
+                           { 0.2f, 20.f, 0.001f, 0.4f },                 2.4f,  "s"));
+    layout.add (makeFloat (sizePct,    "Size",
+                           { 10.f, 200.f, 0.1f },                        100.f, "%"));
 
-    layout.add (std::make_unique<AudioParameterFloat>  (preDelayMs,  "Pre",     NormalisableRange<float>(0.f, 200.f, 0.1f), 0.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (decaySec,    "Decay",   NormalisableRange<float>(0.2f, 20.f, 0.001f, 0.4f), 2.4f));
-    layout.add (std::make_unique<AudioParameterFloat>  (sizePct,     "Size",    NormalisableRange<float>(10.f, 200.f, 0.1f), 100.f));
+    // Early reflections
+    layout.add (makeFloat (erLevelDb,   "ER Lvl",
+                           { -24.f, 6.f, 0.1f },                         -6.f,  "dB"));
+    layout.add (makeFloat (erDensityPct,"ER Den",
+                           { 0.f, 100.f, 0.1f },                         60.f,  "%"));
+    layout.add (makeFloat (erWidthPct,  "ER Wid",
+                           { 0.f, 200.f, 0.1f },                         110.f, "%"));
+    layout.add (makeFloat (erTimeMs,    "ER Time",
+                           { 50.f, 500.f, 0.1f },                        120.f, "ms"));
+    layout.add (makeFloat (erToTailPct, "ER→T",
+                           { 0.f, 100.f, 0.1f },                         40.f,  "%"));
 
-    layout.add (std::make_unique<AudioParameterFloat>  (erLevelDb,   "ER Lvl",  NormalisableRange<float>(-24.f, 6.f, 0.1f), -6.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (erDensityPct,"ER Den",  NormalisableRange<float>(0.f, 100.f, 0.1f), 60.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (erWidthPct,  "ER Wid",  NormalisableRange<float>(0.f, 200.f, 0.1f), 110.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (erTimeMs,    "ER Time", NormalisableRange<float>(50.f, 500.f, 0.1f), 120.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (erToTailPct, "ER→T",    NormalisableRange<float>(0.f, 100.f, 0.1f), 40.f));
+    // Diffusion / density
+    layout.add (makeFloat (diffusionPct,"Diff",
+                           { 0.f, 100.f, 0.1f },                         70.f,  "%"));
+    layout.add (makeFloat (densityPct,  "Dens",
+                           { 0.f, 100.f, 0.1f },                         65.f,  "%"));
 
-    layout.add (std::make_unique<AudioParameterFloat>  (diffusionPct,"Diff",    NormalisableRange<float>(0.f, 100.f, 0.1f), 70.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (densityPct,  "Dens",    NormalisableRange<float>(0.f, 100.f, 0.1f), 65.f));
+    // Modulation
+    layout.add (makeFloat (modDepthCents,"Mod Dep",
+                           { 0.f, 25.f, 0.01f },                         3.5f,  "ct")); // cents
+    layout.add (makeFloat (modRateHz,   "Mod Rate",
+                           { 0.05f, 5.f, 0.0001f, 0.4f },                0.35f, "Hz"));
 
-    layout.add (std::make_unique<AudioParameterFloat>  (modDepthCents,"Mod Dep",NormalisableRange<float>(0.f, 25.f, 0.01f), 3.5f));
-    layout.add (std::make_unique<AudioParameterFloat>  (modRateHz,   "Mod Rate",NormalisableRange<float>(0.05f, 5.f, 0.0001f, 0.4f), 0.35f));
+    // Stereo + rotation
+    layout.add (makeFloat (widthPct,   "Width",
+                           { 0.f, 200.f, 0.1f },                         100.f, "%"));
+    layout.add (makeFloat (rotationDeg,"Rot",
+                           { -45.f, 45.f, 0.1f },                        0.f,   "°"));
 
-    layout.add (std::make_unique<AudioParameterFloat>  (widthPct,    "Width",   NormalisableRange<float>(0.f, 200.f, 0.1f), 100.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (rotationDeg, "Rot",     NormalisableRange<float>(-45.f, 45.f, 0.1f), 0.f));
+    // Motion follow
+    layout.add (makeBool  (followWidth,    "Follow W", false));
+    layout.add (makeFloat (followWidthAmt, "W Amt",
+                           { 0.f, 100.f, 0.1f },                         0.f,   "%"));
+    layout.add (makeBool  (followRot,      "Follow R", false));
+    layout.add (makeFloat (followRotAmt,   "R Amt",
+                           { 0.f, 100.f, 0.1f },                         0.f,   "%"));
 
-    layout.add (std::make_unique<AudioParameterBool>   (followWidth,   "Follow W", false));
-    layout.add (std::make_unique<AudioParameterFloat>  (followWidthAmt,"W Amt",   NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
-    layout.add (std::make_unique<AudioParameterBool>   (followRot,     "Follow R", false));
-    layout.add (std::make_unique<AudioParameterFloat>  (followRotAmt,  "R Amt",   NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
+    // Mix & specials
+    layout.add (makeFloat (wetMix01, "Wet",
+                           { 0.f, 1.f, 0.001f },                         0.25f, "%"));
+    layout.add (makeFloat (bloomPct,     "Bloom",
+                           { 0.f, 100.f, 0.1f },                         0.f,   "%"));
+    layout.add (makeFloat (distancePct,  "Distance",
+                           { 0.f, 100.f, 0.1f },                         50.f,  "%"));
+    layout.add (makeBool  (freeze,       "Freeze",                        false));
+    layout.add (makeFloat (shimmerAmtPct,"Shim Amt",
+                           { 0.f, 100.f, 0.1f },                         0.f,   "%"));
+    layout.add (makeFloat (shimmerInt,   "Shim Int",
+                           { 0.f, 100.f, 0.1f },                         50.f,  "%"));
+    layout.add (makeFloat (gateAmtPct,   "Gate",
+                           { 0.f, 100.f, 0.1f },                         0.f,   "%"));
+    layout.add (makeFloat (outTrimDb,    "Trim",
+                           { -24.f, 12.f, 0.01f },                       0.f,   "dB"));
 
-    layout.add (std::make_unique<AudioParameterFloat>  (wetMix01,    "Wet",     NormalisableRange<float>(0.f, 1.f, 0.001f), 0.25f));
-    layout.add (std::make_unique<AudioParameterFloat>  (bloomPct,    "Bloom",   NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (distancePct, "Distance",NormalisableRange<float>(0.f, 100.f, 0.1f), 50.f));
-    layout.add (std::make_unique<AudioParameterBool>   (freeze,      "Freeze",  false));
-    layout.add (std::make_unique<AudioParameterFloat>  (shimmerAmtPct,"Shim Amt",NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (shimmerInt,   "Shim Int",NormalisableRange<float>(0.f, 100.f, 0.1f), 50.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (gateAmtPct,   "Gate",    NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (outTrimDb,    "Trim",    NormalisableRange<float>(-24.f, 12.f, 0.01f), 0.f));
-
-    layout.add (std::make_unique<AudioParameterFloat>  (dreqXoverLoHz,"DREQ XO Lo", NormalisableRange<float>(80.f, 400.f, 0.1f, 0.35f), 160.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (dreqXoverHiHz,"DREQ XO Hi", NormalisableRange<float>(1000.f, 6000.f, 0.1f, 0.35f), 3000.f));
-    layout.add (std::make_unique<AudioParameterChoice> (dreqApply,    "EQ Apply", dreqApplyChoices(), 1)); // default Post
+    // Reverb EQ routing
+    layout.add (makeFloat (dreqXoverLoHz, "DREQ XO Lo",
+                           { 80.f, 400.f, 0.1f, 0.35f },                  160.f, "Hz"));
+    layout.add (makeFloat (dreqXoverHiHz, "DREQ XO Hi",
+                           { 1000.f, 6000.f, 0.1f, 0.35f },               3000.f,"Hz"));
+    layout.add (makeChoice (dreqApply, "EQ Apply",
+                            ReverbParameters::dreqApplyChoices (),        1)); // default Post
 
     // Ducking (floating)
-    layout.add (std::make_unique<AudioParameterBool>   (duckOn,       "Duck On",   false));
-    layout.add (std::make_unique<AudioParameterChoice> (duckMode,     "Duck Mode", duckModeChoices(), 0));
-    layout.add (std::make_unique<AudioParameterFloat>  (duckDepthDb,  "Duck Depth", NormalisableRange<float>(0.f, 24.f, 0.1f), 6.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (duckAtkMs,    "Attack",     NormalisableRange<float>(1.f, 100.f, 0.1f), 10.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (duckRelMs,    "Release",    NormalisableRange<float>(50.f, 2000.f, 0.1f, 0.35f), 300.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (duckThrDb,    "Threshold",  NormalisableRange<float>(-60.f, -6.f, 0.1f), -24.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (duckRatio,    "Ratio",      NormalisableRange<float>(1.f, 8.f, 0.01f), 3.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (duckKneeDb,   "Knee",       NormalisableRange<float>(0.f, 24.f, 0.1f), 6.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (duckBandHz,   "Focus Hz",   NormalisableRange<float>(50.f, 8000.f, 0.1f, 0.35f), 2000.f));
-    layout.add (std::make_unique<AudioParameterFloat>  (duckBandQ,    "Focus Q",    NormalisableRange<float>(0.3f, 4.f, 0.01f, 0.35f), 1.0f));
-    layout.add (std::make_unique<AudioParameterChoice> (duckDetectorSrc, "Detector", duckDetectorChoices(), 3)); // Wet Sum
+    layout.add (makeBool  (duckOn,       "Duck On",                        false));
+    layout.add (makeChoice(duckMode,     "Duck Mode",
+                           ReverbParameters::duckModeChoices (),          0));
+    layout.add (makeFloat (duckDepthDb,  "Duck Depth",
+                           { 0.f, 24.f, 0.1f },                           6.f,   "dB"));
+    layout.add (makeFloat (duckAtkMs,    "Attack",
+                           { 1.f, 100.f, 0.1f },                          10.f,  "ms"));
+    layout.add (makeFloat (duckRelMs,    "Release",
+                           { 50.f, 2000.f, 0.1f, 0.35f },                 300.f, "ms"));
+    layout.add (makeFloat (duckThrDb,    "Threshold",
+                           { -60.f, -6.f, 0.1f },                         -24.f, "dB"));
+    layout.add (makeFloat (duckRatio,    "Ratio",
+                           { 1.f, 8.f, 0.01f },                           3.f,   ":1"));
+    layout.add (makeFloat (duckKneeDb,   "Knee",
+                           { 0.f, 24.f, 0.1f },                           6.f,   "dB"));
+    layout.add (makeFloat (duckBandHz,   "Focus Hz",
+                           { 50.f, 8000.f, 0.1f, 0.35f },                 2000.f,"Hz"));
+    layout.add (makeFloat (duckBandQ,    "Focus Q",
+                           { 0.3f, 4.f, 0.01f, 0.35f },                   1.0f  /* unitless */));
+    layout.add (makeChoice (duckDetectorSrc, "Detector",
+                            ReverbParameters::duckDetectorChoices (),     3)); // default Wet
 }
