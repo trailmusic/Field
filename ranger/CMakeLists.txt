@@ -13,15 +13,31 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(juce)
 
-# Create simple Field Ranger executable
+# Create Field Ranger GUI application
 juce_add_gui_app(FieldRanger
     PRODUCT_NAME "Field Ranger"
     BUNDLE_ID "com.trail.fieldranger"
     VERSION "1.0.0"
 )
 
+# Generate JUCE header
+juce_generate_juce_header(FieldRanger)
+
 target_sources(FieldRanger PRIVATE
-    SimpleRangerMain.cpp
+    RangerMain.cpp
+    RangerWindow.cpp
+    RangerDesigner.cpp
+    RangerFilePane.cpp
+    RangerPlotPane.cpp
+    RangerSettingsPane.cpp
+    RangerInstructionsPane.cpp
+)
+
+target_link_libraries(FieldRanger PRIVATE
+    juce::juce_gui_basics
+    juce::juce_core
+    juce::juce_events
+    juce::juce_gui_extra
 )
 
 # Set up app bundle for macOS

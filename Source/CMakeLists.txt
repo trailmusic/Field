@@ -147,6 +147,10 @@ set(SRC
     shared/dsp/DelayPresetLibrary.cpp
     shared/dsp/PhaseAlignmentEngine.h
     shared/dsp/PhaseAlignmentEngine.cpp
+    shared/dsp/MinPhaseBankIntegration.h
+    shared/dsp/MinPhaseBankIntegration.cpp
+    ../Ranger/MinPhaseBank.h
+    ../Ranger/MinPhaseBank.cpp
     shared/Presets/PresetStore.h
     shared/Presets/PresetStore.cpp
     shared/Presets/PresetManager.h

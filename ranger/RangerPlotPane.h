@@ -10,19 +10,46 @@ public:
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    
+    // Plot data
+    void setFilterData(const juce::Array<float>& taps);
+    void setFrequencyResponse(const juce::Array<float>& magnitude, const juce::Array<float>& phase);
 
 private:
-    // Plot tabs
-    juce::TabbedComponent plotTabs;
+    // Plot controls
+    juce::Label plotTitleLabel;
+    juce::ComboBox plotTypeCombo;
+    juce::Label plotTypeLabel;
     
-    // Plot components
-    class ImpulsePlot;
-    class StepPlot;
-    class MagnitudePlot;
+    juce::TextButton generatePlotButton;
+    juce::TextButton exportPlotButton;
     
-    std::unique_ptr<ImpulsePlot> impulsePlot;
-    std::unique_ptr<StepPlot> stepPlot;
-    std::unique_ptr<MagnitudePlot> magnitudePlot;
+    // Plot area
+    juce::Component plotArea;
+    
+    // Plot data
+    juce::Array<float> filterTaps;
+    juce::Array<float> magnitudeResponse;
+    juce::Array<float> phaseResponse;
+    juce::Array<float> impulseResponse;
+    
+    // Plot parameters
+    float sampleRate = 44100.0f;
+    int plotType = 0; // 0=freq, 1=impulse, 2=phase, 3=group delay
+    
+    // Methods
+    void generatePlot();
+    void exportPlot();
+    void drawPlot(juce::Graphics& g);
+    void drawFrequencyResponse(juce::Graphics& g, const juce::Rectangle<int>& bounds);
+    void drawImpulseResponse(juce::Graphics& g, const juce::Rectangle<int>& bounds);
+    void drawPhaseResponse(juce::Graphics& g, const juce::Rectangle<int>& bounds);
+    void drawGroupDelay(juce::Graphics& g, const juce::Rectangle<int>& bounds);
+    
+    // Utility functions
+    juce::Array<float> calculateFrequencyResponse(const juce::Array<float>& taps);
+    juce::Array<float> calculatePhaseResponse(const juce::Array<float>& taps);
+    juce::Array<float> calculateGroupDelay(const juce::Array<float>& taps);
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RangerPlotPane)
 };

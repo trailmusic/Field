@@ -1,10 +1,10 @@
 #include <JuceHeader.h>
 #include "RangerWindow.h"
 
-class RangerApplication : public juce::JUCEApplication
+class FieldRangerApplication : public juce::JUCEApplication
 {
 public:
-    RangerApplication() = default;
+    FieldRangerApplication() = default;
 
     const juce::String getApplicationName() override { return "Field Ranger"; }
     const juce::String getApplicationVersion() override { return "1.0.0"; }
@@ -12,11 +12,7 @@ public:
 
     void initialise(const juce::String& commandLine) override
     {
-        // Set up Field Look & Feel
-        fieldLNF = std::make_unique<FieldLNF>();
-        juce::LookAndFeel::setDefaultLookAndFeel(fieldLNF.get());
-        
-        // Create main window
+        // Set up the main window
         mainWindow = std::make_unique<RangerWindow>(getApplicationName());
         mainWindow->setVisible(true);
     }
@@ -24,7 +20,6 @@ public:
     void shutdown() override
     {
         mainWindow = nullptr;
-        fieldLNF = nullptr;
     }
 
     void systemRequestedQuit() override
@@ -34,13 +29,13 @@ public:
 
     void anotherInstanceStarted(const juce::String& commandLine) override
     {
-        // Handle multiple instances if needed
+        // Bring existing window to front
+        if (mainWindow != nullptr)
+            mainWindow->toFront(true);
     }
 
 private:
     std::unique_ptr<RangerWindow> mainWindow;
-    std::unique_ptr<FieldLNF> fieldLNF;
 };
 
-// This macro generates the main() routine that launches the app
-START_JUCE_APPLICATION(RangerApplication)
+START_JUCE_APPLICATION(FieldRangerApplication)

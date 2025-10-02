@@ -12,39 +12,31 @@ public:
     void resized() override;
 
 private:
-    // Settings components
-    juce::Label titleLabel;
+    // Settings sections
+    juce::Label generalLabel;
+    juce::Label advancedLabel;
+    juce::Label aboutLabel;
     
-    // Normalization
-    juce::Label normLabel;
-    juce::ComboBox normCombo;
+    // General settings
+    juce::ToggleButton autoSaveToggle;
+    juce::Label autoSaveLabel;
     
-    // FFT settings
-    juce::Label fftLabel;
-    juce::ComboBox fftCombo;
+    juce::ComboBox themeCombo;
+    juce::Label themeLabel;
     
-    // Output settings
-    juce::Label outputLabel;
-    juce::TextEditor outputPrefix;
-    juce::ToggleButton emitCsvButton;
+    // Advanced settings
+    juce::Slider precisionSlider;
+    juce::Label precisionLabel;
     
-    // Diff thresholds
-    juce::Label diffLabel;
-    juce::Slider sampleThreshold;
-    juce::Slider magThreshold;
+    juce::Slider maxOrderSlider;
+    juce::Label maxOrderLabel;
     
-    // Action buttons
-    juce::TextButton convertButton;
-    juce::TextButton compareButton;
-    juce::TextButton exportButton;
+    // About
+    juce::Label versionLabel;
+    juce::Label copyrightLabel;
     
-    // Status
-    juce::Label statusLabel;
-    
-    void setupComponents();
-    void convertToMinPhase();
-    void compareWithBaseline();
-    void exportBank();
+    // Methods
+    void updateSettings();
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RangerSettingsPane)
 };

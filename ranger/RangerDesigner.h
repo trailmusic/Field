@@ -1,9 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "RangerFilePane.h"
-#include "RangerPlotPane.h"
-#include "RangerSettingsPane.h"
 
 class RangerDesigner : public juce::Component
 {
@@ -15,14 +12,40 @@ public:
     void resized() override;
 
 private:
-    // Main panels
-    std::unique_ptr<RangerFilePane> filePane;
-    std::unique_ptr<RangerPlotPane> plotPane;
-    std::unique_ptr<RangerSettingsPane> settingsPane;
+    // UI Components
+    juce::TextButton loadButton;
+    juce::TextButton generateButton;
+    juce::TextButton exportButton;
+    juce::TextButton clearButton;
     
-    // Layout
-    juce::FlexBox mainLayout;
-    juce::FlexBox centerLayout;
+    juce::Label titleLabel;
+    juce::Label statusLabel;
+    
+    // File info
+    juce::Label fileInfoLabel;
+    juce::TextEditor filePathEditor;
+    
+    // Filter parameters
+    juce::Slider orderSlider;
+    juce::Label orderLabel;
+    
+    juce::Slider cutoffSlider;
+    juce::Label cutoffLabel;
+    
+    juce::ComboBox filterTypeCombo;
+    juce::Label filterTypeLabel;
+    
+    // Results
+    juce::TextEditor resultsEditor;
+    juce::Label resultsLabel;
+    
+    // Methods
+    void loadFile();
+    void generateFilter();
+    void exportResults();
+    void clearAll();
+    
+    void updateStatus(const juce::String& message);
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RangerDesigner)
 };

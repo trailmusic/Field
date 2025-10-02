@@ -2,29 +2,38 @@
 
 RangerFilePane::RangerFilePane()
 {
-    // Set up title
-    titleLabel.setText("Files", juce::dontSendNotification);
-    titleLabel.setFont(juce::Font(16.0f, juce::Font::bold));
-    titleLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    addAndMakeVisible(titleLabel);
+    // File list
+    fileListLabel.setText("Loaded Files:", juce::dontSendNotification);
+    fileListLabel.setFont(juce::Font(16.0f, juce::Font::bold));
+    addAndMakeVisible(fileListLabel);
     
-    // Set up open button
-    openButton.setButtonText("Open taps");
-    openButton.onClick = [this] { openFiles(); };
-    addAndMakeVisible(openButton);
+    addAndMakeVisible(fileListBox);
     
-    // Set up file list
-    fileList.setModel(this);
-    addAndMakeVisible(fileList);
+    // Buttons
+    addFileButton.setButtonText("Add File");
+    addFileButton.onClick = [this] { addFile(); };
+    addAndMakeVisible(addFileButton);
     
-    // Set up baseline
-    baselineButton.setButtonText("Set Baseline");
-    baselineButton.onClick = [this] { setBaselineFolder(); };
-    addAndMakeVisible(baselineButton);
+    removeFileButton.setButtonText("Remove Selected");
+    removeFileButton.onClick = [this] { removeFile(); };
+    addAndMakeVisible(removeFileButton);
     
-    baselineLabel.setText("Baseline: Not set", juce::dontSendNotification);
-    baselineLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
-    addAndMakeVisible(baselineLabel);
+    clearAllButton.setButtonText("Clear All");
+    clearAllButton.onClick = [this] { clearAllFiles(); };
+    addAndMakeVisible(clearAllButton);
+    
+    // File info
+    fileInfoLabel.setText("File Information:", juce::dontSendNotification);
+    fileInfoLabel.setFont(juce::Font(14.0f, juce::Font::bold));
+    addAndMakeVisible(fileInfoLabel);
+    
+    fileInfoEditor.setReadOnly(true);
+    fileInfoEditor.setMultiLine(true);
+    fileInfoEditor.setText("No file selected");
+    addAndMakeVisible(fileInfoEditor);
+    
+    // Enable drag and drop
+    setWantsKeyboardFocus(true);
 }
 
 RangerFilePane::~RangerFilePane()
@@ -33,37 +42,96 @@ RangerFilePane::~RangerFilePane()
 
 void RangerFilePane::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colour(0xff2a2a2a)); // Dark panel background
+    g.fillAll(juce::Colour(0xff1e1e1e));
     
-    // Draw border
-    g.setColour(juce::Colours::darkgrey);
-    g.drawRect(getLocalBounds(), 1);
+    // Draw some visual elements
+    g.setColour(juce::Colour(0xff3d3d3d));
+    g.drawRect(getLocalBounds(), 2);
+    
+    // Draw drag and drop hint
+    g.setColour(juce::Colour(0xff666666));
+    g.setFont(juce::Font(12.0f));
+    g.drawText("Drag and drop FIR files here (.csv, .txt, .dat, .fir)", 
+               getLocalBounds().removeFromBottom(30), 
+               juce::Justification::centred);
 }
 
 void RangerFilePane::resized()
 {
-    auto bounds = getLocalBounds().reduced(8);
+    auto bounds = getLocalBounds().reduced(20);
     
-    titleLabel.setBounds(bounds.removeFromTop(30));
-    bounds.removeFromTop(8);
+    // File list
+    fileListLabel.setBounds(bounds.removeFromTop(30));
+    bounds.removeFromTop(10);
     
-    openButton.setBounds(bounds.removeFromTop(30));
-    bounds.removeFromTop(8);
+    // Buttons
+    auto buttonRow = bounds.removeFromTop(40);
+    addFileButton.setBounds(buttonRow.removeFromLeft(100));
+    buttonRow.removeFromLeft(10);
+    removeFileButton.setBounds(buttonRow.removeFromLeft(120));
+    buttonRow.removeFromLeft(10);
+    clearAllButton.setBounds(buttonRow.removeFromLeft(100));
     
-    fileList.setBounds(bounds.removeFromTop(200));
-    bounds.removeFromTop(8);
+    bounds.removeFromTop(20);
     
-    baselineButton.setBounds(bounds.removeFromTop(30));
-    bounds.removeFromTop(4);
+    // File list box
+    fileListBox.setBounds(bounds.removeFromTop(200));
+    bounds.removeFromTop(20);
     
-    baselineLabel.setBounds(bounds.removeFromTop(20));
+    // File info
+    fileInfoLabel.setBounds(bounds.removeFromTop(30));
+    bounds.removeFromTop(10);
+    fileInfoEditor.setBounds(bounds);
 }
 
+void RangerFilePane::addFile()
+{
+    auto chooser = std::make_unique<juce::FileChooser>("Select FIR files to add...",
+                                                       juce::File(),
+                                                       "*.csv;*.txt;*.dat;*.fir");
+    
+    auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::canSelectMultipleItems;
+    
+    chooser->launchAsync(chooserFlags, [this](const juce::FileChooser& fc)
+    {
+        auto files = fc.getResults();
+        for (auto& file : files)
+        {
+            // Add file to list (simplified for now)
+            updateFileInfo();
+        }
+    });
+}
+
+void RangerFilePane::removeFile()
+{
+    // Remove selected file (simplified for now)
+    updateFileInfo();
+}
+
+void RangerFilePane::clearAllFiles()
+{
+    // Clear all files (simplified for now)
+    fileInfoEditor.setText("No file selected");
+}
+
+void RangerFilePane::updateFileInfo()
+{
+    fileInfoEditor.setText("File: example.fir\n"
+                           "Size: 1.2 KB\n"
+                           "Type: Linear-phase FIR\n"
+                           "Order: 127\n"
+                           "Status: Ready for conversion");
+}
+
+// Drag and drop implementation
 bool RangerFilePane::isInterestedInFileDrag(const juce::StringArray& files)
 {
     for (auto& file : files)
     {
-        if (file.endsWithIgnoreCase(".csv"))
+        auto fileObj = juce::File(file);
+        auto extension = fileObj.getFileExtension().toLowerCase();
+        if (extension == ".csv" || extension == ".txt" || extension == ".dat" || extension == ".fir")
             return true;
     }
     return false;
@@ -71,73 +139,44 @@ bool RangerFilePane::isInterestedInFileDrag(const juce::StringArray& files)
 
 void RangerFilePane::fileDragEnter(const juce::StringArray& files, int x, int y)
 {
+    // Visual feedback for drag enter
     repaint();
 }
 
 void RangerFilePane::fileDragExit(const juce::StringArray& files)
 {
+    // Visual feedback for drag exit
     repaint();
 }
 
 void RangerFilePane::filesDropped(const juce::StringArray& files, int x, int y)
 {
+    juce::StringArray validFiles;
+    
     for (auto& file : files)
     {
-        if (file.endsWithIgnoreCase(".csv"))
+        auto fileObj = juce::File(file);
+        auto extension = fileObj.getFileExtension().toLowerCase();
+        if (extension == ".csv" || extension == ".txt" || extension == ".dat" || extension == ".fir")
         {
-            loadedFiles.add(file);
+            validFiles.add(file);
         }
     }
-    updateFileList();
-}
-
-void RangerFilePane::openFiles()
-{
-    juce::FileChooser chooser("Select CSV files", juce::File(), "*.csv");
-    if (chooser.browseForMultipleFilesToOpen())
-    {
-        auto files = chooser.getResults();
-        for (auto& file : files)
-        {
-            loadedFiles.add(file.getFullPathName());
-        }
-        updateFileList();
-    }
-}
-
-void RangerFilePane::setBaselineFolder()
-{
-    juce::FileChooser chooser("Select baseline folder", juce::File(), "*");
-    if (chooser.browseForDirectory())
-    {
-        baselineFolder = chooser.getResult().getFullPathName();
-        baselineLabel.setText("Baseline: " + juce::File(baselineFolder).getFileName(), juce::dontSendNotification);
-    }
-}
-
-void RangerFilePane::updateFileList()
-{
-    fileList.updateContent();
-    repaint();
-}
-
-// ListBoxModel implementation
-int RangerFilePane::getNumRows()
-{
-    return loadedFiles.size();
-}
-
-void RangerFilePane::paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int height, bool rowIsSelected)
-{
-    if (rowIsSelected)
-        g.fillAll(juce::Colours::darkblue);
     
-    g.setColour(juce::Colours::white);
-    g.setFont(12.0f);
-    g.drawText(loadedFiles[rowNumber], 4, 0, width - 8, height, juce::Justification::centredLeft);
-}
-
-void RangerFilePane::selectedRowsChanged(int lastRowSelected)
-{
-    // Handle file selection
+    if (validFiles.size() > 0)
+    {
+        // Process dropped files
+        for (auto& file : validFiles)
+        {
+            auto fileObj = juce::File(file);
+            fileInfoEditor.setText("Dropped: " + fileObj.getFileName() + "\n"
+                                 "Path: " + fileObj.getFullPathName() + "\n"
+                                 "Size: " + juce::String(fileObj.getSize()) + " bytes\n"
+                                 "Type: FIR filter file\n"
+                                 "Status: Ready for processing");
+        }
+        
+        // Update file list (simplified for now)
+        updateFileInfo();
+    }
 }
