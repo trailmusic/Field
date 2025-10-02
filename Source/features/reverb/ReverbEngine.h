@@ -101,6 +101,17 @@ public:
     float  getErRms()           const noexcept { return erRms.load(); }
     float  getTailRms()         const noexcept { return tailRms.load(); }
     double getTailSeconds()     const noexcept { return 4.0; }
+    
+    // Latency reporting for PDC
+    int  getReportedLatencySamples() const noexcept
+    {
+        // Only the ducking look-ahead contributes latency in our graph.
+#if FIELD_REVERB_PHASE2
+        // FDN itself adds no latency; if you later add oversampling, include it here.
+#endif
+        return duck.getLookAheadSamples();
+    }
+    bool isDuckingEnabled() const noexcept { return duck.isEnabled(); }
 
 private:
     // -------- Early Reflections ---------------------------------------------
@@ -207,6 +218,10 @@ private:
         bool  enabled   = false;
         float envelope  = 1.0f;
         float lastGrDb  = 0.0f;
+        
+        // Latency reporting accessors
+        int  getLookAheadSamples() const noexcept { return enabled ? juce::jmax(0, gaAhead) : 0; }
+        bool isEnabled()          const noexcept { return enabled; }
 
     private:
         // detector selection (no copies)

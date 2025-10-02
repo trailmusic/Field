@@ -40,7 +40,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
             rebuildEqPath(); repaint();
         }
     };
-
+    
     overlay.onQChanged = [this] (float qVal)
     {
         if (selected >= 0 && selected < (int) points.size())
@@ -52,7 +52,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
             rebuildEqPath(); repaint();
         }
     };
-
+    
     overlay.onFreqChanged = [this] (float f)
     {
         if (selected >= 0 && selected < (int) points.size())
@@ -64,7 +64,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
             rebuildEqPath(); repaint();
         }
     };
-
+    
     overlay.onTypeChanged = [this] (int t)
     {
         if (selected >= 0 && selected < (int) points.size())
@@ -195,14 +195,14 @@ void ReverbToneEQ::mouseDown (const MouseEvent& e)
     {
         overlay.setVisible (false);
         badge.setVisible   (false);
-        return;
-    }
-
+            return;
+        }
+        
     // Add new band (max 4)
     if (points.size() >= (size_t) kMaxBands)
         return;
 
-    BandPoint bp;
+        BandPoint bp; 
     bp.hz = jlimit (kMinHz, kMaxHz, mapXToHz (e.getPosition().x));
     bp.db = jlimit (kMinGainDb, kMaxGainDb, mapYToDb (e.getPosition().y));
 
@@ -210,11 +210,11 @@ void ReverbToneEQ::mouseDown (const MouseEvent& e)
     if      (bp.hz <= 50.0f)    { bp.type = 1; bp.db = -12.0f; }   // LowShelf
     else if (bp.hz >= 10000.0f) { bp.type = 2; bp.db = -12.0f; }   // HighShelf
     else                        { bp.type = 0; }                   // Bell
-
-    const int slot = allocateBandSlot();
-    if (slot >= 0)
-    {
-        bp.bandIdx = slot;
+        
+        const int slot = allocateBandSlot();
+        if (slot >= 0)
+        {
+            bp.bandIdx = slot;
         setBandParam (slot, ReverbEQParams::ToneBand::active, 1.0f);
         setBandParam (slot, ReverbEQParams::ToneBand::freqHz, bp.hz);
         setBandParam (slot, ReverbEQParams::ToneBand::gainDb, bp.db);
@@ -228,10 +228,10 @@ void ReverbToneEQ::mouseDown (const MouseEvent& e)
 
     overlay.setValues (bp.db, bp.q, bp.hz, bp.type);
     overlay.setVisible (true);
-    positionOverlay();
+        positionOverlay();
     positionBadgeFor (selected);
-    rebuildEqPath();
-    repaint();
+        rebuildEqPath();
+        repaint();
 }
 
 void ReverbToneEQ::mouseDrag (const MouseEvent& e)
@@ -299,7 +299,7 @@ void ReverbToneEQ::mouseDoubleClick (const MouseEvent& e)
         rebuildEqPath();
         repaint();
 
-        if (selected < 0)
+        if (selected < 0) 
         {
             overlay.setVisible (false);
             badge.setVisible   (false);
@@ -309,7 +309,7 @@ void ReverbToneEQ::mouseDoubleClick (const MouseEvent& e)
         const auto& pt2 = points[(size_t) selected];
         overlay.setValues (pt2.db, pt2.q, pt2.hz, pt2.type);
         overlay.setVisible (true);
-        positionOverlay();
+            positionOverlay();
         positionBadgeFor (selected);
     }
 }
@@ -349,7 +349,7 @@ void ReverbToneEQ::mouseExit (const MouseEvent&)
 
     hover       = -1;
     hoverInPane = false;
-    repaint();
+        repaint();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -370,7 +370,7 @@ void ReverbToneEQ::paint (Graphics& g)
     const auto accentTrace = lf.findColour (FieldLNF::eqAnalyzerTraceColourId);
 
     const float cr = 8.0f;
-
+    
     // Panel with rounded border
     g.setColour (panel);            g.fillRect (r);
     g.setColour (panel);            g.fillRoundedRectangle (r, cr);
@@ -387,10 +387,10 @@ void ReverbToneEQ::paint (Graphics& g)
     // Combined curve
     g.setColour (accent.withAlpha (0.95f));
     g.strokePath (eqPath, PathStrokeType (3.0f));
-
-    // Per-band curves
-    for (size_t i = 0; i < bandPaths.size(); ++i)
-    {
+        
+        // Per-band curves
+        for (size_t i = 0; i < bandPaths.size(); ++i)
+        {
         const Colour base = bandColourFor ((int) i);
         g.setColour (base.withAlpha (0.90f));
         g.strokePath (bandPaths[i], PathStrokeType (1.2f));
@@ -398,8 +398,8 @@ void ReverbToneEQ::paint (Graphics& g)
 
     // Band handles
     g.setColour (accent.withAlpha (0.95f));
-    for (const auto& pt : points)
-    {
+        for (const auto& pt : points)
+        {
         const float x = mapHzToX (pt.hz);
         const float y = mapDbToY (pt.db);
         g.fillEllipse (x - 8.0f, y - 8.0f, 16.0f, 16.0f);
@@ -416,13 +416,13 @@ void ReverbToneEQ::paint (Graphics& g)
     }
 
     // Hover guide + predictive ghost
-    if (hoverInPane)
-    {
+        if (hoverInPane)
+        {
         const int64 nowMs    = (int64) Time::getMillisecondCounterHiRes();
         const bool  ghostOn  = (nowMs - lastMouseMoveMs) >= (int64) ghostDelayMs;
 
         // Center guide with soft fades
-        const float x = (float) hoverPos.x;
+            const float x = (float) hoverPos.x;
         {
             Graphics::ScopedSaveState ss (g);
             const float aMove  = jmap (float (jlimit<int64> (0, ghostDelayMs, nowMs - lastMouseMoveMs)),
@@ -466,18 +466,18 @@ void ReverbToneEQ::paint (Graphics& g)
 
         // Predictive ghost (shelving at extremes, bell otherwise)
         if (ghostOn)
-        {
-            // Avoid ghost when too close to an existing handle
-            bool nearPoint = false;
-            for (const auto& pt : points)
             {
+            // Avoid ghost when too close to an existing handle
+                bool nearPoint = false;
+                for (const auto& pt : points)
+                {
                 if (Point<float> (mapHzToX (pt.hz), mapDbToY (pt.db))
                         .getDistanceFrom (hoverPos.toFloat()) <= 24.0f)
-                { nearPoint = true; break; }
-            }
+                    { nearPoint = true; break; }
+                }
 
-            if (! nearPoint)
-            {
+                if (! nearPoint)
+                {
                 Path ghost;
                 const bool mouseAbove0 = (mapYToDb (hoverPos.y) > 0.0f);
 
@@ -542,11 +542,11 @@ void ReverbToneEQ::rebuildEqPath()
     auto totalDbAt = [this] (double hz)
     {
         float s = 0.0f;
-        for (const auto& b : points)
+        for (const auto& b : points) 
             s += bandDbAtForPaint (b, (float) hz);
         return s;
     };
-
+    
     auto mapX = [&] (int i)
     {
         const double t    = (double) i / (double) (N - 1);
@@ -565,7 +565,7 @@ void ReverbToneEQ::rebuildEqPath()
         const float x = r.getX() + (float) i / (float) (N - 1) * r.getWidth();
         eqPath.lineTo (x, p.second);
     }
-
+    
     // Per-band paths
     bandPaths.resize (points.size());
     for (size_t bi = 0; bi < points.size(); ++bi)
@@ -597,7 +597,7 @@ void ReverbToneEQ::drawUnits (Graphics& g)
 {
     const auto r = analyzer.getBounds().toFloat();
     if (r.isEmpty()) return;
-
+    
     auto& lf   = getLookAndFeel();
     auto grid  = lf.findColour (FieldLNF::eqGridLineColourId);
     auto text  = lf.findColour (FieldLNF::eqLabelTextColourId).withAlpha (0.45f);
@@ -756,7 +756,7 @@ float ReverbToneEQ::bandDbAtForPaint (const BandPoint& b, float hz) const
     const double q     = jlimit (0.1, 36.0, (double) b.q);
     const double width = jlimit (0.02, 0.50, 0.22 / q);
     const double d     = (logHz - logC) / width;
-
+    
     switch (b.type)
     {
         case 0: // Bell

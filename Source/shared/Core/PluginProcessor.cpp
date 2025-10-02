@@ -273,6 +273,9 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     updateLatencyForPhaseMode();
     latencyLocked = true;
     
+    // Refresh ducking latency reporting (SR affects look-ahead in samples)
+    refreshReportedLatency();
+    
     // prepareToPlay complete
 }
 
@@ -652,6 +655,9 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     chainF->setParameters (hp);
     chainF->process (block);
     
+    // Refresh ducking latency reporting after parameter changes
+    refreshReportedLatency();
+    
     // Apply MIX control (blend between dry and wet)
     if (std::abs (hp.mixPct - 100.0) > 0.1)
     {
@@ -985,6 +991,9 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     chainD->setParameters (hp);
     chainD->process (block);
     
+    // Refresh ducking latency reporting after parameter changes
+    refreshReportedLatency();
+    
     // Apply MIX control (blend between dry and wet) - double precision
     if (std::abs (hp.mixPct - 100.0) > 0.1)
     {
@@ -1131,6 +1140,20 @@ void MyPluginAudioProcessor::updateLatencyForPhaseMode()
     
     if (!latencyLocked)
         setLatencySamples (latency);
+}
+
+void MyPluginAudioProcessor::refreshReportedLatency()
+{
+    // Get reverb latency from active chain (float or double)
+    int reverbLatency = 0;
+    if (isDoublePrecEnabled && chainD)
+        reverbLatency = chainD->getReverbLatencySamples();
+    else if (chainF)
+        reverbLatency = chainF->getReverbLatencySamples();
+    
+    const int newLatency = reverbLatency;
+    if (newLatency != getLatencySamples())
+        setLatencySamples (newLatency);
 }
 
 void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, float newValue)

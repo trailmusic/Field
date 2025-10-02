@@ -391,6 +391,7 @@ struct FieldChain
     double getDelayLastSamplesR() const;          // telemetry: last effective delay samples R
     int   getLinearPhaseLatencySamples() const { return (linConvolver ? linConvolver->getLatencySamples() : 0); }
     int   getFullLinearLatencySamples() const { return (fullLinearConvolver ? fullLinearConvolver->getLatencySamples() : 0); }
+    int   getReverbLatencySamples() const { return reverbEnginePrepared ? reverbEngine.getReportedLatencySamples() : 0; }
 
 private:
     // ----- helpers -----
@@ -991,6 +992,9 @@ public:
         onAudioBlock = nullptr;
         onAudioBlockPre = nullptr;
     }
+    
+    // Latency reporting for PDC
+    void refreshReportedLatency();
 
     // Layout
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
