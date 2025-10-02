@@ -98,6 +98,8 @@ set(SRC
     features/reverb/ReverbControlsPane.cpp
     features/reverb/ReverbTab.h
     features/reverb/FieldReverbConfig.h
+    features/reverb/ReverbTypes.h
+    features/reverb/DecayLossDesigner.h
     features/reverb/ReverbFDN.h
     features/reverb/ReverbProcessorGlue.h
     features/reverb/ReverbProcessorGlue.cpp
@@ -194,6 +196,7 @@ target_compile_definitions(Field PRIVATE
     JUCE_DISABLE_VST2=1
     JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_STRICT_REFCOUNTEDPTR=1
+    FIELD_REVERB_PHASE2=1
 )
 
 # Configure VST3 to use only VST3 headers

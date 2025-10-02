@@ -192,8 +192,14 @@ void ReverbEngine::processWet (AudioBuffer<float>& wet, const AudioBuffer<float>
     // 1) ER
     er.process (*erInput, erBuf);
 
-    // 2) Tail (Phase-1: ER copy; Phase-2: fdn.process(input+ER, tailBuf))
-    tailBuf.makeCopyOf (erBuf);
+    // 2) Tail (Phase-1: ER copy; Phase-2: FDN tank with decay-rate shaping)
+#if FIELD_REVERB_PHASE2
+    // FDN tank processes ER input with decay-rate shaping
+    fdn.process(erBuf, tailBuf);
+#else
+    // Phase 1: copy ER to tail
+    tailBuf.makeCopyOf(erBuf);
+#endif
 
     // 3) Tone EQ variants that target ER or Tail only (static IIR)
     if (tone.active())
@@ -217,7 +223,18 @@ void ReverbEngine::processWet (AudioBuffer<float>& wet, const AudioBuffer<float>
     if (tone.apply == ToneEq::Post && tone.active())
         tone.process (wet);
 
-    // 7) Meters
+    // 7) Output safety (soft clipper)
+    auto softClip = [] (float x) {
+        const float a = 0.5f; // gentle
+        return juce::jlimit(-1.0f, 1.0f, x / (1.0f + a*std::abs(x)));
+    };
+    for (int c=0; c<wet.getNumChannels(); ++c) {
+        float* d = wet.getWritePointer(c);
+        for (int i=0; i<wet.getNumSamples(); ++i) 
+            d[i] = softClip(d[i]);
+    }
+
+    // 8) Meters
     auto rms = [] (const AudioBuffer<float>& b)
     {
         long double s = 0.0; const int ch = b.getNumChannels(), n = b.getNumSamples();
@@ -566,14 +583,4 @@ void ReverbEngine::ToneEqRuntime::process (AudioBuffer<float>& buf)
 // ============================================================================
 // FDN scaffold (Phase-2)
 // ============================================================================
-void ReverbEngine::FdnTank::prepare (double sr, int maxBlock, int channels) { fs = sr; C = channels; Nmax = maxBlock; }
-void ReverbEngine::FdnTank::reset   () {}
-void ReverbEngine::FdnTank::setParams (float decaySec, float diffusion, float modDepthCents, float modRateHz)
-{ ignoreUnused(decaySec, diffusion, modDepthCents, modRateHz); }
-void ReverbEngine::FdnTank::setDecayProfile (const DecayRateProfile& p) { ignoreUnused(p); }
-void ReverbEngine::FdnTank::setToneEq       (const ToneEq& e)           { ignoreUnused(e); }
-void ReverbEngine::FdnTank::process (const AudioBuffer<float>& in, AudioBuffer<float>& out)
-{
-    // Phase-1: pass-through; Phase-2 will implement actual tank
-    out.makeCopyOf (in);
-}
+// FdnTank methods are now implemented inline in the header file

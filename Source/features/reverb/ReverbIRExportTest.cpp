@@ -23,6 +23,21 @@ class ReverbIRExportTest : public juce::UnitTest
 {
 public:
     ReverbIRExportTest() : juce::UnitTest ("Reverb IR Export", "Audio") {}
+    
+    // T60 measurement function
+    static float fitT60Sec(const std::vector<float>& mono, double fs, double t0=0.5, double t1=3.5)
+    {
+        const int i0 = (int)std::round(t0*fs), i1 = (int)std::round(t1*fs);
+        double sx=0, sy=0, sxx=0, sxy=0, n=0;
+        for (int i=i0; i<i1 && i<(int)mono.size(); ++i) {
+            const double t = i / fs;
+            const double y = std::log10(std::max(1e-12f, std::fabs(mono[i])));
+            sx += t; sy += y; sxx += t*t; sxy += t*y; n += 1.0;
+        }
+        const double m = (n*sxy - sx*sy) / std::max(1e-12, n*sxx - sx*sx); // slope (log10 amplitude / s)
+        // 60 dB drop means -6 decades in log10 amplitude. T60 = Δdecades / |slope| = 6 / |m|
+        return (float)(6.0 / std::abs(m));
+    }
 
     void runTest() override
     {
@@ -108,6 +123,45 @@ public:
                 logMessage ("Wrote: " + out.getFullPathName());
             }
         }
+        
+        // T60 validation
+        beginTest ("T60 measurement validation");
+        
+        // Convert to mono for T60 measurement
+        std::vector<float> mono(total);
+        for (int i = 0; i < total; ++i) {
+            mono[i] = (tail.getSample(0, i) + tail.getSample(1, i)) * 0.5f;
+        }
+        
+        const float measuredT60 = fitT60Sec(mono, sr, 0.5, 3.5);
+        const float expectedT60 = 1.8f; // Default decay time
+        const float tolerance = 0.1f; // ±5% tolerance
+        
+        logMessage ("Measured T60: " + juce::String(measuredT60, 2) + "s, Expected: " + juce::String(expectedT60, 2) + "s");
+        expect (std::abs(measuredT60 - expectedT60) < tolerance, "T60 measurement failed");
+        
+        // Stereo decorrelation check
+        beginTest ("Stereo decorrelation validation");
+        
+        // Compute cross-correlation
+        double correlation = 0.0;
+        const int windowSize = 1024;
+        for (int i = 0; i < total - windowSize; i += windowSize) {
+            double sumL = 0.0, sumR = 0.0, sumLR = 0.0, sumLL = 0.0, sumRR = 0.0;
+            for (int j = 0; j < windowSize; ++j) {
+                const float l = tail.getSample(0, i + j);
+                const float r = tail.getSample(1, i + j);
+                sumL += l; sumR += r; sumLR += l * r; sumLL += l * l; sumRR += r * r;
+            }
+            const double denom = std::sqrt(sumLL * sumRR);
+            if (denom > 1e-12) {
+                correlation += std::abs(sumLR / denom);
+            }
+        }
+        correlation /= (total / windowSize);
+        
+        logMessage ("Cross-correlation: " + juce::String(correlation, 3));
+        expect (correlation < 0.6, "Stereo decorrelation failed (correlation too high)");
     }
 };
 

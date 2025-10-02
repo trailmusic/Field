@@ -34,35 +34,12 @@ Author's notes
 #include <array>
 #include <vector>
 #include <atomic>
+#include "FieldReverbConfig.h"
+#include "ReverbTypes.h"
 
-// ===================== Decay-Rate EQ profile (from UI) ======================
-struct DecayRateBand
-{
-    enum Type { Bell = 0, TiltLo = 1, TiltHi = 2 } type = Bell;
-    float freqHz = 1000.f;
-    float mult   = 1.0f;   // 0.5× .. 2.0× (maps to per-band loss in tank)
-    float q      = 0.707f; // shape
-};
-
-struct DecayRateProfile
-{
-    std::vector<DecayRateBand> bands; // <= 3 typical
-};
-
-// ===================== Tone EQ (static) =====================================
-struct ToneEqBand
-{
-    enum Kind { Peak, LowShelf, HighShelf } kind = Peak;
-    float freqHz = 1000.f;
-    float q      = 0.707f;   // shelf slope via Q
-    float gainDb = 0.0f;
-};
-
-struct ToneEq
-{
-    std::vector<ToneEqBand> bands; // small (<=3)
-    enum Apply { Pre, Post, EROnly, TailOnly } apply = Post;
-};
+#if FIELD_REVERB_PHASE2
+#include "ReverbFDN.h"
+#endif
 
 // ===================== Shared biquad (IIR) ==================================
 struct ERFilter
@@ -156,19 +133,57 @@ private:
         void process   (const juce::AudioBuffer<float>& in, juce::AudioBuffer<float>& out);
     } er;
 
-    // -------- FDN tank (Phase-2 scaffold) -----------------------------------
+    // -------- FDN tank (Phase-2 implementation) -----------------------------
     struct FdnTank
     {
-        void prepare (double sr, int maxBlock, int channels);
-        void reset   ();
-        void setParams (float decaySec, float diffusion, float modDepthCents, float modRateHz);
-        void setDecayProfile (const DecayRateProfile&);
-        void setToneEq       (const ToneEq&);
-        void process (const juce::AudioBuffer<float>& in, juce::AudioBuffer<float>& out);
+        void prepare (double sr, int maxBlock, int channels)
+        {
+#if FIELD_REVERB_PHASE2
+            fdnCore.prepare(sr, maxBlock, channels, 8); // 8 delay lines
+#endif
+        }
+        
+        void reset()
+        {
+#if FIELD_REVERB_PHASE2
+            fdnCore.reset();
+#endif
+        }
+        
+        void setParams (float decaySec, float diffusion, float modDepthCents, float modRateHz)
+        {
+#if FIELD_REVERB_PHASE2
+            fdnCore.setBaseT60(decaySec);
+            // TODO: Add modulation and diffusion parameters
+#endif
+        }
+        
+        void setDecayProfile (const DecayRateProfile& profile)
+        {
+#if FIELD_REVERB_PHASE2
+            fdnCore.setDecayProfile(profile);
+#endif
+        }
+        
+        void setToneEq (const ToneEq& eq)
+        {
+            // TODO: Implement tone EQ routing
+        }
+        
+        void process (const juce::AudioBuffer<float>& in, juce::AudioBuffer<float>& out)
+        {
+#if FIELD_REVERB_PHASE2
+            fdnCore.process(in, out);
+#else
+            // Phase 1: copy ER to tail
+            out.makeCopyOf(in);
+#endif
+        }
+        
     private:
-        double fs = 48000.0;
-        int C = 2, Nmax = 0;
-        // state/coeffs to be added in next phase
+#if FIELD_REVERB_PHASE2
+        fieldverb::FDNCore fdnCore;
+#endif
     } fdn;
 
     // -------- Ducking --------------------------------------------------------
