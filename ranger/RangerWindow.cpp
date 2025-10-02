@@ -13,13 +13,17 @@ RangerWindow::RangerWindow(const juce::String& name)
     setResizeLimits(1000, 700, 2000, 1400);
     centreWithSize(1200, 800);
     
+    // Set the main content as the content component
+    setContentNonOwned(&mainContent, false);
+    
         // Create main components
         designer = std::make_unique<RangerDesigner>();
         filePane = std::make_unique<RangerFilePane>();
         plotPane = std::make_unique<RangerPlotPane>();
         settingsPane = std::make_unique<RangerSettingsPane>();
         instructionsPane = std::make_unique<RangerInstructionsPane>();
-        // docsPane = std::make_unique<RangerDocsPane>();
+        // docsPane = std::make_unique<SimpleRangerDocsPane>();
+        // auditionPane = std::make_unique<SimpleRangerAuditionPane>();
         rangerLogo = std::make_unique<RangerLogo>();
     
         // Set up tabbed component with Field styling
@@ -29,16 +33,16 @@ RangerWindow::RangerWindow(const juce::String& name)
         tabbedComponent.addTab("Settings", currentTheme.panel, settingsPane.get(), false);
         tabbedComponent.addTab("Instructions", currentTheme.panel, instructionsPane.get(), false);
         // tabbedComponent.addTab("Docs", currentTheme.panel, docsPane.get(), false);
+        // tabbedComponent.addTab("Audition", currentTheme.panel, auditionPane.get(), false);
     
-    // Add components to main content
-    addAndMakeVisible(mainContent);
-    mainContent.addAndMakeVisible(tabbedComponent);
+    // Add components to mainContent (which is the content component)
+    mainContent.addAndMakeVisible(&tabbedComponent);
     
-    // Add Field Ranger logo
-    addAndMakeVisible(*rangerLogo);
+    // Add Field Ranger logo to mainContent
+    if (rangerLogo) mainContent.addAndMakeVisible(rangerLogo.get());
     
-    // Set up menu bar
-    addAndMakeVisible(menuBar);
+    // Set up menu bar (add to window, not mainContent)
+    addAndMakeVisible(&menuBar);
     
     // Set up Field styling
     setupFieldStyling();
@@ -53,7 +57,8 @@ RangerWindow::~RangerWindow()
     plotPane = nullptr;
     settingsPane = nullptr;
     instructionsPane = nullptr;
-    // docsPane = nullptr;
+        // docsPane = nullptr;
+        // auditionPane = nullptr;
     rangerLogo = nullptr;
 }
 
@@ -70,15 +75,19 @@ void RangerWindow::resized()
     menuBar.setBounds(bounds.removeFromTop(25));
     
     // Field Ranger logo at top right
-    if (rangerLogo)
-    {
-        auto logoBounds = bounds.removeFromTop(80).removeFromRight(300);
-        rangerLogo->setBounds(logoBounds);
-    }
-    
     // Main content fills the rest
     mainContent.setBounds(bounds);
+    
+    // Tabbed component fills the main content area
     tabbedComponent.setBounds(mainContent.getLocalBounds());
+    
+    // Position the logo in the top right of main content
+    if (rangerLogo)
+    {
+        auto contentBounds = mainContent.getLocalBounds();
+        auto logoBounds = juce::Rectangle<int>(contentBounds.getWidth() - 200, 10, 180, 40);
+        rangerLogo->setBounds(logoBounds);
+    }
 }
 
 void RangerWindow::applyFieldTheme(SimpleThemeVariant variant)

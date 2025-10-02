@@ -7,7 +7,8 @@
 #include "RangerPlotPane.h"
 #include "RangerSettingsPane.h"
 #include "RangerInstructionsPane.h"
-// #include "RangerDocsPane.h"
+#include "SimpleRangerDocsPane.h"
+#include "SimpleRangerAuditionPane.h"
 #include "RangerLogo.h"
 
 class RangerWindow : public juce::DocumentWindow
@@ -30,7 +31,8 @@ private:
     std::unique_ptr<RangerPlotPane> plotPane;
     std::unique_ptr<RangerSettingsPane> settingsPane;
     std::unique_ptr<RangerInstructionsPane> instructionsPane;
-    // std::unique_ptr<RangerDocsPane> docsPane;
+    std::unique_ptr<SimpleRangerDocsPane> docsPane;
+    std::unique_ptr<SimpleRangerAuditionPane> auditionPane;
     std::unique_ptr<RangerLogo> rangerLogo;
     
     // Layout

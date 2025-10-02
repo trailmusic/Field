@@ -24,6 +24,15 @@ private:
     juce::TextButton generatePlotButton;
     juce::TextButton exportPlotButton;
     
+    // Audition controls
+    juce::Label auditionLabel;
+    juce::ToggleButton impulseViewButton;
+    juce::ToggleButton stepViewButton;
+    juce::ToggleButton magnitudeViewButton;
+    juce::ComboBox normalizationCombo;
+    juce::TextButton generateAuditionButton;
+    juce::TextButton exportAuditionButton;
+    
     // Plot area
     juce::Component plotArea;
     
@@ -45,6 +54,11 @@ private:
     void drawImpulseResponse(juce::Graphics& g, const juce::Rectangle<int>& bounds);
     void drawPhaseResponse(juce::Graphics& g, const juce::Rectangle<int>& bounds);
     void drawGroupDelay(juce::Graphics& g, const juce::Rectangle<int>& bounds);
+    
+    // Audition methods
+    void generateAudition();
+    void exportAudition();
+    void setupAuditionControls();
     
     // Utility functions
     juce::Array<float> calculateFrequencyResponse(const juce::Array<float>& taps);

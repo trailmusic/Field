@@ -29,6 +29,9 @@ RangerPlotPane::RangerPlotPane()
     exportPlotButton.onClick = [this] { exportPlot(); };
     addAndMakeVisible(exportPlotButton);
     
+    // Audition controls
+    setupAuditionControls();
+    
     // Plot area
     addAndMakeVisible(plotArea);
     
@@ -47,6 +50,19 @@ void RangerPlotPane::paint(juce::Graphics& g)
     // Draw some visual elements
     g.setColour(juce::Colour(0xff3d3d3d));
     g.drawRect(getLocalBounds(), 2);
+    
+    // Draw separator line and background for audition section
+    auto bounds = getLocalBounds().reduced(20);
+    auto auditionBounds = bounds.removeFromTop(140);
+    auditionBounds.removeFromTop(100); // Skip to audition section
+    
+    // Draw audition section background
+    g.setColour(juce::Colour(0xff2a2a2a));
+    g.fillRect(auditionBounds);
+    
+    // Draw separator line
+    g.setColour(juce::Colour(0xff555555));
+    g.drawLine(auditionBounds.getX(), auditionBounds.getY(), auditionBounds.getRight(), auditionBounds.getY(), 2.0f);
     
     // Draw the plot in the plot area
     auto plotBounds = plotArea.getBounds();
@@ -80,6 +96,31 @@ void RangerPlotPane::resized()
     generatePlotButton.setBounds(controlRow.removeFromLeft(120));
     controlRow.removeFromLeft(10);
     exportPlotButton.setBounds(controlRow.removeFromLeft(120));
+    
+    bounds.removeFromTop(20);
+    
+    // Audition section - make it more visible
+    auto auditionBounds = bounds.removeFromTop(140);
+    auditionLabel.setBounds(auditionBounds.removeFromTop(30));
+    auditionBounds.removeFromTop(10);
+    
+    // Audition controls row 1
+    auto auditionRow1 = auditionBounds.removeFromTop(25);
+    impulseViewButton.setBounds(auditionRow1.removeFromLeft(80));
+    auditionRow1.removeFromLeft(10);
+    stepViewButton.setBounds(auditionRow1.removeFromLeft(80));
+    auditionRow1.removeFromLeft(10);
+    magnitudeViewButton.setBounds(auditionRow1.removeFromLeft(100));
+    auditionRow1.removeFromLeft(20);
+    normalizationCombo.setBounds(auditionRow1.removeFromLeft(150));
+    
+    auditionBounds.removeFromTop(5);
+    
+    // Audition controls row 2
+    auto auditionRow2 = auditionBounds.removeFromTop(25);
+    generateAuditionButton.setBounds(auditionRow2.removeFromLeft(140));
+    auditionRow2.removeFromLeft(10);
+    exportAuditionButton.setBounds(auditionRow2.removeFromLeft(140));
     
     bounds.removeFromTop(20);
     
@@ -306,4 +347,91 @@ juce::Array<float> RangerPlotPane::calculateGroupDelay(const juce::Array<float>&
     }
     
     return response;
+}
+
+void RangerPlotPane::setupAuditionControls()
+{
+    // Audition section
+    auditionLabel.setText("Filter Audition", juce::dontSendNotification);
+    auditionLabel.setFont(juce::Font(16.0f, juce::Font::bold));
+    auditionLabel.setColour(juce::Label::textColourId, juce::Colour(0xffaaaaaa));
+    addAndMakeVisible(auditionLabel);
+    
+    // View buttons
+    impulseViewButton.setButtonText("Impulse");
+    impulseViewButton.setToggleState(true, juce::dontSendNotification);
+    impulseViewButton.setRadioGroupId(1001);
+    addAndMakeVisible(impulseViewButton);
+    
+    stepViewButton.setButtonText("Step");
+    stepViewButton.setRadioGroupId(1001);
+    addAndMakeVisible(stepViewButton);
+    
+    magnitudeViewButton.setButtonText("Magnitude");
+    magnitudeViewButton.setRadioGroupId(1001);
+    addAndMakeVisible(magnitudeViewButton);
+    
+    // Normalization
+    normalizationCombo.addItem("Peak Normalized", 1);
+    normalizationCombo.addItem("Energy Normalized", 2);
+    normalizationCombo.addItem("DC Unity", 3);
+    normalizationCombo.setSelectedId(1);
+    addAndMakeVisible(normalizationCombo);
+    
+    // Audition buttons
+    generateAuditionButton.setButtonText("Generate Audition");
+    generateAuditionButton.onClick = [this] { generateAudition(); };
+    addAndMakeVisible(generateAuditionButton);
+    
+    exportAuditionButton.setButtonText("Export Audition");
+    exportAuditionButton.onClick = [this] { exportAudition(); };
+    addAndMakeVisible(exportAuditionButton);
+}
+
+void RangerPlotPane::generateAudition()
+{
+    if (filterTaps.isEmpty())
+    {
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon, 
+                                              "Audition", 
+                                              "Please load filter data first in the Designer tab.");
+        return;
+    }
+    
+    // Generate audition data based on selected view
+    int viewType = 0;
+    if (impulseViewButton.getToggleState()) viewType = 0;
+    else if (stepViewButton.getToggleState()) viewType = 1;
+    else if (magnitudeViewButton.getToggleState()) viewType = 2;
+    
+    // Placeholder for actual audition generation
+    juce::String message = "Audition generation for ";
+    if (viewType == 0) message += "Impulse Response";
+    else if (viewType == 1) message += "Step Response";
+    else if (viewType == 2) message += "Magnitude Response";
+    
+    message += " with " + normalizationCombo.getText() + " normalization.";
+    
+    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, 
+                                          "Audition Generated", 
+                                          message + "\n\nThis will be implemented with real filter testing.");
+    
+    // Trigger repaint to show the audition results
+    repaint();
+}
+
+void RangerPlotPane::exportAudition()
+{
+    if (filterTaps.isEmpty())
+    {
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon, 
+                                              "Export", 
+                                              "No audition data to export. Generate audition first.");
+        return;
+    }
+    
+    // Placeholder for export functionality
+    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, 
+                                          "Export Audition", 
+                                          "Audition export functionality will be implemented for CSV output.");
 }
