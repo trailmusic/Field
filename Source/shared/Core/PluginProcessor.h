@@ -5,6 +5,7 @@
 #include "shared/dsp/DelayEngine.h"
 #include "shared/dsp/PhaseModes.h"
 #include "shared/dsp/PhaseAlignmentEngine.h"
+#include "shared/dsp/MinPhaseBankIntegration.h"
 #include "features/motion/MotionEngine.h"
 #include "features/reverb/ReverbParamIDs.h"
 #include "features/reverb/ReverbEngine.h"
@@ -1257,6 +1258,9 @@ private:
     // Phase Alignment Engine
     std::unique_ptr<PhaseAlignmentEngine> phaseAlignmentEngine;
     juce::AudioBuffer<float> phaseDryBuffer; // For audition blend
+    
+    // MinPhaseBank Integration for Field Ranger
+    std::unique_ptr<MinPhaseBankIntegration> minPhaseBank;
 
     // Clock system methods
     inline void pushClockSnapshot (const ClockSnapshot& s)

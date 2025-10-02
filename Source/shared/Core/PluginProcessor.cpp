@@ -65,6 +65,9 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
     // Phase Alignment Engine
     phaseAlignmentEngine = std::make_unique<PhaseAlignmentEngine>();
     
+    // MinPhaseBank Integration for Field Ranger
+    minPhaseBank = std::make_unique<MinPhaseBankIntegration>();
+    
     // Initialize runtime config with defaults
     DspRuntimeConfig defaultCfg;
     defaultCfg.quality = 1; // Standard

@@ -35,6 +35,9 @@ target_include_directories(batch_minphase PRIVATE ${kissfft_SOURCE_DIR})
 # target_compile_definitions(minphase PRIVATE KISS_FFT_DOUBLE)
 # target_compile_definitions(batch_minphase PRIVATE KISS_FFT_DOUBLE)
 
+# Field Ranger Desktop Application
+add_subdirectory(ranger)
+
 # Optimization flags
 if (MSVC)
   target_compile_options(minphase PRIVATE /O2 /fp:fast)
