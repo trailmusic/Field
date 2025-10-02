@@ -1,10 +1,12 @@
-# Min-Phase FIR Toolchain
+# Field Ranger
+
+**Patrol quality, phase, and oversampling.**
 
 ![Build](https://img.shields.io/github/actions/workflow/status/trailmusic/Field/tools-ci.yml?branch=feature)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platforms](https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-666)
 
-This directory contains the complete min-phase FIR toolchain for generating professional-quality minimum-phase filters from linear-phase designs.
+Field Ranger is a professional desktop application for designing and generating minimum-phase FIR filters for the Field audio plugin. It provides visual feedback, baseline comparison, and seamless integration with Field's Look & Feel system.
 
 > **What is this?**
 > These tools convert textbook-clean **linear-phase** filters into punchier **minimum-phase** versions with the *same tone* (same frequency shape) but **no pre-echo**. You can preview impulse/step/magnitude, compare with a baseline, then export headers your plugin uses for **oversampling/anti-alias** stages.

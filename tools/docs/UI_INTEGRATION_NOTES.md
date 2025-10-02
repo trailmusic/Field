@@ -1,7 +1,8 @@
-# Field UI Integration Notes (Look & Feel + Rendering)
+# Field Ranger UI Integration Notes (Look & Feel + Rendering)
 
 **Targets:** `FieldLNF`, `FieldRendering`, EQ views, ComboBox (chevron/abbr), metallic buttons, theme propagation
 **Status:** Ready to implement (no external deps)
+**Purpose:** Seamless integration of Field Ranger with Field's existing Look & Feel system
 
 ---
 

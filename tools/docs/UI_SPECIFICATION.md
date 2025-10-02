@@ -1,8 +1,9 @@
-# Min-Phase Designer – UI Specification
+# Field Ranger – UI Specification
 
 **App type:** Standalone desktop (JUCE)
 **Platforms:** macOS (Intel/Apple Silicon), Windows 10+, Linux (optional)
 **Purpose:** Visual front-end for the existing console tools (linear→min-phase conversion, batch header bank generation, diffs & plots)
+**Branding:** Field Ranger - Patrol quality, phase, and oversampling
 
 ---
 
@@ -43,7 +44,9 @@
 
 ### Theme & Feel
 
-* Use your **Field** LookAndFeel palette (dark, accent color).
+* **Field Integration**: Use Field's `FieldLNF` LookAndFeel palette (dark, accent color).
+* **Consistent Branding**: Match Field's visual design language and component styling.
+* **Theme Propagation**: Automatic theme switching with Field's theme system.
 * Clear status line at bottom: "3 files loaded • baseline: /path • ready".
 
 ### Minimal flow
@@ -58,31 +61,31 @@
 ## 3) Component Tree (JUCE)
 
 ```
-MainWindow (DocumentWindow)
-└── AppRoot (Component, Focus Traversal)
-    ├── LeftPanel: FilePane
-    │   ├── FileDropTarget
-    │   ├── LoadedFilesList (TableListBox)
-    │   ├── BaselineFolderRow (TextButton + FileChooser + Label path)
-    │   └── BatchQueueList (optional)
-    ├── CenterPanel: PlotPane
-    │   ├── PlotToolbar (Buttons: Fit, In/Out, Copy, Save)
-    │   ├── PlotTabs (TabbedComponent)
-    │   │   ├── ImpulsePlot  (Component)
-    │   │   ├── StepPlot     (Component)
-    │   │   └── MagnitudePlot(Component)
-    │   └── Legend/Overlays (baseline / generated toggles)
-    └── RightPanel: SettingsPane
-        ├── Normalization (ToggleGroup: None, Unity, DC)
-        ├── FFT Pad (ComboBox: Auto/4k/8k/16k/32k)
-        ├── Output Prefix (TextEditor: "HB")
-        ├── Emit CSV (ToggleButton)
-        ├── Diff thresholds (2 x Slider/Text: abs, dB)
+FieldRangerMainWindow (DocumentWindow, FieldLNF)
+└── AppRoot (Component, Focus Traversal, FieldLNF)
+    ├── LeftPanel: FilePane (FieldLNF styling)
+    │   ├── FileDropTarget (FieldRendering::drawButtonBackground)
+    │   ├── LoadedFilesList (TableListBox, FieldLNF colors)
+    │   ├── BaselineFolderRow (FieldRendering::drawButton, FieldRendering::drawLabel)
+    │   └── BatchQueueList (optional, FieldLNF styling)
+    ├── CenterPanel: PlotPane (FieldLNF colors, FieldRendering plots)
+    │   ├── PlotToolbar (FieldRendering::drawButton, FieldRendering::drawComboBox)
+    │   ├── PlotTabs (TabbedComponent, FieldLNF tab styling)
+    │   │   ├── ImpulsePlot  (Component, FieldRendering::drawPath)
+    │   │   ├── StepPlot     (Component, FieldRendering::drawPath)
+    │   │   └── MagnitudePlot(Component, FieldRendering::drawPath)
+    │   └── Legend/Overlays (FieldRendering::drawLabel, FieldLNF colors)
+    └── RightPanel: SettingsPane (FieldLNF styling)
+        ├── Normalization (FieldRendering::drawButton, FieldRendering::drawLabel)
+        ├── FFT Pad (FieldRendering::drawComboBox)
+        ├── Output Prefix (FieldRendering::drawTextEditor)
+        ├── Emit CSV (FieldRendering::drawToggleButton)
+        ├── Diff thresholds (FieldRendering::drawSlider, FieldRendering::drawLabel)
         ├── Buttons:
-        │   ├── Generate (selected)
-        │   ├── Generate All
-        │   └── Export MinPhaseBank.h
-        └── Status Hints (Label: pass/fail badges)
+        │   ├── Generate (FieldRendering::drawButton)
+        │   ├── Generate All (FieldRendering::drawButton)
+        │   └── Export MinPhaseBank.h (FieldRendering::drawButton)
+        └── Status Hints (FieldRendering::drawLabel, FieldLNF colors)
 ```
 
 **Plot components** reuse a shared renderer with:
@@ -281,30 +284,36 @@ Persist to a small JSON in user settings.
 
 ## 16) Build Targets
 
-* `MinPhaseDesigner` (app)
+* `FieldRanger` (app)
 
   * deps: `libminphase_core` (shared with CLI), JUCE modules (`juce_gui_basics`, `juce_graphics`, `juce_dsp` if JUCE-FFT)
+  * **Field Integration**: Links against Field's `FieldLNF` and `FieldRendering` for consistent theming
 * `libminphase_core` (static)
 
   * exports: converter + normalization + FFT adapter
 * Reuse `fft_real.h` if keeping KissFFT; otherwise compile JUCE-FFT adapter.
+* **Field Look & Feel**: Integrate with Field's existing theming system for seamless visual consistency.
 
 ---
 
 ## 17) Strings (copy)
 
+* "**Field Ranger** - Patrol quality, phase, and oversampling"
 * "Drop linear-phase CSV files here or **Open…**"
 * "Baseline: Not set" / "Baseline: …/tools/baseline (3 matches)"
 * "Generated (DC, auto FFT)"
 * "Exported **MinPhaseBank.h** to /path/out/"
 * "PASS: |Δsample| ≤ 1e-6 and |Δmag| ≤ 0.10 dB"
 * "FAIL: exceeds thresholds (see Plots)"
+* "**Field Integration**: Using Field's Look & Feel system"
 
 ---
 
 ## 18) Laymen explanation (for the help/about panel)
 
-This app converts **linear-phase** filter taps (perfectly even, great for parallel) into **minimum-phase** taps with the same frequency shape but **no pre-echo**, which often feels more **punchy**. You can **see** the impulse and step responses, and **compare** with a baseline. Then export a single header to use in your plugin's oversampling.
+**Field Ranger** converts **linear-phase** filter taps (perfectly even, great for parallel) into **minimum-phase** taps with the same frequency shape but **no pre-echo**, which often feels more **punchy**. You can **see** the impulse and step responses, and **compare** with a baseline. Then export a single header to use in your **Field plugin's** oversampling.
+
+**Field Integration**: Uses the same visual design and theming as your Field plugin for a seamless workflow.
 
 ---
 

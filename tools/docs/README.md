@@ -1,6 +1,8 @@
-# Min-Phase FIR Tools – Complete User Manual
+# Field Ranger – Complete User Manual
 
-This document provides comprehensive guidance for the min-phase FIR toolchain, including console tools, desktop applications, CI/CD automation, and Field plugin integration.
+**Patrol quality, phase, and oversampling.**
+
+This document provides comprehensive guidance for Field Ranger, including console tools, desktop applications, CI/CD automation, and Field plugin integration.
 
 > **What is this?**
 > These tools convert textbook-clean **linear-phase** filters into punchier **minimum-phase** versions with the *same tone* (same frequency shape) but **no pre-echo**. You can preview impulse/step/magnitude, compare with a baseline, then export headers your plugin uses for **oversampling/anti-alias** stages.
