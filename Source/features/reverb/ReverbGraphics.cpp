@@ -106,46 +106,39 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     addAndMakeVisible (toneEqIndicator);
     addAndMakeVisible (decayRateEqIndicator);
 
-    // Discover param IDs for tb_active_* / db_active_* if present
-    toneEnabledIds  = BandIdFinder::findEnabledIds (state, "tb_active_", "");
-    decayEnabledIds = BandIdFinder::findEnabledIds (state, "db_active_", "");
+    // 1) Build ids deterministically (avoids scan timing issues)
+    toneEnabledIds  = BandIdFinder::makeIndexedIds ("tb_active", 4);
+    decayEnabledIds = BandIdFinder::makeIndexedIds ("db_active", 3);
+
+    // 2) Show 0 immediately (visuals match default state)
+    toneEqIndicator.setActiveBands (0);
+    decayRateEqIndicator.setActiveBands (0);
 
    #if JUCE_DEBUG
-    DBG ("--- Discovered Tone EQ Parameters: " << toneEnabledIds.size () << " ---");
+    DBG ("--- Using Deterministic Tone EQ Parameters: " << toneEnabledIds.size () << " ---");
     for (auto& id : toneEnabledIds) DBG ("Tone: " << id);
-    DBG ("--- Discovered Decay-Rate EQ Parameters: " << decayEnabledIds.size () << " ---");
+    DBG ("--- Using Deterministic Decay-Rate EQ Parameters: " << decayEnabledIds.size () << " ---");
     for (auto& id : decayEnabledIds) DBG ("Decay: " << id);
    #endif
 
-    if (!toneEnabledIds.isEmpty())
-    {
-        toneCounter.reset (new BandCounter (
-            state, toneEnabledIds,
-            [this] (int n)
-            {
-                toneEqIndicator.setActiveBands (n);
-                repaint ();
-            }));
-    }
-    else
-    {
-        toneEqIndicator.setActiveBands (0); // Fallback
-    }
+    // 3) Create counters (listeners attach here)
+    toneCounter = std::make_unique<BandCounter> (state, toneEnabledIds,
+        [this] (int n)
+        {
+            toneEqIndicator.setActiveBands (n);
+            repaint ();
+        });
 
-    if (!decayEnabledIds.isEmpty())
-    {
-        decayCounter.reset (new BandCounter (
-            state, decayEnabledIds,
-            [this] (int n)
-            {
-                decayRateEqIndicator.setActiveBands (n);
-                repaint ();
-            }));
-    }
-    else
-    {
-        decayRateEqIndicator.setActiveBands (0); // Fallback
-    }
+    decayCounter = std::make_unique<BandCounter> (state, decayEnabledIds,
+        [this] (int n)
+        {
+            decayRateEqIndicator.setActiveBands (n);
+            repaint ();
+        });
+
+    // 4) Force an initial publish on the message thread (guaranteed "0")
+    toneCounter->prime();
+    decayCounter->prime();
 
     // EQ Panels
     reverbEQ    = std::make_unique<ReverbToneEQ> (proc);
