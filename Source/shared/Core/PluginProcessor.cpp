@@ -1153,7 +1153,11 @@ void MyPluginAudioProcessor::refreshReportedLatency()
     
     const int newLatency = reverbLatency;
     if (newLatency != getLatencySamples())
+    {
         setLatencySamples (newLatency);
+        // Debug logging (can be removed in production)
+        DBG("[PDC] reverbLatency=" << newLatency << " samples @ " << getSampleRate() << " Hz");
+    }
 }
 
 void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, float newValue)
@@ -1163,6 +1167,16 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
         updateLatencyForPhaseMode();
     if (parameterID == IDs::quality || parameterID == IDs::precision)
         applyQualityFromParams();
+    
+    // Ducking parameter changes - refresh latency reporting
+    if (parameterID == ReverbParamIDs::duckOn || 
+        parameterID == ReverbParamIDs::duckMode ||
+        parameterID == ReverbParamIDs::duckDetectorSrc)
+        refreshReportedLatency();
+    
+    // Bypass parameter changes - refresh latency reporting
+    if (parameterID == IDs::bypass)
+        refreshReportedLatency();
     // Detect explicit user overrides on os_mode and phase_mode so quality stops forcing them
     if (parameterID == IDs::osMode && !qualityApplyingGuard.load())
     {

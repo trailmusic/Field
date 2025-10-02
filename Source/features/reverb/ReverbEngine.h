@@ -106,10 +106,13 @@ public:
     int  getReportedLatencySamples() const noexcept
     {
         // Only the ducking look-ahead contributes latency in our graph.
+        int latency = duck.getLookAheadSamples();
+        
 #if FIELD_REVERB_PHASE2
         // FDN itself adds no latency; if you later add oversampling, include it here.
+        // latency += oversamplingLatencySamp; // Future: add OS latency when implemented
 #endif
-        return duck.getLookAheadSamples();
+        return latency;
     }
     bool isDuckingEnabled() const noexcept { return duck.isEnabled(); }
 
