@@ -24,6 +24,7 @@ juce_add_gui_app(FieldRanger
 juce_generate_juce_header(FieldRanger)
 
 target_sources(FieldRanger PRIVATE
+    # Ranger Application Files
     RangerMain.cpp
     RangerWindow.cpp
     RangerDesigner.cpp
@@ -31,6 +32,64 @@ target_sources(FieldRanger PRIVATE
     RangerPlotPane.cpp
     RangerSettingsPane.cpp
     RangerInstructionsPane.cpp
+    RangerLogo.cpp
+    SimpleFieldTheme.h
+    
+    # Field Components (commented out for now - will integrate later)
+    # Components/ControlContainer.cpp
+    # Components/TooltipBubble.cpp
+    # Components/HelpButton.cpp
+    # Components/QualityButton.cpp
+    # Components/PhaseModeButton.cpp
+    # Components/ToggleSwitch.cpp
+    # Components/ShadeOverlay.cpp
+    # Components/TransportClock.cpp
+    # Components/CorrelationMeter.cpp
+    # Components/GainSlider.cpp
+    # Components/PanSlider.cpp
+    # Components/KnobCell.cpp
+    # Components/KnobCellWithAux.cpp
+    # Components/SwitchCell.cpp
+    # Components/SimpleIconButtons.cpp
+    # Components/ComplexIconButtons.cpp
+    # Components/PresetArrowButton.cpp
+    # Components/ButtonSwitch.cpp
+    # Components/ButtonSwitchFactory.cpp
+    # Components/BypassButton.cpp
+    # Components/AuditionButton.cpp
+    # Components/ABButton.cpp
+    # Components/ThemedIconButton.cpp
+    # Components/TooltipsButton.cpp
+    # Components/TintMenuLNFEx.cpp
+    # Components/VerticalSlider3D.cpp
+    # Components/VizEQ.cpp
+    # Components/MonoSlopeSwitch.cpp
+    # Components/SimpleSwitchCell.cpp
+    # Components/ZoomControl.cpp
+    # Components/HelpFAQComponent.cpp
+    # Components/BottomChevronLNF.cpp
+    
+    # Field Managers (commented out for now)
+    # Managers/AttachmentManager.cpp
+    # Managers/CleanupManager.cpp
+    # Managers/PaintManager.cpp
+    # Managers/StateManager.cpp
+    # Managers/MeterManager.cpp
+    # Managers/SliderManager.cpp
+    # Managers/ButtonManager.cpp
+    
+    # Field Utilities (commented out for now)
+    # Utilities/ComponentGreyout.cpp
+    
+    # Field Engines (commented out for now)
+    # Engines/SpectrumAnalyzer.cpp
+    # Engines/StereoFieldEngine.cpp
+    
+    # Field Events (commented out for now)
+    # Events/EventManager.cpp
+    
+    # Field Layout (commented out for now)
+    # Layout/LayoutManager.cpp
 )
 
 target_link_libraries(FieldRanger PRIVATE

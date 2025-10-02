@@ -1,0 +1,657 @@
+#pragma once
+#include <JuceHeader.h>
+#include "features/dynEq/DynEqTab.h"
+#include "features/xy/XYTab.h"
+#include "features/imager/ImagerTab.h"
+#include "features/band/BandTab.h"
+#include "features/machine/MachineTab.h"
+#include "shared/Core/IconSystem.h"
+#include "features/motion/MotionTab.h"
+#include "features/motion/MotionVisual.h"
+#include "features/reverb/ReverbTab.h"
+#include "features/delay/DelayTab.h"
+#include "features/phase/PhaseTab.h"
+
+// XYPaneAdapter removed - XYTab now contains XYPad directly
+
+enum class PaneID { Phase=0, XY=1, Band=2, Motion=3, Reverb=4, Delay=5, DynEQ=6, Imager=7, Machine=8 };
+
+static inline const char* paneKey (PaneID id)
+{
+    switch (id) {
+        case PaneID::Phase: return "phase";
+        case PaneID::XY: return "xy";
+        case PaneID::DynEQ: return "dyneq";
+        case PaneID::Imager: return "imager";
+        case PaneID::Band: return "band";
+        case PaneID::Motion: return "motion";
+        case PaneID::Machine: return "machine";
+        case PaneID::Reverb:  return "reverb";
+        case PaneID::Delay:   return "delay";
+    }
+    return "phase";
+}
+
+class PaneManager : public juce::Component, private juce::Timer
+{
+    JUCE_LEAK_DETECTOR(PaneManager)
+    
+public:
+    // Keep-warm option removed
+
+    PaneManager (MyPluginAudioProcessor& p, juce::ValueTree& state, juce::LookAndFeel* lnf)
+        : proc(p), vt(state)
+    {
+        phase = std::make_unique<PhaseTab>(p, lnf);
+        dyneq = std::make_unique<DynEqTab> (p, lnf);
+        xyTab = std::make_unique<XYTab>(p);
+        imgr = std::make_unique<ImagerTab>(p, lnf);
+        band = std::make_unique<BandTab>(p);
+        motion = std::make_unique<MotionTab>(p);
+        mach = std::make_unique<MachineTab>(p, state, lnf);
+        // Reverb/Delay composite tabs (controls grid hidden until migration completes)
+        reverb = std::make_unique<ReverbTab>(p);
+        delay  = std::make_unique<DelayTab>(p);
+
+        for (auto* c : { (juce::Component*) phase.get(), (juce::Component*) xyTab.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
+            if (c) addChildComponent (c);
+
+        addAndMakeVisible (tabs);
+        tabs.onSelect = [this](PaneID id){ setActive (id, true); };
+        tabs.onShowMenu = [this](juce::Point<int> where)
+        {
+            juce::PopupMenu m;
+            m.addItem (1, "Phase");
+            m.addItem (2, "XY");
+            m.addItem (3, "Band");
+            m.addItem (4, "Motion");
+            m.addItem (5, "Reverb");
+            m.addItem (6, "Delay");
+            m.addItem (7, "Dynamic EQ");
+            m.addItem (8, "Imager");
+            m.addItem (9, "Machine");
+            // keep-warm option removed
+            // Spectrum removed; no smoothing toggle
+            m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (&tabs),
+                             [this](int r)
+                             {
+                                 if (r == 1) setActive (PaneID::Phase, true);
+                                 else if (r == 2) setActive (PaneID::XY, true);
+                                 else if (r == 3) setActive (PaneID::Band, true);
+                                 else if (r == 4) setActive (PaneID::Motion, true);
+                                 else if (r == 5) setActive (PaneID::Reverb, true);
+                                 else if (r == 6) setActive (PaneID::Delay, true);
+                                 else if (r == 7) setActive (PaneID::DynEQ, true);
+                                 else if (r == 8) setActive (PaneID::Imager, true);
+                                 else if (r == 9) setActive (PaneID::Machine, true);
+                                 // keep-warm toggle removed
+                             });
+        };
+
+        auto s = vt.getProperty ("ui_activePane").toString();
+        PaneID initial = (s=="phase") ? PaneID::Phase : (s=="dyneq" || s=="spec") ? PaneID::DynEQ : (s=="imager") ? PaneID::Imager : (s=="machine") ? PaneID::Machine : (s=="band") ? PaneID::Band : (s=="motion") ? PaneID::Motion : (s=="reverb") ? PaneID::Reverb : (s=="delay") ? PaneID::Delay : PaneID::Phase;
+        setActive (initial, false);
+        // Dynamic EQ tab manages its own analyzer/timers if needed
+
+        for (auto id : { PaneID::Phase, PaneID::XY, PaneID::Band, PaneID::Motion, PaneID::Reverb, PaneID::Delay, PaneID::DynEQ, PaneID::Imager, PaneID::Machine })
+        {
+            auto key = juce::String("ui_shade_") + paneKey(id);
+            if (! vt.hasProperty (key)) vt.setProperty (key, 0.0f, nullptr);
+        }
+
+        // Imager UI state defaults
+        if (! vt.hasProperty ("ui_imager_showPre"))   vt.setProperty ("ui_imager_showPre",   true,  nullptr);
+        if (! vt.hasProperty ("ui_imager_autoGain"))  vt.setProperty ("ui_imager_autoGain",  true,  nullptr);
+        if (! vt.hasProperty ("ui_imager_quality"))   vt.setProperty ("ui_imager_quality",   30,    nullptr); // fps: 15/30/60
+        if (! vt.hasProperty ("ui_imager_overlay_bounds")) vt.setProperty ("ui_imager_overlay_bounds", juce::var(), nullptr);
+        applyImagerOptionsFromState();
+
+        // keep-warm option removed
+        startTimerHz (20);
+        if (auto* bp = dynamic_cast<BandTab*>(band.get()))
+        {
+            bp->setParamEditCallback ([this](const juce::String& id, float value){ setParamAutomated (id, value); });
+        }
+        if (auto* ip = imgr.get())
+        {
+            ip->onUiChange = [this](const juce::String& key, const juce::var& v)
+            {
+                if (key == "ui_imager_overlay_bounds_query")
+                {
+                    // Respond with stored bounds
+                    juce::ignoreUnused (v);
+                    if (vt.hasProperty ("ui_imager_overlay_bounds"))
+                    {
+                        auto val = vt.getProperty ("ui_imager_overlay_bounds");
+                        if (! val.isVoid())
+                        {
+                            if (auto* ip2 = imgr.get())
+                            {
+                                if (auto* o = val.getDynamicObject())
+                                {
+                                    auto x = (int) o->getProperty ("x"); auto y = (int) o->getProperty ("y");
+                                    auto w = (int) o->getProperty ("w"); auto h = (int) o->getProperty ("h");
+                                    ip2->setBounds (ip2->getBounds()); // no-op to ensure init
+                                    if (auto* im = dynamic_cast<ImagerPane*>(ip2))
+                                    {
+                                        im->overlayBounds = { x,y,w,h }; im->overlayBoundsSet = true; im->resized();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return;
+                }
+                vt.setProperty (key, v, nullptr);
+                if (key == "ui_imager_quality") applyImagerOptionsFromState();
+            };
+            ip->onParamEdit = [this](const juce::String& id, float value)
+            {
+                // Route edits to APVTS by parameter ID with host notification
+                setParamAutomated (id, value);
+            };
+            // Designer controls are initialized by the ImagerPane itself
+        }
+    }
+    void timerCallback() override
+    {
+        static int uiTick = 0; ++uiTick; const bool doHeavy = (uiTick % 2) == 0; // halve heavy pulls
+        static juce::AudioBuffer<float> tmpPre, tmpPost, tmpXY;
+        const int maxPull = 2048;
+        // No spectrum push; Dynamic EQ will manage its own feeds
+        const bool wantXY = (active == PaneID::XY) && doHeavy;
+        if (wantXY && xyTab)
+        {
+            int nXY = proc.visPost.pull (tmpXY, 1024);
+            if (nXY > 0)
+            {
+                auto* L = tmpXY.getReadPointer(0);
+                auto* R = tmpXY.getNumChannels()>1 ? tmpXY.getReadPointer(1) : nullptr;
+                for (int i = 0; i < nXY; i += 64)
+                    xyTab->pushWaveformSample (L[i], R ? R[i] : L[i]);
+            }
+        }
+        const bool wantImgr = (active == PaneID::Imager) && doHeavy;
+        if (wantImgr && imgr)
+        {
+            if (auto* ip = dynamic_cast<ImagerPane*>(imgr.get()))
+            {
+                int nPost = proc.visPost.pull (tmpPost, maxPull);
+                if (nPost > 0)
+                    ip->pushBlock (tmpPost.getReadPointer(0), tmpPost.getNumChannels()>1?tmpPost.getReadPointer(1):nullptr, nPost, false);
+                int nPre = proc.visPre.pull (tmpPre, maxPull);
+                if (nPre > 0)
+                    ip->pushBlock (tmpPre.getReadPointer(0), tmpPre.getNumChannels()>1?tmpPre.getReadPointer(1):nullptr, nPre, true);
+
+                // Reflect APVTS values into Imager width editor (keeps XO/widths in sync with knobs)
+                if (auto* pLo = proc.apvts.getRawParameterValue ("xover_lo_hz"))
+                if (auto* pHi = proc.apvts.getRawParameterValue ("xover_hi_hz"))
+                    ip->setCrossovers (*pLo, *pHi);
+                if (auto* wLo = proc.apvts.getRawParameterValue ("width_lo"))
+                if (auto* wMi = proc.apvts.getRawParameterValue ("width_mid"))
+                if (auto* wHi = proc.apvts.getRawParameterValue ("width_hi"))
+                    ip->setWidths (*wLo, *wMi, *wHi);
+            }
+        }
+        const bool wantBand = (active == PaneID::Band) && doHeavy;
+        if (wantBand && band)
+        {
+            if (auto* bp = dynamic_cast<BandTab*>(band.get()))
+            {
+                int nPost = proc.visPost.pull (tmpPost, maxPull);
+                if (nPost > 0)
+                    bp->pushBlock (tmpPost.getReadPointer(0), tmpPost.getNumChannels()>1?tmpPost.getReadPointer(1):nullptr, nPost, false);
+                int nPre = proc.visPre.pull (tmpPre, maxPull);
+                if (nPre > 0)
+                    bp->pushBlock (tmpPre.getReadPointer(0), tmpPre.getNumChannels()>1?tmpPre.getReadPointer(1):nullptr, nPre, true);
+
+                if (auto* pLo = proc.apvts.getRawParameterValue ("xover_lo_hz"))
+                if (auto* pHi = proc.apvts.getRawParameterValue ("xover_hi_hz"))
+                    bp->setCrossovers (*pLo, *pHi);
+                if (auto* wLo = proc.apvts.getRawParameterValue ("width_lo"))
+                if (auto* wMi = proc.apvts.getRawParameterValue ("width_mid"))
+                if (auto* wHi = proc.apvts.getRawParameterValue ("width_hi"))
+                    bp->setWidths (*wLo, *wMi, *wHi);
+                if (auto* sLo = proc.apvts.getRawParameterValue ("shuffler_lo_pct"))
+                if (auto* sHi = proc.apvts.getRawParameterValue ("shuffler_hi_pct"))
+                if (auto* sX = proc.apvts.getRawParameterValue ("shuffler_xover_hz"))
+                    bp->setShuffler (*sLo, *sHi, *sX);
+            }
+        }
+        const bool wantMach = (active == PaneID::Machine) && doHeavy;
+        if (wantMach && mach)
+        {
+            if (auto* mp = mach.get())
+            {
+                int nPost = proc.visPost.pull (tmpPost, maxPull);
+                if (nPost > 0)
+                    mp->pushBlock (tmpPost.getReadPointer(0), tmpPost.getNumChannels()>1?tmpPost.getReadPointer(1):nullptr, nPost);
+            }
+        }
+    }
+
+    // keep-warm API removed
+
+    void setSampleRate (double fs)
+    {
+        if (xyTab) xyTab->setSampleRate (fs);
+        if (auto* ip = dynamic_cast<ImagerPane*>(imgr.get())) ip->setSampleRate (fs);
+        if (auto* bp = dynamic_cast<BandTab*>(band.get())) bp->setSampleRate (fs);
+        if (auto* mp = mach.get()) mp->setSampleRate (fs);
+    }
+    
+    void setMotionVisualState(const motion::VisualState& visualState)
+    {
+        if (motion) {
+            if (auto* motionTab = dynamic_cast<MotionTab*>(motion.get())) {
+                // MotionTab now contains MotionGraphics internally
+                // TODO: Add method to forward setVisualState to internal MotionGraphics
+            }
+        }
+    }
+
+    // Reflect APVTS knob changes back into Imager width editor
+    void onParameterChangedForImager (const juce::String& id, float value)
+    {
+        if (auto* ip = dynamic_cast<ImagerPane*>(imgr.get()))
+        {
+            if      (id == "xover_lo_hz") ip->setCrossovers (value, (float) vt.getProperty ("xover_hi_hz", 2000.0f));
+            else if (id == "xover_hi_hz") ip->setCrossovers ((float) vt.getProperty ("xover_lo_hz", 150.0f), value);
+            else if (id == "width_lo")    ip->setWidths (value, ip->getWidthMid(), ip->getWidthHi());
+            else if (id == "width_mid")   ip->setWidths (ip->getWidthLo(), value, ip->getWidthHi());
+            else if (id == "width_hi")    ip->setWidths (ip->getWidthLo(), ip->getWidthMid(), value);
+        }
+    }
+
+    void onAudioSample (double L, double R)
+    {
+        if (xyTab) xyTab->pushWaveformSample (L, R);
+    }
+    void onAudioBlock (const float* L, const float* R, int n)
+    {
+        juce::ignoreUnused (L, R, n);
+        // Dynamic EQ handles feeds internally
+    }
+    void onAudioBlockPre (const float* L, const float* R, int n)
+    {
+        juce::ignoreUnused (L, R, n);
+    }
+
+    float getActiveShade() const
+    {
+        return (float) vt.getProperty (juce::String("ui_shade_") + paneKey(active), 0.0f);
+    }
+    void setActiveShade (float a)
+    {
+        vt.setProperty (juce::String("ui_shade_") + paneKey(active), juce::jlimit(0.0f,1.0f,a), nullptr);
+    }
+    
+    // Get the bounds of the currently active graphics container
+    juce::Rectangle<int> getActiveGraphicsContainerBounds() const
+    {
+        // Get the active graphics container based on the current active pane
+        juce::Component* activeGraphicsContainer = nullptr;
+        switch (active)
+        {
+            case PaneID::Phase: 
+                if (auto* phaseTab = dynamic_cast<PhaseTab*>(phase.get())) {
+                    activeGraphicsContainer = phaseTab->getPhaseVisualContainer();
+                }
+                break;
+            case PaneID::XY: 
+                if (auto* xyTab = dynamic_cast<XYTab*>(this->xyTab.get())) {
+                    activeGraphicsContainer = xyTab->getXYPad();
+                }
+                break;
+            case PaneID::Band: 
+                if (auto* bandTab = dynamic_cast<BandTab*>(band.get())) {
+                    activeGraphicsContainer = bandTab->getBandGraphics();
+                }
+                break;
+            case PaneID::Motion: 
+                if (auto* motionTab = dynamic_cast<MotionTab*>(motion.get())) {
+                    activeGraphicsContainer = motionTab->getMotionGraphics();
+                }
+                break;
+            case PaneID::Reverb: 
+                if (auto* reverbTab = dynamic_cast<ReverbTab*>(reverb.get())) {
+                    activeGraphicsContainer = reverbTab->getReverbCanvas();
+                }
+                break;
+            case PaneID::Delay: 
+                if (auto* delayTab = dynamic_cast<DelayTab*>(delay.get())) {
+                    activeGraphicsContainer = delayTab->getDelayVisuals();
+                }
+                break;
+            case PaneID::DynEQ: 
+                if (auto* dyneqTab = dynamic_cast<DynEqTab*>(dyneq.get())) {
+                    activeGraphicsContainer = dyneqTab->getAnalyzer();
+                }
+                break;
+            case PaneID::Imager: 
+                activeGraphicsContainer = imgr.get(); // ImagerTab is the graphics container itself
+                break;
+            case PaneID::Machine: 
+                activeGraphicsContainer = mach.get(); // MachineTab is the graphics container itself
+                break;
+        }
+        
+        if (activeGraphicsContainer)
+        {
+            return activeGraphicsContainer->getBounds();
+        }
+        return juce::Rectangle<int>();
+    }
+
+    void setActive (PaneID id, bool persist)
+    {
+        const bool changed = (id != active);
+        // Always enforce correct visibility, even if selecting the same pane.
+        for (auto* c : { (juce::Component*) phase.get(), (juce::Component*) xyTab.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) mach.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get() })
+            if (c) c->setVisible (false);
+
+        if (changed)
+            active = id;
+        // Publish active pane for audio-thread readers
+        activeAtomic.store ((int) id, std::memory_order_release);
+
+        if (auto* a = getActive())
+            a->setVisible (true);
+
+        // Dynamic EQ tab manages its own timers/feeds
+
+        if (persist && changed)
+            vt.setProperty ("ui_activePane", paneKey(id), nullptr);
+
+        tabs.current = id;
+        tabs.repaint();
+        resized();
+
+        if (changed and onActivePaneChanged)
+            onActivePaneChanged (active);
+    }
+
+    ~PaneManager() override
+    {
+        // Stop timer before destruction to prevent use-after-free
+        stopTimer();
+        
+        // Explicitly destroy components in reverse order
+        delay.reset();
+        reverb.reset();
+        mach.reset();
+        motion.reset();
+        band.reset();
+        imgr.reset();
+        dyneq.reset();
+        xyTab.reset();
+    }
+
+    PaneID getActiveID() const { return (PaneID) activeAtomic.load (std::memory_order_acquire); }
+    juce::Component* getActive()
+    {
+        switch (active) { case PaneID::Phase: return (juce::Component*) phase.get(); case PaneID::XY: return (juce::Component*) xyTab.get(); case PaneID::Band: return band.get(); case PaneID::Motion: return (juce::Component*) motion.get(); case PaneID::Reverb: return reverb.get(); case PaneID::Delay: return delay.get(); case PaneID::DynEQ: return (juce::Component*) dyneq.get(); case PaneID::Imager: return (juce::Component*) imgr.get(); case PaneID::Machine: return mach.get(); }
+        return (juce::Component*) phase.get();
+    }
+    
+    // Get specific tab instances
+    XYTab* getXYTab() { return xyTab.get(); }
+
+    // spectrumPane removed; Dynamic EQ tab owns its visuals
+
+    void resized() override
+    {
+        auto full = getLocalBounds();
+        // Larger tabs for easier target; no overlap with content
+        const int tabHeight = 40; // was 32
+        const int tabTopPad = 0;  // was 10 (overlap source)
+        juce::Rectangle<int> tabsR (full.getX(), full.getY(), full.getWidth(), tabHeight + tabTopPad);
+        tabs.setBounds (tabsR);
+
+        // Content starts directly under tabs with a tiny breathing space
+        auto paneTop = tabs.getBottom() + 2;
+        juce::Rectangle<int> paneR (full.getX(), paneTop, full.getWidth(), full.getBottom() - paneTop);
+        
+        // Add 5px margin to top only for exterior padding
+        // Leave sides and bottom untouched
+        paneR = paneR.withY(paneR.getY() + 5);
+        
+        for (auto* c : { (juce::Component*) phase.get(), (juce::Component*) xyTab.get(), (juce::Component*) band.get(), (juce::Component*) motion.get(), (juce::Component*) reverb.get(), (juce::Component*) delay.get(), (juce::Component*) dyneq.get(), (juce::Component*) imgr.get(), (juce::Component*) mach.get() })
+            if (c) c->setBounds (paneR);
+    }
+    
+    void lookAndFeelChanged() override
+    {
+        // Forward theme changes to all child tabs
+        if (phase) phase->lookAndFeelChanged();
+        if (xyTab) xyTab->lookAndFeelChanged();
+        if (band) band->lookAndFeelChanged();
+        if (motion) motion->lookAndFeelChanged();
+        if (reverb) reverb->lookAndFeelChanged();
+        if (delay) delay->lookAndFeelChanged();
+        if (dyneq) dyneq->lookAndFeelChanged();
+        if (imgr) imgr->lookAndFeelChanged();
+        if (mach) mach->lookAndFeelChanged();
+    }
+
+    struct Tabs : public juce::Component, private juce::Timer
+    {
+        std::function<void(PaneID)> onSelect;
+        std::function<void(juce::Point<int>)> onShowMenu;
+        PaneID current { PaneID::XY };
+        void timerCallback() override {}
+        void parentHierarchyChanged() override { stopTimer(); }
+        void paint (juce::Graphics& g) override
+        {
+            auto b = getLocalBounds().toFloat();
+            const int N = 9; float w = b.getWidth() / (float) N;
+            auto drawInlineIcon = [&] (juce::Graphics& gg, PaneID id, juce::Rectangle<float> iconR, juce::Colour col, bool on)
+            {
+                const float s  = iconR.getWidth() / 24.0f;
+                const float st = juce::jlimit (1.2f, 3.6f, iconR.getWidth() * 0.11f + (on ? 0.3f : 0.0f));
+                auto T = juce::AffineTransform::translation (iconR.getX(), iconR.getY());
+                gg.setColour (col);
+                juce::Path p;
+                switch (id)
+                {
+                    case PaneID::Phase: {
+                        // Phase icon: sine wave with phase indicator
+                        p.startNewSubPath (3.0f*s, 12.0f*s);
+                        p.cubicTo (6.0f*s, 6.0f*s, 9.0f*s, 18.0f*s, 12.0f*s, 12.0f*s);
+                        p.cubicTo (15.0f*s, 6.0f*s, 18.0f*s, 18.0f*s, 21.0f*s, 12.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear();
+                        // Phase indicator dot
+                        p.addEllipse (12.0f*s - 1.0f*s, 12.0f*s - 1.0f*s, 2.0f*s, 2.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
+                    case PaneID::XY: {
+                        // XY Pad icon: clean crosshair design
+                        // Vertical line
+                        p.startNewSubPath (12.0f*s, 6.0f*s); p.lineTo (12.0f*s, 18.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear();
+                        // Horizontal line
+                        p.startNewSubPath (6.0f*s, 12.0f*s); p.lineTo (18.0f*s, 12.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear();
+                        // Center dot
+                        p.addEllipse (11.5f*s, 11.5f*s, 1.0f*s, 1.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
+                    case PaneID::DynEQ: { // Dynamic EQ
+                        p.startNewSubPath (3.0f*s, 17.0f*s);
+                        p.cubicTo (6.5f*s, 7.0f*s, 9.5f*s, 21.0f*s, 12.0f*s, 17.0f*s);
+                        p.cubicTo (14.5f*s, 13.0f*s, 17.0f*s, 11.0f*s, 21.0f*s, 13.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear(); p.addEllipse (9.0f*s - 1.25f*s, 15.0f*s - 1.25f*s, 2.5f*s, 2.5f*s);
+                        p.addEllipse (15.0f*s - 1.25f*s, 11.0f*s - 1.25f*s, 2.5f*s, 2.5f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
+                    case PaneID::Imager: {
+                        p.startNewSubPath (12.0f*s, 5.0f*s); p.lineTo (12.0f*s, 19.0f*s);
+                        p.startNewSubPath (5.0f*s, 12.0f*s); p.lineTo (19.0f*s, 12.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear();
+                        // outward chevrons
+                        p.startNewSubPath (7.0f*s, 9.0f*s); p.lineTo (4.5f*s, 12.0f*s); p.lineTo (7.0f*s, 15.0f*s);
+                        p.startNewSubPath (17.0f*s, 9.0f*s); p.lineTo (19.5f*s, 12.0f*s); p.lineTo (17.0f*s, 15.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
+                    case PaneID::Band: {
+                        p.startNewSubPath (7.0f*s, 5.0f*s); p.lineTo (7.0f*s, 19.0f*s);
+                        p.startNewSubPath (17.0f*s, 5.0f*s); p.lineTo (17.0f*s, 19.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear(); p.addRoundedRectangle (8.5f*s, 7.0f*s, 7.0f*s, 10.0f*s, 2.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
+                    case PaneID::Motion: {
+                        p.addEllipse (5.0f*s, 5.0f*s, 14.0f*s, 14.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear(); // small arrow head on the arc end
+                        p.startNewSubPath (18.5f*s, 10.8f*s); p.lineTo (20.25f*s, 12.0f*s); p.lineTo (18.5f*s, 13.2f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
+                    case PaneID::Machine: {
+                        // Machine icon: use same cog wheel as Learn button
+                        p = IconSystem::createIcon (IconSystem::Learn, iconR.getWidth());
+                        gg.fillPath (p, T);
+                        break;
+                    }
+                    case PaneID::Reverb: {
+                        // Reverb icon: sound waves with decay
+                        p.startNewSubPath (4.0f*s, 12.0f*s); p.lineTo (8.0f*s, 12.0f*s);
+                        p.startNewSubPath (6.0f*s, 8.0f*s); p.lineTo (10.0f*s, 8.0f*s);
+                        p.startNewSubPath (8.0f*s, 4.0f*s); p.lineTo (12.0f*s, 4.0f*s);
+                        p.startNewSubPath (10.0f*s, 6.0f*s); p.lineTo (14.0f*s, 6.0f*s);
+                        p.startNewSubPath (12.0f*s, 10.0f*s); p.lineTo (16.0f*s, 10.0f*s);
+                        p.startNewSubPath (14.0f*s, 14.0f*s); p.lineTo (18.0f*s, 14.0f*s);
+                        p.startNewSubPath (16.0f*s, 16.0f*s); p.lineTo (20.0f*s, 16.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
+                    case PaneID::Delay: {
+                        // Delay icon: clock/time symbol
+                        p.addEllipse (6.0f*s, 6.0f*s, 12.0f*s, 12.0f*s);
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        p.clear();
+                        // Clock hands
+                        p.startNewSubPath (12.0f*s, 12.0f*s); p.lineTo (12.0f*s, 8.0f*s); // hour hand
+                        p.startNewSubPath (12.0f*s, 12.0f*s); p.lineTo (15.0f*s, 12.0f*s); // minute hand
+                        gg.strokePath (p, juce::PathStrokeType (st), T);
+                        break;
+                    }
+                }
+            };
+            auto draw = [&](int i, const juce::String& label, PaneID id)
+            {
+                juce::Rectangle<float> r (b.getX() + i*w, b.getY(), w, b.getHeight());
+                const bool on = (current == id);
+                auto rr = r.reduced (1.0f);
+                
+                // Detect hover state
+                auto mousePos = getMouseXYRelative();
+                const bool hover = r.contains(mousePos.toFloat());
+                
+                if (auto* lf = dynamic_cast<FieldLNF*> (&getLookAndFeel())) 
+                {
+                    lf->drawTabPill (g, rr, on, hover);
+                }
+                else
+                {
+                    // Fallback rendering for non-FieldLNF LookAndFeel
+                    g.setColour (juce::Colour (0xFF3A3E45));
+                    g.fillRoundedRectangle (rr, 8.0f);
+                    if (on) { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.85f)); g.drawRoundedRectangle (rr, 8.0f, 2.0f); }
+                    else     { g.setColour (juce::Colour (0xFF5AA9E6).withAlpha (0.3f)); g.drawRoundedRectangle (rr, 8.0f, 1.0f); }
+                }
+                // label + icon
+                auto txtCol = juce::Colours::white.withAlpha (on ? 0.95f : 0.65f);
+                g.setColour (txtCol);
+                juce::Font f (juce::FontOptions (on ? 16.5f : 15.5f).withStyle ("Bold"));
+                f.setExtraKerningFactor (0.0f);
+                g.setFont (f);
+                const float pad = 4.0f;
+                const float iconSz = juce::jmin (rr.getHeight() - 6.0f, 22.0f);
+                juce::Rectangle<float> content = rr.reduced (6.0f, 2.0f);
+                juce::String drawLabel = (id == PaneID::DynEQ ? juce::String ("Dynamic EQ") : label);
+                drawLabel = drawLabel.toUpperCase();
+                float textW = g.getCurrentFont().getStringWidthFloat (drawLabel);
+                float blockW = textW + pad + iconSz;
+                float x0 = content.getCentreX() - blockW * 0.5f;
+                juce::Rectangle<int> textR (juce::roundToInt (x0), (int) content.getY(), (int) (textW + 2.0f), (int) content.getHeight());
+                g.drawFittedText (drawLabel, textR, juce::Justification::centredLeft, 1);
+                juce::Rectangle<float> iconR (x0 + textW + pad, content.getCentreY() - iconSz * 0.5f, iconSz, iconSz);
+                drawInlineIcon (g, id, iconR, txtCol, on);
+            };
+            draw (0, "Phase",      PaneID::Phase);
+            draw (1, "XY",         PaneID::XY);
+            draw (2, "Band",       PaneID::Band);
+            draw (3, "Motion",     PaneID::Motion);
+            draw (4, "Reverb",     PaneID::Reverb);
+            draw (5, "Delay",      PaneID::Delay);
+            draw (6, "Dynamic EQ", PaneID::DynEQ);
+            draw (7, "Imager",     PaneID::Imager);
+            draw (8, "Machine",    PaneID::Machine);
+        }
+        void mouseUp (const juce::MouseEvent& e) override
+        {
+            const int N = 9; int idx = juce::jlimit (0, N-1, e.x * N / juce::jmax (1, getWidth()));
+            PaneID id = idx==0 ? PaneID::Phase : idx==1 ? PaneID::XY : idx==2 ? PaneID::Band : idx==3 ? PaneID::Motion : idx==4 ? PaneID::Reverb : idx==5 ? PaneID::Delay : idx==6 ? PaneID::DynEQ : idx==7 ? PaneID::Imager : PaneID::Machine;
+            current = id; if (onSelect) onSelect (id); repaint();
+            if (e.mods.isPopupMenu()) { if (onShowMenu) onShowMenu (e.getPosition()); }
+        }
+    } tabs;
+
+    std::function<void(PaneID)> onActivePaneChanged;
+
+private:
+    MyPluginAudioProcessor& proc;
+    juce::ValueTree& vt;
+    PaneID active { PaneID::Phase };
+    std::atomic<int> activeAtomic { (int) PaneID::Phase };
+
+    std::unique_ptr<PhaseTab>              phase;
+    std::unique_ptr<XYTab>                 xyTab;
+    // Dynamic EQ tab (replaces Spectrum)
+    std::unique_ptr<DynEqTab>              dyneq;
+    std::unique_ptr<ImagerTab>             imgr;
+    std::unique_ptr<BandTab>               band;
+    std::unique_ptr<MotionTab>             motion;
+    std::unique_ptr<MachineTab>           mach;
+    std::unique_ptr<ReverbTab>            reverb;
+    std::unique_ptr<DelayTab>             delay;
+
+    void applyImagerOptionsFromState()
+    {
+        if (!imgr) return;
+        ImagerPane::Options o;
+        o.showPre = (bool) vt.getProperty ("ui_imager_showPre", true);
+        o.autoGain = (bool) vt.getProperty ("ui_imager_autoGain", true);
+        const int q = (int) vt.getProperty ("ui_imager_quality", 30);
+        o.fps = juce::jlimit (10, 120, q);
+        imgr->setOptions (o);
+    }
+
+    void setParamAutomated (const juce::String& paramID, float value)
+    {
+        if (auto* p = proc.apvts.getParameter (paramID))
+        {
+            if (auto* rp = dynamic_cast<juce::RangedAudioParameter*> (p))
+            {
+                const float norm = rp->convertTo0to1 (value);
+                rp->beginChangeGesture();
+                rp->setValueNotifyingHost (juce::jlimit (0.0f, 1.0f, norm));
+                rp->endChangeGesture();
+            }
+        }
+    }
+};
+
+
