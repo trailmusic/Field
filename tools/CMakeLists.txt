@@ -19,14 +19,16 @@ add_executable(minphase
 )
 
 target_link_libraries(minphase PRIVATE kissfft::kissfft)
+target_include_directories(minphase PRIVATE ${kissfft_SOURCE_DIR})
 
 # Batch generator
 add_executable(batch_minphase
     batch_minphase.cpp
-    fft_real.h
+    minphase/fft_real.h
 )
 
 target_link_libraries(batch_minphase PRIVATE kissfft::kissfft)
+target_include_directories(batch_minphase PRIVATE ${kissfft_SOURCE_DIR})
 
 # Precision switch (default: float)
 # For double precision, uncomment the line below:

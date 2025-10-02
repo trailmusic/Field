@@ -10,7 +10,7 @@
 #include <cstring>
 
 extern "C" {
-  #include <kissfft/kiss_fftr.h>   // from KissFFT
+  #include <kiss_fftr.h>   // from KissFFT
 }
 
 #if defined(KISS_FFT_DOUBLE)

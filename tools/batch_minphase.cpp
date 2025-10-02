@@ -14,7 +14,7 @@
 #include <iomanip>
 #include <cctype>
 
-#include "fft_real.h" // KissFFT wrapper (rfft/irfft) from previous message
+#include "minphase/fft_real.h" // KissFFT wrapper (rfft/irfft) from previous message
 
 static void usage() {
     std::cout <<
