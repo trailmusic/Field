@@ -885,7 +885,10 @@ private:
         Sample rvDecayHiMult{};      // High frequency T60 multiplier (0.25..4.0)
         Sample rvDecayMidDb{};       // Mid frequency bell gain (±12 dB)
         Sample rvDecayMidFreqHz{};  // Mid frequency bell center (Hz)
-        Sample rvDecayMidQ{};        // Mid frequency bell Q (0.7..1.4)
+        Sample rvDecayMidQ{};        // Mid frequency bell Q (0.3..6.0)
+        Sample rvDecayTiltDb{};      // Decay tilt bias (±12 dB)
+        Sample rvDecaySmoothing{};   // Parameter smoothing speed (0..2)
+        Sample rvDecayMode{};        // UI mode toggle (0..1)
         
         // Motion parameters
         bool   motionEnabled{};
@@ -1005,7 +1008,10 @@ struct HostParams
     double rvDecayHiMult{};      // High frequency T60 multiplier (0.25..4.0)
     double rvDecayMidDb{};       // Mid frequency bell gain (±12 dB)
     double rvDecayMidFreqHz{};  // Mid frequency bell center (Hz)
-    double rvDecayMidQ{};        // Mid frequency bell Q (0.7..1.4)
+    double rvDecayMidQ{};        // Mid frequency bell Q (0.3..6.0)
+    double rvDecayTiltDb{};      // Decay tilt bias (±12 dB)
+    double rvDecaySmoothing{};   // Parameter smoothing speed (0..2)
+    double rvDecayMode{};        // UI mode toggle (0..1)
         
     // Delay parameters
     bool   delayEnabled{};

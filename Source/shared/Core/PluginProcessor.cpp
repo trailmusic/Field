@@ -431,6 +431,21 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.rvDuckBandQ     = apvts.getRawParameterValue (ReverbParamIDs::duckBandQ)->load();
     p.rvOutTrimDb     = apvts.getRawParameterValue (ReverbParamIDs::outTrimDb)->load();
     
+    // ================================================================
+    // 🎯 DECAY RATE CONTROL PARAMETERS (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Musical decay-rate control for reverb tails
+    // These parameters enable frequency-dependent T60 shaping
+    // ================================================================
+    p.rvDecayLoMult   = apvts.getRawParameterValue (ReverbParamIDs::decayLoMult)->load();
+    p.rvDecayHiMult   = apvts.getRawParameterValue (ReverbParamIDs::decayHiMult)->load();
+    p.rvDecayMidDb    = apvts.getRawParameterValue (ReverbParamIDs::decayMidDb)->load();
+    p.rvDecayMidFreqHz = apvts.getRawParameterValue (ReverbParamIDs::decayMidFreqHz)->load();
+    p.rvDecayMidQ     = apvts.getRawParameterValue (ReverbParamIDs::decayMidQ)->load();
+    p.rvDecayTiltDb   = apvts.getRawParameterValue (ReverbParamIDs::decayTiltDb)->load();
+    p.rvDecaySmoothing = apvts.getRawParameterValue (ReverbParamIDs::decaySmoothing)->load();
+    p.rvDecayMode     = apvts.getRawParameterValue (ReverbParamIDs::decayMode)->load();
+    
     // Dynamic EQ parameters
     p.dynEqEnabled    = apvts.getRawParameterValue (dynEq::IDs::enabled)->load() > 0.5f;
     
@@ -2574,6 +2589,9 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.rvDecayMidDb    = (Sample) juce::jlimit(-12.0, 12.0, hp.rvDecayMidDb);
     params.rvDecayMidFreqHz = (Sample) juce::jlimit(20.0, 20000.0, hp.rvDecayMidFreqHz);
     params.rvDecayMidQ     = (Sample) juce::jlimit(0.3, 6.0, hp.rvDecayMidQ);
+    params.rvDecayTiltDb   = (Sample) juce::jlimit(-12.0, 12.0, hp.rvDecayTiltDb);
+    params.rvDecaySmoothing = (Sample) juce::jlimit(0.0, 2.0, hp.rvDecaySmoothing);
+    params.rvDecayMode     = (Sample) juce::jlimit(0.0, 1.0, hp.rvDecayMode);
     
     // ================================================================
     // 🎯 REVERB ENGINE PARAMETER MAPPING (JANUARY 2025)
