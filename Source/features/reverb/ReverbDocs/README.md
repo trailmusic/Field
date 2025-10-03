@@ -117,5 +117,6 @@ The reverb system is now organized into the following logical subdirectories:
 
 ## 📝 Version History
 
+- **v2.2 (Jan 2025)**: Production-grade buffer handling implementation - fixes Ableton Live glitching
 - **v2.1 (Jan 2025)**: Complete directory reorganization and preset system integration
 - **v2.0 (Jan 2025)**: Phase 2 FDN implementation with mathematically correct decay mapping

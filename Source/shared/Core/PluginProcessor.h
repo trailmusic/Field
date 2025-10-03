@@ -376,6 +376,9 @@ struct FieldChain
 {
     using Block  = juce::dsp::AudioBlock<Sample>;
     using CtxRep = juce::dsp::ProcessContextReplacing<Sample>;
+    
+    // Production-grade buffer size constants
+    static constexpr int kMaxPreparedAudioBlock = 8192; // Upper bound for engine preallocation and tiling chunks
 
     // Lifecycle
     void prepare (const juce::dsp::ProcessSpec& spec);
@@ -392,6 +395,9 @@ struct FieldChain
     int   getLinearPhaseLatencySamples() const { return (linConvolver ? linConvolver->getLatencySamples() : 0); }
     int   getFullLinearLatencySamples() const { return (fullLinearConvolver ? fullLinearConvolver->getLatencySamples() : 0); }
     int   getReverbLatencySamples() const { return reverbEnginePrepared ? reverbEngine.getReportedLatencySamples() : 0; }
+    
+    // Buffer size management
+    int   getPreparedBlockSize() const { return preparedBlockSize; }
 
 private:
     // ----- helpers -----
@@ -430,6 +436,7 @@ private:
 
     // ----- state -----
     double sr { 48000.0 };
+    int preparedBlockSize { 0 }; // Store the max block size engines were prepared for
 
     // Oversampling (created on demand)
     std::unique_ptr<juce::dsp::Oversampling<Sample>> oversampling;
@@ -639,10 +646,13 @@ private:
     motion::MotionEngine                 motionEngine;
     motion::Params                       motionParams;
     bool motionEnginePrepared { false };
+    int lastMotionBlockSize { 0 };
     
     // Reverb Engine (moved from main processor)
     ReverbEngine                         reverbEngine;
     bool reverbEnginePrepared { false };
+    int lastReverbBlockSize { 0 };
+    int lastReverbChannels { 0 };
 
     // Anti-alias/anti-imaging guards for OS Off around saturation
     juce::dsp::IIR::Filter<Sample> aliasGuardHP;
@@ -995,6 +1005,8 @@ public:
     
     // Latency reporting for PDC
     void refreshReportedLatency();
+    void prepareEnginesWithBufferSize(const juce::AudioBuffer<float>& buffer);
+    void prepareEnginesWithBufferSize(const juce::AudioBuffer<double>& buffer);
 
     // Layout
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;

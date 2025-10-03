@@ -123,14 +123,31 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     juce::FloatVectorOperations::disableDenormalisedNumberSupport();
     currentSR = sampleRate;
     
-    // Basic setup complete
+    // ================================================================
+    // 🎯 PRODUCTION-GRADE BUFFER SIZE HANDLING (JANUARY 2025)
+    // ================================================================
+    // Prepare for MAX block size to handle variable DAW buffer sizes
+    // This ensures engines are ready for any runtime block size ≤ max
+    // ================================================================
+    
+    // Defensive clamp; some hosts report 0 or bizarre values during device switches.
+#if JUCE_DEBUG
+    if (samplesPerBlock <= 0 || samplesPerBlock > 131072)
+        juce::Logger::writeToLog ("[Field] prepareToPlay: odd host hint for samplesPerBlock=" 
+                                  + juce::String (samplesPerBlock));
+#endif
 
+    const int hinted = (samplesPerBlock > 0) ? samplesPerBlock : 512;
+    const int maxBlockSize = juce::jlimit(256, FieldChain<float>::kMaxPreparedAudioBlock, hinted);
+    
+    // Basic setup complete
     for (auto* s : { &panSmoothed, &panLSmoothed, &panRSmoothed, &depthSmoothed, &widthSmoothed, &gainSmoothed, &tiltSmoothed,
                      &hpHzSmoothed, &lpHzSmoothed, &monoHzSmoothed,
                      &satDriveLin, &satMixSmoothed, &airSmoothed, &bassSmoothed, &duckingSmoothed })
         s->reset (sampleRate, 0.005);
 
-    juce::dsp::ProcessSpec spec { sampleRate, (juce::uint32) samplesPerBlock,
+    // Prepare chains with MAX block size (not the actual runtime size)
+    juce::dsp::ProcessSpec spec { sampleRate, (juce::uint32) maxBlockSize,
                                   (juce::uint32) getTotalNumOutputChannels() };
 
     chainF->prepare (spec);
@@ -140,9 +157,9 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     chainD->prepareAliasGuards (sampleRate);
     
     // Chain preparation complete
-    // Resize scratch for potential 32f->64f internal hop
+    // Resize scratch for potential 32f->64f internal hop (use max block size)
     const int chans = juce::jmax (getTotalNumInputChannels(), getTotalNumOutputChannels());
-    scratch64.resize ((size_t) chans * (size_t) samplesPerBlock);
+    scratch64.resize ((size_t) chans * (size_t) maxBlockSize);
     // Apply initial quality/precision profile
     applyQualityFromParams();
     updateLatencyForPhaseMode();
@@ -170,9 +187,9 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     scheduleDspRebuildIfNeeded(cfg);
     rtCfg.store(cfg);
     
-    // Phase Alignment Engine preparation
-    phaseAlignmentEngine->prepare(sampleRate, samplesPerBlock, getTotalNumInputChannels());
-    phaseDryBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock);
+    // Phase Alignment Engine preparation (use max block size)
+    phaseAlignmentEngine->prepare(sampleRate, maxBlockSize, getTotalNumInputChannels());
+    phaseDryBuffer.setSize(getTotalNumInputChannels(), maxBlockSize);
 
     // Motion Engine will be initialized lazily when first accessed
     
@@ -651,9 +668,52 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // Process with Phase Alignment Engine
     phaseAlignmentEngine->processBlock(buffer, phaseDryBuffer);
     
-    juce::dsp::AudioBlock<float> block (buffer);
-    chainF->setParameters (hp);
-    chainF->process (block);
+    // ================================================================
+    // 🎯 PRODUCTION-GRADE BUFFER TILING (JANUARY 2025)
+    // ================================================================
+    // Tile the host buffer so engines never see > maxPrepared size
+    // This handles variable DAW buffer sizes without reallocations
+    // ================================================================
+    
+    // Determine prepared chunk size from chain
+    const int preparedMax = (chainF ? chainF->getPreparedBlockSize() : 0);
+
+#if JUCE_DEBUG
+    jassert (preparedMax > 0);
+#endif
+
+    // RELEASE GUARD: never process a block larger than prepared
+    if (preparedMax > 0 && buffer.getNumSamples() > preparedMax)
+    {
+#if JUCE_DEBUG
+        juce::Logger::writeToLog ("[Field] Oversize audio block from host: N=" 
+                                  + juce::String(buffer.getNumSamples()) 
+                                  + " > prepared=" + juce::String(preparedMax));
+#endif
+        buffer.clear(); // fail-safe: mute the block to avoid overruns
+        return;
+    }
+    
+    const int N = buffer.getNumSamples();
+    const int maxBlockSize = preparedMax; // Use actual prepared block size
+    
+    int offset = 0;
+    while (offset < N)
+    {
+        const int nThis = std::min(maxBlockSize, N - offset);
+        
+        // Create zero-copy view into host buffer
+        juce::AudioBuffer<float> view(buffer.getArrayOfWritePointers(),
+                                      buffer.getNumChannels(),
+                                      offset, nThis);
+        
+        // Process this tile
+        juce::dsp::AudioBlock<float> block(view);
+        chainF->setParameters(hp);
+        chainF->process(block);
+        
+        offset += nThis;
+    }
     
     // Refresh ducking latency reporting after parameter changes
     refreshReportedLatency();
@@ -988,8 +1048,52 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
             dst[i] = static_cast<double>(src[i]);
     }
     
-    chainD->setParameters (hp);
-    chainD->process (block);
+    // ================================================================
+    // 🎯 PRODUCTION-GRADE BUFFER TILING (JANUARY 2025)
+    // ================================================================
+    // Tile the host buffer so engines never see > maxPrepared size
+    // This handles variable DAW buffer sizes without reallocations
+    // ================================================================
+    
+    // Determine prepared chunk size from chain
+    const int preparedMax = (chainD ? chainD->getPreparedBlockSize() : 0);
+
+#if JUCE_DEBUG
+    jassert (preparedMax > 0);
+#endif
+
+    // RELEASE GUARD: never process a block larger than prepared
+    if (preparedMax > 0 && buffer.getNumSamples() > preparedMax)
+    {
+#if JUCE_DEBUG
+        juce::Logger::writeToLog ("[Field] Oversize audio block from host: N=" 
+                                  + juce::String(buffer.getNumSamples()) 
+                                  + " > prepared=" + juce::String(preparedMax));
+#endif
+        buffer.clear(); // fail-safe: mute the block to avoid overruns
+        return;
+    }
+    
+    const int N = buffer.getNumSamples();
+    const int maxBlockSize = preparedMax; // Use actual prepared block size
+    
+    int offset = 0;
+    while (offset < N)
+    {
+        const int nThis = std::min(maxBlockSize, N - offset);
+        
+        // Create zero-copy view into host buffer
+        juce::AudioBuffer<double> view(buffer.getArrayOfWritePointers(),
+                                       buffer.getNumChannels(),
+                                       offset, nThis);
+        
+        // Process this tile
+        juce::dsp::AudioBlock<double> block(view);
+        chainD->setParameters(hp);
+        chainD->process(block);
+        
+        offset += nThis;
+    }
     
     // Refresh ducking latency reporting after parameter changes
     refreshReportedLatency();
@@ -1159,6 +1263,9 @@ void MyPluginAudioProcessor::refreshReportedLatency()
         DBG("[PDC] reverbLatency=" << newLatency << " samples @ " << getSampleRate() << " Hz");
     }
 }
+
+// Removed broken dynamic re-preparation logic
+// Engines are now prepared once in prepareToPlay with max block size
 
 void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, float newValue)
 {
@@ -2090,6 +2197,7 @@ template <typename Sample>
 void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
 {
     sr = spec.sampleRate;
+    preparedBlockSize = (int) spec.maximumBlockSize; // Store the max block size for tiling
 
     hpFilter.prepare (spec);
     lpFilter.prepare (spec);
@@ -2367,17 +2475,8 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
         delayPrepared = true;
     }
     
-    // Prepare Motion Engine only if enabled and not already prepared
-    if (hp.motionEnabled && !motionEnginePrepared) {
-        motionEngine.prepare (sr, 512); // sample rate and block size
-        motionEnginePrepared = true;
-    }
-    
-    // Prepare Reverb Engine only if enabled and not already prepared
-    if (hp.rvEnabled && !reverbEnginePrepared) {
-        reverbEngine.prepare (sr, 512, 2); // sample rate, block size, channels
-        reverbEnginePrepared = true;
-    }
+    // Note: Engine preparation moved to main processBlock functions
+    // where buffer information is available
     
     params.delayMode = hp.delayMode;
     params.delaySync = hp.delaySync;

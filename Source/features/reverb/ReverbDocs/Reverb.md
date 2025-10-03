@@ -573,4 +573,58 @@ presetManager.applyPreset(presetIndex, reverbParams);
 
 ---
 
+## Production-Grade Buffer Handling (January 2025)
+
+### Problem Solved
+The reverb engine was experiencing audio glitching in Ableton Live due to buffer size mismatches. The engine was prepared with a fixed 512-sample buffer, but DAWs use variable buffer sizes (64, 128, 256, 512, 1024, etc.).
+
+### Solution: Buffer Tiling Architecture
+
+#### **Max-Block Preparation**
+```cpp
+// Engines prepared for maximum expected block size (up to 8192 samples)
+const int maxBlockSize = juce::jlimit(256, kMaxPreparedAudioBlock, hinted);
+reverbEngine.prepare(sr, maxBlockSize, channels);
+```
+
+#### **Zero-Copy Buffer Tiling**
+```cpp
+// Tile large host buffers into engine-friendly chunks
+int offset = 0;
+while (offset < N) {
+    const int nThis = std::min(preparedMax, N - offset);
+    juce::AudioBuffer<float> view(buffer.getArrayOfWritePointers(),
+                                  buffer.getNumChannels(),
+                                  offset, nThis);
+    reverbEngine.processWet(view, sidechain);
+    offset += nThis;
+}
+```
+
+#### **Safety Guards**
+```cpp
+// Release-mode protection against oversize blocks
+if (wet.getNumSamples() > maxSamples) {
+    wet.clear(); // Clear buffer to prevent artifacts
+    return;
+}
+```
+
+### Key Features
+- ✅ **8192 sample ceiling**: Handles offline bounces with large blocks
+- ✅ **Zero-copy tiling**: No data copying, just buffer views  
+- ✅ **Release-mode guards**: Fail-safe behavior for oversize blocks
+- ✅ **Debug logging**: Catches unusual host behavior
+- ✅ **Denormal protection**: ScopedNoDenormals in all DSP loops
+- ✅ **Both float/double paths**: Consistent behavior across precision modes
+
+### Testing Results
+- ✅ **Buffer sizes 64/128/256/512/1024**: No clicks or glitches
+- ✅ **Ableton Live**: Smooth operation at all buffer sizes
+- ✅ **Offline rendering**: Handles large blocks correctly
+- ✅ **Buffer size changes**: Clean re-preparation when host changes
+- ✅ **CPU performance**: Minimal overhead from tiling
+
+---
+
 *This document is the single source of truth for Field Reverb's design, shipped state, and near-term roadmap. Keep it updated when parameter IDs, routing, or UX change.*

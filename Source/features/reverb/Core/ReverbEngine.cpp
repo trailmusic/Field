@@ -178,7 +178,32 @@ void ReverbEngine::setToneEq (const ToneEq& eqIn)
 // ============================================================================
 void ReverbEngine::processWet (AudioBuffer<float>& wet, const AudioBuffer<float>& sidechain)
 {
+    // ================================================================
+    // 🎯 PRODUCTION-GRADE BUFFER SAFETY (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Assert buffer size expectations for production safety
+    // This ensures engines never see buffers larger than prepared size
+    // ================================================================
+    
     jassert (wet.getNumChannels() == chans);
+    jassert (wet.getNumSamples() <= maxSamples);
+    jassert (wet.getNumSamples() > 0);
+    jassert (chans > 0);
+    jassert (maxSamples > 0);
+
+    // Safety check: if buffer is larger than prepared size, skip processing
+    if (wet.getNumSamples() > maxSamples) {
+        DBG("ReverbEngine: Buffer size " << wet.getNumSamples() << " exceeds prepared size " << maxSamples);
+        wet.clear(); // Clear buffer to prevent artifacts
+        return;
+    }
+    
+    // ================================================================
+    // 🎯 PRODUCTION-GRADE DENORMAL PROTECTION (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Prevent denormal performance degradation in tight DSP loops
+    // ================================================================
+    juce::ScopedNoDenormals noDenormals;
 
     // 0) If ToneEQ routing is Pre, prefilter the ER input only
     const AudioBuffer<float>* erInput = &wet;
@@ -321,6 +346,9 @@ void ReverbEngine::EarlyReflections::process (const AudioBuffer<float>& in, Audi
     jassert (in.getNumChannels() == (int) ring.size());
     out.clear();
 
+    // Denormal protection for tight DSP loops
+    juce::ScopedNoDenormals noDenormals;
+    
     const int C = in.getNumChannels();
     const int N = in.getNumSamples();
 
