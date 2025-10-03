@@ -2,8 +2,34 @@
 
 Last updated: 2025-10-03 • Branch: `feature`
 
+## Contents
+- [Purpose](#purpose)
+- [Completed (Phase 1)](#completed-phase-1)
+- [Structure (target)](#structure-target)
+- [Decisions & Guardrails](#decisions--guardrails)
+- [Next Steps](#next-steps)
+- [Milestones & Definition of Done](#milestones--definition-of-done)
+- [Migration Checklist](#migration-checklist)
+- [Legacy → New Mapping (Phase 1)](#legacy--new-mapping-phase-1)
+- [Risk & Mitigation](#risk--mitigation)
+- [Rollback Plan](#rollback-plan)
+- [Owners](#owners)
+- [Target Source/ layout (authoritative)](#target-source-layout-authoritative)
+- [What to move now (mapping)](#what-to-move-now-mapping)
+- [One-shot move script (preview, then execute)](#one-shot-move-script-preview-then-execute)
+- [Per-folder index (should exist after move)](#per-folder-index-should-exist-after-move)
+- [Minimal CMake scaffolds](#minimal-cmake-scaffolds)
+- [Builder Work Order #2 — Processor Migration + Latency Proof](#builder-work-order-2--processor-migration--latency-proof)
+- [Verification (host-safe)](#verification-host-safe)
+- [Phase 1 Locked — Minimal Stubs Installed (for Work Order #3)](#phase-1-locked--minimal-stubs-installed-for-work-order-3)
+- [WO-3 Update — Optional Mixing Stages in FieldChain (default-off)](#wo-3-update--optional-mixing-stages-in-fieldchain-default-off)
+
+---
+
 ## Purpose
 Protect the UI while restructuring `Source/` to separate UI, processor glue, DSP engines, and cross-cutting core (signal, runtime, telemetry). Provide a clean lane for future signal + latency work.
+
+---
 
 ## Completed (Phase 1)
 - Core scaffolding
@@ -22,6 +48,8 @@ Protect the UI while restructuring `Source/` to separate UI, processor glue, DSP
 - Build
   - Standalone, AU, VST3 built and installed successfully
 
+---
+
 ## Structure (target)
 - `app/`: entry/host glue only
 - `core/`: params, runtime gates, signal graph, telemetry, utils
@@ -32,12 +60,16 @@ Protect the UI while restructuring `Source/` to separate UI, processor glue, DSP
 - `presets/`: data + minimal loaders
 - `tests/`: offline + perf
 
+---
+
 ## Decisions & Guardrails
 - No DSP code inside `processor/` beyond orchestration and latency reporting.
 - `ui/` and `features/` are display/interaction only; they cannot touch audio buffers.
 - Single source of truth for latency: `core/runtime/LatencyManager` applied from `processor/` on the message thread.
 - Topology rebuilds are gated and occur in `prepareToPlay()` or via explicit crossfades; never mid-block without protection.
 - Forwarders remain only as a transition aid and will be removed when migrations finish.
+
+---
 
 ## Next Steps
 1. Migrate implementations from `shared/Core/PluginProcessor.cpp` and `PluginEditor.cpp` into `processor/` in small, verified steps; remove bridge includes afterwards
@@ -46,6 +78,8 @@ Protect the UI while restructuring `Source/` to separate UI, processor glue, DSP
 4. Add `tests/offline` (null-unity, latency-probe) and `tests/perf`
 5. Tighten CMake: real `field_core` target and explicit links; remove legacy include paths
 6. Clean warnings (override, deprecations)
+
+---
 
 ## Milestones & Definition of Done
 - Milestone A: Processor implementations migrated
