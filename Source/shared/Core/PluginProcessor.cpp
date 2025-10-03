@@ -2564,6 +2564,18 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.phaseMode = hp.phaseMode;
     
     // ================================================================
+    // 🎯 DECAY RATE PARAMETER MAPPING (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Map decay-rate control parameters from HostParams to FieldParams
+    // This enables frequency-dependent T60 shaping in reverb tails
+    // ================================================================
+    params.rvDecayLoMult   = (Sample) juce::jlimit(0.25, 4.0, hp.rvDecayLoMult);
+    params.rvDecayHiMult   = (Sample) juce::jlimit(0.25, 4.0, hp.rvDecayHiMult);
+    params.rvDecayMidDb    = (Sample) juce::jlimit(-12.0, 12.0, hp.rvDecayMidDb);
+    params.rvDecayMidFreqHz = (Sample) juce::jlimit(20.0, 20000.0, hp.rvDecayMidFreqHz);
+    params.rvDecayMidQ     = (Sample) juce::jlimit(0.3, 6.0, hp.rvDecayMidQ);
+    
+    // ================================================================
     // 🎯 REVERB ENGINE PARAMETER MAPPING (JANUARY 2025)
     // ================================================================
     // CRITICAL: Set reverb parameters once per block (not per tile)
@@ -2617,9 +2629,9 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
         
         // These come from your APVTS snapshot (double → float ok)
         const float tiltDb        = (float) hp.rvTiltDb;          // existing tone tilt
-        const float decayLoMult   = 1.0f;  // TODO: Add rvDecayLoMult to HostParams (0.25..4)
-        const float decayHiMult   = 1.0f;  // TODO: Add rvDecayHiMult to HostParams (0.25..4)
-        const float decayMidBell  = 0.0f;  // TODO: Add rvDecayMidDb to HostParams (±12 dB)
+        const float decayLoMult   = (float) juce::jlimit(0.25, 4.0, hp.rvDecayLoMult);  // Low T60× (0.25..4)
+        const float decayHiMult   = (float) juce::jlimit(0.25, 4.0, hp.rvDecayHiMult);  // High T60× (0.25..4)
+        const float decayMidBell  = (float) juce::jlimit(-12.0, 12.0, hp.rvDecayMidDb); // Mid bell (±12 dB)
         rvDecaySm.setTargets(tiltDb, decayLoMult, decayHiMult, decayMidBell);
         
         // (optional) expose a smoothing speed control
@@ -3912,15 +3924,16 @@ void FieldChain<Sample>::process (Block block)
         rvDecaySm.processBlock((int) block.getNumSamples());
         
         // Build the musical Decay-Rate Profile from *smoothed* controls
-        static DecayRateProfile drp;
+        // Use stack-local variable to avoid thread-safety issues with static storage
+        DecayRateProfile drp;
         buildDecayProfileFromTilt(
             drp,
             /*tiltDb   */ rvDecaySm.tiltDb(),
             /*loMult   */ rvDecaySm.loMult(),
             /*hiMult   */ rvDecaySm.hiMult(),
             /*midBellDb*/ rvDecaySm.midBellDb(),         // optional
-            /*midFreqHz*/ (float) params.rvDuckBandHz,   // or dedicated hp.rvDecayMidFreqHz
-            /*midQ     */ (float) params.rvDuckBandQ,    // or dedicated hp.rvDecayMidQ
+            /*midFreqHz*/ (float) juce::jlimit(20.0f, 20000.0f, (float)params.rvDecayMidFreqHz),  // dedicated mid freq
+            /*midQ     */ (float) juce::jlimit(0.3f, 6.0f, (float)params.rvDecayMidQ),            // dedicated mid Q
             /*tiltLoPivot*/ 250.0f,
             /*tiltHiPivot*/ 4000.0f);
         

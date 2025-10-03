@@ -62,6 +62,16 @@ StringArray ReverbParameters::duckDetectorChoices ()
     return { "Dry", "ER", "Tail", "Wet" };
 }
 
+StringArray ReverbParameters::decaySmoothingChoices ()
+{
+    return { "Fast", "Med", "Slow" };
+}
+
+StringArray ReverbParameters::decayModeChoices ()
+{
+    return { "Simple", "Advanced" };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Factory — APVTS layout
 // ─────────────────────────────────────────────────────────────────────────────
@@ -165,4 +175,27 @@ void ReverbParameters::addParameters (AudioProcessorValueTreeState::ParameterLay
                            { 0.3f, 4.f, 0.01f, 0.35f },                   1.0f  /* unitless */));
     layout.add (makeChoice (duckDetectorSrc, "Detector",
                             ReverbParameters::duckDetectorChoices (),     3)); // default Wet
+
+    // ================================================================
+    // 🎯 DECAY RATE CONTROL PARAMETERS (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Musical decay-rate control for reverb tails
+    // These parameters enable frequency-dependent T60 shaping
+    // ================================================================
+    layout.add (makeFloat (decayLoMult,     "Low Decay",
+                           { 0.25f, 4.0f, 0.01f, 0.35f },                   1.0f,  "×"));
+    layout.add (makeFloat (decayHiMult,     "High Decay",
+                           { 0.25f, 4.0f, 0.01f, 0.35f },                   1.0f,  "×"));
+    layout.add (makeFloat (decayMidDb,      "Mid Bell",
+                           { -12.f, 12.f, 0.1f },                           0.f,   "dB"));
+    layout.add (makeFloat (decayMidFreqHz,  "Mid Freq",
+                           { 20.f, 20000.f, 0.1f, 0.35f },                  1200.f,"Hz"));
+    layout.add (makeFloat (decayMidQ,      "Mid Q",
+                           { 0.3f, 6.0f, 0.01f, 0.35f },                    0.9f  /* unitless */));
+    layout.add (makeFloat (decayTiltDb,     "Decay Tilt",
+                           { -12.f, 12.f, 0.1f },                           0.f,   "dB"));
+    layout.add (makeChoice (decaySmoothing, "Smoothing",
+                            ReverbParameters::decaySmoothingChoices (),     1)); // default Med
+    layout.add (makeChoice (decayMode,      "Decay Mode",
+                            ReverbParameters::decayModeChoices (),         0)); // default Simple
 }

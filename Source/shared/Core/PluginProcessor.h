@@ -875,6 +875,18 @@ private:
         Sample rvDuckLookaheadMs{};
         bool   rvDuckLinkGlobal{};
         
+        // ================================================================
+        // 🎯 DECAY RATE CONTROL PARAMETERS (JANUARY 2025)
+        // ================================================================
+        // CRITICAL: Musical decay-rate control for reverb tails
+        // These parameters enable frequency-dependent T60 shaping
+        // ================================================================
+        Sample rvDecayLoMult{};      // Low frequency T60 multiplier (0.25..4.0)
+        Sample rvDecayHiMult{};      // High frequency T60 multiplier (0.25..4.0)
+        Sample rvDecayMidDb{};       // Mid frequency bell gain (±12 dB)
+        Sample rvDecayMidFreqHz{};  // Mid frequency bell center (Hz)
+        Sample rvDecayMidQ{};        // Mid frequency bell Q (0.7..1.4)
+        
         // Motion parameters
         bool   motionEnabled{};
         int    motionPannerSelect{};
@@ -982,6 +994,18 @@ struct HostParams
     double rvDuckRelMs{};
     double rvDuckBandHz{};
     double rvDuckBandQ{};
+    
+    // ================================================================
+    // 🎯 DECAY RATE CONTROL PARAMETERS (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Musical decay-rate control for reverb tails
+    // These parameters enable frequency-dependent T60 shaping
+    // ================================================================
+    double rvDecayLoMult{};      // Low frequency T60 multiplier (0.25..4.0)
+    double rvDecayHiMult{};      // High frequency T60 multiplier (0.25..4.0)
+    double rvDecayMidDb{};       // Mid frequency bell gain (±12 dB)
+    double rvDecayMidFreqHz{};  // Mid frequency bell center (Hz)
+    double rvDecayMidQ{};        // Mid frequency bell Q (0.7..1.4)
         
     // Delay parameters
     bool   delayEnabled{};

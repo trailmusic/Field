@@ -24,6 +24,8 @@ struct ReverbParameters
     static juce::StringArray dreqApplyChoices ();
     static juce::StringArray duckModeChoices ();
     static juce::StringArray duckDetectorChoices ();
+    static juce::StringArray decaySmoothingChoices ();
+    static juce::StringArray decayModeChoices ();
 };
 
 // Legacy helper — vector-based param list (independent implementation for backward compatibility)
@@ -106,4 +108,19 @@ inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioPa
     out.push_back (F (duckBandHz, "Focus Hz", NormalisableRange<float>(50.f, 8000.f, 0.1f, 0.35f), 2000.f));
     out.push_back (F (duckBandQ, "Focus Q", NormalisableRange<float>(0.3f, 4.f, 0.01f, 0.35f), 1.0f));
     out.push_back (C (duckDetectorSrc, "Detector", ReverbParameters::duckDetectorChoices(), 3)); // Wet Sum
+
+    // ================================================================
+    // 🎯 DECAY RATE CONTROL PARAMETERS (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Musical decay-rate control for reverb tails
+    // These parameters enable frequency-dependent T60 shaping
+    // ================================================================
+    out.push_back (F (decayLoMult, "Low Decay", NormalisableRange<float>(0.25f, 4.0f, 0.01f, 0.35f), 1.0f));
+    out.push_back (F (decayHiMult, "High Decay", NormalisableRange<float>(0.25f, 4.0f, 0.01f, 0.35f), 1.0f));
+    out.push_back (F (decayMidDb, "Mid Bell", NormalisableRange<float>(-12.f, 12.f, 0.1f), 0.f));
+    out.push_back (F (decayMidFreqHz, "Mid Freq", NormalisableRange<float>(20.f, 20000.f, 0.1f, 0.35f), 1200.f));
+    out.push_back (F (decayMidQ, "Mid Q", NormalisableRange<float>(0.3f, 6.0f, 0.01f, 0.35f), 0.9f));
+    out.push_back (F (decayTiltDb, "Decay Tilt", NormalisableRange<float>(-12.f, 12.f, 0.1f), 0.f));
+    out.push_back (C (decaySmoothing, "Smoothing", ReverbParameters::decaySmoothingChoices(), 1)); // Med
+    out.push_back (C (decayMode, "Decay Mode", ReverbParameters::decayModeChoices(), 0)); // Simple
 }

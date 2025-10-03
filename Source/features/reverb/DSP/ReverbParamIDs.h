@@ -72,6 +72,21 @@ namespace ReverbParamIDs
     inline constexpr const char* duckBandQ       = "duckBandQ";      // 0.3..4
     inline constexpr const char* duckDetectorSrc = "duckDetectorSrc";// 0=Dry,1=ER,2=Tail,3=Wet
 
+    // ================================================================
+    // 🎯 DECAY RATE CONTROL PARAMETERS (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Musical decay-rate control for reverb tails
+    // These parameters enable frequency-dependent T60 shaping
+    // ================================================================
+    inline constexpr const char* decayLoMult     = "decayLoMult";     // 0.25..4.0 (Low T60×)
+    inline constexpr const char* decayHiMult     = "decayHiMult";     // 0.25..4.0 (High T60×)
+    inline constexpr const char* decayMidDb      = "decayMidDb";      // -12..+12 dB (Mid bell gain)
+    inline constexpr const char* decayMidFreqHz  = "decayMidFreqHz";  // 20..20000 Hz (Mid bell freq)
+    inline constexpr const char* decayMidQ       = "decayMidQ";       // 0.3..6.0 (Mid bell Q)
+    inline constexpr const char* decayTiltDb     = "decayTiltDb";     // -12..+12 dB (Decay tilt bias)
+    inline constexpr const char* decaySmoothing  = "decaySmoothing";  // 0=Fast,1=Med,2=Slow (Smoothing speed)
+    inline constexpr const char* decayMode       = "decayMode";       // 0=Simple,1=Advanced (UI mode)
+
     // ─────────────────────────────────────────────────────────────────────────
     // Choice index helpers (keep in sync with ReverbParameters choice arrays)
     // ─────────────────────────────────────────────────────────────────────────
@@ -96,5 +111,16 @@ namespace ReverbParamIDs
         inline constexpr int ER   = 1;
         inline constexpr int Tail = 2;
         inline constexpr int Wet  = 3; // default in layout
+    }
+
+    namespace DecaySmoothingIdx {
+        inline constexpr int Fast = 0;
+        inline constexpr int Med  = 1; // default
+        inline constexpr int Slow = 2;
+    }
+
+    namespace DecayModeIdx {
+        inline constexpr int Simple   = 0; // default
+        inline constexpr int Advanced = 1;
     }
 }
