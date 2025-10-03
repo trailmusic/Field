@@ -128,7 +128,7 @@ private:
 
     // Constants
     static constexpr float COLLAPSED_HEIGHT   = 40.0f;
-    static constexpr float EXPANDED_HEIGHT    = 200.0f;
+    static constexpr float EXPANDED_HEIGHT    = 100.0f;  // Reduced from 200.0f to 100.0f (half height)
     static constexpr float PILL_CORNER_RADIUS = 20.0f;
     static constexpr float GR_METER_HEIGHT    = 22.0f;
 };
