@@ -101,6 +101,12 @@ ReverbGraphics::ReverbGraphics (MyPluginAudioProcessor& p,
     duckingFloat->setVisible (true);
     duckingFloat->setActive (false);
     duckingFloat->setGreyedOut (true);
+    
+    // Decay-rate module
+    decayRateFloat = std::make_unique<DecayRateFloat> (state);
+    addAndMakeVisible (*decayRateFloat);
+    decayRateFloat->setVisible (true);
+    decayRateFloat->setActive (true);
 
     // Band indicators (visible UI)
     addAndMakeVisible (toneEqIndicator);
@@ -296,7 +302,7 @@ void ReverbGraphics::resized ()
         decayRateEQ->setBounds         (decayArea);
     }
 
-    // Right column: Ducking label + ducking module (50%) + DecayRateFloat (50%)
+    // Right column: Ducking label + ducking module (50%) + Decay label + DecayRateFloat (50%)
     {
         auto duckLabel = rightArea.removeFromTop (kLabelHeight);
         duckingLabel.setBounds (duckLabel);
@@ -306,9 +312,16 @@ void ReverbGraphics::resized ()
             // Give DuckingFloat 50% of the remaining right column height
             auto duckingArea = rightArea.removeFromTop (rightArea.getHeight() / 2);
             duckingFloat->setBounds (duckingArea);
-            
-            // Leave remaining 50% for future DecayRateFloat
-            // (rightArea now contains the bottom 50% for DecayRateFloat)
+        }
+        
+        // Decay label and DecayRateFloat in remaining 50%
+        auto decayLabelArea = rightArea.removeFromTop (kLabelHeight);
+        decayLabel.setBounds (decayLabelArea);
+        
+        if (decayRateFloat)
+        {
+            // DecayRateFloat gets the remaining space
+            decayRateFloat->setBounds (rightArea);
         }
     }
 }
@@ -387,6 +400,7 @@ void ReverbGraphics::setupEQLabels ()
     addAndMakeVisible (toneEqLabel);
     addAndMakeVisible (decayRateEqLabel);
     addAndMakeVisible (duckingLabel);
+    addAndMakeVisible (decayLabel);
     addAndMakeVisible (visualizationLabel);
 
     auto setLabel = [] (juce::Label& L, const juce::String& text)
@@ -400,6 +414,7 @@ void ReverbGraphics::setupEQLabels ()
     setLabel (toneEqLabel,          "TONE EQ");
     setLabel (decayRateEqLabel,     "DECAY-RATE EQ");
     setLabel (duckingLabel,         "DUCKING");
+    setLabel (decayLabel,           "DECAY");
     setLabel (visualizationLabel,   "VISUALIZATION");
 }
 
@@ -411,6 +426,7 @@ void ReverbGraphics::updateLabelColors ()
         toneEqLabel.setColour        (juce::Label::textColourId, c);
         decayRateEqLabel.setColour   (juce::Label::textColourId, c);
         duckingLabel.setColour       (juce::Label::textColourId, c);
+        decayLabel.setColour         (juce::Label::textColourId, c);
         visualizationLabel.setColour (juce::Label::textColourId, c);
     }
 }

@@ -14,6 +14,7 @@
 
 #include <JuceHeader.h>
 #include "DuckingFloat.h"
+#include "DecayRateFloat.h"
 #include "../DSP/ReverbEQ.h"
 #include "../DSP/DecayRateEQ.h"
 #include "../BandIdFinder.h"
@@ -71,6 +72,7 @@ public:
     // Accessors
     // ─────────────────────────────────────────────────────────────────────────
     [[nodiscard]] DuckingFloat*  getDuckingFloat ()  noexcept { return duckingFloat.get (); }
+    [[nodiscard]] DecayRateFloat* getDecayRateFloat () noexcept { return decayRateFloat.get (); }
     [[nodiscard]] ReverbToneEQ*  getReverbEQ   ()    noexcept { return reverbEQ.get (); }
     [[nodiscard]] DecayRateEQ*   getDecayRateEQ ()   noexcept { return decayRateEQ.get (); }
 
@@ -160,7 +162,7 @@ private:
     std::unique_ptr<DecayRateEQ>   decayRateEQ;
 
     // Labels
-    juce::Label toneEqLabel, decayRateEqLabel, duckingLabel, visualizationLabel;
+    juce::Label toneEqLabel, decayRateEqLabel, duckingLabel, decayLabel, visualizationLabel;
 
     // Band indicators + counters
     BandIndicator                         toneEqIndicator { 4 };
@@ -170,6 +172,9 @@ private:
 
     // Ducking module
     std::unique_ptr<DuckingFloat>         duckingFloat;
+    
+    // Decay-rate module
+    std::unique_ptr<DecayRateFloat>       decayRateFloat;
 
     // Animation
     float                     animationTime    = 0.0f;

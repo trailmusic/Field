@@ -96,6 +96,8 @@ set(SRC
     features/reverb/UI/ReverbScopeComponent.cpp
     features/reverb/UI/DuckingFloat.h
     features/reverb/UI/DuckingFloat.cpp
+    features/reverb/UI/DecayRateFloat.h
+    features/reverb/UI/DecayRateFloat.cpp
     
     # Reverb DSP
     features/reverb/DSP/ReverbParamIDs.h
