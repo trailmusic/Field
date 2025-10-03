@@ -15,3 +15,6 @@ target_link_libraries(test_dualchain_midblock PRIVATE field_modules field_core j
 
 add_executable(test_statesanity test_statesanity.cpp)
 target_link_libraries(test_statesanity PRIVATE field_core juce_dsp)
+
+add_executable(test_latency_ci test_latency_ci.cpp)
+target_link_libraries(test_latency_ci PRIVATE field_modules field_core juce_dsp)

@@ -29,6 +29,7 @@ Last updated: 2025-10-03 • Branch: `feature`
 - [WO-7 — Click-Free Live Chain Swap (Same-Latency Only)](#wo-7--click-free-live-chain-swap-same-latency-only)
 - [WO-8 — Mid-Block Swap + Warmup (same-latency only)](#wo-8--mid-block-swap--warmup-same-latency-only)
 - [WO-9 — StateSanity + PDC Guard + First-Bad-Sample Telemetry](#wo-9--statesanity--pdc-guard--first-bad-sample-telemetry)
+- [WO-10 — Host Cache Sanity + LatencyProbe CI Harness](#wo-10--host-cache-sanity--latencyprobe-ci-harness)
 
 ---
 
@@ -678,3 +679,19 @@ Index additions:
 - `core/telemetry/StateSanity.h`
 - `core/runtime/HostPDCGuard.h`
 - `tests/offline/test_statesanity.cpp`
+
+---
+
+## WO-10 — Host Cache Sanity + LatencyProbe CI Harness
+- Platform note: `app/Platform/AbletonNotes.md` capturing PDC/tail host behavior
+- TailGuard: `core/runtime/TailGuard.h` caches applied tail; applies only at prepare; warns when latency>0 but tail==0
+- Latency/Tail single-source:
+  - `processor/LatencyTailCompute.h` for prepare-time compute
+  - `HostPDCGuard` + `TailGuard` apply on message thread only
+- CI harness: `tests/offline/test_latency_ci.cpp` probes multiple SR/block sizes and asserts `measured == reported`
+
+Index additions:
+- `app/Platform/AbletonNotes.md`
+- `core/runtime/TailGuard.h`
+- `processor/LatencyTailCompute.h`
+- `tests/offline/test_latency_ci.cpp`
