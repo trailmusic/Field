@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <algorithm>
-#include "ReverbEngine.h"
+#include "../Core/ReverbEngine.h"
 
 struct ModelDefaults { float sizePct, decaySec, erTimeMs, erDensityPct, diffusionPct, modDepthCents, modRateHz, dreqLoMult, dreqHiMult; };
 inline ModelDefaults modelFor(const std::string& name) {

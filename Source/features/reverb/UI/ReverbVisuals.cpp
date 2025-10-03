@@ -18,7 +18,7 @@
 #include "ReverbVisuals.h"
 #include "shared/Core/FieldLookAndFeel.h"
 #include "shared/Core/PluginProcessor.h"
-#include "ReverbParamIDs.h"
+#include "../DSP/ReverbParamIDs.h"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // File-local constants

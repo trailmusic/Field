@@ -1,6 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
-#include "ReverbEngine.h"
+#include "../Core/ReverbEngine.h"
 #include "ModelMacros.h"
 
 // ===================== ReverbPresetManager ===================================

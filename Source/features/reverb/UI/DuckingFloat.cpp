@@ -1,5 +1,5 @@
 #include "DuckingFloat.h"
-#include "ReverbParamIDs.h"
+#include "../DSP/ReverbParamIDs.h"
 #include "shared/Core/FieldLookAndFeel.h"
 #include "shared/ui/Utilities/ComponentGreyout.h"
 

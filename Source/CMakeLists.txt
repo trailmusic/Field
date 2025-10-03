@@ -78,42 +78,53 @@ set(SRC
     shared/ui/Utilities/ComponentGreyout.cpp
     shared/Core/IconSystem.h
     shared/Core/IconSystem.cpp
-    features/reverb/ReverbParamIDs.h
-    features/reverb/ReverbParameters.h
-    features/reverb/ReverbParameters.cpp
-    features/reverb/ReverbEngine.h
-    features/reverb/ReverbEngine.cpp
-    features/reverb/ReverbGraphics.h
-    features/reverb/ReverbGraphics.cpp
-    features/reverb/ReverbVisuals.h
-    features/reverb/ReverbVisuals.cpp
-    features/reverb/DuckingFloat.h
-    features/reverb/DuckingFloat.cpp
-    features/reverb/ReverbEQParamIDs.h
-    features/reverb/ReverbEQ.h
-    features/reverb/ReverbEQ.cpp
-    features/reverb/DecayRateEQ.h
-    features/reverb/DecayRateEQ.cpp
-    features/reverb/ReverbControlsPane.h
-    features/reverb/ReverbControlsPane.cpp
-    features/reverb/ReverbTab.h
-    features/reverb/FieldReverbConfig.h
-    features/reverb/ReverbTypes.h
-    features/reverb/DecayLossDesigner.h
-    features/reverb/ReverbFDN.h
-    features/reverb/ReverbProcessorGlue.h
-    features/reverb/ReverbProcessorGlue.cpp
-    features/reverb/ReverbIRExportTest.cpp
-    features/reverb/SimdBiquad.h
-    features/reverb/ModelMacros.h
-    features/reverb/ReverbPresetManager.h
-    features/reverb/ReverbPresetManager.cpp
-    features/reverb/ReverbParamMap.h
-    features/reverb/ReverbParamMap.cpp
-    features/reverb/ReverbPresetLoader.h
-    features/reverb/ReverbPresetLoader.cpp
-    features/reverb/ReverbPresetIntegration.h
-    features/reverb/ReverbPresetIntegration.cpp
+    # Reverb Core
+    features/reverb/Core/ReverbEngine.h
+    features/reverb/Core/ReverbEngine.cpp
+    features/reverb/Core/ReverbTypes.h
+    features/reverb/Core/FieldReverbConfig.h
+    
+    # Reverb UI
+    features/reverb/UI/ReverbTab.h
+    features/reverb/UI/ReverbGraphics.h
+    features/reverb/UI/ReverbGraphics.cpp
+    features/reverb/UI/ReverbVisuals.h
+    features/reverb/UI/ReverbVisuals.cpp
+    features/reverb/UI/ReverbControlsPane.h
+    features/reverb/UI/ReverbControlsPane.cpp
+    features/reverb/UI/ReverbScopeComponent.h
+    features/reverb/UI/ReverbScopeComponent.cpp
+    features/reverb/UI/DuckingFloat.h
+    features/reverb/UI/DuckingFloat.cpp
+    
+    # Reverb DSP
+    features/reverb/DSP/ReverbParamIDs.h
+    features/reverb/DSP/ReverbParameters.h
+    features/reverb/DSP/ReverbParameters.cpp
+    features/reverb/DSP/ReverbEQ.h
+    features/reverb/DSP/ReverbEQ.cpp
+    features/reverb/DSP/ReverbEQParamIDs.h
+    features/reverb/DSP/DecayRateEQ.h
+    features/reverb/DSP/DecayRateEQ.cpp
+    features/reverb/DSP/DecayLossDesigner.h
+    features/reverb/DSP/ReverbFDN.h
+    features/reverb/DSP/ReverbProcessorGlue.h
+    features/reverb/DSP/ReverbProcessorGlue.cpp
+    features/reverb/DSP/SimdBiquad.h
+    
+    # Reverb Presets
+    features/reverb/Presets/ReverbPresetManager.h
+    features/reverb/Presets/ReverbPresetManager.cpp
+    features/reverb/Presets/ReverbParamMap.h
+    features/reverb/Presets/ReverbParamMap.cpp
+    features/reverb/Presets/ReverbPresetLoader.h
+    features/reverb/Presets/ReverbPresetLoader.cpp
+    features/reverb/Presets/ReverbPresetIntegration.h
+    features/reverb/Presets/ReverbPresetIntegration.cpp
+    features/reverb/Presets/ModelMacros.h
+    
+    # Reverb Testing
+    features/reverb/Testing/ReverbIRExportTest.cpp
     shared/ui/Engines/SpectrumAnalyzer.h
     shared/ui/Engines/SpectrumAnalyzer.cpp
     features/delay/DelayUiBridge.h

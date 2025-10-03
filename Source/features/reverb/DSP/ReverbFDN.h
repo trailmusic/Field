@@ -28,7 +28,7 @@
 #include <JuceHeader.h>
 #include <atomic>
 #include <memory>
-#include "FieldReverbConfig.h"
+#include "../Core/FieldReverbConfig.h"
 #include "DecayLossDesigner.h"
 
 namespace fieldverb

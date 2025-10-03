@@ -4,7 +4,7 @@
 #include "shared/ui/Components/KnobCell.h"
 #include "shared/ui/Controls/SimpleSwitchCell.h"
 #include "shared/ui/Design/Layout.h"
-#include "ReverbParamIDs.h"
+#include "../DSP/ReverbParamIDs.h"
 #include "shared/Core/FieldLookAndFeel.h"
 #include "shared/Core/FieldMetallic.h"
 

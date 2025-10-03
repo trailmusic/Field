@@ -1,8 +1,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "features/dynEq/FilterFactory.h"
-#include "features/reverb/ReverbParameters.h"
-#include "features/reverb/ReverbEQParamIDs.h"
+#include "features/reverb/DSP/ReverbParameters.h"
+#include "features/reverb/DSP/ReverbEQParamIDs.h"
 #include "features/dynEq/DynamicEqParamIDs.h"
 
 // ================================================================

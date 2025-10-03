@@ -17,9 +17,9 @@
 #include <JuceHeader.h>
 #include <chrono>
 #include <vector>
-#include "ReverbEngine.h"
-#include "ReverbProcessorGlue.h"
-#include "FieldReverbConfig.h"
+#include "../Core/ReverbEngine.h"
+#include "../DSP/ReverbProcessorGlue.h"
+#include "../Core/FieldReverbConfig.h"
 
 class ReverbIRExportTest : public juce::UnitTest
 {

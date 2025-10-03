@@ -15,7 +15,7 @@
 ====================================================================================================
 */
 #include <JuceHeader.h>
-#include "FieldReverbConfig.h"
+#include "Core/FieldReverbConfig.h"
 
 namespace simdverb
 {

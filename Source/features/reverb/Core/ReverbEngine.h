@@ -38,7 +38,7 @@ Author's notes
 #include "ReverbTypes.h"
 
 #if FIELD_REVERB_PHASE2
-#include "ReverbFDN.h"
+#include "../DSP/ReverbFDN.h"
 #endif
 
 // ===================== Shared biquad (IIR) ==================================

@@ -1,7 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
-#include "../../shared/Presets/PresetStore.h"
-#include "../../shared/Presets/PresetManager.h"
+#include "../../../shared/Presets/PresetStore.h"
+#include "../../../shared/Presets/PresetManager.h"
 #include "ReverbPresetLoader.h"
 #include "ReverbParamMap.h"
 

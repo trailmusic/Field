@@ -19,8 +19,8 @@
 */
 
 #include <JuceHeader.h>
-#include "ReverbEngine.h"
-#include "FieldReverbConfig.h"
+#include "../Core/ReverbEngine.h"
+#include "../Core/FieldReverbConfig.h"
 
 class ReverbProcessorGlue
 {

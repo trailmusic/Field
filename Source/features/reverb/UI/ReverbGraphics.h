@@ -14,10 +14,10 @@
 
 #include <JuceHeader.h>
 #include "DuckingFloat.h"
-#include "ReverbEQ.h"
-#include "DecayRateEQ.h"
-#include "BandIdFinder.h"
-#include "BandCounter.h"
+#include "../DSP/ReverbEQ.h"
+#include "../DSP/DecayRateEQ.h"
+#include "../BandIdFinder.h"
+#include "../BandCounter.h"
 #include "ReverbVisuals.h"
 #include "shared/ui/Utilities/SafetySentinels.h"
 

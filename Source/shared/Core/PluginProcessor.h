@@ -7,8 +7,8 @@
 #include "shared/dsp/PhaseAlignmentEngine.h"
 #include "shared/dsp/MinPhaseBankIntegration.h"
 #include "features/motion/MotionEngine.h"
-#include "features/reverb/ReverbParamIDs.h"
-#include "features/reverb/ReverbEngine.h"
+#include "features/reverb/DSP/ReverbParamIDs.h"
+#include "features/reverb/Core/ReverbEngine.h"
 
 // Forward declaration for Biquad struct
 struct Biquad;

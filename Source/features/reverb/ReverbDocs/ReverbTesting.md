@@ -310,7 +310,7 @@ ER < 0.2% • FDN(8) < 1.2% • Duck < 0.1% • Tone EQ < 0.2% (approx per core)
 ```cpp
 // File: tools/FieldIRExport.cpp
 #include <JuceHeader.h>
-#include "features/reverb/ReverbEngine.h" // include your actual path
+#include "features/reverb/Core/ReverbEngine.h" // Updated path after reorganization
 
 using namespace juce;
 
@@ -387,6 +387,14 @@ int main (int, char**)
 add_executable(FieldIRExport tools/FieldIRExport.cpp)
 target_link_libraries(FieldIRExport PRIVATE juce::juce_recommended_config_flags juce::juce_recommended_lto_flags juce::juce_core juce::juce_audio_basics juce::juce_audio_formats)
 target_link_libraries(FieldIRExport PRIVATE FieldPluginLib) # your engine lib target
+
+# Include the reorganized reverb source files
+target_sources(FieldIRExport PRIVATE
+    Source/features/reverb/Core/ReverbEngine.cpp
+    Source/features/reverb/Core/ReverbTypes.h
+    Source/features/reverb/Core/FieldReverbConfig.h
+    # Add other required reverb files as needed
+)
 ```
 
 Run → check `Field_Rev_IR.wav` on Desktop in RX/MATLAB.
