@@ -192,8 +192,11 @@ void DecayRateFloat::updateLayout()
 
     if (expanded)
     {
-        // Header area with labels (similar to DuckingFloat's meter strip)
+        // Header area with labels (36px - matching DuckingFloat's meter strip)
         auto headerArea = bounds.removeFromTop(36.0f);
+        
+        // Control row (28px - matching DuckingFloat's selectors row)
+        auto controlRow = bounds.removeFromTop(28.0f).reduced(2.0f, 2.0f);
         
         // Two columns of 4 knobs each
         auto knobsArea = bounds.reduced(1.0f);
@@ -247,9 +250,13 @@ void DecayRateFloat::paintExpanded(juce::Graphics& g)
     g.setColour(th.accent.withAlpha(0.9f)); g.drawRoundedRectangle(bounds.reduced(1.0f), cr - 1.0f, 1.5f);
     g.setColour(th.text.withAlpha(0.3f)); g.drawRoundedRectangle(bounds.reduced(0.5f), cr - 0.5f, 0.5f);
 
-    // Header area with labels (similar to DuckingFloat's GR meter)
+    // Header area with labels (36px - matching DuckingFloat's meter strip)
     auto headerArea = bounds.removeFromTop(36.0f);
     paintHeaderArea(g, headerArea);
+    
+    // Control row (28px - matching DuckingFloat's selectors row)
+    auto controlRow = bounds.removeFromTop(28.0f);
+    paintControlRow(g, controlRow);
 }
 
 void DecayRateFloat::paintHeaderArea(juce::Graphics& g, juce::Rectangle<float> bounds)
@@ -273,6 +280,36 @@ void DecayRateFloat::paintHeaderArea(juce::Graphics& g, juce::Rectangle<float> b
     auto accentLine = juce::Rectangle<float>(headerArea.getX() + 8, headerArea.getBottom() - 3, headerArea.getWidth() - 16, 1.0f);
     g.setColour(th.accent.withAlpha(0.4f));
     g.fillRoundedRectangle(accentLine, 0.5f);
+}
+
+void DecayRateFloat::paintControlRow(juce::Graphics& g, juce::Rectangle<float> bounds)
+{
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
+
+    const float cr = 3.0f;
+    auto controlArea = bounds.reduced(6.0f, 2.0f);
+
+    // Border (similar to DuckingFloat selectors)
+    g.setColour(th.accent.withAlpha(0.25f));
+    g.drawRoundedRectangle(controlArea, cr, 1.0f);
+
+    // Control labels (Frequency vs Time controls)
+    g.setColour(th.text.withAlpha(0.6f));
+    g.setFont(juce::Font(9.0f, juce::Font::bold));
+    
+    // Left side: Frequency controls
+    auto leftArea = juce::Rectangle<float>(controlArea.getX(), controlArea.getY(), controlArea.getWidth() * 0.5f, controlArea.getHeight());
+    g.drawText("FREQ", leftArea, juce::Justification::centred);
+    
+    // Right side: Time controls  
+    auto rightArea = juce::Rectangle<float>(controlArea.getX() + controlArea.getWidth() * 0.5f, controlArea.getY(), controlArea.getWidth() * 0.5f, controlArea.getHeight());
+    g.drawText("TIME", rightArea, juce::Justification::centred);
+
+    // Subtle divider line
+    auto dividerLine = juce::Rectangle<float>(controlArea.getX() + controlArea.getWidth() * 0.5f - 0.5f, controlArea.getY() + 4, 1.0f, controlArea.getHeight() - 8);
+    g.setColour(th.accent.withAlpha(0.3f));
+    g.fillRoundedRectangle(dividerLine, 0.5f);
 }
 
 void DecayRateFloat::paintCollapsed(juce::Graphics& g)
