@@ -899,6 +899,17 @@ private:
         int rvDecayProfileMode{};     // Profile generation mode (0..7)
         int rvDecayProfileCoupling{}; // External coupling mode (0..4)
         
+        // ================================================================
+        // 🎯 SIDECHAIN LEARN SYSTEM (JANUARY 2025)
+        // ================================================================
+        // CRITICAL: Auto-learn decay profiles from external signals
+        // These parameters enable intelligent decay curve learning
+        // ================================================================
+        bool rvDecayLearn{};          // Learn button (momentary)
+        bool rvDecayLearnReset{};     // Reset learned profile
+        Sample rvDecayLearnStrength{}; // Blend strength (0..1)
+        Sample rvDecayLearnWindow{};   // Capture window (2..8s)
+        
         // Motion parameters
         bool   motionEnabled{};
         int    motionPannerSelect{};
@@ -1030,6 +1041,17 @@ struct HostParams
     // ================================================================
     int rvDecayProfileMode{};     // Profile generation mode (0..7)
     int rvDecayProfileCoupling{}; // External coupling mode (0..4)
+    
+    // ================================================================
+    // 🎯 SIDECHAIN LEARN SYSTEM (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Auto-learn decay profiles from external signals
+    // These parameters enable intelligent decay curve learning
+    // ================================================================
+    bool rvDecayLearn{};          // Learn button (momentary)
+    bool rvDecayLearnReset{};     // Reset learned profile
+    double rvDecayLearnStrength{}; // Blend strength (0..1)
+    double rvDecayLearnWindow{};   // Capture window (2..8s)
         
     // Delay parameters
     bool   delayEnabled{};

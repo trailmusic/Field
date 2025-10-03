@@ -455,6 +455,17 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.rvDecayProfileMode     = (int) std::round(apvts.getRawParameterValue (ReverbParamIDs::decayProfileMode)->load());
     p.rvDecayProfileCoupling = (int) std::round(apvts.getRawParameterValue (ReverbParamIDs::decayProfileCoupling)->load());
     
+    // ================================================================
+    // 🎯 SIDECHAIN LEARN SYSTEM (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Auto-learn decay profiles from external signals
+    // These parameters enable intelligent decay curve learning
+    // ================================================================
+    p.rvDecayLearn          = apvts.getRawParameterValue (ReverbParamIDs::decayLearn)->load() > 0.5f;
+    p.rvDecayLearnReset     = apvts.getRawParameterValue (ReverbParamIDs::decayLearnReset)->load() > 0.5f;
+    p.rvDecayLearnStrength  = apvts.getRawParameterValue (ReverbParamIDs::decayLearnStrength)->load();
+    p.rvDecayLearnWindow    = apvts.getRawParameterValue (ReverbParamIDs::decayLearnWindow)->load();
+    
     // Dynamic EQ parameters
     p.dynEqEnabled    = apvts.getRawParameterValue (dynEq::IDs::enabled)->load() > 0.5f;
     
@@ -2610,6 +2621,17 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     // ================================================================
     params.rvDecayProfileMode     = hp.rvDecayProfileMode;
     params.rvDecayProfileCoupling = hp.rvDecayProfileCoupling;
+    
+    // ================================================================
+    // 🎯 SIDECHAIN LEARN SYSTEM PARAMETER MAPPING (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Map sidechain learn parameters
+    // This enables intelligent decay curve learning
+    // ================================================================
+    params.rvDecayLearn          = hp.rvDecayLearn;
+    params.rvDecayLearnReset     = hp.rvDecayLearnReset;
+    params.rvDecayLearnStrength  = (Sample) juce::jlimit(0.0, 1.0, hp.rvDecayLearnStrength);
+    params.rvDecayLearnWindow    = (Sample) juce::jlimit(2.0, 8.0, hp.rvDecayLearnWindow);
     
     // ================================================================
     // 🎯 REVERB ENGINE PARAMETER MAPPING (JANUARY 2025)

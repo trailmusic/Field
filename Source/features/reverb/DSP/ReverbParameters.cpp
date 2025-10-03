@@ -81,7 +81,12 @@ StringArray ReverbParameters::decayProfileModeChoices ()
 StringArray ReverbParameters::decayProfileCouplingChoices ()
 {
     return { "Independent", "Follow Tone Tilt", "Follow HP/LP", 
-             "Follow Width Designer", "Sidechain Learn (Future)" };
+             "Follow Width Designer", "Sidechain Learn" };
+}
+
+StringArray ReverbParameters::decayLearnChoices ()
+{
+    return { "Idle", "Capturing", "Solving", "Ready", "Error" };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -221,4 +226,17 @@ void ReverbParameters::addParameters (AudioProcessorValueTreeState::ParameterLay
                             ReverbParameters::decayProfileModeChoices (),     0)); // default Manual 3-Band
     layout.add (makeChoice (decayProfileCoupling, "Decay Coupling",
                             ReverbParameters::decayProfileCouplingChoices (),  0)); // default Independent
+    
+    // ================================================================
+    // 🎯 SIDECHAIN LEARN SYSTEM (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Auto-learn decay profiles from external signals
+    // These parameters enable intelligent decay curve learning
+    // ================================================================
+    layout.add (makeBool  (decayLearn,       "Learn (One-Shot)", false));
+    layout.add (makeBool  (decayLearnReset,  "Reset Learned",    false));
+    layout.add (makeFloat (decayLearnStrength, "Learn Strength",
+                           { 0.0f, 1.0f, 0.01f },                0.5f,  "%"));
+    layout.add (makeFloat (decayLearnWindow, "Learn Window (s)",
+                           { 2.0f, 8.0f, 0.1f },                 4.0f,  "s"));
 }

@@ -28,6 +28,7 @@ struct ReverbParameters
     static juce::StringArray decayModeChoices ();
     static juce::StringArray decayProfileModeChoices ();
     static juce::StringArray decayProfileCouplingChoices ();
+    static juce::StringArray decayLearnChoices ();
 };
 
 // Legacy helper — vector-based param list (independent implementation for backward compatibility)
@@ -134,4 +135,15 @@ inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioPa
     // ================================================================
     out.push_back (C (decayProfileMode, "Decay Profile", ReverbParameters::decayProfileModeChoices(), 0)); // Manual 3-Band
     out.push_back (C (decayProfileCoupling, "Decay Coupling", ReverbParameters::decayProfileCouplingChoices(), 0)); // Independent
+    
+    // ================================================================
+    // 🎯 SIDECHAIN LEARN SYSTEM (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Auto-learn decay profiles from external signals
+    // These parameters enable intelligent decay curve learning
+    // ================================================================
+    out.push_back (B (decayLearn, "Learn (One-Shot)", false));
+    out.push_back (B (decayLearnReset, "Reset Learned", false));
+    out.push_back (F (decayLearnStrength, "Learn Strength", NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.5f));
+    out.push_back (F (decayLearnWindow, "Learn Window (s)", NormalisableRange<float>(2.0f, 8.0f, 0.1f), 4.0f));
 }

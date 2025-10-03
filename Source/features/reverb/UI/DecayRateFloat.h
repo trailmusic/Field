@@ -77,6 +77,11 @@ private:
     
     // Decay profile selectors (like DuckingFloat's Mode/Detector)
     juce::ComboBox profileModeCombo, profileCouplingCombo;
+    
+    // Sidechain Learn controls
+    juce::TextButton learnButton, resetButton;
+    juce::Slider strengthSlider, windowSlider;
+    juce::Label strengthLabel, windowLabel, statusLabel;
 
     // Labels (kept for completeness; hidden in this design)
     juce::Label loMultLabel, hiMultLabel, midDbLabel, midFreqLabel;
@@ -103,6 +108,12 @@ private:
     // Decay profile selector attachments
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> profileModeAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> profileCouplingAttachment;
+    
+    // Sidechain Learn attachments
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> learnAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> resetAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> strengthAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> windowAttachment;
 
     // Backing APVTS (non-owning)
     juce::AudioProcessorValueTreeState& apvtsRef;

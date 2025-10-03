@@ -95,6 +95,17 @@ namespace ReverbParamIDs
     // ================================================================
     inline constexpr const char* decayProfileMode     = "decay_profile_mode";     // 0..7 (Profile generation mode)
     inline constexpr const char* decayProfileCoupling = "decay_profile_coupling"; // 0..4 (External coupling mode)
+    
+    // ================================================================
+    // 🎯 SIDECHAIN LEARN SYSTEM (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Auto-learn decay profiles from external signals
+    // These parameters enable intelligent decay curve learning
+    // ================================================================
+    inline constexpr const char* decayLearn          = "decay_learn";           // Learn button (momentary)
+    inline constexpr const char* decayLearnReset     = "decay_learn_reset";     // Reset learned profile
+    inline constexpr const char* decayLearnStrength  = "decay_learn_strength";  // Blend strength (0..1)
+    inline constexpr const char* decayLearnWindow    = "decay_learn_window_s";  // Capture window (2..8s)
 
     // ─────────────────────────────────────────────────────────────────────────
     // Choice index helpers (keep in sync with ReverbParameters choice arrays)
@@ -149,6 +160,6 @@ namespace ReverbParamIDs
         inline constexpr int FollowToneTilt = 1;
         inline constexpr int FollowHPLP = 2;
         inline constexpr int FollowWidthDesigner = 3;
-        inline constexpr int SidechainLearn = 4; // Future
+        inline constexpr int SidechainLearn = 4; // Now implemented!
     }
 }

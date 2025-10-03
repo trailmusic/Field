@@ -59,6 +59,9 @@ DecayRateFloat::DecayRateFloat(juce::AudioProcessorValueTreeState& apvts)
     , tiltDbValue("tiltDbValue", "0.0")
     , smoothingValue("smoothingValue", "0.5")
     , modeValue("modeValue", "0.0")
+    , strengthLabel("strengthLabel", "Strength")
+    , windowLabel("windowLabel", "Window")
+    , statusLabel("statusLabel", "Idle")
     , apvtsRef(apvts)
 {
     setupComponents();
@@ -174,6 +177,42 @@ void DecayRateFloat::setupComponents()
     profileCouplingCombo.setSelectedId(1); // Independent
     profileCouplingCombo.setTooltip("Optionally bias the profile using other controls (tone EQ, filters, width).");
 
+    // ===== Sidechain Learn Controls =====
+    addAndMakeVisible(learnButton);
+    learnButton.setButtonText("Learn");
+    learnButton.setTooltip("Start learning decay profile from external signal");
+    
+    addAndMakeVisible(resetButton);
+    resetButton.setButtonText("Reset");
+    resetButton.setTooltip("Reset learned profile");
+    
+    addAndMakeVisible(strengthSlider);
+    strengthSlider.setRange(0.0, 1.0, 0.01);
+    strengthSlider.setValue(0.5);
+    strengthSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    strengthSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 20);
+    strengthSlider.setTooltip("Blend strength of learned profile (0-100%)");
+    
+    addAndMakeVisible(windowSlider);
+    windowSlider.setRange(2.0, 8.0, 0.1);
+    windowSlider.setValue(4.0);
+    windowSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    windowSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, 20);
+    windowSlider.setTooltip("Capture window duration (2-8 seconds)");
+    
+    addAndMakeVisible(strengthLabel);
+    strengthLabel.setText("Strength", juce::dontSendNotification);
+    strengthLabel.setJustificationType(juce::Justification::centredLeft);
+    
+    addAndMakeVisible(windowLabel);
+    windowLabel.setText("Window", juce::dontSendNotification);
+    windowLabel.setJustificationType(juce::Justification::centredLeft);
+    
+    addAndMakeVisible(statusLabel);
+    statusLabel.setText("Idle", juce::dontSendNotification);
+    statusLabel.setJustificationType(juce::Justification::centred);
+    statusLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
+
     // ===== APVTS Attachments =====
     loMultAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         apvtsRef, decayLoMult, loMultSlider);
@@ -197,6 +236,16 @@ void DecayRateFloat::setupComponents()
         apvtsRef, decayProfileMode, profileModeCombo);
     profileCouplingAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
         apvtsRef, decayProfileCoupling, profileCouplingCombo);
+    
+    // Sidechain Learn attachments
+    learnAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        apvtsRef, decayLearn, learnButton);
+    resetAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+        apvtsRef, decayLearnReset, resetButton);
+    strengthAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        apvtsRef, decayLearnStrength, strengthSlider);
+    windowAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        apvtsRef, decayLearnWindow, windowSlider);
 }
 
 void DecayRateFloat::resized()
@@ -221,6 +270,32 @@ void DecayRateFloat::updateLayout()
         auto rightSelector = controlRow.reduced(1.0f);
         profileModeCombo.setBounds(leftSelector.toNearestInt());
         profileCouplingCombo.setBounds(rightSelector.toNearestInt());
+        
+        // Learn controls area (28px - matching control row height)
+        auto learnArea = bounds.removeFromTop(28.0f).reduced(2.0f, 2.0f);
+        
+        // Learn buttons (left side)
+        auto buttonArea = learnArea.removeFromLeft(learnArea.getWidth() * 0.4f).reduced(1.0f);
+        auto buttonRow = buttonArea.removeFromTop(buttonArea.getHeight() * 0.6f);
+        learnButton.setBounds(buttonRow.removeFromLeft(buttonRow.getWidth() * 0.5f).reduced(1.0f).toNearestInt());
+        resetButton.setBounds(buttonRow.reduced(1.0f).toNearestInt());
+        
+        // Status label (below buttons)
+        statusLabel.setBounds(buttonArea.toNearestInt());
+        
+        // Learn sliders (right side)
+        auto sliderArea = learnArea.reduced(1.0f);
+        auto sliderRow = sliderArea.removeFromTop(sliderArea.getHeight() * 0.5f);
+        
+        // Strength slider
+        auto strengthArea = sliderRow.removeFromLeft(sliderRow.getWidth() * 0.5f).reduced(1.0f);
+        strengthLabel.setBounds(strengthArea.removeFromTop(12).toNearestInt());
+        strengthSlider.setBounds(strengthArea.toNearestInt());
+        
+        // Window slider
+        auto windowArea = sliderRow.reduced(1.0f);
+        windowLabel.setBounds(windowArea.removeFromTop(12).toNearestInt());
+        windowSlider.setBounds(windowArea.toNearestInt());
         
         // Two columns of 4 knobs each
         auto knobsArea = bounds.reduced(1.0f);
