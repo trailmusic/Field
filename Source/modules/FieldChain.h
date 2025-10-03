@@ -59,6 +59,12 @@ struct FieldChain
 		active_.phase   = cfg_.enablePhase;
 		active_.imager  = cfg_.enableImager;
 
+		recomputeLatency();
+		dirty_ = false;
+	}
+
+	void recomputeLatency() noexcept
+	{
 		int sum = 0;
 		sum += delay_.latencySamples();
 		sum += dyneq_.latencySamples();
@@ -66,8 +72,6 @@ struct FieldChain
 		sum += phase_.latencySamples();
 		sum += imager_.latencySamples();
 		latencySum_ = sum;
-
-		dirty_ = false;
 	}
 
 	template <typename Sample>

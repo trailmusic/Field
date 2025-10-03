@@ -1,8 +1,9 @@
 #pragma once
 #include <juce_dsp/juce_dsp.h>
+#include "NodeLatency.h"
 
 namespace field { namespace modules { namespace nodes {
-struct Node_Delay
+struct Node_Delay : NodeLatencyMixin<Node_Delay>
 {
 	template <typename Sample>
 	void prepare (double /*sr*/, int /*maxBlock*/, int /*chans*/) noexcept {}
@@ -11,6 +12,5 @@ struct Node_Delay
 	void process (juce::dsp::AudioBlock<Sample>& /*io*/) const noexcept {}
 
 	void reset() noexcept {}
-	int latencySamples() const noexcept { return 0; }
 };
 }}} // namespace field::modules::nodes

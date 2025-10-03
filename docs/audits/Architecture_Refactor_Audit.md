@@ -577,3 +577,15 @@ cfg.enableDelay = SafeParamGate::getBool(*this, "chain.delay.enable", false);
 cfg.enableDynEq = SafeParamGate::getBool(*this, "chain.dyneq.enable", false);
 cfg.enableReverb= SafeParamGate::getBool(*this, "chain.reverb.enable", false);
 ```
+
+### WO-4 Gate & Latency details
+- FieldChain now honors a strict prepare-time gate:
+  - `Config::needsRebuild` + internal `dirty_` force `buildFromConfig()` only at `prepare<Sample>()`
+  - `setConfig()` marks dirty only when values actually change
+- Latency reporting:
+  - `latencySamples()` returns an internal `latencySum_` (sum of node latencies; remains 0 with placeholders)
+  - Mixing stages (Meter/MS/Gain) are math-only and excluded from the sum
+- Processor usage reminder:
+  - Flip `rebuildGate_.request()` when relevant params change → `cfg.needsRebuild = rebuildGate_.consume()` at prepare
+  - Push config to both chains; call `buildFromConfig()` then `prepare` for float/double
+  - Apply latency via `latency.applyIfChanged(*this)` on message thread; never in `processBlock`
