@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "core/telemetry/LiveSwapHUD.h"
 #include "shared/dsp/Ducker.h"
 #include "shared/dsp/DelayEngine.h"
 #include "shared/dsp/PhaseModes.h"
