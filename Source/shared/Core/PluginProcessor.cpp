@@ -2305,6 +2305,20 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     scoopFreqSm.setCurrentAndTargetValue ((Sample) 1000);
     hpHzSm.setCurrentAndTargetValue ((Sample) 20);
     lpHzSm.setCurrentAndTargetValue ((Sample) 20000);
+    
+    // ================================================================
+    // 🎯 REVERB ENGINE PREPARATION (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Prepare reverb engine once with max block size
+    // This ensures reverb is ready for any runtime block size ≤ max
+    // ================================================================
+    
+    // Reverb engine preparation (float-internal, works for both float and double chains)
+    reverbEngine.prepare(sr, preparedBlockSize, (int) spec.numChannels);
+    reverbEngine.reset();
+    reverbEnginePrepared = true;
+    lastReverbBlockSize = preparedBlockSize;
+    lastReverbChannels = (int) spec.numChannels;
 }
 
 template <typename Sample>
@@ -2534,6 +2548,52 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.rvWet01         = (Sample) hp.rvWet01;
     params.rvOutTrimDb     = (Sample) hp.rvOutTrimDb;
     params.phaseMode = hp.phaseMode;
+    
+    // ================================================================
+    // 🎯 REVERB ENGINE PARAMETER MAPPING (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Set reverb parameters once per block (not per tile)
+    // This prevents parameter thrash and ensures stable reverb processing
+    // ================================================================
+    
+    if (reverbEnginePrepared)
+    {
+        ReverbParams rp{};
+        
+        // Core tank / time / modulation
+        rp.preDelayMs     = (float) hp.rvPreDelayMs;
+        rp.decaySec       = (float) hp.rvDecaySec;
+        rp.density        = (float) hp.rvDensityPct;
+        rp.diffusion      = (float) hp.rvDiffusionPct;
+        rp.modDepthCents  = (float) hp.rvModDepthCents;
+        rp.modRateHz      = (float) hp.rvModRateHz;
+        
+        // Early reflections
+        rp.erLevelDb      = (float) hp.rvErLevelDb;
+        rp.erTimeMs       = (float) hp.rvErTimeMs;
+        rp.erDensity      = (float) hp.rvErDensityPct;
+        rp.erWidthPct     = (float) hp.rvErWidthPct;
+        rp.erToTailPct    = (float) hp.rvErToTailPct;
+        
+        // Imaging
+        rp.widthPct       = (float) hp.rvWidthPct;
+        
+        // Ducking
+        rp.duckMode       = hp.rvDuckMode;
+        rp.duckDetector   = hp.rvDuckDetector;
+        rp.duckDepthDb    = (float) hp.rvDuckDepthDb;
+        rp.duckThrDb      = (float) hp.rvDuckThrDb;
+        rp.duckKneeDb     = (float) hp.rvDuckKneeDb;
+        rp.duckRatio      = (float) hp.rvDuckRatio;
+        rp.duckAtkMs      = (float) hp.rvDuckAtkMs;
+        rp.duckRelMs      = (float) hp.rvDuckRelMs;
+        rp.duckBandHz     = (float) hp.rvDuckBandHz;
+        rp.duckBandQ      = (float) hp.rvDuckBandQ;
+        rp.duckOn         = hp.rvDuckOn;
+        
+        // Apply parameters to reverb engine
+        reverbEngine.setParams(rp);
+    }
 }
 
 // --------- processing utilities ---------
@@ -3535,52 +3595,7 @@ void FieldChain<Sample>::process (Block block)
         // Motion processing handled by MotionEngine
     }
     
-    // Reverb processing
-    if (params.rvEnabled && reverbEnginePrepared) {
-        // Set reverb parameters
-        ReverbParams rvParams;
-        rvParams.preDelayMs = params.rvPreDelayMs;
-        rvParams.decaySec = params.rvDecaySec;
-        rvParams.density = params.rvDensityPct;
-        rvParams.diffusion = params.rvDiffusionPct;
-        rvParams.modDepthCents = params.rvModDepthCents;
-        rvParams.modRateHz = params.rvModRateHz;
-        rvParams.duckMode = params.rvDuckMode;
-        rvParams.duckDetector = params.rvDuckDetector;
-        rvParams.duckDepthDb = params.rvDuckDepthDb;
-        rvParams.duckThrDb = params.rvDuckThrDb;
-        rvParams.duckKneeDb = params.rvDuckKneeDb;
-        rvParams.duckRatio = params.rvDuckRatio;
-        rvParams.duckAtkMs = params.rvDuckAtkMs;
-        rvParams.duckRelMs = params.rvDuckRelMs;
-        rvParams.duckBandHz = params.rvDuckBandHz;
-        rvParams.duckBandQ = params.rvDuckBandQ;
-        rvParams.duckOn = params.rvDuckOn;
-        reverbEngine.setParams(rvParams);
-        
-        // Process reverb with double precision shim
-        if constexpr (std::is_same_v<Sample, float>) {
-            // Native float path
-            reverbEngine.processWet(wetBusBuf, dryBusBuf);
-        } else {
-            // Double path → run reverb in float via shim
-            const int chs = wetBusBuf.getNumChannels();
-            const int n   = wetBusBuf.getNumSamples();
-
-            if (wetFloatScratch.getNumChannels() < chs || wetFloatScratch.getNumSamples() < n)
-                wetFloatScratch.setSize (chs, n, false, false, true);
-            if (dryFloatScratch.getNumChannels() < chs || dryFloatScratch.getNumSamples() < n)
-                dryFloatScratch.setSize (chs, n, false, false, true);
-
-            copyDoubleToFloat (wetBusBuf, wetFloatScratch);
-            copyDoubleToFloat (dryBusBuf, dryFloatScratch);
-
-            reverbEngine.processWet(wetFloatScratch, dryFloatScratch);
-
-            copyFloatToDouble (wetFloatScratch, wetBusBuf);
-            // dryBusBuf is your dry tap; keep it as-is for mix math below
-        }
-    }
+    // Reverb processing is now handled by FieldChain
     
     // Delay processing (render to dedicated delayWetBuf; mixed later independently of reverb wet)
     if (params.delayEnabled)
@@ -3759,6 +3774,92 @@ void FieldChain<Sample>::process (Block block)
     if (params.dynEqEnabled)
     {
         applyDynamicEq(block);
+    }
+    
+    // ================================================================
+    // 🎯 REVERB PROCESSING (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Process reverb once per tile with proper buffer handling
+    // This ensures reverb runs in the correct architectural location
+    // ================================================================
+    
+    if (reverbEnginePrepared && params.rvEnabled)
+    {
+        // Release guard: ensure block size doesn't exceed prepared size
+        const int N = (int) block.getNumSamples();
+        const int C = (int) block.getNumChannels();
+        
+        #if JUCE_DEBUG
+        jassert(preparedBlockSize > 0);
+        jassert(N <= preparedBlockSize);
+        #endif
+        
+        if (preparedBlockSize > 0 && N <= preparedBlockSize)
+        {
+            if constexpr (std::is_same_v<Sample, float>)
+            {
+                // Float path: direct processing
+                juce::AudioBuffer<float> wet(C, N);
+                wet.clear();
+                juce::AudioBuffer<float> side(C, N); // dry-as-sidechain for ducking
+                
+                // Copy input to sidechain and wet buffer
+                for (int ch = 0; ch < C; ++ch)
+                {
+                    auto* src = block.getChannelPointer(ch);
+                    side.copyFrom(ch, 0, src, N);
+                    wet.copyFrom(ch, 0, src, N);
+                }
+                
+                // Process reverb
+                reverbEngine.processWet(wet, side);
+                
+                // Mix wet into output (replace or blend based on wet policy)
+                const Sample wetAmt = juce::jlimit<Sample>((Sample)0, (Sample)1, params.rvWet01);
+                const Sample dryAmt = params.rvKillDry ? (Sample)0 : (Sample)1;
+                const Sample trimLin = (Sample) juce::Decibels::decibelsToGain((float) params.rvOutTrimDb);
+                
+                for (int ch = 0; ch < C; ++ch)
+                {
+                    auto* dst = block.getChannelPointer(ch);
+                    auto* wetPtr = wet.getReadPointer(ch);
+                    for (int i = 0; i < N; ++i)
+                        dst[i] = dryAmt * dst[i] + wetAmt * trimLin * (Sample) wetPtr[i];
+                }
+            }
+            else
+            {
+                // Double path: convert to float scratch buffers
+                wetFloatScratch.setSize(C, N, false, false, true);
+                dryFloatScratch.setSize(C, N, false, false, true);
+                
+                // Copy double to float
+                for (int ch = 0; ch < C; ++ch)
+                {
+                    auto* src = block.getChannelPointer(ch);
+                    auto* df = dryFloatScratch.getWritePointer(ch);
+                    auto* wf = wetFloatScratch.getWritePointer(ch);
+                    for (int i = 0; i < N; ++i)
+                        df[i] = wf[i] = (float) src[i];
+                }
+                
+                // Process reverb in float
+                reverbEngine.processWet(wetFloatScratch, dryFloatScratch);
+                
+                // Mix back to double
+                const Sample wetAmt = juce::jlimit<Sample>((Sample)0, (Sample)1, params.rvWet01);
+                const Sample dryAmt = params.rvKillDry ? (Sample)0 : (Sample)1;
+                const Sample trimLin = (Sample) juce::Decibels::decibelsToGain((float) params.rvOutTrimDb);
+                
+                for (int ch = 0; ch < C; ++ch)
+                {
+                    auto* dst = block.getChannelPointer(ch);
+                    auto* wf = wetFloatScratch.getReadPointer(ch);
+                    for (int i = 0; i < N; ++i)
+                        dst[i] = dryAmt * dst[i] + wetAmt * trimLin * (Sample) wf[i];
+                }
+            }
+        }
     }
     
     // Output gain
