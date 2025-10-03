@@ -1,2 +1,16 @@
 #pragma once
-namespace field { namespace modules { struct Node_Reverb_Stub {}; }}
+#include <juce_dsp/juce_dsp.h>
+
+namespace field { namespace modules { namespace nodes {
+struct Node_Reverb
+{
+	template <typename Sample>
+	void prepare (double /*sr*/, int /*maxBlock*/, int /*chans*/) noexcept {}
+
+	template <typename Sample>
+	void process (juce::dsp::AudioBlock<Sample>& /*io*/) const noexcept {}
+
+	void reset() noexcept {}
+	int latencySamples() const noexcept { return 0; }
+};
+}}} // namespace field::modules::nodes
