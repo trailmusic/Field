@@ -25,6 +25,7 @@ Last updated: 2025-10-03 • Branch: `feature`
 - [WO-3 Update — Optional Mixing Stages in FieldChain (default-off)](#wo-3-update--optional-mixing-stages-in-fieldchain-default-off)
 - [WO-4 — Config-driven placeholders + prepare-time param gate](#wo-4--config-driven-placeholders--prepare-time-param-gate)
 - [WO-5 — Latency Accumulator + Probe + Tests](#wo-5--latency-accumulator--probe--tests)
+- [WO-6 — Processor Glue: Safe Param Reads, Rebuild Fence, Latency & Tail](#wo-6--processor-glue--safe-param-reads--rebuild-fence--latency--tail)
 
 ---
 
@@ -611,3 +612,20 @@ if (active_.reverb) {
 }
 recomputeLatency();
 ```
+
+---
+
+## WO-6 — Processor Glue: Safe Param Reads, Rebuild Fence, Latency & Tail
+- Added helpers:
+  - `core/runtime/SafeParamGate.h`: defensive param reads at prepare-time only
+  - `core/runtime/TailManager.h`: cache tail seconds; reported via `getTailLengthSeconds()`
+  - `core/util/DenormGuard.h`: RAII to disable denormals for each audio block
+  - `processor/BusesLayouts.h`: minimal `makeStereoBuses()` helper
+- Rebuild policy:
+  - Params that affect topology/latency set a gate (no audio-thread rebuild)
+  - Actual `buildFromConfig()` occurs in `prepareToPlay()`
+- Reporting:
+  - Latency applied only on message thread via `LatencyManager.applyIfChanged(...)`
+  - Tail seconds updated only at prepare; defaults 0.0 with placeholders
+- Tests:
+  - `tests/offline/test_rebuild_gate.cpp` verifies no mid-block rebuild behavior

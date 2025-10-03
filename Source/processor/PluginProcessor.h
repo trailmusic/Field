@@ -11,6 +11,7 @@
 #include "features/reverb/Core/ReverbEngine.h"
 #include "core/signal/SignalGraph.h"
 #include "core/runtime/LatencyManager.h"
+#include "core/runtime/TailManager.h"
 
 // Forward declaration for Biquad struct
 struct Biquad;
@@ -1004,11 +1005,8 @@ public:
     bool acceptsMidi() const override                          { return false; }
     bool producesMidi() const override                         { return false; }
     bool isMidiEffect() const override                         { return false; }
-    double getTailLengthSeconds() const override {
-        if (auto* p = apvts.getRawParameterValue (ReverbParamIDs::decaySec))
-            return juce::jlimit (0.0, 20.0, (double) p->load() * 2.0);
-        return 0.0;
-    }
+    int getLatencySamples() const override                 { return latency.getApplied(); }
+    double getTailLengthSeconds() const override           { return tail_.getSeconds(); }
     bool supportsDoublePrecisionProcessing() const override    { return true; }
 
     int getNumPrograms() override                              { return 1; }
@@ -1048,6 +1046,7 @@ public:
 
     VisBus visPre, visPost;
     LatencyManager latency;
+    field::core::runtime::TailManager tail_;
     DelayUiBridge& getDelayUiBridge() { return delayUiBridge; }
 
     std::function<void(double, double)> onAudioSample;
