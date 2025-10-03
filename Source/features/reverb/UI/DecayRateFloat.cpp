@@ -1,6 +1,7 @@
 #include "DecayRateFloat.h"
 #include "../DSP/ReverbParamIDs.h"
 #include "shared/Core/FieldLookAndFeel.h"
+#include "shared/ui/Utilities/ComponentGreyout.h"
 
 /*
 ====================================================================================================
@@ -220,19 +221,28 @@ void DecayRateFloat::paint(juce::Graphics& g)
         paintExpanded(g);
     else
         paintCollapsed(g);
+
+    if (!active)
+    {
+        auto b = getLocalBounds().toFloat();
+        ComponentGreyout::paintGreyoutOverlay(g, b, 0.4f, 8.0f);
+    }
 }
 
 void DecayRateFloat::paintExpanded(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
-    
-    // Background pill
-    g.setColour(juce::Colour(0x1AFFFFFF));
-    g.fillRoundedRectangle(bounds, PILL_CORNER_RADIUS);
-    
-    // Border
-    g.setColour(juce::Colour(0x33FFFFFF));
-    g.drawRoundedRectangle(bounds, PILL_CORNER_RADIUS, 1.0f);
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
+
+    const float cr = 8.0f;
+
+    g.setColour(th.meters.panelDark); g.fillRect(bounds);
+    g.fillRoundedRectangle(bounds, cr);
+
+    g.setColour(th.sh.withAlpha(0.6f));  g.drawRoundedRectangle(bounds.reduced(0.5f), cr - 0.5f, 2.0f);
+    g.setColour(th.accent.withAlpha(0.9f)); g.drawRoundedRectangle(bounds.reduced(1.0f), cr - 1.0f, 1.5f);
+    g.setColour(th.text.withAlpha(0.3f)); g.drawRoundedRectangle(bounds.reduced(0.5f), cr - 0.5f, 0.5f);
 }
 
 void DecayRateFloat::paintCollapsed(juce::Graphics& g)
