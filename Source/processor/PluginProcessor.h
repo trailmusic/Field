@@ -1031,7 +1031,7 @@ public:
 
     // Message-thread tick to plan/arm live swap (dev-only usage)
     void messageThreadTickForLiveSwap (double sampleRate, int maxBlock);
-    // HUD accessor for editor overlay
+    // HUD accessor for potential overlay (dev-only)
     const field::core::telemetry::LiveSwapHUD& hud() const noexcept { return hud_; }
     field::core::telemetry::LiveSwapHUD&       hud()       noexcept { return hud_; }
 
