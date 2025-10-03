@@ -18,3 +18,6 @@ target_link_libraries(test_statesanity PRIVATE field_core juce_dsp)
 
 add_executable(test_latency_ci test_latency_ci.cpp)
 target_link_libraries(test_latency_ci PRIVATE field_modules field_core juce_dsp)
+
+add_executable(test_param_latency_map test_param_latency_map.cpp)
+target_link_libraries(test_param_latency_map PRIVATE field_modules field_core juce_dsp)

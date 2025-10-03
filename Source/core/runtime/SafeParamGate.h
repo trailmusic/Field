@@ -21,6 +21,14 @@ struct SafeParamGate
 		return fallback;
 	}
 
+    static int getInt (juce::AudioProcessor& proc, const juce::String& id, int fallback) noexcept
+    {
+        if (auto* apvts = findAPVTS(proc))
+            if (auto* p = apvts->getParameter (id))
+                return (int) std::lround (p->getValue());
+        return fallback;
+    }
+
 private:
 	static juce::AudioProcessorValueTreeState* findAPVTS (juce::AudioProcessor& proc) noexcept
 	{

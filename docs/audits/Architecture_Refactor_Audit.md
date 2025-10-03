@@ -30,6 +30,7 @@ Last updated: 2025-10-03 • Branch: `feature`
 - [WO-8 — Mid-Block Swap + Warmup (same-latency only)](#wo-8--mid-block-swap--warmup-same-latency-only)
 - [WO-9 — StateSanity + PDC Guard + First-Bad-Sample Telemetry](#wo-9--statesanity--pdc-guard--first-bad-sample-telemetry)
 - [WO-10 — Host Cache Sanity + LatencyProbe CI Harness](#wo-10--host-cache-sanity--latencyprobe-ci-harness)
+- [WO-11 — Param IDs → Latency Hooks (prepare-time only)](#wo-11--param-ids--latency-hooks-prepare-time-only)
 
 ---
 
@@ -695,3 +696,22 @@ Index additions:
 - `core/runtime/TailGuard.h`
 - `processor/LatencyTailCompute.h`
 - `tests/offline/test_latency_ci.cpp`
+
+---
+
+## WO-11 — Param IDs → Latency Hooks (prepare-time only)
+- Added param surfaces:
+  - `core/params/ParamIDs.h` authoritative IDs for topology/latency inputs
+  - `core/params/Snapshot.h` builds a safe prepare-time snapshot via `SafeParamGate`
+- Added mapping helper:
+  - `modules/FieldParamHooks.h` to apply snapshot into node latency mixins; calls `recomputeLatency()`
+- Tests & QA:
+  - `tests/offline/test_param_latency_map.cpp` (stub asserts 0 until engines wire latency setters)
+  - `docs/qa/NullAtUnity.md` recipe for host null at unity
+
+Index additions:
+- `core/params/ParamIDs.h`
+- `core/params/Snapshot.h`
+- `modules/FieldParamHooks.h`
+- `tests/offline/test_param_latency_map.cpp`
+- `docs/qa/NullAtUnity.md`
