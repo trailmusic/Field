@@ -890,6 +890,15 @@ private:
         Sample rvDecaySmoothing{};   // Parameter smoothing speed (0..2)
         Sample rvDecayMode{};        // UI mode toggle (0..1)
         
+        // ================================================================
+        // 🎯 DECAY PROFILE SYSTEM (JANUARY 2025)
+        // ================================================================
+        // CRITICAL: Musical decay profile modes and coupling system
+        // These parameters enable intelligent decay curve generation
+        // ================================================================
+        int rvDecayProfileMode{};     // Profile generation mode (0..7)
+        int rvDecayProfileCoupling{}; // External coupling mode (0..4)
+        
         // Motion parameters
         bool   motionEnabled{};
         int    motionPannerSelect{};
@@ -1012,6 +1021,15 @@ struct HostParams
     double rvDecayTiltDb{};      // Decay tilt bias (±12 dB)
     double rvDecaySmoothing{};   // Parameter smoothing speed (0..2)
     double rvDecayMode{};        // UI mode toggle (0..1)
+    
+    // ================================================================
+    // 🎯 DECAY PROFILE SYSTEM (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Musical decay profile modes and coupling system
+    // These parameters enable intelligent decay curve generation
+    // ================================================================
+    int rvDecayProfileMode{};     // Profile generation mode (0..7)
+    int rvDecayProfileCoupling{}; // External coupling mode (0..4)
         
     // Delay parameters
     bool   delayEnabled{};

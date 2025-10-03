@@ -1,5 +1,6 @@
 #include "DecayRateFloat.h"
 #include "../DSP/ReverbParamIDs.h"
+#include "../DSP/ReverbParameters.h"
 #include "shared/Core/FieldLookAndFeel.h"
 #include "shared/ui/Utilities/ComponentGreyout.h"
 
@@ -162,6 +163,17 @@ void DecayRateFloat::setupComponents()
     addAndMakeVisible(*smoothingKnobCell);
     addAndMakeVisible(*modeKnobCell);
 
+    // ===== Decay Profile Selectors =====
+    addAndMakeVisible(profileModeCombo);
+    profileModeCombo.addItemList(ReverbParameters::decayProfileModeChoices(), 1);
+    profileModeCombo.setSelectedId(1); // Manual 3-Band
+    profileModeCombo.setTooltip("Chooses the spectral shape of decay time (T60) across frequency.");
+
+    addAndMakeVisible(profileCouplingCombo);
+    profileCouplingCombo.addItemList(ReverbParameters::decayProfileCouplingChoices(), 1);
+    profileCouplingCombo.setSelectedId(1); // Independent
+    profileCouplingCombo.setTooltip("Optionally bias the profile using other controls (tone EQ, filters, width).");
+
     // ===== APVTS Attachments =====
     loMultAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         apvtsRef, decayLoMult, loMultSlider);
@@ -179,6 +191,12 @@ void DecayRateFloat::setupComponents()
         apvtsRef, decaySmoothing, smoothingSlider);
     modeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         apvtsRef, decayMode, modeSlider);
+    
+    // Decay profile selector attachments
+    profileModeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
+        apvtsRef, decayProfileMode, profileModeCombo);
+    profileCouplingAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
+        apvtsRef, decayProfileCoupling, profileCouplingCombo);
 }
 
 void DecayRateFloat::resized()
@@ -197,6 +215,12 @@ void DecayRateFloat::updateLayout()
         
         // Control row (28px - matching DuckingFloat's selectors row)
         auto controlRow = bounds.removeFromTop(28.0f).reduced(2.0f, 2.0f);
+        
+        // Layout selectors in control row (like DuckingFloat's Mode/Detector)
+        auto leftSelector = controlRow.removeFromLeft(controlRow.getWidth() * 0.5f).reduced(1.0f);
+        auto rightSelector = controlRow.reduced(1.0f);
+        profileModeCombo.setBounds(leftSelector.toNearestInt());
+        profileCouplingCombo.setBounds(rightSelector.toNearestInt());
         
         // Two columns of 4 knobs each
         auto knobsArea = bounds.reduced(1.0f);
@@ -372,17 +396,17 @@ void DecayRateFloat::paintControlRow(juce::Graphics& g, juce::Rectangle<float> b
     g.setColour(th.accent.withAlpha(0.25f));
     g.drawRoundedRectangle(controlArea, cr, 1.0f);
 
-    // Control labels (Frequency vs Time controls)
+    // Control labels (Profile vs Coupling selectors)
     g.setColour(th.text.withAlpha(0.6f));
     g.setFont(juce::Font(9.0f, juce::Font::bold));
     
-    // Left side: Frequency controls
+    // Left side: Profile Mode
     auto leftArea = juce::Rectangle<float>(controlArea.getX(), controlArea.getY(), controlArea.getWidth() * 0.5f, controlArea.getHeight());
-    g.drawText("FREQ", leftArea, juce::Justification::centred);
+    g.drawText("PROFILE", leftArea, juce::Justification::centred);
     
-    // Right side: Time controls  
+    // Right side: Coupling
     auto rightArea = juce::Rectangle<float>(controlArea.getX() + controlArea.getWidth() * 0.5f, controlArea.getY(), controlArea.getWidth() * 0.5f, controlArea.getHeight());
-    g.drawText("TIME", rightArea, juce::Justification::centred);
+    g.drawText("COUPLING", rightArea, juce::Justification::centred);
 
     // Subtle divider line
     auto dividerLine = juce::Rectangle<float>(controlArea.getX() + controlArea.getWidth() * 0.5f - 0.5f, controlArea.getY() + 4, 1.0f, controlArea.getHeight() - 8);

@@ -446,6 +446,15 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.rvDecaySmoothing = apvts.getRawParameterValue (ReverbParamIDs::decaySmoothing)->load();
     p.rvDecayMode     = apvts.getRawParameterValue (ReverbParamIDs::decayMode)->load();
     
+    // ================================================================
+    // 🎯 DECAY PROFILE SYSTEM (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Musical decay profile modes and coupling system
+    // These parameters enable intelligent decay curve generation
+    // ================================================================
+    p.rvDecayProfileMode     = (int) std::round(apvts.getRawParameterValue (ReverbParamIDs::decayProfileMode)->load());
+    p.rvDecayProfileCoupling = (int) std::round(apvts.getRawParameterValue (ReverbParamIDs::decayProfileCoupling)->load());
+    
     // Dynamic EQ parameters
     p.dynEqEnabled    = apvts.getRawParameterValue (dynEq::IDs::enabled)->load() > 0.5f;
     
@@ -2592,6 +2601,15 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     params.rvDecayTiltDb   = (Sample) juce::jlimit(-12.0, 12.0, hp.rvDecayTiltDb);
     params.rvDecaySmoothing = (Sample) juce::jlimit(0.0, 2.0, hp.rvDecaySmoothing);
     params.rvDecayMode     = (Sample) juce::jlimit(0.0, 1.0, hp.rvDecayMode);
+    
+    // ================================================================
+    // 🎯 DECAY PROFILE SYSTEM PARAMETER MAPPING (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Map decay profile mode and coupling parameters
+    // This enables intelligent decay curve generation
+    // ================================================================
+    params.rvDecayProfileMode     = hp.rvDecayProfileMode;
+    params.rvDecayProfileCoupling = hp.rvDecayProfileCoupling;
     
     // ================================================================
     // 🎯 REVERB ENGINE PARAMETER MAPPING (JANUARY 2025)

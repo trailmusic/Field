@@ -86,6 +86,15 @@ namespace ReverbParamIDs
     inline constexpr const char* decayTiltDb     = "decayTiltDb";     // -12..+12 dB (Decay tilt bias)
     inline constexpr const char* decaySmoothing  = "decaySmoothing";  // 0=Fast,1=Med,2=Slow (Smoothing speed)
     inline constexpr const char* decayMode       = "decayMode";       // 0=Simple,1=Advanced (UI mode)
+    
+    // ================================================================
+    // 🎯 DECAY PROFILE SYSTEM (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Musical decay profile modes and coupling system
+    // These parameters enable intelligent decay curve generation
+    // ================================================================
+    inline constexpr const char* decayProfileMode     = "decay_profile_mode";     // 0..7 (Profile generation mode)
+    inline constexpr const char* decayProfileCoupling = "decay_profile_coupling"; // 0..4 (External coupling mode)
 
     // ─────────────────────────────────────────────────────────────────────────
     // Choice index helpers (keep in sync with ReverbParameters choice arrays)
@@ -122,5 +131,24 @@ namespace ReverbParamIDs
     namespace DecayModeIdx {
         inline constexpr int Simple   = 0; // default
         inline constexpr int Advanced = 1;
+    }
+
+    namespace DecayProfileModeIdx {
+        inline constexpr int Manual3Band = 0; // default
+        inline constexpr int TiltCoupled = 1;
+        inline constexpr int Plate = 2;
+        inline constexpr int Hall = 3;
+        inline constexpr int Room = 4;
+        inline constexpr int Chamber = 5;
+        inline constexpr int Cathedral = 6;
+        inline constexpr int Nonlinear = 7;
+    }
+
+    namespace DecayProfileCouplingIdx {
+        inline constexpr int Independent = 0; // default
+        inline constexpr int FollowToneTilt = 1;
+        inline constexpr int FollowHPLP = 2;
+        inline constexpr int FollowWidthDesigner = 3;
+        inline constexpr int SidechainLearn = 4; // Future
     }
 }

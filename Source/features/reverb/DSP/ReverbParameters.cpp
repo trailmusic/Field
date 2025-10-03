@@ -72,6 +72,18 @@ StringArray ReverbParameters::decayModeChoices ()
     return { "Simple", "Advanced" };
 }
 
+StringArray ReverbParameters::decayProfileModeChoices ()
+{
+    return { "Manual 3-Band", "Tilt-Coupled", "Plate", "Hall", 
+             "Room", "Chamber", "Cathedral", "Nonlinear" };
+}
+
+StringArray ReverbParameters::decayProfileCouplingChoices ()
+{
+    return { "Independent", "Follow Tone Tilt", "Follow HP/LP", 
+             "Follow Width Designer", "Sidechain Learn (Future)" };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Factory — APVTS layout
 // ─────────────────────────────────────────────────────────────────────────────
@@ -198,4 +210,15 @@ void ReverbParameters::addParameters (AudioProcessorValueTreeState::ParameterLay
                             ReverbParameters::decaySmoothingChoices (),     1)); // default Med
     layout.add (makeChoice (decayMode,      "Decay Mode",
                             ReverbParameters::decayModeChoices (),         0)); // default Simple
+    
+    // ================================================================
+    // 🎯 DECAY PROFILE SYSTEM (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Musical decay profile modes and coupling system
+    // These parameters enable intelligent decay curve generation
+    // ================================================================
+    layout.add (makeChoice (decayProfileMode,     "Decay Profile",
+                            ReverbParameters::decayProfileModeChoices (),     0)); // default Manual 3-Band
+    layout.add (makeChoice (decayProfileCoupling, "Decay Coupling",
+                            ReverbParameters::decayProfileCouplingChoices (),  0)); // default Independent
 }

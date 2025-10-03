@@ -74,6 +74,9 @@ private:
     // Decay-rate controls
     juce::Slider loMultSlider, hiMultSlider, midDbSlider, midFreqSlider;
     juce::Slider midQSlider, tiltDbSlider, smoothingSlider, modeSlider;
+    
+    // Decay profile selectors (like DuckingFloat's Mode/Detector)
+    juce::ComboBox profileModeCombo, profileCouplingCombo;
 
     // Labels (kept for completeness; hidden in this design)
     juce::Label loMultLabel, hiMultLabel, midDbLabel, midFreqLabel;
@@ -96,6 +99,10 @@ private:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> tiltDbAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> smoothingAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> modeAttachment;
+    
+    // Decay profile selector attachments
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> profileModeAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> profileCouplingAttachment;
 
     // Backing APVTS (non-owning)
     juce::AudioProcessorValueTreeState& apvtsRef;

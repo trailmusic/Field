@@ -26,6 +26,8 @@ struct ReverbParameters
     static juce::StringArray duckDetectorChoices ();
     static juce::StringArray decaySmoothingChoices ();
     static juce::StringArray decayModeChoices ();
+    static juce::StringArray decayProfileModeChoices ();
+    static juce::StringArray decayProfileCouplingChoices ();
 };
 
 // Legacy helper — vector-based param list (independent implementation for backward compatibility)
@@ -123,4 +125,13 @@ inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioPa
     out.push_back (F (decayTiltDb, "Decay Tilt", NormalisableRange<float>(-12.f, 12.f, 0.1f), 0.f));
     out.push_back (C (decaySmoothing, "Smoothing", ReverbParameters::decaySmoothingChoices(), 1)); // Med
     out.push_back (C (decayMode, "Decay Mode", ReverbParameters::decayModeChoices(), 0)); // Simple
+    
+    // ================================================================
+    // 🎯 DECAY PROFILE SYSTEM (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Musical decay profile modes and coupling system
+    // These parameters enable intelligent decay curve generation
+    // ================================================================
+    out.push_back (C (decayProfileMode, "Decay Profile", ReverbParameters::decayProfileModeChoices(), 0)); // Manual 3-Band
+    out.push_back (C (decayProfileCoupling, "Decay Coupling", ReverbParameters::decayProfileCouplingChoices(), 0)); // Independent
 }
