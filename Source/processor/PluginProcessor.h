@@ -854,6 +854,7 @@ private:
     Sample lastHpLR = (Sample) -1, lastLpLR = (Sample) -1;
 
 public:
+    bool isLinkOn() const;
 };
 
 struct HostParams
@@ -1083,7 +1084,12 @@ public:
     double getTransportTimeSeconds() const { return transportTimeSeconds.load(); }
     bool   isTransportPlaying() const      { return transportIsPlaying.load(); }
     
-    bool isLinkOn() const;
+    bool isLinkOn() const {
+        if (auto* rp = apvts.getParameter ("panner_select"))
+            if (const auto* cp = dynamic_cast<const juce::AudioParameterChoice*> (rp))
+                return cp->getIndex() == 2;
+        return false;
+    }
 
 private:
     void parameterChanged (const juce::String& parameterID, float newValue) override;
