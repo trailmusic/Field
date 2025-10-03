@@ -296,13 +296,20 @@ void ReverbGraphics::resized ()
         decayRateEQ->setBounds         (decayArea);
     }
 
-    // Right column: Ducking label + ducking module
+    // Right column: Ducking label + ducking module (50%) + DecayRateFloat (50%)
     {
         auto duckLabel = rightArea.removeFromTop (kLabelHeight);
         duckingLabel.setBounds (duckLabel);
 
         if (duckingFloat)
-            duckingFloat->setBounds (rightArea);
+        {
+            // Give DuckingFloat 50% of the remaining right column height
+            auto duckingArea = rightArea.removeFromTop (rightArea.getHeight() / 2);
+            duckingFloat->setBounds (duckingArea);
+            
+            // Leave remaining 50% for future DecayRateFloat
+            // (rightArea now contains the bottom 50% for DecayRateFloat)
+        }
     }
 }
 
