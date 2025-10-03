@@ -192,7 +192,10 @@ void DecayRateFloat::updateLayout()
 
     if (expanded)
     {
-        // Two columns of 4 knobs each (no meter, no selectors)
+        // Header area with labels (similar to DuckingFloat's meter strip)
+        auto headerArea = bounds.removeFromTop(36.0f);
+        
+        // Two columns of 4 knobs each
         auto knobsArea = bounds.reduced(1.0f);
         auto leftCol   = knobsArea.removeFromLeft(knobsArea.getWidth() * 0.5f).reduced(1.0f);
         auto rightCol  = knobsArea.reduced(1.0f);
@@ -243,6 +246,33 @@ void DecayRateFloat::paintExpanded(juce::Graphics& g)
     g.setColour(th.sh.withAlpha(0.6f));  g.drawRoundedRectangle(bounds.reduced(0.5f), cr - 0.5f, 2.0f);
     g.setColour(th.accent.withAlpha(0.9f)); g.drawRoundedRectangle(bounds.reduced(1.0f), cr - 1.0f, 1.5f);
     g.setColour(th.text.withAlpha(0.3f)); g.drawRoundedRectangle(bounds.reduced(0.5f), cr - 0.5f, 0.5f);
+
+    // Header area with labels (similar to DuckingFloat's GR meter)
+    auto headerArea = bounds.removeFromTop(36.0f);
+    paintHeaderArea(g, headerArea);
+}
+
+void DecayRateFloat::paintHeaderArea(juce::Graphics& g, juce::Rectangle<float> bounds)
+{
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
+
+    const float cr = 4.0f;
+    auto headerArea = bounds.reduced(6.0f, 2.0f);
+
+    // Border
+    g.setColour(th.accent.withAlpha(0.30f));
+    g.drawRoundedRectangle(headerArea, cr, 1.0f);
+
+    // Header text
+    g.setColour(th.text.withAlpha(0.7f));
+    g.setFont(juce::Font(10.0f, juce::Font::bold));
+    g.drawText("DECAY RATE", headerArea, juce::Justification::centred);
+
+    // Subtle accent line
+    auto accentLine = juce::Rectangle<float>(headerArea.getX() + 8, headerArea.getBottom() - 3, headerArea.getWidth() - 16, 1.0f);
+    g.setColour(th.accent.withAlpha(0.4f));
+    g.fillRoundedRectangle(accentLine, 0.5f);
 }
 
 void DecayRateFloat::paintCollapsed(juce::Graphics& g)

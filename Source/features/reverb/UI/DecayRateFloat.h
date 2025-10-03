@@ -67,6 +67,7 @@ private:
     void updateLayout();
     void paintCollapsed(juce::Graphics& g);
     void paintExpanded(juce::Graphics& g);
+    void paintHeaderArea(juce::Graphics& g, juce::Rectangle<float> bounds);
 
     // Decay-rate controls
     juce::Slider loMultSlider, hiMultSlider, midDbSlider, midFreqSlider;
