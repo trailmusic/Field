@@ -2319,6 +2319,20 @@ void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
     reverbEnginePrepared = true;
     lastReverbBlockSize = preparedBlockSize;
     lastReverbChannels = (int) spec.numChannels;
+    
+    // ================================================================
+    // 🎯 DECAY PROFILE SMOOTHING PREPARATION (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Prepare decay-rate smoothing with sane defaults
+    // This ensures musical parameter transitions in reverb tails
+    // ================================================================
+    
+    // Seed the decay controls to sane defaults
+    const float initTiltDb    = 0.0f;
+    const float initLoMult    = 1.0f;
+    const float initHiMult    = 1.0f;
+    const float initMidBellDb = 0.0f;
+    rvDecaySm.prepare(sr, initTiltDb, initLoMult, initHiMult, initMidBellDb);
 }
 
 template <typename Sample>
@@ -2593,6 +2607,108 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
         
         // Apply parameters to reverb engine
         reverbEngine.setParams(rp);
+        
+        // ================================================================
+        // 🎯 DECAY PROFILE SMOOTHING TARGET SETTING (JANUARY 2025)
+        // ================================================================
+        // CRITICAL: Set decay-rate smoothing targets once per block
+        // This prevents zipper noise and ensures musical transitions
+        // ================================================================
+        
+        // These come from your APVTS snapshot (double → float ok)
+        const float tiltDb        = (float) hp.rvTiltDb;          // existing tone tilt
+        const float decayLoMult   = 1.0f;  // TODO: Add rvDecayLoMult to HostParams (0.25..4)
+        const float decayHiMult   = 1.0f;  // TODO: Add rvDecayHiMult to HostParams (0.25..4)
+        const float decayMidBell  = 0.0f;  // TODO: Add rvDecayMidDb to HostParams (±12 dB)
+        rvDecaySm.setTargets(tiltDb, decayLoMult, decayHiMult, decayMidBell);
+        
+        // (optional) expose a smoothing speed control
+        // rvDecaySm.setTimesMs(/*tilt*/ 80.0, /*mult*/ 80.0, /*mid*/ 100.0);
+    }
+}
+
+// ================================================================
+// 🎯 DECAY PROFILE GENERATION HELPERS (JANUARY 2025)
+// ================================================================
+// CRITICAL: Musical decay-rate control with smooth parameter transitions
+// ================================================================
+
+// Map dB controls to T60 multipliers: ±12 dB -> ×/÷2.0 by design.
+static inline float dbToT60Mult (float dB) noexcept
+{
+    return std::pow (2.0f, dB / 12.0f); // musical & easy to reason about
+}
+
+// Clamp a multiplier to a safe musical window
+static inline float clampMult (float m) noexcept
+{
+    return juce::jlimit (0.25f, 4.0f, m);
+}
+
+/**
+ * Build a Decay-Rate Profile from:
+ *  - rvTiltDb: tone tilt (bright +dB, warm -dB) used as a *gentle* decay bias
+ *  - rvDecayLoMult: user low T60× (0.5..2.0 typical)
+ *  - rvDecayHiMult: user high T60× (0.5..2.0 typical)
+ *  - optional mid bell in dB -> T60× at midFreq/Q
+ *
+ * Pivots:
+ *  - Low tilt pivot ~ 250 Hz  (bass region)
+ *  - High tilt pivot ~ 4 kHz  (air/clarity)
+ *
+ * Notes:
+ *  - Positive tilt slightly *lengthens highs* and *shortens lows*.
+ *  - Negative tilt does the opposite. Scale is mild (½ strength).
+ */
+static inline void buildDecayProfileFromTilt(
+    DecayRateProfile& out,
+    float rvTiltDb,
+    float rvDecayLoMult,
+    float rvDecayHiMult,
+    float midBellDb      = 0.0f,   // optional, 0 = off
+    float midFreqHz      = 1600.0f,
+    float midQ           = 0.9f,
+    float tiltLoPivotHz  = 250.0f,
+    float tiltHiPivotHz  = 4000.0f)
+{
+    out.bands.clear();
+    out.bands.reserve(3); // avoid reallocations across frames
+
+    // Gentle bias from tonal tilt: cap to ±12 dB, apply at half strength
+    const float tiltDbLimited = juce::jlimit(-12.0f, 12.0f, rvTiltDb);
+    const float loBias = dbToT60Mult(-0.5f * tiltDbLimited); // brighter tilt -> a bit faster lows
+    const float hiBias = dbToT60Mult(+0.5f * tiltDbLimited); // brighter tilt -> a bit slower highs
+
+    const float loMult = clampMult(rvDecayLoMult * loBias);
+    const float hiMult = clampMult(rvDecayHiMult * hiBias);
+
+    // Low tilt band
+    {
+        DecayRateBand b;
+        b.type   = DecayRateBand::TiltLo;
+        b.freqHz = juce::jlimit(20.0f, 20000.0f, tiltLoPivotHz);
+        b.q      = 0.707f; // smooth shelf slope
+        b.mult   = loMult; // e.g. 0.5x..2.0x, biased by tilt
+        out.bands.push_back(b);
+    }
+    // High tilt band
+    {
+        DecayRateBand b;
+        b.type   = DecayRateBand::TiltHi;
+        b.freqHz = juce::jlimit(20.0f, 20000.0f, tiltHiPivotHz);
+        b.q      = 0.707f;
+        b.mult   = hiMult;
+        out.bands.push_back(b);
+    }
+    // Optional mid bell (use dB → T60× mapping)
+    if (std::abs(midBellDb) > 0.05f)
+    {
+        DecayRateBand b;
+        b.type   = DecayRateBand::Bell;
+        b.freqHz = juce::jlimit(20.0f, 20000.0f, midFreqHz);
+        b.q      = juce::jlimit(0.3f, 6.0f, midQ);
+        b.mult   = clampMult(dbToT60Mult(midBellDb)); // ±12 dB -> 0.5x..2.0x
+        out.bands.push_back(b);
     }
 }
 
@@ -3785,6 +3901,32 @@ void FieldChain<Sample>::process (Block block)
     
     if (reverbEnginePrepared && params.rvEnabled)
     {
+        // ================================================================
+        // 🎯 DECAY PROFILE SMOOTHING PROCESSING (JANUARY 2025)
+        // ================================================================
+        // CRITICAL: Generate smoothed decay-rate profile for musical tails
+        // This prevents zipper noise and ensures smooth parameter transitions
+        // ================================================================
+        
+        // Advance smoothing for this block (constant-time, no alloc)
+        rvDecaySm.processBlock((int) block.getNumSamples());
+        
+        // Build the musical Decay-Rate Profile from *smoothed* controls
+        static DecayRateProfile drp;
+        buildDecayProfileFromTilt(
+            drp,
+            /*tiltDb   */ rvDecaySm.tiltDb(),
+            /*loMult   */ rvDecaySm.loMult(),
+            /*hiMult   */ rvDecaySm.hiMult(),
+            /*midBellDb*/ rvDecaySm.midBellDb(),         // optional
+            /*midFreqHz*/ (float) params.rvDuckBandHz,   // or dedicated hp.rvDecayMidFreqHz
+            /*midQ     */ (float) params.rvDuckBandQ,    // or dedicated hp.rvDecayMidQ
+            /*tiltLoPivot*/ 250.0f,
+            /*tiltHiPivot*/ 4000.0f);
+        
+        // Push to engine (Phase-1: cached, Phase-2: forwarded to FDN loss designer)
+        reverbEngine.setDecayRateProfile(drp);
+        
         // Release guard: ensure block size doesn't exceed prepared size
         const int N = (int) block.getNumSamples();
         const int C = (int) block.getNumChannels();

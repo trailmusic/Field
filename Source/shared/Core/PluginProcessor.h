@@ -653,6 +653,81 @@ private:
     bool reverbEnginePrepared { false };
     int lastReverbBlockSize { 0 };
     int lastReverbChannels { 0 };
+    
+    // ================================================================
+    // 🎯 DECAY PROFILE SMOOTHING SHIM (JANUARY 2025)
+    // ================================================================
+    // CRITICAL: Smooth decay-rate controls to prevent zipper noise
+    // and ensure musical parameter transitions in reverb tails
+    // ================================================================
+    
+    // One-pole block smoother: y[nBlock] = target + (y - target) * a^N
+    struct OnePoleBlockSmoother
+    {
+        void prepare(double newFs) noexcept { fs = (newFs > 0.0 ? newFs : 48000.0); }
+        void setTimeMs(double ms) noexcept  { tau = juce::jlimit(1.0, 2000.0, ms) * 0.001; }
+        void reset(float v) noexcept        { y = target = v; }
+        void setTarget(float v) noexcept    { target = v; }
+        void processBlock(int N) noexcept
+        {
+            if (N <= 0) return;
+            if (tau <= 1e-6) { y = target; return; }
+            const double a  = std::exp(-1.0 / (tau * fs));
+            const double an = std::pow(a, (double) N);
+            y = (float) (target + (y - target) * an);
+        }
+        float value() const noexcept { return y; }
+    private:
+        double fs   = 48000.0;
+        double tau  = 0.080;      // 80 ms default (seconds)
+        float  y    = 0.0f;
+        float  target = 0.0f;
+    };
+    
+    // Decay profile params smoother (tilt + low/high multipliers + optional mid bell)
+    struct DecayProfileSmoother
+    {
+        void prepare(double fs, float initTiltDb = 0.0f,
+                     float initLoMult = 1.0f, float initHiMult = 1.0f,
+                     float initMidBellDb = 0.0f) noexcept
+        {
+            tilt.prepare(fs);    lo.prepare(fs);     hi.prepare(fs);    midBell.prepare(fs);
+            tilt.setTimeMs(tiltMs); lo.setTimeMs(multMs); hi.setTimeMs(multMs); midBell.setTimeMs(midMs);
+            tilt.reset(initTiltDb);
+            lo.reset(clampMult(initLoMult));
+            hi.reset(clampMult(initHiMult));
+            midBell.reset(initMidBellDb);
+        }
+        void setTargets(float tiltDb, float loMult, float hiMult, float midBellDb = 0.0f) noexcept
+        {
+            tilt.setTarget(juce::jlimit(-24.0f, 24.0f, tiltDb));
+            lo.setTarget  (clampMult(loMult));
+            hi.setTarget  (clampMult(hiMult));
+            midBell.setTarget(juce::jlimit(-12.0f, 12.0f, midBellDb));
+        }
+        void processBlock(int N) noexcept
+        {
+            tilt.processBlock(N);
+            lo  .processBlock(N);
+            hi  .processBlock(N);
+            midBell.processBlock(N);
+        }
+        float tiltDb()     const noexcept { return tilt.value(); }
+        float loMult()     const noexcept { return lo.value(); }
+        float hiMult()     const noexcept { return hi.value(); }
+        float midBellDb()  const noexcept { return midBell.value(); }
+        void setTimesMs(double tiltTimeMs, double multTimeMs, double midTimeMs) noexcept
+        {
+            tiltMs = tiltTimeMs; multMs = multTimeMs; midMs = midTimeMs;
+            tilt.setTimeMs(tiltMs); lo.setTimeMs(multMs); hi.setTimeMs(multMs); midBell.setTimeMs(midMs);
+        }
+    private:
+        static inline float clampMult(float m) noexcept { return juce::jlimit(0.25f, 4.0f, m); }
+        OnePoleBlockSmoother tilt, lo, hi, midBell;
+        double tiltMs = 80.0, multMs = 80.0, midMs = 100.0; // tasteful defaults
+    };
+    
+    DecayProfileSmoother rvDecaySm;
 
     // Anti-alias/anti-imaging guards for OS Off around saturation
     juce::dsp::IIR::Filter<Sample> aliasGuardHP;
