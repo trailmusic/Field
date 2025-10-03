@@ -514,7 +514,7 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
 void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ignoreUnused (midi);
-    juce::ScopedNoDenormals _;
+    juce::ScopedNoDenormals _ftz;  // FTZ/DAZ for this whole block
     
     // ================================================================
     // 🎛️ QUALITY SYSTEM DENORMAL HANDLING (JANUARY 2025)
@@ -528,7 +528,17 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     
     isDoublePrecEnabled = false;
 
-    if (buffer.getNumSamples() <= 0) return;
+    const int N = buffer.getNumSamples();
+    if (N <= 0) return;
+
+    // Fail-safe: if chain not prepared, return early (pass-through if your graph is in-place)
+    const int preparedMax = (chainF ? chainF->getPreparedBlockSize() : 0);
+    if (preparedMax <= 0) {
+       #if JUCE_DEBUG
+       juce::Logger::writeToLog("[Field] processBlock: chain not prepared (preparedMax<=0). Hard pass-through this block.");
+       #endif
+       return; // in-place: host still hears input; we don't risk a spin
+    }
 
     // Emergency safety: hard passthrough to confirm architecture vs. processing
     if (getSafePassthrough()) return;
@@ -710,13 +720,6 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // This handles variable DAW buffer sizes without reallocations
     // ================================================================
     
-    // Determine prepared chunk size from chain
-    const int preparedMax = (chainF ? chainF->getPreparedBlockSize() : 0);
-
-#if JUCE_DEBUG
-    jassert (preparedMax > 0);
-#endif
-
     // RELEASE GUARD: never process a block larger than prepared
     if (preparedMax > 0 && buffer.getNumSamples() > preparedMax)
     {
@@ -728,14 +731,20 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         buffer.clear(); // fail-safe: mute the block to avoid overruns
         return;
     }
-    
-    const int N = buffer.getNumSamples();
     const int maxBlockSize = preparedMax; // Use actual prepared block size
     
     int offset = 0;
-    while (offset < N)
-    {
+    int spinGuard = 0;
+    
+    while (offset < N) {
         const int nThis = std::min(maxBlockSize, N - offset);
+        if (nThis <= 0 || ++spinGuard > 1024) {
+           #if JUCE_DEBUG
+            juce::Logger::writeToLog("[Field] Tiling guard tripped: preparedMax="
+                                     + juce::String(preparedMax) + " N=" + juce::String(N));
+           #endif
+            break; // bail instead of spinning forever
+        }
         
         // Create zero-copy view into host buffer
         juce::AudioBuffer<float> view(buffer.getArrayOfWritePointers(),
@@ -925,7 +934,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
 void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, juce::MidiBuffer& midi)
 {
     juce::ignoreUnused (midi);
-    juce::ScopedNoDenormals _;
+    juce::ScopedNoDenormals _ftz;  // FTZ/DAZ for this whole block
     
     // ================================================================
     // 🎛️ QUALITY SYSTEM DENORMAL HANDLING (JANUARY 2025)
@@ -938,7 +947,17 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     #endif
     isDoublePrecEnabled = true;
 
-    if (buffer.getNumSamples() <= 0) return;
+    const int N = buffer.getNumSamples();
+    if (N <= 0) return;
+
+    // Fail-safe: if chain not prepared, return early (pass-through if your graph is in-place)
+    const int preparedMax = (chainD ? chainD->getPreparedBlockSize() : 0);
+    if (preparedMax <= 0) {
+       #if JUCE_DEBUG
+       juce::Logger::writeToLog("[Field] processBlock: chain not prepared (preparedMax<=0). Hard pass-through this block.");
+       #endif
+       return; // in-place: host still hears input; we don't risk a spin
+    }
 
     // Emergency safety: hard passthrough to confirm architecture vs. processing
     if (getSafePassthrough()) return;
@@ -1090,13 +1109,6 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     // This handles variable DAW buffer sizes without reallocations
     // ================================================================
     
-    // Determine prepared chunk size from chain
-    const int preparedMax = (chainD ? chainD->getPreparedBlockSize() : 0);
-
-#if JUCE_DEBUG
-    jassert (preparedMax > 0);
-#endif
-
     // RELEASE GUARD: never process a block larger than prepared
     if (preparedMax > 0 && buffer.getNumSamples() > preparedMax)
     {
@@ -1108,14 +1120,20 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         buffer.clear(); // fail-safe: mute the block to avoid overruns
         return;
     }
-    
-    const int N = buffer.getNumSamples();
     const int maxBlockSize = preparedMax; // Use actual prepared block size
     
     int offset = 0;
-    while (offset < N)
-    {
+    int spinGuard = 0;
+    
+    while (offset < N) {
         const int nThis = std::min(maxBlockSize, N - offset);
+        if (nThis <= 0 || ++spinGuard > 1024) {
+           #if JUCE_DEBUG
+            juce::Logger::writeToLog("[Field] Tiling guard tripped: preparedMax="
+                                     + juce::String(preparedMax) + " N=" + juce::String(N));
+           #endif
+            break; // bail instead of spinning forever
+        }
         
         // Create zero-copy view into host buffer
         juce::AudioBuffer<double> view(buffer.getArrayOfWritePointers(),
@@ -2232,7 +2250,12 @@ template <typename Sample>
 void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
 {
     sr = spec.sampleRate;
-    preparedBlockSize = (int) spec.maximumBlockSize; // Store the max block size for tiling
+    
+    // Guarantee preparedBlockSize is stamped every time
+    preparedBlockSize = juce::jlimit(64,
+                                     kMaxPreparedAudioBlock, // 8192 in your header
+                                     (int)spec.maximumBlockSize);
+    if (preparedBlockSize <= 0) preparedBlockSize = 512; // belt & suspenders
 
     hpFilter.prepare (spec);
     lpFilter.prepare (spec);
@@ -3394,10 +3417,24 @@ void FieldChain<Sample>::applySaturation (Block block, Sample driveLin, Sample m
 template <typename Sample>
 void FieldChain<Sample>::process (Block block)
 {
-    if (params.bypass) return;
+    juce::ScopedNoDenormals _ftz;
 
-    // Flush denormals to avoid CPU spikes/crackle on quiet passages
-    juce::ScopedNoDenormals noDenormals;
+    const int N = (int)block.getNumSamples();
+    const int preparedMax = getPreparedBlockSize();
+
+    if (N > preparedMax) {
+       #if JUCE_DEBUG
+       juce::Logger::writeToLog("[Field] Chain process: N("
+                                + juce::String(N) + ") > preparedMax("
+                                + juce::String(preparedMax) + "). Muting block.");
+       #endif
+       // Clear all channels of the block
+       for (int ch = 0; ch < (int)block.getNumChannels(); ++ch)
+           juce::FloatVectorOperations::clear(block.getChannelPointer(ch), N);
+       return;
+    }
+
+    if (params.bypass) return;
 
     // Input gain
     block.multiplyBy (params.inputGainLin);

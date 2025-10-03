@@ -178,6 +178,8 @@ void ReverbEngine::setToneEq (const ToneEq& eqIn)
 // ============================================================================
 void ReverbEngine::processWet (AudioBuffer<float>& wet, const AudioBuffer<float>& sidechain)
 {
+    juce::ScopedNoDenormals _ftz;  // FTZ/DAZ for this whole block
+    
     // ================================================================
     // 🎯 PRODUCTION-GRADE BUFFER SAFETY (JANUARY 2025)
     // ================================================================
@@ -190,6 +192,10 @@ void ReverbEngine::processWet (AudioBuffer<float>& wet, const AudioBuffer<float>
     jassert (wet.getNumSamples() > 0);
     jassert (chans > 0);
     jassert (maxSamples > 0);
+    
+    // Add tiny anti-denormal seed in feedback paths (harmless, inaudible)
+    for (int c = 0; c < wet.getNumChannels(); ++c)
+        wet.getWritePointer(c)[0] += 1e-24f;
 
     // Safety check: if buffer is larger than prepared size, skip processing
     if (wet.getNumSamples() > maxSamples) {
