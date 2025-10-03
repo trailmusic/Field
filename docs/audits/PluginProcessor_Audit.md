@@ -2,6 +2,53 @@
 
 ## 🎯 **GOAL: Match and Exceed Gold Clip's Oversampling System**
 
+---
+
+## 🎯 REVERB DECAY-RATE CONTROL SYSTEM - Complete Backend Integration (January 2025)
+
+### **Overview**
+The Field Reverb system now includes 8 new decay-rate control parameters for frequency-dependent T60 shaping. These parameters enable musical control over reverb tail characteristics, allowing users to shape how different frequency bands decay over time.
+
+### **8 Decay-Rate Control Parameters**
+1. **`decayLoMult`** (0.25..4.0) - Low frequency T60 multiplier
+2. **`decayHiMult`** (0.25..4.0) - High frequency T60 multiplier  
+3. **`decayMidDb`** (±12 dB) - Mid frequency bell gain
+4. **`decayMidFreqHz`** (20..20000 Hz) - Mid frequency bell center
+5. **`decayMidQ`** (0.3..6.0) - Mid frequency bell Q
+6. **`decayTiltDb`** (±12 dB) - Decay tilt bias
+7. **`decaySmoothing`** (0..2) - Parameter smoothing speed (Fast/Med/Slow)
+8. **`decayMode`** (0..1) - UI mode toggle (Simple/Advanced)
+
+### **Complete Backend Integration**
+- ✅ **APVTS Parameter Definitions**: All 8 parameters defined in ReverbParamIDs.h and ReverbParameters.h/.cpp
+- ✅ **Choice Arrays**: Smoothing and mode choice arrays for UI controls
+- ✅ **HostParams Integration**: All parameters added to HostParams struct in PluginProcessor.h
+- ✅ **FieldParams Integration**: All parameters added to FieldParams struct for DSP processing
+- ✅ **APVTS Parameter Reading**: Complete parameter reading from APVTS in processBlock method
+- ✅ **Parameter Mapping**: Complete parameter mapping from HostParams to FieldParams with proper clamping
+- ✅ **Build Verification**: All targets compile and install successfully
+- ✅ **Ready for UI**: Backend 100% complete and ready for UI control implementation
+
+### **Technical Implementation**
+- **Parameter Flow**: APVTS → HostParams → FieldParams → ReverbEngine
+- **Smoothing Integration**: Parameters feed into existing decay profile smoothing system
+- **Thread Safety**: All parameters properly integrated with existing architecture
+- **Type Safety**: All parameters properly clamped with appropriate ranges
+- **Build Success**: All targets compile without errors
+
+### **Files Modified**
+- `Source/features/reverb/DSP/ReverbParamIDs.h` - Added parameter ID constants
+- `Source/features/reverb/DSP/ReverbParameters.h/.cpp` - Added parameter definitions and choice arrays
+- `Source/shared/Core/PluginProcessor.h` - Added parameters to HostParams and FieldParams structs
+- `Source/shared/Core/PluginProcessor.cpp` - Added APVTS parameter reading and parameter mapping
+
+### **Next Steps**
+- **UI Implementation**: Ready for UI control implementation
+- **Preset Integration**: Ready for decay-rate presets
+- **Validation**: Ready for Phase-1 stability and parameter sweep testing
+
+---
+
 ### **Current State Analysis**
 
 #### ✅ **What We Have**

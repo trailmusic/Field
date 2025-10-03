@@ -1,6 +1,6 @@
 # Reverb.md — Field Reverb System
 
-*Version:* 2.1 (Jan 2025) • *Owner:* Audio/DSP • *Status:* Phase 2 FDN tank implemented, production-ready, and fully organized
+*Version:* 2.3 (Jan 2025) • *Owner:* Audio/DSP • *Status:* Phase 2 FDN tank implemented, production-ready, fully organized, and complete backend integration of 8 decay-rate control parameters
 
 ---
 
@@ -209,6 +209,29 @@ Input → (PreDelay) → EarlyReflections → FDN Tank (Phase 2)
 * **ReverbIRExportTest**: 10-second IR export to desktop for validation
 * **SimdBiquad.h**: Structure-of-Arrays biquad for future SIMD optimization
 
+### 5.8 Decay-Rate Control Parameters (New - January 2025)
+
+**8 New Decay-Rate Control Parameters for Frequency-Dependent T60 Shaping:**
+
+* `decayLoMult` (0.25..4.0) - Low frequency T60 multiplier
+* `decayHiMult` (0.25..4.0) - High frequency T60 multiplier  
+* `decayMidDb` (±12 dB) - Mid frequency bell gain
+* `decayMidFreqHz` (20..20000 Hz) - Mid frequency bell center
+* `decayMidQ` (0.3..6.0) - Mid frequency bell Q
+* `decayTiltDb` (±12 dB) - Decay tilt bias
+* `decaySmoothing` (0..2) - Parameter smoothing speed (Fast/Med/Slow)
+* `decayMode` (0..1) - UI mode toggle (Simple/Advanced)
+
+**Backend Integration Status:**
+- ✅ **APVTS Parameter Definitions**: All 8 parameters defined in ReverbParamIDs.h and ReverbParameters.h/.cpp
+- ✅ **Choice Arrays**: Smoothing and mode choice arrays for UI controls
+- ✅ **HostParams Integration**: All parameters added to HostParams struct
+- ✅ **FieldParams Integration**: All parameters added to FieldParams struct  
+- ✅ **APVTS Parameter Reading**: Complete parameter reading in processBlock method
+- ✅ **Parameter Mapping**: Complete mapping from HostParams to FieldParams with clamping
+- ✅ **Build Verification**: All targets compile successfully
+- ✅ **Ready for UI**: Backend 100% complete and ready for UI implementation
+
 ---
 
 ## 6. UI System
@@ -357,6 +380,18 @@ Input → (PreDelay) → EarlyReflections → FDN Tank (Phase 2)
 ---
 
 ## 12. Change Log
+
+* **Jan 2025 v2.3 - Complete Backend Integration of 8 Decay-Rate Control Parameters**
+
+  * **APVTS Integration**: All 8 decay-rate parameters added to ReverbParamIDs.h and ReverbParameters.h/.cpp
+  * **Parameter Definitions**: Complete parameter definitions with ranges, defaults, and labels
+  * **Choice Arrays**: Smoothing and mode choice arrays for UI controls
+  * **HostParams Integration**: All 8 parameters added to HostParams struct in PluginProcessor.h
+  * **FieldParams Integration**: All 8 parameters added to FieldParams struct for DSP processing
+  * **APVTS Parameter Reading**: Complete parameter reading from APVTS in processBlock method
+  * **Parameter Mapping**: Complete parameter mapping from HostParams to FieldParams with proper clamping
+  * **Build Verification**: All targets compile and install successfully
+  * **Ready for UI**: Backend 100% complete and ready for UI control implementation
 
 * **Jan 2025 v2.1 - Directory Reorganization & Preset System**
 

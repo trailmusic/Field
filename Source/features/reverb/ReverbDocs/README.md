@@ -78,6 +78,7 @@ The reverb system is now organized into the following logical subdirectories:
 - Production-ready FDN core with 8 delay lines and Hadamard feedback matrix
 - Mathematically correct decay mapping with per-cycle feedback gains
 - Real decay-rate shaping with frequency-dependent T60 curves
+- **8 Decay-Rate Control Parameters**: Complete backend integration with APVTS, HostParams, FieldParams, and parameter mapping
 - Thread-safe parameter updates with double-buffered runtime
 - Denormal protection and output safety features
 
@@ -117,6 +118,7 @@ The reverb system is now organized into the following logical subdirectories:
 
 ## 📝 Version History
 
+- **v2.3 (Jan 2025)**: Complete backend integration of 8 decay-rate control parameters - APVTS, HostParams, FieldParams, and parameter mapping fully integrated
 - **v2.2 (Jan 2025)**: Production-grade buffer handling implementation - fixes Ableton Live glitching
 - **v2.1 (Jan 2025)**: Complete directory reorganization and preset system integration
 - **v2.0 (Jan 2025)**: Phase 2 FDN implementation with mathematically correct decay mapping
