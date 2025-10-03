@@ -304,23 +304,29 @@ void ReverbGraphics::resized ()
 
     // Right column: Ducking label + ducking module (50%) + Decay label + DecayRateFloat (50%)
     {
+        // Calculate available space after both labels
+        const int totalHeight = rightArea.getHeight();
+        const int availableForContainers = totalHeight - (2 * kLabelHeight);
+        const int containerHeight = availableForContainers / 2;
+        
+        // Ducking label
         auto duckLabel = rightArea.removeFromTop (kLabelHeight);
         duckingLabel.setBounds (duckLabel);
 
+        // DuckingFloat gets exactly half the available container space
         if (duckingFloat)
         {
-            // Give DuckingFloat 50% of the remaining right column height
-            auto duckingArea = rightArea.removeFromTop (rightArea.getHeight() / 2);
+            auto duckingArea = rightArea.removeFromTop (containerHeight);
             duckingFloat->setBounds (duckingArea);
         }
         
-        // Decay label and DecayRateFloat in remaining 50%
+        // Decay label
         auto decayLabelArea = rightArea.removeFromTop (kLabelHeight);
         decayLabel.setBounds (decayLabelArea);
         
+        // DecayRateFloat gets the remaining space (should be equal to DuckingFloat)
         if (decayRateFloat)
         {
-            // DecayRateFloat gets the remaining space
             decayRateFloat->setBounds (rightArea);
         }
     }
