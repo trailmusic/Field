@@ -241,19 +241,19 @@ void DuckingFloat::updateLayout()
     {
         // Top meter strip
         auto top = bounds.removeFromTop(36.0f);
-        grMeterBounds = top.reduced(6.0f, 6.0f);
+        grMeterBounds = top.reduced(2.0f, 2.0f);
 
         // Selectors row
-        auto selRow = bounds.removeFromTop(28.0f).reduced(6.0f, 2.0f);
-        auto leftSel  = selRow.removeFromLeft(selRow.getWidth() * 0.5f).reduced(2.0f);
-        auto rightSel = selRow.reduced(2.0f);
+        auto selRow = bounds.removeFromTop(28.0f).reduced(2.0f, 2.0f);
+        auto leftSel  = selRow.removeFromLeft(selRow.getWidth() * 0.5f).reduced(1.0f);
+        auto rightSel = selRow.reduced(1.0f);
         modeSelector.setBounds(leftSel.toNearestInt());
         detectorSelector.setBounds(rightSel.toNearestInt());
 
         // Two columns of 4 knobs each
-        auto knobsArea = bounds.reduced(4.0f);
-        auto leftCol   = knobsArea.removeFromLeft(knobsArea.getWidth() * 0.5f).reduced(4.0f);
-        auto rightCol  = knobsArea.reduced(4.0f);
+        auto knobsArea = bounds.reduced(1.0f);
+        auto leftCol   = knobsArea.removeFromLeft(knobsArea.getWidth() * 0.5f).reduced(1.0f);
+        auto rightCol  = knobsArea.reduced(1.0f);
 
         auto layColumn = [](juce::Component& a, juce::Component& b, juce::Component& c, juce::Component& d, juce::Rectangle<float> area)
         {
