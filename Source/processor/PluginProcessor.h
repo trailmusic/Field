@@ -1005,7 +1005,7 @@ public:
     bool acceptsMidi() const override                          { return false; }
     bool producesMidi() const override                         { return false; }
     bool isMidiEffect() const override                         { return false; }
-    int getLatencySamples() override                        { return latency.getApplied(); }
+    int getLatencySamples() const                          { return latency.getApplied(); }
     double getTailLengthSeconds() const override           { return tail_.getSeconds(); }
     bool supportsDoublePrecisionProcessing() const override    { return true; }
 
