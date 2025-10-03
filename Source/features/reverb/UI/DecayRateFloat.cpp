@@ -271,15 +271,93 @@ void DecayRateFloat::paintHeaderArea(juce::Graphics& g, juce::Rectangle<float> b
     g.setColour(th.accent.withAlpha(0.30f));
     g.drawRoundedRectangle(headerArea, cr, 1.0f);
 
-    // Header text
-    g.setColour(th.text.withAlpha(0.7f));
-    g.setFont(juce::Font(10.0f, juce::Font::bold));
-    g.drawText("DECAY RATE", headerArea, juce::Justification::centred);
+    // Decay Rate Spectral Dots Meter
+    paintDecayRateSpectralMeter(g, headerArea);
 
     // Subtle accent line
     auto accentLine = juce::Rectangle<float>(headerArea.getX() + 8, headerArea.getBottom() - 3, headerArea.getWidth() - 16, 1.0f);
     g.setColour(th.accent.withAlpha(0.4f));
     g.fillRoundedRectangle(accentLine, 0.5f);
+}
+
+void DecayRateFloat::paintDecayRateSpectralMeter(juce::Graphics& g, juce::Rectangle<float> bounds)
+{
+    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+    FieldLNF def; const auto& th = lf ? lf->theme : def.theme;
+
+    // Calculate decay rate activity across frequency spectrum
+    const int numBands = 24; // Number of spectral dots
+    const float dotSize = 2.0f;
+    const float dotSpacing = bounds.getWidth() / (numBands + 1);
+    
+    // Get current parameter values (simplified calculation)
+    float loMult = loMultSlider.getValue();
+    float hiMult = hiMultSlider.getValue();
+    float midDb = midDbSlider.getValue();
+    float tiltDb = tiltDbSlider.getValue();
+    
+    // Calculate decay rate profile across frequency bands
+    for (int i = 0; i < numBands; ++i)
+    {
+        float freq = (float)i / (numBands - 1); // 0.0 to 1.0 across spectrum
+        
+        // Calculate decay rate activity for this frequency band
+        float activity = 0.0f;
+        
+        // Low frequency contribution (left side)
+        if (freq < 0.3f)
+        {
+            float lowWeight = 1.0f - (freq / 0.3f);
+            activity += std::abs(loMult - 1.0f) * lowWeight;
+        }
+        
+        // High frequency contribution (right side)
+        if (freq > 0.7f)
+        {
+            float highWeight = (freq - 0.7f) / 0.3f;
+            activity += std::abs(hiMult - 1.0f) * highWeight;
+        }
+        
+        // Mid frequency contribution (center)
+        if (freq >= 0.3f && freq <= 0.7f)
+        {
+            float midWeight = 1.0f - std::abs(freq - 0.5f) / 0.2f;
+            activity += std::abs(midDb / 12.0f) * midWeight;
+        }
+        
+        // Tilt contribution (affects entire spectrum)
+        float tiltContribution = std::abs(tiltDb / 12.0f) * (1.0f - std::abs(freq - 0.5f) * 2.0f);
+        activity += tiltContribution;
+        
+        // Normalize activity (0.0 to 1.0)
+        activity = juce::jlimit(0.0f, 1.0f, activity);
+        
+        // Calculate dot position
+        float x = bounds.getX() + (i + 1) * dotSpacing - dotSize * 0.5f;
+        float y = bounds.getY() + bounds.getHeight() * 0.5f - dotSize * 0.5f;
+        
+        // Color coding based on activity level
+        juce::Colour dotColor;
+        if (activity < 0.3f)
+        {
+            // Green (subtle)
+            dotColor = juce::Colour(0xff4CAF50).withAlpha(0.3f + activity * 0.7f);
+        }
+        else if (activity < 0.7f)
+        {
+            // Yellow (moderate)
+            dotColor = juce::Colour(0xffFFC107).withAlpha(0.3f + activity * 0.7f);
+        }
+        else
+        {
+            // Red (strong)
+            dotColor = juce::Colour(0xffF44336).withAlpha(0.3f + activity * 0.7f);
+        }
+        
+        // Draw the spectral dot
+        g.setColour(dotColor);
+        g.fillEllipse(x, y, dotSize, dotSize);
+    }
 }
 
 void DecayRateFloat::paintControlRow(juce::Graphics& g, juce::Rectangle<float> bounds)
