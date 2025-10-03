@@ -1,0 +1,415 @@
+total 24
+drwxr-xr-x@  5 grantedwards  staff   160 Oct  2 18:07 .
+drwxr-xr-x  20 grantedwards  staff   640 Oct  2 22:42 ..
+-rw-r--r--   1 grantedwards  staff  9732 Oct  2 21:26 CMakeLists.txt
+drwxr-xr-x  11 grantedwards  staff   352 Sep 29 22:16 features
+drwxr-xr-x   6 grantedwards  staff   192 Sep 29 22:16 shared
+
+/Users/grantedwards/Desktop/Field/Source/features:
+total 0
+drwxr-xr-x  11 grantedwards  staff  352 Sep 29 22:16 .
+drwxr-xr-x@  5 grantedwards  staff  160 Oct  2 18:07 ..
+drwxr-xr-x   6 grantedwards  staff  192 Oct  2 00:10 band
+drwxr-xr-x   7 grantedwards  staff  224 Oct  1 12:27 delay
+drwxr-xr-x  10 grantedwards  staff  320 Oct  1 12:27 dynEq
+drwxr-xr-x   5 grantedwards  staff  160 Oct  2 00:10 imager
+drwxr-xr-x  11 grantedwards  staff  352 Oct  2 14:44 machine
+drwxr-xr-x  13 grantedwards  staff  416 Oct  2 00:10 motion
+drwxr-xr-x   4 grantedwards  staff  128 Oct  1 12:27 phase
+drwxr-xr-x  10 grantedwards  staff  320 Oct  2 18:07 reverb
+drwxr-xr-x   6 grantedwards  staff  192 Oct  2 00:10 xy
+
+/Users/grantedwards/Desktop/Field/Source/features/band:
+total 120
+drwxr-xr-x   6 grantedwards  staff    192 Oct  2 00:10 .
+drwxr-xr-x  11 grantedwards  staff    352 Sep 29 22:16 ..
+-rw-r--r--   1 grantedwards  staff   9306 Oct  2 00:10 BandControlsPane.h
+-rw-r--r--   1 grantedwards  staff   4179 Sep 29 22:16 BandGraphics.cpp
+-rw-r--r--   1 grantedwards  staff  36432 Sep 29 22:16 BandGraphics.h
+-rw-r--r--   1 grantedwards  staff   2378 Oct  2 00:10 BandTab.h
+
+/Users/grantedwards/Desktop/Field/Source/features/delay:
+total 112
+drwxr-xr-x   7 grantedwards  staff    224 Oct  1 12:27 .
+drwxr-xr-x  11 grantedwards  staff    352 Sep 29 22:16 ..
+-rw-r--r--   1 grantedwards  staff   5307 Oct  1 12:27 Delay.md
+-rw-r--r--   1 grantedwards  staff  16791 Oct  1 12:27 DelayControlsPane.h
+-rw-r--r--   1 grantedwards  staff   2160 Oct  1 12:27 DelayTab.h
+-rw-r--r--   1 grantedwards  staff   3067 Sep 29 22:16 DelayUiBridge.h
+-rw-r--r--   1 grantedwards  staff  16559 Sep 29 22:16 DelayVisuals.h
+
+/Users/grantedwards/Desktop/Field/Source/features/dynEq:
+total 288
+drwxr-xr-x  10 grantedwards  staff    320 Oct  1 12:27 .
+drwxr-xr-x  11 grantedwards  staff    352 Sep 29 22:16 ..
+-rw-r--r--   1 grantedwards  staff  89873 Oct  1 12:27 DynEqTab.h
+-rw-r--r--   1 grantedwards  staff   9444 Sep 29 22:16 DynEqZoomSideRail.h
+-rw-r--r--   1 grantedwards  staff   5168 Oct  1 12:27 DynamicEQ.md
+-rw-r--r--   1 grantedwards  staff   9290 Sep 29 22:16 DynamicEqParamIDs.h
+-rw-r--r--   1 grantedwards  staff   5621 Sep 29 22:16 DynamicEqState.cpp
+-rw-r--r--   1 grantedwards  staff   1304 Sep 29 22:16 DynamicEqState.h
+-rw-r--r--   1 grantedwards  staff   7356 Sep 29 22:16 FilterFactory.h
+-rw-r--r--   1 grantedwards  staff   1691 Sep 29 22:16 ProcessedSpectrumPane.h
+
+/Users/grantedwards/Desktop/Field/Source/features/imager:
+total 88
+drwxr-xr-x   5 grantedwards  staff    160 Oct  2 00:10 .
+drwxr-xr-x  11 grantedwards  staff    352 Sep 29 22:16 ..
+-rw-r--r--   1 grantedwards  staff   6902 Oct  2 00:10 ImagerControlsPane.h
+-rw-r--r--   1 grantedwards  staff  32398 Sep 29 22:16 ImagerPane.h
+-rw-r--r--   1 grantedwards  staff   2831 Oct  2 00:10 ImagerTab.h
+
+/Users/grantedwards/Desktop/Field/Source/features/machine:
+total 264
+drwxr-xr-x  11 grantedwards  staff    352 Oct  2 14:44 .
+drwxr-xr-x  11 grantedwards  staff    352 Sep 29 22:16 ..
+-rw-r--r--   1 grantedwards  staff  27125 Sep 29 22:16 MachineEngine.cpp
+-rw-r--r--   1 grantedwards  staff   4808 Sep 29 22:16 MachineEngine.h
+-rw-r--r--   1 grantedwards  staff  11215 Sep 29 22:16 MachineHelpersJUCE.h
+-rw-r--r--   1 grantedwards  staff  22055 Oct  2 14:44 MachinePane.h
+-rw-r--r--   1 grantedwards  staff  34359 Sep 29 22:16 MachineTab.cpp
+-rw-r--r--   1 grantedwards  staff  11313 Sep 29 22:16 MachineTab.h
+-rw-r--r--   1 grantedwards  staff    212 Sep 29 22:16 ParamPatch.h
+-rw-r--r--   1 grantedwards  staff   1755 Sep 29 22:16 ProposalCard.cpp
+-rw-r--r--   1 grantedwards  staff    550 Sep 29 22:16 ProposalCard.h
+
+/Users/grantedwards/Desktop/Field/Source/features/motion:
+total 216
+drwxr-xr-x  13 grantedwards  staff    416 Oct  2 00:10 .
+drwxr-xr-x  11 grantedwards  staff    352 Sep 29 22:16 ..
+-rw-r--r--   1 grantedwards  staff   2996 Sep 29 22:16 CreateParameterLayout_Motion.txt
+-rw-r--r--   1 grantedwards  staff  13241 Oct  2 00:10 MotionControlsPane.h
+-rw-r--r--   1 grantedwards  staff  28242 Sep 29 22:16 MotionEngine.h
+-rw-r--r--   1 grantedwards  staff  19678 Sep 29 22:16 MotionGraphics.cpp
+-rw-r--r--   1 grantedwards  staff   2989 Sep 29 22:16 MotionGraphics.h
+-rw-r--r--   1 grantedwards  staff   5847 Sep 29 22:16 MotionIDs.h
+-rw-r--r--   1 grantedwards  staff   7936 Sep 29 22:16 MotionParams.h
+-rw-r--r--   1 grantedwards  staff   3490 Sep 29 22:16 MotionPath.h
+-rw-r--r--   1 grantedwards  staff   6585 Sep 29 22:16 MotionSlot.h
+-rw-r--r--   1 grantedwards  staff   1598 Oct  2 00:10 MotionTab.h
+-rw-r--r--   1 grantedwards  staff   2165 Sep 29 22:16 MotionVisual.h
+
+/Users/grantedwards/Desktop/Field/Source/features/phase:
+total 48
+drwxr-xr-x   4 grantedwards  staff    128 Oct  1 12:27 .
+drwxr-xr-x  11 grantedwards  staff    352 Sep 29 22:16 ..
+-rw-r--r--   1 grantedwards  staff  13298 Sep 29 22:16 PhaseTab.cpp
+-rw-r--r--   1 grantedwards  staff   4970 Oct  1 12:27 PhaseTab.h
+
+/Users/grantedwards/Desktop/Field/Source/features/reverb:
+total 16
+drwxr-xr-x  10 grantedwards  staff   320 Oct  2 18:07 .
+drwxr-xr-x  11 grantedwards  staff   352 Sep 29 22:16 ..
+-rw-r--r--   1 grantedwards  staff  2980 Oct  2 17:32 BandCounter.h
+-rw-r--r--   1 grantedwards  staff  2195 Oct  2 17:32 BandIdFinder.h
+drwxr-xr-x   8 grantedwards  staff   256 Oct  2 22:15 Core
+drwxr-xr-x  15 grantedwards  staff   480 Oct  2 18:07 DSP
+drwxr-xr-x  13 grantedwards  staff   416 Oct  2 18:07 Presets
+drwxr-xr-x   6 grantedwards  staff   192 Oct  2 19:36 ReverbDocs
+drwxr-xr-x   3 grantedwards  staff    96 Oct  2 18:07 Testing
+drwxr-xr-x  15 grantedwards  staff   480 Oct  2 21:22 UI
+
+/Users/grantedwards/Desktop/Field/Source/features/reverb/Core:
+total 112
+drwxr-xr-x   8 grantedwards  staff    256 Oct  2 22:15 .
+drwxr-xr-x  10 grantedwards  staff    320 Oct  2 18:07 ..
+-rw-r--r--   1 grantedwards  staff   3554 Oct  2 22:17 DecayLearnManager.cpp
+-rw-r--r--   1 grantedwards  staff   4253 Oct  2 22:17 DecayLearnManager.h
+-rw-r--r--   1 grantedwards  staff   1096 Oct  2 18:07 FieldReverbConfig.h
+-rw-r--r--   1 grantedwards  staff  22911 Oct  3 00:02 ReverbEngine.cpp
+-rw-r--r--   1 grantedwards  staff  10391 Oct  2 18:07 ReverbEngine.h
+-rw-r--r--   1 grantedwards  staff   1545 Oct  2 18:07 ReverbTypes.h
+
+/Users/grantedwards/Desktop/Field/Source/features/reverb/DSP:
+total 376
+drwxr-xr-x  15 grantedwards  staff    480 Oct  2 18:07 .
+drwxr-xr-x  10 grantedwards  staff    320 Oct  2 18:07 ..
+-rw-r--r--   1 grantedwards  staff  10417 Oct  2 18:07 DecayLossDesigner.h
+-rw-r--r--   1 grantedwards  staff  38528 Oct  2 18:07 DecayRateEQ.cpp
+-rw-r--r--   1 grantedwards  staff   9979 Oct  2 18:07 DecayRateEQ.h
+-rw-r--r--   1 grantedwards  staff  40197 Oct  2 18:07 ReverbEQ.cpp
+-rw-r--r--   1 grantedwards  staff   7895 Oct  2 18:07 ReverbEQ.h
+-rw-r--r--   1 grantedwards  staff   5671 Oct  2 18:07 ReverbEQParamIDs.h
+-rw-r--r--   1 grantedwards  staff   8471 Oct  2 18:07 ReverbFDN.h
+-rw-r--r--   1 grantedwards  staff   9381 Oct  2 22:17 ReverbParamIDs.h
+-rw-r--r--   1 grantedwards  staff  13219 Oct  2 22:17 ReverbParameters.cpp
+-rw-r--r--   1 grantedwards  staff   9255 Oct  2 22:17 ReverbParameters.h
+-rw-r--r--   1 grantedwards  staff     92 Oct  2 18:07 ReverbProcessorGlue.cpp
+-rw-r--r--   1 grantedwards  staff   4877 Oct  2 18:07 ReverbProcessorGlue.h
+-rw-r--r--   1 grantedwards  staff   1878 Oct  2 18:07 SimdBiquad.h
+
+/Users/grantedwards/Desktop/Field/Source/features/reverb/Presets:
+total 120
+drwxr-xr-x  13 grantedwards  staff    416 Oct  2 18:07 .
+drwxr-xr-x  10 grantedwards  staff    320 Oct  2 18:07 ..
+-rw-r--r--   1 grantedwards  staff   1071 Oct  2 18:07 ModelMacros.h
+-rw-r--r--   1 grantedwards  staff   4120 Oct  2 18:07 ReverbParamMap.cpp
+-rw-r--r--   1 grantedwards  staff    822 Oct  2 18:07 ReverbParamMap.h
+-rw-r--r--   1 grantedwards  staff   2797 Oct  2 18:07 ReverbPresetBrowser.h
+-rw-r--r--   1 grantedwards  staff    871 Oct  2 18:07 ReverbPresetIntegration.cpp
+-rw-r--r--   1 grantedwards  staff   1354 Oct  2 18:07 ReverbPresetIntegration.h
+-rw-r--r--   1 grantedwards  staff   1569 Oct  2 18:07 ReverbPresetIntegrationExample.h
+-rw-r--r--   1 grantedwards  staff   4283 Oct  2 18:07 ReverbPresetLoader.cpp
+-rw-r--r--   1 grantedwards  staff   1570 Oct  2 18:07 ReverbPresetLoader.h
+-rw-r--r--   1 grantedwards  staff  10773 Oct  2 18:07 ReverbPresetManager.cpp
+-rw-r--r--   1 grantedwards  staff   2748 Oct  2 18:07 ReverbPresetManager.h
+
+/Users/grantedwards/Desktop/Field/Source/features/reverb/ReverbDocs:
+total 144
+drwxr-xr-x   6 grantedwards  staff    192 Oct  2 19:36 .
+drwxr-xr-x  10 grantedwards  staff    320 Oct  2 18:07 ..
+-rw-r--r--   1 grantedwards  staff  10837 Oct  2 18:07 PresetSystemIntegration.md
+-rw-r--r--   1 grantedwards  staff   5757 Oct  2 20:46 README.md
+-rw-r--r--   1 grantedwards  staff  31228 Oct  2 20:46 Reverb.md
+-rw-r--r--   1 grantedwards  staff  18512 Oct  2 19:36 ReverbTesting.md
+
+/Users/grantedwards/Desktop/Field/Source/features/reverb/Testing:
+total 32
+drwxr-xr-x   3 grantedwards  staff     96 Oct  2 18:07 .
+drwxr-xr-x  10 grantedwards  staff    320 Oct  2 18:07 ..
+-rw-r--r--   1 grantedwards  staff  16020 Oct  2 18:07 ReverbIRExportTest.cpp
+
+/Users/grantedwards/Desktop/Field/Source/features/reverb/UI:
+total 336
+drwxr-xr-x  15 grantedwards  staff    480 Oct  2 21:22 .
+drwxr-xr-x  10 grantedwards  staff    320 Oct  2 18:07 ..
+-rw-r--r--   1 grantedwards  staff  21841 Oct  2 23:03 DecayRateFloat.cpp
+-rw-r--r--   1 grantedwards  staff   5719 Oct  2 22:37 DecayRateFloat.h
+-rw-r--r--   1 grantedwards  staff  17595 Oct  2 23:05 DuckingFloat.cpp
+-rw-r--r--   1 grantedwards  staff   5775 Oct  2 21:06 DuckingFloat.h
+-rw-r--r--   1 grantedwards  staff  14218 Oct  2 18:07 ReverbControlsPane.cpp
+-rw-r--r--   1 grantedwards  staff   3882 Oct  2 18:07 ReverbControlsPane.h
+-rw-r--r--   1 grantedwards  staff  33149 Oct  2 23:03 ReverbGraphics.cpp
+-rw-r--r--   1 grantedwards  staff  11693 Oct  2 22:45 ReverbGraphics.h
+-rw-r--r--   1 grantedwards  staff   7528 Oct  2 18:07 ReverbScopeComponent.cpp
+-rw-r--r--   1 grantedwards  staff   1806 Oct  2 18:07 ReverbScopeComponent.h
+-rw-r--r--   1 grantedwards  staff   4561 Oct  2 18:07 ReverbTab.h
+-rw-r--r--   1 grantedwards  staff  13812 Oct  2 18:07 ReverbVisuals.cpp
+-rw-r--r--   1 grantedwards  staff   3612 Oct  2 18:07 ReverbVisuals.h
+
+/Users/grantedwards/Desktop/Field/Source/features/xy:
+total 152
+drwxr-xr-x   6 grantedwards  staff    192 Oct  2 00:10 .
+drwxr-xr-x  11 grantedwards  staff    352 Sep 29 22:16 ..
+-rw-r--r--   1 grantedwards  staff  36147 Oct  2 00:10 XYControlsPane.h
+-rw-r--r--   1 grantedwards  staff  25199 Sep 29 22:16 XYPad.cpp
+-rw-r--r--   1 grantedwards  staff   7125 Sep 29 22:16 XYPad.h
+-rw-r--r--   1 grantedwards  staff   3943 Oct  2 00:10 XYTab.h
+
+/Users/grantedwards/Desktop/Field/Source/shared:
+total 0
+drwxr-xr-x   6 grantedwards  staff  192 Sep 29 22:16 .
+drwxr-xr-x@  5 grantedwards  staff  160 Oct  2 18:07 ..
+drwxr-xr-x  18 grantedwards  staff  576 Oct  2 19:55 Core
+drwxr-xr-x  12 grantedwards  staff  384 Sep 29 22:16 Presets
+drwxr-xr-x  15 grantedwards  staff  480 Oct  2 00:10 dsp
+drwxr-xr-x  10 grantedwards  staff  320 Oct  1 12:27 ui
+
+/Users/grantedwards/Desktop/Field/Source/shared/Core:
+total 1008
+drwxr-xr-x  18 grantedwards  staff     576 Oct  2 19:55 .
+drwxr-xr-x   6 grantedwards  staff     192 Sep 29 22:16 ..
+-rw-r--r--   1 grantedwards  staff    2765 Oct  2 00:10 DspRuntimeConfig.h
+-rw-r--r--   1 grantedwards  staff    1823 Oct  1 12:27 FieldLookAndFeel.cpp
+-rw-r--r--   1 grantedwards  staff    9029 Oct  1 12:27 FieldLookAndFeel.h
+-rw-r--r--   1 grantedwards  staff    2248 Oct  1 12:27 FieldMetallic.cpp
+-rw-r--r--   1 grantedwards  staff    4569 Sep 29 22:16 FieldMetallic.h
+-rw-r--r--   1 grantedwards  staff   51324 Oct  2 14:44 FieldRendering.cpp
+-rw-r--r--   1 grantedwards  staff    3910 Oct  1 12:27 FieldRendering.h
+-rw-r--r--   1 grantedwards  staff   12219 Sep 29 22:16 FieldTheme.h
+-rw-r--r--   1 grantedwards  staff    1099 Oct  2 00:10 FloatShim.h
+-rw-r--r--   1 grantedwards  staff   30761 Sep 29 22:16 IconSystem.cpp
+-rw-r--r--   1 grantedwards  staff    4478 Sep 29 22:16 IconSystem.h
+-rw-r--r--   1 grantedwards  staff    3930 Oct  2 00:10 PhaseBanks.h
+-rw-r--r--   1 grantedwards  staff   45817 Oct  2 18:07 PluginEditor.cpp
+-rw-r--r--   1 grantedwards  staff   15181 Oct  2 00:10 PluginEditor.h
+-rw-r--r--   1 grantedwards  staff  232744 Oct  3 10:56 PluginProcessor.cpp
+-rw-r--r--   1 grantedwards  staff   65518 Oct  3 01:01 PluginProcessor.h
+
+/Users/grantedwards/Desktop/Field/Source/shared/Presets:
+total 168
+drwxr-xr-x  12 grantedwards  staff    384 Sep 29 22:16 .
+drwxr-xr-x   6 grantedwards  staff    192 Sep 29 22:16 ..
+-rw-r--r--   1 grantedwards  staff   9633 Sep 29 22:16 PresetCommandPalette.cpp
+-rw-r--r--   1 grantedwards  staff   2387 Sep 29 22:16 PresetCommandPalette.h
+-rw-r--r--   1 grantedwards  staff   4203 Sep 29 22:16 PresetManager.cpp
+-rw-r--r--   1 grantedwards  staff   1301 Sep 29 22:16 PresetManager.h
+-rw-r--r--   1 grantedwards  staff  28231 Sep 29 22:16 PresetRegistry.cpp
+-rw-r--r--   1 grantedwards  staff    882 Sep 29 22:16 PresetRegistry.h
+-rw-r--r--   1 grantedwards  staff   6735 Sep 29 22:16 PresetStore.cpp
+-rw-r--r--   1 grantedwards  staff   1516 Sep 29 22:16 PresetStore.h
+-rw-r--r--   1 grantedwards  staff   6504 Sep 29 22:16 PresetSystem.h
+-rw-r--r--   1 grantedwards  staff   2051 Sep 29 22:16 PresetTheme.h
+
+/Users/grantedwards/Desktop/Field/Source/shared/dsp:
+total 216
+drwxr-xr-x  15 grantedwards  staff    480 Oct  2 00:10 .
+drwxr-xr-x   6 grantedwards  staff    192 Sep 29 22:16 ..
+drwxr-xr-x   2 grantedwards  staff     64 Sep 25 12:25 Delay
+-rw-r--r--   1 grantedwards  staff  24749 Sep 29 22:16 DelayEngine.h
+-rw-r--r--   1 grantedwards  staff  10900 Sep 29 22:16 DelayPresetLibrary.cpp
+-rw-r--r--   1 grantedwards  staff    678 Sep 29 22:16 DelayPresetLibrary.h
+-rw-r--r--   1 grantedwards  staff   7098 Sep 29 22:16 Ducker.h
+drwxr-xr-x   2 grantedwards  staff     64 Sep 25 12:25 DynamicEQ
+-rw-r--r--   1 grantedwards  staff   3697 Oct  2 00:10 MinPhaseBankIntegration.cpp
+-rw-r--r--   1 grantedwards  staff   2235 Oct  2 00:10 MinPhaseBankIntegration.h
+drwxr-xr-x   2 grantedwards  staff     64 Sep 25 12:25 Motion
+-rw-r--r--   1 grantedwards  staff  24271 Oct  1 12:27 PhaseAlignmentEngine.cpp
+-rw-r--r--   1 grantedwards  staff  10474 Oct  1 12:27 PhaseAlignmentEngine.h
+-rw-r--r--   1 grantedwards  staff   9182 Sep 29 22:16 PhaseModes.h
+drwxr-xr-x   2 grantedwards  staff     64 Sep 25 12:25 Reverb
+
+/Users/grantedwards/Desktop/Field/Source/shared/dsp/Delay:
+total 0
+drwxr-xr-x   2 grantedwards  staff   64 Sep 25 12:25 .
+drwxr-xr-x  15 grantedwards  staff  480 Oct  2 00:10 ..
+
+/Users/grantedwards/Desktop/Field/Source/shared/dsp/DynamicEQ:
+total 0
+drwxr-xr-x   2 grantedwards  staff   64 Sep 25 12:25 .
+drwxr-xr-x  15 grantedwards  staff  480 Oct  2 00:10 ..
+
+/Users/grantedwards/Desktop/Field/Source/shared/dsp/Motion:
+total 0
+drwxr-xr-x   2 grantedwards  staff   64 Sep 25 12:25 .
+drwxr-xr-x  15 grantedwards  staff  480 Oct  2 00:10 ..
+
+/Users/grantedwards/Desktop/Field/Source/shared/dsp/Reverb:
+total 0
+drwxr-xr-x   2 grantedwards  staff   64 Sep 25 12:25 .
+drwxr-xr-x  15 grantedwards  staff  480 Oct  2 00:10 ..
+
+/Users/grantedwards/Desktop/Field/Source/shared/ui:
+total 0
+drwxr-xr-x  10 grantedwards  staff   320 Oct  1 12:27 .
+drwxr-xr-x   6 grantedwards  staff   192 Sep 29 22:16 ..
+drwxr-xr-x  52 grantedwards  staff  1664 Oct  2 14:44 Components
+drwxr-xr-x   6 grantedwards  staff   192 Oct  1 12:27 Controls
+drwxr-xr-x   4 grantedwards  staff   128 Sep 29 22:16 Design
+drwxr-xr-x   6 grantedwards  staff   192 Sep 29 22:16 Engines
+drwxr-xr-x   4 grantedwards  staff   128 Oct  2 00:10 Events
+drwxr-xr-x   4 grantedwards  staff   128 Oct  2 00:10 Layout
+drwxr-xr-x  17 grantedwards  staff   544 Oct  2 18:07 Managers
+drwxr-xr-x   5 grantedwards  staff   160 Oct  2 00:10 Utilities
+
+/Users/grantedwards/Desktop/Field/Source/shared/ui/Components:
+total 600
+drwxr-xr-x  52 grantedwards  staff   1664 Oct  2 14:44 .
+drwxr-xr-x  10 grantedwards  staff    320 Oct  1 12:27 ..
+-rw-r--r--   1 grantedwards  staff   1741 Sep 29 22:16 ABButton.h
+-rw-r--r--   1 grantedwards  staff   3577 Sep 29 22:16 AuditionButton.h
+-rw-r--r--   1 grantedwards  staff   2316 Oct  1 12:27 BottomChevronLNF.cpp
+-rw-r--r--   1 grantedwards  staff    422 Sep 29 22:16 BottomChevronLNF.h
+-rw-r--r--   1 grantedwards  staff   2087 Sep 29 22:16 ButtonSwitch.h
+-rw-r--r--   1 grantedwards  staff   2273 Sep 29 22:16 ButtonSwitchFactory.h
+-rw-r--r--   1 grantedwards  staff   4603 Sep 29 22:16 BypassButton.h
+-rw-r--r--   1 grantedwards  staff   4137 Sep 29 22:16 ComplexIconButtons.h
+-rw-r--r--   1 grantedwards  staff   1997 Oct  1 12:27 ControlContainer.cpp
+-rw-r--r--   1 grantedwards  staff   1264 Sep 29 22:16 ControlContainer.h
+-rw-r--r--   1 grantedwards  staff   2899 Oct  1 12:27 CorrelationMeter.cpp
+-rw-r--r--   1 grantedwards  staff    758 Sep 29 22:16 CorrelationMeter.h
+-rw-r--r--   1 grantedwards  staff    839 Sep 29 22:16 GainSlider.h
+-rw-r--r--   1 grantedwards  staff   1358 Sep 29 22:16 HelpButton.h
+-rw-r--r--   1 grantedwards  staff   1319 Sep 29 22:16 HelpFAQComponent.cpp
+-rw-r--r--   1 grantedwards  staff    321 Sep 29 22:16 HelpFAQComponent.h
+-rw-r--r--   1 grantedwards  staff    514 Sep 29 22:16 HorizontalDivider.h
+-rw-r--r--   1 grantedwards  staff   3014 Sep 29 22:16 IOGainMeters.h
+-rw-r--r--   1 grantedwards  staff  29969 Oct  1 12:27 KnobCell.cpp
+-rw-r--r--   1 grantedwards  staff   5409 Sep 29 22:16 KnobCell.h
+-rw-r--r--   1 grantedwards  staff  13307 Oct  1 12:27 KnobCellWithAux.cpp
+-rw-r--r--   1 grantedwards  staff   4444 Sep 29 22:16 KnobCellWithAux.h
+-rw-r--r--   1 grantedwards  staff   1453 Sep 29 22:16 MenuUtils.h
+-rw-r--r--   1 grantedwards  staff   2811 Sep 29 22:16 MonoSlopeSwitch.cpp
+-rw-r--r--   1 grantedwards  staff    499 Sep 29 22:16 MonoSlopeSwitch.h
+-rw-r--r--   1 grantedwards  staff   4705 Sep 29 22:16 PanSlider.h
+-rw-r--r--   1 grantedwards  staff   1383 Sep 29 22:16 PhaseModeButton.h
+-rw-r--r--   1 grantedwards  staff   3589 Sep 29 22:16 PresetArrowButton.h
+-rw-r--r--   1 grantedwards  staff   1372 Sep 29 22:16 QualityButton.h
+-rw-r--r--   1 grantedwards  staff   7555 Oct  2 14:44 Segmented3Control.h
+-rw-r--r--   1 grantedwards  staff  14771 Sep 29 22:16 ShadeOverlay.h
+-rw-r--r--   1 grantedwards  staff   1114 Sep 29 22:16 SimpleIconButtons.h
+-rw-r--r--   1 grantedwards  staff  12201 Sep 29 22:16 SwitchCell.h
+-rw-r--r--   1 grantedwards  staff   5227 Sep 29 22:16 ThemedIconButton.h
+-rw-r--r--   1 grantedwards  staff   3054 Sep 29 22:16 TintMenuLNFEx.cpp
+-rw-r--r--   1 grantedwards  staff    996 Sep 29 22:16 TintMenuLNFEx.h
+-rw-r--r--   1 grantedwards  staff   2803 Oct  1 12:27 ToggleSwitch.cpp
+-rw-r--r--   1 grantedwards  staff   1525 Sep 29 22:16 ToggleSwitch.h
+-rw-r--r--   1 grantedwards  staff   2296 Sep 29 22:16 TooltipBubble.h
+-rw-r--r--   1 grantedwards  staff   1378 Sep 29 22:16 TooltipsButton.h
+-rw-r--r--   1 grantedwards  staff   2883 Oct  2 00:10 TransportClock.cpp
+-rw-r--r--   1 grantedwards  staff   1516 Oct  2 00:10 TransportClock.h
+-rw-r--r--   1 grantedwards  staff   1095 Sep 29 22:16 UIHelpers.h
+-rw-r--r--   1 grantedwards  staff    693 Sep 29 22:16 UpwardComboBox.h
+-rw-r--r--   1 grantedwards  staff    853 Sep 29 22:16 VerticalDivider.h
+-rw-r--r--   1 grantedwards  staff   5533 Sep 29 22:16 VerticalLRMeters.h
+-rw-r--r--   1 grantedwards  staff  12233 Oct  2 14:44 VerticalSlider3D.cpp
+-rw-r--r--   1 grantedwards  staff   1163 Sep 29 22:16 VerticalSlider3D.h
+-rw-r--r--   1 grantedwards  staff   2526 Sep 29 22:16 VizEQ.cpp
+-rw-r--r--   1 grantedwards  staff   1156 Sep 29 22:16 VizEQ.h
+
+/Users/grantedwards/Desktop/Field/Source/shared/ui/Controls:
+total 80
+drwxr-xr-x   6 grantedwards  staff    192 Oct  1 12:27 .
+drwxr-xr-x  10 grantedwards  staff    320 Oct  1 12:27 ..
+-rw-r--r--   1 grantedwards  staff   1312 Oct  1 12:27 ControlGridMetrics.h
+-rw-r--r--   1 grantedwards  staff  17819 Oct  1 12:27 SimpleSwitchCell.h
+-rw-r--r--   1 grantedwards  staff   8407 Sep 29 22:16 ZoomControl.h
+-rw-r--r--   1 grantedwards  staff   3678 Sep 29 22:16 ZoomState.h
+
+/Users/grantedwards/Desktop/Field/Source/shared/ui/Design:
+total 16
+drwxr-xr-x   4 grantedwards  staff   128 Sep 29 22:16 .
+drwxr-xr-x  10 grantedwards  staff   320 Oct  1 12:27 ..
+-rw-r--r--   1 grantedwards  staff   276 Sep 29 22:16 Design.h
+-rw-r--r--   1 grantedwards  staff  2692 Sep 29 22:16 Layout.h
+
+/Users/grantedwards/Desktop/Field/Source/shared/ui/Engines:
+total 112
+drwxr-xr-x   6 grantedwards  staff    192 Sep 29 22:16 .
+drwxr-xr-x  10 grantedwards  staff    320 Oct  1 12:27 ..
+-rw-r--r--   1 grantedwards  staff  29859 Sep 29 22:16 SpectrumAnalyzer.cpp
+-rw-r--r--   1 grantedwards  staff   7455 Sep 29 22:16 SpectrumAnalyzer.h
+-rw-r--r--   1 grantedwards  staff  10337 Sep 29 22:16 StereoFieldEngine.cpp
+-rw-r--r--   1 grantedwards  staff   3442 Sep 29 22:16 StereoFieldEngine.h
+
+/Users/grantedwards/Desktop/Field/Source/shared/ui/Events:
+total 56
+drwxr-xr-x   4 grantedwards  staff    128 Oct  2 00:10 .
+drwxr-xr-x  10 grantedwards  staff    320 Oct  1 12:27 ..
+-rw-r--r--   1 grantedwards  staff  24428 Oct  2 00:10 EventManager.cpp
+-rw-r--r--   1 grantedwards  staff   2945 Oct  2 00:10 EventManager.h
+
+/Users/grantedwards/Desktop/Field/Source/shared/ui/Layout:
+total 48
+drwxr-xr-x   4 grantedwards  staff    128 Oct  2 00:10 .
+drwxr-xr-x  10 grantedwards  staff    320 Oct  1 12:27 ..
+-rw-r--r--   1 grantedwards  staff  18648 Oct  2 00:10 LayoutManager.cpp
+-rw-r--r--   1 grantedwards  staff   2010 Sep 29 22:16 LayoutManager.h
+
+/Users/grantedwards/Desktop/Field/Source/shared/ui/Managers:
+total 224
+drwxr-xr-x  17 grantedwards  staff    544 Oct  2 18:07 .
+drwxr-xr-x  10 grantedwards  staff    320 Oct  1 12:27 ..
+-rw-r--r--   1 grantedwards  staff  10544 Oct  2 00:10 AttachmentManager.cpp
+-rw-r--r--   1 grantedwards  staff   7529 Oct  2 14:44 AttachmentManager.h
+-rw-r--r--   1 grantedwards  staff   3136 Oct  1 12:27 ButtonManager.cpp
+-rw-r--r--   1 grantedwards  staff    963 Sep 29 22:16 ButtonManager.h
+-rw-r--r--   1 grantedwards  staff   8255 Oct  2 00:10 CleanupManager.cpp
+-rw-r--r--   1 grantedwards  staff    592 Sep 29 22:16 CleanupManager.h
+-rw-r--r--   1 grantedwards  staff   2661 Sep 29 22:16 MeterManager.cpp
+-rw-r--r--   1 grantedwards  staff   1455 Sep 29 22:16 MeterManager.h
+-rw-r--r--   1 grantedwards  staff   5835 Sep 29 22:16 PaintManager.cpp
+-rw-r--r--   1 grantedwards  staff    564 Sep 29 22:16 PaintManager.h
+-rw-r--r--   1 grantedwards  staff  31895 Oct  2 18:07 PaneManager.h
+-rw-r--r--   1 grantedwards  staff   2272 Oct  2 14:44 SliderManager.cpp
+-rw-r--r--   1 grantedwards  staff   1395 Sep 29 22:16 SliderManager.h
+-rw-r--r--   1 grantedwards  staff   2920 Sep 29 22:16 StateManager.cpp
+-rw-r--r--   1 grantedwards  staff    919 Sep 29 22:16 StateManager.h
+
+/Users/grantedwards/Desktop/Field/Source/shared/ui/Utilities:
+total 24
+drwxr-xr-x   5 grantedwards  staff   160 Oct  2 00:10 .
+drwxr-xr-x  10 grantedwards  staff   320 Oct  1 12:27 ..
+-rw-r--r--   1 grantedwards  staff  2562 Oct  1 12:27 ComponentGreyout.cpp
+-rw-r--r--   1 grantedwards  staff  1928 Oct  1 12:27 ComponentGreyout.h
+-rw-r--r--   1 grantedwards  staff  1780 Oct  2 00:10 SafetySentinels.h

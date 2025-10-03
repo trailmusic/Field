@@ -9,6 +9,8 @@
 #include "features/motion/MotionEngine.h"
 #include "features/reverb/DSP/ReverbParamIDs.h"
 #include "features/reverb/Core/ReverbEngine.h"
+#include "SignalGraph.h"
+#include "LatencyManager.h"
 
 // Forward declaration for Biquad struct
 struct Biquad;
@@ -222,6 +224,7 @@ namespace IDs {
     static constexpr const char* osFilterType        = "oversampling_filter_type";
     static constexpr const char* tpSafe              = "true_peak_safe";
     static constexpr const char* forceOffline        = "force_offline_mode";
+    // (Removed temporary Safe Bypass param; use existing header Bypass)
 }
 // Delay UI bridge
 #include "features/delay/DelayUiBridge.h"
@@ -932,6 +935,12 @@ private:
     float delay_wetRmsL { 0.0f };
     float delay_wetRmsR { 0.0f };
 
+    // FIXED: Instance variables to prevent static state contamination
+    Sample filterStates[24][2][4] = {{{0}}}; // [band][channel][x1,x2,y1,y2]
+    Sample envelopeStates[24][2] = {{0}}; // [band][channel]
+    uint32_t rng = 0x1234567u; // Random number generator
+    Sample lastHpLR = (Sample) -1, lastLpLR = (Sample) -1; // Filter coefficients
+
 public:
     // Eco mode removed
 };
@@ -1138,15 +1147,7 @@ public:
 
     // Lifecycle
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
-    void releaseResources() override                           {
-        // Clear UI visualization buses to avoid any pending reads on UI timers
-        visPre.clearAll();
-        visPost.clearAll();
-        // Clear UI callbacks
-        onAudioSample = nullptr;
-        onAudioBlock = nullptr;
-        onAudioBlockPre = nullptr;
-    }
+    void releaseResources() override;
     
     // Latency reporting for PDC
     void refreshReportedLatency();
@@ -1187,6 +1188,8 @@ public:
 
     // Visualization buses (audio thread → UI thread)
     VisBus visPre, visPost;
+    // Latency manager (single source of truth)
+    LatencyManager latency;
     // Delay visuals bridge
     DelayUiBridge& getDelayUiBridge() { return delayUiBridge; }
 
@@ -1302,6 +1305,9 @@ private:
     // Chains (float & double)
     std::unique_ptr<FieldChain<float>>  chainF;
     std::unique_ptr<FieldChain<double>> chainD;
+    // Baseline signal graph (unity pass-through)
+    std::unique_ptr<SignalGraph> graphF, graphD;
+    int preparedMax_ { 0 };
     bool isDoublePrecEnabled { false };
     // Precision/quality state
     std::atomic<int> precisionMode { 0 }; // 0=Auto(Host), 1=Force32, 2=Force64

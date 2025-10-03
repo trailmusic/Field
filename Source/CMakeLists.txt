@@ -1,8 +1,8 @@
 set(SRC
-  shared/Core/PluginProcessor.h
-  shared/Core/PluginProcessor.cpp
-  shared/Core/PluginEditor.h
-  shared/Core/PluginEditor.cpp
+  processor/PluginProcessor.h
+  processor/PluginProcessor.cpp
+  processor/PluginEditor.h
+  processor/PluginEditor.cpp
   shared/Core/FieldLookAndFeel.h
   shared/Core/FieldLookAndFeel.cpp
   shared/Core/FieldTheme.h
@@ -152,7 +152,6 @@ set(SRC
     shared/ui/Managers/PaneManager.h
     features/phase/PhaseTab.h
     features/phase/PhaseTab.cpp
-    shared/ui/Controls/SimpleSwitchCell.h
     features/machine/ParamPatch.h
     features/machine/ProposalCard.h
     features/machine/ProposalCard.cpp
@@ -194,6 +193,31 @@ set(SRC
 
 # Add include directories
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+# Layered interface targets for phased migration (no sources yet)
+add_library(field_core      INTERFACE)
+add_library(field_engines   INTERFACE)
+add_library(field_modules   INTERFACE)
+add_library(field_ui        INTERFACE)
+add_library(field_presets   INTERFACE)
+
+target_include_directories(field_core INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/core"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shared"
+    "${CMAKE_CURRENT_SOURCE_DIR}/features"
+)
+target_include_directories(field_engines INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/engines"
+)
+target_include_directories(field_modules INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/modules"
+)
+target_include_directories(field_ui INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/ui"
+)
+target_include_directories(field_presets INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/presets"
+)
 
 juce_add_plugin(Field
     COMPANY_NAME "Trail"

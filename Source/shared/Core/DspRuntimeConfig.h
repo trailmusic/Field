@@ -13,10 +13,10 @@ struct DspRuntimeConfig
     
     // SR-aware oversampling
     double sampleRate = 48000.0;
-    int osRealtime = 0;    // 0=Auto, 1-5=Off,2x,4x,8x,16x
-    int osOffline = 1;     // 0=Auto, 1-5=Off,2x,4x,8x,16x
+    int osRealtime = 1;    // 0=Auto, 1-5=Off,2x,4x,8x,16x (force Off)
+    int osOffline = 1;     // 0=Auto, 1-5=Off,2x,4x,8x,16x (force Off)
     int osFilterType = 0;  // 0=Linear, 1=Minimum
-    bool tpSafe = true;    // True-peak safe mode
+    bool tpSafe = false;   // True-peak safe mode (disabled for baseline)
     
     // Quality mapping
     struct QualityMap { int os; int phase; };

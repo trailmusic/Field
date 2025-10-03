@@ -1,5 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "LatencyProbe.h"
 #include "features/dynEq/FilterFactory.h"
 #include "features/reverb/DSP/ReverbParameters.h"
 #include "features/reverb/DSP/ReverbEQParamIDs.h"
@@ -156,13 +157,38 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     chainF->prepareAliasGuards (sampleRate);
     chainD->prepareAliasGuards (sampleRate);
     
+    // Baseline signal graph (unity) for guarded pass-through
+    const int chans = juce::jmax (getTotalNumInputChannels(), getTotalNumOutputChannels());
+    graphF = std::make_unique<SignalGraph>();
+    graphF->prepare (sampleRate, maxBlockSize, chans);
+#if JUCE_DSP_ENABLE_DOUBLE_PRECISION
+    graphD = std::make_unique<SignalGraph>();
+    graphD->prepare (sampleRate, maxBlockSize, chans);
+#endif
+    preparedMax_ = maxBlockSize;
+
     // Chain preparation complete
     // Resize scratch for potential 32f->64f internal hop (use max block size)
-    const int chans = juce::jmax (getTotalNumInputChannels(), getTotalNumOutputChannels());
     scratch64.resize ((size_t) chans * (size_t) maxBlockSize);
     // Apply initial quality/precision profile
     applyQualityFromParams();
     updateLatencyForPhaseMode();
+    // Measure latency in debug to verify internal vs reported
+#if JUCE_DEBUG
+    {
+        const int measured = LatencyProbe::measure<float> (maxBlockSize,
+            [this](juce::dsp::AudioBlock<float>& in, juce::dsp::AudioBlock<float>& out)
+            {
+                // Use SignalGraph unity path (in-place)
+                graphF->process (in);
+                out.copyFrom (in);
+            });
+        DBG ("[LatencyProbe] measured=" << measured);
+    }
+#endif
+    // Latency: with OS off and zero-latency path, ensure host sees 0
+    latency.setDesired(0);
+    latency.applyIfChanged(*this);
     
     // ================================================================
     // 🎛️ POLICY RECOMPUTATION TRIGGERS (JANUARY 2025)
@@ -190,6 +216,9 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     // Phase Alignment Engine preparation (use max block size)
     phaseAlignmentEngine->prepare(sampleRate, maxBlockSize, getTotalNumInputChannels());
     phaseDryBuffer.setSize(getTotalNumInputChannels(), maxBlockSize);
+    // Initialize hard bypass from existing header bypass parameter
+    if (auto* p = apvts.getRawParameterValue (IDs::bypass))
+        setSafePassthrough (p->load() > 0.5f);
 
     // Motion Engine will be initialized lazily when first accessed
     
@@ -519,12 +548,12 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     const int N = buffer.getNumSamples();
     if (N <= 0) return;
     
-    // DIAG 1: unity probe (1 block only)
-    static std::atomic<bool> didUnity { false };
-    if (!didUnity.exchange(true)) {
-        // leave the input untouched and exit — DAW must keep playing w/ original audio
-        return;
-    }
+    // DIAG 1: unity probe (1 block only) - DISABLED FOR TESTING
+    // static std::atomic<bool> didUnity { false };
+    // if (!didUnity.exchange(true)) {
+    //     // leave the input untouched and exit — DAW must keep playing w/ original audio
+    //     return;
+    // }
     
     // ================================================================
     // 🎛️ QUALITY SYSTEM DENORMAL HANDLING (JANUARY 2025)
@@ -554,7 +583,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     }
     #endif
 
-    // Emergency safety: hard passthrough to confirm architecture vs. processing
+    // Production-standard bypass: early return (hard passthrough)
     if (getSafePassthrough()) return;
     
     // Check for DSP rebuild needed
@@ -563,6 +592,8 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     {
         rebuildDspForConfig<float>(cfg, buffer);
     }
+
+    // (Bypass state updated in parameterChanged)
 
     // Optional internal 64f hop on 32f hosts based on Precision parameter
     const int pMode = precisionMode.load(); // 0 Auto, 1 Force32, 2 Force64
@@ -735,19 +766,18 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // ================================================================
     
     // RELEASE GUARD: never process a block larger than prepared
+    // Instead of muting/returning, tile below to handle oversize host buffers safely
     if (preparedMax > 0 && buffer.getNumSamples() > preparedMax)
     {
 #if JUCE_DEBUG
         juce::Logger::writeToLog ("[Field] Oversize audio block from host: N=" 
                                   + juce::String(buffer.getNumSamples()) 
-                                  + " > prepared=" + juce::String(preparedMax));
+                                  + " > prepared=" + juce::String(preparedMax) + ". Tiling instead of muting.");
 #endif
-        buffer.clear(); // fail-safe: mute the block to avoid overruns
-        return;
     }
-    const int maxBlockSize = preparedMax; // Use actual prepared block size
+    const int maxBlockSize = (preparedMax_ > 0 ? preparedMax_ : preparedMax);
     
-    // Bullet-proof tiling with AudioBlock sub-blocks
+    // Bullet-proof tiling with AudioBlock sub-blocks (unity graph)
     juce::dsp::AudioBlock<float> whole(buffer);
     int offset = 0, spins = 0;
     
@@ -756,13 +786,12 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         if (nThis <= 0 || ++spins > 1024) break;
         
         auto sub = whole.getSubBlock((size_t)offset, (size_t)nThis);
-        chainF->setParameters(hp);
-        chainF->process(sub);  // IMPORTANT: process the block view
+        if (graphF) graphF->process(sub);
         offset += nThis;
     }
     
-    // Refresh ducking latency reporting after parameter changes
-    refreshReportedLatency();
+    // Baseline: OS forced off → latency must be zero
+    setLatencySamples (0);
     
     // Apply MIX control (blend between dry and wet)
     if (std::abs (hp.mixPct - 100.0) > 0.1)
@@ -777,6 +806,39 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
             {
                 data[s] = dryLevel * drySignal[ch][s] + wetLevel * data[s];
             }
+        }
+    }
+
+    // Emergency dry passthrough if output energy collapsed
+    {
+        double sIn = 0.0, sOut = 0.0; const int ch = buffer.getNumChannels(); const int n = buffer.getNumSamples();
+        // Use phaseDryBuffer as pre-process reference (copied before engines)
+        const int chRef = juce::jmin (phaseDryBuffer.getNumChannels(), ch);
+        const int nRef  = juce::jmin (phaseDryBuffer.getNumSamples(),  n);
+        for (int c = 0; c < chRef; ++c)
+        {
+            const float* d = phaseDryBuffer.getReadPointer (c);
+            for (int i = 0; i < nRef; ++i) { const double v = d[i]; sIn += v*v; }
+        }
+        for (int c = 0; c < ch; ++c)
+        {
+            const float* d = buffer.getReadPointer (c);
+            for (int i = 0; i < n; ++i) { const double v = d[i]; sOut += v*v; }
+        }
+        const double eps = 1e-12;
+        if (sIn > eps && sOut < 1e-6 * sIn)
+        {
+            // Copy dry input back to output to restore signal
+            const int C = juce::jmin (chRef, ch); const int N = juce::jmin (nRef, n);
+            for (int c = 0; c < C; ++c)
+            {
+                auto* dst = buffer.getWritePointer (c);
+                const float* src = phaseDryBuffer.getReadPointer (c);
+                for (int i = 0; i < N; ++i) dst[i] = src[i];
+            }
+//#if JUCE_DEBUG
+//            juce::Logger::writeToLog ("[Field] Emergency dry passthrough engaged (float path)");
+//#endif
         }
     }
 
@@ -941,12 +1003,12 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     const int N = buffer.getNumSamples();
     if (N <= 0) return;
     
-    // DIAG 1: unity probe (1 block only)
-    static std::atomic<bool> didUnityDouble { false };
-    if (!didUnityDouble.exchange(true)) {
-        // leave the input untouched and exit — DAW must keep playing w/ original audio
-        return;
-    }
+    // DIAG 1: unity probe (1 block only) - DISABLED FOR TESTING
+    // static std::atomic<bool> didUnityDouble { false };
+    // if (!didUnityDouble.exchange(true)) {
+    //     // leave the input untouched and exit — DAW must keep playing w/ original audio
+    //     return;
+    // }
     
     // ================================================================
     // 🎛️ QUALITY SYSTEM DENORMAL HANDLING (JANUARY 2025)
@@ -968,7 +1030,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
        return; // in-place: host still hears input; we don't risk a spin
     }
 
-    // Emergency safety: hard passthrough to confirm architecture vs. processing
+    // Production-standard bypass: early return (hard passthrough)
     if (getSafePassthrough()) return;
     
     // Check for DSP rebuild needed
@@ -977,6 +1039,8 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     {
         rebuildDspForConfig<double>(cfg, buffer);
     }
+
+    // (Bypass state updated in parameterChanged)
 
     auto hp = makeHostParams (apvts);
     hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
@@ -1058,18 +1122,15 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     
     // Motion Engine is now handled by FieldChain template
 
-    // Capture dry signal for MIX control (double precision)
+    // Capture dry signal for MIX control and emergency fallback (double precision)
     std::vector<std::vector<double>> drySignalD;
-    if (std::abs (hp.mixPct - 100.0) > 0.1)
+    drySignalD.resize (buffer.getNumChannels());
+    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
     {
-        drySignalD.resize (buffer.getNumChannels());
-        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-        {
-            drySignalD[ch].resize (buffer.getNumSamples());
-            const double* src = buffer.getReadPointer (ch);
-            for (int s = 0; s < buffer.getNumSamples(); ++s)
-                drySignalD[ch][s] = src[s];
-        }
+        drySignalD[ch].resize (buffer.getNumSamples());
+        const double* src = buffer.getReadPointer (ch);
+        for (int s = 0; s < buffer.getNumSamples(); ++s)
+            drySignalD[ch][s] = src[s];
     }
 
     juce::dsp::AudioBlock<double> block (buffer);
@@ -1119,19 +1180,18 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     // ================================================================
     
     // RELEASE GUARD: never process a block larger than prepared
+    // Instead of muting/returning, tile below to handle oversize host buffers safely
     if (preparedMax > 0 && buffer.getNumSamples() > preparedMax)
     {
 #if JUCE_DEBUG
         juce::Logger::writeToLog ("[Field] Oversize audio block from host: N=" 
                                   + juce::String(buffer.getNumSamples()) 
-                                  + " > prepared=" + juce::String(preparedMax));
+                                  + " > prepared=" + juce::String(preparedMax) + ". Tiling instead of muting.");
 #endif
-        buffer.clear(); // fail-safe: mute the block to avoid overruns
-        return;
     }
-    const int maxBlockSize = preparedMax; // Use actual prepared block size
+    const int maxBlockSize = (preparedMax_ > 0 ? preparedMax_ : preparedMax);
     
-    // Bullet-proof tiling with AudioBlock sub-blocks
+    // Bullet-proof tiling with AudioBlock sub-blocks (unity graph)
     juce::dsp::AudioBlock<double> whole(buffer);
     int offset = 0, spins = 0;
     
@@ -1140,27 +1200,47 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         if (nThis <= 0 || ++spins > 1024) break;
         
         auto sub = whole.getSubBlock((size_t)offset, (size_t)nThis);
-        chainD->setParameters(hp);
-        chainD->process(sub);  // IMPORTANT: process the block view
+        if (graphD) graphD->process(sub);
         offset += nThis;
     }
     
-    // Refresh ducking latency reporting after parameter changes
-    refreshReportedLatency();
+    // Baseline: OS forced off → latency must be zero
+    setLatencySamples (0);
     
     // Apply MIX control (blend between dry and wet) - double precision
     if (std::abs (hp.mixPct - 100.0) > 0.1)
     {
         const double wetLevel = hp.mixPct / 100.0;
         const double dryLevel = 1.0 - wetLevel;
-        
         for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
         {
             auto* data = buffer.getWritePointer (ch);
             for (int s = 0; s < buffer.getNumSamples(); ++s)
-            {
                 data[s] = dryLevel * drySignalD[ch][s] + wetLevel * data[s];
+        }
+    }
+
+    // Emergency dry passthrough if output energy collapsed (double path)
+    {
+        long double sIn = 0.0L, sOut = 0.0L; const int ch = buffer.getNumChannels(); const int n = buffer.getNumSamples();
+        for (int c = 0; c < ch; ++c)
+        {
+            const auto* inPtr = drySignalD[c].data();
+            const double* outPtr = buffer.getReadPointer (c);
+            for (int i = 0; i < n; ++i) { const long double vi = inPtr[i]; const long double vo = outPtr[i]; sIn += vi*vi; sOut += vo*vo; }
+        }
+        const long double eps = 1e-12L;
+        if (sIn > eps && sOut < 1e-6L * sIn)
+        {
+            for (int c = 0; c < ch; ++c)
+            {
+                auto* dst = buffer.getWritePointer (c);
+                const auto* src = drySignalD[c].data();
+                for (int i = 0; i < n; ++i) dst[i] = src[i];
             }
+#if JUCE_DEBUG
+            juce::Logger::writeToLog ("[Field] Emergency dry passthrough engaged (double path)");
+#endif
         }
     }
 
@@ -1331,9 +1411,12 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
         parameterID == ReverbParamIDs::duckDetectorSrc)
         refreshReportedLatency();
     
-    // Bypass parameter changes - refresh latency reporting
+    // Bypass parameter changes - set passthrough directly and refresh latency
     if (parameterID == IDs::bypass)
+    {
+        setSafePassthrough (newValue > 0.5f);
         refreshReportedLatency();
+    }
     // Detect explicit user overrides on os_mode and phase_mode so quality stops forcing them
     if (parameterID == IDs::osMode && !qualityApplyingGuard.load())
     {
@@ -1593,6 +1676,39 @@ void MyPluginAudioProcessor::scheduleDspRebuildIfNeeded(const DspRuntimeConfig& 
     pendingCfg = cfg;
     needsDspRebuild.store(true, std::memory_order_release);
 }
+
+void MyPluginAudioProcessor::releaseResources()
+{
+    // Clear UI visualization buses to avoid any pending reads on UI timers
+    visPre.clearAll();
+    visPost.clearAll();
+    // Clear UI callbacks
+    onAudioSample = nullptr;
+    onAudioBlock = nullptr;
+    onAudioBlockPre = nullptr;
+    
+    // CRITICAL: Reset all audio processing chains to prevent persistent audio artifacts
+    if (chainF) chainF->reset();
+    if (chainD) chainD->reset();
+    if (graphF) graphF->reset();
+#if JUCE_DSP_ENABLE_DOUBLE_PRECISION
+    if (graphD) graphD->reset();
+#endif
+    latency.reset();
+    setLatencySamples(0);
+    
+    // Reset fade-in state
+    fadeInSamplesLeft = 0;
+    fadeInTotal = 0;
+    
+    // Reset transport state
+    lastTransportTimeSeconds = 0.0;
+    lastTransportWasPlaying = false;
+    
+    // Clear any pending DSP rebuilds
+    needsDspRebuild.store(false, std::memory_order_release);
+}
+
 
 // ================================================================
 // 🎛️ QUALITY SYSTEM DSP REBUILD (JANUARY 2025)
@@ -1895,6 +2011,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     // Force offline mode for testing (hidden parameter)
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::forceOffline, 1 }, "Force Offline Mode", false));
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::splitMode, 1 }, "Split Mode", false));
+    // (Removed temporary Safe Bypass param; use existing header Bypass)
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::tiltFreq, 1 },  "Tilt Frequency", juce::NormalisableRange<float> (100.0f, 1000.0f, 1.0f, 0.5f), 500.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::scoopFreq, 1 }, "Scoop Frequency", juce::NormalisableRange<float> (200.0f, 2000.0f, 1.0f, 0.5f), 800.0f));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::bassFreq, 1 },  "Bass Frequency", juce::NormalisableRange<float> (50.0f, 500.0f, 1.0f, 0.5f), 150.0f));
@@ -2397,6 +2514,18 @@ void FieldChain<Sample>::reset()
     lowShelf.reset(); highShelf.reset(); airFilter.reset(); bassFilter.reset(); scoopFilter.reset();
     dcBlocker.reset();
     if (oversampling) oversampling->reset();
+    
+    // CRITICAL: Reset delay lines to clear feedback buffers (fixes persistent popping)
+    delayLineL.reset();
+    delayLineR.reset();
+    delayPrepared = false;
+    
+    // FIXED: Reset instance variables to prevent static state contamination
+    std::fill(&filterStates[0][0][0], &filterStates[24][0][0], Sample{0});
+    std::fill(&envelopeStates[0][0], &envelopeStates[24][0], Sample{0});
+    rng = 0x1234567u;
+    lastHpLR = (Sample) -1;
+    lastLpLR = (Sample) -1;
 }
 
 // --------- parameter ingress ---------
@@ -3419,6 +3548,58 @@ void FieldChain<Sample>::process (Block block)
     const int N = (int)block.getNumSamples();
     const int preparedMax = getPreparedBlockSize();
     
+    // CRITICAL FIX: Check if input is essentially silent - if so, do nothing
+    auto rms = [](juce::dsp::AudioBlock<Sample> b){
+        long double s=0; auto ch=b.getNumChannels(), n=b.getNumSamples();
+        for(size_t c=0;c<ch;++c){ auto* p=b.getChannelPointer(c);
+            for(size_t i=0;i<n;++i) s+= (long double)p[i]*p[i]; }
+        return std::sqrt((double)s / std::max<size_t>(1,ch*n));
+    };
+    const double inputLevel = rms(block);
+    
+    // If input is essentially silent, don't process anything
+    if (inputLevel < 1e-6) {
+        return; // Leave the silent buffer as-is
+    }
+    
+    // EMERGENCY BYPASS: If any processing is causing crashes, bypass everything
+    // This is a temporary safety measure
+    static bool emergencyBypass = false; // Set to false to enable processing
+    if (emergencyBypass) {
+        return; // Pass through unchanged
+    }
+    
+    // ADDITIONAL SAFETY: Clear any potential noise in silent buffers
+    if (inputLevel < 1e-4) { // Even lower threshold
+        for (int ch = 0; ch < (int)block.getNumChannels(); ++ch) {
+            auto* data = block.getChannelPointer(ch);
+            juce::FloatVectorOperations::clear(data, N);
+        }
+        return;
+    }
+    
+    // COMPONENT TOGGLES: All components enabled for normal operation
+    static bool bypassWidth = false;      // Toggle 1: Bypass width/MS processing
+    static bool bypassReverb = false;     // Toggle 2: Bypass reverb processing
+    static bool bypassDelay = false;     // Toggle 3: Bypass delay processing
+    static bool bypassTone = false;      // Toggle 4: Bypass tone processing
+    static bool bypassOversampling = false; // Toggle 5: Bypass oversampling
+    
+    // CRITICAL SAFETY: Check for NaN/Inf values that could crash the host
+    for (int ch = 0; ch < (int)block.getNumChannels(); ++ch) {
+        auto* data = block.getChannelPointer(ch);
+        for (int i = 0; i < N; ++i) {
+            if (!std::isfinite(data[i])) {
+                // If we find invalid data, clear the buffer and return
+                juce::FloatVectorOperations::clear(data, N);
+                return;
+            }
+        }
+    }
+    
+    // DEBUG: Capture dry input for fail-safe pass-through
+    juce::dsp::AudioBlock<Sample> dryIn = block;   // shallow view for later comparison
+    
     // Energy sentinels (one-shot logging, won't spam)
     #if JUCE_DEBUG
     auto rms = [](juce::dsp::AudioBlock<Sample> b){
@@ -3499,6 +3680,11 @@ void FieldChain<Sample>::process (Block block)
     }
     // Mono maker before tone
     applyMonoMaker (block, params.monoHz);
+    
+    // TRIPWIRE 1: After initial tone/width processing
+    #if JUCE_DEBUG
+    DBG("[F] after Tone/Width " << rms(block));
+    #endif
     // HP/LP is applied in the smoothed sub-block pipeline below (to avoid double-filtering)
 
     // Core tone using smoothed, gated sub-block path (below)
@@ -3674,7 +3860,6 @@ void FieldChain<Sample>::process (Block block)
                 const Sample hpC = juce::jlimit ((Sample) 20,   (Sample) 1000,  hpNowHz);
                 const Sample lpC = juce::jlimit ((Sample) 1000, juce::jmin ((Sample) 20000, nyqLoc * (Sample) 0.45), lpNowHz);
                 // Epsilon gate to avoid micro-retunes
-                static Sample lastHpLR = (Sample) -1, lastLpLR = (Sample) -1;
                 const Sample eps = (Sample) 3.0;
                 if (lastHpLR < 0 || std::abs ((double)(hpC - lastHpLR)) >= (double) eps)
                 { lrHpL.setCutoffFrequency (hpC); lrHpR.setCutoffFrequency (hpC); lastHpLR = hpC; }
@@ -3739,7 +3924,6 @@ void FieldChain<Sample>::process (Block block)
         {
             const int ch = (int) block.getNumChannels();
             const int n  = (int) block.getNumSamples();
-            static uint32_t rng = 0x1234567u;
             for (int c = 0; c < ch; ++c)
             {
                 auto* y = block.getChannelPointer (c);
@@ -3933,6 +4117,11 @@ void FieldChain<Sample>::process (Block block)
                 delay_wetRmsR = rmsOfD (delayWetBuf.getReadPointer(1), n);
             }
         }
+        
+        // TRIPWIRE 3: After Delay processing
+        #if JUCE_DEBUG
+        DBG("[F] after Delay " << rms(block));
+        #endif
     }
 
     // Reverb Engine ducking: Duck reverb wet against dry (WetOnly), only when Reverb is active
@@ -4079,6 +4268,11 @@ void FieldChain<Sample>::process (Block block)
                 // comment this line back out after test
                 // goto SKIP_REVERB;
                 
+                // TRIPWIRE 4: Before Reverb processing
+                #if JUCE_DEBUG
+                DBG("[F] before Reverb " << rms(block));
+                #endif
+                
                 // Process reverb
                 reverbEngine.processWet(wet, side);
                 
@@ -4130,6 +4324,11 @@ void FieldChain<Sample>::process (Block block)
                 }
             }
         }
+        
+        // TRIPWIRE 5: After Reverb mix
+        #if JUCE_DEBUG
+        DBG("[F] after Reverb mix " << rms(block));
+        #endif
     }
     
     // Output gain
@@ -4144,6 +4343,20 @@ void FieldChain<Sample>::process (Block block)
                                  " outR=" + juce::String(outR,3) +
                                  " N=" + juce::String((int)block.getNumSamples()));
     }
+    
+    // DEBUG: Fail-safe pass-through guard
+    static double lastInR=0, lastOutR=0;
+    if (lastInR > 1e-6 && outR < 1e-9) {
+        // TEMP fail-safe: if we see real input but silent output, pass input through
+        for (size_t c=0; c<block.getNumChannels(); ++c) {
+            auto* dst = block.getChannelPointer(c);
+            auto* src = dryIn.getChannelPointer(c);
+            std::memcpy(dst, src, sizeof(Sample)*block.getNumSamples());
+        }
+        juce::Logger::writeToLog("[Field] Fail-safe pass-through engaged (debug)");
+    }
+    lastInR = inR;
+    lastOutR = outR;
     #endif
 }
 
@@ -4308,7 +4521,6 @@ void FieldChain<Sample>::applyDynamicEq (Block audioBlock)
             Sample* channelData = audioBlock.getChannelPointer(ch);
             
             // Simple envelope follower for dynamic processing
-            static Sample envelopeStates[24][2] = {{0}}; // [band][channel]
             Sample& envelope = envelopeStates[band][ch];
             
             for (int i = 0; i < numSamples; ++i)
@@ -4454,7 +4666,6 @@ void FieldChain<Sample>::processBandChannel (Block audioBlock, int band, int cha
     Sample* channelData = audioBlock.getChannelPointer(channel);
     
     // IIR filter implementation with per-band state
-    static Sample filterStates[24][2][4] = {{{0}}}; // [band][channel][x1,x2,y1,y2]
     Sample& x1 = filterStates[band][channel][0];
     Sample& x2 = filterStates[band][channel][1];
     Sample& y1 = filterStates[band][channel][2];

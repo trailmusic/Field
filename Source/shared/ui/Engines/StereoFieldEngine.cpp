@@ -3,14 +3,27 @@
 
 namespace {
 static inline double geoMean (double a, double b) { return std::sqrt (a * b); }
-static inline void accumEdgeWeighted (double& Sxx, double& Syy, double& Sxy,
-                                      const float* F1, const float* F2, int k, double w)
+
+struct Cpx { double re, im; };
+
+// Safe read for JUCE real-only forward FFT layout
+static inline Cpx readRealFFTBin (const float* fd, int N, int k)
 {
-    const double re1 = (double) F1[2 * k], im1 = (double) F1[2 * k + 1];
-    const double re2 = (double) F2[2 * k], im2 = (double) F2[2 * k + 1];
-    const double m1  = re1 * re1 + im1 * im1;
-    const double m2  = re2 * re2 + im2 * im2;
-    const double cr  = re1 * re2 + im1 * im2; // Re{X1 conj X2}
+    jassert (k >= 0 && k <= N/2);
+    if (k == 0)  return { (double) fd[0], 0.0 };
+    if (k == N/2) return { (double) fd[1], 0.0 };
+    const int idx = 2 * k;
+    return { (double) fd[idx], (double) fd[idx + 1] };
+}
+
+static inline void accumEdgeWeighted (double& Sxx, double& Syy, double& Sxy,
+                                      const float* F1, const float* F2, int k, double w, int N)
+{
+    const auto a = readRealFFTBin (F1, N, k);
+    const auto b = readRealFFTBin (F2, N, k);
+    const double m1  = a.re * a.re + a.im * a.im;
+    const double m2  = b.re * b.re + b.im * b.im;
+    const double cr  = a.re * b.re + a.im * b.im; // Re{X1 conj X2}
     Sxx += w * m1; Syy += w * m2; Sxy += w * cr;
 }
 }
@@ -94,10 +107,14 @@ void StereoFieldEngine::rebuildBands()
         b.fLo = fStart; b.fHi = fEnd; b.fC = geoMean (fStart, fEnd);
 
         // fractional-bin edges
-        double k0f = hzToK (b.fLo, sr, fftSize);
-        double k1f = hzToK (b.fHi, sr, fftSize);
+        const double k0f = hzToK (b.fLo, sr, fftSize);
+        const double k1f = hzToK (b.fHi, sr, fftSize);
+        const int N2 = fftSize / 2;
         b.k0 = (int) std::floor (k0f);
         b.k1 = (int) std::floor (k1f);
+        // clamp to avoid DC (0) and Nyquist (N/2)
+        b.k0 = juce::jlimit (1, juce::jmax (1, N2 - 1), b.k0);
+        b.k1 = juce::jlimit (1, juce::jmax (1, N2 - 1), b.k1);
         b.w0 = 1.0 - (k0f - (double) b.k0); // partial weight on lower edge bin
         b.w1 = (k1f - (double) b.k1);       // partial on upper edge bin
         b.rSmooth = 0.f; b.gateOpen = false;
@@ -212,12 +229,29 @@ bool StereoFieldEngine::computeRColumn (juce::AudioBuffer<float>& src, juce::Abs
     for (int bi = 0; bi < (int) bands.size(); ++bi)
     {
         auto& b = bands[(size_t) bi];
+        const int N = fftSize;
         double Sxx = 0.0, Syy = 0.0, Sxy = 0.0;
-        if (b.k0 >= 1)
-            accumEdgeWeighted (Sxx, Syy, Sxy, fdL.getData(), fdR.getData(), b.k0, b.w0);
-        for (int k = b.k0 + 1; k < b.k1; ++k)
-            accumEdgeWeighted (Sxx, Syy, Sxy, fdL.getData(), fdR.getData(), k, 1.0);
-        accumEdgeWeighted (Sxx, Syy, Sxy, fdL.getData(), fdR.getData(), b.k1, b.w1);
+        if (b.k0 == b.k1)
+        {
+            // Normalize partials if same bin
+            const double sumw = juce::jmax (1e-9, b.w0 + b.w1);
+            const double wn0 = b.w0 / sumw;
+            const double wn1 = b.w1 / sumw;
+            if (b.k0 >= 1 && b.k0 < N/2)
+            {
+                accumEdgeWeighted (Sxx, Syy, Sxy, fdL.getData(), fdR.getData(), b.k0, wn0, N);
+                accumEdgeWeighted (Sxx, Syy, Sxy, fdL.getData(), fdR.getData(), b.k1, wn1, N);
+            }
+        }
+        else
+        {
+            if (b.k0 >= 1)
+                accumEdgeWeighted (Sxx, Syy, Sxy, fdL.getData(), fdR.getData(), b.k0, b.w0, N);
+            for (int k = juce::jmax (b.k0 + 1, 1); k < juce::jmin (b.k1, N/2); ++k)
+                accumEdgeWeighted (Sxx, Syy, Sxy, fdL.getData(), fdR.getData(), k, 1.0, N);
+            if (b.k1 > b.k0 && b.k1 < N/2)
+                accumEdgeWeighted (Sxx, Syy, Sxy, fdL.getData(), fdR.getData(), b.k1, b.w1, N);
+        }
 
         const double E = 0.5 * (Sxx + Syy);
         const float  Edb = (float) juce::Decibels::gainToDecibels (std::sqrt (juce::jmax (1e-20, E)));
@@ -231,10 +265,10 @@ bool StereoFieldEngine::computeRColumn (juce::AudioBuffer<float>& src, juce::Abs
         {
             const double denom = std::sqrt (Sxx * Syy) + 1e-30;
             r = (float) juce::jlimit (-1.0, 1.0, Sxy / denom);
-            // Width proxy: |S| / (|M| + eps) using spectra magnitudes
-            const double Mmag = std::sqrt (juce::jmax (1e-30, Sxx));
-            const double Smag = std::sqrt (juce::jmax (1e-30, Syy));
-            width01 = (float) juce::jlimit (0.0, 2.0, Smag / (Mmag + 1e-20));
+            // Proper M/S energies from L/R spectra
+            const double EM = juce::jmax (1e-30, Sxx + Syy + 2.0 * Sxy);
+            const double ES = juce::jmax (0.0,  Sxx + Syy - 2.0 * Sxy);
+            width01 = (float) juce::jlimit (0.0, 2.0, std::sqrt (ES) / (std::sqrt (EM) + 1e-20));
         }
 
         // asym smoothing
