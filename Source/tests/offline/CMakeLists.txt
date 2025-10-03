@@ -12,3 +12,6 @@ target_link_libraries(test_dualchain_xfade PRIVATE field_modules field_core juce
 
 add_executable(test_dualchain_midblock test_dualchain_midblock.cpp)
 target_link_libraries(test_dualchain_midblock PRIVATE field_modules field_core juce_dsp)
+
+add_executable(test_statesanity test_statesanity.cpp)
+target_link_libraries(test_statesanity PRIVATE field_core juce_dsp)

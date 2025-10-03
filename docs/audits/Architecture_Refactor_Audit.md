@@ -28,6 +28,7 @@ Last updated: 2025-10-03 • Branch: `feature`
 - [WO-6 — Processor Glue: Safe Param Reads, Rebuild Fence, Latency & Tail](#wo-6--processor-glue--safe-param-reads--rebuild-fence--latency--tail)
 - [WO-7 — Click-Free Live Chain Swap (Same-Latency Only)](#wo-7--click-free-live-chain-swap-same-latency-only)
 - [WO-8 — Mid-Block Swap + Warmup (same-latency only)](#wo-8--mid-block-swap--warmup-same-latency-only)
+- [WO-9 — StateSanity + PDC Guard + First-Bad-Sample Telemetry](#wo-9--statesanity--pdc-guard--first-bad-sample-telemetry)
 
 ---
 
@@ -660,3 +661,20 @@ Index additions:
 - `core/signal/Warmup.h`
 - `modules/FieldDualChain.h` (updated APIs)
 - `tests/offline/test_dualchain_midblock.cpp`
+
+---
+
+## WO-9 — StateSanity + PDC Guard + First-Bad-Sample Telemetry
+- Added `core/telemetry/StateSanity.h`:
+  - `scanBlock(...)` returns first non-finite sample location
+  - `StateSanity` flags/logs mid-block rebuild attempts
+- Added `core/runtime/HostPDCGuard.h` to enforce message-thread-only latency reporting; defers changes while playing
+- Processor glue (dev-only guards):
+  - Top of `processBlock`: denorm guard, consume mid-block flag, ingress sanitize
+  - End of `processBlock`: scan output once, log first bad sample
+- Offline test: `tests/offline/test_statesanity.cpp`
+
+Index additions:
+- `core/telemetry/StateSanity.h`
+- `core/runtime/HostPDCGuard.h`
+- `tests/offline/test_statesanity.cpp`
