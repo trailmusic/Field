@@ -31,6 +31,8 @@ Last updated: 2025-10-03 • Branch: `feature`
 - [WO-9 — StateSanity + PDC Guard + First-Bad-Sample Telemetry](#wo-9--statesanity--pdc-guard--first-bad-sample-telemetry)
 - [WO-10 — Host Cache Sanity + LatencyProbe CI Harness](#wo-10--host-cache-sanity--latencyprobe-ci-harness)
 - [WO-11 — Param IDs → Latency Hooks (prepare-time only)](#wo-11--param-ids--latency-hooks-prepare-time-only)
+- [WO-12 — Minimal Param Layout (APVTS) + Safe Reads (no DSP changes)](#wo-12--minimal-param-layout-apvts--safe-reads-no-dsp-changes)
+- [WO-13 — Rebuild Listeners + Latency/Tail Apply at Prepare](#wo-13--rebuild-listeners--latencytail-apply-at-prepare)
 
 ---
 
@@ -715,3 +717,34 @@ Index additions:
 - `modules/FieldParamHooks.h`
 - `tests/offline/test_param_latency_map.cpp`
 - `docs/qa/NullAtUnity.md`
+
+---
+
+## WO-12 — Minimal Param Layout (APVTS) + Safe Reads (no DSP changes)
+- APVTS layout:
+  - `core/params/ParamLayout.{h,cpp}` defines parameters for topology/latency IDs introduced in WO-11
+  - Defaults preserve unity: all modules OFF, OS=1x, contributors=0 → reported latency stays 0
+- Safe reads:
+  - `SafeParamGate` gains `getInt` and reads from `getAPVTS()` at prepare-time only
+  - Snapshot (`core/params/Snapshot.h`) now returns real values or safe defaults when absent
+- Processor glue:
+  - `createParameterLayout()` exposed; APVTS constructed from our layout
+  - No DSP changes; this only provides stable params for Snapshot and latency/tail compute
+
+Index additions:
+- `core/params/ParamLayout.h`
+- `core/params/ParamLayout.cpp`
+
+---
+
+## WO-13 — Rebuild Listeners + Latency/Tail Apply at Prepare
+- Added `core/runtime/ParamChangeBus.h` to watch explicit topology and latency-only IDs
+  - Raises atomics; never rebuilds on audio thread
+  - Processor consumes flags at `prepareToPlay()`
+- Prepare-time policy:
+  - Topology changes → `FieldChain::Config::needsRebuild = true` and rebuild chains
+  - Latency-only changes → recompute latency/tail and apply via guards (`HostPDCGuard`, `TailGuard`)
+- `processBlock()` remains DSP-free; optionally logs if flags are observed mid-play (dev)
+
+Index additions:
+- `core/runtime/ParamChangeBus.h`
