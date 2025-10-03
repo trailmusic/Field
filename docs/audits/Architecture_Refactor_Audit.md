@@ -92,3 +92,373 @@ Protect the UI while restructuring `Source/` to separate UI, processor glue, DSP
 - Architecture/Processor: @trail / @grant
 - DSP/Core: @trail
 - UI/Features: @grant
+
+---
+
+## Target Source/ layout (authoritative)
+
+```
+Source/
+├─ app/
+│  ├─ CMakeLists.txt
+│  ├─ PluginMain.cpp
+│  └─ Platform/
+│     └─ AbletonNotes.md
+│
+├─ core/
+│  ├─ params/
+│  │  ├─ ParamIDs.h
+│  │  ├─ ParamLayout.cpp
+│  │  └─ ParamSmoother.h
+│  ├─ runtime/
+│  │  ├─ DspRuntimeConfig.h
+│  │  ├─ RebuildGate.h
+│  │  └─ LatencyManager.h
+│  ├─ signal/
+│  │  ├─ SignalGraph.h
+│  │  ├─ SignalGraph.cpp
+│  │  ├─ OversamplingStage.h
+│  │  ├─ FrameAccumulator.h
+│  │  ├─ Sanitize.h
+│  │  └─ NullNode.h
+│  ├─ telemetry/
+│  │  ├─ DebugTelemetry.h
+│  │  ├─ GlitchHunt.h
+│  │  └─ LatencyProbe.h
+│  └─ util/
+│     ├─ FloatShim.h
+│     └─ FnGuard.h
+│
+├─ engines/
+│  ├─ delay/
+│  │  ├─ DelayEngine.h
+│  │  ├─ DelayPresetLibrary.cpp
+│  │  └─ DelayPresetLibrary.h
+│  ├─ dynamics/
+│  │  ├─ DynamicEqState.h
+│  │  ├─ DynamicEqState.cpp
+│  │  ├─ FilterFactory.h
+│  │  └─ Ducker.h
+│  ├─ phase/
+│  │  ├─ PhaseAlignmentEngine.cpp
+│  │  ├─ PhaseAlignmentEngine.h
+│  │  └─ PhaseModes.h
+│  ├─ image/
+│  │  └─ ImagerCore.h
+│  └─ reverb/
+│     ├─ Core/
+│     │  ├─ ReverbEngine.cpp
+│     │  ├─ ReverbEngine.h
+│     │  ├─ FieldReverbConfig.h
+│     │  └─ ReverbTypes.h
+│     ├─ DSP/
+│     │  ├─ ReverbFDN.h
+│     │  ├─ ReverbEQ.cpp
+│     │  ├─ ReverbEQ.h
+│     │  ├─ ReverbEQParamIDs.h
+│     │  ├─ DecayRateEQ.cpp
+│     │  ├─ DecayRateEQ.h
+│     │  └─ SimdBiquad.h
+│     └─ Presets/
+│        ├─ ReverbParameters.cpp
+│        ├─ ReverbParameters.h
+│        └─ ReverbParamMap.cpp
+│
+├─ modules/
+│  ├─ FieldChain.h
+│  ├─ FieldChain.cpp
+│  ├─ FieldNodes/
+│  │  ├─ Node_Reverb.h
+│  │  ├─ Node_Delay.h
+│  │  ├─ Node_DynEq.h
+│  │  ├─ Node_Phase.h
+│  │  └─ Node_Imager.h
+│  └─ Mixing/
+│     ├─ Node_Gain.h
+│     ├─ Node_MSMatrix.h
+│     └─ Node_Meter.h
+│
+├─ processor/
+│  ├─ PluginProcessor.h
+│  ├─ PluginProcessor.cpp
+│  ├─ PluginEditor.h
+│  ├─ PluginEditor.cpp
+│  └─ BusesLayouts.h
+│
+├─ ui/                      # (keep your existing UI; no audio touches)
+│  ├─ Components/
+│  ├─ Controls/
+│  ├─ Design/
+│  ├─ Engines/             # StereoFieldEngine, SpectrumAnalyzer (visual only)
+│  ├─ Events/
+│  ├─ Layout/
+│  ├─ Managers/
+│  └─ Utilities/
+│
+├─ features/                # UI/UX panels (tabs), NO DSP
+│  ├─ band/  delay/  dynEq/  imager/  machine/  motion/  phase/  reverb/  xy/
+│
+├─ presets/
+│  ├─ PresetRegistry.cpp
+│  ├─ PresetRegistry.h
+│  ├─ PresetStore.cpp
+│  ├─ PresetStore.h
+│  └─ Themes/
+│
+├─ tests/
+│  ├─ offline/
+│  │  ├─ test_null_unity.cpp
+│  │  └─ test_latency_probe.cpp
+│  └─ perf/
+│     └─ bench_signalgraph.cpp
+│
+└─ CMakeLists.txt
+```
+
+## What to move now (mapping)
+
+- From `shared/Core` → `core/*` & `processor/*`
+  - `SignalGraph.h/.cpp` → `core/signal/`
+  - `OversamplingStage.h` → `core/signal/`
+  - `FrameAccumulator.h` → `core/signal/`
+  - `LatencyManager.h` → `core/runtime/`
+  - `DebugTelemetry.h`, `GlitchHunt.h`, `LatencyProbe.h` → `core/telemetry/`
+  - `FloatShim.h` → `core/util/`
+  - `PluginProcessor.h/.cpp`, `PluginEditor.h/.cpp` → `processor/`
+  - `PhaseBanks.h` → `engines/phase/`
+- From `shared/dsp` → `engines/*`
+  - `DelayEngine.h`, `DelayPresetLibrary.*` → `engines/delay/`
+  - `Ducker.h` → `engines/dynamics/`
+  - `PhaseAlignmentEngine.*`, `PhaseModes.h` → `engines/phase/`
+- From `features/reverb` → `engines/reverb`
+  - `Core/*` → `engines/reverb/Core/`
+  - `DSP/*` → `engines/reverb/DSP/`
+  - `Presets/ReverbParameters.*`, `ReverbParamMap.*` → `engines/reverb/Presets/`
+  - Keep UI under `features/reverb/UI/*`
+- From `features/dynEq` → `engines/dynamics/`
+  - `DynamicEqState.*`, `FilterFactory.h` → `engines/dynamics/`
+  - UI stays in `features/dynEq/`
+
+## One-shot move script (preview, then execute)
+
+```bash
+set -e
+
+# Core ➜ core/*
+mkdir -p Source/core/{params,runtime,signal,telemetry,util}
+git mv -n Source/shared/Core/SignalGraph.h Source/core/signal/ || cp Source/shared/Core/SignalGraph.h Source/core/signal/
+git mv -n Source/shared/Core/SignalGraph.cpp Source/core/signal/ || cp Source/shared/Core/SignalGraph.cpp Source/core/signal/
+git mv -n Source/shared/Core/OversamplingStage.h Source/core/signal/ || cp Source/shared/Core/OversamplingStage.h Source/core/signal/
+git mv -n Source/shared/Core/FrameAccumulator.h Source/core/signal/ || cp Source/shared/Core/FrameAccumulator.h Source/core/signal/
+git mv -n Source/shared/Core/LatencyManager.h Source/core/runtime/ || cp Source/shared/Core/LatencyManager.h Source/core/runtime/
+git mv -n Source/shared/Core/DebugTelemetry.h Source/core/telemetry/ || cp Source/shared/Core/DebugTelemetry.h Source/core/telemetry/
+git mv -n Source/shared/Core/GlitchHunt.h Source/core/telemetry/ || cp Source/shared/Core/GlitchHunt.h Source/core/telemetry/
+git mv -n Source/shared/Core/LatencyProbe.h Source/core/telemetry/ || cp Source/shared/Core/LatencyProbe.h Source/core/telemetry/
+git mv -n Source/shared/Core/FloatShim.h Source/core/util/ || cp Source/shared/Core/FloatShim.h Source/core/util/
+
+# Processor ➜ processor/*
+mkdir -p Source/processor
+git mv -n Source/shared/Core/PluginProcessor.h Source/processor/ || cp Source/shared/Core/PluginProcessor.h Source/processor/
+git mv -n Source/shared/Core/PluginProcessor.cpp Source/processor/ || cp Source/shared/Core/PluginProcessor.cpp Source/processor/
+git mv -n Source/shared/Core/PluginEditor.h Source/processor/ || cp Source/shared/Core/PluginEditor.h Source/processor/
+git mv -n Source/shared/Core/PluginEditor.cpp Source/processor/ || cp Source/shared/Core/PluginEditor.cpp Source/processor/
+
+# Engines
+mkdir -p Source/engines/{delay,dynamics,phase,image,reverb/{Core,DSP,Presets}}
+# delay
+git mv -n Source/shared/dsp/DelayEngine.h Source/engines/delay/ || cp Source/shared/dsp/DelayEngine.h Source/engines/delay/
+git mv -n Source/shared/dsp/DelayPresetLibrary.cpp Source/engines/delay/ || cp Source/shared/dsp/DelayPresetLibrary.cpp Source/engines/delay/
+git mv -n Source/shared/dsp/DelayPresetLibrary.h Source/engines/delay/ || true
+# dynamics
+git mv -n Source/features/dynEq/DynamicEqState.cpp Source/engines/dynamics/ || cp Source/features/dynEq/DynamicEqState.cpp Source/engines/dynamics/
+git mv -n Source/features/dynEq/DynamicEqState.h Source/engines/dynamics/ || cp Source/features/dynEq/DynamicEqState.h Source/engines/dynamics/
+git mv -n Source/features/dynEq/FilterFactory.h Source/engines/dynamics/ || cp Source/features/dynEq/FilterFactory.h Source/engines/dynamics/
+git mv -n Source/shared/dsp/Ducker.h Source/engines/dynamics/ || cp Source/shared/dsp/Ducker.h Source/engines/dynamics/
+# phase
+git mv -n Source/shared/dsp/PhaseAlignmentEngine.cpp Source/engines/phase/ || cp Source/shared/dsp/PhaseAlignmentEngine.cpp Source/engines/phase/
+git mv -n Source/shared/dsp/PhaseAlignmentEngine.h Source/engines/phase/ || cp Source/shared/dsp/PhaseAlignmentEngine.h Source/engines/phase/
+git mv -n Source/shared/dsp/PhaseModes.h Source/engines/phase/ || cp Source/shared/dsp/PhaseModes.h Source/engines/phase/
+git mv -n Source/shared/Core/PhaseBanks.h Source/engines/phase/ || cp Source/shared/Core/PhaseBanks.h Source/engines/phase/
+# reverb core
+git mv -n Source/features/reverb/Core/ReverbEngine.cpp Source/engines/reverb/Core/ || cp Source/features/reverb/Core/ReverbEngine.cpp Source/engines/reverb/Core/
+git mv -n Source/features/reverb/Core/ReverbEngine.h Source/engines/reverb/Core/ || cp Source/features/reverb/Core/ReverbEngine.h Source/engines/reverb/Core/
+git mv -n Source/features/reverb/Core/FieldReverbConfig.h Source/engines/reverb/Core/ || cp Source/features/reverb/Core/FieldReverbConfig.h Source/engines/reverb/Core/
+git mv -n Source/features/reverb/Core/ReverbTypes.h Source/engines/reverb/Core/ || cp Source/features/reverb/Core/ReverbTypes.h Source/engines/reverb/Core/
+# reverb dsp
+for f in ReverbFDN.h ReverbEQ.cpp ReverbEQ.h ReverbEQParamIDs.h DecayRateEQ.cpp DecayRateEQ.h SimdBiquad.h; do
+  git mv -n Source/features/reverb/DSP/$f Source/engines/reverb/DSP/ || cp Source/features/reverb/DSP/$f Source/engines/reverb/DSP/
+done
+# reverb presets (engine-facing)
+for f in ReverbParameters.cpp ReverbParameters.h ReverbParamMap.cpp; do
+  git mv -n Source/features/reverb/DSP/$f Source/engines/reverb/Presets/ || \
+  git mv -n Source/features/reverb/Presets/$f Source/engines/reverb/Presets/ || \
+  cp Source/features/reverb/Presets/$f Source/engines/reverb/Presets/ 2>/dev/null || true
+done
+
+# image (create core later if needed)
+touch Source/engines/image/ImagerCore.h
+
+# modules (scaffold)
+mkdir -p Source/modules/{FieldNodes,Mixing}
+touch Source/modules/FieldChain.{h,cpp}
+touch Source/modules/FieldNodes/Node_{Reverb,Delay,DynEq,Phase,Imager}.h
+touch Source/modules/Mixing/Node_{Gain,MSMatrix,Meter}.h
+```
+
+> After you’re happy, replace `-n` (no-op preview) with real `git mv` to commit history.
+
+## Per-folder index (should exist after move)
+
+- `core/runtime/`: `DspRuntimeConfig.h`, `LatencyManager.h`, `RebuildGate.h`
+- `core/signal/`: `SignalGraph.h/.cpp`, `OversamplingStage.h`, `FrameAccumulator.h`, `Sanitize.h`, `NullNode.h`
+- `core/telemetry/`: `DebugTelemetry.h`, `GlitchHunt.h`, `LatencyProbe.h`
+- `processor/`: `PluginProcessor.h/.cpp`, `PluginEditor.h/.cpp`, `BusesLayouts.h`
+- `engines/reverb/Core/`: `ReverbEngine.h/.cpp`, `FieldReverbConfig.h`, `ReverbTypes.h`
+- `engines/reverb/DSP/`: `ReverbFDN.h`, `ReverbEQ*.{h,cpp}`, `DecayRateEQ*.{h,cpp}`, `ReverbEQParamIDs.h`, `SimdBiquad.h`
+- `engines/reverb/Presets/`: `ReverbParameters.{h,cpp}`, `ReverbParamMap.cpp`
+- `engines/delay/`: `DelayEngine.h`, `DelayPresetLibrary.{h,cpp}`
+- `engines/dynamics/`: `DynamicEqState.{h,cpp}`, `FilterFactory.h`, `Ducker.h`
+- `engines/phase/`: `PhaseAlignmentEngine.{h,cpp}`, `PhaseModes.h`, `PhaseBanks.h`
+- `modules/`: `FieldChain.{h,cpp}`, `FieldNodes/Node_*.h`, `Mixing/Node_{Gain,MSMatrix,Meter}.h`
+- `tests/`: `offline/test_null_unity.cpp`, `offline/test_latency_probe.cpp`, `perf/bench_signalgraph.cpp`
+
+## Minimal CMake scaffolds
+
+Root `Source/CMakeLists.txt`
+
+```cmake
+add_subdirectory(app)
+add_subdirectory(core)
+add_subdirectory(engines)
+add_subdirectory(modules)
+add_subdirectory(processor)
+add_subdirectory(ui)
+add_subdirectory(presets)
+add_subdirectory(tests)
+```
+
+`core/CMakeLists.txt`
+
+```cmake
+add_library(field_core
+    runtime/DspRuntimeConfig.h
+    runtime/LatencyManager.h
+    runtime/RebuildGate.h
+    signal/SignalGraph.cpp signal/SignalGraph.h
+    signal/OversamplingStage.h
+    signal/FrameAccumulator.h
+    signal/Sanitize.h
+    signal/NullNode.h
+    telemetry/DebugTelemetry.h
+    telemetry/GlitchHunt.h
+    telemetry/LatencyProbe.h
+    util/FloatShim.h
+    util/FnGuard.h
+)
+target_include_directories(field_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(field_core PUBLIC juce_dsp)
+```
+
+`engines/CMakeLists.txt`
+
+```cmake
+add_library(field_engines
+    delay/DelayEngine.h
+    delay/DelayPresetLibrary.cpp delay/DelayPresetLibrary.h
+    dynamics/DynamicEqState.cpp dynamics/DynamicEqState.h dynamics/FilterFactory.h dynamics/Ducker.h
+    phase/PhaseAlignmentEngine.cpp phase/PhaseAlignmentEngine.h phase/PhaseModes.h phase/PhaseBanks.h
+    reverb/Core/ReverbEngine.cpp reverb/Core/ReverbEngine.h reverb/Core/FieldReverbConfig.h reverb/Core/ReverbTypes.h
+    reverb/DSP/ReverbFDN.h reverb/DSP/ReverbEQ.cpp reverb/DSP/ReverbEQ.h reverb/DSP/ReverbEQParamIDs.h
+    reverb/DSP/DecayRateEQ.cpp reverb/DSP/DecayRateEQ.h reverb/DSP/SimdBiquad.h
+    reverb/Presets/ReverbParameters.cpp reverb/Presets/ReverbParameters.h reverb/Presets/ReverbParamMap.cpp
+    image/ImagerCore.h
+)
+target_include_directories(field_engines PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(field_engines PUBLIC juce_dsp)
+```
+
+`modules/CMakeLists.txt`
+
+```cmake
+add_library(field_modules
+    FieldChain.cpp FieldChain.h
+    FieldNodes/Node_Reverb.h
+    FieldNodes/Node_Delay.h
+    FieldNodes/Node_DynEq.h
+    FieldNodes/Node_Phase.h
+    FieldNodes/Node_Imager.h
+    Mixing/Node_Gain.h
+    Mixing/Node_MSMatrix.h
+    Mixing/Node_Meter.h
+)
+target_include_directories(field_modules PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(field_modules PUBLIC field_engines field_core)
+```
+
+`processor/CMakeLists.txt`
+
+```cmake
+add_library(field_processor
+    PluginProcessor.cpp PluginProcessor.h
+    PluginEditor.cpp    PluginEditor.h
+    BusesLayouts.h
+)
+target_include_directories(field_processor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(field_processor PUBLIC field_core field_modules juce_audio_processors)
+```
+
+## Builder Work Order #2 — Processor Migration + Latency Proof
+
+Objective: finish moving processor glue; make latency host-safe; validate with null + probe.
+
+Checklist:
+- [ ] Move `PluginProcessor.*` & `PluginEditor.*` bodies into `processor/` (no more bridge includes)
+- [ ] Ensure no DSP in `processor/` beyond graph orchestration and sanitize
+- [ ] In `prepareToPlay()`: build graph, compute `desiredLatency`, call `latency.applyIfChanged(*this)` (message thread)
+- [ ] In `processBlock(float/double)`: do not call `setLatencySamples()`; finite-sanitize ingress/egress (dev only)
+- [ ] Gate topology rebuilds: param changes set `needsRebuild=true`; rebuild at next `prepareToPlay()`
+- [ ] Add `tests/offline/test_null_unity.cpp` (null @ unity)
+- [ ] Add `tests/offline/test_latency_probe.cpp` (assert measured≈desired)
+- [ ] Host verification in Live: insert-while-playing is silent; duplicate-invert nulls; automation defers latency
+
+Stubs to add:
+
+`core/runtime/RebuildGate.h`
+
+```cpp
+#pragma once
+#include <atomic>
+struct RebuildGate {
+  std::atomic<bool> need{false};
+  void request() noexcept { need.store(true); }
+  bool consume() noexcept { return need.exchange(false); }
+};
+```
+
+`core/signal/Sanitize.h`
+
+```cpp
+#pragma once
+#include <juce_dsp/juce_dsp.h>
+inline void sanitize(juce::dsp::AudioBlock<float> b){ for(size_t c=0;c<b.getNumChannels();++c){
+ auto* p=b.getChannelPointer(c); for(size_t i=0,n=b.getNumSamples();i<n;++i){ if(!juce::isFinite(p[i])) p[i]=0.f; }}}
+inline void sanitize(juce::dsp::AudioBlock<double> b){ for(size_t c=0;c<b.getNumChannels();++c){
+ auto* p=b.getChannelPointer(c); for(size_t i=0,n=b.getNumSamples();i<n;++i){ if(!juce::isFinite(p[i])) p[i]=0.0; }}}
+```
+
+`core/signal/NullNode.h`
+
+```cpp
+#pragma once
+#include <juce_dsp/juce_dsp.h>
+struct NullNode {
+  template<typename T> void prepare(double, int, int) {}
+  template<typename Sample> void process(juce::dsp::AudioBlock<Sample>&) {}
+  int latencySamples() const noexcept { return 0; }
+};
+```
+
+## Verification (host-safe)
+- Null-unity: duplicate track, put Field @ unity on one; invert other → perfect null
+- Insert-while-playing: drop the plugin on a running loop → silent
+- LatencyProbe vs desired: `DBG` shows identical numbers after `prepareToPlay()`
