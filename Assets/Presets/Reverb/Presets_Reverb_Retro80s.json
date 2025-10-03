@@ -1,0 +1,3442 @@
+[
+  {
+    "id": "7e0bc892-6422-4bcd-92cc-2918b87f72a8",
+    "name": "Retro 80s Verb 01",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713385Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 60.7,
+      "decaySec": 3.69,
+      "sizePct": 60.6,
+      "diffusionPct": 84.2,
+      "densityPct": 68.9,
+      "erLevelDb": -14.1,
+      "erTimeMs": 22.7,
+      "erWidthPct": 84.8,
+      "modDepthCents": 17.28,
+      "modRateHz": 0.389,
+      "widthPct": 82.4,
+      "rotationDeg": 9.3,
+      "wetMix01": 0.233,
+      "bloomPct": 1.9,
+      "distancePct": 56.5,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 33.7,
+      "outTrimDb": 0.47
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "506ec5ce-20e1-4d3e-bc78-8cf76de79bb0",
+    "name": "Retro 80s Verb 02",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713445Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 36.6,
+      "decaySec": 2.29,
+      "sizePct": 50.8,
+      "diffusionPct": 77.8,
+      "densityPct": 57.3,
+      "erLevelDb": -8.4,
+      "erTimeMs": 28.5,
+      "erWidthPct": 60.5,
+      "modDepthCents": 9.82,
+      "modRateHz": 0.194,
+      "widthPct": 85.3,
+      "rotationDeg": -8.8,
+      "wetMix01": 0.158,
+      "bloomPct": 0,
+      "distancePct": 63.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 21.6,
+      "outTrimDb": 0.07
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "4b277d03-ab85-47c0-925d-7e6132f9c40b",
+    "name": "Retro 80s Verb 03",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713501Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 18.5,
+      "decaySec": 3.19,
+      "sizePct": 72.4,
+      "diffusionPct": 56.0,
+      "densityPct": 75.1,
+      "erLevelDb": -21.0,
+      "erTimeMs": 44.2,
+      "erWidthPct": 97.0,
+      "modDepthCents": 14.05,
+      "modRateHz": 0.488,
+      "widthPct": 69.6,
+      "rotationDeg": -6.1,
+      "wetMix01": 0.353,
+      "bloomPct": 0.3,
+      "distancePct": 80.5,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 32.3,
+      "outTrimDb": 1.56
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "34e58b22-bddc-4845-82b3-d3f721997e58",
+    "name": "Retro 80s Verb 04",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713563Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 10.9,
+      "decaySec": 2.27,
+      "sizePct": 87.0,
+      "diffusionPct": 76.7,
+      "densityPct": 57.9,
+      "erLevelDb": -0.3,
+      "erTimeMs": 48.3,
+      "erWidthPct": 83.3,
+      "modDepthCents": 6.53,
+      "modRateHz": 0.303,
+      "widthPct": 86.1,
+      "rotationDeg": 37.9,
+      "wetMix01": 0.222,
+      "bloomPct": 0,
+      "distancePct": 70.5,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 10.1,
+      "outTrimDb": 2.19
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "58c12c4d-b8cb-42d8-b042-b65f07ad174f",
+    "name": "Retro 80s Verb 05",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713628Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 27.4,
+      "decaySec": 4.13,
+      "sizePct": 87.6,
+      "diffusionPct": 70.1,
+      "densityPct": 56.4,
+      "erLevelDb": -10.4,
+      "erTimeMs": 59.3,
+      "erWidthPct": 91.6,
+      "modDepthCents": 2.95,
+      "modRateHz": 0.497,
+      "widthPct": 82.2,
+      "rotationDeg": 0.7,
+      "wetMix01": 0.226,
+      "bloomPct": 0,
+      "distancePct": 43.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 57.2,
+      "outTrimDb": -1.4
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "ce51c766-f05c-41cc-a258-50163a2861f1",
+    "name": "Retro 80s Verb 06",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713702Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 42.3,
+      "decaySec": 2.84,
+      "sizePct": 71.9,
+      "diffusionPct": 68.2,
+      "densityPct": 61.7,
+      "erLevelDb": -18.6,
+      "erTimeMs": 48.0,
+      "erWidthPct": 83.4,
+      "modDepthCents": 12.85,
+      "modRateHz": 0.444,
+      "widthPct": 81.6,
+      "rotationDeg": -27.5,
+      "wetMix01": 0.179,
+      "bloomPct": 0,
+      "distancePct": 36.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 21.0,
+      "outTrimDb": 0.1
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "88533916-2c21-4af5-8e73-4083fce8424d",
+    "name": "Retro 80s Verb 07",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713764Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 40.1,
+      "decaySec": 2.56,
+      "sizePct": 70.6,
+      "diffusionPct": 71.3,
+      "densityPct": 73.3,
+      "erLevelDb": -9.9,
+      "erTimeMs": 43.8,
+      "erWidthPct": 93.5,
+      "modDepthCents": 6.14,
+      "modRateHz": 0.281,
+      "widthPct": 92.5,
+      "rotationDeg": -8.9,
+      "wetMix01": 0.374,
+      "bloomPct": 5.3,
+      "distancePct": 46.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 31.5,
+      "outTrimDb": 2.78
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "5320b7a4-53f0-4020-b829-a29ee2521b5e",
+    "name": "Retro 80s Verb 08",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713819Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 23.2,
+      "decaySec": 3.56,
+      "sizePct": 87.5,
+      "diffusionPct": 56.5,
+      "densityPct": 62.5,
+      "erLevelDb": -13.3,
+      "erTimeMs": 53.8,
+      "erWidthPct": 85.0,
+      "modDepthCents": 11.49,
+      "modRateHz": 0.276,
+      "widthPct": 74.9,
+      "rotationDeg": 10.9,
+      "wetMix01": 0.388,
+      "bloomPct": 4.0,
+      "distancePct": 55.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 20.4,
+      "outTrimDb": 2.1
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "ca77162a-a637-4c6e-bd96-ae565f1f9c51",
+    "name": "Retro 80s Verb 09",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713897Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 24.6,
+      "decaySec": 2.42,
+      "sizePct": 55.6,
+      "diffusionPct": 78.7,
+      "densityPct": 73.3,
+      "erLevelDb": -7.7,
+      "erTimeMs": 51.5,
+      "erWidthPct": 89.5,
+      "modDepthCents": 4.74,
+      "modRateHz": 0.102,
+      "widthPct": 66.8,
+      "rotationDeg": 10.7,
+      "wetMix01": 0.265,
+      "bloomPct": 0,
+      "distancePct": 34.4,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 46.3,
+      "outTrimDb": 0.4
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "60266af2-3698-4bfb-91c9-8a7bd9252879",
+    "name": "Retro 80s Verb 10",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713954Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 12.3,
+      "decaySec": 3.38,
+      "sizePct": 90,
+      "diffusionPct": 66.2,
+      "densityPct": 64.0,
+      "erLevelDb": -4.6,
+      "erTimeMs": 46.9,
+      "erWidthPct": 69.0,
+      "modDepthCents": 10.3,
+      "modRateHz": 0.359,
+      "widthPct": 94.7,
+      "rotationDeg": 16.9,
+      "wetMix01": 0.378,
+      "bloomPct": 0,
+      "distancePct": 39.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 13.7,
+      "outTrimDb": -1.72
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "861de397-04ab-4aa2-a04e-d9704775d660",
+    "name": "Retro 80s Verb 11",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714008Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 45.8,
+      "decaySec": 3.55,
+      "sizePct": 56.1,
+      "diffusionPct": 69.2,
+      "densityPct": 57.6,
+      "erLevelDb": -14.0,
+      "erTimeMs": 49.6,
+      "erWidthPct": 74.0,
+      "modDepthCents": 12.99,
+      "modRateHz": 0.1,
+      "widthPct": 79.5,
+      "rotationDeg": -17.2,
+      "wetMix01": 0.221,
+      "bloomPct": 0,
+      "distancePct": 51.4,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 15.4,
+      "outTrimDb": 1.71
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "4e3725fa-7c33-4b76-8ab3-4ee09872d596",
+    "name": "Retro 80s Verb 12",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714063Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 7.6,
+      "decaySec": 2.75,
+      "sizePct": 48.4,
+      "diffusionPct": 78.9,
+      "densityPct": 81.5,
+      "erLevelDb": -15.7,
+      "erTimeMs": 25.3,
+      "erWidthPct": 76.1,
+      "modDepthCents": 8.08,
+      "modRateHz": 0.1,
+      "widthPct": 99.7,
+      "rotationDeg": 17.4,
+      "wetMix01": 0.431,
+      "bloomPct": 0,
+      "distancePct": 38.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 17.8,
+      "outTrimDb": -0.36
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "10a63dd3-d4c1-4c28-9e96-dcc6fb09c9b1",
+    "name": "Retro 80s Verb 13",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714123Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 25.3,
+      "decaySec": 3.85,
+      "sizePct": 58.1,
+      "diffusionPct": 58.5,
+      "densityPct": 77.9,
+      "erLevelDb": -6.8,
+      "erTimeMs": 41.0,
+      "erWidthPct": 66.3,
+      "modDepthCents": 13.09,
+      "modRateHz": 0.36,
+      "widthPct": 78.7,
+      "rotationDeg": -18.8,
+      "wetMix01": 0.203,
+      "bloomPct": 2.0,
+      "distancePct": 52.8,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 4.2,
+      "outTrimDb": -1.38
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "23b53140-c163-47ed-81e3-c926eb41e94d",
+    "name": "Retro 80s Verb 14",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714175Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 49.3,
+      "decaySec": 2.8,
+      "sizePct": 65.6,
+      "diffusionPct": 72.7,
+      "densityPct": 45.9,
+      "erLevelDb": -5.6,
+      "erTimeMs": 34.1,
+      "erWidthPct": 82.3,
+      "modDepthCents": 16.34,
+      "modRateHz": 0.459,
+      "widthPct": 73.7,
+      "rotationDeg": 2.4,
+      "wetMix01": 0.354,
+      "bloomPct": 0,
+      "distancePct": 58.8,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 15.7,
+      "outTrimDb": 1.15
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "6f28d9ac-ea6e-4c17-bfb3-aaa63b919ce4",
+    "name": "Retro 80s Verb 15",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714230Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 21.5,
+      "decaySec": 2.93,
+      "sizePct": 54.5,
+      "diffusionPct": 80.4,
+      "densityPct": 56.3,
+      "erLevelDb": -13.3,
+      "erTimeMs": 48.3,
+      "erWidthPct": 51.8,
+      "modDepthCents": 12.98,
+      "modRateHz": 0.335,
+      "widthPct": 75.7,
+      "rotationDeg": 2.3,
+      "wetMix01": 0.322,
+      "bloomPct": 6.1,
+      "distancePct": 58.6,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 35.7,
+      "outTrimDb": -0.33
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "22cacab5-aef2-4867-9052-ecfda58cc6c6",
+    "name": "Retro 80s Verb 16",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714286Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 25.7,
+      "decaySec": 2.87,
+      "sizePct": 54.0,
+      "diffusionPct": 67.6,
+      "densityPct": 59.7,
+      "erLevelDb": -14.7,
+      "erTimeMs": 47.1,
+      "erWidthPct": 82.1,
+      "modDepthCents": 7.39,
+      "modRateHz": 0.355,
+      "widthPct": 89.5,
+      "rotationDeg": -9.3,
+      "wetMix01": 0.155,
+      "bloomPct": 0,
+      "distancePct": 64.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 18.1,
+      "outTrimDb": 2.98
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "4e0c9a4d-7b42-48cb-b374-f628768b49e9",
+    "name": "Retro 80s Verb 17",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714343Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 22.2,
+      "decaySec": 1.82,
+      "sizePct": 57.0,
+      "diffusionPct": 60.7,
+      "densityPct": 60.1,
+      "erLevelDb": -15.9,
+      "erTimeMs": 24.7,
+      "erWidthPct": 75.1,
+      "modDepthCents": 13.13,
+      "modRateHz": 0.121,
+      "widthPct": 98.2,
+      "rotationDeg": 9.2,
+      "wetMix01": 0.349,
+      "bloomPct": 1.6,
+      "distancePct": 59.5,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 26.9,
+      "outTrimDb": 0.94
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "adfdea81-d5b8-41ee-a3a5-dfe535b3a34c",
+    "name": "Retro 80s Verb 18",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714396Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 34.7,
+      "decaySec": 3.78,
+      "sizePct": 47.5,
+      "diffusionPct": 71.3,
+      "densityPct": 74.4,
+      "erLevelDb": -8.3,
+      "erTimeMs": 57.3,
+      "erWidthPct": 80.0,
+      "modDepthCents": 15.23,
+      "modRateHz": 0.25,
+      "widthPct": 79.5,
+      "rotationDeg": 0.7,
+      "wetMix01": 0.192,
+      "bloomPct": 0,
+      "distancePct": 65.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 30.7,
+      "outTrimDb": 0.47
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "c0a83570-b7fa-413b-9bf7-3826516f6e62",
+    "name": "Retro 80s Verb 19",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714469Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 27.5,
+      "decaySec": 3.18,
+      "sizePct": 60.4,
+      "diffusionPct": 82.3,
+      "densityPct": 44.4,
+      "erLevelDb": -17.8,
+      "erTimeMs": 30.3,
+      "erWidthPct": 82.6,
+      "modDepthCents": 8.35,
+      "modRateHz": 0.16,
+      "widthPct": 86.2,
+      "rotationDeg": 1.2,
+      "wetMix01": 0.35,
+      "bloomPct": 0,
+      "distancePct": 47.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 34.7,
+      "outTrimDb": 0.82
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "6037a4d4-d3c7-4f38-9572-cac19a318207",
+    "name": "Retro 80s Verb 20",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714524Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 43.6,
+      "decaySec": 3.47,
+      "sizePct": 59.0,
+      "diffusionPct": 55.0,
+      "densityPct": 63.3,
+      "erLevelDb": -12.8,
+      "erTimeMs": 43.5,
+      "erWidthPct": 76.9,
+      "modDepthCents": 14.54,
+      "modRateHz": 0.435,
+      "widthPct": 82.6,
+      "rotationDeg": -24.7,
+      "wetMix01": 0.231,
+      "bloomPct": 2.8,
+      "distancePct": 49.6,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 29.7,
+      "outTrimDb": -2.19
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "2f5f7df2-4847-4c41-ba71-86e613d48ff0",
+    "name": "Retro 80s Verb 21",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714576Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 16.2,
+      "decaySec": 2.01,
+      "sizePct": 90,
+      "diffusionPct": 63.2,
+      "densityPct": 70.9,
+      "erLevelDb": -9.8,
+      "erTimeMs": 63.8,
+      "erWidthPct": 70.5,
+      "modDepthCents": 16.91,
+      "modRateHz": 0.337,
+      "widthPct": 80.1,
+      "rotationDeg": -6.9,
+      "wetMix01": 0.312,
+      "bloomPct": 0,
+      "distancePct": 54.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 25.7,
+      "outTrimDb": 0.27
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "e63d7475-213d-4d0b-bf92-b5796afdb380",
+    "name": "Retro 80s Verb 22",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714639Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 19.6,
+      "decaySec": 3.26,
+      "sizePct": 70.4,
+      "diffusionPct": 75.4,
+      "densityPct": 65.6,
+      "erLevelDb": -5.9,
+      "erTimeMs": 63.9,
+      "erWidthPct": 52.8,
+      "modDepthCents": 15.59,
+      "modRateHz": 0.311,
+      "widthPct": 83.1,
+      "rotationDeg": -8.1,
+      "wetMix01": 0.361,
+      "bloomPct": 10.2,
+      "distancePct": 43.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 52.7,
+      "outTrimDb": -2.29
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "e11828fb-7443-4e70-96c4-d3fa1380effb",
+    "name": "Retro 80s Verb 23",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714702Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 6.1,
+      "decaySec": 3.04,
+      "sizePct": 55.4,
+      "diffusionPct": 77.1,
+      "densityPct": 62.3,
+      "erLevelDb": -14.3,
+      "erTimeMs": 43.0,
+      "erWidthPct": 78.5,
+      "modDepthCents": 10.43,
+      "modRateHz": 0.1,
+      "widthPct": 95.3,
+      "rotationDeg": -27.1,
+      "wetMix01": 0.195,
+      "bloomPct": 2.5,
+      "distancePct": 54.8,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 16.4,
+      "outTrimDb": -1.21
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "fb6de076-d6aa-42cb-9a7f-b0774bca2975",
+    "name": "Retro 80s Verb 24",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714774Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 48.7,
+      "decaySec": 2.74,
+      "sizePct": 70.6,
+      "diffusionPct": 68.3,
+      "densityPct": 76.5,
+      "erLevelDb": -13.4,
+      "erTimeMs": 24.9,
+      "erWidthPct": 84.6,
+      "modDepthCents": 10.11,
+      "modRateHz": 0.315,
+      "widthPct": 82.7,
+      "rotationDeg": 5.6,
+      "wetMix01": 0.171,
+      "bloomPct": 0,
+      "distancePct": 47.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 12.5,
+      "outTrimDb": 0.44
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "de912c6f-34e8-4118-b108-3a76578a297f",
+    "name": "Retro 80s Verb 25",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714854Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 22.4,
+      "decaySec": 2.65,
+      "sizePct": 82.4,
+      "diffusionPct": 65.1,
+      "densityPct": 79.2,
+      "erLevelDb": -17.3,
+      "erTimeMs": 43.6,
+      "erWidthPct": 82.8,
+      "modDepthCents": 6.63,
+      "modRateHz": 0.602,
+      "widthPct": 74.2,
+      "rotationDeg": 28.1,
+      "wetMix01": 0.335,
+      "bloomPct": 8.3,
+      "distancePct": 49.5,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 20.2,
+      "outTrimDb": 0.97
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "f85dae8e-508c-4853-ae4d-eeeacf1097d9",
+    "name": "Retro 80s Verb 26",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.714922Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 36.8,
+      "decaySec": 2.68,
+      "sizePct": 57.6,
+      "diffusionPct": 67.1,
+      "densityPct": 64.5,
+      "erLevelDb": -14.4,
+      "erTimeMs": 24.0,
+      "erWidthPct": 98.7,
+      "modDepthCents": 8.69,
+      "modRateHz": 0.264,
+      "widthPct": 90.1,
+      "rotationDeg": 17.3,
+      "wetMix01": 0.25,
+      "bloomPct": 0,
+      "distancePct": 71.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 21.7,
+      "outTrimDb": 2.18
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "6e3fd84c-d736-405c-9365-037689811607",
+    "name": "Retro 80s Verb 27",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.715207Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 45.9,
+      "decaySec": 2.79,
+      "sizePct": 59.5,
+      "diffusionPct": 66.7,
+      "densityPct": 68.8,
+      "erLevelDb": -10.9,
+      "erTimeMs": 10,
+      "erWidthPct": 74.4,
+      "modDepthCents": 16.16,
+      "modRateHz": 0.368,
+      "widthPct": 87.5,
+      "rotationDeg": 17.7,
+      "wetMix01": 0.398,
+      "bloomPct": 2.5,
+      "distancePct": 49.2,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 14.5,
+      "outTrimDb": -1.2
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "27899ceb-faea-4505-b68c-26e83b95d4b0",
+    "name": "Retro 80s Verb 28",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.715308Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 34.7,
+      "decaySec": 4.13,
+      "sizePct": 73.5,
+      "diffusionPct": 85.1,
+      "densityPct": 68.1,
+      "erLevelDb": -14.7,
+      "erTimeMs": 34.4,
+      "erWidthPct": 69.5,
+      "modDepthCents": 9.9,
+      "modRateHz": 0.324,
+      "widthPct": 82.6,
+      "rotationDeg": -27.7,
+      "wetMix01": 0.298,
+      "bloomPct": 3.6,
+      "distancePct": 62.6,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 10.8,
+      "outTrimDb": -2.74
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "e956bf27-2ddb-46c2-adf2-538b1dd1b755",
+    "name": "Retro 80s Verb 29",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.715495Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 48.5,
+      "decaySec": 3.08,
+      "sizePct": 62.9,
+      "diffusionPct": 72.2,
+      "densityPct": 54.7,
+      "erLevelDb": -21.6,
+      "erTimeMs": 47.0,
+      "erWidthPct": 64.7,
+      "modDepthCents": 9.13,
+      "modRateHz": 0.451,
+      "widthPct": 80.5,
+      "rotationDeg": -27.1,
+      "wetMix01": 0.294,
+      "bloomPct": 0,
+      "distancePct": 39.4,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.69
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "05e45342-421d-43f8-be48-c616ef5f5bdc",
+    "name": "Retro 80s Verb 30",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.715602Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 52.1,
+      "decaySec": 2.3,
+      "sizePct": 45.8,
+      "diffusionPct": 70.7,
+      "densityPct": 67.9,
+      "erLevelDb": -16.2,
+      "erTimeMs": 52.7,
+      "erWidthPct": 89.2,
+      "modDepthCents": 12.87,
+      "modRateHz": 0.574,
+      "widthPct": 74.8,
+      "rotationDeg": -13.6,
+      "wetMix01": 0.274,
+      "bloomPct": 17.5,
+      "distancePct": 43.8,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 25.8,
+      "outTrimDb": -0.32
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "1d0b9dbb-1f65-45b6-9c3b-66b456f0d38e",
+    "name": "Retro 80s Verb 31",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.715661Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 0,
+      "decaySec": 3.38,
+      "sizePct": 48.1,
+      "diffusionPct": 61.9,
+      "densityPct": 79.3,
+      "erLevelDb": -11.0,
+      "erTimeMs": 45.9,
+      "erWidthPct": 84.1,
+      "modDepthCents": 10.09,
+      "modRateHz": 0.314,
+      "widthPct": 85.9,
+      "rotationDeg": 5.8,
+      "wetMix01": 0.357,
+      "bloomPct": 0,
+      "distancePct": 37.8,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 9.8,
+      "outTrimDb": -2.01
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "b5f3fce1-7648-4df1-8eac-24f878d785ec",
+    "name": "Retro 80s Verb 32",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.715724Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 22.7,
+      "decaySec": 3.35,
+      "sizePct": 72.9,
+      "diffusionPct": 78.1,
+      "densityPct": 62.0,
+      "erLevelDb": -14.7,
+      "erTimeMs": 30.4,
+      "erWidthPct": 77.3,
+      "modDepthCents": 14.45,
+      "modRateHz": 0.455,
+      "widthPct": 72.4,
+      "rotationDeg": -28.3,
+      "wetMix01": 0.439,
+      "bloomPct": 0,
+      "distancePct": 45.0,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 13.8,
+      "outTrimDb": -2.3
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "9d101b3c-da0f-4781-99a8-5093f021e93e",
+    "name": "Retro 80s Verb 33",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.715781Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 32.7,
+      "decaySec": 2.94,
+      "sizePct": 56.6,
+      "diffusionPct": 81.1,
+      "densityPct": 73.5,
+      "erLevelDb": -18.6,
+      "erTimeMs": 36.0,
+      "erWidthPct": 75.1,
+      "modDepthCents": 7.6,
+      "modRateHz": 0.657,
+      "widthPct": 70.0,
+      "rotationDeg": 25.5,
+      "wetMix01": 0.298,
+      "bloomPct": 12.7,
+      "distancePct": 24.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 17.0,
+      "outTrimDb": -0.17
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "3df19bc5-924b-4019-bf89-e599f15a2411",
+    "name": "Retro 80s Verb 34",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.715850Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 28.4,
+      "decaySec": 2.38,
+      "sizePct": 74.6,
+      "diffusionPct": 84.5,
+      "densityPct": 65.5,
+      "erLevelDb": -1.6,
+      "erTimeMs": 59.4,
+      "erWidthPct": 87.4,
+      "modDepthCents": 9.03,
+      "modRateHz": 0.406,
+      "widthPct": 81.5,
+      "rotationDeg": -3.7,
+      "wetMix01": 0.24,
+      "bloomPct": 0,
+      "distancePct": 53.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 4.5,
+      "outTrimDb": 0.0
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "68d8b117-66a2-4dd1-b467-e3d5c9e32308",
+    "name": "Retro 80s Verb 35",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.715908Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 19.5,
+      "decaySec": 2.44,
+      "sizePct": 66.8,
+      "diffusionPct": 82.4,
+      "densityPct": 75.9,
+      "erLevelDb": -12.6,
+      "erTimeMs": 35.2,
+      "erWidthPct": 68.4,
+      "modDepthCents": 8.8,
+      "modRateHz": 0.347,
+      "widthPct": 86.7,
+      "rotationDeg": 27.2,
+      "wetMix01": 0.339,
+      "bloomPct": 11.2,
+      "distancePct": 61.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 8.1,
+      "outTrimDb": 2.11
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "c3b13288-81b9-4c5e-bc8a-eaa5b70bb417",
+    "name": "Retro 80s Verb 36",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.715962Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 27.4,
+      "decaySec": 2.21,
+      "sizePct": 50.8,
+      "diffusionPct": 76.3,
+      "densityPct": 54.2,
+      "erLevelDb": -8.0,
+      "erTimeMs": 48.2,
+      "erWidthPct": 75.6,
+      "modDepthCents": 11.6,
+      "modRateHz": 0.185,
+      "widthPct": 94.5,
+      "rotationDeg": -45,
+      "wetMix01": 0.368,
+      "bloomPct": 2.2,
+      "distancePct": 48.4,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 10.5,
+      "outTrimDb": 0.27
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "d0118726-a4cc-46fe-851b-4cdd6a379d11",
+    "name": "Retro 80s Verb 37",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.716023Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 42.7,
+      "decaySec": 3.15,
+      "sizePct": 51.2,
+      "diffusionPct": 70.8,
+      "densityPct": 67.6,
+      "erLevelDb": -10.0,
+      "erTimeMs": 45.6,
+      "erWidthPct": 59.4,
+      "modDepthCents": 8.14,
+      "modRateHz": 0.613,
+      "widthPct": 85.7,
+      "rotationDeg": 14.4,
+      "wetMix01": 0.196,
+      "bloomPct": 12.1,
+      "distancePct": 50.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 11.0,
+      "outTrimDb": 1.54
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "6ee75fee-3d66-45d2-8313-b4f6fb636db0",
+    "name": "Retro 80s Verb 38",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.716078Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 28.6,
+      "decaySec": 2.83,
+      "sizePct": 61.2,
+      "diffusionPct": 81.2,
+      "densityPct": 78.9,
+      "erLevelDb": -20.7,
+      "erTimeMs": 41.2,
+      "erWidthPct": 74.4,
+      "modDepthCents": 9.93,
+      "modRateHz": 0.136,
+      "widthPct": 77.8,
+      "rotationDeg": -2.7,
+      "wetMix01": 0.17,
+      "bloomPct": 0,
+      "distancePct": 50.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 38.9,
+      "outTrimDb": -0.05
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "b2c95404-b988-4363-906d-039dba5dfb86",
+    "name": "Retro 80s Verb 39",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.716143Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 17.0,
+      "decaySec": 4.12,
+      "sizePct": 74.9,
+      "diffusionPct": 81.7,
+      "densityPct": 60.7,
+      "erLevelDb": -13.5,
+      "erTimeMs": 45.6,
+      "erWidthPct": 82.0,
+      "modDepthCents": 11.66,
+      "modRateHz": 0.337,
+      "widthPct": 81.4,
+      "rotationDeg": -19.5,
+      "wetMix01": 0.335,
+      "bloomPct": 0,
+      "distancePct": 60.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 18.0,
+      "outTrimDb": -0.09
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "47e683de-83d2-410f-9bd5-2567cfc43b80",
+    "name": "Retro 80s Verb 40",
+    "category": "Retro80s",
+    "model": "Chamber",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.716202Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 27.3,
+      "decaySec": 3.41,
+      "sizePct": 65.9,
+      "diffusionPct": 57.3,
+      "densityPct": 67.2,
+      "erLevelDb": -16.4,
+      "erTimeMs": 36.0,
+      "erWidthPct": 76.5,
+      "modDepthCents": 11.56,
+      "modRateHz": 0.452,
+      "widthPct": 90.7,
+      "rotationDeg": 19.2,
+      "wetMix01": 0.433,
+      "bloomPct": 0,
+      "distancePct": 60.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 28.0,
+      "outTrimDb": -0.23
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 150,
+          "q": 0.7,
+          "gainDb": -1.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2400,
+          "q": 0.8,
+          "gainDb": 1.2
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000,
+          "q": 0.7,
+          "gainDb": 3.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "Bell",
+          "freqHz": 800,
+          "q": 1.0,
+          "mult": 0.95
+        },
+        {
+          "type": "TiltLo",
+          "freqHz": 400,
+          "q": 0.8,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "Vocal",
+      "detector": "Wet",
+      "depthDb": 5.0,
+      "thrDb": -24.0,
+      "ratio": 2.5,
+      "kneeDb": 2.0,
+      "atkMs": 10.0,
+      "relMs": 220.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  }
+]

@@ -1,0 +1,3442 @@
+[
+  {
+    "id": "c2600f37-07ed-4b4f-9ec9-70bc87c7dc4a",
+    "name": "Drum Plate 01",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710627Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 2.0,
+      "decaySec": 2.19,
+      "sizePct": 70.5,
+      "diffusionPct": 79.0,
+      "densityPct": 82.7,
+      "erLevelDb": -12.9,
+      "erTimeMs": 44.6,
+      "erWidthPct": 87.7,
+      "modDepthCents": 7.19,
+      "modRateHz": 0.9,
+      "widthPct": 86.8,
+      "rotationDeg": 44.9,
+      "wetMix01": 0.172,
+      "bloomPct": 3.6,
+      "distancePct": 5.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -1.1
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "24c5aa31-c0e6-482a-9b76-28e0ab0e0846",
+    "name": "Drum Plate 02",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710683Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 7.8,
+      "decaySec": 1.7,
+      "sizePct": 55.1,
+      "diffusionPct": 84.1,
+      "densityPct": 71.3,
+      "erLevelDb": -2.5,
+      "erTimeMs": 57.2,
+      "erWidthPct": 67.3,
+      "modDepthCents": 2.66,
+      "modRateHz": 0.904,
+      "widthPct": 92.8,
+      "rotationDeg": -12.2,
+      "wetMix01": 0.261,
+      "bloomPct": 6.9,
+      "distancePct": 47.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.05
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "4a99acf7-1ba5-401c-a7c3-a4d03a5c897a",
+    "name": "Drum Plate 03",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710738Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 2.7,
+      "decaySec": 0.91,
+      "sizePct": 52.8,
+      "diffusionPct": 87.7,
+      "densityPct": 76.8,
+      "erLevelDb": -13.9,
+      "erTimeMs": 50.5,
+      "erWidthPct": 74.3,
+      "modDepthCents": 2.31,
+      "modRateHz": 0.626,
+      "widthPct": 97.7,
+      "rotationDeg": -27.4,
+      "wetMix01": 0.297,
+      "bloomPct": 4.1,
+      "distancePct": 47.4,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 2.8,
+      "outTrimDb": 0.96
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "c90b805b-2e82-4527-990f-55ad5facd5a0",
+    "name": "Drum Plate 04",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710792Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 9.8,
+      "decaySec": 1.46,
+      "sizePct": 63.0,
+      "diffusionPct": 87.9,
+      "densityPct": 99.3,
+      "erLevelDb": -9.2,
+      "erTimeMs": 29.3,
+      "erWidthPct": 53.2,
+      "modDepthCents": 5.29,
+      "modRateHz": 0.348,
+      "widthPct": 93.5,
+      "rotationDeg": 21.4,
+      "wetMix01": 0.302,
+      "bloomPct": 0.3,
+      "distancePct": 46.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 19.0,
+      "outTrimDb": 1.07
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "35385d6b-4311-435f-9a19-49048cb809d2",
+    "name": "Drum Plate 05",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710848Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 0,
+      "decaySec": 1.47,
+      "sizePct": 62.3,
+      "diffusionPct": 80.5,
+      "densityPct": 75.5,
+      "erLevelDb": -12.2,
+      "erTimeMs": 35.4,
+      "erWidthPct": 66.1,
+      "modDepthCents": 1.65,
+      "modRateHz": 1.067,
+      "widthPct": 93.7,
+      "rotationDeg": 0.0,
+      "wetMix01": 0.154,
+      "bloomPct": 2.9,
+      "distancePct": 48.4,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -1.46
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "a129982a-e743-485f-a78e-e3dabc93ceb0",
+    "name": "Drum Plate 06",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710912Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 4.5,
+      "decaySec": 2.22,
+      "sizePct": 54.4,
+      "diffusionPct": 92.6,
+      "densityPct": 55,
+      "erLevelDb": -3.6,
+      "erTimeMs": 49.9,
+      "erWidthPct": 69.5,
+      "modDepthCents": 8.35,
+      "modRateHz": 0.547,
+      "widthPct": 93.7,
+      "rotationDeg": -12.9,
+      "wetMix01": 0.222,
+      "bloomPct": 7.7,
+      "distancePct": 61.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 5.9,
+      "outTrimDb": -1.09
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "3d01647b-7e93-4b21-b765-3d033fc0c7a8",
+    "name": "Drum Plate 07",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710967Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 2.2,
+      "decaySec": 1.69,
+      "sizePct": 58.0,
+      "diffusionPct": 75.8,
+      "densityPct": 75.6,
+      "erLevelDb": -4.2,
+      "erTimeMs": 28.2,
+      "erWidthPct": 85.8,
+      "modDepthCents": 6.56,
+      "modRateHz": 0.512,
+      "widthPct": 89.6,
+      "rotationDeg": 22.7,
+      "wetMix01": 0.239,
+      "bloomPct": 8.1,
+      "distancePct": 68.8,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 2.5,
+      "outTrimDb": -1.84
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "16cd7b4e-a0e8-4ded-9c03-6151602fb0e5",
+    "name": "Drum Plate 08",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711052Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 10.8,
+      "decaySec": 2.46,
+      "sizePct": 42.0,
+      "diffusionPct": 85.4,
+      "densityPct": 85.9,
+      "erLevelDb": -6.2,
+      "erTimeMs": 44.1,
+      "erWidthPct": 75.8,
+      "modDepthCents": 3.99,
+      "modRateHz": 0.2,
+      "widthPct": 99.1,
+      "rotationDeg": -5.0,
+      "wetMix01": 0.203,
+      "bloomPct": 0,
+      "distancePct": 57.0,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 2.55
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "8ee9f923-5bc9-426a-a5dd-2f8a53afc08d",
+    "name": "Drum Plate 09",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711128Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 8.7,
+      "decaySec": 1.94,
+      "sizePct": 41.0,
+      "diffusionPct": 94.5,
+      "densityPct": 99.0,
+      "erLevelDb": -16.0,
+      "erTimeMs": 47.9,
+      "erWidthPct": 71.7,
+      "modDepthCents": 4.97,
+      "modRateHz": 0.753,
+      "widthPct": 99.1,
+      "rotationDeg": -27.0,
+      "wetMix01": 0.241,
+      "bloomPct": 11.8,
+      "distancePct": 72.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.01
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "6305de28-5afd-4236-a23b-0bc0b8c3fc7a",
+    "name": "Drum Plate 10",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711190Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 4.2,
+      "decaySec": 2.51,
+      "sizePct": 50.1,
+      "diffusionPct": 87.0,
+      "densityPct": 76.8,
+      "erLevelDb": -3.3,
+      "erTimeMs": 31.6,
+      "erWidthPct": 63.9,
+      "modDepthCents": 3.98,
+      "modRateHz": 0.862,
+      "widthPct": 69.8,
+      "rotationDeg": -23.6,
+      "wetMix01": 0.208,
+      "bloomPct": 0,
+      "distancePct": 39.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 3.6,
+      "outTrimDb": 0.08
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "e81fde67-e7b8-437b-9a6c-83bc57d36593",
+    "name": "Drum Plate 11",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711246Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 8.1,
+      "decaySec": 1.39,
+      "sizePct": 44.8,
+      "diffusionPct": 82.0,
+      "densityPct": 68.9,
+      "erLevelDb": -12.9,
+      "erTimeMs": 71.1,
+      "erWidthPct": 58.4,
+      "modDepthCents": 1.19,
+      "modRateHz": 0.705,
+      "widthPct": 86.9,
+      "rotationDeg": -6.7,
+      "wetMix01": 0.183,
+      "bloomPct": 0,
+      "distancePct": 54.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 1.9,
+      "outTrimDb": -1.6
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "87428dc9-cf30-4f99-a20f-e369244413e3",
+    "name": "Drum Plate 12",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711308Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 5.4,
+      "decaySec": 2.01,
+      "sizePct": 58.9,
+      "diffusionPct": 95.9,
+      "densityPct": 75.1,
+      "erLevelDb": -2.1,
+      "erTimeMs": 31.4,
+      "erWidthPct": 91.2,
+      "modDepthCents": 0.05,
+      "modRateHz": 0.857,
+      "widthPct": 80.3,
+      "rotationDeg": 20.3,
+      "wetMix01": 0.215,
+      "bloomPct": 0,
+      "distancePct": 61.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 8.2,
+      "outTrimDb": 0.71
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "b401524e-216e-4258-8256-fee5662ad3dc",
+    "name": "Drum Plate 13",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711374Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 8.3,
+      "decaySec": 1.28,
+      "sizePct": 64.2,
+      "diffusionPct": 88.1,
+      "densityPct": 96.0,
+      "erLevelDb": -6.1,
+      "erTimeMs": 28.0,
+      "erWidthPct": 66.0,
+      "modDepthCents": 2.47,
+      "modRateHz": 0.578,
+      "widthPct": 83.9,
+      "rotationDeg": -1.6,
+      "wetMix01": 0.226,
+      "bloomPct": 1.2,
+      "distancePct": 66.8,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 1.02
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "2916842f-660d-4bdc-b586-736c6ddd9ef4",
+    "name": "Drum Plate 14",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711431Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 4.1,
+      "decaySec": 1.73,
+      "sizePct": 53.1,
+      "diffusionPct": 89.5,
+      "densityPct": 63.5,
+      "erLevelDb": -7.7,
+      "erTimeMs": 19.5,
+      "erWidthPct": 90.4,
+      "modDepthCents": 2.14,
+      "modRateHz": 0.2,
+      "widthPct": 82.6,
+      "rotationDeg": -33.6,
+      "wetMix01": 0.193,
+      "bloomPct": 0,
+      "distancePct": 61.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.42
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "635c09ff-fabc-40e2-aa8d-9c2fb886e56e",
+    "name": "Drum Plate 15",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711563Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 14.9,
+      "decaySec": 1.62,
+      "sizePct": 53.7,
+      "diffusionPct": 77.8,
+      "densityPct": 79.6,
+      "erLevelDb": -10.2,
+      "erTimeMs": 40.1,
+      "erWidthPct": 83.0,
+      "modDepthCents": 3.57,
+      "modRateHz": 0.563,
+      "widthPct": 76.3,
+      "rotationDeg": 31.1,
+      "wetMix01": 0.279,
+      "bloomPct": 0,
+      "distancePct": 55.6,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 13.6,
+      "outTrimDb": -0.46
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "72b4cbab-2474-47c3-915f-5ced61faca71",
+    "name": "Drum Plate 16",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711671Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 3.2,
+      "decaySec": 1.8,
+      "sizePct": 60.9,
+      "diffusionPct": 92.1,
+      "densityPct": 71.3,
+      "erLevelDb": -7.3,
+      "erTimeMs": 61.2,
+      "erWidthPct": 100,
+      "modDepthCents": 2.51,
+      "modRateHz": 0.505,
+      "widthPct": 84.4,
+      "rotationDeg": -16.8,
+      "wetMix01": 0.293,
+      "bloomPct": 0,
+      "distancePct": 74.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.48
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "91034674-0f93-46f8-8889-c8ced34071e7",
+    "name": "Drum Plate 17",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711763Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 5.5,
+      "decaySec": 1.52,
+      "sizePct": 72.5,
+      "diffusionPct": 81.9,
+      "densityPct": 88.8,
+      "erLevelDb": -2.7,
+      "erTimeMs": 39.4,
+      "erWidthPct": 49.0,
+      "modDepthCents": 4.93,
+      "modRateHz": 0.238,
+      "widthPct": 89.2,
+      "rotationDeg": 7.1,
+      "wetMix01": 0.215,
+      "bloomPct": 0,
+      "distancePct": 28.8,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.79
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "18b4e7ab-36f6-4f23-81cf-947810ef0546",
+    "name": "Drum Plate 18",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711824Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 5.7,
+      "decaySec": 1.65,
+      "sizePct": 45.4,
+      "diffusionPct": 82.0,
+      "densityPct": 82.5,
+      "erLevelDb": -9.9,
+      "erTimeMs": 52.3,
+      "erWidthPct": 81.2,
+      "modDepthCents": 3.54,
+      "modRateHz": 0.837,
+      "widthPct": 93.9,
+      "rotationDeg": 24.9,
+      "wetMix01": 0.211,
+      "bloomPct": 0,
+      "distancePct": 63.8,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 21.4,
+      "outTrimDb": -1.46
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "e4a6c432-2e41-4640-9aee-8aaadb86c840",
+    "name": "Drum Plate 19",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711885Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 9.9,
+      "decaySec": 1.78,
+      "sizePct": 51.4,
+      "diffusionPct": 90.6,
+      "densityPct": 84.2,
+      "erLevelDb": -10.7,
+      "erTimeMs": 65.4,
+      "erWidthPct": 73.8,
+      "modDepthCents": 2.29,
+      "modRateHz": 0.659,
+      "widthPct": 92.8,
+      "rotationDeg": 4.4,
+      "wetMix01": 0.281,
+      "bloomPct": 0,
+      "distancePct": 35.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.75
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "aece266e-3894-4d59-8d06-40e066bd686c",
+    "name": "Drum Plate 20",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711941Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 5.3,
+      "decaySec": 1.59,
+      "sizePct": 55.3,
+      "diffusionPct": 95.7,
+      "densityPct": 83.4,
+      "erLevelDb": 0,
+      "erTimeMs": 37.5,
+      "erWidthPct": 90.1,
+      "modDepthCents": 5.58,
+      "modRateHz": 0.824,
+      "widthPct": 100,
+      "rotationDeg": -14.4,
+      "wetMix01": 0.31,
+      "bloomPct": 0,
+      "distancePct": 57.6,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -1.31
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "60e843ad-36f7-47b9-9428-3eb3807cc19a",
+    "name": "Drum Plate 21",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.711997Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 8.4,
+      "decaySec": 2.72,
+      "sizePct": 52.7,
+      "diffusionPct": 98.4,
+      "densityPct": 75.9,
+      "erLevelDb": -8.8,
+      "erTimeMs": 45.3,
+      "erWidthPct": 72.0,
+      "modDepthCents": 3.59,
+      "modRateHz": 0.43,
+      "widthPct": 85.9,
+      "rotationDeg": -45,
+      "wetMix01": 0.177,
+      "bloomPct": 0,
+      "distancePct": 47.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -1.49
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "c40b03af-241d-4e17-8b19-73051f4cfed9",
+    "name": "Drum Plate 22",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712053Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 8.9,
+      "decaySec": 1.36,
+      "sizePct": 55.7,
+      "diffusionPct": 96.9,
+      "densityPct": 68.8,
+      "erLevelDb": -9.1,
+      "erTimeMs": 42.2,
+      "erWidthPct": 78.8,
+      "modDepthCents": 4.67,
+      "modRateHz": 0.672,
+      "widthPct": 63.1,
+      "rotationDeg": -14.3,
+      "wetMix01": 0.193,
+      "bloomPct": 0,
+      "distancePct": 69.4,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 9.9,
+      "outTrimDb": -1.18
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "35bb5470-f81d-4db2-ab9c-61b5fff8fa99",
+    "name": "Drum Plate 23",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712110Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 5.3,
+      "decaySec": 2.2,
+      "sizePct": 79.5,
+      "diffusionPct": 84.3,
+      "densityPct": 90.4,
+      "erLevelDb": -6.5,
+      "erTimeMs": 14.2,
+      "erWidthPct": 86.4,
+      "modDepthCents": 1.79,
+      "modRateHz": 0.533,
+      "widthPct": 81.8,
+      "rotationDeg": 9.2,
+      "wetMix01": 0.196,
+      "bloomPct": 0,
+      "distancePct": 95.0,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -1.4
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "49b943f2-7443-4092-a46c-4c94dfcdb559",
+    "name": "Drum Plate 24",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712168Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 9.9,
+      "decaySec": 2.15,
+      "sizePct": 78.6,
+      "diffusionPct": 82.0,
+      "densityPct": 94.6,
+      "erLevelDb": -11.7,
+      "erTimeMs": 34.2,
+      "erWidthPct": 100,
+      "modDepthCents": 4.15,
+      "modRateHz": 1.369,
+      "widthPct": 73.8,
+      "rotationDeg": -6.3,
+      "wetMix01": 0.327,
+      "bloomPct": 10.8,
+      "distancePct": 39.0,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.2
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "f8c07a84-3a29-45c5-ab84-7dc342cb5a86",
+    "name": "Drum Plate 25",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712247Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 10.5,
+      "decaySec": 2.03,
+      "sizePct": 58.9,
+      "diffusionPct": 83.5,
+      "densityPct": 81.6,
+      "erLevelDb": -5.5,
+      "erTimeMs": 34.6,
+      "erWidthPct": 95.8,
+      "modDepthCents": 4.66,
+      "modRateHz": 0.324,
+      "widthPct": 68.2,
+      "rotationDeg": 11.2,
+      "wetMix01": 0.222,
+      "bloomPct": 0,
+      "distancePct": 69.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 9.3,
+      "outTrimDb": 0.33
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "6e03de07-32f5-40d0-bb4c-6476bb06a98f",
+    "name": "Drum Plate 26",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712323Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 6.2,
+      "decaySec": 2.05,
+      "sizePct": 51.6,
+      "diffusionPct": 92.1,
+      "densityPct": 79.6,
+      "erLevelDb": -5.1,
+      "erTimeMs": 59.4,
+      "erWidthPct": 81.3,
+      "modDepthCents": 0,
+      "modRateHz": 0.546,
+      "widthPct": 83.7,
+      "rotationDeg": -6.7,
+      "wetMix01": 0.311,
+      "bloomPct": 3.8,
+      "distancePct": 58.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.99
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "aab07d6d-1bee-41cd-aebd-1e88488fd926",
+    "name": "Drum Plate 27",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712384Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 4.7,
+      "decaySec": 2.42,
+      "sizePct": 45.5,
+      "diffusionPct": 86.9,
+      "densityPct": 83.7,
+      "erLevelDb": -5.1,
+      "erTimeMs": 47.1,
+      "erWidthPct": 79.8,
+      "modDepthCents": 2.94,
+      "modRateHz": 0.561,
+      "widthPct": 71.4,
+      "rotationDeg": -21.8,
+      "wetMix01": 0.243,
+      "bloomPct": 3.8,
+      "distancePct": 31.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 2.7,
+      "outTrimDb": -0.54
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "b0a9ebdc-ebb8-4235-a797-17765e2f2a21",
+    "name": "Drum Plate 28",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712443Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 1.6,
+      "decaySec": 1.5,
+      "sizePct": 55.3,
+      "diffusionPct": 98.1,
+      "densityPct": 82.3,
+      "erLevelDb": -9.2,
+      "erTimeMs": 56.0,
+      "erWidthPct": 85.7,
+      "modDepthCents": 5.02,
+      "modRateHz": 1.041,
+      "widthPct": 72.0,
+      "rotationDeg": -0.9,
+      "wetMix01": 0.256,
+      "bloomPct": 3.1,
+      "distancePct": 60.8,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.1
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "51c54c99-15ba-4e30-b626-507ec262b7de",
+    "name": "Drum Plate 29",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712502Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 2.9,
+      "decaySec": 1.98,
+      "sizePct": 67.7,
+      "diffusionPct": 94.0,
+      "densityPct": 85.2,
+      "erLevelDb": -6.4,
+      "erTimeMs": 46.7,
+      "erWidthPct": 86.7,
+      "modDepthCents": 1.8,
+      "modRateHz": 0.672,
+      "widthPct": 70.0,
+      "rotationDeg": -29.2,
+      "wetMix01": 0.282,
+      "bloomPct": 6.7,
+      "distancePct": 49.5,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 1.32
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "2cedc49d-036d-4f62-bdf7-2e94fd7fd63a",
+    "name": "Drum Plate 30",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712630Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 6.7,
+      "decaySec": 1.93,
+      "sizePct": 80,
+      "diffusionPct": 95.5,
+      "densityPct": 82.8,
+      "erLevelDb": -8.6,
+      "erTimeMs": 45.3,
+      "erWidthPct": 46.9,
+      "modDepthCents": 3.79,
+      "modRateHz": 0.268,
+      "widthPct": 78.6,
+      "rotationDeg": -16.6,
+      "wetMix01": 0.276,
+      "bloomPct": 5.9,
+      "distancePct": 49.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 17.8,
+      "outTrimDb": -2.39
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "fb5e8a19-58de-4a59-9831-9d421fc923e6",
+    "name": "Drum Plate 31",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712689Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 3.7,
+      "decaySec": 1.26,
+      "sizePct": 65.7,
+      "diffusionPct": 84.1,
+      "densityPct": 71.5,
+      "erLevelDb": -10.1,
+      "erTimeMs": 38.5,
+      "erWidthPct": 80.2,
+      "modDepthCents": 5.08,
+      "modRateHz": 1.035,
+      "widthPct": 85.8,
+      "rotationDeg": 16.7,
+      "wetMix01": 0.125,
+      "bloomPct": 0.7,
+      "distancePct": 41.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -2.74
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "915a36b1-0ff2-4898-959e-24a8571b75a7",
+    "name": "Drum Plate 32",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712747Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 5.8,
+      "decaySec": 1.61,
+      "sizePct": 55.1,
+      "diffusionPct": 93.5,
+      "densityPct": 77.0,
+      "erLevelDb": 0,
+      "erTimeMs": 44.5,
+      "erWidthPct": 55.2,
+      "modDepthCents": 3.03,
+      "modRateHz": 0.814,
+      "widthPct": 91.8,
+      "rotationDeg": 1.3,
+      "wetMix01": 0.162,
+      "bloomPct": 1.3,
+      "distancePct": 52.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -1.35
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "1a5acaca-1207-48ac-9acb-7c5d497865e1",
+    "name": "Drum Plate 33",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712819Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 11.9,
+      "decaySec": 2.58,
+      "sizePct": 59.9,
+      "diffusionPct": 84.4,
+      "densityPct": 83.4,
+      "erLevelDb": -6.4,
+      "erTimeMs": 63.4,
+      "erWidthPct": 78.8,
+      "modDepthCents": 6.22,
+      "modRateHz": 0.823,
+      "widthPct": 76.3,
+      "rotationDeg": -24.4,
+      "wetMix01": 0.193,
+      "bloomPct": 0,
+      "distancePct": 44.5,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 9.2,
+      "outTrimDb": 1.37
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "282feb91-e3f5-4de6-93da-65d74460ed43",
+    "name": "Drum Plate 34",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712874Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 10.8,
+      "decaySec": 2.38,
+      "sizePct": 56.5,
+      "diffusionPct": 93.0,
+      "densityPct": 98.1,
+      "erLevelDb": -4.4,
+      "erTimeMs": 10,
+      "erWidthPct": 80.9,
+      "modDepthCents": 0.98,
+      "modRateHz": 0.477,
+      "widthPct": 98.9,
+      "rotationDeg": -10.7,
+      "wetMix01": 0.175,
+      "bloomPct": 1.2,
+      "distancePct": 37.2,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.43
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "2c069940-ebe0-464c-940f-9082d4c9d176",
+    "name": "Drum Plate 35",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712935Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 10.5,
+      "decaySec": 1.2,
+      "sizePct": 66.7,
+      "diffusionPct": 76.5,
+      "densityPct": 82.6,
+      "erLevelDb": -10.0,
+      "erTimeMs": 30.0,
+      "erWidthPct": 74.0,
+      "modDepthCents": 5.52,
+      "modRateHz": 0.2,
+      "widthPct": 83.1,
+      "rotationDeg": 0.6,
+      "wetMix01": 0.1,
+      "bloomPct": 4.0,
+      "distancePct": 29.5,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.38
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "48769bfd-f155-4d60-8ea3-7917a25ea8f5",
+    "name": "Drum Plate 36",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.712996Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 1.1,
+      "decaySec": 1.62,
+      "sizePct": 54.0,
+      "diffusionPct": 84.1,
+      "densityPct": 78.6,
+      "erLevelDb": -2.1,
+      "erTimeMs": 39.5,
+      "erWidthPct": 64.8,
+      "modDepthCents": 1.55,
+      "modRateHz": 0.892,
+      "widthPct": 65.0,
+      "rotationDeg": 5.2,
+      "wetMix01": 0.314,
+      "bloomPct": 0,
+      "distancePct": 82.6,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 28.1,
+      "outTrimDb": 0.34
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "f18f7136-61d0-459f-93f5-4a8583a2be3f",
+    "name": "Drum Plate 37",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713065Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 10.1,
+      "decaySec": 2.04,
+      "sizePct": 53.8,
+      "diffusionPct": 94.9,
+      "densityPct": 80.0,
+      "erLevelDb": -7.7,
+      "erTimeMs": 35.3,
+      "erWidthPct": 69.2,
+      "modDepthCents": 5.25,
+      "modRateHz": 1.339,
+      "widthPct": 93.4,
+      "rotationDeg": -9.9,
+      "wetMix01": 0.122,
+      "bloomPct": 3.6,
+      "distancePct": 32.5,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 3.45
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "ed20385c-bfb7-4891-96d0-a559da031dc3",
+    "name": "Drum Plate 38",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713138Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 2.7,
+      "decaySec": 2.62,
+      "sizePct": 36.2,
+      "diffusionPct": 90.2,
+      "densityPct": 86.6,
+      "erLevelDb": -10.0,
+      "erTimeMs": 40.1,
+      "erWidthPct": 100,
+      "modDepthCents": 5.32,
+      "modRateHz": 0.73,
+      "widthPct": 75.9,
+      "rotationDeg": -9.9,
+      "wetMix01": 0.253,
+      "bloomPct": 3.1,
+      "distancePct": 61.0,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 1.95
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "538ec6e4-81aa-42d5-908c-fec4eeede0f8",
+    "name": "Drum Plate 39",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713212Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 0,
+      "decaySec": 1.07,
+      "sizePct": 55.1,
+      "diffusionPct": 86.2,
+      "densityPct": 74.3,
+      "erLevelDb": -3.5,
+      "erTimeMs": 60.6,
+      "erWidthPct": 89.3,
+      "modDepthCents": 2.54,
+      "modRateHz": 0.429,
+      "widthPct": 99.0,
+      "rotationDeg": -44.5,
+      "wetMix01": 0.272,
+      "bloomPct": 1.0,
+      "distancePct": 29.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.37
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  },
+  {
+    "id": "9e946cfb-ac83-4d40-8804-a7c5820b3e81",
+    "name": "Drum Plate 40",
+    "category": "DrumPlates",
+    "model": "Plate",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.713277Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 1.1,
+      "decaySec": 1.85,
+      "sizePct": 68.8,
+      "diffusionPct": 76.1,
+      "densityPct": 73.3,
+      "erLevelDb": -13.9,
+      "erTimeMs": 56.2,
+      "erWidthPct": 80.8,
+      "modDepthCents": 6.01,
+      "modRateHz": 0.755,
+      "widthPct": 75.3,
+      "rotationDeg": 19.8,
+      "wetMix01": 0.313,
+      "bloomPct": 0,
+      "distancePct": 32.0,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.18
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 120,
+          "q": 0.7,
+          "gainDb": -2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 2000,
+          "q": 0.9,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.5
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000,
+          "q": 0.9,
+          "mult": 1.15
+        },
+        {
+          "type": "Bell",
+          "freqHz": 180,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "DrumBus",
+      "detector": "Dry",
+      "depthDb": 6.0,
+      "thrDb": -20.0,
+      "ratio": 3.0,
+      "kneeDb": 2.0,
+      "atkMs": 6.0,
+      "relMs": 160.0,
+      "bandHz": 120.0,
+      "bandQ": 1.2
+    }
+  }
+]

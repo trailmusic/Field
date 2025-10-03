@@ -1,0 +1,3442 @@
+[
+  {
+    "id": "8f13ab2c-beb8-4ff5-b351-1ef1381ec757",
+    "name": "Guitar Room 01",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708149Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 11.0,
+      "decaySec": 1.42,
+      "sizePct": 21.0,
+      "diffusionPct": 70.5,
+      "densityPct": 56.9,
+      "erLevelDb": -20.9,
+      "erTimeMs": 64.3,
+      "erWidthPct": 73.1,
+      "modDepthCents": 1.7,
+      "modRateHz": 1.135,
+      "widthPct": 80.3,
+      "rotationDeg": 13.8,
+      "wetMix01": 0.376,
+      "bloomPct": 6.4,
+      "distancePct": 43.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 3.31
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "57047bf7-2237-4a16-8bb7-5c608d3a93bf",
+    "name": "Guitar Room 02",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708215Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 15.5,
+      "decaySec": 1.36,
+      "sizePct": 30.1,
+      "diffusionPct": 71.4,
+      "densityPct": 72.0,
+      "erLevelDb": -15.1,
+      "erTimeMs": 50.9,
+      "erWidthPct": 78.9,
+      "modDepthCents": 2.5,
+      "modRateHz": 0.789,
+      "widthPct": 75.7,
+      "rotationDeg": -6.2,
+      "wetMix01": 0.371,
+      "bloomPct": 6.3,
+      "distancePct": 41.6,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 17.4,
+      "outTrimDb": -2.06
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "52e3bbb8-a5de-4038-b1da-93d06acf60f4",
+    "name": "Guitar Room 03",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708271Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 17.1,
+      "decaySec": 1.28,
+      "sizePct": 52.4,
+      "diffusionPct": 45.9,
+      "densityPct": 79.3,
+      "erLevelDb": -19.3,
+      "erTimeMs": 19.0,
+      "erWidthPct": 73.2,
+      "modDepthCents": 5.48,
+      "modRateHz": 1.23,
+      "widthPct": 85.4,
+      "rotationDeg": -17.9,
+      "wetMix01": 0.1,
+      "bloomPct": 0,
+      "distancePct": 32.2,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -1.27
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "fb72929c-02b2-4f7d-b3d4-319645c26849",
+    "name": "Guitar Room 04",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708327Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 18.5,
+      "decaySec": 1.5,
+      "sizePct": 40.8,
+      "diffusionPct": 87.2,
+      "densityPct": 57.1,
+      "erLevelDb": -11.6,
+      "erTimeMs": 46.5,
+      "erWidthPct": 69.0,
+      "modDepthCents": 5.12,
+      "modRateHz": 0.879,
+      "widthPct": 75.4,
+      "rotationDeg": -31.8,
+      "wetMix01": 0.131,
+      "bloomPct": 7.0,
+      "distancePct": 47.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 13.8,
+      "outTrimDb": 0.41
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "11f79ec4-72be-4060-b620-5199468b06b9",
+    "name": "Guitar Room 05",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708391Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 16.2,
+      "decaySec": 0.72,
+      "sizePct": 24.2,
+      "diffusionPct": 79.1,
+      "densityPct": 55.8,
+      "erLevelDb": -15.5,
+      "erTimeMs": 36.3,
+      "erWidthPct": 48.9,
+      "modDepthCents": 5.47,
+      "modRateHz": 0.495,
+      "widthPct": 90.0,
+      "rotationDeg": -16.2,
+      "wetMix01": 0.217,
+      "bloomPct": 7.8,
+      "distancePct": 32.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 1.78
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "ba469dd8-c970-4c85-8cad-2209a15cfcec",
+    "name": "Guitar Room 06",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708449Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 19.9,
+      "decaySec": 0.77,
+      "sizePct": 28.6,
+      "diffusionPct": 77.2,
+      "densityPct": 61.0,
+      "erLevelDb": -18.3,
+      "erTimeMs": 78.4,
+      "erWidthPct": 60.2,
+      "modDepthCents": 5.42,
+      "modRateHz": 1.414,
+      "widthPct": 84.8,
+      "rotationDeg": -21.3,
+      "wetMix01": 0.281,
+      "bloomPct": 6.9,
+      "distancePct": 62.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 9.0,
+      "outTrimDb": -1.17
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "b1be6300-6b9b-44bc-8bc6-e1246790a8c9",
+    "name": "Guitar Room 07",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708506Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 27.3,
+      "decaySec": 1.1,
+      "sizePct": 15,
+      "diffusionPct": 90.5,
+      "densityPct": 71.1,
+      "erLevelDb": -11.3,
+      "erTimeMs": 33.4,
+      "erWidthPct": 82.3,
+      "modDepthCents": 8.25,
+      "modRateHz": 1.29,
+      "widthPct": 88.6,
+      "rotationDeg": 19.1,
+      "wetMix01": 0.126,
+      "bloomPct": 0,
+      "distancePct": 51.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 26.5,
+      "outTrimDb": 1.04
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "d925d070-2db0-445c-971a-0866d8664bfb",
+    "name": "Guitar Room 08",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708563Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 30.2,
+      "decaySec": 1.75,
+      "sizePct": 34.8,
+      "diffusionPct": 79.2,
+      "densityPct": 86.6,
+      "erLevelDb": -9.5,
+      "erTimeMs": 33.0,
+      "erWidthPct": 93.2,
+      "modDepthCents": 3.37,
+      "modRateHz": 1.136,
+      "widthPct": 78.2,
+      "rotationDeg": -16.1,
+      "wetMix01": 0.303,
+      "bloomPct": 0,
+      "distancePct": 79.0,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 3.7,
+      "outTrimDb": 1.4
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "49a199f8-d610-4748-9b32-124549e02aba",
+    "name": "Guitar Room 09",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708618Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 17.6,
+      "decaySec": 1.11,
+      "sizePct": 35.8,
+      "diffusionPct": 55.9,
+      "densityPct": 58.1,
+      "erLevelDb": -5.8,
+      "erTimeMs": 57.3,
+      "erWidthPct": 72.2,
+      "modDepthCents": 10.35,
+      "modRateHz": 0.819,
+      "widthPct": 69.8,
+      "rotationDeg": 26.0,
+      "wetMix01": 0.226,
+      "bloomPct": 2.5,
+      "distancePct": 17.5,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0.5,
+      "outTrimDb": -0.61
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "78b0b559-ab14-49bd-be4e-0554ea31341d",
+    "name": "Guitar Room 10",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708671Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 11.0,
+      "decaySec": 2.1,
+      "sizePct": 27.7,
+      "diffusionPct": 63.0,
+      "densityPct": 54.1,
+      "erLevelDb": -15.3,
+      "erTimeMs": 24.0,
+      "erWidthPct": 61.3,
+      "modDepthCents": 1.69,
+      "modRateHz": 0.488,
+      "widthPct": 79.8,
+      "rotationDeg": -13.7,
+      "wetMix01": 0.128,
+      "bloomPct": 0,
+      "distancePct": 57.2,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.65
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "f4c74449-0b5b-4ac2-a7ba-b229cf970c57",
+    "name": "Guitar Room 11",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708727Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 11.5,
+      "decaySec": 1.21,
+      "sizePct": 50.9,
+      "diffusionPct": 72.9,
+      "densityPct": 70.7,
+      "erLevelDb": -22.9,
+      "erTimeMs": 33.9,
+      "erWidthPct": 86.2,
+      "modDepthCents": 0,
+      "modRateHz": 0.73,
+      "widthPct": 74.8,
+      "rotationDeg": 11.5,
+      "wetMix01": 0.266,
+      "bloomPct": 0,
+      "distancePct": 46.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 5.0,
+      "outTrimDb": 0.8
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "a07fcf63-3475-4079-820f-e9bf07cd6468",
+    "name": "Guitar Room 12",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708786Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 35.7,
+      "decaySec": 1.35,
+      "sizePct": 54.4,
+      "diffusionPct": 65.0,
+      "densityPct": 59.6,
+      "erLevelDb": -23.8,
+      "erTimeMs": 56.8,
+      "erWidthPct": 81.3,
+      "modDepthCents": 4.89,
+      "modRateHz": 0.43,
+      "widthPct": 70.7,
+      "rotationDeg": 8.4,
+      "wetMix01": 0.332,
+      "bloomPct": 0,
+      "distancePct": 32.4,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 12.5,
+      "outTrimDb": -3.2
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "a0feea36-4917-4a4e-b490-2de8fdacdf33",
+    "name": "Guitar Room 13",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708842Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 9.6,
+      "decaySec": 1.63,
+      "sizePct": 39.6,
+      "diffusionPct": 94.6,
+      "densityPct": 68.9,
+      "erLevelDb": -20.3,
+      "erTimeMs": 18.5,
+      "erWidthPct": 76.0,
+      "modDepthCents": 6.19,
+      "modRateHz": 1.042,
+      "widthPct": 94.7,
+      "rotationDeg": 30.9,
+      "wetMix01": 0.309,
+      "bloomPct": 11.2,
+      "distancePct": 44.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 13.2,
+      "outTrimDb": 2.57
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "b153da2b-75c4-479f-81cf-301db01f525c",
+    "name": "Guitar Room 14",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708923Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 27.8,
+      "decaySec": 1.88,
+      "sizePct": 42.2,
+      "diffusionPct": 79.9,
+      "densityPct": 55.5,
+      "erLevelDb": -17.2,
+      "erTimeMs": 37.3,
+      "erWidthPct": 82.8,
+      "modDepthCents": 4.96,
+      "modRateHz": 0.889,
+      "widthPct": 74.8,
+      "rotationDeg": 1.4,
+      "wetMix01": 0.199,
+      "bloomPct": 1.5,
+      "distancePct": 48.8,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 1.18
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "78421481-e539-4758-bb00-9c0e6de2680d",
+    "name": "Guitar Room 15",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708993Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 10.4,
+      "decaySec": 2.15,
+      "sizePct": 29.0,
+      "diffusionPct": 84.8,
+      "densityPct": 75.7,
+      "erLevelDb": -23.3,
+      "erTimeMs": 47.7,
+      "erWidthPct": 87.6,
+      "modDepthCents": 4.09,
+      "modRateHz": 1.213,
+      "widthPct": 76.0,
+      "rotationDeg": -14.9,
+      "wetMix01": 0.253,
+      "bloomPct": 0,
+      "distancePct": 47.4,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.26
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "0a173edf-ecc1-45ae-8b22-394ec8fb89ec",
+    "name": "Guitar Room 16",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709119Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 19.9,
+      "decaySec": 1.11,
+      "sizePct": 44.1,
+      "diffusionPct": 81.0,
+      "densityPct": 83.6,
+      "erLevelDb": -6.4,
+      "erTimeMs": 57.5,
+      "erWidthPct": 100,
+      "modDepthCents": 8.02,
+      "modRateHz": 1.144,
+      "widthPct": 100,
+      "rotationDeg": 0.7,
+      "wetMix01": 0.194,
+      "bloomPct": 1.9,
+      "distancePct": 56.2,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.93
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "21968de1-58fb-4890-9620-31cf8300c337",
+    "name": "Guitar Room 17",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709184Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 26.8,
+      "decaySec": 1.35,
+      "sizePct": 33.1,
+      "diffusionPct": 91.1,
+      "densityPct": 67.0,
+      "erLevelDb": -9.7,
+      "erTimeMs": 27.4,
+      "erWidthPct": 79.6,
+      "modDepthCents": 6.45,
+      "modRateHz": 1.017,
+      "widthPct": 73.6,
+      "rotationDeg": 4.2,
+      "wetMix01": 0.236,
+      "bloomPct": 0,
+      "distancePct": 63.8,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 9.0,
+      "outTrimDb": 0.42
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "abc29eac-9322-4d38-aced-6d0684b08e49",
+    "name": "Guitar Room 18",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709242Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 21.5,
+      "decaySec": 1.36,
+      "sizePct": 39.2,
+      "diffusionPct": 46.4,
+      "densityPct": 51.8,
+      "erLevelDb": -10.7,
+      "erTimeMs": 36.6,
+      "erWidthPct": 67.2,
+      "modDepthCents": 5.76,
+      "modRateHz": 0.498,
+      "widthPct": 88.3,
+      "rotationDeg": -4.2,
+      "wetMix01": 0.249,
+      "bloomPct": 7.2,
+      "distancePct": 60.0,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 8.8,
+      "outTrimDb": 0.48
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "a3849dbc-bfdf-4532-8520-da7c5392baf5",
+    "name": "Guitar Room 19",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709303Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 15.9,
+      "decaySec": 1.06,
+      "sizePct": 25.6,
+      "diffusionPct": 52.3,
+      "densityPct": 95,
+      "erLevelDb": -15.4,
+      "erTimeMs": 19.6,
+      "erWidthPct": 68.0,
+      "modDepthCents": 4.92,
+      "modRateHz": 0.788,
+      "widthPct": 71.1,
+      "rotationDeg": -2.5,
+      "wetMix01": 0.199,
+      "bloomPct": 0,
+      "distancePct": 39.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 2.6,
+      "outTrimDb": -0.87
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "8acc6674-1ce4-4c65-9b8f-7ce2e5ca23b3",
+    "name": "Guitar Room 20",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709360Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 13.9,
+      "decaySec": 1.77,
+      "sizePct": 31.1,
+      "diffusionPct": 72.7,
+      "densityPct": 49.1,
+      "erLevelDb": -6.7,
+      "erTimeMs": 44.6,
+      "erWidthPct": 75.4,
+      "modDepthCents": 7.23,
+      "modRateHz": 1.032,
+      "widthPct": 98.5,
+      "rotationDeg": 18.7,
+      "wetMix01": 0.228,
+      "bloomPct": 2.9,
+      "distancePct": 32.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -1.0
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "a7223d0f-77dc-47e6-9112-f4d4af081f5c",
+    "name": "Guitar Room 21",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709420Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 0,
+      "decaySec": 1.3,
+      "sizePct": 39.5,
+      "diffusionPct": 59.2,
+      "densityPct": 79.1,
+      "erLevelDb": -10.0,
+      "erTimeMs": 35.4,
+      "erWidthPct": 72.7,
+      "modDepthCents": 4.57,
+      "modRateHz": 0.2,
+      "widthPct": 81.7,
+      "rotationDeg": -7.9,
+      "wetMix01": 0.187,
+      "bloomPct": 0,
+      "distancePct": 72.5,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 14.6,
+      "outTrimDb": -1.71
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "0b7d8e23-39d0-447f-abf1-43c649fca42e",
+    "name": "Guitar Room 22",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709474Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 23.7,
+      "decaySec": 1.9,
+      "sizePct": 18.8,
+      "diffusionPct": 60.2,
+      "densityPct": 83.3,
+      "erLevelDb": -21.2,
+      "erTimeMs": 62.4,
+      "erWidthPct": 70.3,
+      "modDepthCents": 2.24,
+      "modRateHz": 0.842,
+      "widthPct": 84.3,
+      "rotationDeg": 12.5,
+      "wetMix01": 0.227,
+      "bloomPct": 0,
+      "distancePct": 37.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.14
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "95ec1503-8391-45e2-9733-e8566ae9657d",
+    "name": "Guitar Room 23",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709531Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 16.1,
+      "decaySec": 1.75,
+      "sizePct": 25.6,
+      "diffusionPct": 64.6,
+      "densityPct": 68.9,
+      "erLevelDb": -10.8,
+      "erTimeMs": 47.3,
+      "erWidthPct": 66.9,
+      "modDepthCents": 5.95,
+      "modRateHz": 0.622,
+      "widthPct": 96.7,
+      "rotationDeg": 4.3,
+      "wetMix01": 0.184,
+      "bloomPct": 0,
+      "distancePct": 54.2,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 2.0,
+      "outTrimDb": 1.14
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "0c42a9d8-0a28-4b43-9a01-35e1411ae92b",
+    "name": "Guitar Room 24",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709619Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 10.5,
+      "decaySec": 1.86,
+      "sizePct": 31.3,
+      "diffusionPct": 61.5,
+      "densityPct": 57.7,
+      "erLevelDb": -14.9,
+      "erTimeMs": 33.1,
+      "erWidthPct": 84.2,
+      "modDepthCents": 6.85,
+      "modRateHz": 0.906,
+      "widthPct": 80.0,
+      "rotationDeg": -20.8,
+      "wetMix01": 0.206,
+      "bloomPct": 0,
+      "distancePct": 46.0,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 1.24
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "6f59ba2c-1b72-486e-b0d8-2f2b684effa5",
+    "name": "Guitar Room 25",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709678Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 26.9,
+      "decaySec": 1.74,
+      "sizePct": 35.4,
+      "diffusionPct": 71.6,
+      "densityPct": 71.3,
+      "erLevelDb": -10.2,
+      "erTimeMs": 52.5,
+      "erWidthPct": 75.9,
+      "modDepthCents": 10.97,
+      "modRateHz": 0.932,
+      "widthPct": 73.7,
+      "rotationDeg": 18.1,
+      "wetMix01": 0.271,
+      "bloomPct": 0,
+      "distancePct": 76.8,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 10.4,
+      "outTrimDb": 0.28
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "9236eb7c-cba9-4383-9df0-f59a11d27e84",
+    "name": "Guitar Room 26",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709732Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 15.4,
+      "decaySec": 1.42,
+      "sizePct": 52.5,
+      "diffusionPct": 58.6,
+      "densityPct": 51.1,
+      "erLevelDb": -13.0,
+      "erTimeMs": 32.2,
+      "erWidthPct": 99.2,
+      "modDepthCents": 2.98,
+      "modRateHz": 0.962,
+      "widthPct": 71.1,
+      "rotationDeg": -25.5,
+      "wetMix01": 0.25,
+      "bloomPct": 2.3,
+      "distancePct": 46.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 5.0,
+      "outTrimDb": -0.93
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "76630560-0a0d-47a0-a6ed-8a5300c82c3c",
+    "name": "Guitar Room 27",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709789Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 25.6,
+      "decaySec": 0.99,
+      "sizePct": 28.5,
+      "diffusionPct": 61.8,
+      "densityPct": 71.3,
+      "erLevelDb": -12.4,
+      "erTimeMs": 51.4,
+      "erWidthPct": 89.2,
+      "modDepthCents": 7.76,
+      "modRateHz": 1.316,
+      "widthPct": 79.8,
+      "rotationDeg": -5.2,
+      "wetMix01": 0.303,
+      "bloomPct": 0,
+      "distancePct": 54.4,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.6
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "eb049a94-5178-44bc-bc28-04ff2fbab5a2",
+    "name": "Guitar Room 28",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709848Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 19.7,
+      "decaySec": 1.61,
+      "sizePct": 21.5,
+      "diffusionPct": 57.8,
+      "densityPct": 60.8,
+      "erLevelDb": -12.6,
+      "erTimeMs": 16.1,
+      "erWidthPct": 88.6,
+      "modDepthCents": 2.53,
+      "modRateHz": 0.919,
+      "widthPct": 71.9,
+      "rotationDeg": -11.2,
+      "wetMix01": 0.122,
+      "bloomPct": 0,
+      "distancePct": 28.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.62
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "a28136c8-528f-40d5-9651-10bebfd20c5b",
+    "name": "Guitar Room 29",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709901Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 22.1,
+      "decaySec": 1.79,
+      "sizePct": 39.5,
+      "diffusionPct": 66.9,
+      "densityPct": 74.1,
+      "erLevelDb": -4.4,
+      "erTimeMs": 49.9,
+      "erWidthPct": 100,
+      "modDepthCents": 4.78,
+      "modRateHz": 1.307,
+      "widthPct": 94.3,
+      "rotationDeg": 17.0,
+      "wetMix01": 0.364,
+      "bloomPct": 0,
+      "distancePct": 33.3,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -2.5
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "16e08ae3-713f-4458-a8c0-2993c6daa5ac",
+    "name": "Guitar Room 30",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.709978Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 13.1,
+      "decaySec": 1.16,
+      "sizePct": 43.7,
+      "diffusionPct": 62.0,
+      "densityPct": 71.4,
+      "erLevelDb": -16.8,
+      "erTimeMs": 62.5,
+      "erWidthPct": 95.6,
+      "modDepthCents": 9.07,
+      "modRateHz": 0.983,
+      "widthPct": 76.2,
+      "rotationDeg": 26.4,
+      "wetMix01": 0.26,
+      "bloomPct": 0,
+      "distancePct": 49.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0.2,
+      "outTrimDb": 1.61
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "84abb0a3-a115-498f-9584-085bc76bb212",
+    "name": "Guitar Room 31",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710050Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 28.0,
+      "decaySec": 0.95,
+      "sizePct": 39.5,
+      "diffusionPct": 76.3,
+      "densityPct": 74.7,
+      "erLevelDb": -11.1,
+      "erTimeMs": 25.2,
+      "erWidthPct": 84.9,
+      "modDepthCents": 3.87,
+      "modRateHz": 1.359,
+      "widthPct": 86.8,
+      "rotationDeg": -7.1,
+      "wetMix01": 0.265,
+      "bloomPct": 0,
+      "distancePct": 46.4,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 2.54
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "15a6bd24-a1b4-4456-b2d0-a5a4c19fa455",
+    "name": "Guitar Room 32",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710104Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 33.2,
+      "decaySec": 0.95,
+      "sizePct": 28.4,
+      "diffusionPct": 83.7,
+      "densityPct": 72.0,
+      "erLevelDb": -6.4,
+      "erTimeMs": 51.6,
+      "erWidthPct": 76.1,
+      "modDepthCents": 5.06,
+      "modRateHz": 0.481,
+      "widthPct": 72.3,
+      "rotationDeg": 24.8,
+      "wetMix01": 0.299,
+      "bloomPct": 3.5,
+      "distancePct": 29.4,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 9.4,
+      "outTrimDb": -2.16
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "f92ddbaa-d8cd-47d5-8f67-a578d755ea7e",
+    "name": "Guitar Room 33",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710159Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 25.2,
+      "decaySec": 1.21,
+      "sizePct": 23.8,
+      "diffusionPct": 62.3,
+      "densityPct": 55.0,
+      "erLevelDb": -13.1,
+      "erTimeMs": 37.5,
+      "erWidthPct": 81.0,
+      "modDepthCents": 6.88,
+      "modRateHz": 1.151,
+      "widthPct": 90.4,
+      "rotationDeg": 34.1,
+      "wetMix01": 0.316,
+      "bloomPct": 5.4,
+      "distancePct": 70.7,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 12.2,
+      "outTrimDb": 1.59
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "4ac61aed-9a00-470f-a27b-200584143f73",
+    "name": "Guitar Room 34",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710211Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 13.7,
+      "decaySec": 0.69,
+      "sizePct": 43.8,
+      "diffusionPct": 72.6,
+      "densityPct": 65.7,
+      "erLevelDb": -12.6,
+      "erTimeMs": 44.6,
+      "erWidthPct": 73.3,
+      "modDepthCents": 7.25,
+      "modRateHz": 1.236,
+      "widthPct": 75.5,
+      "rotationDeg": 7.9,
+      "wetMix01": 0.135,
+      "bloomPct": 0,
+      "distancePct": 40.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.42
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "388f8313-b519-4148-88d0-89c6a9663c10",
+    "name": "Guitar Room 35",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710281Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 7.5,
+      "decaySec": 1.4,
+      "sizePct": 24.1,
+      "diffusionPct": 59.9,
+      "densityPct": 62.8,
+      "erLevelDb": -8.0,
+      "erTimeMs": 30.7,
+      "erWidthPct": 70.5,
+      "modDepthCents": 7.46,
+      "modRateHz": 0.57,
+      "widthPct": 86.9,
+      "rotationDeg": -18.0,
+      "wetMix01": 0.431,
+      "bloomPct": 5.0,
+      "distancePct": 77.0,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.26
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "f85324ce-4e7e-49fa-aef6-f05f047c4ac4",
+    "name": "Guitar Room 36",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710345Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 33.5,
+      "decaySec": 1.19,
+      "sizePct": 35.0,
+      "diffusionPct": 87.2,
+      "densityPct": 75.7,
+      "erLevelDb": -14.5,
+      "erTimeMs": 42.8,
+      "erWidthPct": 70.5,
+      "modDepthCents": 9.49,
+      "modRateHz": 1.095,
+      "widthPct": 89.7,
+      "rotationDeg": -6.3,
+      "wetMix01": 0.194,
+      "bloomPct": 0,
+      "distancePct": 63.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 2.3,
+      "outTrimDb": 1.62
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "5489b434-f61d-4e5a-bd51-5588746ab539",
+    "name": "Guitar Room 37",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710399Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 50.1,
+      "decaySec": 1.35,
+      "sizePct": 36.9,
+      "diffusionPct": 83.4,
+      "densityPct": 69.7,
+      "erLevelDb": -8.6,
+      "erTimeMs": 32.3,
+      "erWidthPct": 67.5,
+      "modDepthCents": 5.49,
+      "modRateHz": 0.968,
+      "widthPct": 70.7,
+      "rotationDeg": 10.7,
+      "wetMix01": 0.361,
+      "bloomPct": 3.8,
+      "distancePct": 61.1,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 1.51
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "3fab015d-65a0-4086-87a9-941c470be15f",
+    "name": "Guitar Room 38",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710452Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 24.4,
+      "decaySec": 1.88,
+      "sizePct": 34.0,
+      "diffusionPct": 70.4,
+      "densityPct": 73.1,
+      "erLevelDb": -8.2,
+      "erTimeMs": 49.6,
+      "erWidthPct": 86.4,
+      "modDepthCents": 2.74,
+      "modRateHz": 0.83,
+      "widthPct": 84.0,
+      "rotationDeg": 5.9,
+      "wetMix01": 0.155,
+      "bloomPct": 0,
+      "distancePct": 62.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.19
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "3f2f9fc7-398b-460f-b852-5e8c857310a4",
+    "name": "Guitar Room 39",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710504Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 23.6,
+      "decaySec": 1.85,
+      "sizePct": 27.4,
+      "diffusionPct": 84.4,
+      "densityPct": 66.5,
+      "erLevelDb": -9.9,
+      "erTimeMs": 54.4,
+      "erWidthPct": 77.4,
+      "modDepthCents": 2.26,
+      "modRateHz": 1.138,
+      "widthPct": 81.4,
+      "rotationDeg": 7.4,
+      "wetMix01": 0.244,
+      "bloomPct": 0,
+      "distancePct": 32.4,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 1.9
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "bddb96e7-2b89-4a0f-b74f-8f48ee8efb19",
+    "name": "Guitar Room 40",
+    "category": "GuitarRooms",
+    "model": "Room",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.710558Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 18.0,
+      "decaySec": 1.36,
+      "sizePct": 26.3,
+      "diffusionPct": 78.6,
+      "densityPct": 42.8,
+      "erLevelDb": -20.6,
+      "erTimeMs": 40.2,
+      "erWidthPct": 63.2,
+      "modDepthCents": 6.54,
+      "modRateHz": 0.988,
+      "widthPct": 87.2,
+      "rotationDeg": -32.3,
+      "wetMix01": 0.178,
+      "bloomPct": 0,
+      "distancePct": 53.9,
+      "freeze": false,
+      "shimmerAmtPct": 0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.78
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 160,
+          "q": 0.7,
+          "gainDb": -1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 3200,
+          "q": 1.3,
+          "gainDb": 1.0
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000,
+          "q": 0.8,
+          "gainDb": 1.2
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 3500,
+          "q": 0.9,
+          "mult": 0.9
+        },
+        {
+          "type": "Bell",
+          "freqHz": 220,
+          "q": 0.8,
+          "mult": 0.9
+        }
+      ]
+    },
+    "ducking": {
+      "on": false,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 0.0,
+      "thrDb": -24.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 10.0,
+      "relMs": 180.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  }
+]

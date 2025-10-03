@@ -1,0 +1,3442 @@
+[
+  {
+    "id": "e223ae31-86e0-4866-9e5f-2c60ae79a1a8",
+    "name": "Ambient Pad Hall 01",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.684285Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 22.6,
+      "decaySec": 8.71,
+      "sizePct": 78.3,
+      "diffusionPct": 84.1,
+      "densityPct": 82.0,
+      "erLevelDb": -18.8,
+      "erTimeMs": 44.8,
+      "erWidthPct": 94.0,
+      "modDepthCents": 20.66,
+      "modRateHz": 0.21,
+      "widthPct": 91.6,
+      "rotationDeg": 2.2,
+      "wetMix01": 0.459,
+      "bloomPct": 5.6,
+      "distancePct": 34.8,
+      "freeze": false,
+      "shimmerAmtPct": 19.8,
+      "shimmerInt": 50,
+      "gateAmtPct": 0,
+      "outTrimDb": -1.45
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "caf63aeb-15a0-484e-a07c-89a84f9e3a64",
+    "name": "Ambient Pad Hall 02",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.684579Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 112.0,
+      "decaySec": 12.62,
+      "sizePct": 80.7,
+      "diffusionPct": 82.7,
+      "densityPct": 66.4,
+      "erLevelDb": -9.6,
+      "erTimeMs": 24.7,
+      "erWidthPct": 66.8,
+      "modDepthCents": 16.17,
+      "modRateHz": 0.307,
+      "widthPct": 83.4,
+      "rotationDeg": -24.6,
+      "wetMix01": 0.539,
+      "bloomPct": 15.8,
+      "distancePct": 47.5,
+      "freeze": false,
+      "shimmerAmtPct": 37.9,
+      "shimmerInt": 0,
+      "gateAmtPct": 8.0,
+      "outTrimDb": -1.83
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "ff6059f1-6378-490e-9225-92660c4ad891",
+    "name": "Ambient Pad Hall 03",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.684750Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 80.5,
+      "decaySec": 10.69,
+      "sizePct": 70.0,
+      "diffusionPct": 84.3,
+      "densityPct": 72.1,
+      "erLevelDb": -17.3,
+      "erTimeMs": 34.5,
+      "erWidthPct": 71.4,
+      "modDepthCents": 23.11,
+      "modRateHz": 0.302,
+      "widthPct": 80.3,
+      "rotationDeg": 10.0,
+      "wetMix01": 0.488,
+      "bloomPct": 8.5,
+      "distancePct": 85.0,
+      "freeze": false,
+      "shimmerAmtPct": 28.5,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.58
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "2fb66918-42db-4461-825b-5750d02fe4f4",
+    "name": "Ambient Pad Hall 04",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.684956Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 35.4,
+      "decaySec": 8.84,
+      "sizePct": 74.1,
+      "diffusionPct": 67.4,
+      "densityPct": 95.7,
+      "erLevelDb": -22.9,
+      "erTimeMs": 52.2,
+      "erWidthPct": 82.1,
+      "modDepthCents": 11.85,
+      "modRateHz": 0.05,
+      "widthPct": 84.2,
+      "rotationDeg": 13.7,
+      "wetMix01": 0.393,
+      "bloomPct": 21.5,
+      "distancePct": 39.2,
+      "freeze": false,
+      "shimmerAmtPct": 23.2,
+      "shimmerInt": 50,
+      "gateAmtPct": 0,
+      "outTrimDb": -1.25
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "7617d380-ae6c-43e9-a283-a9655a9461c9",
+    "name": "Ambient Pad Hall 05",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.685145Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 52.7,
+      "decaySec": 10.9,
+      "sizePct": 74.3,
+      "diffusionPct": 84.4,
+      "densityPct": 82.5,
+      "erLevelDb": -22.3,
+      "erTimeMs": 56.3,
+      "erWidthPct": 79.8,
+      "modDepthCents": 6,
+      "modRateHz": 0.088,
+      "widthPct": 87.6,
+      "rotationDeg": 3.4,
+      "wetMix01": 0.483,
+      "bloomPct": 16.5,
+      "distancePct": 63.4,
+      "freeze": false,
+      "shimmerAmtPct": 16.3,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.26
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "56c626c7-f7d5-49ea-a871-c1a3596e04fb",
+    "name": "Ambient Pad Hall 06",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.685439Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 57.1,
+      "decaySec": 4.1,
+      "sizePct": 100,
+      "diffusionPct": 64.1,
+      "densityPct": 70.2,
+      "erLevelDb": -17.4,
+      "erTimeMs": 38.3,
+      "erWidthPct": 75.5,
+      "modDepthCents": 15.79,
+      "modRateHz": 0.05,
+      "widthPct": 74.9,
+      "rotationDeg": 8.8,
+      "wetMix01": 0.435,
+      "bloomPct": 21.7,
+      "distancePct": 41.2,
+      "freeze": false,
+      "shimmerAmtPct": 14.3,
+      "shimmerInt": 50,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.0
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "f9b04d8a-c845-4b76-9884-05c6148255a6",
+    "name": "Ambient Pad Hall 07",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.685530Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 50.9,
+      "decaySec": 12.45,
+      "sizePct": 69.4,
+      "diffusionPct": 81.6,
+      "densityPct": 88.6,
+      "erLevelDb": -20.7,
+      "erTimeMs": 52.6,
+      "erWidthPct": 80.0,
+      "modDepthCents": 18.78,
+      "modRateHz": 0.064,
+      "widthPct": 100,
+      "rotationDeg": 5.6,
+      "wetMix01": 0.353,
+      "bloomPct": 18.2,
+      "distancePct": 30.5,
+      "freeze": false,
+      "shimmerAmtPct": 24.2,
+      "shimmerInt": 50,
+      "gateAmtPct": 23.0,
+      "outTrimDb": 1.1
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "1f17e64b-9931-4aad-806a-30dbc36fdabd",
+    "name": "Ambient Pad Hall 08",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.685623Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 17.5,
+      "decaySec": 9.8,
+      "sizePct": 78.6,
+      "diffusionPct": 82.0,
+      "densityPct": 75.3,
+      "erLevelDb": -17.3,
+      "erTimeMs": 50.8,
+      "erWidthPct": 71.0,
+      "modDepthCents": 24.29,
+      "modRateHz": 0.373,
+      "widthPct": 88.0,
+      "rotationDeg": 24.2,
+      "wetMix01": 0.431,
+      "bloomPct": 9.5,
+      "distancePct": 40.0,
+      "freeze": false,
+      "shimmerAmtPct": 14.5,
+      "shimmerInt": 50,
+      "gateAmtPct": 17.4,
+      "outTrimDb": -0.07
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "352363e8-e22e-45f1-b423-42ac2b567253",
+    "name": "Ambient Pad Hall 09",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.685691Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 88.3,
+      "decaySec": 6.77,
+      "sizePct": 84.6,
+      "diffusionPct": 89.1,
+      "densityPct": 79.9,
+      "erLevelDb": -22.2,
+      "erTimeMs": 45.4,
+      "erWidthPct": 100,
+      "modDepthCents": 18.7,
+      "modRateHz": 0.355,
+      "widthPct": 87.4,
+      "rotationDeg": -5.9,
+      "wetMix01": 0.499,
+      "bloomPct": 10.7,
+      "distancePct": 72.2,
+      "freeze": false,
+      "shimmerAmtPct": 34.7,
+      "shimmerInt": 50,
+      "gateAmtPct": 18.9,
+      "outTrimDb": 2.59
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "79823dcc-838f-445b-a3ec-72be9dc068ad",
+    "name": "Ambient Pad Hall 10",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.685753Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 70.5,
+      "decaySec": 6.96,
+      "sizePct": 75.1,
+      "diffusionPct": 88.1,
+      "densityPct": 57.3,
+      "erLevelDb": -17.0,
+      "erTimeMs": 26.0,
+      "erWidthPct": 49.4,
+      "modDepthCents": 10.38,
+      "modRateHz": 0.316,
+      "widthPct": 93.3,
+      "rotationDeg": 11.8,
+      "wetMix01": 0.477,
+      "bloomPct": 3.6,
+      "distancePct": 75.3,
+      "freeze": false,
+      "shimmerAmtPct": 6.2,
+      "shimmerInt": 50,
+      "gateAmtPct": 4.8,
+      "outTrimDb": 1.52
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "d7ebcb91-fd60-48ae-ba9e-dd5893ba35b1",
+    "name": "Ambient Pad Hall 11",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.685815Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 77.4,
+      "decaySec": 7.57,
+      "sizePct": 83.8,
+      "diffusionPct": 85.0,
+      "densityPct": 97.7,
+      "erLevelDb": -29.2,
+      "erTimeMs": 68.9,
+      "erWidthPct": 74.7,
+      "modDepthCents": 15.55,
+      "modRateHz": 0.235,
+      "widthPct": 88.5,
+      "rotationDeg": -9.8,
+      "wetMix01": 0.449,
+      "bloomPct": 5.9,
+      "distancePct": 50.9,
+      "freeze": false,
+      "shimmerAmtPct": 41.0,
+      "shimmerInt": 0,
+      "gateAmtPct": 10.9,
+      "outTrimDb": 0.53
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "a51f335d-37c6-46ab-8e09-4a6892ff3aee",
+    "name": "Ambient Pad Hall 12",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.685873Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 89.2,
+      "decaySec": 10.56,
+      "sizePct": 79.3,
+      "diffusionPct": 86.9,
+      "densityPct": 64.2,
+      "erLevelDb": -31.3,
+      "erTimeMs": 32.9,
+      "erWidthPct": 100,
+      "modDepthCents": 28.19,
+      "modRateHz": 0.245,
+      "widthPct": 74.0,
+      "rotationDeg": -11.9,
+      "wetMix01": 0.405,
+      "bloomPct": 10.0,
+      "distancePct": 44.9,
+      "freeze": false,
+      "shimmerAmtPct": 20.9,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.05
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "fbf36338-bc60-4d2a-b26a-8e49d5173fd4",
+    "name": "Ambient Pad Hall 13",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.685929Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 38.9,
+      "decaySec": 11.8,
+      "sizePct": 100,
+      "diffusionPct": 89.5,
+      "densityPct": 78.1,
+      "erLevelDb": -25.4,
+      "erTimeMs": 28.2,
+      "erWidthPct": 70.7,
+      "modDepthCents": 18.38,
+      "modRateHz": 0.325,
+      "widthPct": 73.4,
+      "rotationDeg": 12.9,
+      "wetMix01": 0.412,
+      "bloomPct": 0,
+      "distancePct": 45.0,
+      "freeze": false,
+      "shimmerAmtPct": 27.8,
+      "shimmerInt": 50,
+      "gateAmtPct": 0,
+      "outTrimDb": -1.08
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "272d1c86-239d-41e5-9e8d-2d9f971bed9f",
+    "name": "Ambient Pad Hall 14",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.685985Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 50.3,
+      "decaySec": 6.63,
+      "sizePct": 89.1,
+      "diffusionPct": 82.8,
+      "densityPct": 83.3,
+      "erLevelDb": -18.0,
+      "erTimeMs": 44.2,
+      "erWidthPct": 89.2,
+      "modDepthCents": 6,
+      "modRateHz": 0.39,
+      "widthPct": 100,
+      "rotationDeg": -16.8,
+      "wetMix01": 0.449,
+      "bloomPct": 14.2,
+      "distancePct": 40.1,
+      "freeze": false,
+      "shimmerAmtPct": 25.9,
+      "shimmerInt": 50,
+      "gateAmtPct": 9.4,
+      "outTrimDb": -2.02
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "a628b6bf-af2b-4cd0-9bf9-f8f2dd9b87f6",
+    "name": "Ambient Pad Hall 15",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686043Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 40.8,
+      "decaySec": 4.49,
+      "sizePct": 60.9,
+      "diffusionPct": 84.4,
+      "densityPct": 74.0,
+      "erLevelDb": -15.9,
+      "erTimeMs": 53.9,
+      "erWidthPct": 89.5,
+      "modDepthCents": 8.21,
+      "modRateHz": 0.05,
+      "widthPct": 83.1,
+      "rotationDeg": 27.0,
+      "wetMix01": 0.48,
+      "bloomPct": 9.2,
+      "distancePct": 40.1,
+      "freeze": false,
+      "shimmerAmtPct": 25.3,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 1.73
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "ca892841-34aa-4c5b-b099-daeecae47658",
+    "name": "Ambient Pad Hall 16",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686100Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 62.1,
+      "decaySec": 12.2,
+      "sizePct": 69.2,
+      "diffusionPct": 92.0,
+      "densityPct": 80.8,
+      "erLevelDb": -18.1,
+      "erTimeMs": 30.0,
+      "erWidthPct": 76.0,
+      "modDepthCents": 19.51,
+      "modRateHz": 0.05,
+      "widthPct": 88.9,
+      "rotationDeg": 0.5,
+      "wetMix01": 0.581,
+      "bloomPct": 19.6,
+      "distancePct": 28.2,
+      "freeze": false,
+      "shimmerAmtPct": 20.8,
+      "shimmerInt": 0,
+      "gateAmtPct": 8.0,
+      "outTrimDb": -1.71
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "e12178a9-314d-45d2-a5d2-2f7553aaabc2",
+    "name": "Ambient Pad Hall 17",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686158Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 12.4,
+      "decaySec": 9.62,
+      "sizePct": 84.2,
+      "diffusionPct": 78.9,
+      "densityPct": 95.0,
+      "erLevelDb": -14.6,
+      "erTimeMs": 46.7,
+      "erWidthPct": 55.5,
+      "modDepthCents": 22.42,
+      "modRateHz": 0.189,
+      "widthPct": 73.4,
+      "rotationDeg": 15.5,
+      "wetMix01": 0.487,
+      "bloomPct": 17.8,
+      "distancePct": 78.5,
+      "freeze": false,
+      "shimmerAmtPct": 22.0,
+      "shimmerInt": 0,
+      "gateAmtPct": 21.7,
+      "outTrimDb": -0.41
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "6fc2acf2-0f94-4576-9c8a-444ad8ff5dbe",
+    "name": "Ambient Pad Hall 18",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686215Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 41.0,
+      "decaySec": 9.33,
+      "sizePct": 78.5,
+      "diffusionPct": 84.4,
+      "densityPct": 66.0,
+      "erLevelDb": -8.2,
+      "erTimeMs": 60.9,
+      "erWidthPct": 95.3,
+      "modDepthCents": 27.59,
+      "modRateHz": 0.05,
+      "widthPct": 89.5,
+      "rotationDeg": -11.0,
+      "wetMix01": 0.59,
+      "bloomPct": 12.7,
+      "distancePct": 34.8,
+      "freeze": false,
+      "shimmerAmtPct": 20.1,
+      "shimmerInt": 50,
+      "gateAmtPct": 2.4,
+      "outTrimDb": -1.03
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "1726fd6b-10a2-44f1-be0a-aed8e237b39a",
+    "name": "Ambient Pad Hall 19",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686270Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 55.8,
+      "decaySec": 10.3,
+      "sizePct": 81.0,
+      "diffusionPct": 77.4,
+      "densityPct": 92.6,
+      "erLevelDb": -13.3,
+      "erTimeMs": 47.5,
+      "erWidthPct": 77.8,
+      "modDepthCents": 12.91,
+      "modRateHz": 0.132,
+      "widthPct": 91.2,
+      "rotationDeg": -2.3,
+      "wetMix01": 0.438,
+      "bloomPct": 14.6,
+      "distancePct": 47.3,
+      "freeze": false,
+      "shimmerAmtPct": 34.3,
+      "shimmerInt": 50,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.97
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "bba2d492-e910-4033-87a8-09d83e3ae5ba",
+    "name": "Ambient Pad Hall 20",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686328Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 51.1,
+      "decaySec": 7.94,
+      "sizePct": 92.6,
+      "diffusionPct": 77.1,
+      "densityPct": 74.3,
+      "erLevelDb": -22.1,
+      "erTimeMs": 38.2,
+      "erWidthPct": 60.6,
+      "modDepthCents": 17.88,
+      "modRateHz": 0.242,
+      "widthPct": 80.4,
+      "rotationDeg": -16.7,
+      "wetMix01": 0.405,
+      "bloomPct": 18.0,
+      "distancePct": 59.4,
+      "freeze": false,
+      "shimmerAmtPct": 33.1,
+      "shimmerInt": 50,
+      "gateAmtPct": 0,
+      "outTrimDb": 2.68
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "93c09701-32bd-4379-a29a-eb1f6ddb95d8",
+    "name": "Ambient Pad Hall 21",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686383Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 72.0,
+      "decaySec": 8.68,
+      "sizePct": 71.7,
+      "diffusionPct": 82.0,
+      "densityPct": 84.5,
+      "erLevelDb": -22.1,
+      "erTimeMs": 55.6,
+      "erWidthPct": 70.5,
+      "modDepthCents": 23.82,
+      "modRateHz": 0.362,
+      "widthPct": 81.0,
+      "rotationDeg": 23.9,
+      "wetMix01": 0.406,
+      "bloomPct": 14.9,
+      "distancePct": 50.0,
+      "freeze": false,
+      "shimmerAmtPct": 36.0,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -1.05
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "6cf7ec29-c2cb-4253-8548-3f7525b1a3cf",
+    "name": "Ambient Pad Hall 22",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686462Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 34.1,
+      "decaySec": 6.89,
+      "sizePct": 82.4,
+      "diffusionPct": 87.0,
+      "densityPct": 86.0,
+      "erLevelDb": -9.3,
+      "erTimeMs": 30.7,
+      "erWidthPct": 99.1,
+      "modDepthCents": 19.63,
+      "modRateHz": 0.305,
+      "widthPct": 85.1,
+      "rotationDeg": -29.9,
+      "wetMix01": 0.439,
+      "bloomPct": 10.6,
+      "distancePct": 59.9,
+      "freeze": false,
+      "shimmerAmtPct": 7.9,
+      "shimmerInt": 50,
+      "gateAmtPct": 0.4,
+      "outTrimDb": 1.7
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "d74bdc46-f549-4a99-b1d5-238b110039e2",
+    "name": "Ambient Pad Hall 23",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686520Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 96.3,
+      "decaySec": 9.46,
+      "sizePct": 76.9,
+      "diffusionPct": 75.3,
+      "densityPct": 82.2,
+      "erLevelDb": -14.8,
+      "erTimeMs": 42.1,
+      "erWidthPct": 59.4,
+      "modDepthCents": 12.02,
+      "modRateHz": 0.254,
+      "widthPct": 93.2,
+      "rotationDeg": 13.1,
+      "wetMix01": 0.443,
+      "bloomPct": 16.8,
+      "distancePct": 83.7,
+      "freeze": false,
+      "shimmerAmtPct": 21.4,
+      "shimmerInt": 0,
+      "gateAmtPct": 8.6,
+      "outTrimDb": 0.35
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "62067237-b0dc-404a-aca5-542eb8a207f9",
+    "name": "Ambient Pad Hall 24",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686577Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 57.4,
+      "decaySec": 10.28,
+      "sizePct": 71.0,
+      "diffusionPct": 88.8,
+      "densityPct": 60.9,
+      "erLevelDb": -10.0,
+      "erTimeMs": 19.4,
+      "erWidthPct": 79.3,
+      "modDepthCents": 34.03,
+      "modRateHz": 0.152,
+      "widthPct": 64.6,
+      "rotationDeg": -12.6,
+      "wetMix01": 0.367,
+      "bloomPct": 9.7,
+      "distancePct": 33.0,
+      "freeze": false,
+      "shimmerAmtPct": 9.9,
+      "shimmerInt": 50,
+      "gateAmtPct": 0.3,
+      "outTrimDb": 2.14
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "ad31a3d2-9df9-4e6e-9de7-938928b0f635",
+    "name": "Ambient Pad Hall 25",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686657Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 69.6,
+      "decaySec": 9.24,
+      "sizePct": 67.9,
+      "diffusionPct": 80.5,
+      "densityPct": 69.3,
+      "erLevelDb": -13.6,
+      "erTimeMs": 44.2,
+      "erWidthPct": 98.3,
+      "modDepthCents": 17.04,
+      "modRateHz": 0.38,
+      "widthPct": 84.0,
+      "rotationDeg": -7.0,
+      "wetMix01": 0.439,
+      "bloomPct": 3.7,
+      "distancePct": 60.3,
+      "freeze": false,
+      "shimmerAmtPct": 16.7,
+      "shimmerInt": 0,
+      "gateAmtPct": 3.4,
+      "outTrimDb": 1.51
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "758003d4-4f30-47af-ba95-952d56966fdd",
+    "name": "Ambient Pad Hall 26",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686718Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 35.7,
+      "decaySec": 11.19,
+      "sizePct": 72.5,
+      "diffusionPct": 79.7,
+      "densityPct": 56.4,
+      "erLevelDb": -17.4,
+      "erTimeMs": 54.0,
+      "erWidthPct": 76.4,
+      "modDepthCents": 25.44,
+      "modRateHz": 0.255,
+      "widthPct": 84.8,
+      "rotationDeg": -25.1,
+      "wetMix01": 0.293,
+      "bloomPct": 6.6,
+      "distancePct": 43.6,
+      "freeze": false,
+      "shimmerAmtPct": 22.4,
+      "shimmerInt": 50,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.14
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "fc77af25-b8cf-4c24-9320-df2e3ff557d8",
+    "name": "Ambient Pad Hall 27",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686772Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 62.7,
+      "decaySec": 7.45,
+      "sizePct": 92.9,
+      "diffusionPct": 81.0,
+      "densityPct": 78.4,
+      "erLevelDb": -21.1,
+      "erTimeMs": 59.0,
+      "erWidthPct": 82.9,
+      "modDepthCents": 16.65,
+      "modRateHz": 0.226,
+      "widthPct": 92.3,
+      "rotationDeg": 16.8,
+      "wetMix01": 0.514,
+      "bloomPct": 15.6,
+      "distancePct": 54.6,
+      "freeze": false,
+      "shimmerAmtPct": 11.9,
+      "shimmerInt": 50,
+      "gateAmtPct": 0,
+      "outTrimDb": 2.25
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "40e18acc-fc41-4718-989c-5fe574686e79",
+    "name": "Ambient Pad Hall 28",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686827Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 62.4,
+      "decaySec": 6.58,
+      "sizePct": 91.5,
+      "diffusionPct": 88.0,
+      "densityPct": 68.4,
+      "erLevelDb": -17.0,
+      "erTimeMs": 45.4,
+      "erWidthPct": 62.9,
+      "modDepthCents": 6,
+      "modRateHz": 0.091,
+      "widthPct": 85.7,
+      "rotationDeg": -45,
+      "wetMix01": 0.544,
+      "bloomPct": 10.4,
+      "distancePct": 52.9,
+      "freeze": false,
+      "shimmerAmtPct": 13.5,
+      "shimmerInt": 50,
+      "gateAmtPct": 12.5,
+      "outTrimDb": 1.59
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "c6689e75-a31f-4204-bac4-47f45c5c5243",
+    "name": "Ambient Pad Hall 29",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686889Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 89.7,
+      "decaySec": 7.71,
+      "sizePct": 77.3,
+      "diffusionPct": 80.7,
+      "densityPct": 58.8,
+      "erLevelDb": -13.9,
+      "erTimeMs": 44.1,
+      "erWidthPct": 81.7,
+      "modDepthCents": 17.95,
+      "modRateHz": 0.176,
+      "widthPct": 79.3,
+      "rotationDeg": 27.8,
+      "wetMix01": 0.262,
+      "bloomPct": 15.8,
+      "distancePct": 46.1,
+      "freeze": false,
+      "shimmerAmtPct": 32.9,
+      "shimmerInt": 0,
+      "gateAmtPct": 16.3,
+      "outTrimDb": 1.06
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "c29a7f6f-786d-49cc-8b80-50af0583d7c9",
+    "name": "Ambient Pad Hall 30",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.686949Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 52.5,
+      "decaySec": 8.35,
+      "sizePct": 76.7,
+      "diffusionPct": 87.2,
+      "densityPct": 55.7,
+      "erLevelDb": -20.5,
+      "erTimeMs": 32.2,
+      "erWidthPct": 90.4,
+      "modDepthCents": 31.9,
+      "modRateHz": 0.223,
+      "widthPct": 74.4,
+      "rotationDeg": 32.7,
+      "wetMix01": 0.519,
+      "bloomPct": 11.2,
+      "distancePct": 43.6,
+      "freeze": false,
+      "shimmerAmtPct": 15.9,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -2.12
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "1769d366-94c1-41b5-812d-0f5588a656ce",
+    "name": "Ambient Pad Hall 31",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.707100Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 105.1,
+      "decaySec": 8.43,
+      "sizePct": 69.7,
+      "diffusionPct": 82.9,
+      "densityPct": 49.2,
+      "erLevelDb": -19.4,
+      "erTimeMs": 39.3,
+      "erWidthPct": 100,
+      "modDepthCents": 9.07,
+      "modRateHz": 0.209,
+      "widthPct": 87.1,
+      "rotationDeg": -7.4,
+      "wetMix01": 0.501,
+      "bloomPct": 13.3,
+      "distancePct": 42.4,
+      "freeze": false,
+      "shimmerAmtPct": 7.1,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": -0.94
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "fe93e88f-e1c8-415b-93d4-eb546384c0a9",
+    "name": "Ambient Pad Hall 32",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.707180Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 38.2,
+      "decaySec": 12.84,
+      "sizePct": 83.5,
+      "diffusionPct": 87.3,
+      "densityPct": 81.3,
+      "erLevelDb": -16.4,
+      "erTimeMs": 46.8,
+      "erWidthPct": 78.4,
+      "modDepthCents": 27.08,
+      "modRateHz": 0.091,
+      "widthPct": 82.8,
+      "rotationDeg": -22.8,
+      "wetMix01": 0.461,
+      "bloomPct": 10.5,
+      "distancePct": 27.1,
+      "freeze": false,
+      "shimmerAmtPct": 21.8,
+      "shimmerInt": 0,
+      "gateAmtPct": 0,
+      "outTrimDb": 0.15
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "58508c2b-d714-4a1c-a5df-b12ea4768139",
+    "name": "Ambient Pad Hall 33",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.707241Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 46.1,
+      "decaySec": 10.18,
+      "sizePct": 83.9,
+      "diffusionPct": 82.6,
+      "densityPct": 67.0,
+      "erLevelDb": -23.9,
+      "erTimeMs": 39.2,
+      "erWidthPct": 70.9,
+      "modDepthCents": 9.74,
+      "modRateHz": 0.22,
+      "widthPct": 85.0,
+      "rotationDeg": 10.1,
+      "wetMix01": 0.378,
+      "bloomPct": 11.1,
+      "distancePct": 57.1,
+      "freeze": false,
+      "shimmerAmtPct": 21.8,
+      "shimmerInt": 0,
+      "gateAmtPct": 0.6,
+      "outTrimDb": -0.96
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "86f3ef0f-0b98-4e2a-a3c7-e6f75c7563c9",
+    "name": "Ambient Pad Hall 34",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.707300Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 56.9,
+      "decaySec": 9.48,
+      "sizePct": 91.3,
+      "diffusionPct": 81.5,
+      "densityPct": 47.9,
+      "erLevelDb": -22.8,
+      "erTimeMs": 56.8,
+      "erWidthPct": 81.3,
+      "modDepthCents": 22.24,
+      "modRateHz": 0.308,
+      "widthPct": 80.9,
+      "rotationDeg": 45,
+      "wetMix01": 0.5,
+      "bloomPct": 1.2,
+      "distancePct": 42.4,
+      "freeze": false,
+      "shimmerAmtPct": 22.9,
+      "shimmerInt": 50,
+      "gateAmtPct": 9.4,
+      "outTrimDb": -1.28
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "ce7b059e-f1cc-4bfc-9c1b-82f7520325be",
+    "name": "Ambient Pad Hall 35",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.707694Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 67.4,
+      "decaySec": 10.82,
+      "sizePct": 70.6,
+      "diffusionPct": 76.5,
+      "densityPct": 77.1,
+      "erLevelDb": -17.2,
+      "erTimeMs": 57.1,
+      "erWidthPct": 87.6,
+      "modDepthCents": 26.5,
+      "modRateHz": 0.188,
+      "widthPct": 90.4,
+      "rotationDeg": 3.8,
+      "wetMix01": 0.377,
+      "bloomPct": 5.3,
+      "distancePct": 45.1,
+      "freeze": false,
+      "shimmerAmtPct": 26.4,
+      "shimmerInt": 0,
+      "gateAmtPct": 15.0,
+      "outTrimDb": 1.73
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "5bfff406-7ea7-4601-a2ed-57b4aac4d636",
+    "name": "Ambient Pad Hall 36",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.707807Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 68.3,
+      "decaySec": 6.22,
+      "sizePct": 69.0,
+      "diffusionPct": 86.5,
+      "densityPct": 87.0,
+      "erLevelDb": -24.2,
+      "erTimeMs": 26.8,
+      "erWidthPct": 67.5,
+      "modDepthCents": 33.5,
+      "modRateHz": 0.05,
+      "widthPct": 91.5,
+      "rotationDeg": -4.4,
+      "wetMix01": 0.555,
+      "bloomPct": 12.1,
+      "distancePct": 71.4,
+      "freeze": false,
+      "shimmerAmtPct": 17.2,
+      "shimmerInt": 50,
+      "gateAmtPct": 2.2,
+      "outTrimDb": 0.53
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "f7056557-2057-47d0-a6cb-04d7ccc1fcde",
+    "name": "Ambient Pad Hall 37",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.707894Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 98.9,
+      "decaySec": 11.19,
+      "sizePct": 80.2,
+      "diffusionPct": 79.5,
+      "densityPct": 70.4,
+      "erLevelDb": -16.9,
+      "erTimeMs": 46.0,
+      "erWidthPct": 63.7,
+      "modDepthCents": 15.44,
+      "modRateHz": 0.092,
+      "widthPct": 72.7,
+      "rotationDeg": -39.5,
+      "wetMix01": 0.282,
+      "bloomPct": 3.3,
+      "distancePct": 58.5,
+      "freeze": false,
+      "shimmerAmtPct": 13.3,
+      "shimmerInt": 0,
+      "gateAmtPct": 18.8,
+      "outTrimDb": -1.53
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "4e5674ef-dbd6-4cde-a12a-f52577d30e32",
+    "name": "Ambient Pad Hall 38",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.707956Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 51.3,
+      "decaySec": 10.09,
+      "sizePct": 82.6,
+      "diffusionPct": 80.3,
+      "densityPct": 90.5,
+      "erLevelDb": -22.5,
+      "erTimeMs": 28.0,
+      "erWidthPct": 80.0,
+      "modDepthCents": 26.68,
+      "modRateHz": 0.411,
+      "widthPct": 87.5,
+      "rotationDeg": 2.8,
+      "wetMix01": 0.268,
+      "bloomPct": 5.2,
+      "distancePct": 55.5,
+      "freeze": false,
+      "shimmerAmtPct": 14.6,
+      "shimmerInt": 50,
+      "gateAmtPct": 25.8,
+      "outTrimDb": 2.08
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "48f8af7c-6912-459a-a9f2-f26e987f29c7",
+    "name": "Ambient Pad Hall 39",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708014Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 42.5,
+      "decaySec": 10.35,
+      "sizePct": 68.8,
+      "diffusionPct": 100,
+      "densityPct": 63.0,
+      "erLevelDb": -20.2,
+      "erTimeMs": 48.6,
+      "erWidthPct": 76.2,
+      "modDepthCents": 31.02,
+      "modRateHz": 0.313,
+      "widthPct": 72.8,
+      "rotationDeg": -14.5,
+      "wetMix01": 0.471,
+      "bloomPct": 7.4,
+      "distancePct": 50.3,
+      "freeze": false,
+      "shimmerAmtPct": 7.7,
+      "shimmerInt": 50,
+      "gateAmtPct": 0,
+      "outTrimDb": 1.93
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  },
+  {
+    "id": "d32d9c8f-025f-413f-99bc-e79f58d3d299",
+    "name": "Ambient Pad Hall 40",
+    "category": "AmbientPads",
+    "model": "Hall",
+    "meta": {
+      "author": "Field",
+      "created": "2025-10-03T00:18:05.708072Z",
+      "version": "1.0"
+    },
+    "params": {
+      "preDelayMs": 44.5,
+      "decaySec": 10.12,
+      "sizePct": 73.0,
+      "diffusionPct": 82.7,
+      "densityPct": 67.3,
+      "erLevelDb": -7.6,
+      "erTimeMs": 54.0,
+      "erWidthPct": 77.7,
+      "modDepthCents": 9.62,
+      "modRateHz": 0.199,
+      "widthPct": 55.3,
+      "rotationDeg": -5.5,
+      "wetMix01": 0.515,
+      "bloomPct": 5.9,
+      "distancePct": 34.3,
+      "freeze": false,
+      "shimmerAmtPct": 18.5,
+      "shimmerInt": 0,
+      "gateAmtPct": 4.3,
+      "outTrimDb": 1.31
+    },
+    "toneEQ": {
+      "apply": "Post",
+      "bands": [
+        {
+          "kind": "LowShelf",
+          "freqHz": 180,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 1200,
+          "q": 1.0,
+          "gainDb": 0.8
+        },
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000,
+          "q": 0.7,
+          "gainDb": 2.0
+        }
+      ]
+    },
+    "decayRateEQ": {
+      "apply": "Tail",
+      "bands": [
+        {
+          "type": "TiltHi",
+          "freqHz": 2500,
+          "q": 0.8,
+          "mult": 1.2
+        },
+        {
+          "type": "Bell",
+          "freqHz": 600,
+          "q": 1.0,
+          "mult": 1.1
+        }
+      ]
+    },
+    "ducking": {
+      "on": true,
+      "mode": "General",
+      "detector": "Wet",
+      "depthDb": 4.0,
+      "thrDb": -26.0,
+      "ratio": 2.0,
+      "kneeDb": 3.0,
+      "atkMs": 12.0,
+      "relMs": 280.0,
+      "bandHz": 0.0,
+      "bandQ": 1.0
+    }
+  }
+]
