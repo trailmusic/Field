@@ -61,7 +61,6 @@ DecayRateFloat::DecayRateFloat(juce::AudioProcessorValueTreeState& apvts)
     , modeValue("modeValue", "0.0")
     , strengthLabel("strengthLabel", "Strength")
     , windowLabel("windowLabel", "Window")
-    , statusLabel("statusLabel", "Idle")
     , apvtsRef(apvts)
 {
     setupComponents();
@@ -208,10 +207,6 @@ void DecayRateFloat::setupComponents()
     windowLabel.setText("Window", juce::dontSendNotification);
     windowLabel.setJustificationType(juce::Justification::centredLeft);
     
-    addAndMakeVisible(statusLabel);
-    statusLabel.setText("Idle", juce::dontSendNotification);
-    statusLabel.setJustificationType(juce::Justification::centred);
-    statusLabel.setColour(juce::Label::textColourId, juce::Colours::lightgrey);
 
     // ===== APVTS Attachments =====
     loMultAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
@@ -280,8 +275,6 @@ void DecayRateFloat::updateLayout()
         learnButton.setBounds(buttonRow.removeFromLeft(buttonRow.getWidth() * 0.5f).reduced(1.0f).toNearestInt());
         resetButton.setBounds(buttonRow.reduced(1.0f).toNearestInt());
         
-        // Status label (below buttons)
-        statusLabel.setBounds(buttonArea.toNearestInt());
         
         // Learn sliders (right side)
         auto sliderArea = learnArea.reduced(1.0f);
@@ -297,22 +290,22 @@ void DecayRateFloat::updateLayout()
         windowLabel.setBounds(windowArea.removeFromTop(12).toNearestInt());
         windowSlider.setBounds(windowArea.toNearestInt());
         
-        // Two columns of 4 knobs each
+        // Two rows of 4 knobs each (matching actual KnobCell heights)
         auto knobsArea = bounds.reduced(1.0f);
-        auto leftCol   = knobsArea.removeFromLeft(knobsArea.getWidth() * 0.5f).reduced(1.0f);
-        auto rightCol  = knobsArea.reduced(1.0f);
+        auto topRow    = knobsArea.removeFromTop(knobsArea.getHeight() * 0.5f).reduced(1.0f);
+        auto bottomRow = knobsArea.reduced(1.0f);
 
-        auto layColumn = [](juce::Component& a, juce::Component& b, juce::Component& c, juce::Component& d, juce::Rectangle<float> area)
+        auto layRow = [](juce::Component& a, juce::Component& b, juce::Component& c, juce::Component& d, juce::Rectangle<float> area)
         {
-            const float cellH = area.getHeight() / 4.0f;
-            a.setBounds(area.removeFromTop(cellH).toNearestInt());
-            b.setBounds(area.removeFromTop(cellH).toNearestInt());
-            c.setBounds(area.removeFromTop(cellH).toNearestInt());
-            d.setBounds(area.removeFromTop(cellH).toNearestInt());
+            const float cellW = area.getWidth() / 4.0f;
+            a.setBounds(area.removeFromLeft(cellW).toNearestInt());
+            b.setBounds(area.removeFromLeft(cellW).toNearestInt());
+            c.setBounds(area.removeFromLeft(cellW).toNearestInt());
+            d.setBounds(area.removeFromLeft(cellW).toNearestInt());
         };
 
-        layColumn(*loMultKnobCell, *hiMultKnobCell, *midDbKnobCell, *midFreqKnobCell, leftCol);
-        layColumn(*midQKnobCell, *tiltDbKnobCell, *smoothingKnobCell, *modeKnobCell, rightCol);
+        layRow(*loMultKnobCell, *hiMultKnobCell, *midDbKnobCell, *midFreqKnobCell, topRow);
+        layRow(*midQKnobCell, *tiltDbKnobCell, *smoothingKnobCell, *modeKnobCell, bottomRow);
     }
     else
     {

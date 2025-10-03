@@ -81,7 +81,7 @@ private:
     // Sidechain Learn controls
     juce::TextButton learnButton, resetButton;
     juce::Slider strengthSlider, windowSlider;
-    juce::Label strengthLabel, windowLabel, statusLabel;
+    juce::Label strengthLabel, windowLabel;
 
     // Labels (kept for completeness; hidden in this design)
     juce::Label loMultLabel, hiMultLabel, midDbLabel, midFreqLabel;

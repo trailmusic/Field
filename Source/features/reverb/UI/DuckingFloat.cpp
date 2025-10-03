@@ -250,22 +250,22 @@ void DuckingFloat::updateLayout()
         modeSelector.setBounds(leftSel.toNearestInt());
         detectorSelector.setBounds(rightSel.toNearestInt());
 
-        // Two columns of 4 knobs each
+        // Two rows of 4 knobs each (matching actual KnobCell heights)
         auto knobsArea = bounds.reduced(1.0f);
-        auto leftCol   = knobsArea.removeFromLeft(knobsArea.getWidth() * 0.5f).reduced(1.0f);
-        auto rightCol  = knobsArea.reduced(1.0f);
+        auto topRow    = knobsArea.removeFromTop(knobsArea.getHeight() * 0.5f).reduced(1.0f);
+        auto bottomRow = knobsArea.reduced(1.0f);
 
-        auto layColumn = [](juce::Component& a, juce::Component& b, juce::Component& c, juce::Component& d, juce::Rectangle<float> area)
+        auto layRow = [](juce::Component& a, juce::Component& b, juce::Component& c, juce::Component& d, juce::Rectangle<float> area)
         {
-            const float cellH = area.getHeight() / 4.0f;
-            a.setBounds(area.removeFromTop(cellH).toNearestInt());
-            b.setBounds(area.removeFromTop(cellH).toNearestInt());
-            c.setBounds(area.removeFromTop(cellH).toNearestInt());
-            d.setBounds(area.removeFromTop(cellH).toNearestInt());
+            const float cellW = area.getWidth() / 4.0f;
+            a.setBounds(area.removeFromLeft(cellW).toNearestInt());
+            b.setBounds(area.removeFromLeft(cellW).toNearestInt());
+            c.setBounds(area.removeFromLeft(cellW).toNearestInt());
+            d.setBounds(area.removeFromLeft(cellW).toNearestInt());
         };
 
-        layColumn(*depthKnobCell, *thresholdKnobCell, *ratioKnobCell, *kneeKnobCell, leftCol);
-        layColumn(*attackKnobCell, *releaseKnobCell, *bandFreqKnobCell, *bandQKnobCell, rightCol);
+        layRow(*depthKnobCell, *thresholdKnobCell, *ratioKnobCell, *kneeKnobCell, topRow);
+        layRow(*attackKnobCell, *releaseKnobCell, *bandFreqKnobCell, *bandQKnobCell, bottomRow);
     }
     else
     {

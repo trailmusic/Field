@@ -45,10 +45,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 namespace
 {
-    // Percent widths of the three primary columns.
+    // Percent widths of the two primary columns (50/50 split).
     constexpr float kLeftPct   = 0.50f;
-    constexpr float kMiddlePct = 0.40f;
-    constexpr float kRightPct  = 0.10f;
+    constexpr float kRightPct  = 0.50f;
 
     // Panel chrome
     constexpr float kCornerRadius     = 8.0f;
@@ -241,19 +240,18 @@ void ReverbGraphics::resized ()
     const int  H     = total.getHeight ();
     if (W <= 0 || H <= 0) return;
 
-    // Column rectangles derived from total width (no "removeFrom..." cascading)
+    // Column rectangles derived from total width (50/50 split)
     auto leftArea   = juce::Rectangle<int> (0, 0, (int) (W * kLeftPct),  H);
-    auto middleArea = juce::Rectangle<int> ((int) (W * kLeftPct), 0, (int) (W * kMiddlePct), H);
-    auto rightArea  = juce::Rectangle<int> ((int) (W * (1.0f - kRightPct)), 0, (int) (W * kRightPct), H);
+    auto rightArea  = juce::Rectangle<int> ((int) (W * kLeftPct), 0, (int) (W * kRightPct), H);
 
     // Add gutters
     leftArea.removeFromRight   (kInterGapLarge);
-    middleArea = middleArea.reduced (kInterGapSmall, 0);
     rightArea.removeFromLeft   (kInterGapSmall);
 
-    // Middle column: Visualization label, panel, buttons row, child visuals
+    // Right column: Visualization (top) + DecayFloat/DuckingFloat (bottom)
     {
-        auto vizArea = middleArea;
+        // Visualization section (top half of right area)
+        auto vizArea = rightArea.removeFromTop(rightArea.getHeight() / 2);
         auto vizLabel = vizArea.removeFromTop (kLabelHeight);
         visualizationLabel.setBounds (vizLabel);
 
@@ -280,6 +278,36 @@ void ReverbGraphics::resized ()
                                                vizArea.getBottom () - top - kOuterPad);
             reverbVisuals->setBounds (child);
         }
+        
+        // Bottom section: DecayFloat and DuckingFloat side by side with labels
+        auto bottomArea = rightArea; // remaining half
+        
+        // Decay section (left side)
+        auto decaySection = bottomArea.removeFromLeft(bottomArea.getWidth() / 2);
+        auto decayLabelArea = decaySection.removeFromTop(kLabelHeight);
+        
+        // Ducking section (right side)  
+        auto duckingSection = bottomArea;
+        auto duckingLabelArea = duckingSection.removeFromTop(kLabelHeight);
+        
+        // Add small gap between the two sections
+        decaySection.removeFromRight(kInterGapSmall);
+        duckingSection.removeFromLeft(kInterGapSmall);
+        
+        // Position labels
+        decayLabel.setBounds(decayLabelArea);
+        duckingLabel.setBounds(duckingLabelArea);
+        
+        // Position containers
+        if (decayRateFloat)
+        {
+            decayRateFloat->setBounds(decaySection);
+        }
+        
+        if (duckingFloat)
+        {
+            duckingFloat->setBounds(duckingSection);
+        }
     }
 
     // Left column: Tone EQ (top) + Decay-Rate EQ (bottom), each with band indicator + label
@@ -302,34 +330,6 @@ void ReverbGraphics::resized ()
         decayRateEQ->setBounds         (decayArea);
     }
 
-    // Right column: Ducking label + ducking module (50%) + Decay label + DecayRateFloat (50%)
-    {
-        // Calculate available space after both labels
-        const int totalHeight = rightArea.getHeight();
-        const int availableForContainers = totalHeight - (2 * kLabelHeight);
-        const int containerHeight = availableForContainers / 2;
-        
-        // Ducking label
-        auto duckLabel = rightArea.removeFromTop (kLabelHeight);
-        duckingLabel.setBounds (duckLabel);
-
-        // DuckingFloat gets exactly half the available container space
-        if (duckingFloat)
-        {
-            auto duckingArea = rightArea.removeFromTop (containerHeight);
-            duckingFloat->setBounds (duckingArea);
-        }
-        
-        // Decay label
-        auto decayLabelArea = rightArea.removeFromTop (kLabelHeight);
-        decayLabel.setBounds (decayLabelArea);
-        
-        // DecayRateFloat gets the remaining space (should be equal to DuckingFloat)
-        if (decayRateFloat)
-        {
-            decayRateFloat->setBounds (rightArea);
-        }
-    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -431,8 +431,8 @@ void ReverbGraphics::updateLabelColors ()
         const auto c = lf->findColour (FieldLNF::eqLabelTextColourId);
         toneEqLabel.setColour        (juce::Label::textColourId, c);
         decayRateEqLabel.setColour   (juce::Label::textColourId, c);
-        duckingLabel.setColour       (juce::Label::textColourId, c);
-        decayLabel.setColour         (juce::Label::textColourId, c);
+        duckingLabel.setColour        (juce::Label::textColourId, c);
+        decayLabel.setColour          (juce::Label::textColourId, c);
         visualizationLabel.setColour (juce::Label::textColourId, c);
     }
 }
