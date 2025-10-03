@@ -1,133 +1,108 @@
 #pragma once
 #include <juce_dsp/juce_dsp.h>
-#include <memory>
-#include <vector>
+#include <array>
+#include <variant>
 #include <cstdint>
 
-#include "../core/signal/NullNode.h"
-#include "../core/signal/FrameAccumulator.h"
-#include "../core/signal/Sanitize.h"
 #include "Mixing/Node_Gain.h"
 #include "Mixing/Node_MSMatrix.h"
 #include "Mixing/Node_Meter.h"
 
+// Optional future nodes (currently unity stubs; keep includes commented until engines move)
+// #include "FieldNodes/Node_Reverb.h"
+// #include "FieldNodes/Node_Delay.h"
+// #include "FieldNodes/Node_DynEq.h"
+// #include "FieldNodes/Node_Phase.h"
+// #include "FieldNodes/Node_Imager.h"
+
 namespace field { namespace modules {
 
-struct ProcessSpec
+/**
+ * FieldChain
+ * - Small, fixed sequence that can enable/disable stages via Config.
+ * - No heap allocations; reset() returns to unity.
+ * - Latency: 0 in this configuration (update when linear-phase/OS enters).
+ */
+struct FieldChain
 {
-	double sampleRate = 44100.0;
-	int maxBlockSize = 512;
-	int numChannels  = 2;
-};
-
-struct INode
-{
-	virtual ~INode() = default;
-	virtual void prepare (const ProcessSpec& spec) = 0;
-	template <typename Sample>
-	void process (juce::dsp::AudioBlock<Sample>& block) { processImpl (block); }
-	virtual int latencySamples() const noexcept = 0;
-private:
-	virtual void processImpl (juce::dsp::AudioBlock<float>&)  = 0;
-	virtual void processImpl (juce::dsp::AudioBlock<double>&) = 0;
-};
-
-struct Node_Null final : public INode
-{
-	void prepare (const ProcessSpec&) override {}
-	int  latencySamples() const noexcept override { return 0; }
-private:
-	void processImpl (juce::dsp::AudioBlock<float>&)  override {}
-	void processImpl (juce::dsp::AudioBlock<double>&) override {}
-};
-
-class FieldChain
-{
-public:
+	// ---- Public config ------------------------------------------------------
 	struct Config
 	{
-		bool enableReverb = false;
-		bool enableDynEq  = false;
-		bool enableDelay  = false;
-		bool enableMS     = false;
-		bool enableGain   = false;
-		bool enableMeter  = false;
-		int  oversample   = 1;
+		bool enableMeter = false;
+		bool enableMS    = false;
+		bool enableGain  = false;
+
+		// reserved for future (keep stable ABI)
+		uint32_t reserved = 0;
 	};
 
-	void clear()
+	// ---- Lifecycle ----------------------------------------------------------
+	FieldChain() = default;
+
+	void setConfig (const Config& c) noexcept { cfg_ = c; }
+	const Config& getConfig() const noexcept   { return cfg_; }
+
+	// Rebuild internal stage activation based on cfg (no allocations).
+	void buildFromConfig() noexcept;
+
+	template <typename Sample>
+	void prepare (double sampleRate, int maxBlock, int channels) noexcept
 	{
-		nodes.clear();
-		totalLatency_ = 0;
-	}
+		sr_ = sampleRate;
+		maxBlock_ = (maxBlock > 0 ? maxBlock : 512);
+		chans_ = (channels > 0 ? channels : 2);
 
-	void setBypassed (bool b) noexcept { bypassed_ = b; }
-	bool isBypassed() const noexcept { return bypassed_; }
-
-	void setConfig (const Config& cfg) noexcept { config_ = cfg; }
-	const Config& getConfig() const noexcept { return config_; }
-
-	void buildFromConfig()
-	{
-		// Reset optional stage flags
-		msActive_ = config_.enableMS;
-		gainActive_ = config_.enableGain;
-		meterActive_ = config_.enableMeter;
-		recalcLatency();
-	}
-
-	void prepare (double sampleRate, int maxBlock, int numCh)
-	{
-		spec_ = { sampleRate, maxBlock, numCh };
-		for (auto& n : nodes) n->prepare (spec_);
-
-		if (msActive_)    ms_.prepare<float>   (sampleRate, maxBlock, numCh);
-		if (gainActive_)  gain_.prepare<float> (sampleRate, maxBlock, numCh);
-		if (meterActive_) meter_.prepare<float>(sampleRate, maxBlock, numCh);
-		warmed_ = false;
+		// Prepare all nodes; cost is tiny and we may toggle activity via flags.
+		meter_.template prepare<Sample> (sr_, maxBlock_, chans_);
+		ms_.template prepare<Sample>    (sr_, maxBlock_, chans_);
+		gain_.template prepare<Sample>  (sr_, maxBlock_, chans_);
 	}
 
 	template <typename Sample>
-	void process (juce::dsp::AudioBlock<Sample> block)
+	void process (juce::dsp::AudioBlock<Sample>& io) const noexcept
 	{
-		if (! warmed_) warmed_ = true;
-		if (bypassed_) return;
-		for (auto& n : nodes) n->process (block);
-		if (meterActive_) meter_.process(block);
-		if (msActive_)    ms_.process(block);
-		if (gainActive_)  gain_.process(block);
+		// Order (when enabled): Meter → MS → Gain
+		if (active_.meter) meter_.template process<Sample>(io);
+		if (active_.ms)    ms_.template process<Sample>(io);
+		if (active_.gain)  gain_.template process<Sample>(io);
 	}
 
-	int latencySamples() const noexcept { return totalLatency_; }
-
-	void buildUnity()
+	void reset() noexcept
 	{
-		clear();
-		nodes.emplace_back (std::make_unique<Node_Null>());
-		msActive_ = gainActive_ = meterActive_ = false;
-		recalcLatency();
+		meter_.reset();
+		ms_.reset();
+		gain_.reset();
 	}
+
+	int latencySamples() const noexcept { return 0; } // update if stages add delay
+
+	// Back-compat for early tests: unity build alias
+	void buildUnity() noexcept { cfg_ = {}; buildFromConfig(); }
+
+	// ---- Stage accessors (optional; useful for wiring UI later) -------------
+	auto& gainNode()  noexcept { return gain_;  }
+	auto& msNode()    noexcept { return ms_;    }
+	auto& meterNode() noexcept { return meter_; }
 
 private:
-	void recalcLatency()
-	{
-		int sum = 0;
-		for (auto& n : nodes) sum += n->latencySamples();
-		// Optional stages currently report 0 latency
-		totalLatency_ = sum;
-	}
-
-	ProcessSpec spec_{};
-	std::vector<std::unique_ptr<INode>> nodes;
-	int  totalLatency_ = 0;
-	bool bypassed_     = false;
-	bool warmed_       = false;
-
-	Config config_{};
-	bool msActive_ = false, gainActive_ = false, meterActive_ = false;
+	// ---- Concrete stages ----------------------------------------------------
+	mixing::Node_Meter<>  meter_{};
 	mixing::Node_MSMatrix ms_{};
 	mixing::Node_Gain     gain_{};
-	mixing::Node_Meter<>  meter_{};
+
+	// ---- Runtime state ------------------------------------------------------
+	double sr_ = 48000.0;
+	int    maxBlock_ = 512;
+	int    chans_ = 2;
+
+	Config cfg_{};
+
+	struct Active
+	{
+		bool meter = false;
+		bool ms    = false;
+		bool gain  = false;
+	} active_{};
 };
 
 }} // namespace field::modules
