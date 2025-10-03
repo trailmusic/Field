@@ -23,6 +23,7 @@ Last updated: 2025-10-03 • Branch: `feature`
 - [Verification (host-safe)](#verification-host-safe)
 - [Phase 1 Locked — Minimal Stubs Installed (for Work Order #3)](#phase-1-locked--minimal-stubs-installed-for-work-order-3)
 - [WO-3 Update — Optional Mixing Stages in FieldChain (default-off)](#wo-3-update--optional-mixing-stages-in-fieldchain-default-off)
+- [WO-4 — Config-driven placeholders + prepare-time param gate](#wo-4--config-driven-placeholders--prepare-time-param-gate)
 
 ---
 
@@ -539,4 +540,40 @@ chain.setConfig(cfg);
 chain.buildFromConfig();
 chain.prepare(48000.0, 512, 2);
 // process: chain.process(block);
+```
+
+## WO-4 — Config-driven placeholders + prepare-time param gate
+
+Objective: Add a mechanism to gate parameter changes during `prepareToPlay()` to prevent topology rebuilds during audio processing.
+
+Checklist:
+- [ ] Add a `Config` struct to `FieldChain` that holds parameter change flags.
+- [ ] Modify `FieldChain::prepare()` to check `config.needsRebuild` and rebuild if true.
+- [ ] Add a `needsRebuild` flag to `FieldChain::Config`.
+- [ ] Add a `buildFromConfig()` method to `FieldChain` that rebuilds the graph based on the current config.
+- [ ] Add a `setConfig()` method to `FieldChain` that updates the internal config and triggers a rebuild if needed.
+
+---
+
+## WO-4 — Config-driven placeholders + prepare-time param gate
+- Added unity, 0-latency stubs in `modules/FieldNodes/`: `Node_Reverb.h`, `Node_Delay.h`, `Node_DynEq.h`
+- Extended `modules/FieldChain.{h,cpp}` config and active set:
+  - New flags: `enableDelay`, `enableDynEq`, `enableReverb` (default false)
+  - Processing order: Meter → MS → Gain → Delay → DynEq → Reverb (all unity-safe by default)
+  - No allocations; latency remains 0
+- Prepare-time gate (no UI changes): set `FieldChain::Config` in `prepareToPlay()` (hardcoded or via safe param lookup) then `buildFromConfig()` and `prepare(...)`
+
+Example prepare-time toggle (hardcoded):
+```cpp
+field::modules::FieldChain::Config cfg{};
+cfg.enableDelay = false; cfg.enableDynEq = false; cfg.enableReverb = false;
+chainF_.setConfig(cfg); chainD_.setConfig(cfg);
+chainF_.buildFromConfig(); chainD_.buildFromConfig();
+```
+
+Optional safe param lookup (falls back to defaults if IDs absent):
+```cpp
+cfg.enableDelay = SafeParamGate::getBool(*this, "chain.delay.enable", false);
+cfg.enableDynEq = SafeParamGate::getBool(*this, "chain.dyneq.enable", false);
+cfg.enableReverb= SafeParamGate::getBool(*this, "chain.reverb.enable", false);
 ```
