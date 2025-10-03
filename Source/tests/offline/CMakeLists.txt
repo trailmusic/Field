@@ -6,3 +6,6 @@ target_link_libraries(test_latency_probe PRIVATE field_modules field_core juce_d
 
 add_executable(test_rebuild_gate test_rebuild_gate.cpp)
 target_link_libraries(test_rebuild_gate PRIVATE field_modules field_core juce_dsp)
+
+add_executable(test_dualchain_xfade test_dualchain_xfade.cpp)
+target_link_libraries(test_dualchain_xfade PRIVATE field_modules field_core juce_dsp)

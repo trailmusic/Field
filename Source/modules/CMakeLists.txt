@@ -1,5 +1,6 @@
 add_library(field_modules
     FieldChain.cpp FieldChain.h
+    FieldDualChain.h
     FieldNodes/NodeLatency.h
     FieldNodes/Node_Reverb.h
     FieldNodes/Node_Delay.h

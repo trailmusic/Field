@@ -26,6 +26,7 @@ Last updated: 2025-10-03 • Branch: `feature`
 - [WO-4 — Config-driven placeholders + prepare-time param gate](#wo-4--config-driven-placeholders--prepare-time-param-gate)
 - [WO-5 — Latency Accumulator + Probe + Tests](#wo-5--latency-accumulator--probe--tests)
 - [WO-6 — Processor Glue: Safe Param Reads, Rebuild Fence, Latency & Tail](#wo-6--processor-glue--safe-param-reads--rebuild-fence--latency--tail)
+- [WO-7 — Click-Free Live Chain Swap (Same-Latency Only)](#wo-7--click-free-live-chain-swap-same-latency-only)
 
 ---
 
@@ -629,3 +630,17 @@ recomputeLatency();
   - Tail seconds updated only at prepare; defaults 0.0 with placeholders
 - Tests:
   - `tests/offline/test_rebuild_gate.cpp` verifies no mid-block rebuild behavior
+
+---
+
+## WO-7 — Click-Free Live Chain Swap (Same-Latency Only)
+- Added `core/signal/CrossfadeRamp.h` and `modules/FieldDualChain.h`
+- DualChain: holds `{active, staging}` `FieldChain`s; message-thread builds staging
+- If `staging.latency == active.latency`, audio thread crossfades over a 64-sample ramp and promotes; otherwise defer to prepare-time rebuild
+- No behavior change unless you call `armLiveSwapIfSameLatency()`
+- Offline test: `tests/offline/test_dualchain_xfade.cpp`
+
+Index additions:
+- `core/signal/CrossfadeRamp.h`
+- `modules/FieldDualChain.h`
+- `tests/offline/test_dualchain_xfade.cpp`
