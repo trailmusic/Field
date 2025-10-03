@@ -1029,6 +1029,12 @@ public:
 
     juce::AudioProcessorEditor* createEditor() override;
 
+    // Message-thread tick to plan/arm live swap (dev-only usage)
+    void messageThreadTickForLiveSwap (double sampleRate, int maxBlock);
+    // HUD accessor for editor overlay
+    const field::core::telemetry::LiveSwapHUD& hud() const noexcept { return hud_; }
+    field::core::telemetry::LiveSwapHUD&       hud()       noexcept { return hud_; }
+
     // Expose APVTS for SafeParamGate prepare-time reads
     juce::AudioProcessorValueTreeState& getAPVTS() noexcept { return apvts; }
 
@@ -1147,6 +1153,7 @@ private:
     std::atomic<bool> phaseFollowQuality   { true };
     std::atomic<bool> reverbAutoGuard      { false };
     DelayUiBridge delayUiBridge;
+    field::core::telemetry::LiveSwapHUD hud_;
     
     std::atomic<bool> mirrorGuard{false};
 
