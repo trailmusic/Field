@@ -30,13 +30,11 @@ struct SafeParamGate
     }
 
 private:
-	static juce::AudioProcessorValueTreeState* findAPVTS (juce::AudioProcessor& proc) noexcept
+    static juce::AudioProcessorValueTreeState* findAPVTS (juce::AudioProcessor& proc) noexcept
 	{
-		// Preferred: expose APVTS via processor properties in ctor
-		if (auto* var = proc.getProperties().getVarPointer("apvts"))
-			if (auto* ptr = var->getNativeObject())
-				if (auto* apvts = reinterpret_cast<juce::AudioProcessorValueTreeState*>(ptr))
-					return apvts;
+        // Preferred: processor exposes getAPVTS()
+        struct APVTSGetter { virtual juce::AudioProcessorValueTreeState& getAPVTS() = 0; };
+        if (auto* g = dynamic_cast<APVTSGetter*>(&proc)) return &g->getAPVTS();
 		return nullptr;
 	}
 };

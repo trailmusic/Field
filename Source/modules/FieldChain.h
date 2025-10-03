@@ -120,9 +120,9 @@ struct FieldChain
 	int latencySamples() const noexcept { return latencySum_; }
 
 private:
-	mixing::Node_Meter<>  meter_{};
-	mixing::Node_MSMatrix ms_{};
-	mixing::Node_Gain     gain_{};
+    mixing::Node_Meter<>  meter_{};
+    mixing::Node_MSMatrix ms_{};
+    mixing::Node_Gain     gain_{};
 	nodes::Node_Delay     delay_{};
 	nodes::Node_DynEq     dyneq_{};
 	nodes::Node_Reverb    reverb_{};
