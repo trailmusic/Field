@@ -27,3 +27,6 @@ inline void sanitizeAudioBlock (juce::dsp::AudioBlock<Sample>& block) noexcept
 	for (int c = 0; c < C; ++c)
 		sanitizeSampleBuffer (block.getChannelPointer ((size_t) c), N);
 }
+
+inline void sanitize (juce::dsp::AudioBlock<float>  b) { sanitizeAudioBlock (b); }
+inline void sanitize (juce::dsp::AudioBlock<double> b) { sanitizeAudioBlock (b); }

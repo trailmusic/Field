@@ -1,0 +1,5 @@
+add_executable(test_null_unity test_null_unity.cpp)
+target_link_libraries(test_null_unity PRIVATE field_modules field_core juce_dsp)
+
+add_executable(test_latency_probe test_latency_probe.cpp)
+target_link_libraries(test_latency_probe PRIVATE field_modules field_core juce_dsp)
