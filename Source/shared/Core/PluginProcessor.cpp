@@ -516,6 +516,16 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     juce::ignoreUnused (midi);
     juce::ScopedNoDenormals _ftz;  // FTZ/DAZ for this whole block
     
+    const int N = buffer.getNumSamples();
+    if (N <= 0) return;
+    
+    // DIAG 1: unity probe (1 block only)
+    static std::atomic<bool> didUnity { false };
+    if (!didUnity.exchange(true)) {
+        // leave the input untouched and exit — DAW must keep playing w/ original audio
+        return;
+    }
+    
     // ================================================================
     // 🎛️ QUALITY SYSTEM DENORMAL HANDLING (JANUARY 2025)
     // ================================================================
@@ -528,9 +538,6 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     
     isDoublePrecEnabled = false;
 
-    const int N = buffer.getNumSamples();
-    if (N <= 0) return;
-
     // Fail-safe: if chain not prepared, return early (pass-through if your graph is in-place)
     const int preparedMax = (chainF ? chainF->getPreparedBlockSize() : 0);
     if (preparedMax <= 0) {
@@ -539,6 +546,13 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
        #endif
        return; // in-place: host still hears input; we don't risk a spin
     }
+    
+    #if JUCE_DEBUG
+    static int preparedCount = 0;
+    if (++preparedCount <= 3) {
+        juce::Logger::writeToLog("[Field] processBlock: chain prepared with max=" + juce::String(preparedMax));
+    }
+    #endif
 
     // Emergency safety: hard passthrough to confirm architecture vs. processing
     if (getSafePassthrough()) return;
@@ -733,29 +747,17 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     }
     const int maxBlockSize = preparedMax; // Use actual prepared block size
     
-    int offset = 0;
-    int spinGuard = 0;
+    // Bullet-proof tiling with AudioBlock sub-blocks
+    juce::dsp::AudioBlock<float> whole(buffer);
+    int offset = 0, spins = 0;
     
     while (offset < N) {
         const int nThis = std::min(maxBlockSize, N - offset);
-        if (nThis <= 0 || ++spinGuard > 1024) {
-           #if JUCE_DEBUG
-            juce::Logger::writeToLog("[Field] Tiling guard tripped: preparedMax="
-                                     + juce::String(preparedMax) + " N=" + juce::String(N));
-           #endif
-            break; // bail instead of spinning forever
-        }
+        if (nThis <= 0 || ++spins > 1024) break;
         
-        // Create zero-copy view into host buffer
-        juce::AudioBuffer<float> view(buffer.getArrayOfWritePointers(),
-                                      buffer.getNumChannels(),
-                                      offset, nThis);
-        
-        // Process this tile
-        juce::dsp::AudioBlock<float> block(view);
+        auto sub = whole.getSubBlock((size_t)offset, (size_t)nThis);
         chainF->setParameters(hp);
-        chainF->process(block);
-        
+        chainF->process(sub);  // IMPORTANT: process the block view
         offset += nThis;
     }
     
@@ -936,6 +938,16 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     juce::ignoreUnused (midi);
     juce::ScopedNoDenormals _ftz;  // FTZ/DAZ for this whole block
     
+    const int N = buffer.getNumSamples();
+    if (N <= 0) return;
+    
+    // DIAG 1: unity probe (1 block only)
+    static std::atomic<bool> didUnityDouble { false };
+    if (!didUnityDouble.exchange(true)) {
+        // leave the input untouched and exit — DAW must keep playing w/ original audio
+        return;
+    }
+    
     // ================================================================
     // 🎛️ QUALITY SYSTEM DENORMAL HANDLING (JANUARY 2025)
     // ================================================================
@@ -946,9 +958,6 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         _mm_setcsr(_mm_getcsr() | 0x8040); // DAZ|FTZ
     #endif
     isDoublePrecEnabled = true;
-
-    const int N = buffer.getNumSamples();
-    if (N <= 0) return;
 
     // Fail-safe: if chain not prepared, return early (pass-through if your graph is in-place)
     const int preparedMax = (chainD ? chainD->getPreparedBlockSize() : 0);
@@ -1122,29 +1131,17 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     }
     const int maxBlockSize = preparedMax; // Use actual prepared block size
     
-    int offset = 0;
-    int spinGuard = 0;
+    // Bullet-proof tiling with AudioBlock sub-blocks
+    juce::dsp::AudioBlock<double> whole(buffer);
+    int offset = 0, spins = 0;
     
     while (offset < N) {
         const int nThis = std::min(maxBlockSize, N - offset);
-        if (nThis <= 0 || ++spinGuard > 1024) {
-           #if JUCE_DEBUG
-            juce::Logger::writeToLog("[Field] Tiling guard tripped: preparedMax="
-                                     + juce::String(preparedMax) + " N=" + juce::String(N));
-           #endif
-            break; // bail instead of spinning forever
-        }
+        if (nThis <= 0 || ++spins > 1024) break;
         
-        // Create zero-copy view into host buffer
-        juce::AudioBuffer<double> view(buffer.getArrayOfWritePointers(),
-                                       buffer.getNumChannels(),
-                                       offset, nThis);
-        
-        // Process this tile
-        juce::dsp::AudioBlock<double> block(view);
+        auto sub = whole.getSubBlock((size_t)offset, (size_t)nThis);
         chainD->setParameters(hp);
-        chainD->process(block);
-        
+        chainD->process(sub);  // IMPORTANT: process the block view
         offset += nThis;
     }
     
@@ -3421,6 +3418,17 @@ void FieldChain<Sample>::process (Block block)
 
     const int N = (int)block.getNumSamples();
     const int preparedMax = getPreparedBlockSize();
+    
+    // Energy sentinels (one-shot logging, won't spam)
+    #if JUCE_DEBUG
+    auto rms = [](juce::dsp::AudioBlock<Sample> b){
+        long double s=0; auto ch=b.getNumChannels(), n=b.getNumSamples();
+        for(size_t c=0;c<ch;++c){ auto* p=b.getChannelPointer(c);
+            for(size_t i=0;i<n;++i) s+= (long double)p[i]*p[i]; }
+        return std::sqrt((double)s / std::max<size_t>(1,ch*n));
+    };
+    const double inR = rms(block);
+    #endif
 
     if (N > preparedMax) {
        #if JUCE_DEBUG
@@ -3434,7 +3442,13 @@ void FieldChain<Sample>::process (Block block)
        return;
     }
 
-    if (params.bypass) return;
+    // TEMPORARILY DISABLE BYPASS CHECK FOR DEBUGGING
+    // if (params.bypass) {
+    //     #if JUCE_DEBUG
+    //     juce::Logger::writeToLog("[Field] FieldChain::process: BYPASS is enabled - returning early");
+    //     #endif
+    //     return;
+    // }
 
     // Input gain
     block.multiplyBy (params.inputGainLin);
@@ -4061,8 +4075,14 @@ void FieldChain<Sample>::process (Block block)
                     wet.copyFrom(ch, 0, src, N);
                 }
                 
+                // DIAG 2: skip reverb entirely
+                // comment this line back out after test
+                // goto SKIP_REVERB;
+                
                 // Process reverb
                 reverbEngine.processWet(wet, side);
+                
+                SKIP_REVERB:;
                 
                 // Mix wet into output (replace or blend based on wet policy)
                 const Sample wetAmt = juce::jlimit<Sample>((Sample)0, (Sample)1, params.rvWet01);
@@ -4114,6 +4134,17 @@ void FieldChain<Sample>::process (Block block)
     
     // Output gain
     block.multiplyBy (params.outputGainLin);
+    
+    // Energy sentinels output logging
+    #if JUCE_DEBUG
+    const double outR = rms(block);
+    static int energyCount = 0;
+    if (++energyCount <= 3) {
+        juce::Logger::writeToLog("[Field] chain inR=" + juce::String(inR,3) +
+                                 " outR=" + juce::String(outR,3) +
+                                 " N=" + juce::String((int)block.getNumSamples()));
+    }
+    #endif
 }
 
 template <typename Sample>
