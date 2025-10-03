@@ -33,6 +33,7 @@ Last updated: 2025-10-03 • Branch: `feature`
 - [WO-11 — Param IDs → Latency Hooks (prepare-time only)](#wo-11--param-ids--latency-hooks-prepare-time-only)
 - [WO-12 — Minimal Param Layout (APVTS) + Safe Reads (no DSP changes)](#wo-12--minimal-param-layout-apvts--safe-reads-no-dsp-changes)
 - [WO-13 — Rebuild Listeners + Latency/Tail Apply at Prepare](#wo-13--rebuild-listeners--latencytail-apply-at-prepare)
+- [WO-14 — Live-Swap for Voicing Params (same-latency edits only)](#wo-14--live-swap-for-voicing-params-same-latency-edits-only)
 
 ---
 
@@ -748,3 +749,15 @@ Index additions:
 
 Index additions:
 - `core/runtime/ParamChangeBus.h`
+
+---
+
+## WO-14 — Live-Swap for Voicing Params (same-latency edits only)
+- Extended `ParamChangeBus` to support voicing IDs and flags
+- Added `core/runtime/LiveSwapPlanner.h` to build staging with new voicing and arm swap iff latency unchanged
+- `modules/FieldDualChain.h` now exposes `activeChain()`/`stagingChain()` for planner integration
+- Offline test: `tests/offline/test_dualchain_voicing_swap.cpp`
+
+Index additions:
+- `core/runtime/LiveSwapPlanner.h`
+- `tests/offline/test_dualchain_voicing_swap.cpp`

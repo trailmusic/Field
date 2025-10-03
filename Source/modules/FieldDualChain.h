@@ -48,6 +48,12 @@ struct DualChain
 
 	int latencySamples() const noexcept { return active_.latencySamples(); }
 
+    // Accessors for planner integration
+    FieldChain& activeChain() noexcept { return active_; }
+    FieldChain& stagingChain() noexcept { return staging_; }
+    const FieldChain& activeChain() const noexcept { return active_; }
+    const FieldChain& stagingChain() const noexcept { return staging_; }
+
     template <typename Sample>
     void process (juce::dsp::AudioBlock<Sample>& io)
     {
