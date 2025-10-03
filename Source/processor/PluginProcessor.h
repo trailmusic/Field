@@ -1029,6 +1029,9 @@ public:
 
     juce::AudioProcessorEditor* createEditor() override;
 
+    // Expose APVTS for SafeParamGate prepare-time reads
+    juce::AudioProcessorValueTreeState& getAPVTS() noexcept { return apvts; }
+
     void setIsEditing (bool b) { isEditing.store (b, std::memory_order_release); }
     bool getIsEditing() const { return isEditing.load (std::memory_order_acquire); }
 
