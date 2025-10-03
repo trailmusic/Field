@@ -488,3 +488,21 @@ Next wiring (Builder Work Order #3):
   - Build and run offline tests; ensure unity/null and latency agreement
 - Host checks
   - Insert-while-playing silent; duplicate/invert null at unity; automation latency changes defer to restart
+
+## WO-3 Update — Optional Mixing Stages in FieldChain (default-off)
+- FieldChain now exposes a `Config` with flags: `enableMS`, `enableGain`, `enableMeter` (all false by default)
+- Stages are allocation-free, zero-latency, and unity-safe when disabled
+- Order (when enabled): Meter → MSMatrix → Gain; chain remains unity and latency=0 with defaults
+
+Example:
+```cpp
+field::modules::FieldChain chain;
+field::modules::FieldChain::Config cfg{};
+cfg.enableMeter = true;   // optional; off by default
+cfg.enableMS    = false;  // unity
+cfg.enableGain  = false;  // unity
+chain.setConfig(cfg);
+chain.buildFromConfig();
+chain.prepare(48000.0, 512, 2);
+// process: chain.process(block);
+```
