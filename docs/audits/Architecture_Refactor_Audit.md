@@ -462,3 +462,29 @@ struct NullNode {
 - Null-unity: duplicate track, put Field @ unity on one; invert other → perfect null
 - Insert-while-playing: drop the plugin on a running loop → silent
 - LatencyProbe vs desired: `DBG` shows identical numbers after `prepareToPlay()`
+
+## Phase 1 Locked — Minimal Stubs Installed (for Work Order #3)
+
+What was added (compiling, no-UI changes):
+- Modules chain
+  - `modules/FieldChain.{h,cpp}`: unity chain, 0 latency; templated float/double `process(...)`
+  - `modules/FieldNodes/Node_{Reverb,Delay,DynEq,Phase,Imager}.h`: tiny placeholder stubs
+  - `modules/Mixing/Node_{Gain,MSMatrix,Meter}.h`: tiny placeholder stubs
+  - `modules/CMakeLists.txt`: builds `field_modules` and exposes headers
+- Core signal hygiene
+  - `core/signal/Sanitize.h`: added `sanitize(juce::dsp::AudioBlock<float|double>)` overloads
+  - `core/runtime/RebuildGate.h`: request/consume flag for safe DSP rebuild gating
+- Offline tests (no JUCE AudioProcessor)
+  - `tests/offline/test_null_unity.cpp`: asserts unity pass and latency==0
+  - `tests/offline/test_latency_probe.cpp`: measures latency via `LatencyProbe` and asserts equality
+  - `tests/offline/CMakeLists.txt` + `tests/CMakeLists.txt` hook
+
+Next wiring (Builder Work Order #3):
+- Processor side
+  - Add members: `field::modules::FieldChain chainF_, chainD_; LatencyManager latency_; RebuildGate rebuildGate_;`
+  - `prepareToPlay()`: `buildUnity()`, `prepare(sr, maxBlock, chans)`, set `desired = chainF_.latencySamples()`, then `latency.applyIfChanged(*this)`
+  - `processBlock(float/double)`: `sanitize(block)`, `chain.process(block)`, `sanitize(block)`; never call `setLatencySamples()` here
+- Tests
+  - Build and run offline tests; ensure unity/null and latency agreement
+- Host checks
+  - Insert-while-playing silent; duplicate/invert null at unity; automation latency changes defer to restart
