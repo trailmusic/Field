@@ -1,0 +1,3076 @@
+{
+  "bank": "Trap Slap Rooms",
+  "schema": "field.reverb.presets.v1",
+  "created": "2025-10-03T00:01:58.173722Z",
+  "count": 40,
+  "presets": [
+    {
+      "name": "Trap Slap 80ms",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.25,
+        "sizePct": 25,
+        "diffusionPct": 60,
+        "densityPct": 75,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.08,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.5,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 250,
+            "mult": 1.1,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Trap Slap 100ms",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 2,
+        "decaySec": 0.3,
+        "sizePct": 28,
+        "diffusionPct": 64,
+        "densityPct": 78,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.09,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Trap Ping",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 4,
+        "decaySec": 0.35,
+        "sizePct": 31,
+        "diffusionPct": 68,
+        "densityPct": 81,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.1,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Short Skrrt",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.4,
+        "sizePct": 34,
+        "diffusionPct": 72,
+        "densityPct": 84,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.11,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Adlib Spark",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 2,
+        "decaySec": 0.45,
+        "sizePct": 37,
+        "diffusionPct": 76,
+        "densityPct": 75,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.12,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.5,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Snare Tight Room",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 4,
+        "decaySec": 0.25,
+        "sizePct": 40,
+        "diffusionPct": 60,
+        "densityPct": 78,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.08,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 250,
+            "mult": 1.1,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Clap Smack",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.3,
+        "sizePct": 25,
+        "diffusionPct": 64,
+        "densityPct": 81,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.09,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "808 Click Room",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 2,
+        "decaySec": 0.35,
+        "sizePct": 28,
+        "diffusionPct": 68,
+        "densityPct": 84,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.1,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Vox Booth Slap",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 4,
+        "decaySec": 0.4,
+        "sizePct": 31,
+        "diffusionPct": 72,
+        "densityPct": 75,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.11,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.5,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Perc Pop",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.45,
+        "sizePct": 34,
+        "diffusionPct": 76,
+        "densityPct": 78,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.12,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Slap & Spread",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 2,
+        "decaySec": 0.25,
+        "sizePct": 37,
+        "diffusionPct": 60,
+        "densityPct": 81,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.08,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 250,
+            "mult": 1.1,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Halftime Slap",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 4,
+        "decaySec": 0.3,
+        "sizePct": 40,
+        "diffusionPct": 64,
+        "densityPct": 84,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.09,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Triplet Slap",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.35,
+        "sizePct": 25,
+        "diffusionPct": 68,
+        "densityPct": 75,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.1,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.5,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Auto Pan Slap",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 2,
+        "decaySec": 0.4,
+        "sizePct": 28,
+        "diffusionPct": 72,
+        "densityPct": 78,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.11,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Dark Booth",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 4,
+        "decaySec": 0.45,
+        "sizePct": 31,
+        "diffusionPct": 76,
+        "densityPct": 81,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.12,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Bright Booth",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.25,
+        "sizePct": 34,
+        "diffusionPct": 60,
+        "densityPct": 84,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.08,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 250,
+            "mult": 1.1,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Thin Booth",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 2,
+        "decaySec": 0.3,
+        "sizePct": 37,
+        "diffusionPct": 64,
+        "densityPct": 75,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.09,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.5,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Wide Snap",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 4,
+        "decaySec": 0.35,
+        "sizePct": 40,
+        "diffusionPct": 68,
+        "densityPct": 78,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.1,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Phone Booth",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.4,
+        "sizePct": 25,
+        "diffusionPct": 72,
+        "densityPct": 81,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.11,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Pantry Room",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 2,
+        "decaySec": 0.45,
+        "sizePct": 28,
+        "diffusionPct": 76,
+        "densityPct": 84,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.12,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Platey Slap",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 4,
+        "decaySec": 0.25,
+        "sizePct": 31,
+        "diffusionPct": 60,
+        "densityPct": 75,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.08,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.5,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 250,
+            "mult": 1.1,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Wood Room",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.3,
+        "sizePct": 34,
+        "diffusionPct": 64,
+        "densityPct": 78,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.09,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Tile Room",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 2,
+        "decaySec": 0.35,
+        "sizePct": 37,
+        "diffusionPct": 68,
+        "densityPct": 81,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.1,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Parking Garage Short",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 4,
+        "decaySec": 0.4,
+        "sizePct": 40,
+        "diffusionPct": 72,
+        "densityPct": 84,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.11,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Stairwell Short",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.45,
+        "sizePct": 25,
+        "diffusionPct": 76,
+        "densityPct": 75,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.12,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.5,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Grammy Booth",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 2,
+        "decaySec": 0.25,
+        "sizePct": 28,
+        "diffusionPct": 60,
+        "densityPct": 78,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.08,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 250,
+            "mult": 1.1,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Doubler Slap",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 4,
+        "decaySec": 0.3,
+        "sizePct": 31,
+        "diffusionPct": 64,
+        "densityPct": 81,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.09,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Ticky Hat Room",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.35,
+        "sizePct": 34,
+        "diffusionPct": 68,
+        "densityPct": 84,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.1,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Sizzle Snap",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 2,
+        "decaySec": 0.4,
+        "sizePct": 37,
+        "diffusionPct": 72,
+        "densityPct": 75,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.11,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.5,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Glass Slap",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 4,
+        "decaySec": 0.45,
+        "sizePct": 40,
+        "diffusionPct": 76,
+        "densityPct": 78,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.12,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "LoFi Slap",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.25,
+        "sizePct": 25,
+        "diffusionPct": 60,
+        "densityPct": 81,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.08,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 250,
+            "mult": 1.1,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "OG Trap Booth",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 2,
+        "decaySec": 0.3,
+        "sizePct": 28,
+        "diffusionPct": 64,
+        "densityPct": 84,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.09,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Modern Booth",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 4,
+        "decaySec": 0.35,
+        "sizePct": 31,
+        "diffusionPct": 68,
+        "densityPct": 75,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.1,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.5,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Snap N Crackle",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.4,
+        "sizePct": 34,
+        "diffusionPct": 72,
+        "densityPct": 78,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.11,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Smack City",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 2,
+        "decaySec": 0.45,
+        "sizePct": 37,
+        "diffusionPct": 76,
+        "densityPct": 81,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.12,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Rattle Room",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 4,
+        "decaySec": 0.25,
+        "sizePct": 40,
+        "diffusionPct": 60,
+        "densityPct": 84,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.08,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 250,
+            "mult": 1.1,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Snare Lid",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.3,
+        "sizePct": 25,
+        "diffusionPct": 64,
+        "densityPct": 75,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.09,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.5,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Tight Wink",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 2,
+        "decaySec": 0.35,
+        "sizePct": 28,
+        "diffusionPct": 68,
+        "densityPct": 78,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.1,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Wet Whisper",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 4,
+        "decaySec": 0.4,
+        "sizePct": 31,
+        "diffusionPct": 72,
+        "densityPct": 81,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.11,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    },
+    {
+      "name": "Slap King",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 0,
+        "decaySec": 0.45,
+        "sizePct": 34,
+        "diffusionPct": 76,
+        "densityPct": 84,
+        "erLevelDb": -6,
+        "erTimeMs": 35,
+        "erWidthPct": 95,
+        "erToTailPct": 40,
+        "modDepthCents": 2.0,
+        "modRateHz": 0.7,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.12,
+        "bloomPct": 0,
+        "distancePct": 10,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 8000,
+            "gainDb": 2.5,
+            "q": 0.8
+          },
+          {
+            "type": "Peak",
+            "freqHz": 3500,
+            "gainDb": 1.0,
+            "q": 1.0
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.9,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -20,
+        "ratio": 2.0,
+        "kneeDb": 2,
+        "atkMs": 3.5,
+        "relMs": 60,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "trap",
+        "hiphop",
+        "slap",
+        "room"
+      ]
+    }
+  ]
+}

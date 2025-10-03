@@ -1,0 +1,3082 @@
+{
+  "version": 1,
+  "author": "Field Audio",
+  "format": "FieldReverbPresetPack",
+  "count": 40,
+  "presets": [
+    {
+      "name": "Vocal Plate - Smooth",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 2.2,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.18,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 3.8,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.22,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Chamber - Intimate",
+      "model": "Chamber",
+      "tags": [
+        "vocal",
+        "intimate"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 1.6,
+        "sizePct": 45.0,
+        "erLevelDb": -9.0,
+        "erDensityPct": 70.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 82.0,
+        "densityPct": 70.0,
+        "modDepthCents": 5.0,
+        "modRateHz": 0.3,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.16,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "Peak",
+          "freqHz": 250.0,
+          "q": 1.1,
+          "gainDb": -1.2
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "Bell",
+          "freqHz": 250.0,
+          "q": 1.0,
+          "mult": 0.9
+        },
+        {
+          "type": "TiltHi",
+          "freqHz": 6000.0,
+          "q": 0.7,
+          "mult": 0.95
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 7.0,
+        "thrDb": -28.0,
+        "ratio": 2.5,
+        "kneeDb": 6.0,
+        "atkMs": 14.0,
+        "relMs": 160.0,
+        "bandHz": 1800.0,
+        "bandQ": 1.2
+      },
+      "notes": "Near-field intimacy without wool."
+    },
+    {
+      "name": "Vocal Room - Tight",
+      "model": "Room",
+      "tags": [
+        "vocal",
+        "tight"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 0.9,
+        "sizePct": 30.0,
+        "erLevelDb": -8.0,
+        "erDensityPct": 75.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 35.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 70.0,
+        "densityPct": 70.0,
+        "modDepthCents": 5.0,
+        "modRateHz": 0.3,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.12,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 7000.0,
+          "q": 0.7,
+          "gainDb": 1.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "Bell",
+          "freqHz": 180.0,
+          "q": 0.8,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 6.0,
+        "thrDb": -25.0,
+        "ratio": 2.5,
+        "kneeDb": 6.0,
+        "atkMs": 12.0,
+        "relMs": 140.0,
+        "bandHz": 0.0,
+        "bandQ": 0.7
+      },
+      "notes": "Singer in a booth feel; quick."
+    },
+    {
+      "name": "Vocal Plate - Smooth v4",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 2.6400000000000006,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.18,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v5",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 3.04,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.25,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v6",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 1.9800000000000002,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.15,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v7",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 3.8,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.22,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v8",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 2.4200000000000004,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.21,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v9",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 4.5600000000000005,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.19,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v10",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 1.7600000000000002,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.18,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v11",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 3.42,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.25,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v12",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 2.2,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.15,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v13",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 4.18,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.22,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v14",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 2.6400000000000006,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.21,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v15",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 3.04,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.19,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v16",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 1.9800000000000002,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.18,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v17",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 3.8,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.25,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v18",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 2.4200000000000004,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.15,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v19",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 4.5600000000000005,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.22,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v20",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 1.7600000000000002,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.21,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v21",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 3.42,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.19,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v22",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 2.2,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.18,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v23",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 4.18,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.25,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v24",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 2.6400000000000006,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.15,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v25",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 3.04,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.22,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v26",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 1.9800000000000002,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.21,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v27",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 3.8,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.19,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v28",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 2.4200000000000004,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.18,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v29",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 4.5600000000000005,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.25,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v30",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 1.7600000000000002,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.15,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v31",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 3.42,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.22,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v32",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 2.2,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.21,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v33",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 4.18,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.19,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v34",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 2.6400000000000006,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.18,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v35",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 3.04,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.25,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v36",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 1.9800000000000002,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.15,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v37",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 3.8,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.22,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    },
+    {
+      "name": "Vocal Plate - Smooth v38",
+      "model": "Plate",
+      "tags": [
+        "vocal",
+        "pop"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 2.4200000000000004,
+        "sizePct": 60.0,
+        "erLevelDb": -10.0,
+        "erDensityPct": 65.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 80.0,
+        "densityPct": 70.0,
+        "modDepthCents": 6.0,
+        "modRateHz": 0.35,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.21,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 8000.0,
+          "q": 0.7,
+          "gainDb": 1.5
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 300.0,
+          "q": 1.0,
+          "gainDb": -1.5
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 4000.0,
+          "q": 0.7,
+          "mult": 0.85
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 8.0,
+        "thrDb": -26.0,
+        "ratio": 3.0,
+        "kneeDb": 6.0,
+        "atkMs": 16.0,
+        "relMs": 180.0,
+        "bandHz": 2500.0,
+        "bandQ": 1.0
+      },
+      "notes": "Silky top, gentle presence; vocal-forward."
+    },
+    {
+      "name": "Vocal Hall - Airy v39",
+      "model": "Hall",
+      "tags": [
+        "vocal",
+        "ballad"
+      ],
+      "params": {
+        "enabled": true,
+        "killDry": false,
+        "preDelayMs": 0.0,
+        "decaySec": 4.5600000000000005,
+        "sizePct": 80.0,
+        "erLevelDb": -14.0,
+        "erDensityPct": 55.0,
+        "erWidthPct": 80.0,
+        "erTimeMs": 50.0,
+        "erToTailPct": 60.0,
+        "diffusionPct": 75.0,
+        "densityPct": 70.0,
+        "modDepthCents": 7.0,
+        "modRateHz": 0.28,
+        "widthPct": 100.0,
+        "rotationDeg": 0.0,
+        "wetMix01": 0.19,
+        "bloomPct": 0.0,
+        "distancePct": 50.0,
+        "freeze": false,
+        "shimmerAmtPct": 0.0,
+        "shimmerInt": 0.0,
+        "gateAmtPct": 0.0,
+        "outTrimDb": 0.0,
+        "dreqXoverLoHz": 160.0,
+        "dreqXoverHiHz": 4000.0,
+        "dreqApply": 3,
+        "followWidth": false,
+        "followWidthAmt": 0.0,
+        "followRot": false,
+        "followRotAmt": 0.0
+      },
+      "toneEQ": [
+        {
+          "kind": "HighShelf",
+          "freqHz": 9000.0,
+          "q": 0.7,
+          "gainDb": 2.0
+        },
+        {
+          "kind": "Peak",
+          "freqHz": 450.0,
+          "q": 1.2,
+          "gainDb": -2.0
+        }
+      ],
+      "decayRateEQ": [
+        {
+          "type": "TiltHi",
+          "freqHz": 5000.0,
+          "q": 0.7,
+          "mult": 0.8
+        }
+      ],
+      "ducking": {
+        "on": true,
+        "mode": 1,
+        "detector": 0,
+        "depthDb": 9.0,
+        "thrDb": -27.0,
+        "ratio": 3.5,
+        "kneeDb": 6.0,
+        "atkMs": 18.0,
+        "relMs": 220.0,
+        "bandHz": 3000.0,
+        "bandQ": 0.9
+      },
+      "notes": "Expansive but controlled sibilance via DR-EQ tilt."
+    }
+  ]
+}

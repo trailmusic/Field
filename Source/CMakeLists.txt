@@ -105,6 +105,15 @@ set(SRC
     features/reverb/ReverbProcessorGlue.cpp
     features/reverb/ReverbIRExportTest.cpp
     features/reverb/SimdBiquad.h
+    features/reverb/ModelMacros.h
+    features/reverb/ReverbPresetManager.h
+    features/reverb/ReverbPresetManager.cpp
+    features/reverb/ReverbParamMap.h
+    features/reverb/ReverbParamMap.cpp
+    features/reverb/ReverbPresetLoader.h
+    features/reverb/ReverbPresetLoader.cpp
+    features/reverb/ReverbPresetIntegration.h
+    features/reverb/ReverbPresetIntegration.cpp
     shared/ui/Engines/SpectrumAnalyzer.h
     shared/ui/Engines/SpectrumAnalyzer.cpp
     features/delay/DelayUiBridge.h

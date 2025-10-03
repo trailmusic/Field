@@ -1,0 +1,3012 @@
+{
+  "bank": "Electronic / Techno Halls",
+  "schema": "field.reverb.presets.v1",
+  "created": "2025-10-03T00:01:58.166595Z",
+  "count": 40,
+  "presets": [
+    {
+      "name": "Techno Hall A",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 12,
+        "decaySec": 2.2,
+        "sizePct": 75,
+        "diffusionPct": 80,
+        "densityPct": 70,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -1.5,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -24,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Techno Hall B",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 16,
+        "decaySec": 2.26,
+        "sizePct": 78,
+        "diffusionPct": 81,
+        "densityPct": 71,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.8,
+        "modRateHz": 0.43,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.8,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.88,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 5,
+        "thrDb": -23,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Warehouse Wash",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 2.32,
+        "sizePct": 81,
+        "diffusionPct": 82,
+        "densityPct": 72,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 5.6,
+        "modRateHz": 0.51,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 2.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -0.9,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.91,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 6,
+        "thrDb": -22,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Cold Steel Hall",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 24,
+        "decaySec": 2.38,
+        "sizePct": 84,
+        "diffusionPct": 83,
+        "densityPct": 73,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 6.4,
+        "modRateHz": 0.59,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.26,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.4,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -21,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Midnight Tunnel",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 28,
+        "decaySec": 2.44,
+        "sizePct": 87,
+        "diffusionPct": 84,
+        "densityPct": 74,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 7.2,
+        "modRateHz": 0.67,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -1.5,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.88,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 5,
+        "thrDb": -20,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Neon Arcade",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 2.5,
+        "sizePct": 75,
+        "diffusionPct": 85,
+        "densityPct": 75,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 2.0,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.0,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.91,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 6,
+        "thrDb": -24,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Blade Runner Hall",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 12,
+        "decaySec": 2.56,
+        "sizePct": 78,
+        "diffusionPct": 86,
+        "densityPct": 76,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.8,
+        "modRateHz": 0.43,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -0.9,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -23,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Concrete Cathedral",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 16,
+        "decaySec": 2.62,
+        "sizePct": 81,
+        "diffusionPct": 80,
+        "densityPct": 77,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 5.6,
+        "modRateHz": 0.51,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.26,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.6,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.88,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 5,
+        "thrDb": -22,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Pulse Chamber",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 2.68,
+        "sizePct": 84,
+        "diffusionPct": 81,
+        "densityPct": 78,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 6.4,
+        "modRateHz": 0.59,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 2.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -1.5,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.91,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 6,
+        "thrDb": -21,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Noir Hall",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 24,
+        "decaySec": 2.74,
+        "sizePct": 87,
+        "diffusionPct": 82,
+        "densityPct": 70,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 7.2,
+        "modRateHz": 0.67,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.2,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -20,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Hi-Hat Air",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 28,
+        "decaySec": 2.8,
+        "sizePct": 75,
+        "diffusionPct": 83,
+        "densityPct": 71,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -0.9,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.88,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 5,
+        "thrDb": -24,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Chord Stab Bloom",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 2.86,
+        "sizePct": 78,
+        "diffusionPct": 84,
+        "densityPct": 72,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.8,
+        "modRateHz": 0.43,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.26,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 2.0,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.8,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.91,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 6,
+        "thrDb": -23,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "909 Room Boom",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 12,
+        "decaySec": 2.92,
+        "sizePct": 81,
+        "diffusionPct": 85,
+        "densityPct": 73,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 5.6,
+        "modRateHz": 0.51,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -1.5,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -22,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Riser Halo",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 16,
+        "decaySec": 2.98,
+        "sizePct": 84,
+        "diffusionPct": 86,
+        "densityPct": 74,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 6.4,
+        "modRateHz": 0.59,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.4,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.88,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 5,
+        "thrDb": -21,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Drone Cloud",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 3.04,
+        "sizePct": 87,
+        "diffusionPct": 80,
+        "densityPct": 75,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 7.2,
+        "modRateHz": 0.67,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 2.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -0.9,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.91,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 6,
+        "thrDb": -20,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Detroit Platewash",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 24,
+        "decaySec": 3.1,
+        "sizePct": 75,
+        "diffusionPct": 81,
+        "densityPct": 76,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.26,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.0,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -24,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Trance GateVerb",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 28,
+        "decaySec": 3.16,
+        "sizePct": 78,
+        "diffusionPct": 82,
+        "densityPct": 77,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.8,
+        "modRateHz": 0.43,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -1.5,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.88,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 5,
+        "thrDb": -23,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Dub Chord Tail",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 3.22,
+        "sizePct": 81,
+        "diffusionPct": 83,
+        "densityPct": 78,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 5.6,
+        "modRateHz": 0.51,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 2.0,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.6,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.91,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 6,
+        "thrDb": -22,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Industrial Hangar",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 12,
+        "decaySec": 3.28,
+        "sizePct": 84,
+        "diffusionPct": 84,
+        "densityPct": 70,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 6.4,
+        "modRateHz": 0.59,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -0.9,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -21,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Laser Hall",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 16,
+        "decaySec": 3.34,
+        "sizePct": 87,
+        "diffusionPct": 85,
+        "densityPct": 71,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 7.2,
+        "modRateHz": 0.67,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.26,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.2,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.88,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 5,
+        "thrDb": -20,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Fast Return Hall",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 3.4,
+        "sizePct": 75,
+        "diffusionPct": 86,
+        "densityPct": 72,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 2.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -1.5,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.91,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 6,
+        "thrDb": -24,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Mono-to-Wide Hall",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 24,
+        "decaySec": 3.46,
+        "sizePct": 78,
+        "diffusionPct": 80,
+        "densityPct": 73,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.8,
+        "modRateHz": 0.43,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.8,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -23,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Body Snare Hall",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 28,
+        "decaySec": 3.52,
+        "sizePct": 81,
+        "diffusionPct": 81,
+        "densityPct": 74,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 5.6,
+        "modRateHz": 0.51,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -0.9,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.88,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 5,
+        "thrDb": -22,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Lo-Shelf Long",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 3.58,
+        "sizePct": 84,
+        "diffusionPct": 82,
+        "densityPct": 75,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 6.4,
+        "modRateHz": 0.59,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.26,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 2.0,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.4,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.91,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 6,
+        "thrDb": -21,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Hi-Shelf Long",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 12,
+        "decaySec": 3.64,
+        "sizePct": 87,
+        "diffusionPct": 83,
+        "densityPct": 76,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 7.2,
+        "modRateHz": 0.67,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -1.5,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -20,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Shimmer Tease",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 16,
+        "decaySec": 3.7,
+        "sizePct": 75,
+        "diffusionPct": 84,
+        "densityPct": 77,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.0,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.88,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 5,
+        "thrDb": -24,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Gated Hall Pulse",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 3.76,
+        "sizePct": 78,
+        "diffusionPct": 85,
+        "densityPct": 78,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.8,
+        "modRateHz": 0.43,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 2.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -0.9,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.91,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 6,
+        "thrDb": -23,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Side Alley",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 24,
+        "decaySec": 3.82,
+        "sizePct": 81,
+        "diffusionPct": 86,
+        "densityPct": 70,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 5.6,
+        "modRateHz": 0.51,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.26,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.6,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -22,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Backroom Hall",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 28,
+        "decaySec": 3.88,
+        "sizePct": 84,
+        "diffusionPct": 80,
+        "densityPct": 71,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 6.4,
+        "modRateHz": 0.59,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -1.5,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.88,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 5,
+        "thrDb": -21,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Metallic Diffuse",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 3.94,
+        "sizePct": 87,
+        "diffusionPct": 81,
+        "densityPct": 72,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 7.2,
+        "modRateHz": 0.67,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 2.0,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.2,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.91,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 6,
+        "thrDb": -20,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Glass Atrium",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 12,
+        "decaySec": 4.0,
+        "sizePct": 75,
+        "diffusionPct": 82,
+        "densityPct": 73,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -0.9,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -24,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Subway Vault",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 16,
+        "decaySec": 4.06,
+        "sizePct": 78,
+        "diffusionPct": 83,
+        "densityPct": 74,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.8,
+        "modRateHz": 0.43,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.26,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.8,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.88,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 5,
+        "thrDb": -23,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "LED Basilica",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 4.12,
+        "sizePct": 81,
+        "diffusionPct": 84,
+        "densityPct": 75,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 5.6,
+        "modRateHz": 0.51,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 2.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -1.5,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.91,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 6,
+        "thrDb": -22,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Fog Machine",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 24,
+        "decaySec": 4.18,
+        "sizePct": 84,
+        "diffusionPct": 85,
+        "densityPct": 76,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 6.4,
+        "modRateHz": 0.59,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.4,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -21,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Strobe Field",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 28,
+        "decaySec": 4.24,
+        "sizePct": 87,
+        "diffusionPct": 86,
+        "densityPct": 77,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 7.2,
+        "modRateHz": 0.67,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -0.9,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.88,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 5,
+        "thrDb": -20,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Sine Pad Halo",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 4.3,
+        "sizePct": 75,
+        "diffusionPct": 80,
+        "densityPct": 78,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.26,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 2.0,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -2.0,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.91,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 6,
+        "thrDb": -24,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "FM Keys Space",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 12,
+        "decaySec": 4.36,
+        "sizePct": 78,
+        "diffusionPct": 81,
+        "densityPct": 70,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 4.8,
+        "modRateHz": 0.43,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -1.5,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -23,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Acid Echo Hall",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 16,
+        "decaySec": 4.42,
+        "sizePct": 81,
+        "diffusionPct": 82,
+        "densityPct": 71,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 5.6,
+        "modRateHz": 0.51,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.6,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.88,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 5,
+        "thrDb": -22,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Rave Nostalgia",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 4.48,
+        "sizePct": 84,
+        "diffusionPct": 83,
+        "densityPct": 72,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 6.4,
+        "modRateHz": 0.59,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 2.0,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 350,
+            "gainDb": -0.9,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.91,
+            "q": 0.9
+          }
+        ]
+      },
+      "ducking": {
+        "on": true,
+        "mode": "DrumBus",
+        "depthDb": 6,
+        "thrDb": -21,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    },
+    {
+      "name": "Warehouse King",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 24,
+        "decaySec": 4.54,
+        "sizePct": 87,
+        "diffusionPct": 84,
+        "densityPct": 73,
+        "erLevelDb": -12,
+        "erTimeMs": 55,
+        "erWidthPct": 90,
+        "erToTailPct": 40,
+        "modDepthCents": 7.2,
+        "modRateHz": 0.67,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.26,
+        "bloomPct": 0,
+        "distancePct": 25,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9000,
+            "gainDb": 1.0,
+            "q": 0.7
+          },
+          {
+            "type": "LowShelf",
+            "freqHz": 180,
+            "gainDb": -1.2,
+            "q": 0.7
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltHi",
+            "freqHz": 3500,
+            "mult": 0.85,
+            "q": 0.9
+          },
+          {
+            "type": "Bell",
+            "freqHz": 220,
+            "mult": 1.15,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "DrumBus",
+        "depthDb": 4,
+        "thrDb": -20,
+        "ratio": 2.5,
+        "kneeDb": 2,
+        "atkMs": 6,
+        "relMs": 90,
+        "bandHz": 120,
+        "bandQ": 1.0,
+        "detector": "Dry"
+      },
+      "tags": [
+        "electronic",
+        "techno",
+        "hall"
+      ]
+    }
+  ]
+}

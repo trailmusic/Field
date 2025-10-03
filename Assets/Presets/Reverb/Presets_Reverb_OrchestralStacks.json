@@ -1,0 +1,3208 @@
+{
+  "bank": "Orchestral Depth Stacks",
+  "schema": "field.reverb.presets.v1",
+  "created": "2025-10-03T00:01:58.181962Z",
+  "count": 40,
+  "presets": [
+    {
+      "name": "Stage Front",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 8,
+        "decaySec": 1.6,
+        "sizePct": 55,
+        "diffusionPct": 75,
+        "densityPct": 70,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.18,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Stage Mid",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 14,
+        "decaySec": 1.64,
+        "sizePct": 55,
+        "diffusionPct": 78,
+        "densityPct": 74,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Stage Back",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 1.68,
+        "sizePct": 55,
+        "diffusionPct": 81,
+        "densityPct": 78,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Pit Low Strings",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 26,
+        "decaySec": 1.72,
+        "sizePct": 55,
+        "diffusionPct": 84,
+        "densityPct": 82,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Winds Close",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 1.76,
+        "sizePct": 55,
+        "diffusionPct": 87,
+        "densityPct": 86,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.18,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Winds Mid",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 8,
+        "decaySec": 1.8,
+        "sizePct": 55,
+        "diffusionPct": 75,
+        "densityPct": 90,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Winds Far",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 14,
+        "decaySec": 1.6,
+        "sizePct": 55,
+        "diffusionPct": 78,
+        "densityPct": 70,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Brass Close",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 1.64,
+        "sizePct": 55,
+        "diffusionPct": 81,
+        "densityPct": 74,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Brass Mid",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 26,
+        "decaySec": 1.68,
+        "sizePct": 55,
+        "diffusionPct": 84,
+        "densityPct": 78,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.18,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Brass Far",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 1.72,
+        "sizePct": 55,
+        "diffusionPct": 87,
+        "densityPct": 82,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Perc Close",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 8,
+        "decaySec": 1.76,
+        "sizePct": 55,
+        "diffusionPct": 75,
+        "densityPct": 86,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Perc Mid",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 14,
+        "decaySec": 1.8,
+        "sizePct": 55,
+        "diffusionPct": 78,
+        "densityPct": 90,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Perc Far",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 1.6,
+        "sizePct": 55,
+        "diffusionPct": 81,
+        "densityPct": 70,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.18,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Choir Loft",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 26,
+        "decaySec": 1.64,
+        "sizePct": 55,
+        "diffusionPct": 84,
+        "densityPct": 74,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Choir Mid Nave",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 1.68,
+        "sizePct": 55,
+        "diffusionPct": 87,
+        "densityPct": 78,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Choir Far Nave",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 8,
+        "decaySec": 1.72,
+        "sizePct": 55,
+        "diffusionPct": 75,
+        "densityPct": 82,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Chamber Small",
+      "model": "Chamber",
+      "params": {
+        "preDelayMs": 14,
+        "decaySec": 2.36,
+        "sizePct": 70,
+        "diffusionPct": 78,
+        "densityPct": 86,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.18,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Chamber Medium",
+      "model": "Chamber",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 2.4,
+        "sizePct": 70,
+        "diffusionPct": 81,
+        "densityPct": 90,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Chamber Large",
+      "model": "Chamber",
+      "params": {
+        "preDelayMs": 26,
+        "decaySec": 2.2,
+        "sizePct": 70,
+        "diffusionPct": 84,
+        "densityPct": 70,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Scoring Stage A",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 2.84,
+        "sizePct": 85,
+        "diffusionPct": 87,
+        "densityPct": 74,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Scoring Stage B",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 8,
+        "decaySec": 2.88,
+        "sizePct": 85,
+        "diffusionPct": 75,
+        "densityPct": 78,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.18,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Hall A",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 14,
+        "decaySec": 2.92,
+        "sizePct": 85,
+        "diffusionPct": 78,
+        "densityPct": 82,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Hall B",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 2.96,
+        "sizePct": 85,
+        "diffusionPct": 81,
+        "densityPct": 86,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Hall C",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 26,
+        "decaySec": 3.0,
+        "sizePct": 85,
+        "diffusionPct": 84,
+        "densityPct": 90,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Cathedral Short",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 2.8,
+        "sizePct": 85,
+        "diffusionPct": 87,
+        "densityPct": 70,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.18,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Cathedral Long",
+      "model": "Hall",
+      "params": {
+        "preDelayMs": 8,
+        "decaySec": 2.84,
+        "sizePct": 85,
+        "diffusionPct": 75,
+        "densityPct": 74,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Gallery Reflections",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 14,
+        "decaySec": 1.68,
+        "sizePct": 55,
+        "diffusionPct": 78,
+        "densityPct": 78,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Balcony Return",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 1.72,
+        "sizePct": 55,
+        "diffusionPct": 81,
+        "densityPct": 82,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Side Wall Early",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 26,
+        "decaySec": 1.76,
+        "sizePct": 55,
+        "diffusionPct": 84,
+        "densityPct": 86,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.18,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Back Wall Blend",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 1.8,
+        "sizePct": 55,
+        "diffusionPct": 87,
+        "densityPct": 90,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Strings Seat 1",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 8,
+        "decaySec": 1.6,
+        "sizePct": 55,
+        "diffusionPct": 75,
+        "densityPct": 70,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Strings Seat 2",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 14,
+        "decaySec": 1.64,
+        "sizePct": 55,
+        "diffusionPct": 78,
+        "densityPct": 74,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Winds Seat 1",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 1.68,
+        "sizePct": 55,
+        "diffusionPct": 81,
+        "densityPct": 78,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.18,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Brass Seat 1",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 26,
+        "decaySec": 1.72,
+        "sizePct": 55,
+        "diffusionPct": 84,
+        "densityPct": 82,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Perc Seat 1",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 1.76,
+        "sizePct": 55,
+        "diffusionPct": 87,
+        "densityPct": 86,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Solo Violin Halo",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 8,
+        "decaySec": 1.8,
+        "sizePct": 55,
+        "diffusionPct": 75,
+        "densityPct": 90,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Solo Cello Halo",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 14,
+        "decaySec": 1.6,
+        "sizePct": 55,
+        "diffusionPct": 78,
+        "densityPct": 70,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.18,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Piano Lid Up",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 20,
+        "decaySec": 1.64,
+        "sizePct": 55,
+        "diffusionPct": 81,
+        "densityPct": 74,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.2,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Piano Lid Half",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 26,
+        "decaySec": 1.68,
+        "sizePct": 55,
+        "diffusionPct": 84,
+        "densityPct": 78,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.22,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    },
+    {
+      "name": "Grand Choir Glory",
+      "model": "Room",
+      "params": {
+        "preDelayMs": 32,
+        "decaySec": 1.72,
+        "sizePct": 55,
+        "diffusionPct": 87,
+        "densityPct": 82,
+        "erLevelDb": -14,
+        "erTimeMs": 60,
+        "erWidthPct": 80,
+        "erToTailPct": 45,
+        "modDepthCents": 3.0,
+        "modRateHz": 0.35,
+        "widthPct": 100,
+        "rotationDeg": 0,
+        "wetMix01": 0.24,
+        "bloomPct": 0,
+        "distancePct": 30,
+        "freeze": false,
+        "shimmerAmtPct": 0,
+        "shimmerInt": 0,
+        "gateAmtPct": 0,
+        "outTrimDb": 0.0
+      },
+      "toneEQ": {
+        "apply": "Post",
+        "bands": [
+          {
+            "type": "HighShelf",
+            "freqHz": 9500,
+            "gainDb": 1.5,
+            "q": 0.7
+          },
+          {
+            "type": "Peak",
+            "freqHz": 500,
+            "gainDb": -1.2,
+            "q": 1.2
+          }
+        ]
+      },
+      "decayRateEQ": {
+        "apply": "Tail",
+        "bands": [
+          {
+            "type": "TiltLo",
+            "freqHz": 300,
+            "mult": 1.08,
+            "q": 0.9
+          },
+          {
+            "type": "TiltHi",
+            "freqHz": 4000,
+            "mult": 0.92,
+            "q": 1.0
+          }
+        ]
+      },
+      "ducking": {
+        "on": false,
+        "mode": "General",
+        "depthDb": 3.0,
+        "thrDb": -26,
+        "ratio": 2.2,
+        "kneeDb": 2,
+        "atkMs": 12,
+        "relMs": 250,
+        "bandHz": 0,
+        "bandQ": 0.7,
+        "detector": "Dry"
+      },
+      "tags": [
+        "orchestral",
+        "scoring",
+        "depth",
+        "stack"
+      ]
+    }
+  ]
+}
