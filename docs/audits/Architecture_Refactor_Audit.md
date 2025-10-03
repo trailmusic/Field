@@ -24,6 +24,7 @@ Last updated: 2025-10-03 • Branch: `feature`
 - [Phase 1 Locked — Minimal Stubs Installed (for Work Order #3)](#phase-1-locked--minimal-stubs-installed-for-work-order-3)
 - [WO-3 Update — Optional Mixing Stages in FieldChain (default-off)](#wo-3-update--optional-mixing-stages-in-fieldchain-default-off)
 - [WO-4 — Config-driven placeholders + prepare-time param gate](#wo-4--config-driven-placeholders--prepare-time-param-gate)
+- [WO-5 — Latency Accumulator + Probe + Tests](#wo-5--latency-accumulator--probe--tests)
 
 ---
 
@@ -589,3 +590,24 @@ cfg.enableReverb= SafeParamGate::getBool(*this, "chain.reverb.enable", false);
   - Flip `rebuildGate_.request()` when relevant params change → `cfg.needsRebuild = rebuildGate_.consume()` at prepare
   - Push config to both chains; call `buildFromConfig()` then `prepare` for float/double
   - Apply latency via `latency.applyIfChanged(*this)` on message thread; never in `processBlock`
+
+---
+
+## WO-5 — Latency Accumulator + Probe + Tests
+- Node latency contract added:
+  - `modules/FieldNodes/NodeLatency.h`: `LatencyParts` and `NodeLatencyMixin<Derived>` with setters for OS/FIR/look-ahead/extra; `latencySamples()` sums parts (default 0)
+  - Placeholders updated to inherit the mixin: Reverb/Delay/DynEq/Phase/Imager
+- FieldChain updates:
+  - `recomputeLatency()` sums node latencies; `buildFromConfig()` calls it
+  - Reported latency remains 0 until engines set non-zero parts at prepare
+- Processor (dev-only): add a `LatencyProbe` check after `prepareToPlay()`; assert/DBG that measured latency equals `chain.latencySamples()`
+- Offline tests refreshed to assert null-unity and probe==reported
+
+Example engine hook later (prepare-time):
+```cpp
+if (active_.reverb) {
+  reverb_.setLinearPhaseFIRGroupDelay(firHalfLenSamples);
+  reverb_.setOversamplingGroupDelay(osGroupDelaySamples);
+}
+recomputeLatency();
+```
