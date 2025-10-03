@@ -27,6 +27,7 @@ Last updated: 2025-10-03 • Branch: `feature`
 - [WO-5 — Latency Accumulator + Probe + Tests](#wo-5--latency-accumulator--probe--tests)
 - [WO-6 — Processor Glue: Safe Param Reads, Rebuild Fence, Latency & Tail](#wo-6--processor-glue--safe-param-reads--rebuild-fence--latency--tail)
 - [WO-7 — Click-Free Live Chain Swap (Same-Latency Only)](#wo-7--click-free-live-chain-swap-same-latency-only)
+- [WO-8 — Mid-Block Swap + Warmup (same-latency only)](#wo-8--mid-block-swap--warmup-same-latency-only)
 
 ---
 
@@ -644,3 +645,18 @@ Index additions:
 - `core/signal/CrossfadeRamp.h`
 - `modules/FieldDualChain.h`
 - `tests/offline/test_dualchain_xfade.cpp`
+
+---
+
+## WO-8 — Mid-Block Swap + Warmup (same-latency only)
+- Added `core/signal/Warmup.h` to settle staging nodes before a live swap (silent blocks)
+- Enhanced `modules/FieldDualChain.h`:
+  - `armLiveSwapAtSameLatency(offsetSamples, warmupBlocks)` to start the ramp mid-block and optionally pre-warm
+  - Maintains zero-alloc on audio thread; reuses scratch
+  - If latency differs, returns false and you defer to prepare-time rebuild
+- Offline test: `tests/offline/test_dualchain_midblock.cpp`
+
+Index additions:
+- `core/signal/Warmup.h`
+- `modules/FieldDualChain.h` (updated APIs)
+- `tests/offline/test_dualchain_midblock.cpp`
