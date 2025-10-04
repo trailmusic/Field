@@ -301,4 +301,11 @@ endif()
 
 # ================================================================
 # 🎛️ END QUALITY SYSTEM BUILD PREREQUISITES
-# ================================================================ 
+# ================================================================
+
+# --- CI Tripwires: forbid legacy includes (features/reverb/DSP, shared/dsp) ---
+add_custom_target(ci_tripwire_legacy_includes ALL
+    COMMAND ${CMAKE_COMMAND} -E env LC_ALL=C LANG=C
+      bash -c "(! grep -R --line-number '#include\\s*\"features/reverb/DSP/' Source || (echo '❌ Legacy features/reverb/DSP include found' && false)) && \
+               (! grep -R --line-number '#include\\s*\"shared/dsp/' Source || (echo '❌ shared/dsp include found' && false))"
+) 
