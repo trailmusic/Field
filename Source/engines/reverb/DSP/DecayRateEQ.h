@@ -76,7 +76,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "shared/ui/Engines/SpectrumAnalyzer.h"
-#include "ReverbEQParamIDs.h"
+#include "core/params/ParamIDs.h"
 #include "shared/Core/FieldLookAndFeel.h"
 #include "shared/ui/Controls/ZoomState.h"
 
