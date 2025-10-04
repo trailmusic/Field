@@ -918,3 +918,27 @@ Index additions:
 
 - `tests/offline/TestUtils_APVTS.h`
 - `tests/offline/test_processor_latency_tail_smoke.cpp`
+
+---
+
+# WO-20 — ParamChangeBus ⇄ Processor Glue Test (no audio)
+
+## What you get
+
+- Headless test that proves ParamChangeBus raises the right gates:
+  - Topology flips → rebuild gate only.
+  - Latency-only flips → latency/tail apply at prepare; no live rebuild.
+  - Voicing flips (optional) → isolated voicing flag.
+
+## Changes
+
+- `tests/offline/test_param_bus_processor_glue.cpp`: toggles APVTS params, asserts topology vs latency separation and no mid-play PDC.
+- `tests/offline/CMakeLists.txt`: adds glue test target and links against `field_processor` and JUCE.
+
+## Verification
+
+- Build succeeds; test requires no UI/audio devices.
+
+### Index additions (WO-20)
+
+- `tests/offline/test_param_bus_processor_glue.cpp`
