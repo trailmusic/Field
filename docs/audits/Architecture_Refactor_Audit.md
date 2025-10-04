@@ -66,125 +66,9 @@ Last updated: 2025-10-04 • Branch: `feature`
 - [WO-43 — Include-scope hygiene (ODR guard)](#wo-43--include-scope-hygiene-odr-guard)
 - [WO-44 — FDN invariants & first-bad-sample capture (dev-only)](#wo-44--fdn-invariants--first-bad-sample-capture-dev-only)
  - [WO-45 — Motion/Machine engine split + MotionCore extraction + rename](#wo-45--motionmachine-engine-split--motioncore-extraction--rename)
- - [WO-47 — UI “Engines” fence + CI tripwire](#wo-47--ui-engines-fence--ci-tripwire)
+ - [WO-46 — Reverb legacy purge (finish WO-40/41)](#wo-46--reverb-legacy-purge-finish-wo-4041)
+- [WO-47 — UI “Engines” fence + CI tripwire](#wo-47--ui-engines-fence--ci-tripwire)
  - [WO-49 — Ableton Insert Safe hardening](#wo-49--ableton-insert-safe-hardening)
-
----
-
-# WO-43 — Include-scope hygiene (ODR guard)
-
-## Objective
-
-Prevent ODR drift by ensuring code under `engines/**` cannot include headers from `features/` or `shared/` and fail the build if it happens.
-
-## Changes
-
-- CMake include scope:
-  - Confirmed `field_engines` only exposes `Source/engines` (no `features` or `shared`).
-- CI/Build tripwire:
-  - Extended `ci_tripwire_legacy_includes` to fail if any TU under `Source/engines/**` includes a path containing `/features/` or `/shared/`.
-
-## Verification
-
-- Full green build (Standalone, AU, VST3) with tripwire active.
-- Manual grep shows no engine file includes `features/` or `shared/`.
-
----
-
-# WO-44 — FDN invariants & first-bad-sample capture (dev-only)
-
-## Objective
-
-Add zero-cost-in-release invariants to `ReverbFDN` to catch wrap/feedback anomalies immediately during development and log a minimal context.
-
-## Changes
-
-- `Source/engines/reverb/DSP/ReverbFDN.h`:
-  - Added debug-only checks (compiled out in Release):
-    - read/write indices remain in-range `[0, logicalLen)`;
-    - canonical `wrappedRead(...)` usage verified;
-    - hooks to assert if invariants are violated (DBG + jassert).
-  - Scaffold for one-shot first-bad-sample capture (expandable):
-    - At anomaly detection, can log indices and context for rapid triage.
-
-## Verification
-
-- Builds green in all formats; debug builds will assert on violation; release is unaffected.
-
----
-
-
-# WO-45 — Motion/Machine engine split + MotionCore extraction + rename
-
-## Objective
-
-Move all DSP for Machine/Motion under `engines/**`, keep `features/**` visual-only, and correct naming to reflect responsibilities.
-
-## Changes
-
-- Created canonical engine homes:
-  - `Source/engines/machine/`
-  - `Source/engines/motion/`
-- Machine (engine-side):
-  - Moved `features/machine/MachineEngine.{h,cpp}` → `engines/machine/`
-  - Moved `features/machine/MachineHelpersJUCE.h` → `engines/machine/`
-  - Updated includes and `Source/CMakeLists.txt` to reference `engines/machine/*`
-- Motion (split visual vs DSP):
-  - Extracted DSP-only core as `engines/motion/MotionCore.h` (EnvelopeFollower, BiquadFilter, SmoothedValue, FractionalDelay, PannerState)
-  - Moved `features/motion/MotionParams.h` and `features/motion/MotionPath.h` → `engines/motion/`
-  - Kept feature-layer wrapper in `features/motion/`, renamed `MotionEngine` → `MotionController` and refactored it to use `motion::core` types
-  - Updated references: `processor/PluginProcessor.h` now includes `features/motion/MotionController.h` and uses `motion::MotionController`
-  - Removed stray legacy header `features/motion/MotionEngine.h`
-- CMake: switched `SRC` entries to new engine paths and `MotionController.h`
-
-## Verification
-
-- Full green build (Standalone, AU, VST3). No functional/tone change intended.
-- Grep confirms no engine file includes any `features/` path.
-
----
-
-# WO-47 — UI “Engines” fence + CI tripwire
-
-## Objective
-
-Guarantee that UI/feature code cannot compile against engine-only scope and engines never include `features/` or `shared/`.
-
-## Changes
-
-- Added `Source/engines/EngineScope.h` (marker include for real engines).
-- Extended `ci_tripwire_legacy_includes` in `Source/CMakeLists.txt` to:
-  - Fail if any TU under `Source/engines/**` includes a path containing `/features/` or `/shared/`.
-  - Fail if any file under `Source/features/**` includes `engines/EngineScope.h`.
-- Included `engines/EngineScope.h` in engine headers where appropriate (e.g., `engines/reverb/DSP/ReverbFDN.h`).
-
-## Verification
-
-- Tripwire active; builds green across Standalone/AU/VST3.
-
----
-
-# WO-49 — Ableton Insert Safe hardening
-
-## Objective
-
-Make first-callback insert safe in hosts that may call `processBlock` with engines not fully prepared (no tone change).
-
-## Changes
-
-- `processor/PluginProcessor.h`:
-  - Added `std::atomic<bool> prepared_{false};` to gate audio callback readiness.
-- `modules/FieldChain.h`:
-  - Added prepared-awareness: set `prepared_ = true` at end of `prepare()` and `false` in `reset()`; exposed `isPrepared()`.
-- `modules/FieldDualChain.h`:
-  - Early-clear guard: if `activeChain().isPrepared()` is false, clear the block and return (prevents deref before prepare finishes).
-
-## Verification
-
-- Full green build; insert on Live/hosts should not crash even if callbacks occur during initialization.
-
----
-
 
 
 ---
@@ -1634,3 +1518,149 @@ Add zero-cost-in-release invariants to `ReverbFDN` to catch wrap/feedback anomal
 
 ## Purpose
 Protect the UI while restructuring `Source/` to separate UI, processor glue, DSP engines, and cross-cutting core (signal, runtime, telemetry). Provide a clean lane for future signal + latency work.
+
+---
+
+# WO-43 — Include-scope hygiene (ODR guard)
+
+## Objective
+
+Prevent ODR drift by ensuring code under `engines/**` cannot include headers from `features/` or `shared/` and fail the build if it happens.
+
+## Changes
+
+- CMake include scope:
+  - Confirmed `field_engines` only exposes `Source/engines` (no `features` or `shared`).
+- CI/Build tripwire:
+  - Extended `ci_tripwire_legacy_includes` to fail if any TU under `Source/engines/**` includes a path containing `/features/` or `/shared/`.
+
+## Verification
+
+- Full green build (Standalone, AU, VST3) with tripwire active.
+- Manual grep shows no engine file includes `features/` or `shared/`.
+
+---
+
+# WO-44 — FDN invariants & first-bad-sample capture (dev-only)
+
+## Objective
+
+Add zero-cost-in-release invariants to `ReverbFDN` to catch wrap/feedback anomalies immediately during development and log a minimal context.
+
+## Changes
+
+- `Source/engines/reverb/DSP/ReverbFDN.h`:
+  - Added debug-only checks (compiled out in Release):
+    - read/write indices remain in-range `[0, logicalLen)`;
+    - canonical `wrappedRead(...)` usage verified;
+    - hooks to assert if invariants are violated (DBG + jassert).
+  - Scaffold for one-shot first-bad-sample capture (expandable):
+    - At anomaly detection, can log indices and context for rapid triage.
+
+## Verification
+
+- Builds green in all formats; debug builds will assert on violation; release is unaffected.
+
+---
+
+
+# WO-45 — Motion/Machine engine split + MotionCore extraction + rename
+
+## Objective
+
+Move all DSP for Machine/Motion under `engines/**`, keep `features/**` visual-only, and correct naming to reflect responsibilities.
+
+## Changes
+
+- Created canonical engine homes:
+  - `Source/engines/machine/`
+  - `Source/engines/motion/`
+- Machine (engine-side):
+  - Moved `features/machine/MachineEngine.{h,cpp}` → `engines/machine/`
+  - Moved `features/machine/MachineHelpersJUCE.h` → `engines/machine/`
+  - Updated includes and `Source/CMakeLists.txt` to reference `engines/machine/*`
+- Motion (split visual vs DSP):
+  - Extracted DSP-only core as `engines/motion/MotionCore.h` (EnvelopeFollower, BiquadFilter, SmoothedValue, FractionalDelay, PannerState)
+  - Moved `features/motion/MotionParams.h` and `features/motion/MotionPath.h` → `engines/motion/`
+  - Kept feature-layer wrapper in `features/motion/`, renamed `MotionEngine` → `MotionController` and refactored it to use `motion::core` types
+  - Updated references: `processor/PluginProcessor.h` now includes `features/motion/MotionController.h` and uses `motion::MotionController`
+  - Removed stray legacy header `features/motion/MotionEngine.h`
+- CMake: switched `SRC` entries to new engine paths and `MotionController.h`
+
+## Verification
+
+- Full green build (Standalone, AU, VST3). No functional/tone change intended.
+- Grep confirms no engine file includes any `features/` path.
+
+---
+
+# WO-46 — Reverb legacy purge (finish WO-40/41)
+
+## Objective
+
+Eliminate active code under `features/reverb/{DSP,Core}` so reverb DSP has a single source of truth under `engines/reverb/**`. Leave only poison headers in legacy locations to prevent accidental use.
+
+## Changes
+
+- Poison legacy headers under `features/reverb/DSP/`:
+  - `ReverbFDN.h` → replaced with `#error` pointing to `engines/reverb/DSP/ReverbFDN.h`.
+  - `ReverbParamIDs.h` and `ReverbEQParamIDs.h` → replaced with `#error` pointing to `core/params/ParamIDs.h`.
+  - `ReverbProcessorGlue.h` → replaced with `#error` instructing to use engine/module path (legacy glue removed).
+- Core/UI includes updated to reference engines IDs and headers:
+  - UI files (`ReverbGraphics.*`, `ReverbVisuals.*`, `DuckingFloat.*`, `DecayRateFloat.*`, `Presets/ReverbParamMap.*`) now include `core/params/ParamIDs.h` and `engines/reverb/DSP/*`.
+  - `features/reverb/Core/ReverbEngine.*` includes `engines/reverb/DSP/ReverbFDN.h`.
+- CMake:
+  - Removed legacy `features/reverb/DSP/*` sources from `SRC`.
+  - Ensured `engines/reverb/**` are the only reverb DSP sources compiled.
+- CI tripwires:
+  - Extended `ci_tripwire_legacy_includes` to fail on any `#include "features/reverb/DSP/…"`.
+  - (Planned) Content scan for `features/reverb/DSP/**` to ensure poison headers (lines start with `#error`).
+
+## Verification
+
+- Full green build across Standalone/AU/VST3 after include updates.
+- Grep shows no remaining includes of `features/reverb/DSP/*`.
+- Tripwires pass; legacy headers are poison-only.
+
+---
+
+# WO-47 — UI “Engines” fence + CI tripwire
+
+## Objective
+
+Guarantee that UI/feature code cannot compile against engine-only scope and engines never include `features/` or `shared/`.
+
+## Changes
+
+- Added `Source/engines/EngineScope.h` (marker include for real engines).
+- Extended `ci_tripwire_legacy_includes` in `Source/CMakeLists.txt` to:
+  - Fail if any TU under `Source/engines/**` includes a path containing `/features/` or `/shared/`.
+  - Fail if any file under `Source/features/**` includes `engines/EngineScope.h`.
+- Included `engines/EngineScope.h` in engine headers where appropriate (e.g., `engines/reverb/DSP/ReverbFDN.h`).
+
+## Verification
+
+- Tripwire active; builds green across Standalone/AU/VST3.
+
+---
+
+# WO-49 — Ableton Insert Safe hardening
+
+## Objective
+
+Make first-callback insert safe in hosts that may call `processBlock` with engines not fully prepared (no tone change).
+
+## Changes
+
+- `processor/PluginProcessor.h`:
+  - Added `std::atomic<bool> prepared_{false};` to gate audio callback readiness.
+- `modules/FieldChain.h`:
+  - Added prepared-awareness: set `prepared_ = true` at end of `prepare()` and `false` in `reset()`; exposed `isPrepared()`.
+- `modules/FieldDualChain.h`:
+  - Early-clear guard: if `activeChain().isPrepared()` is false, clear the block and return (prevents deref before prepare finishes).
+
+## Verification
+
+- Full green build; insert on Live/hosts should not crash even if callbacks occur during initialization.
+
+---
