@@ -1,5 +1,5 @@
 #include "PhaseAlignmentEngine.h"
-#include "../Core/PluginProcessor.h"
+#include "processor/PluginProcessor.h"
 
 // =============================================================================
 // PhaseAlignmentEngine Implementation

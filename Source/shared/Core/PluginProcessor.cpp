@@ -1406,9 +1406,9 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
         applyQualityFromParams();
     
     // Ducking parameter changes - refresh latency reporting
-    if (parameterID.getParamID() == juce::String{"duckOn"} || 
-        parameterID.getParamID() == juce::String{"duckMode"} ||
-        parameterID.getParamID() == juce::String{"duckDetectorSrc"})
+    if (parameterID == juce::String{"duckOn"} || 
+        parameterID == juce::String{"duckMode"} ||
+        parameterID == juce::String{"duckDetectorSrc"})
         refreshReportedLatency();
     
     // Bypass parameter changes - set passthrough directly and refresh latency
@@ -1508,7 +1508,7 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
         }
     }
     // Auto-enable/disable Reverb based on WET amount
-    if (parameterID.getParamID() == juce::String{"wetMix01"} && !reverbAutoGuard.load())
+    if (parameterID == juce::String{"wetMix01"} && !reverbAutoGuard.load())
     {
         const float wet = newValue;
         if (auto* p = apvts.getParameter ("reverb_enabled"))

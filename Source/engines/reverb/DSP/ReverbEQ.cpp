@@ -36,7 +36,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
             auto& bp = points[(size_t) selected];
             bp.db = jlimit (kMinGainDb, kMaxGainDb, g);
             if (bp.bandIdx >= 0)
-                setBandParam (bp.bandIdx, ReverbParams::ToneEqBand::gainDb, bp.db);
+                setBandParam (bp.bandIdx, "tb_gainDb", bp.db);
             rebuildEqPath(); repaint();
         }
     };
@@ -48,7 +48,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
             auto& bp = points[(size_t) selected];
             bp.q = jlimit (kMinQ, kMaxQ, qVal);
             if (bp.bandIdx >= 0)
-                setBandParam (bp.bandIdx, ReverbParams::ToneEqBand::q, bp.q);
+                setBandParam (bp.bandIdx, "tb_q", bp.q);
             rebuildEqPath(); repaint();
         }
     };
@@ -60,7 +60,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
             auto& bp = points[(size_t) selected];
             bp.hz = jlimit (kMinHz, kMaxHz, f);
             if (bp.bandIdx >= 0)
-                setBandParam (bp.bandIdx, ReverbParams::ToneEqBand::freqHz, bp.hz);
+                setBandParam (bp.bandIdx, "tb_freqHz", bp.hz);
             rebuildEqPath(); repaint();
         }
     };
@@ -72,7 +72,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
             auto& bp = points[(size_t) selected];
             bp.type = jlimit (0, 2, t);
             if (bp.bandIdx >= 0)
-                setBandParam (bp.bandIdx, ReverbParams::ToneEqBand::type, (float) bp.type);
+                setBandParam (bp.bandIdx, "tb_type", (float) bp.type);
             rebuildEqPath(); repaint(); positionBadgeFor (selected);
         }
     };
@@ -710,7 +710,7 @@ int ReverbToneEQ::allocateBandSlot()
 {
     for (int i = 0; i < kMaxBands; ++i)
     {
-        const auto id = bandId (ReverbEQParams::ToneBand::active, i);
+        const auto id = bandId ("tb_active", i);
         if (auto* v = proc.apvts.getRawParameterValue (id))
             if (v->load() < 0.5f)
                 return i;

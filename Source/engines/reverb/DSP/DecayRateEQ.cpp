@@ -556,10 +556,10 @@ void DecayRateEQ::mouseDown (const MouseEvent& e)
     if (slot >= 0)
     {
         bp.bandIdx = slot;
-        setBandParam (slot, ReverbEQParams::DecayBand::active,   1.0f);
-        setBandParam (slot, ReverbEQParams::DecayBand::freqHz,   bp.hz);
-        setBandParam (slot, ReverbEQParams::DecayBand::decayMult,bp.mult);
-        setBandParam (slot, ReverbEQParams::DecayBand::q,        bp.q);
+        setBandParam (slot, "db_active",    1.0f);
+        setBandParam (slot, "db_freqHz",    bp.hz);
+        setBandParam (slot, "db_decayMult", bp.mult);
+        setBandParam (slot, "db_q",         bp.q);
     }
 
     points.push_back (bp);
@@ -585,8 +585,8 @@ void DecayRateEQ::mouseDrag (const MouseEvent& e)
 
     if (pt.bandIdx >= 0)
     {
-        setBandParam (pt.bandIdx, ReverbEQParams::DecayBand::freqHz,    pt.hz);
-        setBandParam (pt.bandIdx, ReverbEQParams::DecayBand::decayMult, pt.mult);
+        setBandParam (pt.bandIdx, "db_freqHz",    pt.hz);
+        setBandParam (pt.bandIdx, "db_decayMult", pt.mult);
     }
 
     rebuildEqPath();
@@ -613,7 +613,7 @@ void DecayRateEQ::mouseWheelMove (const MouseEvent& e, const MouseWheelDetails& 
     // Wheel adjusts Q multiplicatively (feels natural for wide range)
     pt.q = jlimit (0.1f, 36.0f, pt.q * (1.0f + delta));
     if (pt.bandIdx >= 0)
-        setBandParam (pt.bandIdx, ReverbEQParams::DecayBand::q, pt.q);
+        setBandParam (pt.bandIdx, "db_q", pt.q);
 
     rebuildEqPath();
     overlay.setValues (pt.mult, pt.q, pt.hz, pt.type);
@@ -630,7 +630,7 @@ void DecayRateEQ::mouseDoubleClick (const MouseEvent& e)
 
     const int bandIdx = points[(size_t) idx].bandIdx;
     if (bandIdx >= 0)
-        setBandParam (bandIdx, ReverbEQParams::DecayBand::active, 0.0f);
+        setBandParam (bandIdx, "db_active", 0.0f);
 
     points.erase (points.begin() + idx);
     if (selected == idx)      selected = -1;
@@ -758,7 +758,7 @@ int DecayRateEQ::allocateBandSlot()
 {
     for (int i = 0; i < kMaxBands; ++i)
     {
-        auto id = bandId (ReverbEQParams::DecayBand::active, i);
+        auto id = bandId ("db_active", i);
         if (auto* v = proc.apvts.getRawParameterValue (id))
             if (v->load() < 0.5f)
                 return i;
