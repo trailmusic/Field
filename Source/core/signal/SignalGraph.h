@@ -51,7 +51,7 @@ struct SignalGraph
 
 	void process (juce::dsp::AudioBlock<float> block) noexcept
 	{
-		sanitizeAudioBlock (block);
+                ::sanitizeAudioBlock (block);
 		insertFadeF.apply (block);
 		const bool osOn = (useOversampling.load() && !forceOSOff.load());
 		if (osOn)
@@ -65,12 +65,12 @@ struct SignalGraph
 								<< " frame=" << engineFrame
 								<< " chans=" << (int) block.getNumChannels()
 								<< " OS=" << (osOn ? "ON" : "OFF"));
-		sanitizeAudioBlock (block);
+                ::sanitizeAudioBlock (block);
 	}
 
 	void process (juce::dsp::AudioBlock<double> block) noexcept
 	{
-		sanitizeAudioBlock (block);
+                ::sanitizeAudioBlock (block);
 		insertFadeD.apply (block);
 		const bool osOn = (useOversampling.load() && !forceOSOff.load());
 		if (osOn)
@@ -84,7 +84,7 @@ struct SignalGraph
 								<< " frame=" << engineFrame
 								<< " chans=" << (int) block.getNumChannels()
 								<< " OS=" << (osOn ? "ON" : "OFF"));
-		sanitizeAudioBlock (block);
+                ::sanitizeAudioBlock (block);
 	}
 
 	int getPreparedBlockSize() const noexcept { return preparedMax; }
