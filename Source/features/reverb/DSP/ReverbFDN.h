@@ -32,6 +32,7 @@
 #include "engines/reverb/DSP/DecayLossDesigner.h"
 #include "core/util/DenormGuard.h"
 #include "core/signal/Sanitize.h"
+#include <algorithm>
 
 namespace fieldverb
 {
@@ -44,6 +45,25 @@ struct FdnRuntime {
 class FDNCore
 {
 public:
+    // Normalize feedback operator (L1 row-norm bound)
+    template <typename T>
+    static inline void normalizeMatrixL1 (T** A, int M, double safety = 0.98) noexcept
+    {
+        double maxRowSum = 0.0;
+        for (int r=0; r<M; ++r)
+        {
+            double s = 0.0;
+            for (int c=0; c<M; ++c) s += std::abs((double)A[r][c]);
+            if (s > maxRowSum) maxRowSum = s;
+        }
+        if (maxRowSum > 0.0 && maxRowSum > safety)
+        {
+            const double scale = safety / maxRowSum;
+            for (int r=0; r<M; ++r)
+                for (int c=0; c<M; ++c)
+                    A[r][c] = (T)((double)A[r][c] * scale);
+        }
+    }
     // Member variables (needed for prepare method)
     std::vector<double> lineDelaySec; // Round-trip delays in seconds
         void prepare (double sr, int maxBlock, int channels, int lines = 8)
@@ -74,6 +94,9 @@ public:
 
             // default decay
             setBaseT60 (1.8f);
+
+            // If a feedback matrix is added later, normalize here (placeholder for integration)
+            // normalizeMatrixL1(A_, M_, 0.98);
 
             tmp.setSize (numCh, blockSize);
             // prepare feedback smoother (unity target to avoid tone change)
@@ -202,6 +225,9 @@ public:
 
         // Optional final sanitize for development safety
         // sanitize (juce::dsp::AudioBlock<float> (tailOut));
+        // Post-wet hygiene: DC block and optional safety soft-clip (default off)
+        juce::dsp::AudioBlock<float> wetBlock (tailOut);
+        postWetBus (wetBlock);
     }
 
 private:
@@ -275,5 +301,31 @@ private:
         inline float tick() noexcept        { z_ = target_ + alpha_ * (z_ - target_); return (float) z_; }
         double sr_ = 48000.0, alpha_ = 0.0, target_ = 0.95, z_ = 0.95;
     } feedback_;
+
+    // --- WO-30: DC guard + optional safety soft-clip (default OFF) ----------
+    struct DcBlock { float x1=0.f, y1=0.f; void reset() noexcept { x1=y1=0.f; }
+        inline float tick(float x) noexcept { constexpr float R=0.995f; const float y=(x - x1) + R*y1; x1=x; y1=y; return y; } };
+    std::array<DcBlock, 2> dcOut_{};
+    bool enableSafetySoftClip_ = false;
+    static inline float softSat (float x) noexcept { const float a = 0.5f; return std::tanh(a*x)/a; }
+
+    template <typename Sample>
+    void postWetBus (juce::dsp::AudioBlock<Sample>& block) noexcept
+    {
+        const size_t C = block.getNumChannels();
+        const size_t N = block.getNumSamples();
+        for (size_t ch=0; ch<C && ch<2; ++ch)
+        {
+            auto* p = block.getChannelPointer(ch);
+            for (size_t i=0; i<N; ++i)
+            {
+                float y = (float)p[i];
+                if (!std::isfinite((double)y) || std::abs(y) < 1e-30f) y = 0.f;
+                y = dcOut_[(size_t)ch].tick(y);
+                if (enableSafetySoftClip_) y = softSat(y);
+                p[i] = (Sample) y;
+            }
+        }
+    }
 };
 } // namespace fieldverb

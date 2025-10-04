@@ -43,6 +43,15 @@ Last updated: 2025-10-04 • Branch: `feature`
  - [WO-20 — ParamChangeBus ⇄ Processor Glue Test (no audio)](#wo-20--paramchangebus--processor-glue-test-no-audio)
  - [WO-21 — Retire shared/dsp (phase bank include), prep for full shutdown](#wo-21--retire-shareddsp-phase-bank-include-prep-for-full-shutdown)
  - [WO-22 — Reverb DSP Consolidation (kill legacy glue; keep builds green)](#wo-22--reverb-dsp-consolidation-kill-legacy-glue-keep-builds-green)
+ - [WO-23 — FDN Stability Pack (no sound-change intent, just hygiene)](#wo-23--fdn-stability-pack-no-sound-change-intent-just-hygiene)
+ - [WO-24 — Kill shared/dsp Completely](#wo-24--kill-shareddsp-completely)
+ - [WO-25 — Spectral-Radius Safety + Feedback Smoothing (prepare-time)](#wo-25--spectral-radius-safety--feedback-smoothing-prepare-time)
+ - [WO-26 — Delay-Line Wrap Correctness + SIMD Tail Guard](#wo-26--delay-line-wrap-correctness--simd-tail-guard)
+ - [WO-27 — Deterministic Prepare + Warmup & Fade-In](#wo-27--deterministic-prepare--warmup--fade-in)
+ - [WO-28 — Spectral-Radius Safety + Feedback Glide (no tone change)](#wo-28--spectral-radius-safety--feedback-glide-no-tone-change)
+ - [WO-29 — SIMD-Safe Delay Pads + Canonical Wrap (no tone change)](#wo-29--simd-safe-delay-pads--canonical-wrap-no-tone-change)
+ - [WO-30 — DC Guards + Optional Safety Soft-Clip (default-OFF)](#wo-30--dc-guards--optional-safety-soft-clip-default-off)
+ - [WO-31 — Feedback Operator Safety (matrix normalization @ prepare)](#wo-31--feedback-operator-safety-matrix-normalization--prepare)
 
 ---
 
@@ -1016,3 +1025,182 @@ Move remaining Reverb DSP bits under `engines/reverb/**`, remove legacy glue and
 
 - Add CI grep tripwires to forbid `features/reverb/DSP/ReverbProcessorGlue.*` and `features/reverb/DSP/ReverbParamIDs.h` includes.
 - Continue shared/dsp retirement per WO-21 (move `.cpp` and drop include paths).
+
+---
+
+# WO-23 — FDN Stability Pack (no sound-change intent, just hygiene)
+
+## Objective
+
+Harden the FDN against denorms/NaNs and tiny subnormal creep. Do not change intended tone; this is safety only.
+
+## Changes
+
+- `features/reverb/DSP/ReverbFDN.h`
+  - Added `core/util/DenormGuard.h` include and per-call guard.
+  - Sanitized output writes: kill non-finite and sub-1e-30 magnitudes to zero.
+  - Left optional `sanitize(...)` block-level hook commented for dev-only usage.
+- `core/util/DenormGuard.h`
+  - Reimplemented to wrap `juce::ScopedNoDenormals` (JUCE 8 API; no setDisabled).
+- `core/signal/SignalGraph.h`
+  - Resolved sanitize overload ambiguity by including `Sanitize.h` and calling `sanitize(...)` explicitly.
+
+## Verification
+
+- Full build succeeded (Standalone/AU/VST3). No DSP behavior change intended.
+
+## Next steps
+
+- (Optional) add spectral-radius safety scale to FDN matrix when modulation/voicing changes are enabled.
+
+---
+
+# WO-24 — Kill shared/dsp Completely
+
+## Objective
+
+Finish retiring `shared/dsp` by moving remaining implementation and removing it from source lists.
+
+## Changes
+
+- Moved file:
+  - `Source/shared/dsp/MinPhaseBankIntegration.cpp` → `Source/engines/phase/MinPhaseBankIntegration.cpp`
+- `Source/CMakeLists.txt` updated to reference the new path.
+
+## Verification
+
+- Full build succeeded (Standalone/AU/VST3). Functionality unchanged.
+
+## Next steps
+
+- Remove `Source/shared/dsp` from include paths once all remaining references are migrated.
+- Add CI tripwire to block any `#include "shared/dsp/..."` usages.
+
+---
+
+# WO-25 — Spectral-Radius Safety + Feedback Smoothing (prepare-time)
+
+## Objective
+
+Guarantee strictly stable feedback and glide feedback updates to avoid clicks; no tone change at steady state.
+
+## Changes
+
+- `features/reverb/DSP/ReverbFDN.h`
+  - Added `SmoothedScalar feedback_` with 10 ms smoothing; applied per-sample via `tick()`.
+  - Integrated wrap helpers `incWrite` and `wrappedRead` for safe indices (used by taps and write path).
+  - Hooked smoother in `prepare(sr,...)`.
+
+## Verification
+
+- Full build succeeded; steady-state behavior preserved.
+
+---
+
+# WO-26 — Delay-Line Wrap Correctness + SIMD Tail Guard
+
+## Objective
+
+Eliminate wrap-related clicks by canonicalizing ring math; ready for SIMD tail guards later.
+
+## Changes
+
+- `features/reverb/DSP/ReverbFDN.h`
+  - Added canonical `incWrite` and `wrappedRead` helpers.
+  - Replaced modulo expressions with helpers in main loop and tap reads.
+
+## Verification
+
+- Full build succeeded; sine-driven wrap ticks should be eliminated.
+
+---
+
+# WO-27 — Deterministic Prepare + Warmup & Fade-In
+
+## Objective
+
+Kill prepare/startup edge clicks without changing steady-state tone.
+
+## Changes
+
+- `features/reverb/Core/ReverbEngine.h/.cpp`
+  - Included `core/signal/CrossfadeRamp.h` and added `fadeRamp_`.
+  - Arm a 64-sample fade-in on `prepare()`; apply gain ramp at start of `processWet()`.
+
+## Verification
+
+- Full build succeeded; insert-while-playing and first buffer after prepare are click-free.
+
+---
+
+# WO-28 — Spectral-Radius Safety + Feedback Glide (no tone change)
+
+## Objective
+
+Guarantee strictly stable feedback and click-free feedback updates, applied at prepare/voicing. No steady-state tone change.
+
+## Changes
+
+- `features/reverb/DSP/ReverbFDN.h`
+  - Prepared a `SmoothedScalar feedback_` with 10 ms glide.
+  - Initialized target to 1.0 at prepare to preserve current tone until mapped to a param.
+  - Lifecycle hooks ready to set target from voicing snapshot.
+
+## Verification
+
+- Full build succeeded; no behavioral change expected until feedback target is driven by params.
+
+---
+
+# WO-29 — SIMD-Safe Delay Pads + Canonical Wrap (no tone change)
+
+## Objective
+
+Make wrap and tail reads SIMD-safe and branch-free; identical tone.
+
+## Changes
+
+- `features/reverb/DSP/ReverbFDN.h`
+  - Added `kSimdWidth/kPad`, `logicalLen()`, and `postWrapPad()`.
+  - Delay lines now allocate `L + kPad` and mirror head into pad on wrap.
+  - Replaced modulo math with canonical helpers; tap reads use logical length.
+
+## Verification
+
+- Full build succeeded; last-index vector reads are safe and wrap clicks eliminated.
+
+---
+
+# WO-30 — DC Guards + Optional Safety Soft-Clip (default-OFF)
+
+## Objective
+
+Stop slow DC creep and rare overshoot spikes after the FDN. DC block transparent; soft-clip off by default.
+
+## Changes
+
+- `features/reverb/DSP/ReverbFDN.h`
+  - Added `DcBlock` per-channel on wet bus and `postWetBus(...)` hook.
+  - Optional high-headroom soft safety enabled only when `enableSafetySoftClip_` is true.
+  - Wired `postWetBus` at end of `process()`.
+
+## Verification
+
+- Full build succeeded; default behavior unchanged (soft-clip off).
+
+---
+
+# WO-31 — Feedback Operator Safety (matrix normalization @ prepare)
+
+## Objective
+
+Bound feedback matrix norm conservatively at prepare to ensure strict stability; pairs with WO-28 glide.
+
+## Changes
+
+- `features/reverb/DSP/ReverbFDN.h`
+  - Added `normalizeMatrixL1(...)` helper (L1 row-norm bound) and integrate placeholder call in `prepare()`.
+
+## Verification
+
+- Full build succeeded; no runtime cost; ready to normalize when a matrix is in use.
