@@ -5,6 +5,8 @@
 #include "engines/reverb/Presets/ReverbParameters.h"
 #include "core/params/ParamIDs.h"
 #include "features/dynEq/DynamicEqParamIDs.h"
+#include "core/params/Snapshot.h"
+#include "core/runtime/OSPhaseResolver.h"
 
 // ================================================================
 // 🎛️ QUALITY SYSTEM SSE2 SUPPORT (JANUARY 2025)
@@ -1611,7 +1613,7 @@ void MyPluginAudioProcessor::onTPSafeChanged(bool enabled)
 
 void MyPluginAudioProcessor::resetManualOverrides()
 {
-    scheduleDspRebuildIfNeeded({});
+    scheduleDspRebuildIfNeeded();
 }
 
 void MyPluginAudioProcessor::scheduleDspRebuildIfNeeded()
@@ -1671,29 +1673,19 @@ void MyPluginAudioProcessor::rebuildDspForConfig(juce::AudioBuffer<Sample>& buff
     // with assertions, latency discipline, and crossfade handling.
     // ================================================================
     
-    // 1) Get active OS factor (SR-aware + realtime/offline)
+    // 1) Get active OS factor (SR-aware + realtime/offline) via Snapshot + Resolver
     const bool isOffline = isNonRealtime();
-    const int factor = cfg.getActiveOSFactor(isOffline);
+    const auto snap = field::params::buildSnapshot(*this);
+    const int qualityTier = 1; // TODO: wire real quality param if exposed
+    const int factor = field::runtime::effectiveOSFactor(getSampleRate(), qualityTier, snap.osFactor, isOffline);
+    const int phaseMode = field::runtime::effectivePhase(qualityTier, false, 0);
     
     // Assertions for power-of-two factors and latency bounds
     jassert(juce::isPowerOfTwo(factor) || factor == 1);
     jassert(factor >= 1 && factor <= 16);
     
-    // 2) Get filter type based on user selection
-    // JUCE provides different filter types for oversampling
-    auto filterType = juce::dsp::Oversampling<Sample>::filterHalfBandPolyphaseIIR; // Default to IIR
-    
-    if (cfg.osFilterType == 0) // Linear Phase
-    {
-        // Use polyphase FIR filters for linear phase (no pre-ringing, higher latency)
-        // JUCE's polyphase filters are closer to linear phase than standard IIR
-        filterType = juce::dsp::Oversampling<Sample>::filterHalfBandPolyphaseIIR;
-    }
-    else // Minimum Phase (cfg.osFilterType == 1)
-    {
-        // Use standard IIR filters for minimum phase (lower latency, some pre-ringing)
-        filterType = juce::dsp::Oversampling<Sample>::filterHalfBandPolyphaseIIR;
-    }
+    // 2) Get filter type (use default polyphase IIR for now)
+    auto filterType = juce::dsp::Oversampling<Sample>::filterHalfBandPolyphaseIIR;
     
     // Calculate latency
     int latencySamples = 0;
@@ -1712,8 +1704,8 @@ void MyPluginAudioProcessor::rebuildDspForConfig(juce::AudioBuffer<Sample>& buff
                 filterType, true, true);
             osF->reset();
         }
-        phaseBanksF.prepare(getSampleRate() * factor, getBlockSize() * factor, buffer.getNumChannels(), cfg.phase);
-        latencySamples = (cfg.os ? osLatencySamples(factor) : 0) + phaseBanksF.latencyFor(cfg.phase);
+        phaseBanksF.prepare(getSampleRate() * factor, getBlockSize() * factor, buffer.getNumChannels(), phaseMode);
+        latencySamples = (factor > 1 ? osLatencySamples(factor) : 0) + phaseBanksF.latencyFor(phaseMode);
     }
     else
     {
@@ -1729,21 +1721,16 @@ void MyPluginAudioProcessor::rebuildDspForConfig(juce::AudioBuffer<Sample>& buff
                 filterType, true, true);
             osD->reset();
         }
-        phaseBanksD.prepare(getSampleRate() * factor, getBlockSize() * factor, buffer.getNumChannels(), cfg.phase);
-        latencySamples = (cfg.os ? osLatencySamples(factor) : 0) + phaseBanksD.latencyFor(cfg.phase);
+        phaseBanksD.prepare(getSampleRate() * factor, getBlockSize() * factor, buffer.getNumChannels(), phaseMode);
+        latencySamples = (factor > 1 ? osLatencySamples(factor) : 0) + phaseBanksD.latencyFor(phaseMode);
     }
     
     // 2) Latency discipline - assert bounds and report to host
     jassert(latencySamples >= 0 && latencySamples < 32768);
     setLatencySamples(latencySamples);
     
-    // 3) Create updated config with latency and commit
-    DspRuntimeConfig updatedCfg = cfg;
-    updatedCfg.latencySamples = latencySamples;
-    // WO-38: rtCfg removed; no-op
-    
     // 4) Apply True-Peak protection if enabled
-    if (cfg.tpSafe)
+    if (getParam(apvts, IDs::tpSafe) > 0.5f)
     {
         applyTruePeakProtection(buffer, true);
     }
