@@ -2,6 +2,7 @@
 // Moved from features/reverb/DSP/ReverbFDN.h
 // Single source of truth lives here.
 
+#include "engines/EngineScope.h"
 #include <JuceHeader.h>
 #include <atomic>
 #include <memory>

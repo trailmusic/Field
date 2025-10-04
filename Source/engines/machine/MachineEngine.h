@@ -1,4 +1,5 @@
 #pragma once
+#include "engines/EngineScope.h"
 #include <JuceHeader.h>
 #include "shared/Core/PluginProcessor.h"
 

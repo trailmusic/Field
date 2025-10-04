@@ -154,12 +154,12 @@ set(SRC
     features/machine/ParamPatch.h
     features/machine/ProposalCard.h
     features/machine/ProposalCard.cpp
-    features/machine/MachineEngine.h
-    features/machine/MachineEngine.cpp
+    engines/machine/MachineEngine.h
+    engines/machine/MachineEngine.cpp
     features/machine/MachineTab.h
     features/machine/MachineTab.cpp
     
-    features/motion/MotionEngine.h
+    engines/motion/MotionEngine.h
     features/motion/MotionGraphics.h
     features/motion/MotionGraphics.cpp
     features/motion/MotionParams.h

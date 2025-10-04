@@ -1,6 +1,6 @@
 #pragma once
 #include <JuceHeader.h>
-#include "features/machine/MachineEngine.h"
+#include "engines/machine/MachineEngine.h"
 #include "features/machine/ProposalCard.h"
 #include "shared/Core/FieldLookAndFeel.h"
 #include "shared/Core/FieldMetallic.h"
