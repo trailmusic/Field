@@ -103,11 +103,11 @@ set(SRC
     # features/reverb/DSP/ReverbParamIDs.h (removed; use core/params/ParamIDs.h)
     engines/reverb/Presets/ReverbParameters.h
     engines/reverb/Presets/ReverbParameters.cpp
-    features/reverb/DSP/ReverbEQ.h
-    features/reverb/DSP/ReverbEQ.cpp
+    engines/reverb/DSP/ReverbEQ.h
+    engines/reverb/DSP/ReverbEQ.cpp
     # features/reverb/DSP/ReverbEQParamIDs.h (removed; use core/params/ParamIDs.h)
-    features/reverb/DSP/DecayRateEQ.h
-    features/reverb/DSP/DecayRateEQ.cpp
+    engines/reverb/DSP/DecayRateEQ.h
+    engines/reverb/DSP/DecayRateEQ.cpp
     engines/reverb/DSP/DecayLossDesigner.h
     features/reverb/DSP/ReverbFDN.h
     # features/reverb/DSP/ReverbProcessorGlue.* removed; replaced by modules APIs
