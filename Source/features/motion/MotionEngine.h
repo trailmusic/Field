@@ -1,9 +1,9 @@
 
 #pragma once
-#include "engines/EngineScope.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "engines/motion/MotionParams.h"
 #include "engines/motion/MotionPath.h"
+#include "engines/motion/MotionCore.h"
 #include "features/motion/MotionVisual.h"
 namespace motion {
 
@@ -17,7 +17,7 @@ struct HostInfo {
 };
 
 // Envelope follower for input/sidechain processing
-class EnvelopeFollower {
+using core::EnvelopeFollower;
 public:
     void set(float atkMs, float relMs, double sr) {
         aAtk = std::exp(-1.0f / (0.001f * atkMs * sr));
@@ -45,7 +45,7 @@ private:
 };
 
 // Simple biquad filter for elevation and front bias processing
-class BiquadFilter {
+using core::BiquadFilter;
 public:
     void setHighShelf(double sr, float freq, float gainDb, float Q = 0.707f) {
         float w = 2.0f * juce::MathConstants<float>::pi * freq / (float)sr;
@@ -119,7 +119,7 @@ private:
 
 // Smoothed parameter for control rate changes
 template<typename T>
-class SmoothedValue {
+using core::SmoothedValue;
 public:
     void setTarget(T target) { targetValue = target; }
     void setCurrentAndTargetValue(T value) { currentValue = targetValue = value; }
@@ -133,7 +133,7 @@ public:
 private:
     T currentValue = 0, targetValue = 0, smoothingCoeff = 0.1f;
 };
-class FractionalDelay {
+using core::FractionalDelay;
 public:
     void prepare (double sr, int maxMs = 20) {
         sampleRate = sr; int maxSamps = int(sr * maxMs / 1000.0) + 8;
@@ -164,7 +164,7 @@ public:
 private:
     juce::AudioBuffer<float> buffer; double sampleRate=48000.0; int writePos=0;
 };
-struct PannerState { double sr=48000.0; PathGen path; float phase=0.0f; };
+using core::PannerState;
 
 class MotionEngine {
 private:
