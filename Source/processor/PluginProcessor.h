@@ -231,7 +231,11 @@ namespace IDs {
 // Delay UI bridge
 #include "features/delay/DelayUiBridge.h"
 #include "shared/Core/FloatShim.h"
+#if !defined(FIELD_POISON_DSP_RUNTIME_CONFIG)
 #include "shared/Core/DspRuntimeConfig.h"
+#else
+struct DspRuntimeConfig; // poisoned: forward-declare only
+#endif
 #include "shared/Core/PhaseBanks.h"
 // ==================================
 // Visualization Bus (lock-free SPSC)
@@ -1198,9 +1202,14 @@ public:
     std::array<ClockSnapshot, 256> clockRing;
     std::atomic<ClockSnapshot*> lastClockForUI { nullptr };
 
+#if defined(FIELD_POISON_DSP_RUNTIME_CONFIG)
+    std::atomic<DspRuntimeConfig> rtCfg;
+    std::atomic<bool> needsDspRebuild { false };
+#else
     std::atomic<DspRuntimeConfig> rtCfg;
     std::atomic<bool> needsDspRebuild { false };
     DspRuntimeConfig pendingCfg;
+#endif
     
     std::unique_ptr<juce::dsp::Oversampling<float>>  osF;
     std::unique_ptr<juce::dsp::Oversampling<double>> osD;
