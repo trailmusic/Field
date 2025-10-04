@@ -95,6 +95,7 @@ struct FieldChain
 		reverb_.template prepare<Sample> (sr_, maxBlock_, chans_);
 		phase_.template  prepare<Sample> (sr_, maxBlock_, chans_);
 		imager_.template prepare<Sample> (sr_, maxBlock_, chans_);
+		prepared_ = true;
 	}
 
 	template <typename Sample>
@@ -115,7 +116,10 @@ struct FieldChain
 		meter_.reset();  ms_.reset();  gain_.reset();
 		delay_.reset();  dyneq_.reset(); reverb_.reset();
 		phase_.reset();  imager_.reset();
+		prepared_ = false;
 	}
+
+	bool isPrepared() const noexcept { return prepared_; }
 
 	int latencySamples() const noexcept { return latencySum_; }
 
@@ -143,5 +147,6 @@ private:
 	} active_{};
 
 	int latencySum_ = 0;
+	bool prepared_ = false;
 };
 }} // namespace field::modules

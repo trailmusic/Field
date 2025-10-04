@@ -1139,6 +1139,7 @@ private:
     std::unique_ptr<FieldChain<double>> chainD;
     std::unique_ptr<SignalGraph> graphF, graphD;
     int preparedMax_ { 0 };
+    std::atomic<bool> prepared_{ false };
     bool isDoublePrecEnabled { false };
     std::atomic<int> precisionMode { 0 };
     std::atomic<int> qualityMode   { 1 };

@@ -61,6 +61,8 @@ struct DualChain
         const size_t chans  = io.getNumChannels();
         const size_t frames = io.getNumSamples();
 
+        if (!activeChain().isPrepared()) { io.clear(); return; }
+
 		if (!ramp_.active() && !wantSwap_.load(std::memory_order_acquire))
 		{
 			activeChain().process<Sample>(io);
