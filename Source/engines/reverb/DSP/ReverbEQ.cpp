@@ -36,7 +36,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
             auto& bp = points[(size_t) selected];
             bp.db = jlimit (kMinGainDb, kMaxGainDb, g);
             if (bp.bandIdx >= 0)
-                setBandParam (bp.bandIdx, ReverbEQParams::ToneBand::gainDb, bp.db);
+                setBandParam (bp.bandIdx, ReverbParams::ToneEqBand::gainDb, bp.db);
             rebuildEqPath(); repaint();
         }
     };
@@ -48,7 +48,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
             auto& bp = points[(size_t) selected];
             bp.q = jlimit (kMinQ, kMaxQ, qVal);
             if (bp.bandIdx >= 0)
-                setBandParam (bp.bandIdx, ReverbEQParams::ToneBand::q, bp.q);
+                setBandParam (bp.bandIdx, ReverbParams::ToneEqBand::q, bp.q);
             rebuildEqPath(); repaint();
         }
     };
@@ -60,7 +60,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
             auto& bp = points[(size_t) selected];
             bp.hz = jlimit (kMinHz, kMaxHz, f);
             if (bp.bandIdx >= 0)
-                setBandParam (bp.bandIdx, ReverbEQParams::ToneBand::freqHz, bp.hz);
+                setBandParam (bp.bandIdx, ReverbParams::ToneEqBand::freqHz, bp.hz);
             rebuildEqPath(); repaint();
         }
     };
@@ -72,7 +72,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
             auto& bp = points[(size_t) selected];
             bp.type = jlimit (0, 2, t);
             if (bp.bandIdx >= 0)
-                setBandParam (bp.bandIdx, ReverbEQParams::ToneBand::type, (float) bp.type);
+                setBandParam (bp.bandIdx, ReverbParams::ToneEqBand::type, (float) bp.type);
             rebuildEqPath(); repaint(); positionBadgeFor (selected);
         }
     };
@@ -84,7 +84,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
         {
             const int bandIdx = points[(size_t) selected].bandIdx;
             if (bandIdx >= 0)
-                setBandParam (bandIdx, ReverbEQParams::ToneBand::active, 0.0f);
+                setBandParam (bandIdx, ReverbParams::ToneEqBand::active, 0.0f);
 
             points.erase (points.begin() + selected);
             selected = -1;
@@ -100,7 +100,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
         {
             const int bandIdx = points[(size_t) selected].bandIdx;
             if (bandIdx >= 0)
-                setBandParam (bandIdx, ReverbEQParams::ToneBand::active, off ? 0.0f : 1.0f);
+                setBandParam (bandIdx, ReverbParams::ToneEqBand::active, off ? 0.0f : 1.0f);
         }
     };
 
@@ -112,7 +112,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
             auto& bp = points[(size_t) idx];
             bp.type = jlimit (0, 2, tp);
             if (bp.bandIdx >= 0)
-                setBandParam (bp.bandIdx, ReverbEQParams::ToneBand::type, (float) bp.type);
+                setBandParam (bp.bandIdx, ReverbParams::ToneEqBand::type, (float) bp.type);
             rebuildEqPath(); repaint(); positionBadgeFor (idx);
         }
     };

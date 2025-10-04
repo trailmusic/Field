@@ -75,7 +75,7 @@ DecayRateFloat::~DecayRateFloat()
 
 void DecayRateFloat::setupComponents()
 {
-    using namespace ReverbParamIDs;
+    using namespace field::params;
 
     // ===== Sliders =====
     addAndMakeVisible(loMultSlider);
@@ -210,37 +210,37 @@ void DecayRateFloat::setupComponents()
 
     // ===== APVTS Attachments =====
     loMultAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvtsRef, decayLoMult, loMultSlider);
+        apvtsRef, "decayLoMult", loMultSlider);
     hiMultAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvtsRef, decayHiMult, hiMultSlider);
+        apvtsRef, "decayHiMult", hiMultSlider);
     midDbAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvtsRef, decayMidDb, midDbSlider);
+        apvtsRef, "decayMidDb", midDbSlider);
     midFreqAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvtsRef, decayMidFreqHz, midFreqSlider);
+        apvtsRef, "decayMidFreqHz", midFreqSlider);
     midQAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvtsRef, decayMidQ, midQSlider);
+        apvtsRef, "decayMidQ", midQSlider);
     tiltDbAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvtsRef, decayTiltDb, tiltDbSlider);
+        apvtsRef, "decayTiltDb", tiltDbSlider);
     smoothingAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvtsRef, decaySmoothing, smoothingSlider);
+        apvtsRef, "decaySmoothing", smoothingSlider);
     modeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvtsRef, decayMode, modeSlider);
+        apvtsRef, "decayMode", modeSlider);
     
     // Decay profile selector attachments
     profileModeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
-        apvtsRef, decayProfileMode, profileModeCombo);
+        apvtsRef, "decay_profile_mode", profileModeCombo);
     profileCouplingAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(
-        apvtsRef, decayProfileCoupling, profileCouplingCombo);
+        apvtsRef, "decay_profile_coupling", profileCouplingCombo);
     
     // Sidechain Learn attachments
     learnAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
-        apvtsRef, decayLearn, learnButton);
+        apvtsRef, "decay_learn", learnButton);
     resetAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
-        apvtsRef, decayLearnReset, resetButton);
+        apvtsRef, "decay_learn_reset", resetButton);
     strengthAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvtsRef, decayLearnStrength, strengthSlider);
+        apvtsRef, "decay_learn_strength", strengthSlider);
     windowAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
-        apvtsRef, decayLearnWindow, windowSlider);
+        apvtsRef, "decay_learn_window_s", windowSlider);
 }
 
 void DecayRateFloat::resized()

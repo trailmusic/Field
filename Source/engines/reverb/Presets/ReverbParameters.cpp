@@ -3,11 +3,11 @@
 // ----------------------------------------------------------------------------
 
 #include "ReverbParameters.h"
-#include "ReverbParamIDs.h"
+#include "core/params/ParamIDs.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 
 using namespace juce;
-using namespace ReverbParamIDs;
+using namespace field::params;
 
 namespace
 {
