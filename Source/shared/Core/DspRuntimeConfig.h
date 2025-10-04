@@ -1,5 +1,10 @@
 #pragma once
 #include <algorithm>
+
+#if defined(FIELD_POISON_DSP_RUNTIME_CONFIG)
+#error "DspRuntimeConfig has been removed. Use core/params/Snapshot.h + core/runtime/OSPhaseResolver.h."
+#endif
+
 #warning "DspRuntimeConfig is deprecated. Use core/params/Snapshot.h + core/runtime/OSPhaseResolver.h. Scheduled removal in WO-38."
 // Minimal shim to keep legacy includes compiling. Do NOT read on audio thread.
 struct DspRuntimeConfig {
