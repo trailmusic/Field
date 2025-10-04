@@ -7,7 +7,7 @@
 #include "engines/phase/PhaseModes.h"
 #include "engines/phase/PhaseAlignmentEngine.h"
 #include "engines/phase/MinPhaseBankIntegration.h"
-#include "engines/motion/MotionEngine.h"
+#include "features/motion/MotionEngine.h"
 #include "core/params/ParamIDs.h"
 #include "features/reverb/Core/ReverbEngine.h"
 #include "core/signal/SignalGraph.h"
