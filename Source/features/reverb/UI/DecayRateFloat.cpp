@@ -1,6 +1,6 @@
 #include "DecayRateFloat.h"
-#include "../DSP/ReverbParamIDs.h"
-#include "../DSP/ReverbParameters.h"
+#include "core/params/ParamIDs.h"
+#include "engines/reverb/Presets/ReverbParameters.h"
 #include "shared/Core/FieldLookAndFeel.h"
 #include "shared/ui/Utilities/ComponentGreyout.h"
 

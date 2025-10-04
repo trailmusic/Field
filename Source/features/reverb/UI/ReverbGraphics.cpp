@@ -37,7 +37,7 @@
 #include "ReverbGraphics.h"
 #include "shared/Core/FieldLookAndFeel.h"
 #include "shared/Core/PluginProcessor.h"
-#include "../DSP/ReverbParamIDs.h"
+#include "core/params/ParamIDs.h"
 #include "shared/ui/Utilities/SafetySentinels.h"
 
 // ─────────────────────────────────────────────────────────────────────────────

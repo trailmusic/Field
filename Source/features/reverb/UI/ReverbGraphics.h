@@ -15,8 +15,8 @@
 #include <JuceHeader.h>
 #include "DuckingFloat.h"
 #include "DecayRateFloat.h"
-#include "../DSP/ReverbEQ.h"
-#include "../DSP/DecayRateEQ.h"
+#include "engines/reverb/DSP/ReverbEQ.h"
+#include "engines/reverb/DSP/DecayRateEQ.h"
 #include "../BandIdFinder.h"
 #include "../BandCounter.h"
 #include "ReverbVisuals.h"

@@ -1,5 +1,5 @@
 #include "ReverbParamMap.h"
-#include "../DSP/ReverbParamIDs.h"
+#include "core/params/ParamIDs.h"
 
 ReverbParamMap::ReverbParamMap()
 {
