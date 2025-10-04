@@ -190,7 +190,7 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     // WO-38: Snapshot + resolver (no DspRuntimeConfig mutation)
     // Keep behavior: schedule rebuild when SR changes
     {
-        scheduleDspRebuildIfNeeded({});
+        scheduleDspRebuildIfNeeded();
     }
     
     // Phase Alignment Engine preparation (use max block size)
@@ -569,8 +569,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // Check for DSP rebuild needed
     if (needsDspRebuild.exchange(false, std::memory_order_acq_rel))
     {
-        DspRuntimeConfig cfg{}; // placeholder value type to satisfy template
-        rebuildDspForConfig<float>(cfg, buffer);
+        rebuildDspForConfig<float>(buffer);
     }
 
     // (Bypass state updated in parameterChanged)
@@ -1016,8 +1015,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     // Check for DSP rebuild needed (WO-38: no DspRuntimeConfig)
     if (needsDspRebuild.exchange(false, std::memory_order_acq_rel))
     {
-        DspRuntimeConfig cfg{}; // placeholder value type to satisfy template
-        rebuildDspForConfig<double>(cfg, buffer);
+        rebuildDspForConfig<double>(buffer);
     }
 
     // (Bypass state updated in parameterChanged)
@@ -1440,7 +1438,7 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
     else if (parameterID == IDs::forceOffline)
     {
         // Force offline mode changed - trigger DSP rebuild (WO-38)
-        scheduleDspRebuildIfNeeded({});
+        scheduleDspRebuildIfNeeded();
     }
     // Phase alignment handled by PhaseAlignmentEngine
     
@@ -1572,43 +1570,43 @@ void MyPluginAudioProcessor::onQualityChanged(int quality)
     
     // WO-38: Replace legacy cfg flow with a simple rebuild request; prepare() will resolve via Snapshot
     juce::ignoreUnused (quality);
-    scheduleDspRebuildIfNeeded({});
+    scheduleDspRebuildIfNeeded();
 }
 
 void MyPluginAudioProcessor::onOSChanged(int os)
 {
     juce::ignoreUnused (os);
-    scheduleDspRebuildIfNeeded({});
+    scheduleDspRebuildIfNeeded();
 }
 
 void MyPluginAudioProcessor::onPhaseChanged(int phase)
 {
     juce::ignoreUnused (phase);
-    scheduleDspRebuildIfNeeded({});
+    scheduleDspRebuildIfNeeded();
 }
 
 void MyPluginAudioProcessor::onOSRealtimeChanged(int os)
 {
     juce::ignoreUnused (os);
-    scheduleDspRebuildIfNeeded({});
+    scheduleDspRebuildIfNeeded();
 }
 
 void MyPluginAudioProcessor::onOSOfflineChanged(int os)
 {
     juce::ignoreUnused (os);
-    scheduleDspRebuildIfNeeded({});
+    scheduleDspRebuildIfNeeded();
 }
 
 void MyPluginAudioProcessor::onOSFilterTypeChanged(int type)
 {
     juce::ignoreUnused (type);
-    scheduleDspRebuildIfNeeded({});
+    scheduleDspRebuildIfNeeded();
 }
 
 void MyPluginAudioProcessor::onTPSafeChanged(bool enabled)
 {
     juce::ignoreUnused (enabled);
-    scheduleDspRebuildIfNeeded({});
+    scheduleDspRebuildIfNeeded();
 }
 
 void MyPluginAudioProcessor::resetManualOverrides()
@@ -1616,7 +1614,7 @@ void MyPluginAudioProcessor::resetManualOverrides()
     scheduleDspRebuildIfNeeded({});
 }
 
-void MyPluginAudioProcessor::scheduleDspRebuildIfNeeded(const DspRuntimeConfig&)
+void MyPluginAudioProcessor::scheduleDspRebuildIfNeeded()
 {
     needsDspRebuild.store(true, std::memory_order_release);
 }
@@ -1664,7 +1662,7 @@ void MyPluginAudioProcessor::releaseResources()
 // ================================================================
 
 template <typename Sample>
-void MyPluginAudioProcessor::rebuildDspForConfig(const DspRuntimeConfig& cfg, juce::AudioBuffer<Sample>& buffer)
+void MyPluginAudioProcessor::rebuildDspForConfig(juce::AudioBuffer<Sample>& buffer)
 {
     // ================================================================
     // 🎛️ ENGINE REBUILD PROTOCOL (HOT-SWAP) - PHASE 1

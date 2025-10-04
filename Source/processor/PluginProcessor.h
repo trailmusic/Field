@@ -1123,10 +1123,10 @@ private:
     void onTPSafeChanged(bool enabled);
     
     void resetManualOverrides();
-    void scheduleDspRebuildIfNeeded(const DspRuntimeConfig& cfg);
+    void scheduleDspRebuildIfNeeded();
     
     template <typename Sample>
-    void rebuildDspForConfig(const DspRuntimeConfig& cfg, juce::AudioBuffer<Sample>& buffer);
+    void rebuildDspForConfig(juce::AudioBuffer<Sample>& buffer);
     inline int osLatencySamples(int factor);
     void startTopologyCrossfadeMs(float ms);
     
