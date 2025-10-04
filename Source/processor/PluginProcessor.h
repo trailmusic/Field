@@ -231,11 +231,6 @@ namespace IDs {
 // Delay UI bridge
 #include "features/delay/DelayUiBridge.h"
 #include "shared/Core/FloatShim.h"
-#if !defined(FIELD_POISON_DSP_RUNTIME_CONFIG)
-#include "shared/Core/DspRuntimeConfig.h"
-#else
-struct DspRuntimeConfig; // poisoned: forward-declare only
-#endif
 #include "shared/Core/PhaseBanks.h"
 // ==================================
 // Visualization Bus (lock-free SPSC)
@@ -1202,13 +1197,7 @@ public:
     std::array<ClockSnapshot, 256> clockRing;
     std::atomic<ClockSnapshot*> lastClockForUI { nullptr };
 
-#if defined(FIELD_POISON_DSP_RUNTIME_CONFIG)
     std::atomic<bool> needsDspRebuild { false };
-#else
-    std::atomic<DspRuntimeConfig> rtCfg;
-    std::atomic<bool> needsDspRebuild { false };
-    DspRuntimeConfig pendingCfg;
-#endif
     
     std::unique_ptr<juce::dsp::Oversampling<float>>  osF;
     std::unique_ptr<juce::dsp::Oversampling<double>> osD;
@@ -1239,17 +1228,9 @@ private:
         return std::max(0.0, (samplePos - latencySamples) / std::max(1.0, sr));
     }
     
-    inline int getCurrentLatencySamples() const {
-#if defined(FIELD_POISON_DSP_RUNTIME_CONFIG)
-        return 0;
-#else
-        auto cfg = rtCfg.load(std::memory_order_acquire);
-        return cfg.latencySamples;
-#endif
-    }
+    inline int getCurrentLatencySamples() const { return latency.getApplied(); }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)
 };
 
-// removed legacy include of DspRuntimeConfig; forward declare to keep members compiling
-struct DspRuntimeConfig;
+// DspRuntimeConfig fully removed; no forward declarations remain
