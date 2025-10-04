@@ -1,6 +1,6 @@
 # Field Architecture Refactor Audit (Phase 1)
 
-Last updated: 2025-10-03 • Branch: `feature`
+Last updated: 2025-10-04 • Branch: `feature`
 
 ## Contents
 - [Purpose](#purpose)
@@ -761,3 +761,45 @@ Index additions:
 Index additions:
 - `core/runtime/LiveSwapPlanner.h`
 - `tests/offline/test_dualchain_voicing_swap.cpp`
+
+## 2025-10-04 — Maintenance Update: DualChain assignment removal + full build
+
+- Issue: Build failed in `modules/FieldDualChain.h` when assigning `FieldChain` (contains non-assignable `std::atomic<float>` members via `mixing::Node_Meter`).
+- Fix: Refactored `DualChain` to avoid object assignment.
+  - Replaced `active_`/`staging_` members with `FieldChain chains_[2]` and `int activeIndex_`.
+  - Promotion now flips the active index (`activeIndex_ ^= 1`) instead of assigning.
+  - Updated `buildStaging()`, `latencySamples()`, accessors (`activeChain()`, `stagingChain()`), `process<Sample>()`, and `promoteStagingHard()` to use index-based access.
+- Result: `build_all.sh` completed successfully; Standalone, AU, and VST3 built and installed. Remaining output contains warnings only (e.g., missing `override` on `KnobCell::mouseDoubleClick`, deprecated JUCE font/playhead APIs).
+
+---
+
+# WO-15 — Editor Timer Hook + Live-Swap HUD (dev-only)
+
+## What you get
+
+- Message-thread poll calls `LiveSwapPlanner` (WO-14) from the editor timer (~20 Hz).
+- Tiny HUD overlay shows:
+  - `LIVE SWAP: ARMED` when same-latency voicing change is armed
+  - `LIVE SWAP: DEFERRED (latency mismatch)` when rebuild will defer to prepare
+  - Auto-clears after ~1–1.6 seconds
+- No DSP changes; off in release builds (`#if JUCE_DEBUG`).
+
+## Changes
+
+- `core/telemetry/LiveSwapHUD.h` (already present): TTL-based, atomic HUD state.
+- `processor/PluginProcessor.*`:
+  - Implemented `messageThreadTickForLiveSwap(double sr, int maxBlock)`; consumes voicing flag via `ParamChangeBus`, queries `LiveSwapPlanner::armIfSameLatency(...)`, sets HUD state, ticks TTL (~50 ms).
+- `shared/Core/PluginEditor.cpp`:
+  - `timerCallback()` calls `proc.messageThreadTickForLiveSwap()` and repaints only the HUD rect when visible.
+  - `paintOverChildren()` draws a small bottom-left overlay with the HUD text in debug builds.
+- Build: no project config changes required (header already indexed in `core/CMakeLists.txt`).
+
+## Verification
+
+- Built Standalone/AU/VST3 successfully (`build_all.sh`).
+- In debug builds, adjusting a voicing param that doesn’t change latency shows “ARMED” for ~1.2s; changing one that alters latency shows “DEFERRED”.
+
+### Index additions (WO-15)
+
+- `processor/PluginProcessor.*` (message-thread tick + HUD member used)
+- `shared/Core/PluginEditor.cpp` (timer hook + overlay paint)

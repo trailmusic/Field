@@ -17,11 +17,12 @@ struct DualChain
 
 	int buildStaging (double sr, int maxBlock, int chans)
 	{
-		staging_.setConfig (pendingCfg_);
-		staging_.buildFromConfig();
-		staging_.prepare<float>  (sr, maxBlock, chans);
-		staging_.prepare<double> (sr, maxBlock, chans);
-		return staging_.latencySamples();
+		auto& staging = stagingChain();
+		staging.setConfig (pendingCfg_);
+		staging.buildFromConfig();
+		staging.prepare<float>  (sr, maxBlock, chans);
+		staging.prepare<double> (sr, maxBlock, chans);
+		return staging.latencySamples();
 	}
 
     bool armLiveSwapIfSameLatency()
@@ -31,8 +32,8 @@ struct DualChain
 
     bool armLiveSwapAtSameLatency (int offsetSamples, int warmupBlocks)
     {
-        const int newLat = staging_.latencySamples();
-        const int oldLat = active_.latencySamples();
+		const int newLat = stagingChain().latencySamples();
+		const int oldLat = activeChain().latencySamples();
         if (newLat != oldLat) return false;
         pendingOffset_.store (std::max (0, offsetSamples), std::memory_order_release);
         warmupBlocks_.store (std::max (0, warmupBlocks),   std::memory_order_release);
@@ -42,17 +43,17 @@ struct DualChain
 
 	void promoteStagingHard()
 	{
-		active_ = std::move(staging_);
+		activeIndex_ ^= 1;
 		wantSwap_.store(false, std::memory_order_release);
 	}
 
-	int latencySamples() const noexcept { return active_.latencySamples(); }
+	int latencySamples() const noexcept { return activeChain().latencySamples(); }
 
     // Accessors for planner integration
-    FieldChain& activeChain() noexcept { return active_; }
-    FieldChain& stagingChain() noexcept { return staging_; }
-    const FieldChain& activeChain() const noexcept { return active_; }
-    const FieldChain& stagingChain() const noexcept { return staging_; }
+	FieldChain& activeChain() noexcept { return chains_[activeIndex_]; }
+	FieldChain& stagingChain() noexcept { return chains_[activeIndex_ ^ 1]; }
+	const FieldChain& activeChain() const noexcept { return chains_[activeIndex_]; }
+	const FieldChain& stagingChain() const noexcept { return chains_[activeIndex_ ^ 1]; }
 
     template <typename Sample>
     void process (juce::dsp::AudioBlock<Sample>& io)
@@ -60,30 +61,30 @@ struct DualChain
         const size_t chans  = io.getNumChannels();
         const size_t frames = io.getNumSamples();
 
-        if (!ramp_.active() && !wantSwap_.load(std::memory_order_acquire))
-        {
-            active_.process<Sample>(io);
-            return;
-        }
+		if (!ramp_.active() && !wantSwap_.load(std::memory_order_acquire))
+		{
+			activeChain().process<Sample>(io);
+			return;
+		}
 
         ensureTmp (chans, frames);
 
         int warmN = warmupBlocks_.exchange (0, std::memory_order_acq_rel);
         if (warmN > 0)
         {
-            field::core::signal::Warmup::run<Sample> (warmN, (int)chans, (int)frames,
-                [this] (juce::dsp::AudioBlock<Sample>& blk) { staging_.process<Sample>(blk); });
+			field::core::signal::Warmup::run<Sample> (warmN, (int)chans, (int)frames,
+				[this] (juce::dsp::AudioBlock<Sample>& blk) { stagingChain().process<Sample>(blk); });
         }
 
-        // active -> io
-        active_.process<Sample>(io);
+		// active -> io
+		activeChain().process<Sample>(io);
 
         // staging -> tmp_
         {
             juce::dsp::AudioBlock<Sample> tmpBlock (tmp_.getArrayOfWritePointers(), chans, frames);
             for (size_t ch = 0; ch < chans; ++ch)
                 tmp_.copyFrom ((int)ch, 0, io.getChannelPointer(ch), (int)frames);
-            staging_.process<Sample>(tmpBlock);
+			stagingChain().process<Sample>(tmpBlock);
         }
 
         int offset = 0;
@@ -106,17 +107,17 @@ struct DualChain
             }
         }
 
-        if (!ramp_.active())
-        {
-            active_ = std::move(staging_);
-            tmp_.setSize(0, 0);
-        }
+		if (!ramp_.active())
+		{
+			activeIndex_ ^= 1;
+			tmp_.setSize(0, 0);
+		}
     }
 
 	void reset()
 	{
-		active_.reset();
-		staging_.reset();
+		chains_[0].reset();
+		chains_[1].reset();
 		wantSwap_.store(false, std::memory_order_release);
 		tmp_.setSize(0,0);
 	}
@@ -129,8 +130,8 @@ private:
 			tmp_.setSize ((int)chans, (int)samples, false, false, true);
 	}
 
-	FieldChain active_{};
-	FieldChain staging_{};
+	FieldChain chains_[2]{};
+	int		activeIndex_ { 0 };
 	Config     pendingCfg_{};
 
     std::atomic<bool> wantSwap_{false};

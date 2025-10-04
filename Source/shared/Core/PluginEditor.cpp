@@ -866,7 +866,19 @@ void MyPluginAudioProcessorEditor::mouseDown  (const juce::MouseEvent& e) { if (
 void MyPluginAudioProcessorEditor::mouseDrag  (const juce::MouseEvent& e) { noteUserInteraction(); if (eventManager) eventManager->handleMouseDrag  (e); }
 void MyPluginAudioProcessorEditor::mouseUp    (const juce::MouseEvent& e) { if (eventManager) eventManager->handleMouseUp    (e); }
 void MyPluginAudioProcessorEditor::mouseMove  (const juce::MouseEvent& e) { if (eventManager) eventManager->handleMouseMove  (e); }
-void MyPluginAudioProcessorEditor::timerCallback()                        { if (eventManager) eventManager->handleTimerCallback(); }
+void MyPluginAudioProcessorEditor::timerCallback()
+{
+#if JUCE_DEBUG
+    proc.messageThreadTickForLiveSwap(proc.getSampleRate(), proc.getBlockSize());
+    if (proc.hud().visible())
+    {
+        const int h = 22;
+        const int w = 360;
+        repaint({ 8, getHeight() - (h + 8), w, h });
+    }
+#endif
+    if (eventManager) eventManager->handleTimerCallback();
+}
 
 void MyPluginAudioProcessorEditor::resized()
 {
@@ -874,7 +886,23 @@ void MyPluginAudioProcessorEditor::resized()
     performLayout();
 }
 
-void MyPluginAudioProcessorEditor::paintOverChildren (juce::Graphics& g) { juce::ignoreUnused (g); }
+void MyPluginAudioProcessorEditor::paintOverChildren (juce::Graphics& g)
+{
+#if JUCE_DEBUG
+    const auto& hud = proc.hud();
+    if (hud.visible())
+    {
+        auto r = juce::Rectangle<int>{ 8, getHeight() - 30, 360, 22 };
+        g.setColour(juce::Colours::black.withAlpha(0.6f));
+        g.fillRoundedRectangle(r.toFloat().reduced(2.0f), 6.0f);
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font(juce::FontOptions(12.0f).withStyle("Bold")));
+        g.drawFittedText(hud.text(), r.reduced(6), juce::Justification::centredLeft, 1);
+    }
+#else
+    juce::ignoreUnused (g);
+#endif
+}
 void MyPluginAudioProcessorEditor::updateGroup2OverlayDuringSlide()      {}
 void MyPluginAudioProcessorEditor::applyGlobalCursorPolicy()             {}
 void MyPluginAudioProcessorEditor::updateMutedKnobVisuals()              {}
