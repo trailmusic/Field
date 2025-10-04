@@ -1,7 +1,6 @@
 # Field Architecture Refactor Audit (Phase 1)
 
-Last updated: 2025-10-04 • Branch: `feature`  
-Maintenance note: WO-38 glue refactor (cfg removal in processor) landed; poison header pending.
+Last updated: 2025-10-04 • Branch: `feature`
 
 ## Contents
 - [Purpose](#purpose)
@@ -61,13 +60,57 @@ Maintenance note: WO-38 glue refactor (cfg removal in processor) landed; poison 
 - [WO-37 — Decommission DspRuntimeConfig (soft) + deterministic OS/Phase resolver](#wo-37--decommission-dspruntimeconfig-soft--deterministic-osphase-resolver)
 - [WO-38 — Remove DspRuntimeConfig (hard) + CI tripwire](#wo-38--remove-dspruntimeconfig-hard--ci-tripwire)
 - [WO-39 — shared/dsp full shutdown (headers poison + include path removal)](#wo-39--shareddsp-full-shutdown-headers-poison--include-path-removal)
+- [WO-40 — Reverb DSP: single source of truth (poison legacy, keep builds green)](#wo-40--reverb-dsp-single-source-of-truth-poison-legacy-keep-builds-green)
+- [WO-41 — Move/Pin FDN under engines (single canonical header)](#wo-41--movepin-fdn-under-engines-single-canonical-header)
+- [WO-42 — DspRuntimeConfig poison + CI tripwires](#wo-42--dspruntimeconfig-poison--ci-tripwires)
+- [WO-43 — Include-scope hygiene (ODR guard)](#wo-43--include-scope-hygiene-odr-guard)
+- [WO-44 — FDN invariants & first-bad-sample capture (dev-only)](#wo-44--fdn-invariants--first-bad-sample-capture-dev-only)
 
 ---
 
- 
+# WO-43 — Include-scope hygiene (ODR guard)
 
-## Purpose
-Protect the UI while restructuring `Source/` to separate UI, processor glue, DSP engines, and cross-cutting core (signal, runtime, telemetry). Provide a clean lane for future signal + latency work.
+## Objective
+
+Prevent ODR drift by ensuring code under `engines/**` cannot include headers from `features/` or `shared/` and fail the build if it happens.
+
+## Changes
+
+- CMake include scope:
+  - Confirmed `field_engines` only exposes `Source/engines` (no `features` or `shared`).
+- CI/Build tripwire:
+  - Extended `ci_tripwire_legacy_includes` to fail if any TU under `Source/engines/**` includes a path containing `/features/` or `/shared/`.
+
+## Verification
+
+- Full green build (Standalone, AU, VST3) with tripwire active.
+- Manual grep shows no engine file includes `features/` or `shared/`.
+
+---
+
+# WO-44 — FDN invariants & first-bad-sample capture (dev-only)
+
+## Objective
+
+Add zero-cost-in-release invariants to `ReverbFDN` to catch wrap/feedback anomalies immediately during development and log a minimal context.
+
+## Changes
+
+- `Source/engines/reverb/DSP/ReverbFDN.h`:
+  - Added debug-only checks (compiled out in Release):
+    - read/write indices remain in-range `[0, logicalLen)`;
+    - canonical `wrappedRead(...)` usage verified;
+    - hooks to assert if invariants are violated (DBG + jassert).
+  - Scaffold for one-shot first-bad-sample capture (expandable):
+    - At anomaly detection, can log indices and context for rapid triage.
+
+## Verification
+
+- Builds green in all formats; debug builds will assert on violation; release is unaffected.
+
+---
+
+
 
 ---
 
@@ -1471,3 +1514,48 @@ Finalize removal by poisoning the header and enforcing CI checks across the tree
 - Full build succeeded with the poison header in place; tripwire target added to default build.
 
 ---
+# WO-43 — Include-scope hygiene (ODR guard)
+
+## Objective
+
+Prevent ODR drift by ensuring code under `engines/**` cannot include headers from `features/` or `shared/` and fail the build if it happens.
+
+## Changes
+
+- CMake include scope:
+  - Confirmed `field_engines` only exposes `Source/engines` (no `features` or `shared`).
+- CI/Build tripwire:
+  - Extended `ci_tripwire_legacy_includes` to fail if any TU under `Source/engines/**` includes a path containing `/features/` or `/shared/`.
+
+## Verification
+
+- Full green build (Standalone, AU, VST3) with tripwire active.
+- Manual grep shows no engine file includes `features/` or `shared/`.
+
+---
+
+# WO-44 — FDN invariants & first-bad-sample capture (dev-only)
+
+## Objective
+
+Add zero-cost-in-release invariants to `ReverbFDN` to catch wrap/feedback anomalies immediately during development and log a minimal context.
+
+## Changes
+
+- `Source/engines/reverb/DSP/ReverbFDN.h`:
+  - Added debug-only checks (compiled out in Release):
+    - read/write indices remain in-range `[0, logicalLen)`;
+    - canonical `wrappedRead(...)` usage verified;
+    - hooks to assert if invariants are violated (DBG + jassert).
+  - Scaffold for one-shot first-bad-sample capture (expandable):
+    - At anomaly detection, can log indices and context for rapid triage.
+
+## Verification
+
+- Builds green in all formats; debug builds will assert on violation; release is unaffected.
+
+---
+ 
+
+## Purpose
+Protect the UI while restructuring `Source/` to separate UI, processor glue, DSP engines, and cross-cutting core (signal, runtime, telemetry). Provide a clean lane for future signal + latency work.
