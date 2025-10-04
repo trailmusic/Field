@@ -31,3 +31,13 @@ target_link_libraries(test_dualchain_voicing_golden PRIVATE field_modules field_
 
 add_executable(test_dualchain_midblock_golden test_dualchain_midblock_golden.cpp TestUtils_Golden.h)
 target_link_libraries(test_dualchain_midblock_golden PRIVATE field_modules field_core juce_dsp)
+
+# WO-18 smoke matrix and tail cache tests
+add_executable(test_latency_smoke_matrix
+    test_latency_smoke_matrix.cpp
+    TestUtils_Golden.h
+    TestUtils_Params.h)
+target_link_libraries(test_latency_smoke_matrix PRIVATE field_modules field_core juce_dsp)
+
+add_executable(test_tail_guard_cache test_tail_guard_cache.cpp)
+target_link_libraries(test_tail_guard_cache PRIVATE field_core)

@@ -868,3 +868,30 @@ Index additions:
 - `tests/offline/TestUtils_Golden.h`
 - `tests/offline/test_dualchain_voicing_golden.cpp`
 - `tests/offline/test_dualchain_midblock_golden.cpp`
+
+---
+
+# WO-18 — Latency Smoke Matrix + Tail Cache Test
+
+## What you get
+
+- Param-snapshot helper and two offline tests:
+  - Latency smoke matrix sweeps SR, block, FIR half-length, look-ahead, OS; asserts `LatencyProbe == chain.latencySamples()` and unity.
+  - TailGuard cache test ensures tail applies only at prepare (host-style).
+
+## Changes
+
+- `tests/offline/TestUtils_Params.h`: helper to build `ChainParamSnapshot` with explicit values.
+- `tests/offline/test_latency_smoke_matrix.cpp`: probe vs reported across matrix; unity verified via FNV-1a hash.
+- `tests/offline/test_tail_guard_cache.cpp`: verifies prepare-time-only tail apply behavior.
+- `tests/offline/CMakeLists.txt`: adds both executables and links.
+
+## Verification
+
+- Build succeeds; tests link against `field_core`/`field_modules` only; no DSP changes.
+
+### Index additions (WO-18)
+
+- `tests/offline/TestUtils_Params.h`
+- `tests/offline/test_latency_smoke_matrix.cpp`
+- `tests/offline/test_tail_guard_cache.cpp`
