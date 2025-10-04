@@ -111,7 +111,7 @@ set(SRC
     engines/reverb/DSP/DecayLossDesigner.h
     features/reverb/DSP/ReverbFDN.h
     # features/reverb/DSP/ReverbProcessorGlue.* removed; replaced by modules APIs
-    features/reverb/DSP/SimdBiquad.h
+    engines/reverb/DSP/SimdBiquad.h
     
     # Reverb Presets
     features/reverb/Presets/ReverbPresetManager.h
