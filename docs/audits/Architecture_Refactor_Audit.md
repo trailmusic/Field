@@ -1,6 +1,7 @@
 # Field Architecture Refactor Audit (Phase 1)
 
-Last updated: 2025-10-04 • Branch: `feature`
+Last updated: 2025-10-04 • Branch: `feature`  
+Maintenance note: WO-38 glue refactor (cfg removal in processor) landed; poison header pending.
 
 ## Contents
 - [Purpose](#purpose)
@@ -35,28 +36,31 @@ Last updated: 2025-10-04 • Branch: `feature`
 - [WO-13 — Rebuild Listeners + Latency/Tail Apply at Prepare](#wo-13--rebuild-listeners--latencytail-apply-at-prepare)
 - [WO-14 — Live-Swap for Voicing Params (same-latency edits only)](#wo-14--live-swap-for-voicing-params-same-latency-edits-only)
  - [2025-10-04 — Maintenance Update: DualChain assignment removal + full build](#2025-10-04--maintenance-update-dualchain-assignment-removal--full-build)
- - [WO-15 — Editor Timer Hook + Live-Swap HUD (dev-only)](#wo-15--editor-timer-hook--live-swap-hud-dev-only)
- - [WO-16 — FIELD_DEV_HUD flag + runtime toggle](#wo-16--field_dev_hud-flag--runtime-toggle)
- - [WO-17 — Offline Golden Tests (same-latency voicing & mid-block swap)](#wo-17--offline-golden-tests-same-latency-voicing--mid-block-swap)
- - [WO-18 — Latency Smoke Matrix + Tail Cache Test](#wo-18--latency-smoke-matrix--tail-cache-test)
- - [WO-19 — Processor Latency/Tail Smoke (APVTS + Host-style)](#wo-19--processor-latencytail-smoke-apvts--host-style)
- - [WO-20 — ParamChangeBus ⇄ Processor Glue Test (no audio)](#wo-20--paramchangebus--processor-glue-test-no-audio)
- - [WO-21 — Retire shared/dsp (phase bank include), prep for full shutdown](#wo-21--retire-shareddsp-phase-bank-include-prep-for-full-shutdown)
- - [WO-22 — Reverb DSP Consolidation (kill legacy glue; keep builds green)](#wo-22--reverb-dsp-consolidation-kill-legacy-glue-keep-builds-green)
- - [WO-23 — FDN Stability Pack (no sound-change intent, just hygiene)](#wo-23--fdn-stability-pack-no-sound-change-intent-just-hygiene)
- - [WO-24 — Kill shared/dsp Completely](#wo-24--kill-shareddsp-completely)
- - [WO-25 — Spectral-Radius Safety + Feedback Smoothing (prepare-time)](#wo-25--spectral-radius-safety--feedback-smoothing-prepare-time)
- - [WO-26 — Delay-Line Wrap Correctness + SIMD Tail Guard](#wo-26--delay-line-wrap-correctness--simd-tail-guard)
- - [WO-27 — Deterministic Prepare + Warmup & Fade-In](#wo-27--deterministic-prepare--warmup--fade-in)
- - [WO-28 — Spectral-Radius Safety + Feedback Glide (no tone change)](#wo-28--spectral-radius-safety--feedback-glide-no-tone-change)
- - [WO-29 — SIMD-Safe Delay Pads + Canonical Wrap (no tone change)](#wo-29--simd-safe-delay-pads--canonical-wrap-no-tone-change)
- - [WO-30 — DC Guards + Optional Safety Soft-Clip (default-OFF)](#wo-30--dc-guards--optional-safety-soft-clip-default-off)
- - [WO-31 — Feedback Operator Safety (matrix normalization @ prepare)](#wo-31--feedback-operator-safety-matrix-normalization--prepare)
- - [WO-32 — Kill shared/dsp From the Build (fast, reversible)](#wo-32--kill-shareddsp-from-the-build-fast-reversible)
- - [WO-33 — Move/Map Every shared/dsp Artifact to Engines](#wo-33--movemap-every-shareddsp-artifact-to-engines)
- - [WO-34 — Reverb DSP Consolidation (one source of truth)](#wo-34--reverb-dsp-consolidation-one-source-of-truth)
- - [WO-35 — Block features/.../DSP includes (tripwire)](#wo-35--block-featuresdspdsp-includes-tripwire)
- - [WO-36 — ReverbEngine sanity pin (static_asserts)](#wo-36--reverbengine-sanity-pin-static_asserts)
+- [WO-15 — Editor Timer Hook + Live-Swap HUD (dev-only)](#wo-15--editor-timer-hook--live-swap-hud-dev-only)
+- [WO-16 — FIELD_DEV_HUD flag + runtime toggle](#wo-16--field_dev_hud-flag--runtime-toggle)
+- [WO-17 — Offline Golden Tests (same-latency voicing & mid-block swap)](#wo-17--offline-golden-tests-same-latency-voicing--mid-block-swap)
+- [WO-18 — Latency Smoke Matrix + Tail Cache Test](#wo-18--latency-smoke-matrix--tail-cache-test)
+- [WO-19 — Processor Latency/Tail Smoke (APVTS + Host-style)](#wo-19--processor-latencytail-smoke-apvts--host-style)
+- [WO-20 — ParamChangeBus ⇄ Processor Glue Test (no audio)](#wo-20--paramchangebus--processor-glue-test-no-audio)
+- [WO-21 — Retire shared/dsp (phase bank include), prep for full shutdown](#wo-21--retire-shareddsp-phase-bank-include-prep-for-full-shutdown)
+- [WO-22 — Reverb DSP Consolidation (kill legacy glue; keep builds green)](#wo-22--reverb-dsp-consolidation-kill-legacy-glue-keep-builds-green)
+- [WO-23 — FDN Stability Pack (no sound-change intent, just hygiene)](#wo-23--fdn-stability-pack-no-sound-change-intent-just-hygiene)
+- [WO-24 — Kill shared/dsp Completely](#wo-24--kill-shareddsp-completely)
+- [WO-25 — Spectral-Radius Safety + Feedback Smoothing (prepare-time)](#wo-25--spectral-radius-safety--feedback-smoothing-prepare-time)
+- [WO-26 — Delay-Line Wrap Correctness + SIMD Tail Guard](#wo-26--delay-line-wrap-correctness--simd-tail-guard)
+- [WO-27 — Deterministic Prepare + Warmup & Fade-In](#wo-27--deterministic-prepare--warmup--fade-in)
+- [WO-28 — Spectral-Radius Safety + Feedback Glide (no tone change)](#wo-28--spectral-radius-safety--feedback-glide-no-tone-change)
+- [WO-29 — SIMD-Safe Delay Pads + Canonical Wrap (no tone change)](#wo-29--simd-safe-delay-pads--canonical-wrap-no-tone-change)
+- [WO-30 — DC Guards + Optional Safety Soft-Clip (default-OFF)](#wo-30--dc-guards--optional-safety-soft-clip-default-off)
+- [WO-31 — Feedback Operator Safety (matrix normalization @ prepare)](#wo-31--feedback-operator-safety-matrix-normalization--prepare)
+- [WO-32 — Kill shared/dsp From the Build (fast, reversible)](#wo-32--kill-shareddsp-from-the-build-fast-reversible)
+- [WO-33 — Move/Map Every shared/dsp Artifact to Engines](#wo-33--movemap-every-shareddsp-artifact-to-engines)
+- [WO-34 — Reverb DSP Consolidation (one source of truth)](#wo-34--reverb-dsp-consolidation-one-source-of-truth)
+- [WO-35 — Block features/.../DSP includes (tripwire)](#wo-35--block-featuresdspdsp-includes-tripwire)
+- [WO-36 — ReverbEngine sanity pin (static_asserts)](#wo-36--reverbengine-sanity-pin-static_asserts)
+- [WO-37 — Decommission DspRuntimeConfig (soft) + deterministic OS/Phase resolver](#wo-37--decommission-dspruntimeconfig-soft--deterministic-osphase-resolver)
+- [WO-38 — Remove DspRuntimeConfig (hard) + CI tripwire](#wo-38--remove-dspruntimeconfig-hard--ci-tripwire)
+- [WO-39 — shared/dsp full shutdown (headers poison + include path removal)](#wo-39--shareddsp-full-shutdown-headers-poison--include-path-removal)
 
 ---
 
@@ -1324,3 +1328,146 @@ Add static sanity pins in `ReverbEngine.h` to enforce hardened path presence.
 ## Verification
 
 - CI grep tripwire passes.
+
+---
+
+# WO-37 — Decommission DspRuntimeConfig (soft) + deterministic OS/Phase resolver
+
+## Objective
+
+Remove mutable runtime dependency from audio paths by introducing a stateless resolver and preparing the codebase for hard removal while keeping builds green.
+
+## Changes
+
+- Added resolver (authoritative, stateless):
+  - `core/runtime/OSPhaseResolver.h` with `effectiveOSFactor(...)` and `effectivePhase(...)`.
+- Soft-deprecated legacy config:
+  - Replaced `shared/Core/DspRuntimeConfig.h` with a shim that compiles, warns, and exposes minimal fields/helpers (no audio-thread use).
+- Processor prepare-time flow:
+  - `processor/PluginProcessor.cpp` now snapshots params (`core/params/Snapshot.h`) and resolves OS/phase via `OSPhaseResolver` at `prepareToPlay()`.
+  - Removed direct reliance on `DspRuntimeConfig` for prepare-time decisions.
+- Safety test:
+  - `tests/offline/test_no_dsp_runtime_config.cpp` added as a build-only sentinel.
+
+## Verification
+
+- Ran `/Users/grantedwards/Desktop/Field/build_and_test.sh`: Standalone, AU, VST3 built and installed successfully.
+- No DSP/tone changes; warnings indicate deprecation of `DspRuntimeConfig` as intended.
+
+---
+
+# WO-38 — Remove DspRuntimeConfig (hard) + CI tripwire
+
+## Objective
+
+Make misuse impossible by deleting the shim, poisoning the header, and adding CI tripwires to block regressions.
+
+## Changes (landed)
+
+- Processor glue no longer depends on `DspRuntimeConfig`:
+  - `Source/processor/PluginProcessor.h`:
+    - `scheduleDspRebuildIfNeeded()` is now argless.
+    - `rebuildDspForConfig<Sample>(juce::AudioBuffer<Sample>&)` drops the legacy cfg arg.
+  - `Source/shared/Core/PluginProcessor.cpp`:
+    - Added `#include "core/params/Snapshot.h"` and `#include "core/runtime/OSPhaseResolver.h"`.
+    - Replaced all `scheduleDspRebuildIfNeeded({})` with `scheduleDspRebuildIfNeeded()`.
+    - Rewrote `rebuildDspForConfig<Sample>(...)` to compute `osFactor` and `phaseMode` via `Snapshot + OSPhaseResolver`; removed all `cfg.*` usage.
+    - Latency now derives from `factor` and phase-bank latency; `tpSafe` reads from APVTS parameter `IDs::tpSafe`.
+    - Preserved equal-power crossfade initiation for glitch‑free topology changes.
+- Build hygiene:
+  - Full build succeeded for Standalone, AU, and VST3 after these changes.
+
+## Remaining (to fully complete WO-38)
+
+- Flip the `shared/Core/DspRuntimeConfig.h` shim to a poison header (emit `#error`).
+- Ensure `FIELD_POISON_DSP_RUNTIME_CONFIG` is enabled in `Source/CMakeLists.txt` without breaking builds.
+- CI/grep tripwires already specified under guardrails: fail on `\bDspRuntimeConfig\b`, legacy `shared/dsp/`, and `features/reverb/DSP/ReverbParamIDs.h` includes.
+
+## Verification
+
+- Ran `/Users/grantedwards/Desktop/Field/build_and_test.sh`: Standalone, AU, VST3 built and installed successfully; no sonic change expected.
+
+---
+
+# WO-39 — shared/dsp full shutdown (headers poison + include path removal)
+
+## Objective
+
+Finish decommissioning `Source/shared/dsp/` by moving or poisoning residual headers and removing the folder from include paths.
+
+## Planned Changes (not executed yet)
+
+- Move or poison residual headers:
+- Map remaining artifacts to `engines/*` (delay, dynamics, phase) and delete duplicates from `shared/dsp`.
+- For any legacy-only headers, replace contents with a poison `#error` and migration guidance.
+- Build system:
+- Remove `Source/shared/dsp` from include paths and source lists in `Source/CMakeLists.txt`.
+- Add CI/grep tripwire to block `#include "shared/dsp/"`.
+
+## Verification Plan
+
+- Grep confirms no `shared/dsp` includes remain.
+- Full build completes; functionality unchanged.
+
+---
+
+# WO-40 — Reverb DSP: single source of truth (poison legacy, keep builds green)
+
+## Objective
+
+Eliminate duplicate reverb DSP header sources under `features/reverb/DSP/` by remapping to `engines/reverb/**` and poisoning legacy headers to prevent regressions.
+
+## Changes
+
+- Poisoned legacy headers (compile-time error with guidance):
+  - `Source/features/reverb/DSP/ReverbParamIDs.h`
+  - `Source/features/reverb/DSP/ReverbEQParamIDs.h`
+  - `Source/features/reverb/DSP/ReverbProcessorGlue.h`
+- UI remap to canonical ParamIDs and engine paths:
+  - `Source/features/reverb/UI/ReverbControlsPane.h/.cpp` now include `core/params/ParamIDs.h` and use canonical `"reverb.*"` parameter IDs.
+  - `Source/features/reverb/Core/ReverbEngine.h` now includes `engines/reverb/DSP/ReverbFDN.h`.
+- CMake:
+  - `Source/CMakeLists.txt` now points to `engines/reverb/DSP/ReverbFDN.h`.
+
+## Verification
+
+- Full build (Standalone, AU, VST3) succeeded; UI compiles against canonical IDs.
+
+---
+
+# WO-41 — Move/Pin FDN under engines (single canonical header)
+
+## Objective
+
+Guarantee one FDN home under `engines/` and block shadow copies under `features/`.
+
+## Changes
+
+- Moved `ReverbFDN.h` → `Source/engines/reverb/DSP/ReverbFDN.h`.
+- Replaced legacy `Source/features/reverb/DSP/ReverbFDN.h` with a poison header pointing to the engines path.
+- Updated all includes to reference `engines/reverb/DSP/ReverbFDN.h`.
+
+## Verification
+
+- Build succeeded; grep shows no remaining includes of `features/reverb/DSP/ReverbFDN.h`.
+
+---
+
+# WO-42 — DspRuntimeConfig poison + CI tripwires
+
+## Objective
+
+Finalize removal by poisoning the header and enforcing CI checks across the tree.
+
+## Changes
+
+- Poison header:
+  - `Source/shared/Core/DspRuntimeConfig.h` now emits `#error` with migration guidance.
+- CI/Build tripwires (CMake custom target):
+  - Extended `ci_tripwire_legacy_includes` to fail on `\bDspRuntimeConfig\b`, `#include "shared/dsp/"`, and `#include "features/reverb/DSP/"`.
+
+## Verification
+
+- Full build succeeded with the poison header in place; tripwire target added to default build.
+
+---
