@@ -162,8 +162,8 @@ set(SRC
     engines/motion/MotionEngine.h
     features/motion/MotionGraphics.h
     features/motion/MotionGraphics.cpp
-    features/motion/MotionParams.h
-    features/motion/MotionPath.h
+    engines/motion/MotionParams.h
+    engines/motion/MotionPath.h
     features/motion/MotionIDs.h
     features/motion/MotionControlsPane.h
     features/motion/MotionTab.h
