@@ -2,9 +2,8 @@
 #pragma once
 #include "engines/EngineScope.h"
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "MotionParams.h"
-#include "MotionPath.h"
-#include "MotionVisual.h"
+#include "engines/motion/MotionParams.h"
+#include "engines/motion/MotionPath.h"
 namespace motion {
 
 // Host sync information

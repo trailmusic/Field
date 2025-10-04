@@ -2,7 +2,7 @@
 #pragma once
 #include <atomic>
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "MotionIDs.h"
+#include "features/motion/MotionIDs.h"
 namespace motion {
 // Individual panner parameter set
 struct PannerParams {
