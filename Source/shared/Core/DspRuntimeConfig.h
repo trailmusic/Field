@@ -34,4 +34,10 @@ struct DspRuntimeConfig {
         }
         return 1;
     }
+
+    inline void resetOverrides() noexcept { userOverrodePhase = false; userOverrodeOS = false; }
+    inline int getActiveOSFactor(bool isOffline) const noexcept {
+        const int overrideFactor = isOffline ? osOffline : osRealtime;
+        return overrideFactor == 0 ? resolveOSFactor(sampleRate, quality) : overrideFactor;
+    }
 };
