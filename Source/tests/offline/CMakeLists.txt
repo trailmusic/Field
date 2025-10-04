@@ -55,3 +55,7 @@ add_executable(test_param_bus_processor_glue
     TestUtils_APVTS.h)
 target_link_libraries(test_param_bus_processor_glue
     PRIVATE field_processor field_modules field_core juce_audio_processors juce_dsp)
+
+# WO-37 build-only guard
+add_executable(test_no_dsp_runtime_config test_no_dsp_runtime_config.cpp)
+target_link_libraries(test_no_dsp_runtime_config PRIVATE field_core)

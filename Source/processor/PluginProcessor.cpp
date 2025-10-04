@@ -2,6 +2,9 @@
 #include "core/runtime/LiveSwapPlanner.h"
 #include "core/runtime/ParamChangeBus.h"
 #include "core/params/Snapshot.h"
+#include "core/runtime/OSPhaseResolver.h"
+#include "modules/FieldParamHooks.h"
+#include "processor/LatencyTailCompute.h"
 void MyPluginAudioProcessor::messageThreadTickForLiveSwap (double sampleRate, int maxBlock)
 {
 #include "core/runtime/DevHudFlag.h"
