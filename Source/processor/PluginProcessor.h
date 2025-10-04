@@ -231,8 +231,7 @@ namespace IDs {
 // Delay UI bridge
 #include "features/delay/DelayUiBridge.h"
 #include "shared/Core/FloatShim.h"
-struct DspRuntimeConfig; // forward-declare legacy shim (WO-37)
-// #include "shared/Core/DspRuntimeConfig.h" // removed in WO-37 soft phase
+#include "shared/Core/DspRuntimeConfig.h"
 #include "shared/Core/PhaseBanks.h"
 // ==================================
 // Visualization Bus (lock-free SPSC)
