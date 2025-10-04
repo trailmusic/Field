@@ -121,7 +121,7 @@ DecayRateEQ::DecayRateEQ (MyPluginAudioProcessor& p)
             auto& pt = points[(size_t) selected];
             pt.mult = jlimit (0.5f, 2.0f, m);
             if (pt.bandIdx >= 0)
-                setBandParam (pt.bandIdx, ReverbParams::DecayBand::decayMult, pt.mult);
+                setBandParam (pt.bandIdx, "db_decayMult", pt.mult);
             rebuildEqPath(); repaint();
         }
     };
@@ -132,7 +132,7 @@ DecayRateEQ::DecayRateEQ (MyPluginAudioProcessor& p)
             auto& pt = points[(size_t) selected];
             pt.q = jlimit (0.1f, 36.0f, qv);
             if (pt.bandIdx >= 0)
-                setBandParam (pt.bandIdx, ReverbParams::DecayBand::q, pt.q);
+                setBandParam (pt.bandIdx, "db_q", pt.q);
             rebuildEqPath(); repaint();
         }
     };
@@ -143,7 +143,7 @@ DecayRateEQ::DecayRateEQ (MyPluginAudioProcessor& p)
             auto& pt = points[(size_t) selected];
             pt.hz = jlimit (20.f, 20000.f, f);
             if (pt.bandIdx >= 0)
-                setBandParam (pt.bandIdx, ReverbParams::DecayBand::freqHz, pt.hz);
+                setBandParam (pt.bandIdx, "db_freqHz", pt.hz);
             rebuildEqPath(); repaint();
         }
     };
@@ -165,7 +165,7 @@ DecayRateEQ::DecayRateEQ (MyPluginAudioProcessor& p)
         {
             const int bandIdx = points[(size_t) selected].bandIdx;
             if (bandIdx >= 0)
-                setBandParam (bandIdx, ReverbParams::DecayBand::active, 0.0f);
+                setBandParam (bandIdx, "db_active", 0.0f);
 
             points.erase (points.begin() + selected);
             selected = -1;
@@ -180,7 +180,7 @@ DecayRateEQ::DecayRateEQ (MyPluginAudioProcessor& p)
         {
             const int bandIdx = points[(size_t) selected].bandIdx;
             if (bandIdx >= 0)
-                setBandParam (bandIdx, ReverbParams::DecayBand::active, off ? 0.0f : 1.0f);
+                setBandParam (bandIdx, "db_active", off ? 0.0f : 1.0f);
         }
     };
     badge.onSetType = [this] (int tp)

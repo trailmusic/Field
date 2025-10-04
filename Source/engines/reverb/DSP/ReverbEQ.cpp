@@ -84,7 +84,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
         {
             const int bandIdx = points[(size_t) selected].bandIdx;
             if (bandIdx >= 0)
-                setBandParam (bandIdx, ReverbParams::ToneEqBand::active, 0.0f);
+                setBandParam (bandIdx, "tb_active", 0.0f);
 
             points.erase (points.begin() + selected);
             selected = -1;
@@ -100,7 +100,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
         {
             const int bandIdx = points[(size_t) selected].bandIdx;
             if (bandIdx >= 0)
-                setBandParam (bandIdx, ReverbParams::ToneEqBand::active, off ? 0.0f : 1.0f);
+                setBandParam (bandIdx, "tb_active", off ? 0.0f : 1.0f);
         }
     };
 
@@ -112,7 +112,7 @@ ReverbToneEQ::ReverbToneEQ (MyPluginAudioProcessor& p)
             auto& bp = points[(size_t) idx];
             bp.type = jlimit (0, 2, tp);
             if (bp.bandIdx >= 0)
-                setBandParam (bp.bandIdx, ReverbParams::ToneEqBand::type, (float) bp.type);
+                setBandParam (bp.bandIdx, "tb_type", (float) bp.type);
             rebuildEqPath(); repaint(); positionBadgeFor (idx);
         }
     };
@@ -215,12 +215,12 @@ void ReverbToneEQ::mouseDown (const MouseEvent& e)
         if (slot >= 0)
         {
             bp.bandIdx = slot;
-        setBandParam (slot, ReverbEQParams::ToneBand::active, 1.0f);
-        setBandParam (slot, ReverbEQParams::ToneBand::freqHz, bp.hz);
-        setBandParam (slot, ReverbEQParams::ToneBand::gainDb, bp.db);
-        setBandParam (slot, ReverbEQParams::ToneBand::q,      bp.q);
-        setBandParam (slot, ReverbEQParams::ToneBand::type,   (float) bp.type);
-        setBandParam (slot, ReverbEQParams::ToneBand::phase,  (float) bp.phase);
+        setBandParam (slot, "tb_active", 1.0f);
+        setBandParam (slot, "tb_freqHz", bp.hz);
+        setBandParam (slot, "tb_gainDb", bp.db);
+        setBandParam (slot, "tb_q",      bp.q);
+        setBandParam (slot, "tb_type",   (float) bp.type);
+        setBandParam (slot, "tb_phase",  (float) bp.phase);
     }
 
     points.push_back (bp);
@@ -244,8 +244,8 @@ void ReverbToneEQ::mouseDrag (const MouseEvent& e)
 
         if (pt.bandIdx >= 0)
         {
-            setBandParam (pt.bandIdx, ReverbEQParams::ToneBand::freqHz, pt.hz);
-            setBandParam (pt.bandIdx, ReverbEQParams::ToneBand::gainDb, pt.db);
+            setBandParam (pt.bandIdx, "tb_freqHz", pt.hz);
+            setBandParam (pt.bandIdx, "tb_gainDb", pt.db);
         }
 
         rebuildEqPath();
@@ -272,7 +272,7 @@ void ReverbToneEQ::mouseWheelMove (const MouseEvent&, const MouseWheelDetails& w
         pt.q = jlimit (kMinQ, kMaxQ, pt.q + wheel.deltaY * 0.1f);
 
         if (pt.bandIdx >= 0)
-            setBandParam (pt.bandIdx, ReverbEQParams::ToneBand::q, pt.q);
+            setBandParam (pt.bandIdx, "tb_q", pt.q);
 
         rebuildEqPath();
         overlay.setValues (pt.db, pt.q, pt.hz, pt.type);
@@ -289,7 +289,7 @@ void ReverbToneEQ::mouseDoubleClick (const MouseEvent& e)
     {
         const int bandIdx = points[(size_t) idx].bandIdx;
         if (bandIdx >= 0)
-            setBandParam (bandIdx, ReverbEQParams::ToneBand::active, 0.0f);
+            setBandParam (bandIdx, "tb_active", 0.0f);
 
         points.erase (points.begin() + idx);
 
