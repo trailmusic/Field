@@ -75,8 +75,9 @@ public:
             setBaseT60 (1.8f);
 
             tmp.setSize (numCh, blockSize);
-            // prepare feedback smoother
+            // prepare feedback smoother (unity target to avoid tone change)
             feedback_.prepare(sampleRate, 10.0);
+            feedback_.setTarget(1.0);
         }
 
     void reset ()
