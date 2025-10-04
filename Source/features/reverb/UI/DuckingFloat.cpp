@@ -80,7 +80,7 @@ DuckingFloat::~DuckingFloat()
 
 void DuckingFloat::setupComponents()
 {
-    using namespace ReverbParamIDs;
+    using namespace field::params;
 
     // ===== Selectors (UI items) =====
     addAndMakeVisible(modeSelector);
@@ -145,17 +145,17 @@ void DuckingFloat::setupComponents()
         l->setVisible(false);
 
     // ===== APVTS Attachments =====
-    modeAttachment      = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(apvtsRef, ReverbParamIDs::duckMode,        modeSelector);
-    detectorAttachment  = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(apvtsRef, ReverbParamIDs::duckDetectorSrc, detectorSelector);
+    modeAttachment      = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(apvtsRef, duckMode,        modeSelector);
+    detectorAttachment  = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(apvtsRef, duckDetectorSrc, detectorSelector);
 
-    depthAttachment     = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, ReverbParamIDs::duckDepthDb,  depthSlider);
-    thresholdAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, ReverbParamIDs::duckThrDb,    thresholdSlider);
-    ratioAttachment     = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, ReverbParamIDs::duckRatio,    ratioSlider);
-    kneeAttachment      = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, ReverbParamIDs::duckKneeDb,   kneeSlider);
-    attackAttachment    = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, ReverbParamIDs::duckAtkMs,    attackSlider);
-    releaseAttachment   = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, ReverbParamIDs::duckRelMs,    releaseSlider);
-    bandFreqAttachment  = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, ReverbParamIDs::duckBandHz,   bandFreqSlider);
-    bandQAttachment     = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, ReverbParamIDs::duckBandQ,    bandQSlider);
+    depthAttachment     = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, duckDepthDb,  depthSlider);
+    thresholdAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, duckThrDb,    thresholdSlider);
+    ratioAttachment     = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, duckRatio,    ratioSlider);
+    kneeAttachment      = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, duckKneeDb,   kneeSlider);
+    attackAttachment    = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, duckAtkMs,    attackSlider);
+    releaseAttachment   = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, duckRelMs,    releaseSlider);
+    bandFreqAttachment  = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, duckBandHz,   bandFreqSlider);
+    bandQAttachment     = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvtsRef, duckBandQ,    bandQSlider);
 
     // Ensure module is enabled initially (parent can later call setActive/greyout)
     setActive(true);

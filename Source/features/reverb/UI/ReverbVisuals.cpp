@@ -109,8 +109,8 @@ void ReverbVisuals::paint (juce::Graphics& g)
     const float tail = getTailRms ? getTailRms () : 0.0f;
 
     // Params / bypass / freeze
-    const auto* enabledParam = state.getRawParameterValue (ReverbParamIDs::enabled);
-    const auto* freezeParam  = state.getRawParameterValue (ReverbParamIDs::freeze);
+    const auto* enabledParam = state.getRawParameterValue ("reverb_enabled");
+    const auto* freezeParam  = state.getRawParameterValue ("freeze");
 
     if (! enabledParam || ! freezeParam)
     {

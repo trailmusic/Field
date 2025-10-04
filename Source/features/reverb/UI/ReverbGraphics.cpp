@@ -673,7 +673,7 @@ void ReverbGraphics::updateDuckingModuleVisibility ()
 {
     if (! duckingFloat) return;
 
-    const auto* duckOnParam = state.getRawParameterValue (ReverbParamIDs::duckOn);
+    const auto* duckOnParam = state.getRawParameterValue ("duckOn");
     const bool enabled = duckOnParam ? (duckOnParam->load () > 0.5f) : false;
 
     duckingFloat->setVisible (true);
