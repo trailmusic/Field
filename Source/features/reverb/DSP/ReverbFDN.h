@@ -30,6 +30,8 @@
 #include <memory>
 #include "../Core/FieldReverbConfig.h"
 #include "engines/reverb/DSP/DecayLossDesigner.h"
+#include "core/util/DenormGuard.h"
+#include "core/signal/Sanitize.h"
 
 namespace fieldverb
 {
@@ -105,6 +107,7 @@ public:
 
     void process (const juce::AudioBuffer<float>& in, juce::AudioBuffer<float>& tailOut)
     {
+        DenormGuard _ftzGuard;
         const int N  = in.getNumSamples();
         const int C  = juce::jmin (numCh, in.getNumChannels());
         jassert (N <= tmp.getNumSamples());
@@ -181,9 +184,14 @@ public:
             for (int c=0; c<C; ++c)
             {
                 float* d = tailOut.getWritePointer (c);
-                d[n] += (c == 0 ? l : r);
+                float v = (c == 0 ? l : r);
+                if (!juce::isFinite (v) || std::abs (v) < 1e-30f) v = 0.0f;
+                d[n] += v;
             }
         }
+
+        // Optional final sanitize for development safety
+        // sanitize (juce::dsp::AudioBlock<float> (tailOut));
     }
 
 private:
