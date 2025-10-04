@@ -567,9 +567,9 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     if (getSafePassthrough()) return;
     
     // Check for DSP rebuild needed
-    // WO-38: rtCfg removed; no-op fetch
     if (needsDspRebuild.exchange(false, std::memory_order_acq_rel))
     {
+        DspRuntimeConfig cfg{}; // placeholder value type to satisfy template
         rebuildDspForConfig<float>(cfg, buffer);
     }
 
@@ -1440,7 +1440,7 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
     else if (parameterID == IDs::forceOffline)
     {
         // Force offline mode changed - trigger DSP rebuild
-        auto cfg = rtCfg.load();
+        // WO-38: rtCfg removed; no-op
         scheduleDspRebuildIfNeeded(cfg);
     }
     // Phase alignment handled by PhaseAlignmentEngine
@@ -1743,7 +1743,7 @@ void MyPluginAudioProcessor::rebuildDspForConfig(const DspRuntimeConfig& cfg, ju
     // 3) Create updated config with latency and commit
     DspRuntimeConfig updatedCfg = cfg;
     updatedCfg.latencySamples = latencySamples;
-    rtCfg.store(updatedCfg, std::memory_order_release);
+    // WO-38: rtCfg removed; no-op
     
     // 4) Apply True-Peak protection if enabled
     if (cfg.tpSafe)
