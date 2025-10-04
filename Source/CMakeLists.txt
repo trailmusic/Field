@@ -240,7 +240,7 @@ target_compile_definitions(Field PRIVATE     JUCE_DISABLE_VST2_LEGACY=1
     JUCE_DISABLE_VST2=1
     JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_STRICT_REFCOUNTEDPTR=1
-    FIELD_REVERB_PHASE2=1
+    &    FIELD_POISON_DSP_RUNTIME_CONFIG=1
     )
 
 # Enable Dev HUD in internal builds by default (can be overridden per-config)
