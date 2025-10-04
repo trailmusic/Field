@@ -75,6 +75,8 @@ public:
             setBaseT60 (1.8f);
 
             tmp.setSize (numCh, blockSize);
+            // prepare feedback smoother
+            feedback_.prepare(sampleRate, 10.0);
         }
 
     void reset ()
@@ -156,16 +158,16 @@ public:
             const float excite = mono.getSample(0, n);
             
             // feedback + input injection + per-cycle feedback gains
+            const float fbScalar = feedback_.tick();
             for (int i=0; i<numLines; ++i)
             {
                 const float g = (i < (int)feedbackGains.size()) ? feedbackGains[i] : 0.9f;
                 const float spreadGain = (i < 8) ? W[i] : 0.1f; // Use decorrelated weights
-                float y = g * x[i] + excite * inputGain * spreadGain;
+                float y = (fbScalar * g) * x[i] + excite * inputGain * spreadGain;
 
                 auto& buf = delay[i];
                 buf[writeIdx[i]] = y;
-
-                writeIdx[i] = (writeIdx[i] + 1) % (int) buf.size();
+                incWrite(writeIdx[i], (int)buf.size());
             }
 
             // tap multiple decorrelated lines for stereo output
@@ -176,8 +178,8 @@ public:
             {
                 const int Li = Lset[k] % numLines;
                 const int Ri = Rset[k] % numLines;
-                l += delay[Li][ (writeIdx[Li] + (int)delay[Li].size() - (3+2*k)) % (int)delay[Li].size() ];
-                r += delay[Ri][ (writeIdx[Ri] + (int)delay[Ri].size() - (5+2*k)) % (int)delay[Ri].size() ];
+                l += delay[Li][ wrappedRead(writeIdx[Li], (3+2*k), (int)delay[Li].size()) ];
+                r += delay[Ri][ wrappedRead(writeIdx[Ri], (5+2*k), (int)delay[Ri].size()) ];
             }
             l *= 0.25f; r *= 0.25f;
 
@@ -195,6 +197,10 @@ public:
     }
 
 private:
+    // Wrap helpers
+    static inline void incWrite (int& w, int len) noexcept { if (++w >= len) w = 0; }
+    static inline int  wrappedRead (int w, int tap, int len) noexcept { int r = w - tap; if (r < 0) r += len; return r; }
+
     // in-place Hadamard for 4/8/16
     static void hadamardMixInPlace (float* v, int n)
     {
@@ -240,5 +246,15 @@ private:
     // Thread-safe runtime parameters
     std::atomic<FdnRuntime*> rt { nullptr };
     std::unique_ptr<FdnRuntime> back;
+
+    // Smoothed scalar for feedback gain (prepare-time configured)
+    struct SmoothedScalar
+    {
+        void prepare (double sr, double ms) { sr_ = sr; setTimeMs(ms); z_ = target_; }
+        void setTimeMs (double ms)          { alpha_ = std::exp(-1.0 / (std::max(1.0, sr_) * (ms * 0.001))); }
+        void setTarget (double v)           { target_ = juce::jlimit(0.0, 0.999, v); }
+        inline float tick() noexcept        { z_ = target_ + alpha_ * (z_ - target_); return (float) z_; }
+        double sr_ = 48000.0, alpha_ = 0.0, target_ = 0.95, z_ = 0.95;
+    } feedback_;
 };
 } // namespace fieldverb

@@ -36,6 +36,7 @@ Author's notes
 #include <atomic>
 #include "FieldReverbConfig.h"
 #include "ReverbTypes.h"
+#include "core/signal/CrossfadeRamp.h"
 
 #if FIELD_REVERB_PHASE2
 #include "../DSP/ReverbFDN.h"
@@ -285,4 +286,7 @@ private:
     // cached profiles (for FDN in Phase-2)
     DecayRateProfile decayProfile;
     ToneEq           toneEq;
+
+    // Prepare-time fade-in
+    field::core::signal::CrossfadeRamp fadeRamp_;
 };

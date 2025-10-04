@@ -15,6 +15,7 @@ Phase-2 hooks (FDN & Decay-Rate integration)
 */
 
 #include "ReverbEngine.h"
+#include "core/signal/CrossfadeRamp.h"
 using namespace juce;
 
 // ============================================================================
@@ -141,6 +142,10 @@ void ReverbEngine::prepare (double sr, int maxBlock, int channels)
 
     // Tone EQ runtime
     tone.channels = chans;
+
+    // Fade-in ramp after prepare to avoid edge clicks
+    fadeRamp_.setLength(64);
+    fadeRamp_.start();
 }
 
 void ReverbEngine::reset ()
@@ -246,6 +251,20 @@ void ReverbEngine::processWet (AudioBuffer<float>& wet, const AudioBuffer<float>
 
     // 4) Merge ER+Tail → wet (Phase-1: just Tail)
     wet.makeCopyOf (tailBuf);
+
+    // Apply small fade-in after prepare
+    if (fadeRamp_.active())
+    {
+        const int C = wet.getNumChannels();
+        const int N = wet.getNumSamples();
+        for (int n=0; n<N; ++n)
+        {
+            const float g = fadeRamp_.next();
+            for (int c=0; c<C; ++c)
+                wet.getWritePointer(c)[n] *= g;
+            if (!fadeRamp_.active()) break;
+        }
+    }
 
     // 5) Ducking (uses sidechain as dry) - RE-ENABLED
     duck.process (wet, sidechain, erBuf, tailBuf);
