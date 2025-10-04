@@ -63,7 +63,8 @@ public:
             for (int i=0; i<numLines; ++i)
             {
                 const int Di = (int) juce::roundToInt (baseDelaysMs[i] * sampleRate / 1000.0);
-                delay[i].assign (juce::jmax (Di, blockSize*2), 0.0f);
+                const int L = juce::jmax (Di, blockSize*2);
+                delay[i].assign (L + kPad, 0.0f);
                 lineDelaySec[i] = (double)Di / sampleRate; // Store round-trip time
                 maxSamps = juce::jmax (maxSamps, (int) delay[i].size());
             }
@@ -147,8 +148,9 @@ public:
             for (int i=0; i<numLines; ++i)
             {
                 auto& buf = delay[i];
-                const int ri = (writeIdx[i] + (int) buf.size() - 1) % (int) buf.size();
-                x[i] = buf[ri];
+                const int logical = logicalLen(buf);
+                const int ri = wrappedRead(writeIdx[i], 1, logical);
+                x[i] = buf[(size_t)ri];
             }
 
             // Hadamard mix (size power of two; we clamp at 8/16)
@@ -167,8 +169,11 @@ public:
                 float y = (fbScalar * g) * x[i] + excite * inputGain * spreadGain;
 
                 auto& buf = delay[i];
-                buf[writeIdx[i]] = y;
-                incWrite(writeIdx[i], (int)buf.size());
+                const int logical = logicalLen(buf);
+                buf[(size_t)writeIdx[i]] = y;
+                const int prev = writeIdx[i];
+                incWrite(writeIdx[i], logical);
+                if (writeIdx[i] == 0 && prev != 0) postWrapPad(buf);
             }
 
             // tap multiple decorrelated lines for stereo output
@@ -179,8 +184,10 @@ public:
             {
                 const int Li = Lset[k] % numLines;
                 const int Ri = Rset[k] % numLines;
-                l += delay[Li][ wrappedRead(writeIdx[Li], (3+2*k), (int)delay[Li].size()) ];
-                r += delay[Ri][ wrappedRead(writeIdx[Ri], (5+2*k), (int)delay[Ri].size()) ];
+                const int lenL = logicalLen(delay[Li]);
+                const int lenR = logicalLen(delay[Ri]);
+                l += delay[Li][ wrappedRead(writeIdx[Li], (3+2*k), lenL) ];
+                r += delay[Ri][ wrappedRead(writeIdx[Ri], (5+2*k), lenR) ];
             }
             l *= 0.25f; r *= 0.25f;
 
@@ -198,6 +205,17 @@ public:
     }
 
 private:
+    // SIMD-safe padding configuration (for future vectorized reads)
+    static constexpr int kSimdWidth = 4;
+    static constexpr int kPad       = kSimdWidth - 1;
+
+    static inline int logicalLen (const std::vector<float>& v) noexcept { return (int)v.size() - kPad; }
+    static inline void postWrapPad (std::vector<float>& v) noexcept
+    {
+        const int len = logicalLen(v);
+        if (len <= 0) return;
+        for (int i = 0; i < kPad; ++i) v[(size_t)len + (size_t)i] = v[(size_t)i];
+    }
     // Wrap helpers
     static inline void incWrite (int& w, int len) noexcept { if (++w >= len) w = 0; }
     static inline int  wrappedRead (int w, int tap, int len) noexcept { int r = w - tap; if (r < 0) r += len; return r; }
