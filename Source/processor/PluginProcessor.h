@@ -231,7 +231,8 @@ namespace IDs {
 // Delay UI bridge
 #include "features/delay/DelayUiBridge.h"
 #include "shared/Core/FloatShim.h"
-#include "shared/Core/DspRuntimeConfig.h"
+struct DspRuntimeConfig; // forward-declare legacy shim (WO-37)
+// #include "shared/Core/DspRuntimeConfig.h" // removed in WO-37 soft phase
 #include "shared/Core/PhaseBanks.h"
 // ==================================
 // Visualization Bus (lock-free SPSC)
@@ -1238,3 +1239,6 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)
 };
+
+// removed legacy include of DspRuntimeConfig; forward declare to keep members compiling
+struct DspRuntimeConfig;
