@@ -1,6 +1,9 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "shared/ui/Managers/PaneManager.h"
+#include "core/runtime/DevHudFlag.h"
+#include "core/runtime/SafeParamGate.h"
+#include "core/params/ParamIDs.h"
 #include "shared/ui/Managers/ButtonManager.h"
 #include "features/xy/XYPad.h"
 #include "features/reverb/DSP/ReverbParamIDs.h"
@@ -868,13 +871,19 @@ void MyPluginAudioProcessorEditor::mouseUp    (const juce::MouseEvent& e) { if (
 void MyPluginAudioProcessorEditor::mouseMove  (const juce::MouseEvent& e) { if (eventManager) eventManager->handleMouseMove  (e); }
 void MyPluginAudioProcessorEditor::timerCallback()
 {
-#if JUCE_DEBUG
-    proc.messageThreadTickForLiveSwap(proc.getSampleRate(), proc.getBlockSize());
-    if (proc.hud().visible())
+#include "core/runtime/DevHudFlag.h"
+#if FIELD_DEV_HUD_ON
+    const bool hudOn = field::core::runtime::SafeParamGate::getBool(
+        proc, field::params::kDevHudEnable, true);
+    if (hudOn)
     {
-        const int h = 22;
-        const int w = 360;
-        repaint({ 8, getHeight() - (h + 8), w, h });
+        proc.messageThreadTickForLiveSwap(proc.getSampleRate(), proc.getBlockSize());
+        if (proc.hud().visible())
+        {
+            const int h = 22;
+            const int w = 360;
+            repaint({ 8, getHeight() - (h + 8), w, h });
+        }
     }
 #endif
     if (eventManager) eventManager->handleTimerCallback();
@@ -888,16 +897,22 @@ void MyPluginAudioProcessorEditor::resized()
 
 void MyPluginAudioProcessorEditor::paintOverChildren (juce::Graphics& g)
 {
-#if JUCE_DEBUG
-    const auto& hud = proc.hud();
-    if (hud.visible())
+#include "core/runtime/DevHudFlag.h"
+#if FIELD_DEV_HUD_ON
+    const bool hudOn = field::core::runtime::SafeParamGate::getBool(
+        proc, field::params::kDevHudEnable, true);
+    if (hudOn)
     {
-        auto r = juce::Rectangle<int>{ 8, getHeight() - 30, 360, 22 };
-        g.setColour(juce::Colours::black.withAlpha(0.6f));
-        g.fillRoundedRectangle(r.toFloat().reduced(2.0f), 6.0f);
-        g.setColour(juce::Colours::white);
-        g.setFont(juce::Font(juce::FontOptions(12.0f).withStyle("Bold")));
-        g.drawFittedText(hud.text(), r.reduced(6), juce::Justification::centredLeft, 1);
+        const auto& hud = proc.hud();
+        if (hud.visible())
+        {
+            auto r = juce::Rectangle<int>{ 8, getHeight() - 30, 360, 22 };
+            g.setColour(juce::Colours::black.withAlpha(0.6f));
+            g.fillRoundedRectangle(r.toFloat().reduced(2.0f), 6.0f);
+            g.setColour(juce::Colours::white);
+            g.setFont(juce::Font(juce::FontOptions(12.0f).withStyle("Bold")));
+            g.drawFittedText(hud.text(), r.reduced(6), juce::Justification::centredLeft, 1);
+        }
     }
 #else
     juce::ignoreUnused (g);

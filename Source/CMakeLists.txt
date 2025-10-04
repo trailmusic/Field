@@ -245,6 +245,9 @@ target_compile_definitions(Field PRIVATE
     FIELD_REVERB_PHASE2=1
 )
 
+# Enable Dev HUD in internal builds by default (can be overridden per-config)
+add_compile_definitions(FIELD_DEV_HUD=1)
+
 # Configure VST3 to use only VST3 headers
 set_target_properties(Field PROPERTIES
     JUCE_VST3_SDK_PATH "/dev/null"

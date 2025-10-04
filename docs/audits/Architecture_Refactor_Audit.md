@@ -782,7 +782,7 @@ Index additions:
   - `LIVE SWAP: ARMED` when same-latency voicing change is armed
   - `LIVE SWAP: DEFERRED (latency mismatch)` when rebuild will defer to prepare
   - Auto-clears after ~1–1.6 seconds
-- No DSP changes; off in release builds (`#if JUCE_DEBUG`).
+- No DSP changes; off in release builds.
 
 ## Changes
 
@@ -803,3 +803,40 @@ Index additions:
 
 - `processor/PluginProcessor.*` (message-thread tick + HUD member used)
 - `shared/Core/PluginEditor.cpp` (timer hook + overlay paint)
+
+---
+
+# WO-16 — FIELD_DEV_HUD flag + runtime toggle
+
+## What you get
+
+- Build-time flag to enable the HUD on internal builds (not only Debug).
+- Runtime toggle parameter `dev.hud.enable` to show/hide HUD without recompile.
+- No DSP changes.
+
+## Changes
+
+- Build flag:
+  - `Source/CMakeLists.txt`: `add_compile_definitions(FIELD_DEV_HUD=1)` (internal default).
+- Unified guard:
+  - `core/runtime/DevHudFlag.h`: defines `FIELD_DEV_HUD_ON` as (JUCE_DEBUG || FIELD_DEV_HUD).
+- Param + layout:
+  - `core/params/ParamIDs.h`: `kDevHudEnable = "dev.hud.enable"`.
+  - `core/params/ParamLayout.cpp` (under guard): adds `AudioParameterBool("Dev HUD", default=true)`.
+- Editor/processor guards switched:
+  - Replaced `#if JUCE_DEBUG` with `#if FIELD_DEV_HUD_ON` in live-swap tick and overlay paint.
+  - Editor timer reads `dev.hud.enable` via `SafeParamGate` before painting/ticking.
+- Safety guard:
+  - Processor tick references to planner/dual guarded behind `FIELD_LIVE_SWAP_AVAILABLE` (no-op if absent).
+
+## Verification
+
+- Rebuilt Standalone, AU, VST3 successfully.
+- In internal builds, HUD appears and can be turned off via `dev.hud.enable`.
+
+### Index additions (WO-16)
+
+- `core/runtime/DevHudFlag.h`
+- `core/params/ParamIDs.h` (+ `kDevHudEnable`)
+- `core/params/ParamLayout.cpp` (+ guarded bool param)
+- `processor/PluginProcessor.*`, `shared/Core/PluginEditor.cpp` (guards + toggle)

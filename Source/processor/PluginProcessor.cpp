@@ -4,7 +4,9 @@
 #include "core/params/Snapshot.h"
 void MyPluginAudioProcessor::messageThreadTickForLiveSwap (double sampleRate, int maxBlock)
 {
-#if JUCE_DEBUG
+#include "core/runtime/DevHudFlag.h"
+#if FIELD_DEV_HUD_ON
+# if defined(FIELD_LIVE_SWAP_AVAILABLE)
     if (paramBus_.consumeVoicingChanged() &&
         !paramBus_.peekTopologyChanged() && !paramBus_.peekLatencyChanged())
     {
@@ -14,6 +16,7 @@ void MyPluginAudioProcessor::messageThreadTickForLiveSwap (double sampleRate, in
                        2, 64);
         if (res.armed && res.sameLatency) hud_.setArmed(); else hud_.setDeferredLatency();
     }
+# endif
     hud_.tick(50);
 #else
     (void) sampleRate; (void) maxBlock;

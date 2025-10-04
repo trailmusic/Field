@@ -24,7 +24,7 @@ Layout makeParameterLayout()
 	layout.add (std::make_unique<AudioParameterBool>(
 		kChainReverbEnable, "Reverb Enable", false));
 
-	{
+    {
 		const juce::StringArray choices { "1x", "2x", "4x", "8x" };
 		layout.add (std::make_unique<AudioParameterChoice>(
 			kQualityOSFactor, "Oversampling", choices, 0));
@@ -60,7 +60,16 @@ Layout makeParameterLayout()
 			[] (const juce::String& s) { return s.getFloatValue(); }));
 	}
 
-	return layout;
+    // Dev HUD (debug/internal only)
+    {
+    #include "core/runtime/DevHudFlag.h"
+    #if FIELD_DEV_HUD_ON
+        layout.add (std::make_unique<AudioParameterBool>(
+            kDevHudEnable, "Dev HUD", true));
+    #endif
+    }
+
+    return layout;
 }
 
 }} // namespace field::params
