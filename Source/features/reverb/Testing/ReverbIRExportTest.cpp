@@ -18,7 +18,7 @@
 #include <chrono>
 #include <vector>
 #include "../Core/ReverbEngine.h"
-#include "../DSP/ReverbProcessorGlue.h"
+// ReverbProcessorGlue retired; use engines/modules directly
 #include "../Core/FieldReverbConfig.h"
 
 class ReverbIRExportTest : public juce::UnitTest
@@ -87,8 +87,7 @@ public:
         juce::AudioProcessorValueTreeState apvts (dummy, nullptr, "ReverbTest", std::move (layout));
 
         ReverbEngine engine;
-        ReverbProcessorGlue glue (apvts, engine);
-        glue.prepareToPlay (sr, block, 2);
+        engine.prepare (sr, block, 2);
         
         // Force wet-only mode for unambiguous IR
         if (auto* p = apvts.getParameter("wet_only")) 
@@ -111,7 +110,11 @@ public:
                     io.setSample (c, 0, 1.0f);
 
             // Keep buffer size constant, just process first n samples
-            glue.processBlock (io, midi);
+            {
+                juce::AudioBuffer<float> sidechain (io.getNumChannels(), io.getNumSamples());
+                sidechain.makeCopyOf(io);
+                engine.processWet(io, sidechain);
+            }
 
             for (int c=0;c<2;++c)
                 tail.copyFrom (c, rendered, io.getReadPointer (c), n);

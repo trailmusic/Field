@@ -37,6 +37,38 @@ Last updated: 2025-10-04 • Branch: `feature`
 
 ---
 
+# WO-22 — Reverb DSP Consolidation (kill legacy glue; keep builds green)
+
+## Objective
+
+Move remaining Reverb DSP bits under `engines/reverb/**`, remove legacy glue and duplicate param ID headers. No UI or sonic changes.
+
+## Changes
+
+- Moved header:
+  - `features/reverb/DSP/DecayLossDesigner.h` → `engines/reverb/DSP/DecayLossDesigner.h`
+  - Updated includes: `features/reverb/DSP/ReverbFDN.h` now includes `engines/reverb/DSP/DecayLossDesigner.h`.
+- Removed legacy glue (or replaced with poison):
+  - Deleted `features/reverb/DSP/ReverbProcessorGlue.cpp`.
+  - `features/reverb/DSP/ReverbProcessorGlue.h` now emits a compile-time error if included.
+- Replaced duplicate param IDs includes:
+  - `processor/PluginProcessor.h` and `shared/Core/PluginEditor.cpp` now include `core/params/ParamIDs.h` instead of `features/reverb/DSP/ReverbParamIDs.h`.
+- CMake updates (`Source/CMakeLists.txt`):
+  - Added `engines/reverb/DSP/DecayLossDesigner.h` to sources list.
+  - Removed references to `ReverbProcessorGlue.*` and commented `ReverbParamIDs.h` as retired.
+- Test fix:
+  - `features/reverb/Testing/ReverbIRExportTest.cpp` no longer uses Glue; it prepares `ReverbEngine` directly and calls `processWet()` with a sidechain copy.
+
+## Verification
+
+- Ran `/Users/grantedwards/Desktop/Field/build_and_test.sh`: Standalone, AU, VST3 built and installed successfully.
+- Searched for retired headers in code; remaining references only in docs.
+
+## Next steps
+
+- Add CI grep tripwires to forbid `features/reverb/DSP/ReverbProcessorGlue.*` and `features/reverb/DSP/ReverbParamIDs.h` includes.
+- Continue shared/dsp retirement per WO-21 (move `.cpp` and drop include paths).
+
 ## Purpose
 Protect the UI while restructuring `Source/` to separate UI, processor glue, DSP engines, and cross-cutting core (signal, runtime, telemetry). Provide a clean lane for future signal + latency work.
 
@@ -942,3 +974,32 @@ Index additions:
 ### Index additions (WO-20)
 
 - `tests/offline/test_param_bus_processor_glue.cpp`
+
+---
+
+# WO-21 — Retire shared/dsp (phase bank include), prep for full shutdown
+
+## What you get
+
+- Begin decommissioning of `Source/shared/dsp` by migrating the MinPhaseBank include into the engines tree; builds stay green.
+
+## Changes
+
+- Processor include updated:
+  - `processor/PluginProcessor.h`: `#include "engines/phase/MinPhaseBankIntegration.h"` (was `shared/dsp/...`).
+- Engines header added:
+  - `engines/phase/MinPhaseBankIntegration.h` (copied interface; temporary until full move completes).
+- CMake source list adjusted:
+  - `Source/CMakeLists.txt`: swapped header path to `engines/phase/MinPhaseBankIntegration.h` while keeping the existing `.cpp` compiled.
+- Kept existing implementation for now:
+  - `shared/dsp/MinPhaseBankIntegration.cpp` updated to include the engines header path.
+
+## Verification
+
+- Ran `/Users/grantedwards/Desktop/Field/build_and_test.sh`: Standalone, AU, VST3 built and installed successfully.
+
+## Next steps (not executed yet)
+
+- Move `.cpp` into `engines/phase/` and remove `shared/dsp` from include paths.
+- Add CI grep tripwire to block `#include "shared/dsp/..."`.
+- Replace any remaining `shared/dsp` use sites with engines/modules equivalents.

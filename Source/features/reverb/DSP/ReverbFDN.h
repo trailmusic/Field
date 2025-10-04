@@ -29,7 +29,7 @@
 #include <atomic>
 #include <memory>
 #include "../Core/FieldReverbConfig.h"
-#include "DecayLossDesigner.h"
+#include "engines/reverb/DSP/DecayLossDesigner.h"
 
 namespace fieldverb
 {

@@ -1,4 +1,4 @@
-#include "MinPhaseBankIntegration.h"
+#include "engines/phase/MinPhaseBankIntegration.h"
 
 MinPhaseBankIntegration::MinPhaseBankIntegration()
 {

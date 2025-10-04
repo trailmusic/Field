@@ -32,6 +32,8 @@ target_sources(FieldRanger PRIVATE
     RangerPlotPane.cpp
     RangerSettingsPane.cpp
     RangerInstructionsPane.cpp
+    SimpleRangerDocsPane.cpp
+    SimpleRangerAuditionPane.cpp
     RangerLogo.cpp
     SimpleFieldTheme.h
     

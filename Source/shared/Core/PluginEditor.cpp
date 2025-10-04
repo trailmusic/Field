@@ -6,7 +6,7 @@
 #include "core/params/ParamIDs.h"
 #include "shared/ui/Managers/ButtonManager.h"
 #include "features/xy/XYPad.h"
-#include "features/reverb/DSP/ReverbParamIDs.h"
+#include "core/params/ParamIDs.h"
 #include "shared/ui/Design/Layout.h"
 #include "shared/dsp/DelayPresetLibrary.h"
 #include "features/reverb/UI/ReverbGraphics.h"

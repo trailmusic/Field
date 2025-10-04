@@ -22,7 +22,7 @@
 */
 
 #include <JuceHeader.h>
-#include "../Core/ReverbTypes.h"
+#include "features/reverb/Core/ReverbTypes.h"
 
 namespace fieldverb
 {

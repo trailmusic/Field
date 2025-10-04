@@ -100,7 +100,7 @@ set(SRC
     features/reverb/UI/DecayRateFloat.cpp
     
     # Reverb DSP
-    features/reverb/DSP/ReverbParamIDs.h
+    # features/reverb/DSP/ReverbParamIDs.h (removed; use core/params/ParamIDs.h)
     features/reverb/DSP/ReverbParameters.h
     features/reverb/DSP/ReverbParameters.cpp
     features/reverb/DSP/ReverbEQ.h
@@ -108,10 +108,9 @@ set(SRC
     features/reverb/DSP/ReverbEQParamIDs.h
     features/reverb/DSP/DecayRateEQ.h
     features/reverb/DSP/DecayRateEQ.cpp
-    features/reverb/DSP/DecayLossDesigner.h
+    engines/reverb/DSP/DecayLossDesigner.h
     features/reverb/DSP/ReverbFDN.h
-    features/reverb/DSP/ReverbProcessorGlue.h
-    features/reverb/DSP/ReverbProcessorGlue.cpp
+    # features/reverb/DSP/ReverbProcessorGlue.* removed; replaced by modules APIs
     features/reverb/DSP/SimdBiquad.h
     
     # Reverb Presets
@@ -174,7 +173,7 @@ set(SRC
     shared/dsp/DelayPresetLibrary.cpp
     shared/dsp/PhaseAlignmentEngine.h
     shared/dsp/PhaseAlignmentEngine.cpp
-    shared/dsp/MinPhaseBankIntegration.h
+    engines/phase/MinPhaseBankIntegration.h
     shared/dsp/MinPhaseBankIntegration.cpp
     ../Ranger/MinPhaseBank.h
     ../Ranger/MinPhaseBank.cpp
