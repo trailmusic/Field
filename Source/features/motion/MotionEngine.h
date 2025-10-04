@@ -4,6 +4,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "engines/motion/MotionParams.h"
 #include "engines/motion/MotionPath.h"
+#include "features/motion/MotionVisual.h"
 namespace motion {
 
 // Host sync information
