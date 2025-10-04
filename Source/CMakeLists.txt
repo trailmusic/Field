@@ -236,12 +236,13 @@ juce_add_plugin(Field
 juce_generate_juce_header(Field)
 
 # Configure VST3 without VST2 dependencies
-target_compile_definitions(Field PRIVATE     JUCE_DISABLE_VST2_LEGACY=1
+target_compile_definitions(Field PRIVATE 
+    JUCE_DISABLE_VST2_LEGACY=1
     JUCE_DISABLE_VST2=1
     JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_STRICT_REFCOUNTEDPTR=1
-    &    FIELD_POISON_DSP_RUNTIME_CONFIG=1
-    )
+    FIELD_POISON_DSP_RUNTIME_CONFIG=1
+)
 
 # Enable Dev HUD in internal builds by default (can be overridden per-config)
 add_compile_definitions(FIELD_DEV_HUD=1)
