@@ -13,7 +13,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "ReverbParamIDs.h"
+#include "core/params/ParamIDs.h"
 
 struct ReverbParameters
 {
@@ -35,7 +35,7 @@ struct ReverbParameters
 inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioParameter>>& out)
 {
     using namespace juce;
-    using namespace ReverbParamIDs;
+    using namespace field::params;
     
     auto F = [] (const String& id, const String& nm, NormalisableRange<float> r, float def)
     {
@@ -51,66 +51,66 @@ inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioPa
     };
 
     // Core routing
-    out.push_back (B (enabled, "Reverb Enable", true));
-    out.push_back (B (killDry, "Wet Only", false));
+    out.push_back (B ("reverb.enabled", "Reverb Enable", true));
+    out.push_back (B ("reverb.killDry", "Wet Only", false));
 
     // Structure / space
-    out.push_back (F (preDelayMs, "Pre", NormalisableRange<float>(0.f, 200.f, 0.1f), 0.f));
-    out.push_back (F (decaySec, "Decay", NormalisableRange<float>(0.2f, 20.f, 0.001f, 0.4f), 2.4f));
-    out.push_back (F (sizePct, "Size", NormalisableRange<float>(10.f, 200.f, 0.1f), 100.f));
+    out.push_back (F ("reverb.preDelayMs", "Pre", NormalisableRange<float>(0.f, 200.f, 0.1f), 0.f));
+    out.push_back (F ("reverb.decaySec", "Decay", NormalisableRange<float>(0.2f, 20.f, 0.001f, 0.4f), 2.4f));
+    out.push_back (F ("reverb.sizePct", "Size", NormalisableRange<float>(10.f, 200.f, 0.1f), 100.f));
 
     // Early reflections
-    out.push_back (F (erLevelDb, "ER Lvl", NormalisableRange<float>(-24.f, 6.f, 0.1f), -6.f));
-    out.push_back (F (erDensityPct, "ER Den", NormalisableRange<float>(0.f, 100.f, 0.1f), 60.f));
-    out.push_back (F (erWidthPct, "ER Wid", NormalisableRange<float>(0.f, 200.f, 0.1f), 110.f));
-    out.push_back (F (erTimeMs, "ER Time", NormalisableRange<float>(50.f, 500.f, 0.1f), 120.f));
-    out.push_back (F (erToTailPct, "ER→T", NormalisableRange<float>(0.f, 100.f, 0.1f), 40.f));
+    out.push_back (F ("reverb.er.levelDb", "ER Lvl", NormalisableRange<float>(-24.f, 6.f, 0.1f), -6.f));
+    out.push_back (F ("reverb.er.densityPct", "ER Den", NormalisableRange<float>(0.f, 100.f, 0.1f), 60.f));
+    out.push_back (F ("reverb.er.widthPct", "ER Wid", NormalisableRange<float>(0.f, 200.f, 0.1f), 110.f));
+    out.push_back (F ("reverb.er.timeMs", "ER Time", NormalisableRange<float>(50.f, 500.f, 0.1f), 120.f));
+    out.push_back (F ("reverb.er.toTailPct", "ER→T", NormalisableRange<float>(0.f, 100.f, 0.1f), 40.f));
 
     // Diffusion / density
-    out.push_back (F (diffusionPct, "Diff", NormalisableRange<float>(0.f, 100.f, 0.1f), 70.f));
-    out.push_back (F (densityPct, "Dens", NormalisableRange<float>(0.f, 100.f, 0.1f), 65.f));
+    out.push_back (F ("reverb.diffusionPct", "Diff", NormalisableRange<float>(0.f, 100.f, 0.1f), 70.f));
+    out.push_back (F ("reverb.densityPct", "Dens", NormalisableRange<float>(0.f, 100.f, 0.1f), 65.f));
 
     // Modulation
-    out.push_back (F (modDepthCents, "Mod Dep", NormalisableRange<float>(0.f, 25.f, 0.01f), 3.5f));
-    out.push_back (F (modRateHz, "Mod Rate", NormalisableRange<float>(0.05f, 5.f, 0.0001f, 0.4f), 0.35f));
+    out.push_back (F ("reverb.mod.depthCents", "Mod Dep", NormalisableRange<float>(0.f, 25.f, 0.01f), 3.5f));
+    out.push_back (F ("reverb.mod.rateHz", "Mod Rate", NormalisableRange<float>(0.05f, 5.f, 0.0001f, 0.4f), 0.35f));
 
     // Stereo + rotation
-    out.push_back (F (widthPct, "Width", NormalisableRange<float>(0.f, 200.f, 0.1f), 100.f));
-    out.push_back (F (rotationDeg, "Rot", NormalisableRange<float>(-45.f, 45.f, 0.1f), 0.f));
+    out.push_back (F ("reverb.widthPct", "Width", NormalisableRange<float>(0.f, 200.f, 0.1f), 100.f));
+    out.push_back (F ("reverb.rotationDeg", "Rot", NormalisableRange<float>(-45.f, 45.f, 0.1f), 0.f));
 
     // Motion follow
-    out.push_back (B (followWidth, "Follow W", false));
-    out.push_back (F (followWidthAmt, "W Amt", NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
-    out.push_back (B (followRot, "Follow R", false));
-    out.push_back (F (followRotAmt, "R Amt", NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
+    out.push_back (B ("reverb.follow.width", "Follow W", false));
+    out.push_back (F ("reverb.follow.widthAmt", "W Amt", NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
+    out.push_back (B ("reverb.follow.rot", "Follow R", false));
+    out.push_back (F ("reverb.follow.rotAmt", "R Amt", NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
 
     // Mix & specials
-    out.push_back (F (wetMix01, "Wet", NormalisableRange<float>(0.f, 1.f, 0.001f), 0.25f));
-    out.push_back (F (bloomPct, "Bloom", NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
-    out.push_back (F (distancePct, "Distance", NormalisableRange<float>(0.f, 100.f, 0.1f), 50.f));
-    out.push_back (B (freeze, "Freeze", false));
-    out.push_back (F (shimmerAmtPct, "Shim Amt", NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
-    out.push_back (F (shimmerInt, "Shim Int", NormalisableRange<float>(0.f, 100.f, 0.1f), 50.f));
-    out.push_back (F (gateAmtPct, "Gate", NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
-    out.push_back (F (outTrimDb, "Trim", NormalisableRange<float>(-24.f, 12.f, 0.01f), 0.f));
+    out.push_back (F ("reverb.wet01", "Wet", NormalisableRange<float>(0.f, 1.f, 0.001f), 0.25f));
+    out.push_back (F ("reverb.bloomPct", "Bloom", NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
+    out.push_back (F ("reverb.distancePct", "Distance", NormalisableRange<float>(0.f, 100.f, 0.1f), 50.f));
+    out.push_back (B ("reverb.freeze", "Freeze", false));
+    out.push_back (F ("reverb.shimmer.amtPct", "Shim Amt", NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
+    out.push_back (F ("reverb.shimmer.intPct", "Shim Int", NormalisableRange<float>(0.f, 100.f, 0.1f), 50.f));
+    out.push_back (F ("reverb.gateAmtPct", "Gate", NormalisableRange<float>(0.f, 100.f, 0.1f), 0.f));
+    out.push_back (F ("reverb.outTrimDb", "Trim", NormalisableRange<float>(-24.f, 12.f, 0.01f), 0.f));
 
     // Reverb EQ routing
-    out.push_back (F (dreqXoverLoHz, "DREQ XO Lo", NormalisableRange<float>(80.f, 400.f, 0.1f, 0.35f), 160.f));
-    out.push_back (F (dreqXoverHiHz, "DREQ XO Hi", NormalisableRange<float>(1000.f, 6000.f, 0.1f, 0.35f), 3000.f));
-    out.push_back (C (dreqApply, "EQ Apply", ReverbParameters::dreqApplyChoices(), 1)); // default Post
+    out.push_back (F ("reverb.dreq.xoverLoHz", "DREQ XO Lo", NormalisableRange<float>(80.f, 400.f, 0.1f, 0.35f), 160.f));
+    out.push_back (F ("reverb.dreq.xoverHiHz", "DREQ XO Hi", NormalisableRange<float>(1000.f, 6000.f, 0.1f, 0.35f), 3000.f));
+    out.push_back (C ("reverb.dreq.apply", "EQ Apply", ReverbParameters::dreqApplyChoices(), 1)); // default Post
 
     // Ducking (floating)
-    out.push_back (B (duckOn, "Duck On", false));
-    out.push_back (C (duckMode, "Duck Mode", ReverbParameters::duckModeChoices(), 0));
-    out.push_back (F (duckDepthDb, "Duck Depth", NormalisableRange<float>(0.f, 24.f, 0.1f), 6.f));
-    out.push_back (F (duckAtkMs, "Attack", NormalisableRange<float>(1.f, 100.f, 0.1f), 10.f));
-    out.push_back (F (duckRelMs, "Release", NormalisableRange<float>(50.f, 2000.f, 0.1f, 0.35f), 300.f));
-    out.push_back (F (duckThrDb, "Threshold", NormalisableRange<float>(-60.f, -6.f, 0.1f), -24.f));
-    out.push_back (F (duckRatio, "Ratio", NormalisableRange<float>(1.f, 8.f, 0.01f), 3.f));
-    out.push_back (F (duckKneeDb, "Knee", NormalisableRange<float>(0.f, 24.f, 0.1f), 6.f));
-    out.push_back (F (duckBandHz, "Focus Hz", NormalisableRange<float>(50.f, 8000.f, 0.1f, 0.35f), 2000.f));
-    out.push_back (F (duckBandQ, "Focus Q", NormalisableRange<float>(0.3f, 4.f, 0.01f, 0.35f), 1.0f));
-    out.push_back (C (duckDetectorSrc, "Detector", ReverbParameters::duckDetectorChoices(), 3)); // Wet Sum
+    out.push_back (B ("reverb.duck.on", "Duck On", false));
+    out.push_back (C ("reverb.duck.mode", "Duck Mode", ReverbParameters::duckModeChoices(), 0));
+    out.push_back (F ("reverb.duck.depthDb", "Duck Depth", NormalisableRange<float>(0.f, 24.f, 0.1f), 6.f));
+    out.push_back (F ("reverb.duck.atkMs", "Attack", NormalisableRange<float>(1.f, 100.f, 0.1f), 10.f));
+    out.push_back (F ("reverb.duck.relMs", "Release", NormalisableRange<float>(50.f, 2000.f, 0.1f, 0.35f), 300.f));
+    out.push_back (F ("reverb.duck.thrDb", "Threshold", NormalisableRange<float>(-60.f, -6.f, 0.1f), -24.f));
+    out.push_back (F ("reverb.duck.ratio", "Ratio", NormalisableRange<float>(1.f, 8.f, 0.01f), 3.f));
+    out.push_back (F ("reverb.duck.kneeDb", "Knee", NormalisableRange<float>(0.f, 24.f, 0.1f), 6.f));
+    out.push_back (F ("reverb.duck.bandHz", "Focus Hz", NormalisableRange<float>(50.f, 8000.f, 0.1f, 0.35f), 2000.f));
+    out.push_back (F ("reverb.duck.bandQ", "Focus Q", NormalisableRange<float>(0.3f, 4.f, 0.01f, 0.35f), 1.0f));
+    out.push_back (C ("reverb.duck.detector", "Detector", ReverbParameters::duckDetectorChoices(), 3)); // Wet Sum
 
     // ================================================================
     // 🎯 DECAY RATE CONTROL PARAMETERS (JANUARY 2025)
@@ -118,14 +118,14 @@ inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioPa
     // CRITICAL: Musical decay-rate control for reverb tails
     // These parameters enable frequency-dependent T60 shaping
     // ================================================================
-    out.push_back (F (decayLoMult, "Low Decay", NormalisableRange<float>(0.25f, 4.0f, 0.01f, 0.35f), 1.0f));
-    out.push_back (F (decayHiMult, "High Decay", NormalisableRange<float>(0.25f, 4.0f, 0.01f, 0.35f), 1.0f));
-    out.push_back (F (decayMidDb, "Mid Bell", NormalisableRange<float>(-12.f, 12.f, 0.1f), 0.f));
-    out.push_back (F (decayMidFreqHz, "Mid Freq", NormalisableRange<float>(20.f, 20000.f, 0.1f, 0.35f), 1200.f));
-    out.push_back (F (decayMidQ, "Mid Q", NormalisableRange<float>(0.3f, 6.0f, 0.01f, 0.35f), 0.9f));
-    out.push_back (F (decayTiltDb, "Decay Tilt", NormalisableRange<float>(-12.f, 12.f, 0.1f), 0.f));
-    out.push_back (C (decaySmoothing, "Smoothing", ReverbParameters::decaySmoothingChoices(), 1)); // Med
-    out.push_back (C (decayMode, "Decay Mode", ReverbParameters::decayModeChoices(), 0)); // Simple
+    out.push_back (F ("reverb.decay.loMult", "Low Decay", NormalisableRange<float>(0.25f, 4.0f, 0.01f, 0.35f), 1.0f));
+    out.push_back (F ("reverb.decay.hiMult", "High Decay", NormalisableRange<float>(0.25f, 4.0f, 0.01f, 0.35f), 1.0f));
+    out.push_back (F ("reverb.decay.midDb", "Mid Bell", NormalisableRange<float>(-12.f, 12.f, 0.1f), 0.f));
+    out.push_back (F ("reverb.decay.midFreqHz", "Mid Freq", NormalisableRange<float>(20.f, 20000.f, 0.1f, 0.35f), 1200.f));
+    out.push_back (F ("reverb.decay.midQ", "Mid Q", NormalisableRange<float>(0.3f, 6.0f, 0.01f, 0.35f), 0.9f));
+    out.push_back (F ("reverb.decay.tiltDb", "Decay Tilt", NormalisableRange<float>(-12.f, 12.f, 0.1f), 0.f));
+    out.push_back (C ("reverb.decay.smoothing", "Smoothing", ReverbParameters::decaySmoothingChoices(), 1)); // Med
+    out.push_back (C ("reverb.decay.mode", "Decay Mode", ReverbParameters::decayModeChoices(), 0)); // Simple
     
     // ================================================================
     // 🎯 DECAY PROFILE SYSTEM (JANUARY 2025)
@@ -133,8 +133,8 @@ inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioPa
     // CRITICAL: Musical decay profile modes and coupling system
     // These parameters enable intelligent decay curve generation
     // ================================================================
-    out.push_back (C (decayProfileMode, "Decay Profile", ReverbParameters::decayProfileModeChoices(), 0)); // Manual 3-Band
-    out.push_back (C (decayProfileCoupling, "Decay Coupling", ReverbParameters::decayProfileCouplingChoices(), 0)); // Independent
+    out.push_back (C ("reverb.decay.profile.mode", "Decay Profile", ReverbParameters::decayProfileModeChoices(), 0)); // Manual 3-Band
+    out.push_back (C ("reverb.decay.profile.coupling", "Decay Coupling", ReverbParameters::decayProfileCouplingChoices(), 0)); // Independent
     
     // ================================================================
     // 🎯 SIDECHAIN LEARN SYSTEM (JANUARY 2025)
@@ -142,8 +142,8 @@ inline void addReverbParameters (std::vector<std::unique_ptr<juce::RangedAudioPa
     // CRITICAL: Auto-learn decay profiles from external signals
     // These parameters enable intelligent decay curve learning
     // ================================================================
-    out.push_back (B (decayLearn, "Learn (One-Shot)", false));
-    out.push_back (B (decayLearnReset, "Reset Learned", false));
-    out.push_back (F (decayLearnStrength, "Learn Strength", NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.5f));
-    out.push_back (F (decayLearnWindow, "Learn Window (s)", NormalisableRange<float>(2.0f, 8.0f, 0.1f), 4.0f));
+    out.push_back (B ("reverb.decay.learn", "Learn (One-Shot)", false));
+    out.push_back (B ("reverb.decay.learnReset", "Reset Learned", false));
+    out.push_back (F ("reverb.decay.learn.strength", "Learn Strength", NormalisableRange<float>(0.0f, 1.0f, 0.01f), 0.5f));
+    out.push_back (F ("reverb.decay.learn.windowSec", "Learn Window (s)", NormalisableRange<float>(2.0f, 8.0f, 0.1f), 4.0f));
 }
