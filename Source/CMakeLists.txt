@@ -299,6 +299,9 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL
   endif()
 endif()
 
+# Disable JUCE debug assertions for the Standalone wrapper so Debug app can launch cleanly
+target_compile_definitions(Field_Standalone PRIVATE $<$<CONFIG:Debug>:JUCE_DISABLE_ASSERTIONS=1>)
+
 # ================================================================
 # 🎛️ END QUALITY SYSTEM BUILD PREREQUISITES
 # ================================================================

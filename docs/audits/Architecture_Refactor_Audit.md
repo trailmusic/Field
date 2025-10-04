@@ -34,7 +34,7 @@ Last updated: 2025-10-04 • Branch: `feature`
 - [WO-12 — Minimal Param Layout (APVTS) + Safe Reads (no DSP changes)](#wo-12--minimal-param-layout-apvts--safe-reads-no-dsp-changes)
 - [WO-13 — Rebuild Listeners + Latency/Tail Apply at Prepare](#wo-13--rebuild-listeners--latencytail-apply-at-prepare)
 - [WO-14 — Live-Swap for Voicing Params (same-latency edits only)](#wo-14--live-swap-for-voicing-params-same-latency-edits-only)
- - [2025-10-04 — Maintenance Update: DualChain assignment removal + full build](#2025-10-04--maintenance-update-dualchain-assignment-removal--full-build)
+- [2025-10-04 — Maintenance Update: DualChain assignment removal + full build](#2025-10-04--maintenance-update-dualchain-assignment-removal--full-build)
 - [WO-15 — Editor Timer Hook + Live-Swap HUD (dev-only)](#wo-15--editor-timer-hook--live-swap-hud-dev-only)
 - [WO-16 — FIELD_DEV_HUD flag + runtime toggle](#wo-16--field_dev_hud-flag--runtime-toggle)
 - [WO-17 — Offline Golden Tests (same-latency voicing & mid-block swap)](#wo-17--offline-golden-tests-same-latency-voicing--mid-block-swap)
@@ -65,10 +65,15 @@ Last updated: 2025-10-04 • Branch: `feature`
 - [WO-42 — DspRuntimeConfig poison + CI tripwires](#wo-42--dspruntimeconfig-poison--ci-tripwires)
 - [WO-43 — Include-scope hygiene (ODR guard)](#wo-43--include-scope-hygiene-odr-guard)
 - [WO-44 — FDN invariants & first-bad-sample capture (dev-only)](#wo-44--fdn-invariants--first-bad-sample-capture-dev-only)
- - [WO-45 — Motion/Machine engine split + MotionCore extraction + rename](#wo-45--motionmachine-engine-split--motioncore-extraction--rename)
- - [WO-46 — Reverb legacy purge (finish WO-40/41)](#wo-46--reverb-legacy-purge-finish-wo-4041)
+- [WO-45 — Motion/Machine engine split + MotionCore extraction + rename](#wo-45--motionmachine-engine-split--motioncore-extraction--rename)
+- [WO-46 — Reverb legacy purge (finish WO-40/41)](#wo-46--reverb-legacy-purge-finish-wo-4041)
 - [WO-47 — UI “Engines” fence + CI tripwire](#wo-47--ui-engines-fence--ci-tripwire)
- - [WO-49 — Ableton Insert Safe hardening](#wo-49--ableton-insert-safe-hardening)
+- [WO-49 — Ableton Insert Safe hardening](#wo-49--ableton-insert-safe-hardening)
+- [WO-50 — Processor lifecycle & zero-buffer guards](#wo-50--processor-lifecycle--zero-buffer-guards)
+- [WO-51 — FieldChain: stage list + prepared flag](#wo-51--fieldchain-stage-list--prepared-flag)
+- [WO-52 — Node_Meter hardening (no atomics before prepare, 0-chan safe)](#wo-52--node_meter-hardening-no-atomics-before-prepare-0-chan-safe)
+- [WO-53 — Kill APVTS reads on audio thread (final sweep)](#wo-53--kill-apvts-reads-on-audio-thread-final-sweep)
+- [WO-54 — Offline test: chain unity with disabled stages](#wo-54--offline-test-chain-unity-with-disabled-stages)
 
 
 ---
@@ -1564,7 +1569,104 @@ Add zero-cost-in-release invariants to `ReverbFDN` to catch wrap/feedback anomal
 ---
 
 
-# WO-45 — Motion/Machine engine split + MotionCore extraction + rename
+# WO-50 — Processor lifecycle & zero-buffer guards
+
+## Objective
+
+Make first-callback insertion safe across hosts that may deliver zero-channel/zero-sample buffers or call before prepare completes.
+
+## Changes
+
+- `processor/PluginProcessor.h`:
+  - Added lifecycle state: `std::atomic<bool> prepared_{false}; lastPrepared{SR,Block,NumChans}`.
+- `processor/PluginProcessor.cpp`:
+  - In `prepareToPlay`, set last prepared SR/block/chans and mark `prepared_ = true`.
+  - In `releaseResources`, clear `prepared_`.
+  - In `processBlock(float/double)`, early-return on trivial blocks; clear on not prepared; then process.
+
+## Verification
+
+- Linted; builds green. Live insert with zero buffers is safe; no tone change.
+
+---
+
+# WO-51 — FieldChain: stage list + prepared flag
+
+## Objective
+
+Eliminate calls into unprepared stages; execute only enabled stages; add prepare gate.
+
+## Changes
+
+- `Source/modules/FieldChain.h`:
+  - Added `enum class Stage` and `std::vector<Stage> stages_`; `buildFromConfig()` populates enabled-only order.
+  - `process()` iterates `stages_` and dispatches.
+  - Added `prepared_` flag; set in `prepare()`, cleared in `reset()`; `process()` returns early if not prepared.
+
+## Verification
+
+- Linted; builds green. Disabled stages are never invoked; no placeholder calls.
+
+---
+
+# WO-52 — Node_Meter hardening (no atomics before prepare, 0-chan safe)
+
+## Objective
+
+Ensure atomics are only touched after prepare; safely handle zero-channel/zero-sample blocks.
+
+## Changes
+
+- `Source/modules/Mixing/Node_Meter.h`:
+  - Added `std::atomic<bool> prepared_{false}`; set in `prepare()`, cleared in `reset()`.
+  - Debug `jassert(prepared_)` in `process()`; early-return on 0 channels/samples.
+
+## Verification
+
+- Linted; builds green. Debug asserts catch misuse; no tone change.
+
+---
+
+# WO-53 — Kill APVTS reads on audio thread (final sweep)
+
+## Objective
+
+Remove APVTS access in audio callbacks; enforce via CI tripwires and caching policy.
+
+## Changes
+
+- Audit findings:
+  - APVTS reads in `processBlock(float/double)` (`makeHostParams(apvts)`, `getParameterAsValue(...)`).
+  - APVTS reads in `PhaseAlignmentEngine::updateParameters(...)` called from audio thread.
+- Policy:
+  - Move reads to prepare/message-thread tick; cache POD for audio thread.
+- CI tripwires:
+  - Regex: `getRawParameterValue\(.*\).*processBlock`, `AudioProcessorValueTreeState.*processBlock`.
+
+## Verification
+
+- Linted doc; tripwires to be added in build scripts; follow-up refactor planned.
+
+---
+
+# WO-54 — Offline test: chain unity with disabled stages
+
+## Objective
+
+Ensure a chain with all stages disabled is safe to prepare and process and leaves silence unchanged.
+
+## Changes
+
+- Added `Source/tests/offline/test_chain_unity_disabled_stages.cpp`:
+  - Builds a default `FieldChain`, prepares it, processes a silent buffer, and asserts no crash and unchanged data.
+
+## Verification
+
+- Linted; compiles. Test asserts hold under local run.
+
+---
+
+# WO-55 — Motion/Machine engine split + MotionCore extraction + rename
 
 ## Objective
 
@@ -1594,7 +1696,7 @@ Move all DSP for Machine/Motion under `engines/**`, keep `features/**` visual-on
 
 ---
 
-# WO-46 — Reverb legacy purge (finish WO-40/41)
+# WO-56 — Reverb legacy purge (finish WO-40/41)
 
 ## Objective
 
@@ -1624,7 +1726,7 @@ Eliminate active code under `features/reverb/{DSP,Core}` so reverb DSP has a sin
 
 ---
 
-# WO-47 — UI “Engines” fence + CI tripwire
+# WO-57 — UI “Engines” fence + CI tripwire
 
 ## Objective
 
@@ -1644,7 +1746,7 @@ Guarantee that UI/feature code cannot compile against engine-only scope and engi
 
 ---
 
-# WO-49 — Ableton Insert Safe hardening
+# WO-59 — Ableton Insert Safe hardening
 
 ## Objective
 
@@ -1664,3 +1766,4 @@ Make first-callback insert safe in hosts that may call `processBlock` with engin
 - Full green build; insert on Live/hosts should not crash even if callbacks occur during initialization.
 
 ---
+

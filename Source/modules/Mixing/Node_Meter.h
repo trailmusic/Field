@@ -8,16 +8,22 @@ namespace field { namespace modules { namespace mixing {
 template <size_t MaxChannels = 16>
 struct Node_Meter
 {
+	alignas(4) std::atomic<bool> prepared_{false};
+
 	template <typename Sample>
 	void prepare (double /*sr*/, int /*maxBlock*/, int chans)
 	{
 		chans_ = (chans > 0 ? (chans <= (int)MaxChannels ? chans : (int)MaxChannels) : 2);
 		reset();
+		prepared_.store(true, std::memory_order_release);
 	}
 
 	template <typename Sample>
 	void process (juce::dsp::AudioBlock<Sample>& io) noexcept
 	{
+		#if JUCE_DEBUG
+		jassert (prepared_.load(std::memory_order_acquire));
+		#endif
 		for (int ch = 0; ch < chans_; ++ch)
 		{
 			auto* p = io.getChannelPointer((size_t)ch);
@@ -31,6 +37,7 @@ struct Node_Meter
 	void reset() noexcept
 	{
 		for (auto& a : peaks_) a.store(0.f, std::memory_order_relaxed);
+		prepared_.store(false, std::memory_order_release);
 	}
 
 	float getPeak (int ch) const noexcept { return (ch >= 0 && ch < (int)MaxChannels) ? peaks_[ch].load() : 0.f; }

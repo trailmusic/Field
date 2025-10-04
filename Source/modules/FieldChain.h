@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <type_traits>
 #include <cstring>
+#include <vector>
 
 #include "Mixing/Node_Gain.h"
 #include "Mixing/Node_MSMatrix.h"
@@ -17,6 +18,8 @@
 namespace field { namespace modules {
 struct FieldChain
 {
+	enum class Stage : uint8_t { Meter, MS, Gain, Delay, DynEq, Reverb, Phase, Imager };
+
 	struct Config
 	{
 		bool enableMeter  = false;
@@ -58,6 +61,17 @@ struct FieldChain
 		active_.reverb  = cfg_.enableReverb;
 		active_.phase   = cfg_.enablePhase;
 		active_.imager  = cfg_.enableImager;
+
+		// Build enabled stage order (enabled-only execution)
+		stages_.clear();
+		if (active_.meter)  stages_.push_back(Stage::Meter);
+		if (active_.ms)     stages_.push_back(Stage::MS);
+		if (active_.gain)   stages_.push_back(Stage::Gain);
+		if (active_.delay)  stages_.push_back(Stage::Delay);
+		if (active_.dyneq)  stages_.push_back(Stage::DynEq);
+		if (active_.reverb) stages_.push_back(Stage::Reverb);
+		if (active_.phase)  stages_.push_back(Stage::Phase);
+		if (active_.imager) stages_.push_back(Stage::Imager);
 
 		recomputeLatency();
 		dirty_ = false;
@@ -101,14 +115,20 @@ struct FieldChain
 	template <typename Sample>
 	void process (juce::dsp::AudioBlock<Sample>& io) const noexcept
 	{
-		if (active_.meter)   meter_.template  process<Sample>(io);
-		if (active_.ms)      ms_.template     process<Sample>(io);
-		if (active_.gain)    gain_.template   process<Sample>(io);
-		if (active_.delay)   delay_.template  process<Sample>(io);
-		if (active_.dyneq)   dyneq_.template  process<Sample>(io);
-		if (active_.reverb)  reverb_.template process<Sample>(io);
-		if (active_.phase)   phase_.template  process<Sample>(io);
-		if (active_.imager)  imager_.template process<Sample>(io);
+		for (auto st : stages_)
+		{
+			switch (st)
+			{
+				case Stage::Meter:  meter_.template  process<Sample>(io); break;
+				case Stage::MS:     ms_.template     process<Sample>(io); break;
+				case Stage::Gain:   gain_.template   process<Sample>(io); break;
+				case Stage::Delay:  delay_.template  process<Sample>(io); break;
+				case Stage::DynEq:  dyneq_.template  process<Sample>(io); break;
+				case Stage::Reverb: reverb_.template process<Sample>(io); break;
+				case Stage::Phase:  phase_.template  process<Sample>(io); break;
+				case Stage::Imager: imager_.template process<Sample>(io); break;
+			}
+		}
 	}
 
 	void reset() noexcept
@@ -148,5 +168,8 @@ private:
 
 	int latencySum_ = 0;
 	bool prepared_ = false;
+
+	// Enabled-only stage execution order
+	std::vector<Stage> stages_{};
 };
 }} // namespace field::modules

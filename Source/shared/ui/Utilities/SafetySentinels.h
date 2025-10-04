@@ -13,7 +13,7 @@ struct TimerSentinel
     ~TimerSentinel() { --live; } 
     static int getLiveCount() { return live.load(); }
 };
-std::atomic<int> TimerSentinel::live{0};
+inline std::atomic<int> TimerSentinel::live{0};
 
 // Listener watchdog - tracks active listeners
 struct ListenerSentinel 
@@ -23,7 +23,7 @@ struct ListenerSentinel
     ~ListenerSentinel() { --live; } 
     static int getLiveCount() { return live.load(); }
 };
-std::atomic<int> ListenerSentinel::live{0};
+inline std::atomic<int> ListenerSentinel::live{0};
 
 // RAII helper for listener management
 template <typename Broadcaster, typename Listener>

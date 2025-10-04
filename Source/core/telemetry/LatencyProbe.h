@@ -16,8 +16,12 @@ struct LatencyProbe
 		for (int i = 0; i < N; i += maxBlock)
 		{
 			const int n = juce::jmin (maxBlock, N - i);
-			juce::dsp::AudioBlock<Sample> bIn  (&in[i],  1, (size_t) n);
-			juce::dsp::AudioBlock<Sample> bOut (&out[i], 1, (size_t) n);
+			Sample* inChan  = &in[i];
+			Sample* outChan = &out[i];
+			Sample* inPtrs[1]  = { inChan };
+			Sample* outPtrs[1] = { outChan };
+			juce::dsp::AudioBlock<Sample> bIn  (inPtrs,  1, (size_t) n);
+			juce::dsp::AudioBlock<Sample> bOut (outPtrs, 1, (size_t) n);
 			processOnce (bIn, bOut);
 		}
 

@@ -29,6 +29,13 @@ static inline float getParam (juce::AudioProcessorValueTreeState& apvts, const c
     jassertfalse; return 0.0f;
 }
 
+// Safe raw loader: returns fallback if parameter id is missing (avoids nullptr deref on first insert)
+static inline float getRawOr (juce::AudioProcessorValueTreeState& apvts, const char* id, float fallback) noexcept
+{
+    if (auto* p = apvts.getRawParameterValue (id)) return p->load();
+    return fallback;
+}
+
 static inline float lerpFloat (float a, float b, float t)
 {
     t = juce::jlimit (0.0f, 1.0f, t);
@@ -138,6 +145,22 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
                      &hpHzSmoothed, &lpHzSmoothed, &monoHzSmoothed,
                      &satDriveLin, &satMixSmoothed, &airSmoothed, &bassSmoothed, &duckingSmoothed })
         s->reset (sampleRate, 0.005);
+    // Initialise smoothed values so Debug assertions don't trip before first param tick
+    panSmoothed.setCurrentAndTargetValue(0.0);
+    panLSmoothed.setCurrentAndTargetValue(0.0);
+    panRSmoothed.setCurrentAndTargetValue(0.0);
+    depthSmoothed.setCurrentAndTargetValue(0.0);
+    widthSmoothed.setCurrentAndTargetValue(0.0);
+    gainSmoothed.setCurrentAndTargetValue(1.0);
+    tiltSmoothed.setCurrentAndTargetValue(0.0);
+    hpHzSmoothed.setCurrentAndTargetValue(20.0);
+    lpHzSmoothed.setCurrentAndTargetValue(20000.0);
+    monoHzSmoothed.setCurrentAndTargetValue(0.0);
+    satDriveLin.setCurrentAndTargetValue(1.0);
+    satMixSmoothed.setCurrentAndTargetValue(0.0);
+    airSmoothed.setCurrentAndTargetValue(0.0);
+    bassSmoothed.setCurrentAndTargetValue(0.0);
+    duckingSmoothed.setCurrentAndTargetValue(0.0);
 
     // Prepare chains with MAX block size (not the actual runtime size)
     juce::dsp::ProcessSpec spec { sampleRate, (juce::uint32) maxBlockSize,
@@ -303,6 +326,11 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     
     // Refresh ducking latency reporting (SR affects look-ahead in samples)
     refreshReportedLatency();
+    // Mark processor prepared for editor/UI timers and audio-thread gates
+    prepared_.store(true, std::memory_order_release);
+    // Ensure a short startup fade-in to avoid insert pops on first callback
+    if (fadeInSamplesLeft <= 0)
+        fadeInTotal = fadeInSamplesLeft = juce::roundToInt ((float) currentSR * 0.005f);
     
     // prepareToPlay complete
 }
@@ -413,34 +441,34 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.delayDuckLinkGlobal = (getParam(apvts, IDs::delayDuckLinkGlobal) >= 0.5f);
     // Phase alignment handled by PhaseAlignmentEngine
     // Reverb params ingress (APVTS -> HostParams)
-    p.rvEnabled       = apvts.getRawParameterValue ("reverb_enabled")->load() > 0.5f;
-    p.rvKillDry       = apvts.getRawParameterValue ("reverb_kill_dry")->load() > 0.5f;
-    p.rvDuckOn        = apvts.getRawParameterValue ("duckOn")->load() > 0.5f;
-    p.rvPreDelayMs    = apvts.getRawParameterValue ("preDelayMs")->load();
-    p.rvDecaySec      = apvts.getRawParameterValue ("decaySec")->load();
-    p.rvDensityPct    = apvts.getRawParameterValue ("densityPct")->load();
-    p.rvDiffusionPct  = apvts.getRawParameterValue ("diffusionPct")->load();
-    p.rvModDepthCents = apvts.getRawParameterValue ("modDepthCents")->load();
-    p.rvModRateHz     = apvts.getRawParameterValue ("modRateHz")->load();
-    p.rvErLevelDb     = apvts.getRawParameterValue ("erLevelDb")->load();
-    p.rvErTimeMs      = apvts.getRawParameterValue ("erTimeMs")->load();
-    p.rvErDensityPct  = apvts.getRawParameterValue ("erDensityPct")->load();
-    p.rvErWidthPct    = apvts.getRawParameterValue ("erWidthPct")->load();
-    p.rvErToTailPct   = apvts.getRawParameterValue ("erToTailPct")->load();
-    p.rvWidthPct      = apvts.getRawParameterValue ("widthPct")->load();
-    p.rvWet01         = apvts.getRawParameterValue ("wetMix01")->load();
+    p.rvEnabled       = getRawOr(apvts, "reverb_enabled", 0.0f) > 0.5f;
+    p.rvKillDry       = getRawOr(apvts, "reverb_kill_dry", 0.0f) > 0.5f;
+    p.rvDuckOn        = getRawOr(apvts, "duckOn", 0.0f) > 0.5f;
+    p.rvPreDelayMs    = getRawOr(apvts, "preDelayMs", 0.0f);
+    p.rvDecaySec      = getRawOr(apvts, "decaySec", 1.0f);
+    p.rvDensityPct    = getRawOr(apvts, "densityPct", 50.0f);
+    p.rvDiffusionPct  = getRawOr(apvts, "diffusionPct", 50.0f);
+    p.rvModDepthCents = getRawOr(apvts, "modDepthCents", 0.0f);
+    p.rvModRateHz     = getRawOr(apvts, "modRateHz", 0.5f);
+    p.rvErLevelDb     = getRawOr(apvts, "erLevelDb", -6.0f);
+    p.rvErTimeMs      = getRawOr(apvts, "erTimeMs", 20.0f);
+    p.rvErDensityPct  = getRawOr(apvts, "erDensityPct", 50.0f);
+    p.rvErWidthPct    = getRawOr(apvts, "erWidthPct", 100.0f);
+    p.rvErToTailPct   = getRawOr(apvts, "erToTailPct", 50.0f);
+    p.rvWidthPct      = getRawOr(apvts, "widthPct", 100.0f);
+    p.rvWet01         = getRawOr(apvts, "wetMix01", 1.0f);
     // Reverb ducking ingress
-    p.rvDuckMode      = (int) apvts.getRawParameterValue ("duckMode")->load();
-    p.rvDuckDetector  = (int) apvts.getRawParameterValue ("duckDetectorSrc")->load();
-    p.rvDuckDepthDb   = apvts.getRawParameterValue ("duckDepthDb")->load();
-    p.rvDuckThrDb     = apvts.getRawParameterValue ("duckThrDb")->load();
-    p.rvDuckKneeDb    = apvts.getRawParameterValue ("duckKneeDb")->load();
-    p.rvDuckRatio     = apvts.getRawParameterValue ("duckRatio")->load();
-    p.rvDuckAtkMs     = apvts.getRawParameterValue ("duckAtkMs")->load();
-    p.rvDuckRelMs     = apvts.getRawParameterValue ("duckRelMs")->load();
-    p.rvDuckBandHz    = apvts.getRawParameterValue ("duckBandHz")->load();
-    p.rvDuckBandQ     = apvts.getRawParameterValue ("duckBandQ")->load();
-    p.rvOutTrimDb     = apvts.getRawParameterValue ("outTrimDb")->load();
+    p.rvDuckMode      = (int) getRawOr(apvts, "duckMode", 0.0f);
+    p.rvDuckDetector  = (int) getRawOr(apvts, "duckDetectorSrc", 0.0f);
+    p.rvDuckDepthDb   = getRawOr(apvts, "duckDepthDb", 0.0f);
+    p.rvDuckThrDb     = getRawOr(apvts, "duckThrDb", -30.0f);
+    p.rvDuckKneeDb    = getRawOr(apvts, "duckKneeDb", 6.0f);
+    p.rvDuckRatio     = getRawOr(apvts, "duckRatio", 2.0f);
+    p.rvDuckAtkMs     = getRawOr(apvts, "duckAtkMs", 5.0f);
+    p.rvDuckRelMs     = getRawOr(apvts, "duckRelMs", 100.0f);
+    p.rvDuckBandHz    = getRawOr(apvts, "duckBandHz", 200.0f);
+    p.rvDuckBandQ     = getRawOr(apvts, "duckBandQ", 1.0f);
+    p.rvOutTrimDb     = getRawOr(apvts, "outTrimDb", 0.0f);
     
     // ================================================================
     // 🎯 DECAY RATE CONTROL PARAMETERS (JANUARY 2025)
@@ -448,14 +476,14 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     // CRITICAL: Musical decay-rate control for reverb tails
     // These parameters enable frequency-dependent T60 shaping
     // ================================================================
-    p.rvDecayLoMult   = apvts.getRawParameterValue ("decayLoMult")->load();
-    p.rvDecayHiMult   = apvts.getRawParameterValue ("decayHiMult")->load();
-    p.rvDecayMidDb    = apvts.getRawParameterValue ("decayMidDb")->load();
-    p.rvDecayMidFreqHz = apvts.getRawParameterValue ("decayMidFreqHz")->load();
-    p.rvDecayMidQ     = apvts.getRawParameterValue ("decayMidQ")->load();
-    p.rvDecayTiltDb   = apvts.getRawParameterValue ("decayTiltDb")->load();
-    p.rvDecaySmoothing = apvts.getRawParameterValue ("decaySmoothing")->load();
-    p.rvDecayMode     = apvts.getRawParameterValue ("decayMode")->load();
+    p.rvDecayLoMult    = getRawOr(apvts, "decayLoMult", 1.0f);
+    p.rvDecayHiMult    = getRawOr(apvts, "decayHiMult", 1.0f);
+    p.rvDecayMidDb     = getRawOr(apvts, "decayMidDb", 0.0f);
+    p.rvDecayMidFreqHz = getRawOr(apvts, "decayMidFreqHz", 1000.0f);
+    p.rvDecayMidQ      = getRawOr(apvts, "decayMidQ", 1.0f);
+    p.rvDecayTiltDb    = getRawOr(apvts, "decayTiltDb", 0.0f);
+    p.rvDecaySmoothing = getRawOr(apvts, "decaySmoothing", 0.0f);
+    p.rvDecayMode      = getRawOr(apvts, "decayMode", 0.0f);
     
     // ================================================================
     // 🎯 DECAY PROFILE SYSTEM (JANUARY 2025)
@@ -463,8 +491,8 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     // CRITICAL: Musical decay profile modes and coupling system
     // These parameters enable intelligent decay curve generation
     // ================================================================
-    p.rvDecayProfileMode     = (int) std::round(apvts.getRawParameterValue ("decay_profile_mode")->load());
-    p.rvDecayProfileCoupling = (int) std::round(apvts.getRawParameterValue ("decay_profile_coupling")->load());
+    p.rvDecayProfileMode     = (int) std::round(getRawOr(apvts, "decay_profile_mode", 0.0f));
+    p.rvDecayProfileCoupling = (int) std::round(getRawOr(apvts, "decay_profile_coupling", 0.0f));
     
     // ================================================================
     // 🎯 SIDECHAIN LEARN SYSTEM (JANUARY 2025)
@@ -472,10 +500,10 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     // CRITICAL: Auto-learn decay profiles from external signals
     // These parameters enable intelligent decay curve learning
     // ================================================================
-    p.rvDecayLearn          = apvts.getRawParameterValue ("decay_learn")->load() > 0.5f;
-    p.rvDecayLearnReset     = apvts.getRawParameterValue ("decay_learn_reset")->load() > 0.5f;
-    p.rvDecayLearnStrength  = apvts.getRawParameterValue ("decay_learn_strength")->load();
-    p.rvDecayLearnWindow    = apvts.getRawParameterValue ("decay_learn_window_s")->load();
+    p.rvDecayLearn          = getRawOr(apvts, "decay_learn", 0.0f) > 0.5f;
+    p.rvDecayLearnReset     = getRawOr(apvts, "decay_learn_reset", 0.0f) > 0.5f;
+    p.rvDecayLearnStrength  = getRawOr(apvts, "decay_learn_strength", 0.0f);
+    p.rvDecayLearnWindow    = getRawOr(apvts, "decay_learn_window_s", 0.5f);
     
     // Dynamic EQ parameters
     p.dynEqEnabled    = apvts.getRawParameterValue (dynEq::IDs::enabled)->load() > 0.5f;
@@ -1623,6 +1651,7 @@ void MyPluginAudioProcessor::scheduleDspRebuildIfNeeded()
 
 void MyPluginAudioProcessor::releaseResources()
 {
+    prepared_.store(false, std::memory_order_release);
     // Clear UI visualization buses to avoid any pending reads on UI timers
     visPre.clearAll();
     visPost.clearAll();
@@ -3531,12 +3560,6 @@ void FieldChain<Sample>::process (Block block)
     
     // Energy sentinels (one-shot logging, won't spam)
     #if JUCE_DEBUG
-    auto rms = [](juce::dsp::AudioBlock<Sample> b){
-        long double s=0; auto ch=b.getNumChannels(), n=b.getNumSamples();
-        for(size_t c=0;c<ch;++c){ auto* p=b.getChannelPointer(c);
-            for(size_t i=0;i<n;++i) s+= (long double)p[i]*p[i]; }
-        return std::sqrt((double)s / std::max<size_t>(1,ch*n));
-    };
     const double inR = rms(block);
     #endif
 

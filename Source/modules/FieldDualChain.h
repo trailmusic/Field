@@ -63,9 +63,15 @@ struct DualChain
 
         if (!activeChain().isPrepared()) { io.clear(); return; }
 
-		if (!ramp_.active() && !wantSwap_.load(std::memory_order_acquire))
+        if (!ramp_.active() && !wantSwap_.load(std::memory_order_acquire))
 		{
-			activeChain().process<Sample>(io);
+            auto& act = activeChain();
+#if JUCE_DEBUG
+            const FieldChain* actPtrBefore = &act;
+            const FieldChain* actPtrByIndex = &chains_[activeIndex_];
+            jassert (actPtrBefore == actPtrByIndex);
+#endif
+            act.process<Sample>(io);
 			return;
 		}
 
