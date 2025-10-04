@@ -24,3 +24,10 @@ target_link_libraries(test_dualchain_voicing_swap PRIVATE field_modules field_co
 
 add_executable(test_param_latency_map test_param_latency_map.cpp)
 target_link_libraries(test_param_latency_map PRIVATE field_modules field_core juce_dsp)
+
+# Golden determinism tests
+add_executable(test_dualchain_voicing_golden test_dualchain_voicing_golden.cpp TestUtils_Golden.h)
+target_link_libraries(test_dualchain_voicing_golden PRIVATE field_modules field_core juce_dsp)
+
+add_executable(test_dualchain_midblock_golden test_dualchain_midblock_golden.cpp TestUtils_Golden.h)
+target_link_libraries(test_dualchain_midblock_golden PRIVATE field_modules field_core juce_dsp)

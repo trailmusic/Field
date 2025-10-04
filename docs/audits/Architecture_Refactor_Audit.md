@@ -840,3 +840,31 @@ Index additions:
 - `core/params/ParamIDs.h` (+ `kDevHudEnable`)
 - `core/params/ParamLayout.cpp` (+ guarded bool param)
 - `processor/PluginProcessor.*`, `shared/Core/PluginEditor.cpp` (guards + toggle)
+
+---
+
+# WO-17 — Offline Golden Tests (same-latency voicing & mid-block swap)
+
+## What you get
+
+- Deterministic input generator (seeded PRNG) and portable FNV-1a 64-bit hash.
+- Two tests to assert byte-identical output across block sizes and mid-block ramps:
+  1) Voicing swap (same latency) across multiple block sizes → output equals input (unity) and hashes match.
+  2) Mid-block swap with warmup/ramp offset → output equals input (unity) and hashes match.
+
+## Changes
+
+- `tests/offline/TestUtils_Golden.h`: `fnv1a64`, `hashAudio`, `makeDeterministicInput`, `monoToStereo`.
+- `tests/offline/test_dualchain_voicing_golden.cpp`: renders with 64/128/256, arms live-swap (same latency), asserts memcmp==0 and hash equality.
+- `tests/offline/test_dualchain_midblock_golden.cpp`: renders with 96/144/192, arms mid-block swap, asserts memcmp==0 and hash equality.
+- `tests/offline/CMakeLists.txt`: adds both executables and links against `field_modules field_core juce_dsp`.
+
+## Verification
+
+- Build succeeds with golden tests compiled; tests are unity-only and require no UI/processor linkage.
+
+### Index additions (WO-17)
+
+- `tests/offline/TestUtils_Golden.h`
+- `tests/offline/test_dualchain_voicing_golden.cpp`
+- `tests/offline/test_dualchain_midblock_golden.cpp`
