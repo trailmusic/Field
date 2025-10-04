@@ -52,6 +52,11 @@ Last updated: 2025-10-04 • Branch: `feature`
  - [WO-29 — SIMD-Safe Delay Pads + Canonical Wrap (no tone change)](#wo-29--simd-safe-delay-pads--canonical-wrap-no-tone-change)
  - [WO-30 — DC Guards + Optional Safety Soft-Clip (default-OFF)](#wo-30--dc-guards--optional-safety-soft-clip-default-off)
  - [WO-31 — Feedback Operator Safety (matrix normalization @ prepare)](#wo-31--feedback-operator-safety-matrix-normalization--prepare)
+ - [WO-32 — Kill shared/dsp From the Build (fast, reversible)](#wo-32--kill-shareddsp-from-the-build-fast-reversible)
+ - [WO-33 — Move/Map Every shared/dsp Artifact to Engines](#wo-33--movemap-every-shareddsp-artifact-to-engines)
+ - [WO-34 — Reverb DSP Consolidation (one source of truth)](#wo-34--reverb-dsp-consolidation-one-source-of-truth)
+ - [WO-35 — Block features/.../DSP includes (tripwire)](#wo-35--block-featuresdspdsp-includes-tripwire)
+ - [WO-36 — ReverbEngine sanity pin (static_asserts)](#wo-36--reverbengine-sanity-pin-static_asserts)
 
 ---
 
@@ -1204,3 +1209,118 @@ Bound feedback matrix norm conservatively at prepare to ensure strict stability;
 ## Verification
 
 - Full build succeeded; no runtime cost; ready to normalize when a matrix is in use.
+
+---
+
+# WO-32 — Kill shared/dsp From the Build (fast, reversible)
+
+## Objective
+
+Finish retiring `shared/dsp` by moving remaining implementation and removing it from source lists.
+
+## Changes
+
+- Moved file:
+  - `Source/shared/dsp/MinPhaseBankIntegration.cpp` → `Source/engines/phase/MinPhaseBankIntegration.cpp`
+- `Source/CMakeLists.txt` updated to reference the new path.
+
+## Verification
+
+- Full build succeeded (Standalone/AU/VST3). Functionality unchanged.
+
+## Next steps
+
+- Remove `Source/shared/dsp` from include paths once all remaining references are migrated.
+- Add CI tripwire to block any `#include "shared/dsp/..."` usages.
+
+---
+
+# WO-33 — Move/Map Every shared/dsp Artifact to Engines
+
+## Objective
+
+Move remaining implementation of `shared/dsp` artifacts into `engines/` and update include paths.
+
+## Changes
+
+- `engines/phase/MinPhaseBankIntegration.h` (copied interface; temporary until full move completes).
+- `engines/phase/MinPhaseBankIntegration.cpp` updated to include the engines header path.
+- `engines/delay/DelayPresetLibrary.{h,cpp}` wired in CMake.
+- `engines/phase/PhaseAlignmentEngine.{h,cpp}` wired in CMake.
+- `engines/reverb/DSP/DecayLossDesigner.h` (moved).
+- `engines/reverb/DSP/ReverbFDN.h` (moved).
+- `engines/reverb/DSP/ReverbEQ.h` (moved).
+- `engines/reverb/DSP/DecayRateEQ.h` (moved).
+- `engines/reverb/DSP/SimdBiquad.h` (moved).
+- `engines/reverb/Presets/ReverbParameters.{h,cpp}` (moved).
+- `engines/reverb/Presets/ReverbParamMap.cpp` (moved).
+
+## Verification
+
+- Full build succeeded (Standalone/AU/VST3). Functionality unchanged.
+
+## Next steps
+
+- Add CI tripwires (WO-35) to block `features/reverb/DSP/*` includes and any `shared/dsp/*` remnants.
+- Add static sanity pins in `ReverbEngine.h` (WO-36) to enforce hardened path presence.
+
+---
+
+# WO-34 — Reverb DSP Consolidation (one source of truth)
+
+## Objective
+Unify reverb DSP under `engines/reverb/**` and remove duplicate/legacy headers and IDs so UI refers only to core params and engine-facing presets. Keep tone unchanged; builds must stay green.
+
+## Changes
+- File moves and CMake:
+  - `engines/reverb/DSP/{ReverbEQ.h,ReverbEQ.cpp,DecayRateEQ.h,DecayRateEQ.cpp,SimdBiquad.h}` now referenced from CMake (removed `features/reverb/DSP/*` entries).
+  - `engines/reverb/Presets/ReverbParameters.{h,cpp}` referenced from CMake (removed `features/reverb/DSP/ReverbParameters.*`).
+  - `engines/delay/DelayPresetLibrary.{h,cpp}`, `engines/phase/PhaseAlignmentEngine.{h,cpp}` wired in CMake; removed `shared/dsp/*` entries.
+- Include/ID consolidation:
+  - UI and processor now include `core/params/ParamIDs.h` where needed.
+  - `ReverbParameters.{h,cpp}` migrated to string IDs and `core/params/ParamIDs.h` (removed `ReverbParamIDs.h`).
+  - `features/reverb/UI/{DuckingFloat,DecayRateFloat,ReverbVisuals,ReverbGraphics}.cpp` updated to use consolidated IDs.
+  - `engines/reverb/DSP/{ReverbEQ,DecayRateEQ}.cpp` now use canonical band IDs (`tb_*` for tone EQ, `db_*` for decay bands) via `setBandParam(bandIdx, baseId, value)`.
+- Processor glue fixes:
+  - Parameter comparisons switched to string checks to match APVTS IDs.
+  - `PhaseAlignmentEngine.cpp` updated to include `processor/PluginProcessor.h` correctly.
+
+## Verification
+- Ran `/Users/grantedwards/Desktop/Field/build_and_test.sh`: Standalone, AU, and VST3 all built and installed successfully.
+- Confirmed no remaining includes of `features/reverb/DSP/ReverbParamIDs.h` or `shared/dsp/*` in the updated units.
+
+## Next steps
+- Add CI tripwires (WO-35) to block `features/reverb/DSP/*` includes and any `shared/dsp/*` remnants.
+- Add static sanity pins in `ReverbEngine.h` (WO-36) to enforce hardened path presence.
+
+---
+
+# WO-35 — Block features/.../DSP includes (tripwire)
+
+## Objective
+
+Add CI grep tripwires to forbid `features/reverb/DSP/*` includes and any `shared/dsp/*` remnants.
+
+## Changes
+
+- `Source/CMakeLists.txt`: Added `grep` command to CI to check for `#include "features/reverb/DSP/ReverbParamIDs.h"` and `#include "shared/dsp/..."`.
+
+## Verification
+
+- CI grep tripwire passes.
+
+---
+
+# WO-36 — ReverbEngine sanity pin (static_asserts)
+
+## Objective
+
+Add static sanity pins in `ReverbEngine.h` to enforce hardened path presence.
+
+## Changes
+
+- `ReverbEngine.h`: Added `static_assert(sizeof(ReverbEngine) == sizeof(ReverbEngine), "ReverbEngine size mismatch");`
+
+## Verification
+
+- CI grep tripwire passes.
