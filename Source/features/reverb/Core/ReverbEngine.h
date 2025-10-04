@@ -39,7 +39,7 @@ Author's notes
 #include "core/signal/CrossfadeRamp.h"
 
 #if FIELD_REVERB_PHASE2
-#include "../DSP/ReverbFDN.h"
+#include "engines/reverb/DSP/ReverbFDN.h"
 #endif
 
 // ===================== Shared biquad (IIR) ==================================
