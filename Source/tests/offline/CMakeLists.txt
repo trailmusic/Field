@@ -41,3 +41,10 @@ target_link_libraries(test_latency_smoke_matrix PRIVATE field_modules field_core
 
 add_executable(test_tail_guard_cache test_tail_guard_cache.cpp)
 target_link_libraries(test_tail_guard_cache PRIVATE field_core)
+
+# WO-19 processor latency/tail smoke
+add_executable(test_processor_latency_tail_smoke
+    test_processor_latency_tail_smoke.cpp
+    TestUtils_APVTS.h)
+target_link_libraries(test_processor_latency_tail_smoke
+    PRIVATE field_processor field_modules field_core juce_audio_processors juce_dsp)

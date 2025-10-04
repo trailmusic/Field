@@ -895,3 +895,26 @@ Index additions:
 - `tests/offline/TestUtils_Params.h`
 - `tests/offline/test_latency_smoke_matrix.cpp`
 - `tests/offline/test_tail_guard_cache.cpp`
+
+---
+
+# WO-19 — Processor Latency/Tail Smoke (APVTS + Host-style)
+
+## What you get
+
+- Headless processor test that toggles APVTS latency params while “playing” and asserts no mid-play PDC/tail changes; applies at next prepare.
+
+## Changes
+
+- `tests/offline/TestUtils_APVTS.h`: minimal helpers to set APVTS bool/int/float.
+- `tests/offline/test_processor_latency_tail_smoke.cpp`: builds `MyPluginAudioProcessor`, flips linear-phase FIR + look-ahead while running, confirms `latency==0` during play; after `prepareToPlay()`, asserts expected latency is applied; tail allowed to change only at prepare.
+- `tests/offline/CMakeLists.txt`: adds processor test target and links against `field_processor` + JUCE.
+
+## Verification
+
+- Build succeeds; test exercises prepare-time guards and APVTS wiring without UI/audio devices.
+
+### Index additions (WO-19)
+
+- `tests/offline/TestUtils_APVTS.h`
+- `tests/offline/test_processor_latency_tail_smoke.cpp`
