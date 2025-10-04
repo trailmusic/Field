@@ -1203,7 +1203,6 @@ public:
     std::atomic<ClockSnapshot*> lastClockForUI { nullptr };
 
 #if defined(FIELD_POISON_DSP_RUNTIME_CONFIG)
-    std::atomic<DspRuntimeConfig> rtCfg;
     std::atomic<bool> needsDspRebuild { false };
 #else
     std::atomic<DspRuntimeConfig> rtCfg;
