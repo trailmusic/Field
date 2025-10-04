@@ -91,6 +91,9 @@ public:
 
     void process (const juce::AudioBuffer<float>& in, juce::AudioBuffer<float>& tailOut)
     {
+#if JUCE_DEBUG
+        auto dbgOnce = [](bool cond, const char* msg){ if (!cond) { DBG(msg); jassertfalse; } };
+#endif
         DenormGuard _ftzGuard;
         const int N  = in.getNumSamples();
         const int C  = juce::jmin (numCh, in.getNumChannels());
@@ -121,6 +124,9 @@ public:
                 auto& buf = delay[i];
                 const int logical = logicalLen(buf);
                 const int ri = wrappedRead(writeIdx[i], 1, logical);
+#if JUCE_DEBUG
+                dbgOnce(ri >= 0 && ri < logical, "FDN: read index out of range");
+#endif
                 x[i] = buf[(size_t)ri];
             }
 
@@ -137,10 +143,16 @@ public:
 
                 auto& buf = delay[i];
                 const int logical = logicalLen(buf);
+#if JUCE_DEBUG
+                dbgOnce(writeIdx[i] >= 0 && writeIdx[i] < logical, "FDN: write index out of range (pre)");
+#endif
                 buf[(size_t)writeIdx[i]] = y;
                 const int prev = writeIdx[i];
                 incWrite(writeIdx[i], logical);
                 if (writeIdx[i] == 0 && prev != 0) postWrapPad(buf);
+#if JUCE_DEBUG
+                dbgOnce(writeIdx[i] >= 0 && writeIdx[i] < logical, "FDN: write index out of range (post)");
+#endif
             }
 
             static const int Lset[4] = {1,3,6,7};

@@ -308,5 +308,6 @@ add_custom_target(ci_tripwire_legacy_includes ALL
     COMMAND ${CMAKE_COMMAND} -E env LC_ALL=C LANG=C
       bash -c "(! grep -R --line-number '#include\\s*\"features/reverb/DSP/' Source || (echo '❌ Legacy features/reverb/DSP include found' && false)) && \
                (! grep -R --line-number '#include\\s*\"shared/dsp/' Source || (echo '❌ shared/dsp include found' && false)) && \
-               (! grep -R --line-number '\\bDspRuntimeConfig\\b' Source || (echo '❌ DspRuntimeConfig usage found' && false))"
+               (! grep -R --line-number '\\bDspRuntimeConfig\\b' Source || (echo '❌ DspRuntimeConfig usage found' && false)) && \
+               (! grep -R --line-number '#include\\s*\".*(features/|shared/).*\"' Source/engines || (echo '❌ engines code must not include features/ or shared/' && false))"
 ) 
