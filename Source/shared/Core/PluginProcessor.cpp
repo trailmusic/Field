@@ -2,8 +2,8 @@
 #include "PluginEditor.h"
 #include "LatencyProbe.h"
 #include "features/dynEq/FilterFactory.h"
-#include "features/reverb/DSP/ReverbParameters.h"
-#include "features/reverb/DSP/ReverbEQParamIDs.h"
+#include "engines/reverb/Presets/ReverbParameters.h"
+#include "core/params/ParamIDs.h"
 #include "features/dynEq/DynamicEqParamIDs.h"
 
 // ================================================================

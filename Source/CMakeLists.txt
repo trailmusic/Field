@@ -101,11 +101,11 @@ set(SRC
     
     # Reverb DSP
     # features/reverb/DSP/ReverbParamIDs.h (removed; use core/params/ParamIDs.h)
-    features/reverb/DSP/ReverbParameters.h
-    features/reverb/DSP/ReverbParameters.cpp
+    engines/reverb/Presets/ReverbParameters.h
+    engines/reverb/Presets/ReverbParameters.cpp
     features/reverb/DSP/ReverbEQ.h
     features/reverb/DSP/ReverbEQ.cpp
-    features/reverb/DSP/ReverbEQParamIDs.h
+    # features/reverb/DSP/ReverbEQParamIDs.h (removed; use core/params/ParamIDs.h)
     features/reverb/DSP/DecayRateEQ.h
     features/reverb/DSP/DecayRateEQ.cpp
     engines/reverb/DSP/DecayLossDesigner.h
@@ -169,10 +169,10 @@ set(SRC
     features/motion/MotionTab.h
     features/motion/MotionSlot.h
     
-    shared/dsp/DelayPresetLibrary.h
-    shared/dsp/DelayPresetLibrary.cpp
-    shared/dsp/PhaseAlignmentEngine.h
-    shared/dsp/PhaseAlignmentEngine.cpp
+    engines/delay/DelayPresetLibrary.h
+    engines/delay/DelayPresetLibrary.cpp
+    engines/phase/PhaseAlignmentEngine.h
+    engines/phase/PhaseAlignmentEngine.cpp
     engines/phase/MinPhaseBankIntegration.h
     engines/phase/MinPhaseBankIntegration.cpp
     ../Ranger/MinPhaseBank.h
