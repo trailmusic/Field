@@ -2,10 +2,10 @@
 
 #include <JuceHeader.h>
 #include "core/telemetry/LiveSwapHUD.h"
-#include "shared/dsp/Ducker.h"
-#include "shared/dsp/DelayEngine.h"
-#include "shared/dsp/PhaseModes.h"
-#include "shared/dsp/PhaseAlignmentEngine.h"
+#include "engines/dynamics/Ducker.h"
+#include "engines/delay/DelayEngine.h"
+#include "engines/phase/PhaseModes.h"
+#include "engines/phase/PhaseAlignmentEngine.h"
 #include "engines/phase/MinPhaseBankIntegration.h"
 #include "features/motion/MotionEngine.h"
 #include "core/params/ParamIDs.h"
