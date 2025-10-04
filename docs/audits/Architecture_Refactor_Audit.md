@@ -34,40 +34,19 @@ Last updated: 2025-10-04 • Branch: `feature`
 - [WO-12 — Minimal Param Layout (APVTS) + Safe Reads (no DSP changes)](#wo-12--minimal-param-layout-apvts--safe-reads-no-dsp-changes)
 - [WO-13 — Rebuild Listeners + Latency/Tail Apply at Prepare](#wo-13--rebuild-listeners--latencytail-apply-at-prepare)
 - [WO-14 — Live-Swap for Voicing Params (same-latency edits only)](#wo-14--live-swap-for-voicing-params-same-latency-edits-only)
+ - [2025-10-04 — Maintenance Update: DualChain assignment removal + full build](#2025-10-04--maintenance-update-dualchain-assignment-removal--full-build)
+ - [WO-15 — Editor Timer Hook + Live-Swap HUD (dev-only)](#wo-15--editor-timer-hook--live-swap-hud-dev-only)
+ - [WO-16 — FIELD_DEV_HUD flag + runtime toggle](#wo-16--field_dev_hud-flag--runtime-toggle)
+ - [WO-17 — Offline Golden Tests (same-latency voicing & mid-block swap)](#wo-17--offline-golden-tests-same-latency-voicing--mid-block-swap)
+ - [WO-18 — Latency Smoke Matrix + Tail Cache Test](#wo-18--latency-smoke-matrix--tail-cache-test)
+ - [WO-19 — Processor Latency/Tail Smoke (APVTS + Host-style)](#wo-19--processor-latencytail-smoke-apvts--host-style)
+ - [WO-20 — ParamChangeBus ⇄ Processor Glue Test (no audio)](#wo-20--paramchangebus--processor-glue-test-no-audio)
+ - [WO-21 — Retire shared/dsp (phase bank include), prep for full shutdown](#wo-21--retire-shareddsp-phase-bank-include-prep-for-full-shutdown)
+ - [WO-22 — Reverb DSP Consolidation (kill legacy glue; keep builds green)](#wo-22--reverb-dsp-consolidation-kill-legacy-glue-keep-builds-green)
 
 ---
 
-# WO-22 — Reverb DSP Consolidation (kill legacy glue; keep builds green)
-
-## Objective
-
-Move remaining Reverb DSP bits under `engines/reverb/**`, remove legacy glue and duplicate param ID headers. No UI or sonic changes.
-
-## Changes
-
-- Moved header:
-  - `features/reverb/DSP/DecayLossDesigner.h` → `engines/reverb/DSP/DecayLossDesigner.h`
-  - Updated includes: `features/reverb/DSP/ReverbFDN.h` now includes `engines/reverb/DSP/DecayLossDesigner.h`.
-- Removed legacy glue (or replaced with poison):
-  - Deleted `features/reverb/DSP/ReverbProcessorGlue.cpp`.
-  - `features/reverb/DSP/ReverbProcessorGlue.h` now emits a compile-time error if included.
-- Replaced duplicate param IDs includes:
-  - `processor/PluginProcessor.h` and `shared/Core/PluginEditor.cpp` now include `core/params/ParamIDs.h` instead of `features/reverb/DSP/ReverbParamIDs.h`.
-- CMake updates (`Source/CMakeLists.txt`):
-  - Added `engines/reverb/DSP/DecayLossDesigner.h` to sources list.
-  - Removed references to `ReverbProcessorGlue.*` and commented `ReverbParamIDs.h` as retired.
-- Test fix:
-  - `features/reverb/Testing/ReverbIRExportTest.cpp` no longer uses Glue; it prepares `ReverbEngine` directly and calls `processWet()` with a sidechain copy.
-
-## Verification
-
-- Ran `/Users/grantedwards/Desktop/Field/build_and_test.sh`: Standalone, AU, VST3 built and installed successfully.
-- Searched for retired headers in code; remaining references only in docs.
-
-## Next steps
-
-- Add CI grep tripwires to forbid `features/reverb/DSP/ReverbProcessorGlue.*` and `features/reverb/DSP/ReverbParamIDs.h` includes.
-- Continue shared/dsp retirement per WO-21 (move `.cpp` and drop include paths).
+ 
 
 ## Purpose
 Protect the UI while restructuring `Source/` to separate UI, processor glue, DSP engines, and cross-cutting core (signal, runtime, telemetry). Provide a clean lane for future signal + latency work.
@@ -1003,3 +982,37 @@ Index additions:
 - Move `.cpp` into `engines/phase/` and remove `shared/dsp` from include paths.
 - Add CI grep tripwire to block `#include "shared/dsp/..."`.
 - Replace any remaining `shared/dsp` use sites with engines/modules equivalents.
+
+---
+
+# WO-22 — Reverb DSP Consolidation (kill legacy glue; keep builds green)
+
+## Objective
+
+Move remaining Reverb DSP bits under `engines/reverb/**`, remove legacy glue and duplicate param ID headers. No UI or sonic changes.
+
+## Changes
+
+- Moved header:
+  - `features/reverb/DSP/DecayLossDesigner.h` → `engines/reverb/DSP/DecayLossDesigner.h`
+  - Updated includes: `features/reverb/DSP/ReverbFDN.h` now includes `engines/reverb/DSP/DecayLossDesigner.h`.
+- Removed legacy glue (or replaced with poison):
+  - Deleted `features/reverb/DSP/ReverbProcessorGlue.cpp`.
+  - `features/reverb/DSP/ReverbProcessorGlue.h` now emits a compile-time error if included.
+- Replaced duplicate param IDs includes:
+  - `processor/PluginProcessor.h` and `shared/Core/PluginEditor.cpp` now include `core/params/ParamIDs.h` instead of `features/reverb/DSP/ReverbParamIDs.h`.
+- CMake updates (`Source/CMakeLists.txt`):
+  - Added `engines/reverb/DSP/DecayLossDesigner.h` to sources list.
+  - Removed references to `ReverbProcessorGlue.*` and commented `ReverbParamIDs.h` as retired.
+- Test fix:
+  - `features/reverb/Testing/ReverbIRExportTest.cpp` no longer uses Glue; it prepares `ReverbEngine` directly and calls `processWet()` with a sidechain copy.
+
+## Verification
+
+- Ran `/Users/grantedwards/Desktop/Field/build_and_test.sh`: Standalone, AU, VST3 built and installed successfully.
+- Searched for retired headers in code; remaining references only in docs.
+
+## Next steps
+
+- Add CI grep tripwires to forbid `features/reverb/DSP/ReverbProcessorGlue.*` and `features/reverb/DSP/ReverbParamIDs.h` includes.
+- Continue shared/dsp retirement per WO-21 (move `.cpp` and drop include paths).
