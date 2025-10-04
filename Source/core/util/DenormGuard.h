@@ -1,8 +1,8 @@
 #pragma once
 #include <juce_core/juce_core.h>
 
+// RAII FTZ/DAZ guard using JUCE's ScopedNoDenormals
 struct DenormGuard
 {
-	DenormGuard()  { juce::ScopedNoDenormals::setDisabled (true); }
-	~DenormGuard() { juce::ScopedNoDenormals::setDisabled (false); }
+    juce::ScopedNoDenormals scoped;
 };

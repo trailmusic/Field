@@ -185,7 +185,7 @@ public:
             {
                 float* d = tailOut.getWritePointer (c);
                 float v = (c == 0 ? l : r);
-                if (!juce::isFinite (v) || std::abs (v) < 1e-30f) v = 0.0f;
+                if (!std::isfinite((double)v) || std::abs (v) < 1e-30f) v = 0.0f;
                 d[n] += v;
             }
         }

@@ -174,7 +174,7 @@ set(SRC
     shared/dsp/PhaseAlignmentEngine.h
     shared/dsp/PhaseAlignmentEngine.cpp
     engines/phase/MinPhaseBankIntegration.h
-    shared/dsp/MinPhaseBankIntegration.cpp
+    engines/phase/MinPhaseBankIntegration.cpp
     ../Ranger/MinPhaseBank.h
     ../Ranger/MinPhaseBank.cpp
     shared/Presets/PresetStore.h
