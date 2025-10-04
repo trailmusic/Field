@@ -69,17 +69,7 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
     // MinPhaseBank Integration for Field Ranger
     minPhaseBank = std::make_unique<MinPhaseBankIntegration>();
     
-    // Initialize runtime config with defaults
-    DspRuntimeConfig defaultCfg;
-    defaultCfg.quality = 1; // Standard
-    defaultCfg.os = 1; // 2x oversampling
-    defaultCfg.phase = 2; // Hybrid
-    defaultCfg.sampleRate = getSampleRate();
-    defaultCfg.osRealtime = 0; // Auto by Quality
-    defaultCfg.osOffline = 1;  // Auto by Quality (one tier higher)
-    defaultCfg.osFilterType = 0; // Linear Phase
-    defaultCfg.tpSafe = true; // True-Peak Safe enabled
-    rtCfg.store(defaultCfg);
+    // WO-38: Remove DspRuntimeConfig state. Snapshot & resolver are used at prepare-time.
 
     // Keep existing smoothers if declared in the header (no harm if unused here)
     // Reset smoothers
@@ -197,21 +187,11 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     // for SR-aware OS mapping and realtime/offline detection.
     // ================================================================
     
-    // Update runtime config with new sample rate and trigger recomputation
-    auto cfg = rtCfg.load();
-    cfg.sampleRate = sampleRate;
-    
-    // Recompute OS factors based on new sample rate
-    if (cfg.osRealtime == 0) { // Auto by Quality
-        cfg.os = DspRuntimeConfig::resolveOSFactor(sampleRate, cfg.quality);
+    // WO-38: Snapshot + resolver (no DspRuntimeConfig mutation)
+    // Keep behavior: schedule rebuild when SR changes
+    {
+        scheduleDspRebuildIfNeeded({});
     }
-    if (cfg.osOffline == 0) { // Auto by Quality  
-        cfg.os = DspRuntimeConfig::resolveOSFactor(sampleRate, cfg.quality);
-    }
-    
-    // Trigger DSP rebuild for new sample rate
-    scheduleDspRebuildIfNeeded(cfg);
-    rtCfg.store(cfg);
     
     // Phase Alignment Engine preparation (use max block size)
     phaseAlignmentEngine->prepare(sampleRate, maxBlockSize, getTotalNumInputChannels());
@@ -587,7 +567,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     if (getSafePassthrough()) return;
     
     // Check for DSP rebuild needed
-    auto cfg = rtCfg.load(std::memory_order_acquire);
+    // WO-38: rtCfg removed; no-op fetch
     if (needsDspRebuild.exchange(false, std::memory_order_acq_rel))
     {
         rebuildDspForConfig<float>(cfg, buffer);
@@ -1033,10 +1013,10 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     // Production-standard bypass: early return (hard passthrough)
     if (getSafePassthrough()) return;
     
-    // Check for DSP rebuild needed
-    auto cfg = rtCfg.load(std::memory_order_acquire);
+    // Check for DSP rebuild needed (WO-38: no DspRuntimeConfig)
     if (needsDspRebuild.exchange(false, std::memory_order_acq_rel))
     {
+        DspRuntimeConfig cfg{}; // placeholder value type to satisfy template
         rebuildDspForConfig<double>(cfg, buffer);
     }
 
@@ -1591,89 +1571,54 @@ void MyPluginAudioProcessor::onQualityChanged(int quality)
     // with SR-aware OS mapping and manual override protection.
     // ================================================================
     
-    auto cfg = rtCfg.load();
-    cfg.quality = juce::jlimit(0, 2, quality);
-    cfg.sampleRate = getSampleRate();
-    
-    // Apply SR-aware OS if using Auto mode (policy recomputation)
-    if (cfg.osRealtime == 0) { // Auto by Quality
-        cfg.os = DspRuntimeConfig::resolveOSFactor(cfg.sampleRate, cfg.quality);
-    }
-    if (cfg.osOffline == 0) { // Auto by Quality
-        cfg.os = DspRuntimeConfig::resolveOSFactor(cfg.sampleRate, cfg.quality);
-    }
-    
-    // Apply quality defaults if no manual override
-    if (!cfg.userOverrodePhase) cfg.phase = DspRuntimeConfig::kQMap[cfg.quality].phase;
-    
-    // Trigger DSP rebuild with policy recomputation
-    scheduleDspRebuildIfNeeded(cfg);
-    rtCfg.store(cfg);
+    // WO-38: Replace legacy cfg flow with a simple rebuild request; prepare() will resolve via Snapshot
+    juce::ignoreUnused (quality);
+    scheduleDspRebuildIfNeeded({});
 }
 
 void MyPluginAudioProcessor::onOSChanged(int os)
 {
-    auto cfg = rtCfg.load();
-    cfg.os = juce::jlimit(0, 4, os);
-    cfg.userOverrodeOS = true;
-    scheduleDspRebuildIfNeeded(cfg);
-    rtCfg.store(cfg);
+    juce::ignoreUnused (os);
+    scheduleDspRebuildIfNeeded({});
 }
 
 void MyPluginAudioProcessor::onPhaseChanged(int phase)
 {
-    auto cfg = rtCfg.load();
-    cfg.phase = phase; // 0,2,3
-    cfg.userOverrodePhase = true;
-    scheduleDspRebuildIfNeeded(cfg);
-    rtCfg.store(cfg);
+    juce::ignoreUnused (phase);
+    scheduleDspRebuildIfNeeded({});
 }
 
 void MyPluginAudioProcessor::onOSRealtimeChanged(int os)
 {
-    auto cfg = rtCfg.load();
-    cfg.osRealtime = juce::jlimit(0, 5, os);
-    cfg.userOverrodeOS = true;
-    scheduleDspRebuildIfNeeded(cfg);
-    rtCfg.store(cfg);
+    juce::ignoreUnused (os);
+    scheduleDspRebuildIfNeeded({});
 }
 
 void MyPluginAudioProcessor::onOSOfflineChanged(int os)
 {
-    auto cfg = rtCfg.load();
-    cfg.osOffline = juce::jlimit(0, 5, os);
-    cfg.userOverrodeOS = true;
-    scheduleDspRebuildIfNeeded(cfg);
-    rtCfg.store(cfg);
+    juce::ignoreUnused (os);
+    scheduleDspRebuildIfNeeded({});
 }
 
 void MyPluginAudioProcessor::onOSFilterTypeChanged(int type)
 {
-    auto cfg = rtCfg.load();
-    cfg.osFilterType = juce::jlimit(0, 1, type);
-    scheduleDspRebuildIfNeeded(cfg);
-    rtCfg.store(cfg);
+    juce::ignoreUnused (type);
+    scheduleDspRebuildIfNeeded({});
 }
 
 void MyPluginAudioProcessor::onTPSafeChanged(bool enabled)
 {
-    auto cfg = rtCfg.load();
-    cfg.tpSafe = enabled;
-    scheduleDspRebuildIfNeeded(cfg);
-    rtCfg.store(cfg);
+    juce::ignoreUnused (enabled);
+    scheduleDspRebuildIfNeeded({});
 }
 
 void MyPluginAudioProcessor::resetManualOverrides()
 {
-    auto cfg = rtCfg.load();
-    cfg.resetOverrides();
-    scheduleDspRebuildIfNeeded(cfg);
-    rtCfg.store(cfg);
+    scheduleDspRebuildIfNeeded({});
 }
 
-void MyPluginAudioProcessor::scheduleDspRebuildIfNeeded(const DspRuntimeConfig& cfg)
+void MyPluginAudioProcessor::scheduleDspRebuildIfNeeded(const DspRuntimeConfig&)
 {
-    pendingCfg = cfg;
     needsDspRebuild.store(true, std::memory_order_release);
 }
 

@@ -1240,8 +1240,12 @@ private:
     }
     
     inline int getCurrentLatencySamples() const {
+#if defined(FIELD_POISON_DSP_RUNTIME_CONFIG)
+        return 0;
+#else
         auto cfg = rtCfg.load(std::memory_order_acquire);
         return cfg.latencySamples;
+#endif
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MyPluginAudioProcessor)
