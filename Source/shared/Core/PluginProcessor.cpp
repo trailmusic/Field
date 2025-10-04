@@ -3942,7 +3942,7 @@ void FieldChain<Sample>::process (Block block)
     if (params.motionEnabled && motionEnginePrepared) {
         // Motion Engine is now handled by FieldChain template
         // Note: Motion parameters need to be set up properly with APVTS parameter pointers
-        // Motion processing handled by MotionEngine
+        // Motion processing handled by MotionController
     }
     
     // Reverb processing is now handled by FieldChain

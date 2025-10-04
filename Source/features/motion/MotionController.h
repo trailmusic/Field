@@ -166,7 +166,7 @@ private:
 };
 using core::PannerState;
 
-class MotionEngine {
+class MotionController {
 private:
     bool initialized = false;
     

@@ -159,7 +159,7 @@ set(SRC
     features/machine/MachineTab.h
     features/machine/MachineTab.cpp
     
-    features/motion/MotionEngine.h
+    features/motion/MotionController.h
     features/motion/MotionGraphics.h
     features/motion/MotionGraphics.cpp
     engines/motion/MotionParams.h
