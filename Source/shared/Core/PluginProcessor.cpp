@@ -1439,9 +1439,8 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
     }
     else if (parameterID == IDs::forceOffline)
     {
-        // Force offline mode changed - trigger DSP rebuild
-        // WO-38: rtCfg removed; no-op
-        scheduleDspRebuildIfNeeded(cfg);
+        // Force offline mode changed - trigger DSP rebuild (WO-38)
+        scheduleDspRebuildIfNeeded({});
     }
     // Phase alignment handled by PhaseAlignmentEngine
     
