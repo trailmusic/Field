@@ -1,7 +1,7 @@
 
 #pragma once
 #include <juce_core/juce_core.h>
-#include "MotionIDs.h"
+#include "features/motion/MotionIDs.h"
 namespace motion {
 struct Pose { float azimuth=0.0f; float elevation=0.0f; float radius=0.0f; };
 class PathGen {
