@@ -260,40 +260,40 @@ void ReverbControlsPane::buildControls()
     };
 
     // ------- Row 1 -------
-    makeToggleCell (enabled, "ENABLE", ReverbParamIDs::enabled);
-    makeCell (pre,  preV,  "PRE",       ReverbParamIDs::preDelayMs);
-    makeCell (erL,  erLV,  "ER LVL",    ReverbParamIDs::erLevelDb);
-    makeCell (erD,  erDV,  "ER DEN",    ReverbParamIDs::erDensityPct);
-    makeCell (erW,  erWV,  "ER WID",    ReverbParamIDs::erWidthPct);
-    makeCell (erTime, erTimeV, "ER TIME", ReverbParamIDs::erTimeMs);
-    makeCell (erToTail, erToTailV, "ER→T", ReverbParamIDs::erToTailPct);
-    makeCell (dif,  difV,  "DIFF",      ReverbParamIDs::diffusionPct);
-    makeCell (density, densityV, "DENS", ReverbParamIDs::densityPct);
-    makeCell (md,   mdV,   "MOD DEP",   ReverbParamIDs::modDepthCents);
-    makeCell (mr,   mrV,   "MOD RATE",  ReverbParamIDs::modRateHz);
-    makeCell (w,    wV,    "WIDTH",     ReverbParamIDs::widthPct);
-    makeCell (rotation, rotationV, "ROT", ReverbParamIDs::rotationDeg);
-    makeCell (size, sizeV, "SIZE",      ReverbParamIDs::sizePct);
-    makeCell (dec,  decV,  "DECAY",     ReverbParamIDs::decaySec);
-    makeToggleCell (killDry, "WET ONLY", ReverbParamIDs::killDry);
+    makeToggleCell (enabled, "ENABLE", "reverb.enabled");
+    makeCell (pre,  preV,  "PRE",       "reverb.preDelayMs");
+    makeCell (erL,  erLV,  "ER LVL",    "reverb.er.levelDb");
+    makeCell (erD,  erDV,  "ER DEN",    "reverb.er.densityPct");
+    makeCell (erW,  erWV,  "ER WID",    "reverb.er.widthPct");
+    makeCell (erTime, erTimeV, "ER TIME", "reverb.er.timeMs");
+    makeCell (erToTail, erToTailV, "ER→T", "reverb.er.toTailPct");
+    makeCell (dif,  difV,  "DIFF",      "reverb.diffusionPct");
+    makeCell (density, densityV, "DENS", "reverb.densityPct");
+    makeCell (md,   mdV,   "MOD DEP",   "reverb.mod.depthCents");
+    makeCell (mr,   mrV,   "MOD RATE",  "reverb.mod.rateHz");
+    makeCell (w,    wV,    "WIDTH",     "reverb.widthPct");
+    makeCell (rotation, rotationV, "ROT", "reverb.rotationDeg");
+    makeCell (size, sizeV, "SIZE",      "reverb.sizePct");
+    makeCell (dec,  decV,  "DECAY",     "reverb.decaySec");
+    makeToggleCell (killDry, "WET ONLY", "reverb.killDry");
 
     // ------- Row 2 -------
-    makeCell (wet,  wetV,  "WET",       ReverbParamIDs::wetMix01);
-    makeCell (bloom,bloomV,"BLOOM",     ReverbParamIDs::bloomPct);
-    makeCell (distance, distanceV, "DIST", ReverbParamIDs::distancePct);
-    makeToggleCell (freeze, "FREEZE", ReverbParamIDs::freeze);
-    makeCell (shimmerAmt, shimmerAmtV, "SHIM AMT", ReverbParamIDs::shimmerAmtPct);
-    makeCell (shimmerInt, shimmerIntV, "SHIM INT", ReverbParamIDs::shimmerInt);
-    makeCell (gateAmt, gateAmtV, "GATE", ReverbParamIDs::gateAmtPct);
-    makeCell (dreqXoverLo, dreqXoverLoV, "DR XO LO", ReverbParamIDs::dreqXoverLoHz);
-    makeCell (dreqXoverHi, dreqXoverHiV, "DR XO HI", ReverbParamIDs::dreqXoverHiHz);
-    makeComboCell (dreqApply, "EQ APPLY", ReverbParamIDs::dreqApply);
-    makeToggleCell (followWidth, "FOLLOW W", ReverbParamIDs::followWidth);
-    makeCell (followWidthAmt, followWidthAmtV, "W AMT", ReverbParamIDs::followWidthAmt);
-    makeToggleCell (followRot, "FOLLOW R", ReverbParamIDs::followRot);
-    makeCell (followRotAmt, followRotAmtV, "R AMT", ReverbParamIDs::followRotAmt);
-    makeCell (outTrim, outTrimV, "TRIM", ReverbParamIDs::outTrimDb);
-    makeToggleCell (duckOn, "DUCK", ReverbParamIDs::duckOn);
+    makeCell (wet,  wetV,  "WET",       "reverb.wet01");
+    makeCell (bloom,bloomV,"BLOOM",     "reverb.bloomPct");
+    makeCell (distance, distanceV, "DIST", "reverb.distancePct");
+    makeToggleCell (freeze, "FREEZE", "reverb.freeze");
+    makeCell (shimmerAmt, shimmerAmtV, "SHIM AMT", "reverb.shimmer.amtPct");
+    makeCell (shimmerInt, shimmerIntV, "SHIM INT", "reverb.shimmer.intPct");
+    makeCell (gateAmt, gateAmtV, "GATE", "reverb.gateAmtPct");
+    makeCell (dreqXoverLo, dreqXoverLoV, "DR XO LO", "reverb.dreq.xoverLoHz");
+    makeCell (dreqXoverHi, dreqXoverHiV, "DR XO HI", "reverb.dreq.xoverHiHz");
+    makeComboCell (dreqApply, "EQ APPLY", "reverb.dreq.apply");
+    makeToggleCell (followWidth, "FOLLOW W", "reverb.follow.width");
+    makeCell (followWidthAmt, followWidthAmtV, "W AMT", "reverb.follow.widthAmt");
+    makeToggleCell (followRot, "FOLLOW R", "reverb.follow.rot");
+    makeCell (followRotAmt, followRotAmtV, "R AMT", "reverb.follow.rotAmt");
+    makeCell (outTrim, outTrimV, "TRIM", "reverb.outTrimDb");
+    makeToggleCell (duckOn, "DUCK", "reverb.duck.on");
 
     // Grid order: Row 1 then Row 2
     auto push = [&](juce::Component* c){ gridOrder.push_back (c); };
