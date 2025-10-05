@@ -574,8 +574,7 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
 void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ignoreUnused (midi);
-    // DRY-ONLY PASSTHROUGH (triage step B): leave buffer untouched and return
-    return;
+    // DRY-ONLY PASSTHROUGH (triage step B): disabled
     juce::ScopedNoDenormals _ftz;  // FTZ/DAZ for this whole block
     
     const int N = buffer.getNumSamples();
@@ -858,22 +857,13 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         }
     }
     
-    // Dev cut output routing
-    if (hp.devCutMode == 1) /* dryOnly */
+    // TRIAGE C: Wet-only hard output (processed - dry)
+    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
     {
-        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-            std::memcpy (buffer.getWritePointer(ch), drySignal[ch].data(), (size_t)buffer.getNumSamples() * sizeof(float));
-        // Do not early-return: allow meters/vis/UI to tick this block
-    }
-    else if (hp.devCutMode == 2) /* wetOnly */
-    {
-        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-        {
-            auto* data = buffer.getWritePointer (ch);
-            const float* d0 = drySignal[ch].data();
-            for (int s = 0; s < buffer.getNumSamples(); ++s)
-                data[s] = data[s] - d0[s];
-        }
+        auto* data = buffer.getWritePointer (ch);
+        const float* d0 = drySignal[ch].data();
+        for (int s = 0; s < buffer.getNumSamples(); ++s)
+            data[s] = data[s] - d0[s];
     }
 
     // Apply MIX control (blend between dry and wet)
@@ -1110,8 +1100,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
 void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, juce::MidiBuffer& midi)
 {
     juce::ignoreUnused (midi);
-    // DRY-ONLY PASSTHROUGH (triage step B): leave buffer untouched and return
-    return;
+    // DRY-ONLY PASSTHROUGH (triage step B): disabled
     juce::ScopedNoDenormals _ftz;  // FTZ/DAZ for this whole block
     
     const int N = buffer.getNumSamples();
@@ -1348,25 +1337,12 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         }
     }
     
-    // Dev cut output routing (double)
-    if (hp.devCutMode == 1) /* dryOnly */
+    // TRIAGE C: Wet-only hard output (processed - dry) — double path
+    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
     {
-        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-        {
-            auto* dst = buffer.getWritePointer (ch);
-            const auto* src = drySignalD[ch].data();
-            std::memcpy (dst, src, (size_t)buffer.getNumSamples() * sizeof(double));
-        }
-        // Do not early-return: allow meters/vis/UI to tick this block
-    }
-    else if (hp.devCutMode == 2) /* wetOnly */
-    {
-        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-        {
-            auto* dst = buffer.getWritePointer (ch);
-            const auto* d0 = drySignalD[ch].data();
-            for (int i = 0; i < buffer.getNumSamples(); ++i) dst[i] = dst[i] - d0[i];
-        }
+        auto* dst = buffer.getWritePointer (ch);
+        const auto* d0 = drySignalD[ch].data();
+        for (int i = 0; i < buffer.getNumSamples(); ++i) dst[i] = dst[i] - d0[i];
     }
 
     // Apply MIX control (blend between dry and wet) - double precision
