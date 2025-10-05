@@ -163,8 +163,13 @@ public:
 #endif
 				buf[(size_t)writeIdx[i]] = y;
 				const int prev = writeIdx[i];
-				incWrite(writeIdx[i], logical);
-				if (writeIdx[i] == 0 && prev != 0) postWrapPad(buf);
+                incWrite(writeIdx[i], logical);
+                if (writeIdx[i] == 0 && prev != 0) {
+                    postWrapPad(buf);
+#if JUCE_DEBUG
+                    DBG("[FDN] wrap at line=" << i << " n=" << n);
+#endif
+                }
 #if JUCE_DEBUG
 				dbgOnce(writeIdx[i] >= 0 && writeIdx[i] < logical, "FDN: write index out of range (post)");
 #endif

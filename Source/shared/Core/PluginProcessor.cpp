@@ -885,6 +885,45 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         }
     }
 
+    // TRIAGE F: first-bad-sample recorder (Debug only)
+#if JUCE_DEBUG
+    {
+        static bool dumped = false;
+        static int firstBad = -1;
+        if (!dumped)
+        {
+            const int chN = buffer.getNumChannels();
+            const int nSm = buffer.getNumSamples();
+            for (int ch = 0; ch < chN && firstBad < 0; ++ch)
+            {
+                const float* p = buffer.getReadPointer(ch);
+                for (int i = 0; i < nSm; ++i)
+                {
+                    const float v = p[i];
+                    if (!juce::isFinite(v) || std::abs(v) > 1.2f)
+                    { firstBad = i; break; }
+                }
+            }
+            if (firstBad >= 0)
+            {
+                dumped = true;
+                juce::File f = juce::File::getSpecialLocation(juce::File::tempDirectory)
+                                 .getChildFile("field_glitch_dump.wav");
+                juce::WavAudioFormat wf;
+                if (auto out = f.createOutputStream())
+                {
+                    if (auto* w = wf.createWriterFor(out.release(), (int) currentSR, buffer.getNumChannels(), 24, {}, 0))
+                    {
+                        std::unique_ptr<juce::AudioFormatWriter> writer (w);
+                        writer->writeFromAudioSampleBuffer(buffer, 0, nSm);
+                        DBG("[Field] First bad @ sample " << firstBad << " -> " << f.getFullPathName());
+                    }
+                }
+            }
+        }
+    }
+#endif
+
     // Emergency dry passthrough if output energy collapsed
     {
         double sIn = 0.0, sOut = 0.0; const int ch = buffer.getNumChannels(); const int n = buffer.getNumSamples();
