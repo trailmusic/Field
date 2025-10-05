@@ -518,3 +518,96 @@ struct DcBlock {
 
 **Phase 2 is focused, reversible, and guarded.**
 When this page is green, we’ll graduate to Phase 3 (latency-aware live swaps beyond same-latency, and engine-level voicing maps).
+
+---
+
+## Appendix D — Cleanup Map (dev artifacts; how to remove later)
+
+- Dev parameters (APVTS) and toggles
+  - In `Source/shared/Core/PluginProcessor.cpp` (createParameterLayout):
+    - `dev.dsp.cut` (choice: normal/dry/wet/fdnMuted/fdnBypassed)
+    - `dev.transport.ignore` (bool)
+    - `dev.tempoSync.off` (bool)
+    - `dev.master.safe` (bool)
+    - `dev.phase.off` (bool)
+  - Snapshot/listeners: `parameterChanged` refresh for dev params; extra listeners for `mix`, `inputGain`, `outputGain`.
+
+- Processor snapshot (WO-61)
+  - In `Source/processor/PluginProcessor.h`:
+    - `HostParams` additions (dev flags at end).
+    - Snapshot fields: `snapshotA_`, `snapshotB_`, `snapshotPtr_`.
+  - In `Source/shared/Core/PluginProcessor.cpp`:
+    - Constructor: allocate snapshots; set `snapshotPtr_`.
+    - `parameterChanged`: rebuild snapshot.
+    - Float/double `processBlock(...)`: read from `snapshotPtr_` instead of APVTS.
+  - Keep (recommended) or remove by reverting snapshot fields and uses.
+
+- Transport/tempo gates (WO-62)
+  - In `processBlock` (float/double):
+    - Guard playhead reads with `dev.transport.ignore`.
+    - Force host-info `playing=false` when `dev.tempoSync.off`.
+  - Remove by deleting those `hp.devTransportIgnore/devTempoSyncOff` checks.
+
+- Dev cut routing (WO-57)
+  - In `processBlock` (float/double):
+    - Pre-routing: if `fdnMuted/fdnBypassed` → `hp.rvEnabled=false; hp.rvWet01=0`.
+    - Output routing for `dryOnly` (copy dry) and `wetOnly` (wet = processed − dry).
+    - Mix blend uses dry copy unless `dryOnly`.
+  - Remove by deleting these branches and restore original mix path.
+
+- Bypass behavior (non-latching)
+  - In `processBlock` (float/double):
+    - If bypass on, skip processing/graph tiling and copy dry back to output (still tick meters).
+  - Remove by deleting the `userBypassNow` branches and restoring early-return passthrough.
+
+- Debug logs (once-per-path)
+  - In `processBlock` ingress: `DBG` prints devCut/transport flags/bypass state (Debug-only).
+  - Remove DBG blocks.
+
+- Phase OFF gate (WO-65)
+  - In float path: skip `PhaseAlignmentEngine::processBlock(...)` when `dev.phase.off`.
+  - Remove that check to always run phase.
+
+- MasterSafe (WO-64)
+  - Only parameter exists; minimal-chain behavior is planned. If not needed, remove `dev.master.safe` and references.
+
+- FDN/hardening (WO-55/60)
+  - In `Source/engines/reverb/DSP/ReverbFDN.h`:
+    - Wrap mirroring on index wrap (`postWrapPad` on wrap)
+    - 5 ms wet fade-in (`fadeSamplesLeft` ramp in `postWetBus`)
+    - `SpikeSilencer` (Debug-only) after wet-sum, pre-DC
+    - DC blocker `DcBlock dc_[2]` post-sum
+    - Optional Debug clamp inside DC loop
+  - Remove debug-only optionally (SpikeSilencer, clamp); keep wrap/fade/DC (recommended).
+
+- Parity asserts (WO-58)
+  - In `Source/modules/FieldChain.h`:
+    - Debug-only prep cookies `cookieF_/cookieD_` and asserts in `prepare/process`.
+  - Remove by deleting the `#if JUCE_DEBUG` cookie sections.
+
+- Metering
+  - We left `Node_Meter` intact; changes were elsewhere. No cleanup needed here.
+
+- CMake / build toggles
+  - `JUCE_DISABLE_ASSERTIONS` for Standalone Debug in `Source/CMakeLists.txt`.
+  - Remove to restore JUCE asserts in Standalone Debug.
+
+- Misc fixes (safe to keep)
+  - `LatencyProbe` pointer-based `AudioBlock` construction fix.
+  - `SafetySentinels` `inline` statics to fix duplicate symbols.
+  - “Unity disabled stages” offline test: `Source/tests/offline/test_chain_unity_disabled_stages.cpp`.
+
+- New file(s)
+  - `Source/core/signal/SpikeSilencer.h` (delete if you drop WO-56).
+
+### Quick find/remove searches
+- Dev params/toggles: `dev.dsp.cut|dev.transport.ignore|dev.tempoSync.off|dev.master.safe|dev.phase.off`
+- Snapshot bits: `snapshotA_|snapshotB_|snapshotPtr_|makeHostParams|HostParams`
+- Parity cookies: `cookieF_|cookieD_|PrepCookie`
+- Debug logs: `DBG\(\"\[Field\]`
+- FDN debug: `SpikeSilencer|DcBlock|postWrapPad\(|fadeSamplesLeft`
+
+### Keep vs remove
+- Keep: FDN wrap mirroring, 5 ms fade-in, DC blocker; APVTS snapshot.
+- Optional remove: SpikeSilencer, parity cookie asserts, dev transport/cut/phase/master flags and routing, debug logs.
+- Revertable behavior: non-latching bypass → restore early-return passthrough.
