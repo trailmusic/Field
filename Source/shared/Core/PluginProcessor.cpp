@@ -890,17 +890,23 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     {
         static bool dumped = false;
         static int firstBad = -1;
+        static bool banner = false;
+        if (!banner) { DBG("[Field] TRIAGE build active: wet-only, FDN no taps, postWetBus bypassed"); banner = true; }
         if (!dumped)
         {
             const int chN = buffer.getNumChannels();
             const int nSm = buffer.getNumSamples();
+            const float ampThresh = 0.20f;   // lowered threshold
+            const float stepThresh = 0.20f;  // sudden delta detector
             for (int ch = 0; ch < chN && firstBad < 0; ++ch)
             {
                 const float* p = buffer.getReadPointer(ch);
+                float prev = p[0];
                 for (int i = 0; i < nSm; ++i)
                 {
                     const float v = p[i];
-                    if (!std::isfinite((double)v) || std::abs(v) > 1.2f)
+                    const float dv = v - prev; prev = v;
+                    if (!std::isfinite((double)v) || std::abs(v) > ampThresh || std::abs(dv) > stepThresh)
                     { firstBad = i; break; }
                 }
             }
