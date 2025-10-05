@@ -110,11 +110,53 @@ struct FieldChain
 		phase_.template  prepare<Sample> (sr_, maxBlock_, chans_);
 		imager_.template prepare<Sample> (sr_, maxBlock_, chans_);
 		prepared_ = true;
+
+#if JUCE_DEBUG
+		// Record preparation cookie for parity checks in process()
+		if constexpr (std::is_same_v<Sample, float>)
+		{
+			cookieF_.sr = sr_;
+			cookieF_.maxBlock = maxBlock_;
+			cookieF_.chans = chans_;
+			cookieF_.bytes = (int)sizeof(Sample);
+			cookieF_.set = true;
+		}
+		else if constexpr (std::is_same_v<Sample, double>)
+		{
+			cookieD_.sr = sr_;
+			cookieD_.maxBlock = maxBlock_;
+			cookieD_.chans = chans_;
+			cookieD_.bytes = (int)sizeof(Sample);
+			cookieD_.set = true;
+		}
+#endif
 	}
 
 	template <typename Sample>
 	void process (juce::dsp::AudioBlock<Sample>& io) const noexcept
 	{
+#if JUCE_DEBUG
+		// Ensure we were prepared for this precision and configuration
+		if constexpr (std::is_same_v<Sample, float>)
+		{
+			jassert (cookieF_.set);
+			jassert (cookieF_.bytes == (int)sizeof(Sample));
+			jassert (cookieF_.sr == sr_ && cookieF_.chans == chans_);
+		}
+		else if constexpr (std::is_same_v<Sample, double>)
+		{
+			jassert (cookieD_.set);
+			jassert (cookieD_.bytes == (int)sizeof(Sample));
+			jassert (cookieD_.sr == sr_ && cookieD_.chans == chans_);
+		}
+		// Cross-precision parity: both paths should have been prepared to the same topology
+		if (cookieF_.set && cookieD_.set)
+		{
+			jassert (cookieF_.sr == cookieD_.sr);
+			jassert (cookieF_.chans == cookieD_.chans);
+			jassert (cookieF_.maxBlock >= cookieD_.maxBlock || cookieD_.maxBlock >= cookieF_.maxBlock);
+		}
+#endif
 		for (auto st : stages_)
 		{
 			switch (st)
@@ -171,5 +213,11 @@ private:
 
 	// Enabled-only stage execution order
 	std::vector<Stage> stages_{};
+
+#if JUCE_DEBUG
+	struct PrepCookie { double sr{0}; int maxBlock{0}; int chans{0}; int bytes{0}; bool set{false}; };
+	mutable PrepCookie cookieF_{};
+	mutable PrepCookie cookieD_{};
+#endif
 };
 }} // namespace field::modules
