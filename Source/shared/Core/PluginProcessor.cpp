@@ -831,7 +831,8 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     const int maxBlockSize = (preparedMax_ > 0 ? preparedMax_ : preparedMax);
     
     // Bullet-proof tiling with AudioBlock sub-blocks (unity graph)
-    if (!userBypassNow)
+    constexpr bool kSkipGraphProcess = true; // TRIAGE E: skip engines
+    if (!userBypassNow && !kSkipGraphProcess)
     {
         juce::dsp::AudioBlock<float> whole(buffer);
         int offset = 0, spins = 0;
@@ -1312,7 +1313,8 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     const int maxBlockSize = (preparedMax_ > 0 ? preparedMax_ : preparedMax);
     
     // Bullet-proof tiling with AudioBlock sub-blocks (unity graph)
-    if (!userBypassNowD)
+    constexpr bool kSkipGraphProcessD = true; // TRIAGE E: skip engines (double)
+    if (!userBypassNowD && !kSkipGraphProcessD)
     {
         juce::dsp::AudioBlock<double> whole(buffer);
         int offset = 0, spins = 0;
