@@ -273,6 +273,12 @@ rg -n "DcBlock|postWetBus" Source/engines/reverb/DSP/ReverbFDN.h
 - Verification: Build clean; ready for host litmus (Master vs Track, 64/128/512).
 - Commits: 3b2fb89
 
+### Update — 2025-10-05
+- Change: Bypass made non-latching; when bypass is active, we copy dry to output but keep meters/visualization ticking. Wired listeners for Mix/Input/Output to refresh the snapshot immediately. Added debug logs for dev cut/transport flags at ingress. (`Source/shared/Core/PluginProcessor.cpp`)
+- Reason: Ensure UI controls apply live and diagnostics remain visible while bypassed; simplify A/B on Master.
+- Verification: AU/VST3/Standalone built; toggling bypass re-applies; meters tick under dryOnly and bypass.
+- Commits: e889c2e
+
 * If glitches vanish with transport disabled → we localize to transport-coupled logic; else we stay in wet-path/OS.
 
 ---
