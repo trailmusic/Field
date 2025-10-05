@@ -522,6 +522,11 @@ When this page is green, we’ll graduate to Phase 3 (latency-aware live swaps b
 ---
 
 ## Appendix D — Cleanup Map (dev artifacts; how to remove later)
+- 2025-10-05 — Legacy poisoning and tripwire
+  - Change: Poisoned legacy headers under `features/reverb/DSP/*` and `shared/Core/DspRuntimeConfig.h` with `#error`. Added CMake tripwire to fail on legacy includes and forbidden cross-includes.
+  - Files: `Source/features/reverb/DSP/ReverbFDN.h`, `ReverbParamIDs.h`, `ReverbEQParamIDs.h`, `ReverbProcessorGlue.h`, `shared/Core/DspRuntimeConfig.h`, `Source/CMakeLists.txt`.
+  - Commits: df3dbbc
+
 
 - Dev parameters (APVTS) and toggles
   - In `Source/shared/Core/PluginProcessor.cpp` (createParameterLayout):
