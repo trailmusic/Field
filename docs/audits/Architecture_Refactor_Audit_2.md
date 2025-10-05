@@ -1,8 +1,7 @@
-# Field Architecture Refactor Audit — Phase 2
+# Field Architecture Refactor Audit — Phase 2  
+_Contributors Guide & Header_
 
-*Contributors Guide & Header*
-
-**File:** `docs/audits/Architecture_Refactor_Audit_2.md`
+**File:** `docs/audits/Architecture_Refactor_Audit_2.md`  
 **Last updated:** `2025-10-05` • **Branch:** `feature` • **Maintainers:** @trail @grant
 
 ---
