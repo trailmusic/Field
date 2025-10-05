@@ -527,6 +527,50 @@ When this page is green, we’ll graduate to Phase 3 (latency-aware live swaps b
   - Files: `Source/features/reverb/DSP/{ReverbFDN.h,ReverbParamIDs.h,ReverbEQParamIDs.h,ReverbProcessorGlue.h}`, `Source/shared/Core/DspRuntimeConfig.h`, `Source/CMakeLists.txt`.
   - Commits: df3dbbc
 
+---
+
+## Appendix E — Live Glitch Triage Log (2025-10-05)
+
+Context: Audible fast “zipper”/glitch on Master. Goal: binary isolation with one change per build.
+
+- A — Nuclear mute (clear+return at callback ingress)
+  - Commit: 8d0fe16
+  - Result: clean silence → glitch is inside our callback.
+
+- B — Dry-only passthrough (no processing)
+  - Commit: 7e0b0cb
+  - Result: clean → wet/mix path implicated.
+
+- C — Wet-only (output processed − dry) in float+double
+  - Commit: 7fb7d46
+  - Result: wet glitches → issue in wet path.
+
+- C.1 — FDN pure‑thru (feedback=0, taps disabled)
+  - Commit: 3aa88c5
+  - Result: still glitches → not feedback accumulation or output taps.
+
+- D — Phase OFF (hard-disable Phase engine in both precisions)
+  - Commit: 0764837
+  - Result: still glitches → not Phase engine/routing.
+
+- E — Minimal chain / postWetBus bypass
+  - Skip graph (both precisions): 234c296
+  - Re-enable graph; bypass FDN postWetBus: d2eb960
+  - Result: still glitches with postWetBus bypassed → points earlier than post-sum (write/wrap/read indices).
+
+- F — Glitch recorder + wrap logs (Debug only)
+  - Float recorder + banner, sensitivity lowered: d757caf, 4eae8c2
+  - Double-path recorder + banner: 94307e4
+  - Status: Standalone showed no glitch; Live logs lacked recorder markers (likely stale plugin instance). Next run should fully quit Live and relaunch from Terminal to confirm banner: "[Field] TRIAGE build active …".
+
+Next steps (single-step toggles)
+- Wrap/read isolation in FDN:
+  - Instrument read offsets and clamp; temporarily bypass `postWrapPad`; add block-boundary detector; compare values at wraps.
+- Post-wet re-enable in halves (if needed):
+  - Re-enable DC only → fade → soft-limit, one per build; note first flip.
+- Ensure Live loads current build:
+  - Quit Live; relaunch from Terminal; look for TRIAGE banner before testing. If banner absent, plugin cache likely stale.
+
 
 - Dev parameters (APVTS) and toggles
   - In `Source/shared/Core/PluginProcessor.cpp` (createParameterLayout):
