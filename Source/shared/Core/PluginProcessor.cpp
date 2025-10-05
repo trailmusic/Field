@@ -2125,7 +2125,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
         juce::StringArray { "normal", "dry", "wet", "fdnMuted", "fdnBypassed" },
         0));
     params.push_back (std::make_unique<juce::AudioParameterBool>(
-        juce::ParameterID{ "dev.transport.ignore", 1 }, "Dev Ignore Transport", false));
+        juce::ParameterID{ "dev.transport.ignore", 1 }, "Dev Ignore Transport", true));
     params.push_back (std::make_unique<juce::AudioParameterBool>(
         juce::ParameterID{ "dev.tempoSync.off", 1 }, "Dev Tempo Sync Off", false));
     
