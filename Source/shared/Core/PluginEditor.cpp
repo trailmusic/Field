@@ -156,20 +156,7 @@ void MyPluginAudioProcessorEditor::initializeUIComponents()
     initializeTheme();
     initializeTimer();
     initializeMouseListener();
-#if JUCE_DEBUG
-    // Dev HUD: expose master safe, phase off, and cut directly in UI
-    addAndMakeVisible (devMasterSafeToggle);
-    addAndMakeVisible (devPhaseOffToggle);
-    addAndMakeVisible (devCutCombo);
-    devCutCombo.addItem ("normal",     1);
-    devCutCombo.addItem ("dry",        2);
-    devCutCombo.addItem ("wet",        3);
-    devCutCombo.addItem ("fdnMuted",   4);
-    devCutCombo.addItem ("fdnBypassed",5);
-    devMasterSafeAttach = std::make_unique<ButtonAttachment> (proc.apvts, "dev.master.safe", devMasterSafeToggle);
-    devPhaseOffAttach   = std::make_unique<ButtonAttachment> (proc.apvts, "dev.phase.off",   devPhaseOffToggle);
-    devCutAttach        = std::make_unique<ComboAttachment>  (proc.apvts, "dev.dsp.cut",     devCutCombo);
-#endif
+    
 }
 
 void MyPluginAudioProcessorEditor::initializeButtonCallbacks()
@@ -907,14 +894,7 @@ void MyPluginAudioProcessorEditor::resized()
 {
     if (!layoutReady) return;
     performLayout();
-#if JUCE_DEBUG
-    // Place Dev HUD in header area (top-right)
-    auto header = getLocalBounds().removeFromTop (50).reduced (10);
-    auto right = header.removeFromRight (juce::jmin (300, header.getWidth()));
-    devMasterSafeToggle.setBounds (right.removeFromTop (18));
-    devPhaseOffToggle.setBounds   (right.removeFromTop (18));
-    devCutCombo.setBounds         (right.removeFromTop (20));
-#endif
+
 }
 
 void MyPluginAudioProcessorEditor::paintOverChildren (juce::Graphics& g)

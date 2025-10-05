@@ -199,15 +199,6 @@ public:
 
     ControlContainer mainControlsContainer, volumeContainer;
 
-    // ===== Dev HUD (debug-only) =====
-#if JUCE_DEBUG
-    juce::ToggleButton devMasterSafeToggle { "SAFE(MASTER)" };
-    juce::ToggleButton devPhaseOffToggle   { "Phase OFF" };
-    juce::ComboBox     devCutCombo;
-    std::unique_ptr<ButtonAttachment> devMasterSafeAttach;
-    std::unique_ptr<ButtonAttachment> devPhaseOffAttach;
-    std::unique_ptr<ComboAttachment>  devCutAttach;
-#endif
     ControlContainer MainContentContainer;
     ControlContainer panKnobContainer;
     ControlContainer widthGroupContainer;
