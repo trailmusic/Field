@@ -1,8 +1,22 @@
-# Field Architecture Refactor Audit — **Phase 2**
+# Field Architecture Refactor Audit — Phase 2
 
-> **Last updated:** 2025-10-05
-> **Branch:** `feature`
-> **Goal:** eliminate rhythmic/glitch artifacts across hosts, cement float/double parity, and add **zero-cost-in-Release** diagnostics.
+*Contributors Guide & Header*
+
+**File:** `docs/audits/Architecture_Refactor_Audit_2.md`
+**Last updated:** `2025-10-05` • **Branch:** `feature` • **Maintainers:** @trail @grant
+
+---
+
+## How to Use This Document
+
+* **Append-only.** Never rewrite historical entries. Add new **WO** blocks or dated **Update** patchlets.
+* **One WO = one anchor.** Header format: `# WO-XX — Title` (use the exact em dash).
+* **Required sections** for every WO: Objective • Changes • Build & CMake • Tests • Verification • Tripwires • Risk & Mitigation • Notes & Links • Status/Owner/Date.
+* **Bullets over prose.** Keep each change: `path` → short action. Put commands/regex in fenced blocks.
+* **Link everything.** Use relative paths like `Source/...`. Reference PRs and short SHAs.
+* **Status tags:** `PLANNED | IN PROGRESS | LANDING | LANDED | ROLLED BACK`.
+* **Dates in UTC:** `YYYY-MM-DD`.
+* **No DSP/tone changes** must be explicitly stated when applicable.
 
 ---
 
@@ -11,18 +25,18 @@
 * [Purpose](#purpose)
 * [Scope](#scope)
 * [Success Criteria (DoD)](#success-criteria-dod)
-* [Entry Checklist](#entry-checklist)
+* [Starting Checklist](#starting-checklist)
 * [Work Orders (Phase 2)](#work-orders-phase-2)
 
-  * [WO-55 — FDN wet fade-in + wrap mirroring](#wo55--fdn-wet-fade-in--wrap-mirroring)
-  * [WO-56 — SpikeSilencer (dev-only micro-fade)](#wo56--spikesilencer-dev-only-micro-fade)
-  * [WO-57 — Dev cut switches + silence contract](#wo57--dev-cut-switches--silence-contract)
-  * [WO-58 — Double-path parity & prepare guarantees](#wo58--double-path-parity--prepare-guarantees)
-  * [WO-59 — Ableton Insert Safe hardening (recap)](#wo59--ableton-insert-safe-hardening-recap)
-  * [WO-60 — Wet-path DC guard & post-sum clamp](#wo60--wet-path-dc-guard--post-sum-clamp)
-  * [WO-61 — APVTS Freeze: snapshot & purge audio-thread reads](#wo61--apvts-freeze-snapshot--purge-audio-thread-reads)
-  * [WO-62 — Rhythm-coupling probes (transport/tempo)](#wo62--rhythm-coupling-probes-transporttempo)
-  * [WO-63 — pluginval + Host Matrix CI](#wo63--pluginval--host-matrix-ci)
+  * [WO-55 — FDN wet fade-in + wrap mirroring](#wo-55--fdn-wet-fade-in--wrap-mirroring)
+  * [WO-56 — SpikeSilencer (dev-only micro-fade)](#wo-56--spikesilencer-dev-only-micro-fade)
+  * [WO-57 — Dev cut switches + silence contract](#wo-57--dev-cut-switches--silence-contract)
+  * [WO-58 — Double-path parity & prepare guarantees](#wo-58--double-path-parity--prepare-guarantees)
+  * [WO-59 — Ableton Insert Safe hardening (recap)](#wo-59--ableton-insert-safe-hardening-recap)
+  * [WO-60 — Wet-path DC guard & post-sum clamp](#wo-60--wet-path-dc-guard--post-sum-clamp)
+  * [WO-61 — APVTS Freeze: snapshot & purge audio-thread reads](#wo-61--apvts-freeze-snapshot--purge-audio-thread-reads)
+  * [WO-62 — Rhythm-coupling probes (transport/tempo)](#wo-62--rhythm-coupling-probes-transporttempo)
+  * [WO-63 — pluginval + Host Matrix CI](#wo-63--pluginval--host-matrix-ci)
 * [Diagnostics & Telemetry (dev-only)](#diagnostics--telemetry-dev-only)
 * [Verification Matrix](#verification-matrix)
 * [Risk & Mitigation](#risk--mitigation)
@@ -63,7 +77,7 @@ Phase 2 hardens **stability and parity** across formats/hosts and installs **fas
 
 ---
 
-## Entry Checklist
+## Starting Checklist
 
 1. Build **RelWithDebInfo** AU/VST3; clear macOS quarantine.
 2. Run **pluginval** (AU and VST3).
@@ -74,7 +88,9 @@ Phase 2 hardens **stability and parity** across formats/hosts and installs **fas
 
 ## Work Orders (Phase 2)
 
-### WO-55 — FDN wet fade-in + wrap mirroring
+# WO-55 — FDN wet fade-in + wrap mirroring
+**Status:** LANDED  
+**Owner:** @trail • **Date:** 2025-10-05
 
 **Objective:** Make startup & wrap transitions click-free and SIMD-safe.
 
@@ -91,7 +107,9 @@ Phase 2 hardens **stability and parity** across formats/hosts and installs **fas
 
 ---
 
-### WO-56 — SpikeSilencer (dev-only micro-fade)
+# WO-56 — SpikeSilencer (dev-only micro-fade)
+**Status:** LANDED  
+**Owner:** @trail • **Date:** 2025-10-05
 
 **Objective:** Smother rare >0.95 spikes with a one-shot **32-sample** micro-fade **(Debug only)**.
 
@@ -108,7 +126,9 @@ Phase 2 hardens **stability and parity** across formats/hosts and installs **fas
 
 ---
 
-### WO-57 — Dev cut switches + silence contract
+# WO-57 — Dev cut switches + silence contract
+**Status:** PLANNED  
+**Owner:** @trail • **Date:** 2025-10-05
 
 **Objective:** Fast isolation switches; formal “silence means silence” rule.
 
@@ -124,7 +144,9 @@ Phase 2 hardens **stability and parity** across formats/hosts and installs **fas
 
 ---
 
-### WO-58 — Double-path parity & prepare guarantees
+# WO-58 — Double-path parity & prepare guarantees
+**Status:** LANDED  
+**Owner:** @trail • **Date:** 2025-10-05
 
 **Objective:** Ensure float/double paths are **prepared identically** and remain in lockstep.
 
@@ -147,7 +169,9 @@ Phase 2 hardens **stability and parity** across formats/hosts and installs **fas
 
 ---
 
-### WO-59 — Ableton Insert Safe hardening (recap)
+# WO-59 — Ableton Insert Safe hardening (recap)
+**Status:** LANDED  
+**Owner:** @trail • **Date:** 2025-10-05
 
 **Objective:** Belt-and-suspenders for Live’s first callback behaviors.
 
@@ -163,7 +187,9 @@ Phase 2 hardens **stability and parity** across formats/hosts and installs **fas
 
 ---
 
-### WO-60 — Wet-path DC guard & post-sum clamp
+# WO-60 — Wet-path DC guard & post-sum clamp
+**Status:** LANDED  
+**Owner:** @trail • **Date:** 2025-10-05
 
 **Objective:** Kill DC creep and disallow pathological overs.
 
@@ -198,11 +224,13 @@ rg -n "DcBlock|postWetBus" Source/engines/reverb/DSP/ReverbFDN.h
 
 **Notes & Links**
 
-- Commit: <pending>
+- Commits: aa9f0a1
 
 ---
 
-### WO-61 — APVTS Freeze: snapshot & purge audio-thread reads
+# WO-61 — APVTS Freeze: snapshot & purge audio-thread reads
+**Status:** LANDED  
+**Owner:** @trail • **Date:** 2025-10-05
 
 **Objective:** Eliminate the last APVTS touch in audio callbacks.
 
@@ -219,11 +247,13 @@ rg -n "DcBlock|postWetBus" Source/engines/reverb/DSP/ReverbFDN.h
 - Change: Implemented lock-free `HostParams` snapshot with double buffers in processor; replaced audio-thread `makeHostParams(apvts)` with snapshot reads in both float and double paths. (`Source/shared/Core/PluginProcessor.cpp`, `Source/processor/PluginProcessor.h`)
 - Reason: Remove audio-thread `APVTS`/`ValueTree` interaction; enforce WO-61.
 - Verification: Built AU/VST3/Standalone (RelWithDebInfo) successfully.
-- Commits: aa9f0a1
+- Commits: d5593a6
 
 ---
 
-### WO-62 — Rhythm-coupling probes (transport/tempo)
+# WO-62 — Rhythm-coupling probes (transport/tempo)
+**Status:** PLANNED  
+**Owner:** @trail • **Date:** 2025-10-05
 
 **Objective:** Prove or disprove transport coupling for rhythmic glitches.
 
@@ -238,7 +268,9 @@ rg -n "DcBlock|postWetBus" Source/engines/reverb/DSP/ReverbFDN.h
 
 ---
 
-### WO-63 — pluginval + Host Matrix CI
+# WO-63 — pluginval + Host Matrix CI
+**Status:** PLANNED  
+**Owner:** @trail • **Date:** 2025-10-05
 
 **Objective:** Make regressions noisy.
 
