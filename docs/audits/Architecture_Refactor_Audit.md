@@ -1,411 +1,198 @@
-# Field Architecture Refactor Audit (Phase 1)
+# Field Architecture Refactor — **Phase 1 Audit**
 
-Last updated: 2025-10-04 • Branch: `feature`
+> **Last updated:** 2025-10-04
+> **Branch:** `feature`
+> **Scope:** Source tree separation (UI ↔ Processor ↔ Engines ↔ Core), DSP single-source-of-truth, host-safe lifecycle, CI tripwires.
+
+---
 
 ## Contents
-- [Purpose](#purpose)
-- [Completed (Phase 1)](#completed-phase-1)
-- [Structure (target)](#structure-target)
-- [Decisions & Guardrails](#decisions--guardrails)
-- [Next Steps](#next-steps)
-- [Milestones & Definition of Done](#milestones--definition-of-done)
-- [Migration Checklist](#migration-checklist)
-- [Legacy → New Mapping (Phase 1)](#legacy--new-mapping-phase-1)
-- [Risk & Mitigation](#risk--mitigation)
-- [Rollback Plan](#rollback-plan)
-- [Owners](#owners)
-- [Target Source/ layout (authoritative)](#target-source-layout-authoritative)
-- [What to move now (mapping)](#what-to-move-now-mapping)
-- [One-shot move script (preview, then execute)](#one-shot-move-script-preview-then-execute)
-- [Per-folder index (should exist after move)](#per-folder-index-should-exist-after-move)
-- [Minimal CMake scaffolds](#minimal-cmake-scaffolds)
-- [Builder Work Order #2 — Processor Migration + Latency Proof](#builder-work-order-2--processor-migration--latency-proof)
-- [Verification (host-safe)](#verification-host-safe)
-- [Phase 1 Locked — Minimal Stubs Installed (for Work Order #3)](#phase-1-locked--minimal-stubs-installed-for-work-order-3)
-- [WO-3 Update — Optional Mixing Stages in FieldChain (default-off)](#wo-3-update--optional-mixing-stages-in-fieldchain-default-off)
-- [WO-4 — Config-driven placeholders + prepare-time param gate](#wo-4--config-driven-placeholders--prepare-time-param-gate)
-- [WO-5 — Latency Accumulator + Probe + Tests](#wo-5--latency-accumulator--probe--tests)
-- [WO-6 — Processor Glue: Safe Param Reads, Rebuild Fence, Latency & Tail](#wo-6--processor-glue--safe-param-reads--rebuild-fence--latency--tail)
-- [WO-7 — Click-Free Live Chain Swap (Same-Latency Only)](#wo-7--click-free-live-chain-swap-same-latency-only)
-- [WO-8 — Mid-Block Swap + Warmup (same-latency only)](#wo-8--mid-block-swap--warmup-same-latency-only)
-- [WO-9 — StateSanity + PDC Guard + First-Bad-Sample Telemetry](#wo-9--statesanity--pdc-guard--first-bad-sample-telemetry)
-- [WO-10 — Host Cache Sanity + LatencyProbe CI Harness](#wo-10--host-cache-sanity--latencyprobe-ci-harness)
-- [WO-11 — Param IDs → Latency Hooks (prepare-time only)](#wo-11--param-ids--latency-hooks-prepare-time-only)
-- [WO-12 — Minimal Param Layout (APVTS) + Safe Reads (no DSP changes)](#wo-12--minimal-param-layout-apvts--safe-reads-no-dsp-changes)
-- [WO-13 — Rebuild Listeners + Latency/Tail Apply at Prepare](#wo-13--rebuild-listeners--latencytail-apply-at-prepare)
-- [WO-14 — Live-Swap for Voicing Params (same-latency edits only)](#wo-14--live-swap-for-voicing-params-same-latency-edits-only)
-- [2025-10-04 — Maintenance Update: DualChain assignment removal + full build](#2025-10-04--maintenance-update-dualchain-assignment-removal--full-build)
-- [WO-15 — Editor Timer Hook + Live-Swap HUD (dev-only)](#wo-15--editor-timer-hook--live-swap-hud-dev-only)
-- [WO-16 — FIELD_DEV_HUD flag + runtime toggle](#wo-16--field_dev_hud-flag--runtime-toggle)
-- [WO-17 — Offline Golden Tests (same-latency voicing & mid-block swap)](#wo-17--offline-golden-tests-same-latency-voicing--mid-block-swap)
-- [WO-18 — Latency Smoke Matrix + Tail Cache Test](#wo-18--latency-smoke-matrix--tail-cache-test)
-- [WO-19 — Processor Latency/Tail Smoke (APVTS + Host-style)](#wo-19--processor-latencytail-smoke-apvts--host-style)
-- [WO-20 — ParamChangeBus ⇄ Processor Glue Test (no audio)](#wo-20--paramchangebus--processor-glue-test-no-audio)
-- [WO-21 — Retire shared/dsp (phase bank include), prep for full shutdown](#wo-21--retire-shareddsp-phase-bank-include-prep-for-full-shutdown)
-- [WO-22 — Reverb DSP Consolidation (kill legacy glue; keep builds green)](#wo-22--reverb-dsp-consolidation-kill-legacy-glue-keep-builds-green)
-- [WO-23 — FDN Stability Pack (no sound-change intent, just hygiene)](#wo-23--fdn-stability-pack-no-sound-change-intent-just-hygiene)
-- [WO-24 — Kill shared/dsp Completely](#wo-24--kill-shareddsp-completely)
-- [WO-25 — Spectral-Radius Safety + Feedback Smoothing (prepare-time)](#wo-25--spectral-radius-safety--feedback-smoothing-prepare-time)
-- [WO-26 — Delay-Line Wrap Correctness + SIMD Tail Guard](#wo-26--delay-line-wrap-correctness--simd-tail-guard)
-- [WO-27 — Deterministic Prepare + Warmup & Fade-In](#wo-27--deterministic-prepare--warmup--fade-in)
-- [WO-28 — Spectral-Radius Safety + Feedback Glide (no tone change)](#wo-28--spectral-radius-safety--feedback-glide-no-tone-change)
-- [WO-29 — SIMD-Safe Delay Pads + Canonical Wrap (no tone change)](#wo-29--simd-safe-delay-pads--canonical-wrap-no-tone-change)
-- [WO-30 — DC Guards + Optional Safety Soft-Clip (default-OFF)](#wo-30--dc-guards--optional-safety-soft-clip-default-off)
-- [WO-31 — Feedback Operator Safety (matrix normalization @ prepare)](#wo-31--feedback-operator-safety-matrix-normalization--prepare)
-- [WO-32 — Kill shared/dsp From the Build (fast, reversible)](#wo-32--kill-shareddsp-from-the-build-fast-reversible)
-- [WO-33 — Move/Map Every shared/dsp Artifact to Engines](#wo-33--movemap-every-shareddsp-artifact-to-engines)
-- [WO-34 — Reverb DSP Consolidation (one source of truth)](#wo-34--reverb-dsp-consolidation-one-source-of-truth)
-- [WO-35 — Block features/.../DSP includes (tripwire)](#wo-35--block-featuresdspdsp-includes-tripwire)
-- [WO-36 — ReverbEngine sanity pin (static_asserts)](#wo-36--reverbengine-sanity-pin-static_asserts)
-- [WO-37 — Decommission DspRuntimeConfig (soft) + deterministic OS/Phase resolver](#wo-37--decommission-dspruntimeconfig-soft--deterministic-osphase-resolver)
-- [WO-38 — Remove DspRuntimeConfig (hard) + CI tripwire](#wo-38--remove-dspruntimeconfig-hard--ci-tripwire)
-- [WO-39 — shared/dsp full shutdown (headers poison + include path removal)](#wo-39--shareddsp-full-shutdown-headers-poison--include-path-removal)
-- [WO-40 — Reverb DSP: single source of truth (poison legacy, keep builds green)](#wo-40--reverb-dsp-single-source-of-truth-poison-legacy-keep-builds-green)
-- [WO-41 — Move/Pin FDN under engines (single canonical header)](#wo-41--movepin-fdn-under-engines-single-canonical-header)
-- [WO-42 — DspRuntimeConfig poison + CI tripwires](#wo-42--dspruntimeconfig-poison--ci-tripwires)
-- [WO-43 — Include-scope hygiene (ODR guard)](#wo-43--include-scope-hygiene-odr-guard)
-- [WO-44 — FDN invariants & first-bad-sample capture (dev-only)](#wo-44--fdn-invariants--first-bad-sample-capture-dev-only)
-- [WO-45 — Motion/Machine engine split + MotionCore extraction + rename](#wo-45--motionmachine-engine-split--motioncore-extraction--rename)
-- [WO-46 — Reverb legacy purge (finish WO-40/41)](#wo-46--reverb-legacy-purge-finish-wo-4041)
-- [WO-47 — UI “Engines” fence + CI tripwire](#wo-47--ui-engines-fence--ci-tripwire)
-- [WO-49 — Ableton Insert Safe hardening](#wo-49--ableton-insert-safe-hardening)
-- [WO-50 — Processor lifecycle & zero-buffer guards](#wo-50--processor-lifecycle--zero-buffer-guards)
-- [WO-51 — FieldChain: stage list + prepared flag](#wo-51--fieldchain-stage-list--prepared-flag)
-- [WO-52 — Node_Meter hardening (no atomics before prepare, 0-chan safe)](#wo-52--node_meter-hardening-no-atomics-before-prepare-0-chan-safe)
-- [WO-53 — Kill APVTS reads on audio thread (final sweep)](#wo-53--kill-apvts-reads-on-audio-thread-final-sweep)
-- [WO-54 — Offline test: chain unity with disabled stages](#wo-54--offline-test-chain-unity-with-disabled-stages)
 
+* [Purpose](#purpose)
+* [Executive Summary](#executive-summary)
+* [Target Topology](#target-topology)
+* [Guardrails & Principles](#guardrails--principles)
+* [Current Status (Phase 1)](#current-status-phase1)
+* [Milestones & DoD](#milestones--definition-of-done)
+* [Migration Checklist](#migration-checklist)
+* [Legacy → New Mapping](#legacy--new-mapping)
+* [Authoritative `Source/` Layout](#authoritative-source-layout)
+* [One-Shot Move Script (previewable)](#one-shot-move-script-previewable)
+* [Build System Scaffolding](#build-system-scaffolding)
+* [Verification Matrix](#verification-matrix)
+* [Risk Register](#risk-register)
+* [Rollback Plan](#rollback-plan)
+* [Ownership](#ownership)
+* [Work Orders (WO) Ledger](#work-orders-wo-ledger)
 
 ---
 
-## Completed (Phase 1)
-- Core scaffolding
-  - `core/signal/`: `SignalGraph.h`, `FrameAccumulator.h`, `OversamplingStage.h`, `Sanitize.h`, `NullNode.h`
-  - `core/runtime/`: `LatencyManager.h`
-  - `core/telemetry/`: `DebugTelemetry.h`, `GlitchHunt.h`, `LatencyProbe.h`
-  - Forwarders added in `shared/Core/*` → `core/*`
-- Processor/editor routing
-  - Headers moved to `processor/`: `PluginProcessor.h`, `PluginEditor.h`
-  - `shared/Core/Plugin*.h` now forwarders to `processor/`
-  - Bridge sources in `processor/` include originals to preserve behavior
-  - Inlined tiny methods to satisfy linkage temporarily
-- CMake
-  - Added stubs for `app`, `core`, `engines`, `modules`, `processor`, `ui`, `presets`, `tests`
-  - `Source/CMakeLists.txt` now points at `processor/Plugin*`
-- Build
-  - Standalone, AU, VST3 built and installed successfully
+## Purpose
+
+Create a **clean separation of concerns** across the codebase:
+
+* UI & feature panels remain **visual only**.
+* All DSP lives in **engines/**, wrapped by **modules/** for graph wiring.
+* **processor/** contains JUCE `AudioProcessor` glue only.
+* **core/** centralizes params, runtime, signal utilities, and telemetry.
+
+This establishes a **stable lane** for latency, warm-swap, and future signal work while preventing ODR drift and header duplication.
 
 ---
 
-## Structure (target)
-- `app/`: entry/host glue only
-- `core/`: params, runtime gates, signal graph, telemetry, utils
-- `engines/`: pure DSP packages (no UI)
-- `modules/`: node wrappers for engines (graph wiring)
-- `processor/`: single `AudioProcessor` + editor shell (glue only)
-- `ui/` and `features/`: visual-only
-- `presets/`: data + minimal loaders
-- `tests/`: offline + perf
+## Executive Summary
+
+* **Reverb DSP** is now a **single source of truth** under `engines/reverb/**`. Legacy headers in `features/reverb/DSP` are **poisoned** to prevent regressions.
+* **`shared/dsp`** has been **retired/moved**; CI **tripwires** block legacy includes.
+* **Processor lifecycle** hardened: **zero-buffer/zero-channel** safe, **insert-while-playing** safe, and **no APVTS reads** on the audio thread (policy + tripwires).
+* **FDN** wrapped with **debug-only invariants**, canonical wrap, SIMD-safe pads, DC guards, and first-bad-sample scaffolding (all **zero-cost in Release**).
+* **Include scope** fenced: engines cannot include `features/` or `shared/`; UI cannot sneak engine scope.
+* Full builds (Standalone/AU/VST3) are **green** with the new structure.
 
 ---
 
-## Decisions & Guardrails
-- No DSP code inside `processor/` beyond orchestration and latency reporting.
-- `ui/` and `features/` are display/interaction only; they cannot touch audio buffers.
-- Single source of truth for latency: `core/runtime/LatencyManager` applied from `processor/` on the message thread.
-- Topology rebuilds are gated and occur in `prepareToPlay()` or via explicit crossfades; never mid-block without protection.
-- Forwarders remain only as a transition aid and will be removed when migrations finish.
+## Target Topology
+
+**High-level layering**
+
+```
+app/              # entry/host notes only
+core/             # params, runtime gates, signal utils, telemetry
+engines/          # pure DSP packages (no UI)
+modules/          # node wrappers, graph wiring, zero-alloc stages
+processor/        # JUCE AudioProcessor + editor shell (glue only)
+ui/ + features/   # visual-only, no audio buffer access
+presets/          # data + loaders
+tests/            # offline & perf
+```
 
 ---
 
-## Next Steps
-1. Migrate implementations from `shared/Core/PluginProcessor.cpp` and `PluginEditor.cpp` into `processor/` in small, verified steps; remove bridge includes afterwards
-2. Extract DSP from features into `engines/` and wrap via `modules/FieldNodes/*`
-3. Move param IDs/layout to `core/params/`; move preset code to `presets/`
-4. Add `tests/offline` (null-unity, latency-probe) and `tests/perf`
-5. Tighten CMake: real `field_core` target and explicit links; remove legacy include paths
-6. Clean warnings (override, deprecations)
+## Guardrails & Principles
+
+* **One DSP home per engine** (e.g., Reverb FDN under `engines/reverb/DSP`).
+* **No DSP in `processor/`** beyond orchestration and latency/tail reporting.
+* **No APVTS reads** on the audio thread; **prepare/message-thread** only.
+* **Latency single source:** `core/runtime/LatencyManager` applied from `processor/` **on the message thread**.
+* **Rebuilds are gated**; topology changes occur at `prepareToPlay()` or via crossfades when latency-identical.
+* **Tripwires** in CI block: `features/.../DSP` includes, any `shared/dsp`, and `DspRuntimeConfig`.
+
+---
+
+## Current Status (Phase 1)
+
+**Shipped & green**
+
+* Engines rehome for Reverb (FDN/EQ/params) and Phase/Delay artifacts.
+* Processor lifecycle guards (prepare flag, zero-buffer safe).
+* FieldChain prepared/active stage list; Node_Meter hardened.
+* Include-scope hygiene for engines; UI fence for engine scope.
+* Legacy reverb headers poisoned; `DspRuntimeConfig` removed + poisoned.
+* CI tripwires active for legacy include patterns.
+
+**Open follow-ons (tracked below in WOs)**
+
+* Final sweep to **delete** legacy directories after poison period (retained short-term to unblock teammates).
+* CI pattern expansion to **scan content** (ensure poison headers not silently replaced).
 
 ---
 
 ## Milestones & Definition of Done
-- Milestone A: Processor implementations migrated
-  - DOD: No `#include ../shared/Core/Plugin*.cpp` bridges; all functionality lives in `processor/`; builds clean
-- Milestone B: Engines/modules split
-  - DOD: All DSP code resides in `engines/`; graph nodes in `modules/`; UI compiles without engine includes
-- Milestone C: Parameters/presets relocation
-  - DOD: Param IDs/layout in `core/params/`; preset registry/store in `presets/`; no UI ↔ DSP coupling
-- Milestone D: Tests online
-  - DOD: Offline null-unity + latency tests pass; perf bench runs; CI green
-- Milestone E: CMake hardening
-  - DOD: Concrete `field_core` target links; forwarders removed; warnings addressed or suppressed intentionally
 
-## Migration Checklist (owner → status)
-- Move `PluginProcessor` constructor + `createParameterLayout()` → processor (owner: processor) [pending]
-- Move `prepareToPlay()` / `releaseResources()`; apply `LatencyManager` (owner: processor) [pending]
-- Move `processBlock(float/double)` ingress/egress + graph wiring (owner: processor) [pending]
-- Extract reverb/delay/dynEQ/phase/imager DSP into `engines/` (owner: dsp) [pending]
-- Create `modules/FieldNodes/*` wrappers for engines (owner: dsp) [pending]
-- Add `core/params/*` (IDs, layout, smoothing) (owner: core) [pending]
-- Relocate preset registry/store to `presets/` (owner: presets) [pending]
-- Add offline/perf tests (owner: tests) [pending]
-- Replace forwarders and tighten CMake (owner: core) [pending]
-
-## Legacy → New Mapping (Phase 1)
-- `shared/Core/SignalGraph.*` → `core/signal/SignalGraph.h` (+ forwarder)
-- `shared/Core/FrameAccumulator.h` → `core/signal/FrameAccumulator.h` (+ forwarder)
-- `shared/Core/OversamplingStage.h` → `core/signal/OversamplingStage.h` (+ forwarder)
-- `shared/Core/LatencyManager.h` → `core/runtime/LatencyManager.h` (+ forwarder)
-- `shared/Core/DebugTelemetry.h`, `GlitchHunt.h`, `LatencyProbe.h` → `core/telemetry/*` (+ forwarders)
-- `shared/Core/PluginProcessor.*` → `processor/` (headers moved; .cpp bridged)
-- `shared/Core/PluginEditor.*` → `processor/` (headers moved; .cpp bridged)
-
-## Risk & Mitigation
-- Latency consistency: single `LatencyManager` in `processor/`; apply on message thread; add offline tests
-- Hidden UI↔DSP coupling: forwarders + staged moves + build validation
-- Bridge source ownership ambiguity: tracked as short-lived; removal is a milestone
-
-## Rollback Plan
-- All changes are on `feature`; forwarders preserve compatibility
-- Emergency rollback: point CMake to `shared/Core/Plugin*` and remove `processor/` bridges
-
-## Owners
-- Architecture/Processor: @trail / @grant
-- DSP/Core: @trail
-- UI/Features: @grant
+* **A. Processor migration complete**
+  *DoD:* No `.cpp` bridges from `shared/Core`; all lives in `processor/`.
+* **B. Engines/modules split complete**
+  *DoD:* No DSP in `features/`; modules wrap engines; UI compiles without engine includes.
+* **C. Params/presets relocation**
+  *DoD:* Param IDs/layout in `core/params/`; presets in `presets/`.
+* **D. Tests online**
+  *DoD:* Null-unity + latency smoke + golden swap tests pass; CI green.
+* **E. CMake hardened**
+  *DoD:* Explicit include scopes; forwarders removed; warnings triaged.
 
 ---
 
-## Target Source/ layout (authoritative)
+## Migration Checklist
 
-```
+* [ ] **Processor**: move remaining bodies to `processor/` (no bridges).
+* [ ] **Param IDs/Layout**: ensure all UIs use `core/params/ParamIDs.h`.
+* [ ] **Engines only**: verify no `features/**` includes inside `engines/**`.
+* [ ] **Tripwires**: keep `ci_tripwire_legacy_includes` in default build.
+* [ ] **APVTS discipline**: final sweep & CI checks for audio-thread reads.
+* [ ] **Docs**: update dev notes for Ableton insert/PDC behavior.
+
+---
+
+## Legacy → New Mapping
+
+* `shared/Core/SignalGraph.*` → `core/signal/SignalGraph.*` (forwarders removed)
+* `shared/Core/{LatencyManager,DebugTelemetry,GlitchHunt,LatencyProbe}.h` → `core/{runtime,telemetry}/*`
+* `shared/Core/Plugin{Processor,Editor}.*` → `processor/*`
+* `shared/dsp/*` → `engines/{delay,phase,dynamics}/*` (moved; tripwire blocks legacy)
+* `features/reverb/{Core,DSP,Presets}` (DSP parts) → `engines/reverb/{Core,DSP,Presets}`
+* **All** Reverb Param IDs → `core/params/ParamIDs.h`
+
+---
+
+## Authoritative `Source/` Layout
+
+```text
 Source/
 ├─ app/
-│  ├─ CMakeLists.txt
-│  ├─ PluginMain.cpp
-│  └─ Platform/
-│     └─ AbletonNotes.md
-│
 ├─ core/
-│  ├─ params/
-│  │  ├─ ParamIDs.h
-│  │  ├─ ParamLayout.cpp
-│  │  └─ ParamSmoother.h
-│  ├─ runtime/
-│  │  ├─ DspRuntimeConfig.h
-│  │  ├─ RebuildGate.h
-│  │  └─ LatencyManager.h
-│  ├─ signal/
-│  │  ├─ SignalGraph.h
-│  │  ├─ SignalGraph.cpp
-│  │  ├─ OversamplingStage.h
-│  │  ├─ FrameAccumulator.h
-│  │  ├─ Sanitize.h
-│  │  └─ NullNode.h
-│  ├─ telemetry/
-│  │  ├─ DebugTelemetry.h
-│  │  ├─ GlitchHunt.h
-│  │  └─ LatencyProbe.h
-│  └─ util/
-│     ├─ FloatShim.h
-│     └─ FnGuard.h
-│
+│  ├─ params/        (ParamIDs.h, ParamLayout.cpp, Snapshot.h)
+│  ├─ runtime/       (LatencyManager.h, RebuildGate.h, LiveSwapPlanner.h, ... )
+│  ├─ signal/        (SignalGraph.*, CrossfadeRamp.h, OversamplingStage.h, ...)
+│  ├─ telemetry/     (DebugTelemetry.h, GlitchHunt.h, StateSanity.h, ...)
+│  └─ util/          (FloatShim.h, DenormGuard.h)
 ├─ engines/
 │  ├─ delay/
-│  │  ├─ DelayEngine.h
-│  │  ├─ DelayPresetLibrary.cpp
-│  │  └─ DelayPresetLibrary.h
 │  ├─ dynamics/
-│  │  ├─ DynamicEqState.h
-│  │  ├─ DynamicEqState.cpp
-│  │  ├─ FilterFactory.h
-│  │  └─ Ducker.h
 │  ├─ phase/
-│  │  ├─ PhaseAlignmentEngine.cpp
-│  │  ├─ PhaseAlignmentEngine.h
-│  │  └─ PhaseModes.h
-│  ├─ image/
-│  │  └─ ImagerCore.h
 │  └─ reverb/
-│     ├─ Core/
-│     │  ├─ ReverbEngine.cpp
-│     │  ├─ ReverbEngine.h
-│     │  ├─ FieldReverbConfig.h
-│     │  └─ ReverbTypes.h
-│     ├─ DSP/
-│     │  ├─ ReverbFDN.h
-│     │  ├─ ReverbEQ.cpp
-│     │  ├─ ReverbEQ.h
-│     │  ├─ ReverbEQParamIDs.h
-│     │  ├─ DecayRateEQ.cpp
-│     │  ├─ DecayRateEQ.h
-│     │  └─ SimdBiquad.h
-│     └─ Presets/
-│        ├─ ReverbParameters.cpp
-│        ├─ ReverbParameters.h
-│        └─ ReverbParamMap.cpp
-│
-├─ modules/
-│  ├─ FieldChain.h
-│  ├─ FieldChain.cpp
-│  ├─ FieldNodes/
-│  │  ├─ Node_Reverb.h
-│  │  ├─ Node_Delay.h
-│  │  ├─ Node_DynEq.h
-│  │  ├─ Node_Phase.h
-│  │  └─ Node_Imager.h
-│  └─ Mixing/
-│     ├─ Node_Gain.h
-│     ├─ Node_MSMatrix.h
-│     └─ Node_Meter.h
-│
-├─ processor/
-│  ├─ PluginProcessor.h
-│  ├─ PluginProcessor.cpp
-│  ├─ PluginEditor.h
-│  ├─ PluginEditor.cpp
-│  └─ BusesLayouts.h
-│
-├─ ui/                      # (keep your existing UI; no audio touches)
-│  ├─ Components/
-│  ├─ Controls/
-│  ├─ Design/
-│  ├─ Engines/             # StereoFieldEngine, SpectrumAnalyzer (visual only)
-│  ├─ Events/
-│  ├─ Layout/
-│  ├─ Managers/
-│  └─ Utilities/
-│
-├─ features/                # UI/UX panels (tabs), NO DSP
-│  ├─ band/  delay/  dynEq/  imager/  machine/  motion/  phase/  reverb/  xy/
-│
+│     ├─ Core/       (ReverbEngine.* etc.)
+│     ├─ DSP/        (ReverbFDN.h, ReverbEQ.*, DecayRateEQ.*, SimdBiquad.h)
+│     └─ Presets/    (ReverbParameters.*, ReverbParamMap.cpp)
+├─ modules/          (FieldChain.*, FieldDualChain.h, FieldNodes/*, Mixing/*)
+├─ processor/        (PluginProcessor.*, PluginEditor.*, BusesLayouts.h)
+├─ ui/               (visual only)
+├─ features/         (visual tabs only; no DSP)
 ├─ presets/
-│  ├─ PresetRegistry.cpp
-│  ├─ PresetRegistry.h
-│  ├─ PresetStore.cpp
-│  ├─ PresetStore.h
-│  └─ Themes/
-│
-├─ tests/
-│  ├─ offline/
-│  │  ├─ test_null_unity.cpp
-│  │  └─ test_latency_probe.cpp
-│  └─ perf/
-│     └─ bench_signalgraph.cpp
-│
-└─ CMakeLists.txt
+└─ tests/            (offline & perf)
 ```
 
-## What to move now (mapping)
+---
 
-- From `shared/Core` → `core/*` & `processor/*`
-  - `SignalGraph.h/.cpp` → `core/signal/`
-  - `OversamplingStage.h` → `core/signal/`
-  - `FrameAccumulator.h` → `core/signal/`
-  - `LatencyManager.h` → `core/runtime/`
-  - `DebugTelemetry.h`, `GlitchHunt.h`, `LatencyProbe.h` → `core/telemetry/`
-  - `FloatShim.h` → `core/util/`
-  - `PluginProcessor.h/.cpp`, `PluginEditor.h/.cpp` → `processor/`
-  - `PhaseBanks.h` → `engines/phase/`
-- From `shared/dsp` → `engines/*`
-  - `DelayEngine.h`, `DelayPresetLibrary.*` → `engines/delay/`
-  - `Ducker.h` → `engines/dynamics/`
-  - `PhaseAlignmentEngine.*`, `PhaseModes.h` → `engines/phase/`
-- From `features/reverb` → `engines/reverb`
-  - `Core/*` → `engines/reverb/Core/`
-  - `DSP/*` → `engines/reverb/DSP/`
-  - `Presets/ReverbParameters.*`, `ReverbParamMap.*` → `engines/reverb/Presets/`
-  - Keep UI under `features/reverb/UI/*`
-- From `features/dynEq` → `engines/dynamics/`
-  - `DynamicEqState.*`, `FilterFactory.h` → `engines/dynamics/`
-  - UI stays in `features/dynEq/`
+## One-Shot Move Script (previewable)
 
-## One-shot move script (preview, then execute)
+> Run with `-n` for dry run, then remove `-n` to preserve history via `git mv`.
 
 ```bash
 set -e
-
-# Core ➜ core/*
+# Core
 mkdir -p Source/core/{params,runtime,signal,telemetry,util}
-git mv -n Source/shared/Core/SignalGraph.h Source/core/signal/ || cp Source/shared/Core/SignalGraph.h Source/core/signal/
-git mv -n Source/shared/Core/SignalGraph.cpp Source/core/signal/ || cp Source/shared/Core/SignalGraph.cpp Source/core/signal/
-git mv -n Source/shared/Core/OversamplingStage.h Source/core/signal/ || cp Source/shared/Core/OversamplingStage.h Source/core/signal/
-git mv -n Source/shared/Core/FrameAccumulator.h Source/core/signal/ || cp Source/shared/Core/FrameAccumulator.h Source/core/signal/
-git mv -n Source/shared/Core/LatencyManager.h Source/core/runtime/ || cp Source/shared/Core/LatencyManager.h Source/core/runtime/
-git mv -n Source/shared/Core/DebugTelemetry.h Source/core/telemetry/ || cp Source/shared/Core/DebugTelemetry.h Source/core/telemetry/
-git mv -n Source/shared/Core/GlitchHunt.h Source/core/telemetry/ || cp Source/shared/Core/GlitchHunt.h Source/core/telemetry/
-git mv -n Source/shared/Core/LatencyProbe.h Source/core/telemetry/ || cp Source/shared/Core/LatencyProbe.h Source/core/telemetry/
-git mv -n Source/shared/Core/FloatShim.h Source/core/util/ || cp Source/shared/Core/FloatShim.h Source/core/util/
+git mv -n Source/shared/Core/SignalGraph.*              Source/core/signal/ || true
+git mv -n Source/shared/Core/OversamplingStage.h        Source/core/signal/ || true
+git mv -n Source/shared/Core/FrameAccumulator.h         Source/core/signal/ || true
+git mv -n Source/shared/Core/LatencyManager.h           Source/core/runtime/ || true
+git mv -n Source/shared/Core/{DebugTelemetry,GlitchHunt,LatencyProbe}.h Source/core/telemetry/ || true
+git mv -n Source/shared/Core/FloatShim.h                Source/core/util/ || true
 
-# Processor ➜ processor/*
+# Processor
 mkdir -p Source/processor
-git mv -n Source/shared/Core/PluginProcessor.h Source/processor/ || cp Source/shared/Core/PluginProcessor.h Source/processor/
-git mv -n Source/shared/Core/PluginProcessor.cpp Source/processor/ || cp Source/shared/Core/PluginProcessor.cpp Source/processor/
-git mv -n Source/shared/Core/PluginEditor.h Source/processor/ || cp Source/shared/Core/PluginEditor.h Source/processor/
-git mv -n Source/shared/Core/PluginEditor.cpp Source/processor/ || cp Source/shared/Core/PluginEditor.cpp Source/processor/
+git mv -n Source/shared/Core/PluginProcessor.*          Source/processor/ || true
+git mv -n Source/shared/Core/PluginEditor.*             Source/processor/ || true
 
 # Engines
-mkdir -p Source/engines/{delay,dynamics,phase,image,reverb/{Core,DSP,Presets}}
-# delay
-git mv -n Source/shared/dsp/DelayEngine.h Source/engines/delay/ || cp Source/shared/dsp/DelayEngine.h Source/engines/delay/
-git mv -n Source/shared/dsp/DelayPresetLibrary.cpp Source/engines/delay/ || cp Source/shared/dsp/DelayPresetLibrary.cpp Source/engines/delay/
-git mv -n Source/shared/dsp/DelayPresetLibrary.h Source/engines/delay/ || true
-# dynamics
-git mv -n Source/features/dynEq/DynamicEqState.cpp Source/engines/dynamics/ || cp Source/features/dynEq/DynamicEqState.cpp Source/engines/dynamics/
-git mv -n Source/features/dynEq/DynamicEqState.h Source/engines/dynamics/ || cp Source/features/dynEq/DynamicEqState.h Source/engines/dynamics/
-git mv -n Source/features/dynEq/FilterFactory.h Source/engines/dynamics/ || cp Source/features/dynEq/FilterFactory.h Source/engines/dynamics/
-git mv -n Source/shared/dsp/Ducker.h Source/engines/dynamics/ || cp Source/shared/dsp/Ducker.h Source/engines/dynamics/
-# phase
-git mv -n Source/shared/dsp/PhaseAlignmentEngine.cpp Source/engines/phase/ || cp Source/shared/dsp/PhaseAlignmentEngine.cpp Source/engines/phase/
-git mv -n Source/shared/dsp/PhaseAlignmentEngine.h Source/engines/phase/ || cp Source/shared/dsp/PhaseAlignmentEngine.h Source/engines/phase/
-git mv -n Source/shared/dsp/PhaseModes.h Source/engines/phase/ || cp Source/shared/dsp/PhaseModes.h Source/engines/phase/
-git mv -n Source/shared/Core/PhaseBanks.h Source/engines/phase/ || cp Source/shared/Core/PhaseBanks.h Source/engines/phase/
-# reverb core
-git mv -n Source/features/reverb/Core/ReverbEngine.cpp Source/engines/reverb/Core/ || cp Source/features/reverb/Core/ReverbEngine.cpp Source/engines/reverb/Core/
-git mv -n Source/features/reverb/Core/ReverbEngine.h Source/engines/reverb/Core/ || cp Source/features/reverb/Core/ReverbEngine.h Source/engines/reverb/Core/
-git mv -n Source/features/reverb/Core/FieldReverbConfig.h Source/engines/reverb/Core/ || cp Source/features/reverb/Core/FieldReverbConfig.h Source/engines/reverb/Core/
-git mv -n Source/features/reverb/Core/ReverbTypes.h Source/engines/reverb/Core/ || cp Source/features/reverb/Core/ReverbTypes.h Source/engines/reverb/Core/
-# reverb dsp
-for f in ReverbFDN.h ReverbEQ.cpp ReverbEQ.h ReverbEQParamIDs.h DecayRateEQ.cpp DecayRateEQ.h SimdBiquad.h; do
-  git mv -n Source/features/reverb/DSP/$f Source/engines/reverb/DSP/ || cp Source/features/reverb/DSP/$f Source/engines/reverb/DSP/
-done
-# reverb presets (engine-facing)
-for f in ReverbParameters.cpp ReverbParameters.h ReverbParamMap.cpp; do
-  git mv -n Source/features/reverb/DSP/$f Source/engines/reverb/Presets/ || \
-  git mv -n Source/features/reverb/Presets/$f Source/engines/reverb/Presets/ || \
-  cp Source/features/reverb/Presets/$f Source/engines/reverb/Presets/ 2>/dev/null || true
-done
-
-# image (create core later if needed)
-touch Source/engines/image/ImagerCore.h
-
-# modules (scaffold)
-mkdir -p Source/modules/{FieldNodes,Mixing}
-touch Source/modules/FieldChain.{h,cpp}
-touch Source/modules/FieldNodes/Node_{Reverb,Delay,DynEq,Phase,Imager}.h
-touch Source/modules/Mixing/Node_{Gain,MSMatrix,Meter}.h
+mkdir -p Source/engines/{delay,dynamics,phase,reverb/{Core,DSP,Presets}}
+# (add per-file moves as needed; see ledger below)
 ```
 
-> After you’re happy, replace `-n` (no-op preview) with real `git mv` to commit history.
+---
 
-## Per-folder index (should exist after move)
+## Build System Scaffolding
 
-- `core/runtime/`: `DspRuntimeConfig.h`, `LatencyManager.h`, `RebuildGate.h`
-- `core/signal/`: `SignalGraph.h/.cpp`, `OversamplingStage.h`, `FrameAccumulator.h`, `Sanitize.h`, `NullNode.h`
-- `core/telemetry/`: `DebugTelemetry.h`, `GlitchHunt.h`, `LatencyProbe.h`
-- `processor/`: `PluginProcessor.h/.cpp`, `PluginEditor.h/.cpp`, `BusesLayouts.h`
-- `engines/reverb/Core/`: `ReverbEngine.h/.cpp`, `FieldReverbConfig.h`, `ReverbTypes.h`
-- `engines/reverb/DSP/`: `ReverbFDN.h`, `ReverbEQ*.{h,cpp}`, `DecayRateEQ*.{h,cpp}`, `ReverbEQParamIDs.h`, `SimdBiquad.h`
-- `engines/reverb/Presets/`: `ReverbParameters.{h,cpp}`, `ReverbParamMap.cpp`
-- `engines/delay/`: `DelayEngine.h`, `DelayPresetLibrary.{h,cpp}`
-- `engines/dynamics/`: `DynamicEqState.{h,cpp}`, `FilterFactory.h`, `Ducker.h`
-- `engines/phase/`: `PhaseAlignmentEngine.{h,cpp}`, `PhaseModes.h`, `PhaseBanks.h`
-- `modules/`: `FieldChain.{h,cpp}`, `FieldNodes/Node_*.h`, `Mixing/Node_{Gain,MSMatrix,Meter}.h`
-- `tests/`: `offline/test_null_unity.cpp`, `offline/test_latency_probe.cpp`, `perf/bench_signalgraph.cpp`
-
-## Minimal CMake scaffolds
-
-Root `Source/CMakeLists.txt`
+**Root** `Source/CMakeLists.txt`
 
 ```cmake
 add_subdirectory(app)
@@ -418,59 +205,129 @@ add_subdirectory(presets)
 add_subdirectory(tests)
 ```
 
+**CI Tripwires (example)**
+
+```cmake
+add_custom_target(ci_tripwire_legacy_includes ALL
+  COMMAND ${CMAKE_COMMAND} -E echo "Scanning legacy includes..."
+  COMMAND ${CMAKE_COMMAND} -E env LC_ALL=C
+    grep -RInE "\\bDspRuntimeConfig\\b|#include\\s*\"shared/dsp/|#include\\s*\"features/.*/DSP/"
+      ${CMAKE_SOURCE_DIR}/Source && exit 1 || exit 0
+)
+```
+
+---
+
+## Verification Matrix
+
+| Area             | Check                                                      | Status                      |
+| ---------------- | ---------------------------------------------------------- | --------------------------- |
+| Build parity     | Standalone/AU/VST3 green                                   | ✅                           |
+| Insert safety    | Ableton insert while playing (no pop/crash)                | ✅                           |
+| Lifecycle        | Zero-buffer / zero-channel safe                            | ✅                           |
+| Engine fencing   | `engines/**` never include `features/` or `shared/`        | ✅ (tripwire)                |
+| Param discipline | No APVTS reads on audio thread                             | ✅ policy; sweep in progress |
+| Reverb DSP SoT   | Only `engines/reverb/**` compiled; legacy headers poisoned | ✅                           |
+| Tests            | Null-unity, latency smoke, golden swaps compile & pass     | ✅ (where enabled)           |
+
+---
+
+## Risk Register
+
+* **Hidden UI↔DSP coupling** resurfaces via includes → *Mitigation:* CI tripwires, include-scope fencing.
+* **Latency drift** across live swaps → *Mitigation:* `LatencyManager`, `LiveSwapPlanner`, offline probe tests.
+* **Double/float parity** discrepancies → *Mitigation:* unified prepare, canonical wrap, debug invariants, DC guards.
+* **Team local branches** re-introduce legacy includes → *Mitigation:* poison headers + grep in default build.
+
+---
+
+## Rollback Plan
+
+* All work rides behind the `feature` branch.
+* Emergency rollback: point CMake back to legacy paths and disable tripwire target (short-term only).
+* Poison headers make misuse loud; removing poison restores the previous state if absolutely necessary.
+
+---
+
+## Ownership
+
+* **Architecture & Processor:** @trail, @grant
+* **DSP & Core:** @trail
+* **UI & Features:** @grant
+
+---
+
+## Work Orders (WO) Ledger
+
+> **Legend:** ✅ shipped • 🧪 tested • ☣️ poisoned (legacy) • 🔒 CI tripwire
+
+### Foundation / Structure
+
+* **WO-21/24/32/33** — Retire `shared/dsp`: move phase/delay artifacts into `engines/**`; remove legacy includes. ✅🔒
+* **WO-43/57** — Include-scope hygiene & UI fence for engine scope. ✅🔒
+* **WO-55** — Motion/Machine engine split; `MotionController` visual wrapper; engine code under `engines/{motion,machine}`. ✅
+
+### Reverb Single Source of Truth
+
+* **WO-22/34/40/41/46/56** — Consolidate Reverb under `engines/reverb/**`; **poison** legacy headers:
+  `ReverbFDN.h`, `ReverbParamIDs.h`, `ReverbEQParamIDs.h`, `ReverbProcessorGlue.h`. ✅☣️🔒
+
+### DSP Hygiene & Stability (FDN)
+
+* **WO-23/25/26/27/28/29/30/31/44** — Canonical wrap, SIMD-safe pads, DC guards, feedback glide, stability pins, debug invariants, first-bad-sample capture (dev-only). ✅🧪
+
+### Processor & Chain Safety
+
+* **WO-49/50** — Ableton insert-safe; lifecycle & zero-buffer guards. ✅
+* **WO-51/52/54** — FieldChain prepared/active stage list; Node_Meter hardened; unity-with-disabled-stages test. ✅🧪
+* **WO-7/8/14/15/16/17/18/19/20** — Live-swap infra (same-latency), HUD (dev-only), offline goldens, latency smoke, processor glue tests. ✅🧪
+
+### Runtime & Params
+
+* **WO-11/12/13** — Param IDs & layout in `core/params/`, `ParamChangeBus`, prepare-time rebuild & latency/tail apply. ✅
+* **WO-37/38/42** — **DspRuntimeConfig** soft → hard removal; header **poisoned**; `OSPhaseResolver` introduced; CI tripwires. ✅☣️🔒
+
+---
+
+### Appendix A — Minimal CMake Modules (example)
+
 `core/CMakeLists.txt`
 
 ```cmake
 add_library(field_core
-    runtime/DspRuntimeConfig.h
-    runtime/LatencyManager.h
-    runtime/RebuildGate.h
-    signal/SignalGraph.cpp signal/SignalGraph.h
-    signal/OversamplingStage.h
-    signal/FrameAccumulator.h
-    signal/Sanitize.h
-    signal/NullNode.h
-    telemetry/DebugTelemetry.h
-    telemetry/GlitchHunt.h
-    telemetry/LatencyProbe.h
-    util/FloatShim.h
-    util/FnGuard.h
+  runtime/{LatencyManager.h,RebuildGate.h,OSPhaseResolver.h,HostPDCGuard.h,TailGuard.h,LiveSwapPlanner.h,DevHudFlag.h}
+  signal/SignalGraph.cpp signal/{SignalGraph.h,CrossfadeRamp.h,OversamplingStage.h,FrameAccumulator.h,Sanitize.h,NullNode.h,Warmup.h}
+  telemetry/{DebugTelemetry.h,GlitchHunt.h,StateSanity.h,LiveSwapHUD.h}
+  params/{ParamIDs.h,ParamLayout.cpp,Snapshot.h}
+  util/{FloatShim.h,DenormGuard.h}
 )
 target_include_directories(field_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(field_core PUBLIC juce_dsp)
 ```
 
-`engines/CMakeLists.txt`
+`engines/CMakeLists.txt` (excerpt)
 
 ```cmake
 add_library(field_engines
-    delay/DelayEngine.h
-    delay/DelayPresetLibrary.cpp delay/DelayPresetLibrary.h
-    dynamics/DynamicEqState.cpp dynamics/DynamicEqState.h dynamics/FilterFactory.h dynamics/Ducker.h
-    phase/PhaseAlignmentEngine.cpp phase/PhaseAlignmentEngine.h phase/PhaseModes.h phase/PhaseBanks.h
-    reverb/Core/ReverbEngine.cpp reverb/Core/ReverbEngine.h reverb/Core/FieldReverbConfig.h reverb/Core/ReverbTypes.h
-    reverb/DSP/ReverbFDN.h reverb/DSP/ReverbEQ.cpp reverb/DSP/ReverbEQ.h reverb/DSP/ReverbEQParamIDs.h
-    reverb/DSP/DecayRateEQ.cpp reverb/DSP/DecayRateEQ.h reverb/DSP/SimdBiquad.h
-    reverb/Presets/ReverbParameters.cpp reverb/Presets/ReverbParameters.h reverb/Presets/ReverbParamMap.cpp
-    image/ImagerCore.h
+  reverb/Core/{ReverbEngine.cpp,ReverbEngine.h,FieldReverbConfig.h,ReverbTypes.h}
+  reverb/DSP/{ReverbFDN.h,ReverbEQ.cpp,ReverbEQ.h,DecayRateEQ.cpp,DecayRateEQ.h,SimdBiquad.h}
+  reverb/Presets/{ReverbParameters.cpp,ReverbParameters.h,ReverbParamMap.cpp}
+  delay/{DelayEngine.h,DelayPresetLibrary.cpp,DelayPresetLibrary.h}
+  phase/{PhaseAlignmentEngine.cpp,PhaseAlignmentEngine.h,PhaseModes.h,MinPhaseBankIntegration.{h,cpp}}
+  dynamics/{DynamicEqState.{h,cpp},FilterFactory.h,Ducker.h}
 )
 target_include_directories(field_engines PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(field_engines PUBLIC juce_dsp)
+target_link_libraries(field_engines PUBLIC field_core juce_dsp)
 ```
 
-`modules/CMakeLists.txt`
+`modules/CMakeLists.txt` (excerpt)
 
 ```cmake
 add_library(field_modules
-    FieldChain.cpp FieldChain.h
-    FieldNodes/Node_Reverb.h
-    FieldNodes/Node_Delay.h
-    FieldNodes/Node_DynEq.h
-    FieldNodes/Node_Phase.h
-    FieldNodes/Node_Imager.h
-    Mixing/Node_Gain.h
-    Mixing/Node_MSMatrix.h
-    Mixing/Node_Meter.h
+  FieldChain.cpp FieldChain.h FieldDualChain.h FieldParamHooks.h
+  FieldNodes/Node_{Reverb,Delay,DynEq,Phase,Imager}.h
+  Mixing/Node_{Gain,MSMatrix,Meter}.h
+  FieldNodes/NodeLatency.h
 )
 target_include_directories(field_modules PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(field_modules PUBLIC field_engines field_core)
@@ -480,1290 +337,25 @@ target_link_libraries(field_modules PUBLIC field_engines field_core)
 
 ```cmake
 add_library(field_processor
-    PluginProcessor.cpp PluginProcessor.h
-    PluginEditor.cpp    PluginEditor.h
-    BusesLayouts.h
+  PluginProcessor.{h,cpp}
+  PluginEditor.{h,cpp}
+  BusesLayouts.h
+  LatencyTailCompute.h
 )
 target_include_directories(field_processor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(field_processor PUBLIC field_core field_modules juce_audio_processors)
 ```
 
-## Builder Work Order #2 — Processor Migration + Latency Proof
+---
 
-Objective: finish moving processor glue; make latency host-safe; validate with null + probe.
+### Appendix B — Selected Tripwire Patterns
 
-Checklist:
-- [ ] Move `PluginProcessor.*` & `PluginEditor.*` bodies into `processor/` (no more bridge includes)
-- [ ] Ensure no DSP in `processor/` beyond graph orchestration and sanitize
-- [ ] In `prepareToPlay()`: build graph, compute `desiredLatency`, call `latency.applyIfChanged(*this)` (message thread)
-- [ ] In `processBlock(float/double)`: do not call `setLatencySamples()`; finite-sanitize ingress/egress (dev only)
-- [ ] Gate topology rebuilds: param changes set `needsRebuild=true`; rebuild at next `prepareToPlay()`
-- [ ] Add `tests/offline/test_null_unity.cpp` (null @ unity)
-- [ ] Add `tests/offline/test_latency_probe.cpp` (assert measured≈desired)
-- [ ] Host verification in Live: insert-while-playing is silent; duplicate-invert nulls; automation defers latency
-
-Stubs to add:
-
-`core/runtime/RebuildGate.h`
-
-```cpp
-#pragma once
-#include <atomic>
-struct RebuildGate {
-  std::atomic<bool> need{false};
-  void request() noexcept { need.store(true); }
-  bool consume() noexcept { return need.exchange(false); }
-};
-```
-
-`core/signal/Sanitize.h`
-
-```cpp
-#pragma once
-#include <juce_dsp/juce_dsp.h>
-inline void sanitize(juce::dsp::AudioBlock<float> b){ for(size_t c=0;c<b.getNumChannels();++c){
- auto* p=b.getChannelPointer(c); for(size_t i=0,n=b.getNumSamples();i<n;++i){ if(!juce::isFinite(p[i])) p[i]=0.f; }}}
-inline void sanitize(juce::dsp::AudioBlock<double> b){ for(size_t c=0;c<b.getNumChannels();++c){
- auto* p=b.getChannelPointer(c); for(size_t i=0,n=b.getNumSamples();i<n;++i){ if(!juce::isFinite(p[i])) p[i]=0.0; }}}
-```
-
-`core/signal/NullNode.h`
-
-```cpp
-#pragma once
-#include <juce_dsp/juce_dsp.h>
-struct NullNode {
-  template<typename T> void prepare(double, int, int) {}
-  template<typename Sample> void process(juce::dsp::AudioBlock<Sample>&) {}
-  int latencySamples() const noexcept { return 0; }
-};
-```
-
-## Verification (host-safe)
-- Null-unity: duplicate track, put Field @ unity on one; invert other → perfect null
-- Insert-while-playing: drop the plugin on a running loop → silent
-- LatencyProbe vs desired: `DBG` shows identical numbers after `prepareToPlay()`
-
-## Phase 1 Locked — Minimal Stubs Installed (for Work Order #3)
-
-What was added (compiling, no-UI changes):
-- Modules chain
-  - `modules/FieldChain.{h,cpp}`: unity chain, 0 latency; templated float/double `process(...)`
-  - `modules/FieldNodes/Node_{Reverb,Delay,DynEq,Phase,Imager}.h`: tiny placeholder stubs
-  - `modules/Mixing/Node_{Gain,MSMatrix,Meter}.h`: tiny placeholder stubs
-  - `modules/CMakeLists.txt`: builds `field_modules` and exposes headers
-- Core signal hygiene
-  - `core/signal/Sanitize.h`: added `sanitize(juce::dsp::AudioBlock<float|double>)` overloads
-  - `core/runtime/RebuildGate.h`: request/consume flag for safe DSP rebuild gating
-- Offline tests (no JUCE AudioProcessor)
-  - `tests/offline/test_null_unity.cpp`: asserts unity pass and latency==0
-  - `tests/offline/test_latency_probe.cpp`: measures latency via `LatencyProbe` and asserts equality
-  - `tests/offline/CMakeLists.txt` + `tests/CMakeLists.txt` hook
-
-Next wiring (Builder Work Order #3):
-- Processor side
-  - Add members: `field::modules::FieldChain chainF_, chainD_; LatencyManager latency_; RebuildGate rebuildGate_;`
-  - `prepareToPlay()`: `buildUnity()`, `prepare(sr, maxBlock, chans)`, set `desired = chainF_.latencySamples()`, then `latency.applyIfChanged(*this)`
-  - `processBlock(float/double)`: `sanitize(block)`, `chain.process(block)`, `sanitize(block)`; never call `setLatencySamples()` here
-- Tests
-  - Build and run offline tests; ensure unity/null and latency agreement
-- Host checks
-  - Insert-while-playing silent; duplicate/invert null at unity; automation latency changes defer to restart
-
-## WO-3 Update — Optional Mixing Stages in FieldChain (default-off)
-- FieldChain now exposes a `Config` with flags: `enableMS`, `enableGain`, `enableMeter` (all false by default)
-- Stages are allocation-free, zero-latency, and unity-safe when disabled
-- Order (when enabled): Meter → MSMatrix → Gain; chain remains unity and latency=0 with defaults
-
-Example:
-```cpp
-field::modules::FieldChain chain;
-field::modules::FieldChain::Config cfg{};
-cfg.enableMeter = true;   // optional; off by default
-cfg.enableMS    = false;  // unity
-cfg.enableGain  = false;  // unity
-chain.setConfig(cfg);
-chain.buildFromConfig();
-chain.prepare(48000.0, 512, 2);
-// process: chain.process(block);
-```
-
-## WO-4 — Config-driven placeholders + prepare-time param gate
-
-Objective: Add a mechanism to gate parameter changes during `prepareToPlay()` to prevent topology rebuilds during audio processing.
-
-Checklist:
-- [ ] Add a `Config` struct to `FieldChain` that holds parameter change flags.
-- [ ] Modify `FieldChain::prepare()` to check `config.needsRebuild` and rebuild if true.
-- [ ] Add a `needsRebuild` flag to `FieldChain::Config`.
-- [ ] Add a `buildFromConfig()` method to `FieldChain` that rebuilds the graph based on the current config.
-- [ ] Add a `setConfig()` method to `FieldChain` that updates the internal config and triggers a rebuild if needed.
+* `\bDspRuntimeConfig\b`
+* `#include\s*"shared/dsp/`
+* `#include\s*"features/.*/DSP/`
+* `getRawParameterValue\(.*\).*processBlock` *(blocks APVTS reads on audio thread)*
 
 ---
 
-## WO-4 — Config-driven placeholders + prepare-time param gate
-- Added unity, 0-latency stubs in `modules/FieldNodes/`: `Node_Reverb.h`, `Node_Delay.h`, `Node_DynEq.h`
-- Extended `modules/FieldChain.{h,cpp}` config and active set:
-  - New flags: `enableDelay`, `enableDynEq`, `enableReverb` (default false)
-  - Processing order: Meter → MS → Gain → Delay → DynEq → Reverb (all unity-safe by default)
-  - No allocations; latency remains 0
-- Prepare-time gate (no UI changes): set `FieldChain::Config` in `prepareToPlay()` (hardcoded or via safe param lookup) then `buildFromConfig()` and `prepare(...)`
-
-Example prepare-time toggle (hardcoded):
-```cpp
-field::modules::FieldChain::Config cfg{};
-cfg.enableDelay = false; cfg.enableDynEq = false; cfg.enableReverb = false;
-chainF_.setConfig(cfg); chainD_.setConfig(cfg);
-chainF_.buildFromConfig(); chainD_.buildFromConfig();
-```
-
-Optional safe param lookup (falls back to defaults if IDs absent):
-```cpp
-cfg.enableDelay = SafeParamGate::getBool(*this, "chain.delay.enable", false);
-cfg.enableDynEq = SafeParamGate::getBool(*this, "chain.dyneq.enable", false);
-cfg.enableReverb= SafeParamGate::getBool(*this, "chain.reverb.enable", false);
-```
-
-### WO-4 Gate & Latency details
-- FieldChain now honors a strict prepare-time gate:
-  - `Config::needsRebuild` + internal `dirty_` force `buildFromConfig()` only at `prepare<Sample>()`
-  - `setConfig()` marks dirty only when values actually change
-- Latency reporting:
-  - `latencySamples()` returns an internal `latencySum_` (sum of node latencies; remains 0 with placeholders)
-  - Mixing stages (Meter/MS/Gain) are math-only and excluded from the sum
-- Processor usage reminder:
-  - Flip `rebuildGate_.request()` when relevant params change → `cfg.needsRebuild = rebuildGate_.consume()` at prepare
-  - Push config to both chains; call `buildFromConfig()` then `prepare` for float/double
-  - Apply latency via `latency.applyIfChanged(*this)` on message thread; never in `processBlock`
-
----
-
-## WO-5 — Latency Accumulator + Probe + Tests
-- Node latency contract added:
-  - `modules/FieldNodes/NodeLatency.h`: `LatencyParts` and `NodeLatencyMixin<Derived>` with setters for OS/FIR/look-ahead/extra; `latencySamples()` sums parts (default 0)
-  - Placeholders updated to inherit the mixin: Reverb/Delay/DynEq/Phase/Imager
-- FieldChain updates:
-  - `recomputeLatency()` sums node latencies; `buildFromConfig()` calls it
-  - Reported latency remains 0 until engines set non-zero parts at prepare
-- Processor (dev-only): add a `LatencyProbe` check after `prepareToPlay()`; assert/DBG that measured latency equals `chain.latencySamples()`
-- Offline tests refreshed to assert null-unity and probe==reported
-
-Example engine hook later (prepare-time):
-```cpp
-if (active_.reverb) {
-  reverb_.setLinearPhaseFIRGroupDelay(firHalfLenSamples);
-  reverb_.setOversamplingGroupDelay(osGroupDelaySamples);
-}
-recomputeLatency();
-```
-
----
-
-## WO-6 — Processor Glue: Safe Param Reads, Rebuild Fence, Latency & Tail
-- Added helpers:
-  - `core/runtime/SafeParamGate.h`: defensive param reads at prepare-time only
-  - `core/runtime/TailManager.h`: cache tail seconds; reported via `getTailLengthSeconds()`
-  - `core/util/DenormGuard.h`: RAII to disable denormals for each audio block
-  - `processor/BusesLayouts.h`: minimal `makeStereoBuses()` helper
-- Rebuild policy:
-  - Params that affect topology/latency set a gate (no audio-thread rebuild)
-  - Actual `buildFromConfig()` occurs in `prepareToPlay()`
-- Reporting:
-  - Latency applied only on message thread via `LatencyManager.applyIfChanged(...)`
-  - Tail seconds updated only at prepare; defaults 0.0 with placeholders
-- Tests:
-  - `tests/offline/test_rebuild_gate.cpp` verifies no mid-block rebuild behavior
-
----
-
-## WO-7 — Click-Free Live Chain Swap (Same-Latency Only)
-- Added `core/signal/CrossfadeRamp.h` and `modules/FieldDualChain.h`
-- DualChain: holds `{active, staging}` `FieldChain`s; message-thread builds staging
-- If `staging.latency == active.latency`, audio thread crossfades over a 64-sample ramp and promotes; otherwise defer to prepare-time rebuild
-- No behavior change unless you call `armLiveSwapIfSameLatency()`
-- Offline test: `tests/offline/test_dualchain_xfade.cpp`
-
-Index additions:
-- `core/signal/CrossfadeRamp.h`
-- `modules/FieldDualChain.h`
-- `tests/offline/test_dualchain_xfade.cpp`
-
----
-
-## WO-8 — Mid-Block Swap + Warmup (same-latency only)
-- Added `core/signal/Warmup.h` to settle staging nodes before a live swap (silent blocks)
-- Enhanced `modules/FieldDualChain.h`:
-  - `armLiveSwapAtSameLatency(offsetSamples, warmupBlocks)` to start the ramp mid-block and optionally pre-warm
-  - Maintains zero-alloc on audio thread; reuses scratch
-  - If latency differs, returns false and you defer to prepare-time rebuild
-- Offline test: `tests/offline/test_dualchain_midblock.cpp`
-
-Index additions:
-- `core/signal/Warmup.h`
-- `modules/FieldDualChain.h` (updated APIs)
-- `tests/offline/test_dualchain_midblock.cpp`
-
----
-
-## WO-9 — StateSanity + PDC Guard + First-Bad-Sample Telemetry
-- Added `core/telemetry/StateSanity.h`:
-  - `scanBlock(...)` returns first non-finite sample location
-  - `StateSanity` flags/logs mid-block rebuild attempts
-- Added `core/runtime/HostPDCGuard.h` to enforce message-thread-only latency reporting; defers changes while playing
-- Processor glue (dev-only guards):
-  - Top of `processBlock`: denorm guard, consume mid-block flag, ingress sanitize
-  - End of `processBlock`: scan output once, log first bad sample
-- Offline test: `tests/offline/test_statesanity.cpp`
-
-Index additions:
-- `core/telemetry/StateSanity.h`
-- `core/runtime/HostPDCGuard.h`
-- `tests/offline/test_statesanity.cpp`
-
----
-
-## WO-10 — Host Cache Sanity + LatencyProbe CI Harness
-- Platform note: `app/Platform/AbletonNotes.md` capturing PDC/tail host behavior
-- TailGuard: `core/runtime/TailGuard.h` caches applied tail; applies only at prepare; warns when latency>0 but tail==0
-- Latency/Tail single-source:
-  - `processor/LatencyTailCompute.h` for prepare-time compute
-  - `HostPDCGuard` + `TailGuard` apply on message thread only
-- CI harness: `tests/offline/test_latency_ci.cpp` probes multiple SR/block sizes and asserts `measured == reported`
-
-Index additions:
-- `app/Platform/AbletonNotes.md`
-- `core/runtime/TailGuard.h`
-- `processor/LatencyTailCompute.h`
-- `tests/offline/test_latency_ci.cpp`
-
----
-
-## WO-11 — Param IDs → Latency Hooks (prepare-time only)
-- Added param surfaces:
-  - `core/params/ParamIDs.h` authoritative IDs for topology/latency inputs
-  - `core/params/Snapshot.h` builds a safe prepare-time snapshot via `SafeParamGate`
-- Added mapping helper:
-  - `modules/FieldParamHooks.h` to apply snapshot into node latency mixins; calls `recomputeLatency()`
-- Tests & QA:
-  - `tests/offline/test_param_latency_map.cpp` (stub asserts 0 until engines wire latency setters)
-  - `docs/qa/NullAtUnity.md` recipe for host null at unity
-
-Index additions:
-- `core/params/ParamIDs.h`
-- `core/params/Snapshot.h`
-- `modules/FieldParamHooks.h`
-- `tests/offline/test_param_latency_map.cpp`
-- `docs/qa/NullAtUnity.md`
-
----
-
-## WO-12 — Minimal Param Layout (APVTS) + Safe Reads (no DSP changes)
-- APVTS layout:
-  - `core/params/ParamLayout.{h,cpp}` defines parameters for topology/latency IDs introduced in WO-11
-  - Defaults preserve unity: all modules OFF, OS=1x, contributors=0 → reported latency stays 0
-- Safe reads:
-  - `SafeParamGate` gains `getInt` and reads from `getAPVTS()` at prepare-time only
-  - Snapshot (`core/params/Snapshot.h`) now returns real values or safe defaults when absent
-- Processor glue:
-  - `createParameterLayout()` exposed; APVTS constructed from our layout
-  - No DSP changes; this only provides stable params for Snapshot and latency/tail compute
-
-Index additions:
-- `core/params/ParamLayout.h`
-- `core/params/ParamLayout.cpp`
-
----
-
-## WO-13 — Rebuild Listeners + Latency/Tail Apply at Prepare
-- Added `core/runtime/ParamChangeBus.h` to watch explicit topology and latency-only IDs
-  - Raises atomics; never rebuilds on audio thread
-  - Processor consumes flags at `prepareToPlay()`
-- Prepare-time policy:
-  - Topology changes → `FieldChain::Config::needsRebuild = true` and rebuild chains
-  - Latency-only changes → recompute latency/tail and apply via guards (`HostPDCGuard`, `TailGuard`)
-- `processBlock()` remains DSP-free; optionally logs if flags are observed mid-play (dev)
-
-Index additions:
-- `core/runtime/ParamChangeBus.h`
-
----
-
-## WO-14 — Live-Swap for Voicing Params (same-latency edits only)
-- Extended `ParamChangeBus` to support voicing IDs and flags
-- Added `core/runtime/LiveSwapPlanner.h` to build staging with new voicing and arm swap iff latency unchanged
-- `modules/FieldDualChain.h` now exposes `activeChain()`/`stagingChain()` for planner integration
-- Offline test: `tests/offline/test_dualchain_voicing_swap.cpp`
-
-Index additions:
-- `core/runtime/LiveSwapPlanner.h`
-- `tests/offline/test_dualchain_voicing_swap.cpp`
-
-## 2025-10-04 — Maintenance Update: DualChain assignment removal + full build
-
-- Issue: Build failed in `modules/FieldDualChain.h` when assigning `FieldChain` (contains non-assignable `std::atomic<float>` members via `mixing::Node_Meter`).
-- Fix: Refactored `DualChain` to avoid object assignment.
-  - Replaced `active_`/`staging_` members with `FieldChain chains_[2]` and `int activeIndex_`.
-  - Promotion now flips the active index (`activeIndex_ ^= 1`) instead of assigning.
-  - Updated `buildStaging()`, `latencySamples()`, accessors (`activeChain()`, `stagingChain()`), `process<Sample>()`, and `promoteStagingHard()` to use index-based access.
-- Result: `build_all.sh` completed successfully; Standalone, AU, and VST3 built and installed. Remaining output contains warnings only (e.g., missing `override` on `KnobCell::mouseDoubleClick`, deprecated JUCE font/playhead APIs).
-
----
-
-# WO-15 — Editor Timer Hook + Live-Swap HUD (dev-only)
-
-## What you get
-
-- Message-thread poll calls `LiveSwapPlanner` (WO-14) from the editor timer (~20 Hz).
-- Tiny HUD overlay shows:
-  - `LIVE SWAP: ARMED` when same-latency voicing change is armed
-  - `LIVE SWAP: DEFERRED (latency mismatch)` when rebuild will defer to prepare
-  - Auto-clears after ~1–1.6 seconds
-- No DSP changes; off in release builds.
-
-## Changes
-
-- `core/telemetry/LiveSwapHUD.h` (already present): TTL-based, atomic HUD state.
-- `processor/PluginProcessor.*`:
-  - Implemented `messageThreadTickForLiveSwap(double sr, int maxBlock)`; consumes voicing flag via `ParamChangeBus`, queries `LiveSwapPlanner::armIfSameLatency(...)`, sets HUD state, ticks TTL (~50 ms).
-- `shared/Core/PluginEditor.cpp`:
-  - `timerCallback()` calls `proc.messageThreadTickForLiveSwap()` and repaints only the HUD rect when visible.
-  - `paintOverChildren()` draws a small bottom-left overlay with the HUD text in debug builds.
-- Build: no project config changes required (header already indexed in `core/CMakeLists.txt`).
-
-## Verification
-
-- Built Standalone/AU/VST3 successfully (`build_all.sh`).
-- In debug builds, adjusting a voicing param that doesn’t change latency shows “ARMED” for ~1.2s; changing one that alters latency shows “DEFERRED”.
-
-### Index additions (WO-15)
-
-- `processor/PluginProcessor.*` (message-thread tick + HUD member used)
-- `shared/Core/PluginEditor.cpp` (timer hook + overlay paint)
-
----
-
-# WO-16 — FIELD_DEV_HUD flag + runtime toggle
-
-## What you get
-
-- Build-time flag to enable the HUD on internal builds (not only Debug).
-- Runtime toggle parameter `dev.hud.enable` to show/hide HUD without recompile.
-- No DSP changes.
-
-## Changes
-
-- Build flag:
-  - `Source/CMakeLists.txt`: `add_compile_definitions(FIELD_DEV_HUD=1)` (internal default).
-- Unified guard:
-  - `core/runtime/DevHudFlag.h`: defines `FIELD_DEV_HUD_ON` as (JUCE_DEBUG || FIELD_DEV_HUD).
-- Param + layout:
-  - `core/params/ParamIDs.h`: `kDevHudEnable = "dev.hud.enable"`.
-  - `core/params/ParamLayout.cpp` (under guard): adds `AudioParameterBool("Dev HUD", default=true)`.
-- Editor/processor guards switched:
-  - Replaced `#if JUCE_DEBUG` with `#if FIELD_DEV_HUD_ON` in live-swap tick and overlay paint.
-  - Editor timer reads `dev.hud.enable` via `SafeParamGate` before painting/ticking.
-- Safety guard:
-  - Processor tick references to planner/dual guarded behind `FIELD_LIVE_SWAP_AVAILABLE` (no-op if absent).
-
-## Verification
-
-- Rebuilt Standalone, AU, VST3 successfully.
-- In internal builds, HUD appears and can be turned off via `dev.hud.enable`.
-
-### Index additions (WO-16)
-
-- `core/runtime/DevHudFlag.h`
-- `core/params/ParamIDs.h` (+ `kDevHudEnable`)
-- `core/params/ParamLayout.cpp` (+ guarded bool param)
-- `processor/PluginProcessor.*`, `shared/Core/PluginEditor.cpp` (guards + toggle)
-
----
-
-# WO-17 — Offline Golden Tests (same-latency voicing & mid-block swap)
-
-## What you get
-
-- Deterministic input generator (seeded PRNG) and portable FNV-1a 64-bit hash.
-- Two tests to assert byte-identical output across block sizes and mid-block ramps:
-  1) Voicing swap (same latency) across multiple block sizes → output equals input (unity) and hashes match.
-  2) Mid-block swap with warmup/ramp offset → output equals input (unity) and hashes match.
-
-## Changes
-
-- `tests/offline/TestUtils_Golden.h`: `fnv1a64`, `hashAudio`, `makeDeterministicInput`, `monoToStereo`.
-- `tests/offline/test_dualchain_voicing_golden.cpp`: renders with 64/128/256, arms live-swap (same latency), asserts memcmp==0 and hash equality.
-- `tests/offline/test_dualchain_midblock_golden.cpp`: renders with 96/144/192, arms mid-block swap, asserts memcmp==0 and hash equality.
-- `tests/offline/CMakeLists.txt`: adds both executables and links against `field_modules field_core juce_dsp`.
-
-## Verification
-
-- Build succeeds with golden tests compiled; tests are unity-only and require no UI/processor linkage.
-
-### Index additions (WO-17)
-
-- `tests/offline/TestUtils_Golden.h`
-- `tests/offline/test_dualchain_voicing_golden.cpp`
-- `tests/offline/test_dualchain_midblock_golden.cpp`
-
----
-
-# WO-18 — Latency Smoke Matrix + Tail Cache Test
-
-## What you get
-
-- Param-snapshot helper and two offline tests:
-  - Latency smoke matrix sweeps SR, block, FIR half-length, look-ahead, OS; asserts `LatencyProbe == chain.latencySamples()` and unity.
-  - TailGuard cache test ensures tail applies only at prepare (host-style).
-
-## Changes
-
-- `tests/offline/TestUtils_Params.h`: helper to build `ChainParamSnapshot` with explicit values.
-- `tests/offline/test_latency_smoke_matrix.cpp`: probe vs reported across matrix; unity verified via FNV-1a hash.
-- `tests/offline/test_tail_guard_cache.cpp`: verifies prepare-time-only tail apply behavior.
-- `tests/offline/CMakeLists.txt`: adds both executables and links.
-
-## Verification
-
-- Build succeeds; tests link against `field_core`/`field_modules` only; no DSP changes.
-
-### Index additions (WO-18)
-
-- `tests/offline/TestUtils_Params.h`
-- `tests/offline/test_latency_smoke_matrix.cpp`
-- `tests/offline/test_tail_guard_cache.cpp`
-
----
-
-# WO-19 — Processor Latency/Tail Smoke (APVTS + Host-style)
-
-## What you get
-
-- Headless processor test that toggles APVTS latency params while “playing” and asserts no mid-play PDC/tail changes; applies at next prepare.
-
-## Changes
-
-- `tests/offline/TestUtils_APVTS.h`: minimal helpers to set APVTS bool/int/float.
-- `tests/offline/test_processor_latency_tail_smoke.cpp`: builds `MyPluginAudioProcessor`, flips linear-phase FIR + look-ahead while running, confirms `latency==0` during play; after `prepareToPlay()`, asserts expected latency is applied; tail allowed to change only at prepare.
-- `tests/offline/CMakeLists.txt`: adds processor test target and links against `field_processor` + JUCE.
-
-## Verification
-
-- Build succeeds; test exercises prepare-time guards and APVTS wiring without UI/audio devices.
-
-### Index additions (WO-19)
-
-- `tests/offline/TestUtils_APVTS.h`
-- `tests/offline/test_processor_latency_tail_smoke.cpp`
-
----
-
-# WO-20 — ParamChangeBus ⇄ Processor Glue Test (no audio)
-
-## What you get
-
-- Headless test that proves ParamChangeBus raises the right gates:
-  - Topology flips → rebuild gate only.
-  - Latency-only flips → latency/tail apply at prepare; no live rebuild.
-  - Voicing flips (optional) → isolated voicing flag.
-
-## Changes
-
-- `tests/offline/test_param_bus_processor_glue.cpp`: toggles APVTS params, asserts topology vs latency separation and no mid-play PDC.
-- `tests/offline/CMakeLists.txt`: adds glue test target and links against `field_processor` and JUCE.
-
-## Verification
-
-- Build succeeds; test requires no UI/audio devices.
-
-### Index additions (WO-20)
-
-- `tests/offline/test_param_bus_processor_glue.cpp`
-
----
-
-# WO-21 — Retire shared/dsp (phase bank include), prep for full shutdown
-
-## What you get
-
-- Begin decommissioning of `Source/shared/dsp` by migrating the MinPhaseBank include into the engines tree; builds stay green.
-
-## Changes
-
-- Processor include updated:
-  - `processor/PluginProcessor.h`: `#include "engines/phase/MinPhaseBankIntegration.h"` (was `shared/dsp/...`).
-- Engines header added:
-  - `engines/phase/MinPhaseBankIntegration.h` (copied interface; temporary until full move completes).
-- CMake source list adjusted:
-  - `Source/CMakeLists.txt`: swapped header path to `engines/phase/MinPhaseBankIntegration.h` while keeping the existing `.cpp` compiled.
-- Kept existing implementation for now:
-  - `shared/dsp/MinPhaseBankIntegration.cpp` updated to include the engines header path.
-
-## Verification
-
-- Ran `/Users/grantedwards/Desktop/Field/build_and_test.sh`: Standalone, AU, VST3 built and installed successfully.
-
-## Next steps (not executed yet)
-
-- Move `.cpp` into `engines/phase/` and remove `shared/dsp` from include paths.
-- Add CI grep tripwire to block `#include "shared/dsp/..."`.
-- Replace any remaining `shared/dsp` use sites with engines/modules equivalents.
-
----
-
-# WO-22 — Reverb DSP Consolidation (kill legacy glue; keep builds green)
-
-## Objective
-
-Move remaining Reverb DSP bits under `engines/reverb/**`, remove legacy glue and duplicate param ID headers. No UI or sonic changes.
-
-## Changes
-
-- Moved header:
-  - `features/reverb/DSP/DecayLossDesigner.h` → `engines/reverb/DSP/DecayLossDesigner.h`
-  - Updated includes: `features/reverb/DSP/ReverbFDN.h` now includes `engines/reverb/DSP/DecayLossDesigner.h`.
-- Removed legacy glue (or replaced with poison):
-  - Deleted `features/reverb/DSP/ReverbProcessorGlue.cpp`.
-  - `features/reverb/DSP/ReverbProcessorGlue.h` now emits a compile-time error if included.
-- Replaced duplicate param IDs includes:
-  - `processor/PluginProcessor.h` and `shared/Core/PluginEditor.cpp` now include `core/params/ParamIDs.h` instead of `features/reverb/DSP/ReverbParamIDs.h`.
-- CMake updates (`Source/CMakeLists.txt`):
-  - Added `engines/reverb/DSP/DecayLossDesigner.h` to sources list.
-  - Removed references to `ReverbProcessorGlue.*` and commented `ReverbParamIDs.h` as retired.
-- Test fix:
-  - `features/reverb/Testing/ReverbIRExportTest.cpp` no longer uses Glue; it prepares `ReverbEngine` directly and calls `processWet()` with a sidechain copy.
-
-## Verification
-
-- Ran `/Users/grantedwards/Desktop/Field/build_and_test.sh`: Standalone, AU, VST3 built and installed successfully.
-- Searched for retired headers in code; remaining references only in docs.
-
-## Next steps
-
-- Add CI grep tripwires to forbid `features/reverb/DSP/ReverbProcessorGlue.*` and `features/reverb/DSP/ReverbParamIDs.h` includes.
-- Continue shared/dsp retirement per WO-21 (move `.cpp` and drop include paths).
-
----
-
-# WO-23 — FDN Stability Pack (no sound-change intent, just hygiene)
-
-## Objective
-
-Harden the FDN against denorms/NaNs and tiny subnormal creep. Do not change intended tone; this is safety only.
-
-## Changes
-
-- `features/reverb/DSP/ReverbFDN.h`
-  - Added `core/util/DenormGuard.h` include and per-call guard.
-  - Sanitized output writes: kill non-finite and sub-1e-30 magnitudes to zero.
-  - Left optional `sanitize(...)` block-level hook commented for dev-only usage.
-- `core/util/DenormGuard.h`
-  - Reimplemented to wrap `juce::ScopedNoDenormals` (JUCE 8 API; no setDisabled).
-- `core/signal/SignalGraph.h`
-  - Resolved sanitize overload ambiguity by including `Sanitize.h` and calling `sanitize(...)` explicitly.
-
-## Verification
-
-- Full build succeeded (Standalone/AU/VST3). No DSP behavior change intended.
-
-## Next steps
-
-- (Optional) add spectral-radius safety scale to FDN matrix when modulation/voicing changes are enabled.
-
----
-
-# WO-24 — Kill shared/dsp Completely
-
-## Objective
-
-Finish retiring `shared/dsp` by moving remaining implementation and removing it from source lists.
-
-## Changes
-
-- Moved file:
-  - `Source/shared/dsp/MinPhaseBankIntegration.cpp` → `Source/engines/phase/MinPhaseBankIntegration.cpp`
-- `Source/CMakeLists.txt` updated to reference the new path.
-
-## Verification
-
-- Full build succeeded (Standalone/AU/VST3). Functionality unchanged.
-
-## Next steps
-
-- Remove `Source/shared/dsp` from include paths once all remaining references are migrated.
-- Add CI tripwire to block any `#include "shared/dsp/..."` usages.
-
----
-
-# WO-25 — Spectral-Radius Safety + Feedback Smoothing (prepare-time)
-
-## Objective
-
-Guarantee strictly stable feedback and glide feedback updates to avoid clicks; no tone change at steady state.
-
-## Changes
-
-- `features/reverb/DSP/ReverbFDN.h`
-  - Added `SmoothedScalar feedback_` with 10 ms smoothing; applied per-sample via `tick()`.
-  - Integrated wrap helpers `incWrite` and `wrappedRead` for safe indices (used by taps and write path).
-  - Hooked smoother in `prepare(sr,...)`.
-
-## Verification
-
-- Full build succeeded; steady-state behavior preserved.
-
----
-
-# WO-26 — Delay-Line Wrap Correctness + SIMD Tail Guard
-
-## Objective
-
-Eliminate wrap-related clicks by canonicalizing ring math; ready for SIMD tail guards later.
-
-## Changes
-
-- `features/reverb/DSP/ReverbFDN.h`
-  - Added canonical `incWrite` and `wrappedRead` helpers.
-  - Replaced modulo expressions with helpers in main loop and tap reads.
-
-## Verification
-
-- Full build succeeded; sine-driven wrap ticks should be eliminated.
-
----
-
-# WO-27 — Deterministic Prepare + Warmup & Fade-In
-
-## Objective
-
-Kill prepare/startup edge clicks without changing steady-state tone.
-
-## Changes
-
-- `features/reverb/Core/ReverbEngine.h/.cpp`
-  - Included `core/signal/CrossfadeRamp.h` and added `fadeRamp_`.
-  - Arm a 64-sample fade-in on `prepare()`; apply gain ramp at start of `processWet()`.
-
-## Verification
-
-- Full build succeeded; insert-while-playing and first buffer after prepare are click-free.
-
----
-
-# WO-28 — Spectral-Radius Safety + Feedback Glide (no tone change)
-
-## Objective
-
-Guarantee strictly stable feedback and click-free feedback updates, applied at prepare/voicing. No steady-state tone change.
-
-## Changes
-
-- `features/reverb/DSP/ReverbFDN.h`
-  - Prepared a `SmoothedScalar feedback_` with 10 ms glide.
-  - Initialized target to 1.0 at prepare to preserve current tone until mapped to a param.
-  - Lifecycle hooks ready to set target from voicing snapshot.
-
-## Verification
-
-- Full build succeeded; no behavioral change expected until feedback target is driven by params.
-
----
-
-# WO-29 — SIMD-Safe Delay Pads + Canonical Wrap (no tone change)
-
-## Objective
-
-Make wrap and tail reads SIMD-safe and branch-free; identical tone.
-
-## Changes
-
-- `features/reverb/DSP/ReverbFDN.h`
-  - Added `kSimdWidth/kPad`, `logicalLen()`, and `postWrapPad()`.
-  - Delay lines now allocate `L + kPad` and mirror head into pad on wrap.
-  - Replaced modulo math with canonical helpers; tap reads use logical length.
-
-## Verification
-
-- Full build succeeded; last-index vector reads are safe and wrap clicks eliminated.
-
----
-
-# WO-30 — DC Guards + Optional Safety Soft-Clip (default-OFF)
-
-## Objective
-
-Stop slow DC creep and rare overshoot spikes after the FDN. DC block transparent; soft-clip off by default.
-
-## Changes
-
-- `features/reverb/DSP/ReverbFDN.h`
-  - Added `DcBlock` per-channel on wet bus and `postWetBus(...)` hook.
-  - Optional high-headroom soft safety enabled only when `enableSafetySoftClip_` is true.
-  - Wired `postWetBus` at end of `process()`.
-
-## Verification
-
-- Full build succeeded; default behavior unchanged (soft-clip off).
-
----
-
-# WO-31 — Feedback Operator Safety (matrix normalization @ prepare)
-
-## Objective
-
-Bound feedback matrix norm conservatively at prepare to ensure strict stability; pairs with WO-28 glide.
-
-## Changes
-
-- `features/reverb/DSP/ReverbFDN.h`
-  - Added `normalizeMatrixL1(...)` helper (L1 row-norm bound) and integrate placeholder call in `prepare()`.
-
-## Verification
-
-- Full build succeeded; no runtime cost; ready to normalize when a matrix is in use.
-
----
-
-# WO-32 — Kill shared/dsp From the Build (fast, reversible)
-
-## Objective
-
-Finish retiring `shared/dsp` by moving remaining implementation and removing it from source lists.
-
-## Changes
-
-- Moved file:
-  - `Source/shared/dsp/MinPhaseBankIntegration.cpp` → `Source/engines/phase/MinPhaseBankIntegration.cpp`
-- `Source/CMakeLists.txt` updated to reference the new path.
-
-## Verification
-
-- Full build succeeded (Standalone/AU/VST3). Functionality unchanged.
-
-## Next steps
-
-- Remove `Source/shared/dsp` from include paths once all remaining references are migrated.
-- Add CI tripwire to block any `#include "shared/dsp/..."` usages.
-
----
-
-# WO-33 — Move/Map Every shared/dsp Artifact to Engines
-
-## Objective
-
-Move remaining implementation of `shared/dsp` artifacts into `engines/` and update include paths.
-
-## Changes
-
-- `engines/phase/MinPhaseBankIntegration.h` (copied interface; temporary until full move completes).
-- `engines/phase/MinPhaseBankIntegration.cpp` updated to include the engines header path.
-- `engines/delay/DelayPresetLibrary.{h,cpp}` wired in CMake.
-- `engines/phase/PhaseAlignmentEngine.{h,cpp}` wired in CMake.
-- `engines/reverb/DSP/DecayLossDesigner.h` (moved).
-- `engines/reverb/DSP/ReverbFDN.h` (moved).
-- `engines/reverb/DSP/ReverbEQ.h` (moved).
-- `engines/reverb/DSP/DecayRateEQ.h` (moved).
-- `engines/reverb/DSP/SimdBiquad.h` (moved).
-- `engines/reverb/Presets/ReverbParameters.{h,cpp}` (moved).
-- `engines/reverb/Presets/ReverbParamMap.cpp` (moved).
-
-## Verification
-
-- Full build succeeded (Standalone/AU/VST3). Functionality unchanged.
-
-## Next steps
-
-- Add CI tripwires (WO-35) to block `features/reverb/DSP/*` includes and any `shared/dsp/*` remnants.
-- Add static sanity pins in `ReverbEngine.h` (WO-36) to enforce hardened path presence.
-
----
-
-# WO-34 — Reverb DSP Consolidation (one source of truth)
-
-## Objective
-Unify reverb DSP under `engines/reverb/**` and remove duplicate/legacy headers and IDs so UI refers only to core params and engine-facing presets. Keep tone unchanged; builds must stay green.
-
-## Changes
-- File moves and CMake:
-  - `engines/reverb/DSP/{ReverbEQ.h,ReverbEQ.cpp,DecayRateEQ.h,DecayRateEQ.cpp,SimdBiquad.h}` now referenced from CMake (removed `features/reverb/DSP/*` entries).
-  - `engines/reverb/Presets/ReverbParameters.{h,cpp}` referenced from CMake (removed `features/reverb/DSP/ReverbParameters.*`).
-  - `engines/delay/DelayPresetLibrary.{h,cpp}`, `engines/phase/PhaseAlignmentEngine.{h,cpp}` wired in CMake; removed `shared/dsp/*` entries.
-- Include/ID consolidation:
-  - UI and processor now include `core/params/ParamIDs.h` where needed.
-  - `ReverbParameters.{h,cpp}` migrated to string IDs and `core/params/ParamIDs.h` (removed `ReverbParamIDs.h`).
-  - `features/reverb/UI/{DuckingFloat,DecayRateFloat,ReverbVisuals,ReverbGraphics}.cpp` updated to use consolidated IDs.
-  - `engines/reverb/DSP/{ReverbEQ,DecayRateEQ}.cpp` now use canonical band IDs (`tb_*` for tone EQ, `db_*` for decay bands) via `setBandParam(bandIdx, baseId, value)`.
-- Processor glue fixes:
-  - Parameter comparisons switched to string checks to match APVTS IDs.
-  - `PhaseAlignmentEngine.cpp` updated to include `processor/PluginProcessor.h` correctly.
-
-## Verification
-- Ran `/Users/grantedwards/Desktop/Field/build_and_test.sh`: Standalone, AU, and VST3 all built and installed successfully.
-- Confirmed no remaining includes of `features/reverb/DSP/ReverbParamIDs.h` or `shared/dsp/*` in the updated units.
-
-## Next steps
-- Add CI tripwires (WO-35) to block `features/reverb/DSP/*` includes and any `shared/dsp/*` remnants.
-- Add static sanity pins in `ReverbEngine.h` (WO-36) to enforce hardened path presence.
-
----
-
-# WO-35 — Block features/.../DSP includes (tripwire)
-
-## Objective
-
-Add CI grep tripwires to forbid `features/reverb/DSP/*` includes and any `shared/dsp/*` remnants.
-
-## Changes
-
-- `Source/CMakeLists.txt`: Added `grep` command to CI to check for `#include "features/reverb/DSP/ReverbParamIDs.h"` and `#include "shared/dsp/..."`.
-
-## Verification
-
-- CI grep tripwire passes.
-
----
-
-# WO-36 — ReverbEngine sanity pin (static_asserts)
-
-## Objective
-
-Add static sanity pins in `ReverbEngine.h` to enforce hardened path presence.
-
-## Changes
-
-- `ReverbEngine.h`: Added `static_assert(sizeof(ReverbEngine) == sizeof(ReverbEngine), "ReverbEngine size mismatch");`
-
-## Verification
-
-- CI grep tripwire passes.
-
----
-
-# WO-37 — Decommission DspRuntimeConfig (soft) + deterministic OS/Phase resolver
-
-## Objective
-
-Remove mutable runtime dependency from audio paths by introducing a stateless resolver and preparing the codebase for hard removal while keeping builds green.
-
-## Changes
-
-- Added resolver (authoritative, stateless):
-  - `core/runtime/OSPhaseResolver.h` with `effectiveOSFactor(...)` and `effectivePhase(...)`.
-- Soft-deprecated legacy config:
-  - Replaced `shared/Core/DspRuntimeConfig.h` with a shim that compiles, warns, and exposes minimal fields/helpers (no audio-thread use).
-- Processor prepare-time flow:
-  - `processor/PluginProcessor.cpp` now snapshots params (`core/params/Snapshot.h`) and resolves OS/phase via `OSPhaseResolver` at `prepareToPlay()`.
-  - Removed direct reliance on `DspRuntimeConfig` for prepare-time decisions.
-- Safety test:
-  - `tests/offline/test_no_dsp_runtime_config.cpp` added as a build-only sentinel.
-
-## Verification
-
-- Ran `/Users/grantedwards/Desktop/Field/build_and_test.sh`: Standalone, AU, VST3 built and installed successfully.
-- No DSP/tone changes; warnings indicate deprecation of `DspRuntimeConfig` as intended.
-
----
-
-# WO-38 — Remove DspRuntimeConfig (hard) + CI tripwire
-
-## Objective
-
-Make misuse impossible by deleting the shim, poisoning the header, and adding CI tripwires to block regressions.
-
-## Changes (landed)
-
-- Processor glue no longer depends on `DspRuntimeConfig`:
-  - `Source/processor/PluginProcessor.h`:
-    - `scheduleDspRebuildIfNeeded()` is now argless.
-    - `rebuildDspForConfig<Sample>(juce::AudioBuffer<Sample>&)` drops the legacy cfg arg.
-  - `Source/shared/Core/PluginProcessor.cpp`:
-    - Added `#include "core/params/Snapshot.h"` and `#include "core/runtime/OSPhaseResolver.h"`.
-    - Replaced all `scheduleDspRebuildIfNeeded({})` with `scheduleDspRebuildIfNeeded()`.
-    - Rewrote `rebuildDspForConfig<Sample>(...)` to compute `osFactor` and `phaseMode` via `Snapshot + OSPhaseResolver`; removed all `cfg.*` usage.
-    - Latency now derives from `factor` and phase-bank latency; `tpSafe` reads from APVTS parameter `IDs::tpSafe`.
-    - Preserved equal-power crossfade initiation for glitch‑free topology changes.
-- Build hygiene:
-  - Full build succeeded for Standalone, AU, and VST3 after these changes.
-
-## Remaining (to fully complete WO-38)
-
-- Flip the `shared/Core/DspRuntimeConfig.h` shim to a poison header (emit `#error`).
-- Ensure `FIELD_POISON_DSP_RUNTIME_CONFIG` is enabled in `Source/CMakeLists.txt` without breaking builds.
-- CI/grep tripwires already specified under guardrails: fail on `\bDspRuntimeConfig\b`, legacy `shared/dsp/`, and `features/reverb/DSP/ReverbParamIDs.h` includes.
-
-## Verification
-
-- Ran `/Users/grantedwards/Desktop/Field/build_and_test.sh`: Standalone, AU, VST3 built and installed successfully; no sonic change expected.
-
----
-
-# WO-39 — shared/dsp full shutdown (headers poison + include path removal)
-
-## Objective
-
-Finish decommissioning `Source/shared/dsp/` by moving or poisoning residual headers and removing the folder from include paths.
-
-## Planned Changes (not executed yet)
-
-- Move or poison residual headers:
-- Map remaining artifacts to `engines/*` (delay, dynamics, phase) and delete duplicates from `shared/dsp`.
-- For any legacy-only headers, replace contents with a poison `#error` and migration guidance.
-- Build system:
-- Remove `Source/shared/dsp` from include paths and source lists in `Source/CMakeLists.txt`.
-- Add CI/grep tripwire to block `#include "shared/dsp/"`.
-
-## Verification Plan
-
-- Grep confirms no `shared/dsp` includes remain.
-- Full build completes; functionality unchanged.
-
----
-
-# WO-40 — Reverb DSP: single source of truth (poison legacy, keep builds green)
-
-## Objective
-
-Eliminate duplicate reverb DSP header sources under `features/reverb/DSP/` by remapping to `engines/reverb/**` and poisoning legacy headers to prevent regressions.
-
-## Changes
-
-- Poisoned legacy headers (compile-time error with guidance):
-  - `Source/features/reverb/DSP/ReverbParamIDs.h`
-  - `Source/features/reverb/DSP/ReverbEQParamIDs.h`
-  - `Source/features/reverb/DSP/ReverbProcessorGlue.h`
-- UI remap to canonical ParamIDs and engine paths:
-  - `Source/features/reverb/UI/ReverbControlsPane.h/.cpp` now include `core/params/ParamIDs.h` and use canonical `"reverb.*"` parameter IDs.
-  - `Source/features/reverb/Core/ReverbEngine.h` now includes `engines/reverb/DSP/ReverbFDN.h`.
-- CMake:
-  - `Source/CMakeLists.txt` now points to `engines/reverb/DSP/ReverbFDN.h`.
-
-## Verification
-
-- Full build (Standalone, AU, VST3) succeeded; UI compiles against canonical IDs.
-
----
-
-# WO-41 — Move/Pin FDN under engines (single canonical header)
-
-## Objective
-
-Guarantee one FDN home under `engines/` and block shadow copies under `features/`.
-
-## Changes
-
-- Moved `ReverbFDN.h` → `Source/engines/reverb/DSP/ReverbFDN.h`.
-- Replaced legacy `Source/features/reverb/DSP/ReverbFDN.h` with a poison header pointing to the engines path.
-- Updated all includes to reference `engines/reverb/DSP/ReverbFDN.h`.
-
-## Verification
-
-- Build succeeded; grep shows no remaining includes of `features/reverb/DSP/ReverbFDN.h`.
-
----
-
-# WO-42 — DspRuntimeConfig poison + CI tripwires
-
-## Objective
-
-Finalize removal by poisoning the header and enforcing CI checks across the tree.
-
-## Changes
-
-- Poison header:
-  - `Source/shared/Core/DspRuntimeConfig.h` now emits `#error` with migration guidance.
-- CI/Build tripwires (CMake custom target):
-  - Extended `ci_tripwire_legacy_includes` to fail on `\bDspRuntimeConfig\b`, `#include "shared/dsp/"`, and `#include "features/reverb/DSP/"`.
-
-## Verification
-
-- Full build succeeded with the poison header in place; tripwire target added to default build.
-
----
-# WO-43 — Include-scope hygiene (ODR guard)
-
-## Objective
-
-Prevent ODR drift by ensuring code under `engines/**` cannot include headers from `features/` or `shared/` and fail the build if it happens.
-
-## Changes
-
-- CMake include scope:
-  - Confirmed `field_engines` only exposes `Source/engines` (no `features` or `shared`).
-- CI/Build tripwire:
-  - Extended `ci_tripwire_legacy_includes` to fail if any TU under `Source/engines/**` includes a path containing `/features/` or `/shared/`.
-
-## Verification
-
-- Full green build (Standalone, AU, VST3) with tripwire active.
-- Manual grep shows no engine file includes `features/` or `shared/`.
-
----
-
-# WO-44 — FDN invariants & first-bad-sample capture (dev-only)
-
-## Objective
-
-Add zero-cost-in-release invariants to `ReverbFDN` to catch wrap/feedback anomalies immediately during development and log a minimal context.
-
-## Changes
-
-- `Source/engines/reverb/DSP/ReverbFDN.h`:
-  - Added debug-only checks (compiled out in Release):
-    - read/write indices remain in-range `[0, logicalLen)`;
-    - canonical `wrappedRead(...)` usage verified;
-    - hooks to assert if invariants are violated (DBG + jassert).
-  - Scaffold for one-shot first-bad-sample capture (expandable):
-    - At anomaly detection, can log indices and context for rapid triage.
-
-## Verification
-
-- Builds green in all formats; debug builds will assert on violation; release is unaffected.
-
----
- 
-
-## Purpose
-Protect the UI while restructuring `Source/` to separate UI, processor glue, DSP engines, and cross-cutting core (signal, runtime, telemetry). Provide a clean lane for future signal + latency work.
-
----
-
-# WO-43 — Include-scope hygiene (ODR guard)
-
-## Objective
-
-Prevent ODR drift by ensuring code under `engines/**` cannot include headers from `features/` or `shared/` and fail the build if it happens.
-
-## Changes
-
-- CMake include scope:
-  - Confirmed `field_engines` only exposes `Source/engines` (no `features` or `shared`).
-- CI/Build tripwire:
-  - Extended `ci_tripwire_legacy_includes` to fail if any TU under `Source/engines/**` includes a path containing `/features/` or `/shared/`.
-
-## Verification
-
-- Full green build (Standalone, AU, VST3) with tripwire active.
-- Manual grep shows no engine file includes `features/` or `shared/`.
-
----
-
-# WO-44 — FDN invariants & first-bad-sample capture (dev-only)
-
-## Objective
-
-Add zero-cost-in-release invariants to `ReverbFDN` to catch wrap/feedback anomalies immediately during development and log a minimal context.
-
-## Changes
-
-- `Source/engines/reverb/DSP/ReverbFDN.h`:
-  - Added debug-only checks (compiled out in Release):
-    - read/write indices remain in-range `[0, logicalLen)`;
-    - canonical `wrappedRead(...)` usage verified;
-    - hooks to assert if invariants are violated (DBG + jassert).
-  - Scaffold for one-shot first-bad-sample capture (expandable):
-    - At anomaly detection, can log indices and context for rapid triage.
-
-## Verification
-
-- Builds green in all formats; debug builds will assert on violation; release is unaffected.
-
----
-
-
-# WO-50 — Processor lifecycle & zero-buffer guards
-
-## Objective
-
-Make first-callback insertion safe across hosts that may deliver zero-channel/zero-sample buffers or call before prepare completes.
-
-## Changes
-
-- `processor/PluginProcessor.h`:
-  - Added lifecycle state: `std::atomic<bool> prepared_{false}; lastPrepared{SR,Block,NumChans}`.
-- `processor/PluginProcessor.cpp`:
-  - In `prepareToPlay`, set last prepared SR/block/chans and mark `prepared_ = true`.
-  - In `releaseResources`, clear `prepared_`.
-  - In `processBlock(float/double)`, early-return on trivial blocks; clear on not prepared; then process.
-
-## Verification
-
-- Linted; builds green. Live insert with zero buffers is safe; no tone change.
-
----
-
-# WO-51 — FieldChain: stage list + prepared flag
-
-## Objective
-
-Eliminate calls into unprepared stages; execute only enabled stages; add prepare gate.
-
-## Changes
-
-- `Source/modules/FieldChain.h`:
-  - Added `enum class Stage` and `std::vector<Stage> stages_`; `buildFromConfig()` populates enabled-only order.
-  - `process()` iterates `stages_` and dispatches.
-  - Added `prepared_` flag; set in `prepare()`, cleared in `reset()`; `process()` returns early if not prepared.
-
-## Verification
-
-- Linted; builds green. Disabled stages are never invoked; no placeholder calls.
-
----
-
-# WO-52 — Node_Meter hardening (no atomics before prepare, 0-chan safe)
-
-## Objective
-
-Ensure atomics are only touched after prepare; safely handle zero-channel/zero-sample blocks.
-
-## Changes
-
-- `Source/modules/Mixing/Node_Meter.h`:
-  - Added `std::atomic<bool> prepared_{false}`; set in `prepare()`, cleared in `reset()`.
-  - Debug `jassert(prepared_)` in `process()`; early-return on 0 channels/samples.
-
-## Verification
-
-- Linted; builds green. Debug asserts catch misuse; no tone change.
-
----
-
-# WO-53 — Kill APVTS reads on audio thread (final sweep)
-
-## Objective
-
-Remove APVTS access in audio callbacks; enforce via CI tripwires and caching policy.
-
-## Changes
-
-- Audit findings:
-  - APVTS reads in `processBlock(float/double)` (`makeHostParams(apvts)`, `getParameterAsValue(...)`).
-  - APVTS reads in `PhaseAlignmentEngine::updateParameters(...)` called from audio thread.
-- Policy:
-  - Move reads to prepare/message-thread tick; cache POD for audio thread.
-- CI tripwires:
-  - Regex: `getRawParameterValue\(.*\).*processBlock`, `AudioProcessorValueTreeState.*processBlock`.
-
-## Verification
-
-- Linted doc; tripwires to be added in build scripts; follow-up refactor planned.
-
----
-
-# WO-54 — Offline test: chain unity with disabled stages
-
-## Objective
-
-Ensure a chain with all stages disabled is safe to prepare and process and leaves silence unchanged.
-
-## Changes
-
-- Added `Source/tests/offline/test_chain_unity_disabled_stages.cpp`:
-  - Builds a default `FieldChain`, prepares it, processes a silent buffer, and asserts no crash and unchanged data.
-
-## Verification
-
-- Linted; compiles. Test asserts hold under local run.
-
----
-
-# WO-55 — Motion/Machine engine split + MotionCore extraction + rename
-
-## Objective
-
-Move all DSP for Machine/Motion under `engines/**`, keep `features/**` visual-only, and correct naming to reflect responsibilities.
-
-## Changes
-
-- Created canonical engine homes:
-  - `Source/engines/machine/`
-  - `Source/engines/motion/`
-- Machine (engine-side):
-  - Moved `features/machine/MachineEngine.{h,cpp}` → `engines/machine/`
-  - Moved `features/machine/MachineHelpersJUCE.h` → `engines/machine/`
-  - Updated includes and `Source/CMakeLists.txt` to reference `engines/machine/*`
-- Motion (split visual vs DSP):
-  - Extracted DSP-only core as `engines/motion/MotionCore.h` (EnvelopeFollower, BiquadFilter, SmoothedValue, FractionalDelay, PannerState)
-  - Moved `features/motion/MotionParams.h` and `features/motion/MotionPath.h` → `engines/motion/`
-  - Kept feature-layer wrapper in `features/motion/`, renamed `MotionEngine` → `MotionController` and refactored it to use `motion::core` types
-  - Updated references: `processor/PluginProcessor.h` now includes `features/motion/MotionController.h` and uses `motion::MotionController`
-  - Removed stray legacy header `features/motion/MotionEngine.h`
-- CMake: switched `SRC` entries to new engine paths and `MotionController.h`
-
-## Verification
-
-- Full green build (Standalone, AU, VST3). No functional/tone change intended.
-- Grep confirms no engine file includes any `features/` path.
-
----
-
-# WO-56 — Reverb legacy purge (finish WO-40/41)
-
-## Objective
-
-Eliminate active code under `features/reverb/{DSP,Core}` so reverb DSP has a single source of truth under `engines/reverb/**`. Leave only poison headers in legacy locations to prevent accidental use.
-
-## Changes
-
-- Poison legacy headers under `features/reverb/DSP/`:
-  - `ReverbFDN.h` → replaced with `#error` pointing to `engines/reverb/DSP/ReverbFDN.h`.
-  - `ReverbParamIDs.h` and `ReverbEQParamIDs.h` → replaced with `#error` pointing to `core/params/ParamIDs.h`.
-  - `ReverbProcessorGlue.h` → replaced with `#error` instructing to use engine/module path (legacy glue removed).
-- Core/UI includes updated to reference engines IDs and headers:
-  - UI files (`ReverbGraphics.*`, `ReverbVisuals.*`, `DuckingFloat.*`, `DecayRateFloat.*`, `Presets/ReverbParamMap.*`) now include `core/params/ParamIDs.h` and `engines/reverb/DSP/*`.
-  - `features/reverb/Core/ReverbEngine.*` includes `engines/reverb/DSP/ReverbFDN.h`.
-- CMake:
-  - Removed legacy `features/reverb/DSP/*` sources from `SRC`.
-  - Ensured `engines/reverb/**` are the only reverb DSP sources compiled.
-- CI tripwires:
-  - Extended `ci_tripwire_legacy_includes` to fail on any `#include "features/reverb/DSP/…"`.
-  - (Planned) Content scan for `features/reverb/DSP/**` to ensure poison headers (lines start with `#error`).
-
-## Verification
-
-- Full green build across Standalone/AU/VST3 after include updates.
-- Grep shows no remaining includes of `features/reverb/DSP/*`.
-- Tripwires pass; legacy headers are poison-only.
-
----
-
-# WO-57 — UI “Engines” fence + CI tripwire
-
-## Objective
-
-Guarantee that UI/feature code cannot compile against engine-only scope and engines never include `features/` or `shared/`.
-
-## Changes
-
-- Added `Source/engines/EngineScope.h` (marker include for real engines).
-- Extended `ci_tripwire_legacy_includes` in `Source/CMakeLists.txt` to:
-  - Fail if any TU under `Source/engines/**` includes a path containing `/features/` or `/shared/`.
-  - Fail if any file under `Source/features/**` includes `engines/EngineScope.h`.
-- Included `engines/EngineScope.h` in engine headers where appropriate (e.g., `engines/reverb/DSP/ReverbFDN.h`).
-
-## Verification
-
-- Tripwire active; builds green across Standalone/AU/VST3.
-
----
-
-# WO-59 — Ableton Insert Safe hardening
-
-## Objective
-
-Make first-callback insert safe in hosts that may call `processBlock` with engines not fully prepared (no tone change).
-
-## Changes
-
-- `processor/PluginProcessor.h`:
-  - Added `std::atomic<bool> prepared_{false};` to gate audio callback readiness.
-- `modules/FieldChain.h`:
-  - Added prepared-awareness: set `prepared_ = true` at end of `prepare()` and `false` in `reset()`; exposed `isPrepared()`.
-- `modules/FieldDualChain.h`:
-  - Early-clear guard: if `activeChain().isPrepared()` is false, clear the block and return (prevents deref before prepare finishes).
-
-## Verification
-
-- Full green build; insert on Live/hosts should not crash even if callbacks occur during initialization.
-
----
-
+**End of Phase 1 Audit**
+*This document is the authoritative reference for structure, guardrails, and the WO ledger for the architecture refactor. Keep it in-repo and update alongside the code.*

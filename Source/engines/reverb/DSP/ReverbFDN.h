@@ -11,6 +11,9 @@
 #include "core/util/DenormGuard.h"
 #include "core/signal/Sanitize.h"
 #include <algorithm>
+#if JUCE_DEBUG
+#include "core/signal/SpikeSilencer.h"
+#endif
 
 namespace fieldverb
 {
@@ -40,7 +43,7 @@ public:
 
 	std::vector<double> lineDelaySec;
 
-	void prepare (double sr, int maxBlock, int channels, int lines = 8)
+    void prepare (double sr, int maxBlock, int channels, int lines = 8)
 	{
 		sampleRate = sr;
 		blockSize  = juce::jmax (1, maxBlock);
@@ -66,6 +69,8 @@ public:
 		feedback_.prepare(sampleRate, 10.0);
 		feedback_.setTarget(1.0);
 		fadeSamplesLeft = juce::jmax (1, (int) juce::roundToInt (0.005 * sampleRate)); // 5 ms start fade
+        spikeSilencer_.configure(0.98f, 8, 8, 16, 64);
+        spikeSilencer_.reset();
 	}
 
 	void reset ()
@@ -179,8 +184,11 @@ public:
         if (C >= 2) tailOut.getWritePointer (1)[n] += vR;
 		}
 
-		juce::dsp::AudioBlock<float> wetBlock (tailOut);
-		postWetBus (wetBlock);
+        juce::dsp::AudioBlock<float> wetBlock (tailOut);
+        postWetBus (wetBlock);
+#if JUCE_DEBUG
+        spikeSilencer_.process(wetBlock);
+#endif
 	}
 
 private:
@@ -231,8 +239,11 @@ private:
 	std::vector<std::vector<float>> delay; std::vector<int> writeIdx; juce::AudioBuffer<float> tmp; float baseT60 { 1.8f };
 	DecayLossDesigner decayDesigner;
 	std::atomic<FdnRuntime*> rt { nullptr }; std::unique_ptr<FdnRuntime> back;
-	struct SmoothedScalar { void prepare(double sr,double ms){sr_=sr;setTimeMs(ms);z_=target_;} void setTimeMs(double ms){alpha_=std::exp(-1.0/(std::max(1.0,sr_)*(ms*0.001)));} void setTarget(double v){ target_=juce::jlimit(0.0,0.999,v);} float tick(){ z_= (float)(target_ + alpha_ * (z_ - target_)); return z_; } double sr_{48000.0},alpha_{0.0},target_{1.0},z_{1.0}; } feedback_;
+    struct SmoothedScalar { void prepare(double sr,double ms){sr_=sr;setTimeMs(ms);z_=target_;} void setTimeMs(double ms){alpha_=std::exp(-1.0/(std::max(1.0,sr_)*(ms*0.001)));} void setTarget(double v){ target_=juce::jlimit(0.0,0.999,v);} float tick(){ z_= (float)(target_ + alpha_ * (z_ - target_)); return z_; } double sr_{48000.0},alpha_{0.0},target_{1.0},z_{1.0}; } feedback_;
 	int fadeSamplesLeft { 0 };
+    #if JUCE_DEBUG
+    SpikeSilencer spikeSilencer_{};
+    #endif
 
 	template <typename Sample>
 	inline void postWetBus (juce::dsp::AudioBlock<Sample>& block)
