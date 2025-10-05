@@ -1106,6 +1106,9 @@ public:
 private:
     void parameterChanged (const juce::String& parameterID, float newValue) override;
 
+    // Rebuild a lock-free snapshot of host parameters on the message thread
+    void rebuildHostParamsSnapshotOnMessageThread();
+
     void applyQualityFromParams();
     
     void onQualityChanged(int quality);
@@ -1157,6 +1160,11 @@ private:
     field::core::telemetry::LiveSwapHUD hud_;
     
     std::atomic<bool> mirrorGuard{false};
+
+    // ===== Parameter Snapshot (WO-61) =====
+    std::unique_ptr<HostParams> snapshotA_;
+    std::unique_ptr<HostParams> snapshotB_;
+    std::atomic<HostParams*>     snapshotPtr_{ nullptr };
 
     juce::SmoothedValue<double> panSmoothed, panLSmoothed, panRSmoothed,
                                 depthSmoothed, widthSmoothed, gainSmoothed, tiltSmoothed,

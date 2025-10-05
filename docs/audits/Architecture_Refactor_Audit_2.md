@@ -215,6 +215,12 @@ rg -n "DcBlock|postWetBus" Source/engines/reverb/DSP/ReverbFDN.h
 
 * Grep is clean; audio thread reads **only** POD snapshots.
 
+### Update — 2025-10-05
+- Change: Implemented lock-free `HostParams` snapshot with double buffers in processor; replaced audio-thread `makeHostParams(apvts)` with snapshot reads in both float and double paths. (`Source/shared/Core/PluginProcessor.cpp`, `Source/processor/PluginProcessor.h`)
+- Reason: Remove audio-thread `APVTS`/`ValueTree` interaction; enforce WO-61.
+- Verification: Built AU/VST3/Standalone (RelWithDebInfo) successfully.
+- Commits: aa9f0a1
+
 ---
 
 ### WO-62 — Rhythm-coupling probes (transport/tempo)

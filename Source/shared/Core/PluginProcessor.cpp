@@ -106,6 +106,11 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
     apvts.addParameterListener (IDs::forceOffline, this);
     
     // Constructor completed
+
+    // WO-61: initialize parameter snapshots (message thread)
+    snapshotA_ = std::make_unique<HostParams>();
+    snapshotB_ = std::make_unique<HostParams>();
+    snapshotPtr_.store(snapshotA_.get(), std::memory_order_release);
 }
 
 bool MyPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -647,7 +652,9 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
                      buffer.getNumSamples());
     }
 
-    auto hp = makeHostParams (apvts);
+    // WO-61: read snapshot (fallback to local if null)
+    const HostParams* hpPtr = snapshotPtr_.load(std::memory_order_acquire);
+    HostParams hp = hpPtr ? *hpPtr : makeHostParams (apvts);
     // Sync helpers (UI → chain)
     hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
     {
@@ -1050,7 +1057,8 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
 
     // (Bypass state updated in parameterChanged)
 
-    auto hp = makeHostParams (apvts);
+    const HostParams* hpPtrD = snapshotPtr_.load(std::memory_order_acquire);
+    HostParams hp = hpPtrD ? *hpPtrD : makeHostParams (apvts);
     hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
     {
         double bpm = 120.0;
@@ -1531,6 +1539,17 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
                 reverbAutoGuard.store (false);
             }
         }
+    }
+
+    // WO-61: refresh lock-free parameter snapshot on message thread
+    {
+        // Build fresh snapshot from APVTS
+        auto fresh = makeHostParams (apvts);
+        // Choose back buffer
+        HostParams* live = snapshotPtr_.load(std::memory_order_acquire);
+        HostParams* back = (live == snapshotA_.get()) ? snapshotB_.get() : snapshotA_.get();
+        *back = fresh;
+        snapshotPtr_.store(back, std::memory_order_release);
     }
 }
 
