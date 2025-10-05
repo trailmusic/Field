@@ -410,6 +410,11 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     p.eqQLink        = (getParam(apvts, IDs::eqQLink)   >= 0.5f);
     p.hpQ            = getParam(apvts, IDs::hpQ);
     p.lpQ            = getParam(apvts, IDs::lpQ);
+
+    // Dev-only (WO-57/62)
+    p.devCutMode         = (int) apvts.getParameterAsValue ("dev.dsp.cut").getValue();
+    p.devTransportIgnore = (bool) apvts.getParameterAsValue ("dev.transport.ignore").getValue();
+    p.devTempoSyncOff    = (bool) apvts.getParameterAsValue ("dev.tempoSync.off").getValue();
     
     // Delay parameters
     p.delayEnabled = (getParam(apvts, IDs::delayEnabled) >= 0.5f);
@@ -663,30 +668,33 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         snap.sampleRate = currentSR;
         snap.latencySamples = getLatencySamples();
         
-        if (auto* ph = getPlayHead())
+        if (!hp.devTransportIgnore)
         {
-            juce::AudioPlayHead::CurrentPositionInfo pos {};
-            ph->getCurrentPosition (pos);
+            if (auto* ph = getPlayHead())
+            {
+                juce::AudioPlayHead::CurrentPositionInfo pos {};
+                ph->getCurrentPosition (pos);
 
-            snap.playing   = pos.isPlaying;
-            snap.looping   = pos.isLooping;
-            snap.bpm       = pos.bpm > 0 ? pos.bpm : snap.bpm;
-            snap.numerator = pos.timeSigNumerator   > 0 ? pos.timeSigNumerator   : snap.numerator;
-            snap.denominator = pos.timeSigDenominator > 0 ? pos.timeSigDenominator : snap.denominator;
-            
-            if (pos.timeInSamples >= 0)        
-                snap.samplePos = pos.timeInSamples;
-            else if (pos.timeInSeconds > 0.0)  
-                snap.samplePos = (int64) juce::roundToInt (pos.timeInSeconds * snap.sampleRate);
-            else                                
-                snap.samplePos += buffer.getNumSamples(); // advance locally as fallback
+                snap.playing   = pos.isPlaying;
+                snap.looping   = pos.isLooping;
+                snap.bpm       = pos.bpm > 0 ? pos.bpm : snap.bpm;
+                snap.numerator = pos.timeSigNumerator   > 0 ? pos.timeSigNumerator   : snap.numerator;
+                snap.denominator = pos.timeSigDenominator > 0 ? pos.timeSigDenominator : snap.denominator;
+                
+                if (pos.timeInSamples >= 0)        
+                    snap.samplePos = pos.timeInSamples;
+                else if (pos.timeInSeconds > 0.0)  
+                    snap.samplePos = (int64) juce::roundToInt (pos.timeInSeconds * snap.sampleRate);
+                else                                
+                    snap.samplePos += buffer.getNumSamples(); // advance locally as fallback
 
-            // Legacy transport tracking for existing code
-            if (pos.timeInSeconds > 0.0)
-                transportTimeSeconds.store (pos.timeInSeconds);
-            transportIsPlaying.store (pos.isPlaying);
-            
-            bpm = snap.bpm;
+                // Legacy transport tracking for existing code
+                if (pos.timeInSeconds > 0.0)
+                    transportTimeSeconds.store (pos.timeInSeconds);
+                transportIsPlaying.store (pos.isPlaying);
+                
+                bpm = snap.bpm;
+            }
         }
         else {
             // No playhead — advance locally if playing flag you track says true
@@ -728,7 +736,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         lastTransportWasPlaying  = curP;
     }
     // Update Motion host sync so Sync mode rates are correct
-    motion::HostInfo hinfo; hinfo.bpm = hp.tempoBpm; hinfo.playing = transportIsPlaying.load();
+    motion::HostInfo hinfo; hinfo.bpm = hp.tempoBpm; hinfo.playing = hp.devTempoSyncOff ? false : transportIsPlaying.load();
     if (auto* ph = getPlayHead()) { 
         if (auto pos = ph->getPosition()) { 
             if (auto ppq = pos->getPpqPosition()) hinfo.ppqPosition = *ppq; 
@@ -751,18 +759,21 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         }
     }
 
-    // Capture dry signal for MIX control
+    // Capture dry signal for MIX control and dev cuts
     std::vector<std::vector<float>> drySignal;
-    if (std::abs (hp.mixPct - 100.0) > 0.1)
+    drySignal.resize (buffer.getNumChannels());
+    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
     {
-        drySignal.resize (buffer.getNumChannels());
-        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-        {
-            drySignal[ch].resize (buffer.getNumSamples());
-            const float* src = buffer.getReadPointer (ch);
-            for (int s = 0; s < buffer.getNumSamples(); ++s)
-                drySignal[ch][s] = src[s];
-        }
+        drySignal[ch].resize (buffer.getNumSamples());
+        const float* src = buffer.getReadPointer (ch);
+        std::memcpy (drySignal[ch].data(), src, (size_t)buffer.getNumSamples() * sizeof(float));
+    }
+
+    // Dev cut pre-routing (mute FDN wet path variants)
+    if (hp.devCutMode == 3 /* fdnMuted */ || hp.devCutMode == 4 /* fdnBypassed */)
+    {
+        hp.rvEnabled = false;
+        hp.rvWet01   = 0.0;
     }
 
     // Phase Alignment Engine processing
@@ -809,8 +820,26 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // Baseline: OS forced off → latency must be zero
     setLatencySamples (0);
     
+    // Dev cut output routing
+    if (hp.devCutMode == 1) /* dryOnly */
+    {
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+            std::memcpy (buffer.getWritePointer(ch), drySignal[ch].data(), (size_t)buffer.getNumSamples() * sizeof(float));
+        return;
+    }
+    else if (hp.devCutMode == 2) /* wetOnly */
+    {
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            auto* data = buffer.getWritePointer (ch);
+            const float* d0 = drySignal[ch].data();
+            for (int s = 0; s < buffer.getNumSamples(); ++s)
+                data[s] = data[s] - d0[s];
+        }
+    }
+
     // Apply MIX control (blend between dry and wet)
-    if (std::abs (hp.mixPct - 100.0) > 0.1)
+    if (std::abs (hp.mixPct - 100.0) > 0.1 && hp.devCutMode != 1)
     {
         const float wetLevel = hp.mixPct / 100.0f;
         const float dryLevel = 1.0f - wetLevel;
@@ -818,9 +847,10 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
         {
             auto* data = buffer.getWritePointer (ch);
+            const float* d0 = drySignal[ch].data();
             for (int s = 0; s < buffer.getNumSamples(); ++s)
             {
-                data[s] = dryLevel * drySignal[ch][s] + wetLevel * data[s];
+                data[s] = dryLevel * d0[s] + wetLevel * data[s];
             }
         }
     }
@@ -898,6 +928,34 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
                       buffer.getNumChannels() > 1 ? buffer.getReadPointer (chR) : nullptr,
                       buffer.getNumSamples());
     }
+
+    // Debug-only silence contract (first-bad capture)
+#if JUCE_DEBUG
+    {
+        static std::atomic<bool> fired{false};
+        if (!fired.load())
+        {
+            const int n  = buffer.getNumSamples();
+            const int ch = buffer.getNumChannels();
+            long double s=0.0L; for (int c=0;c<ch;++c){ const float* d = drySignal[c].data(); for (int i=0;i<n;++i){ const float v=d[i]; s+= (long double)v*v; } }
+            const float inRms = std::sqrt ((double)(s / juce::jmax(1, ch*n)));
+            const float outThr = 1.0e-7f; // ~ -140 dBFS
+            if (inRms < 1.0e-7f)
+            {
+                bool bad = false; int badIdx=-1; float badVal=0.f;
+                for (int c=0;c<ch && !bad;++c) {
+                    const float* d = buffer.getReadPointer(c);
+                    for (int i=0;i<n;++i){ const float v=d[i]; if (std::abs(v) > outThr){ bad=true; badIdx=i; badVal=v; break; } }
+                }
+                if (bad) {
+                    fired.store(true);
+                    DBG("[SilenceContract] first-bad idx=" << badIdx << " val=" << badVal << " n=" << n << " ch=" << ch);
+                    jassertfalse;
+                }
+            }
+        }
+    }
+#endif
 
     // Feed Delay UI metrics (float path)
     {
@@ -1127,7 +1185,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         lastTransportWasPlaying  = curP;
     }
     // Update Motion host sync for double path as well
-    motion::HostInfo hinfoD; hinfoD.bpm = hp.tempoBpm; hinfoD.playing = transportIsPlaying.load();
+    motion::HostInfo hinfoD; hinfoD.bpm = hp.tempoBpm; hinfoD.playing = hp.devTempoSyncOff ? false : transportIsPlaying.load();
     if (auto* ph2 = getPlayHead()) { 
         if (auto pos = ph2->getPosition()) { 
             if (auto ppq = pos->getPpqPosition()) hinfoD.ppqPosition = *ppq; 
@@ -1138,15 +1196,20 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     
     // Motion Engine is now handled by FieldChain template
 
-    // Capture dry signal for MIX control and emergency fallback (double precision)
+    // Capture dry signal for MIX control, dev cuts, and emergency fallback (double)
     std::vector<std::vector<double>> drySignalD;
     drySignalD.resize (buffer.getNumChannels());
     for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
     {
         drySignalD[ch].resize (buffer.getNumSamples());
         const double* src = buffer.getReadPointer (ch);
-        for (int s = 0; s < buffer.getNumSamples(); ++s)
-            drySignalD[ch][s] = src[s];
+        std::memcpy (drySignalD[ch].data(), src, (size_t)buffer.getNumSamples() * sizeof(double));
+    }
+    // Dev cut pre-routing (mute FDN wet path variants)
+    if (hp.devCutMode == 3 /* fdnMuted */ || hp.devCutMode == 4 /* fdnBypassed */)
+    {
+        hp.rvEnabled = false;
+        hp.rvWet01   = 0.0;
     }
 
     juce::dsp::AudioBlock<double> block (buffer);
@@ -1223,16 +1286,38 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     // Baseline: OS forced off → latency must be zero
     setLatencySamples (0);
     
+    // Dev cut output routing (double)
+    if (hp.devCutMode == 1) /* dryOnly */
+    {
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            auto* dst = buffer.getWritePointer (ch);
+            const auto* src = drySignalD[ch].data();
+            std::memcpy (dst, src, (size_t)buffer.getNumSamples() * sizeof(double));
+        }
+        return;
+    }
+    else if (hp.devCutMode == 2) /* wetOnly */
+    {
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            auto* dst = buffer.getWritePointer (ch);
+            const auto* d0 = drySignalD[ch].data();
+            for (int i = 0; i < buffer.getNumSamples(); ++i) dst[i] = dst[i] - d0[i];
+        }
+    }
+
     // Apply MIX control (blend between dry and wet) - double precision
-    if (std::abs (hp.mixPct - 100.0) > 0.1)
+    if (std::abs (hp.mixPct - 100.0) > 0.1 && hp.devCutMode != 1)
     {
         const double wetLevel = hp.mixPct / 100.0;
         const double dryLevel = 1.0 - wetLevel;
         for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
         {
             auto* data = buffer.getWritePointer (ch);
+            const double* d0 = drySignalD[ch].data();
             for (int s = 0; s < buffer.getNumSamples(); ++s)
-                data[s] = dryLevel * drySignalD[ch][s] + wetLevel * data[s];
+                data[s] = dryLevel * d0[s] + wetLevel * data[s];
         }
     }
 
@@ -1969,6 +2054,16 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::precision, 1 }, "Precision", juce::StringArray { "Auto (Host)", "Force 32-bit", "Force 64-bit" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osMode, 1 }, "Oversampling", juce::StringArray { "Off", "2x", "4x", "8x", "16x" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::phaseMode, 1 }, "Phase Mode", juce::StringArray { "Zero", "Natural", "Hybrid", "Full Linear" }, 3));
+    // ===== Dev-only (WO-57/62) =====
+    params.push_back (std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{ "dev.dsp.cut", 1 },
+        "Dev DSP Cut",
+        juce::StringArray { "normal", "dry", "wet", "fdnMuted", "fdnBypassed" },
+        0));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{ "dev.transport.ignore", 1 }, "Dev Ignore Transport", false));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{ "dev.tempoSync.off", 1 }, "Dev Tempo Sync Off", false));
     
     // ================================================================
     // 🎛️ QUALITY SYSTEM PARAMETERS (JANUARY 2025)

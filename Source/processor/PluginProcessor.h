@@ -991,6 +991,11 @@ struct HostParams
     
     bool   dynEqEnabled{};
     DynEqBand dynEqBands[24];
+
+    // Dev-only (WO-57/62)
+    int  devCutMode{};            // 0=normal,1=dryOnly,2=wetOnly,3=fdnMuted,4=fdnBypassed
+    bool devTransportIgnore{};    // ignore AudioPlayHead in process()
+    bool devTempoSyncOff{};       // disable tempo-synced behavior in engines
 };
 
 class MyPluginAudioProcessor : public juce::AudioProcessor,
