@@ -22,7 +22,7 @@ inline FirstBadSample scanBlock (juce::dsp::AudioBlock<Sample> b) noexcept
 		for (size_t i = 0, n = b.getNumSamples(); i < n; ++i)
 		{
 			const auto x = p[i];
-			if (!juce::isFinite(x))
+			if (!std::isfinite((double)x))
 				return { (int)ch, (int)i };
 		}
 	}

@@ -900,7 +900,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
                 for (int i = 0; i < nSm; ++i)
                 {
                     const float v = p[i];
-                    if (!juce::isFinite(v) || std::abs(v) > 1.2f)
+                    if (!std::isfinite((double)v) || std::abs(v) > 1.2f)
                     { firstBad = i; break; }
                 }
             }
