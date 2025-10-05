@@ -69,6 +69,8 @@ public:
 		feedback_.prepare(sampleRate, 10.0);
 		feedback_.setTarget(1.0);
 		fadeSamplesLeft = juce::jmax (1, (int) juce::roundToInt (0.005 * sampleRate)); // 5 ms start fade
+		// Reset DC blocks per channel
+		for (int c = 0; c < 2; ++c) { dc_[c].z = 0.0f; }
         spikeSilencer_.configure(0.98f, 8, 8, 16, 64);
         spikeSilencer_.reset();
 	}
@@ -245,6 +247,10 @@ private:
     SpikeSilencer spikeSilencer_{};
     #endif
 
+	// Simple 1st-order DC blocker per channel (post wet-sum)
+	struct DcBlock { float z{0.f}; float a{0.995f}; inline float process (float x) noexcept { float y = x - z; z = x + y * a; return y; } };
+	DcBlock dc_[2]{};
+
 	template <typename Sample>
 	inline void postWetBus (juce::dsp::AudioBlock<Sample>& block)
 	{
@@ -265,8 +271,27 @@ private:
 				--fadeSamplesLeft;
 			}
 		}
-		// Optional DC block / soft clip could go here
-		juce::ignoreUnused(block);
+		// DC guard per channel (post wet-sum)
+		{
+			const size_t C = block.getNumChannels();
+			const size_t N = block.getNumSamples();
+			for (size_t c = 0; c < C && c < 2; ++c)
+			{
+				auto* d = block.getChannelPointer(c);
+				for (size_t n = 0; n < N; ++n)
+				{
+					float x = (float) d[n];
+					x = dc_[(size_t)c].process(x);
+					#if JUCE_DEBUG
+						// Dev-only soft clamp with very high headroom to catch pathological overs
+						const float limit = 8.0f;
+						if (x >  limit) x =  limit;
+						if (x < -limit) x = -limit;
+					#endif
+					d[n] = (Sample) x;
+				}
+			}
+		}
 	}
 };
 }

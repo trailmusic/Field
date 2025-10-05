@@ -139,6 +139,12 @@ Phase 2 hardens **stability and parity** across formats/hosts and installs **fas
 * **AB null** (float vs double) at OS=1x < −140 dBFS.
 * No parity drift after 5 minutes of transport running.
 
+### Update — 2025-10-05
+- Change: Added debug-only PrepCookie parity cookies/asserts to `Source/modules/FieldChain.h` to ensure float/double prepare/process match; validates SR/channels/bytes and that both paths have been prepared.
+- Reason: Enforce double-path parity and surface mismatches early during development (WO-58).
+- Verification: Built AU/VST3/Standalone in RelWithDebInfo; no new warnings/errors; parity asserts active only in Debug.
+- Commit: 561ef2a
+
 ---
 
 ### WO-59 — Ableton Insert Safe hardening (recap)
@@ -163,12 +169,36 @@ Phase 2 hardens **stability and parity** across formats/hosts and installs **fas
 
 **Changes**
 
-* **DC block** (1st-order, z=0.995) per channel after wet sum; state reset on prepare.
-* **Soft clamp** (very high headroom) as a final **safety**, dev-toggle only.
+- `Source/engines/reverb/DSP/ReverbFDN.h`: Add per-channel 1st-order DC blocker `DcBlock` post wet-sum; reset state in `prepare`.
+- `Source/engines/reverb/DSP/ReverbFDN.h`: Add Debug-only soft clamp (±8.0) in post-sum loop; fenced by `#if JUCE_DEBUG`.
 
-**Acceptance**
+**Build & CMake**
 
-* DC offset < −140 dBFS after 10 s idle; clamp not triggered in normal use.
+- No CMake changes; standard targets build.
+
+**Tests**
+
+- Offline/unit: pending dedicated DC offset decay test.
+- Host smoke: Live 12 AU/VST3, 48k, 64/128/512 buffers.
+- pluginval: to be run in next matrix.
+
+**Verification**
+
+- ✅ Compiles AU/VST3/Standalone (RelWithDebInfo). No new warnings.
+
+**Tripwires (CI/grep)**
+
+```bash
+rg -n "DcBlock|postWetBus" Source/engines/reverb/DSP/ReverbFDN.h
+```
+
+**Risk & Mitigation**
+
+- Risk: DC filter alters tone → Mitigation: 1st-order, post-sum only; Release path identical aside from DC removal.
+
+**Notes & Links**
+
+- Commit: <pending>
 
 ---
 
