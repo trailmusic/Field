@@ -1408,6 +1408,59 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         }
     }
 
+    // TRIAGE F: first-bad-sample recorder (double path, Debug only)
+#if JUCE_DEBUG
+    {
+        static bool dumpedD = false;
+        static int firstBadD = -1;
+        static bool bannerD = false;
+        if (!bannerD) { DBG("[Field] TRIAGE build active (double): wet-only, FDN no taps, postWetBus bypassed"); bannerD = true; }
+        if (!dumpedD)
+        {
+            const int chN = buffer.getNumChannels();
+            const int nSm = buffer.getNumSamples();
+            const double ampThresh = 0.20;
+            const double stepThresh = 0.20;
+            for (int ch = 0; ch < chN && firstBadD < 0; ++ch)
+            {
+                const double* p = buffer.getReadPointer(ch);
+                double prev = p[0];
+                for (int i = 0; i < nSm; ++i)
+                {
+                    const double v = p[i];
+                    const double dv = v - prev; prev = v;
+                    if (!std::isfinite(v) || std::abs(v) > ampThresh || std::abs(dv) > stepThresh)
+                    { firstBadD = i; break; }
+                }
+            }
+            if (firstBadD >= 0)
+            {
+                dumpedD = true;
+                juce::File f = juce::File::getSpecialLocation(juce::File::tempDirectory)
+                                 .getChildFile("field_glitch_dump.wav");
+                juce::WavAudioFormat wf;
+                if (auto out = f.createOutputStream())
+                {
+                    // Convert double buffer to float for writing
+                    juce::AudioBuffer<float> tmpF(buffer.getNumChannels(), buffer.getNumSamples());
+                    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+                    {
+                        auto* dst = tmpF.getWritePointer(ch);
+                        const double* src = buffer.getReadPointer(ch);
+                        for (int i = 0; i < buffer.getNumSamples(); ++i) dst[i] = (float) src[i];
+                    }
+                    if (auto* w = wf.createWriterFor(out.release(), (int) currentSR, tmpF.getNumChannels(), 24, {}, 0))
+                    {
+                        std::unique_ptr<juce::AudioFormatWriter> writer (w);
+                        writer->writeFromAudioSampleBuffer(tmpF, 0, tmpF.getNumSamples());
+                        DBG("[Field] First bad @ sample (double) " << firstBadD << " -> " << f.getFullPathName());
+                    }
+                }
+            }
+        }
+    }
+#endif
+
     // Emergency dry passthrough if output energy collapsed (double path)
     {
         long double sIn = 0.0L, sOut = 0.0L; const int ch = buffer.getNumChannels(); const int n = buffer.getNumSamples();
