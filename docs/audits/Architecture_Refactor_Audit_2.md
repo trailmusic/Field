@@ -279,6 +279,48 @@ rg -n "DcBlock|postWetBus" Source/engines/reverb/DSP/ReverbFDN.h
 - Verification: AU/VST3/Standalone built; toggling bypass re-applies; meters tick under dryOnly and bypass.
 - Commits: e889c2e
 
+### Update — 2025-10-05
+- Change: Default flip sequence for transport probes to simplify testing:
+  - `dev.transport.ignore` default ON → OFF
+  - `dev.tempoSync.off`   default OFF → ON
+- Reason: Force “transport considered, tempo-sync disabled” as the hard test configuration on Master.
+- Commits: 7f6cbac, 75a2577
+
+### Update — 2025-10-05
+- Change: Removed temporary Dev HUD UI controls (debug toggles in header); control remains via host automation only. (No processing changes.)
+- Reason: Reduce confusion and surface area; keep Phase 2 focused on signal path.
+- Commits: f00d3fe
+
+# WO-65 — Phase engine hard toggle (dev-only)
+**Status:** LANDING  
+**Owner:** @trail • **Date:** 2025-10-05
+
+## Objective
+Allow disabling PhaseAlignmentEngine at process-time to isolate phase as a glitch source (dev-only; no Release impact).
+
+## Changes
+- `Source/shared/Core/PluginProcessor.cpp`: Added `dev.phase.off` param; skip PhaseAlignmentEngine `processBlock` when enabled.
+
+## Verification
+- Toggle `dev.phase.off` and confirm audible difference on Master if phase contributes to artifacts.
+
+### Update — 2025-10-05
+- Change: Implemented `dev.phase.off` gate at process-time. (`Source/shared/Core/PluginProcessor.cpp`)
+- Commits: 7e0c04f
+
+# WO-64 — MasterSafe (float-only minimal chain on Master)
+**Status:** PLANNED  
+**Owner:** @trail • **Date:** 2025-10-05
+
+## Objective
+On Master inserts only, force float path and minimal stages to determine if double-precision or non-reverb stages are implicated.
+
+## Changes
+- (Planned) Add `dev.master.safe` behavior to enforce minimal chain on Master.
+
+## Verification
+- If glitches vanish under MasterSafe, focus on double-path parity or non-reverb stages.
+
 * If glitches vanish with transport disabled → we localize to transport-coupled logic; else we stay in wet-path/OS.
 
 ---
