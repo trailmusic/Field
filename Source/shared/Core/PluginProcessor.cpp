@@ -104,6 +104,15 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
     apvts.addParameterListener (IDs::osFilterType, this);
     apvts.addParameterListener (IDs::tpSafe,     this);
     apvts.addParameterListener (IDs::forceOffline, this);
+    // Dev-only (WO-57/62) listeners so snapshot rebuilds on toggle
+    if (auto* p = apvts.getParameter ("dev.dsp.cut"))            apvts.addParameterListener (p->getParameterID(), this);
+    if (auto* p = apvts.getParameter ("dev.transport.ignore"))   apvts.addParameterListener (p->getParameterID(), this);
+    if (auto* p = apvts.getParameter ("dev.tempoSync.off"))      apvts.addParameterListener (p->getParameterID(), this);
+
+    // Critical UI controls: update snapshot on change
+    apvts.addParameterListener (IDs::mix, this);
+    apvts.addParameterListener (IDs::inputGain, this);
+    apvts.addParameterListener (IDs::outputGain, this);
     
     // Constructor completed
 
@@ -603,8 +612,8 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     }
     #endif
 
-    // Production-standard bypass: early return (hard passthrough)
-    if (getSafePassthrough()) return;
+    // Production-standard bypass: hard passthrough but continue ticking meters/vis
+    const bool userBypassNow = getSafePassthrough();
     
     // Check for DSP rebuild needed
     if (needsDspRebuild.exchange(false, std::memory_order_acq_rel))
@@ -660,6 +669,17 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // WO-61: read snapshot (fallback to local if null)
     const HostParams* hpPtr = snapshotPtr_.load(std::memory_order_acquire);
     HostParams hp = hpPtr ? *hpPtr : makeHostParams (apvts);
+    #if JUCE_DEBUG
+    {
+        static int dbgCount = 0; if (dbgCount < 3) {
+            DBG("[Field] Float path: devCut=" << hp.devCutMode
+                << " transpIgnore=" << (hp.devTransportIgnore?1:0)
+                << " tempoOff=" << (hp.devTempoSyncOff?1:0)
+                << " bypass=" << (getSafePassthrough()?1:0));
+            ++dbgCount;
+        }
+    }
+    #endif
     // Sync helpers (UI → chain)
     hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
     {
@@ -782,8 +802,9 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // Copy input to dry buffer for audition blend
     phaseDryBuffer.makeCopyOf(buffer);
     
-    // Process with Phase Alignment Engine
-    phaseAlignmentEngine->processBlock(buffer, phaseDryBuffer);
+    // Process or bypass
+    if (!userBypassNow)
+        phaseAlignmentEngine->processBlock(buffer, phaseDryBuffer);
     
     // ================================================================
     // 🎯 PRODUCTION-GRADE BUFFER TILING (JANUARY 2025)
@@ -805,27 +826,39 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     const int maxBlockSize = (preparedMax_ > 0 ? preparedMax_ : preparedMax);
     
     // Bullet-proof tiling with AudioBlock sub-blocks (unity graph)
-    juce::dsp::AudioBlock<float> whole(buffer);
-    int offset = 0, spins = 0;
-    
-    while (offset < N) {
-        const int nThis = std::min(maxBlockSize, N - offset);
-        if (nThis <= 0 || ++spins > 1024) break;
-        
-        auto sub = whole.getSubBlock((size_t)offset, (size_t)nThis);
-        if (graphF) graphF->process(sub);
-        offset += nThis;
+    if (!userBypassNow)
+    {
+        juce::dsp::AudioBlock<float> whole(buffer);
+        int offset = 0, spins = 0;
+        while (offset < N) {
+            const int nThis = std::min(maxBlockSize, N - offset);
+            if (nThis <= 0 || ++spins > 1024) break;
+            auto sub = whole.getSubBlock((size_t)offset, (size_t)nThis);
+            if (graphF) graphF->process(sub);
+            offset += nThis;
+        }
     }
     
     // Baseline: OS forced off → latency must be zero
     setLatencySamples (0);
+    
+    // User bypass: restore dry buffer to output
+    if (userBypassNow)
+    {
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            auto* dst = buffer.getWritePointer (ch);
+            const float* src = phaseDryBuffer.getReadPointer (ch);
+            std::memcpy (dst, src, (size_t)buffer.getNumSamples() * sizeof(float));
+        }
+    }
     
     // Dev cut output routing
     if (hp.devCutMode == 1) /* dryOnly */
     {
         for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
             std::memcpy (buffer.getWritePointer(ch), drySignal[ch].data(), (size_t)buffer.getNumSamples() * sizeof(float));
-        return;
+        // Do not early-return: allow meters/vis/UI to tick this block
     }
     else if (hp.devCutMode == 2) /* wetOnly */
     {
@@ -1117,6 +1150,17 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
 
     const HostParams* hpPtrD = snapshotPtr_.load(std::memory_order_acquire);
     HostParams hp = hpPtrD ? *hpPtrD : makeHostParams (apvts);
+    #if JUCE_DEBUG
+    {
+        static int dbgCountD = 0; if (dbgCountD < 3) {
+            DBG("[Field] Double path: devCut=" << hp.devCutMode
+                << " transpIgnore=" << (hp.devTransportIgnore?1:0)
+                << " tempoOff=" << (hp.devTempoSyncOff?1:0)
+                << " bypass=" << (getSafePassthrough()?1:0));
+            ++dbgCountD;
+        }
+    }
+    #endif
     hp.delayGridFlavor = (int) apvts.getParameterAsValue(IDs::delayGridFlavor).getValue();
     {
         double bpm = 120.0;
@@ -1230,6 +1274,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     }
     // Phase Alignment Engine processing (double precision)
     // Note: Phase Alignment Engine works with float internally, so we convert
+    const bool userBypassNowD = getSafePassthrough();
     juce::AudioBuffer<float> floatBuffer(buffer.getNumChannels(), buffer.getNumSamples());
     for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
     {
@@ -1238,11 +1283,9 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         for (int i = 0; i < buffer.getNumSamples(); ++i)
             dst[i] = static_cast<float>(src[i]);
     }
-    
     phaseAlignmentEngine->updateParameters(apvts);
-    phaseAlignmentEngine->processBlock(floatBuffer, phaseDryBuffer);
-    
-    // Convert back to double
+    if (!userBypassNowD)
+        phaseAlignmentEngine->processBlock(floatBuffer, phaseDryBuffer);
     for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
     {
         auto* src = floatBuffer.getReadPointer(ch);
@@ -1271,20 +1314,32 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
     const int maxBlockSize = (preparedMax_ > 0 ? preparedMax_ : preparedMax);
     
     // Bullet-proof tiling with AudioBlock sub-blocks (unity graph)
-    juce::dsp::AudioBlock<double> whole(buffer);
-    int offset = 0, spins = 0;
-    
-    while (offset < N) {
-        const int nThis = std::min(maxBlockSize, N - offset);
-        if (nThis <= 0 || ++spins > 1024) break;
-        
-        auto sub = whole.getSubBlock((size_t)offset, (size_t)nThis);
-        if (graphD) graphD->process(sub);
-        offset += nThis;
+    if (!userBypassNowD)
+    {
+        juce::dsp::AudioBlock<double> whole(buffer);
+        int offset = 0, spins = 0;
+        while (offset < N) {
+            const int nThis = std::min(maxBlockSize, N - offset);
+            if (nThis <= 0 || ++spins > 1024) break;
+            auto sub = whole.getSubBlock((size_t)offset, (size_t)nThis);
+            if (graphD) graphD->process(sub);
+            offset += nThis;
+        }
     }
     
     // Baseline: OS forced off → latency must be zero
     setLatencySamples (0);
+    
+    // User bypass: restore dry buffer to output (double)
+    if (userBypassNowD)
+    {
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            auto* dst = buffer.getWritePointer (ch);
+            const float* src = phaseDryBuffer.getReadPointer (ch);
+            for (int i = 0; i < buffer.getNumSamples(); ++i) dst[i] = (double) src[i];
+        }
+    }
     
     // Dev cut output routing (double)
     if (hp.devCutMode == 1) /* dryOnly */
@@ -1295,7 +1350,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
             const auto* src = drySignalD[ch].data();
             std::memcpy (dst, src, (size_t)buffer.getNumSamples() * sizeof(double));
         }
-        return;
+        // Do not early-return: allow meters/vis/UI to tick this block
     }
     else if (hp.devCutMode == 2) /* wetOnly */
     {
@@ -1631,6 +1686,15 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
         // Build fresh snapshot from APVTS
         auto fresh = makeHostParams (apvts);
         // Choose back buffer
+        HostParams* live = snapshotPtr_.load(std::memory_order_acquire);
+        HostParams* back = (live == snapshotA_.get()) ? snapshotB_.get() : snapshotA_.get();
+        *back = fresh;
+        snapshotPtr_.store(back, std::memory_order_release);
+    }
+
+    // Rebuild parameter snapshot for dev toggles (WO-57/62) and other param changes
+    {
+        auto fresh = makeHostParams (apvts);
         HostParams* live = snapshotPtr_.load(std::memory_order_acquire);
         HostParams* back = (live == snapshotA_.get()) ? snapshotB_.get() : snapshotA_.get();
         *back = fresh;
