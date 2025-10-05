@@ -113,6 +113,8 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
     apvts.addParameterListener (IDs::mix, this);
     apvts.addParameterListener (IDs::inputGain, this);
     apvts.addParameterListener (IDs::outputGain, this);
+    apvts.addParameterListener ("dev.master.safe", this);
+    apvts.addParameterListener ("dev.phase.off", this);
     
     // Constructor completed
 
@@ -802,8 +804,9 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // Copy input to dry buffer for audition blend
     phaseDryBuffer.makeCopyOf(buffer);
     
-    // Process or bypass
-    if (!userBypassNow)
+    // Process or bypass; allow dev.phase.off to fully disable Phase engine
+    const bool phaseOff = (bool) apvts.getParameterAsValue ("dev.phase.off").getValue();
+    if (!userBypassNow && !phaseOff)
         phaseAlignmentEngine->processBlock(buffer, phaseDryBuffer);
     
     // ================================================================
@@ -2128,6 +2131,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
         juce::ParameterID{ "dev.transport.ignore", 1 }, "Dev Ignore Transport", false));
     params.push_back (std::make_unique<juce::AudioParameterBool>(
         juce::ParameterID{ "dev.tempoSync.off", 1 }, "Dev Tempo Sync Off", true));
+    // WO-64/65
+    params.push_back (std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{ "dev.master.safe", 1 }, "Dev Master Safe", false));
+    params.push_back (std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{ "dev.phase.off", 1 }, "Dev Phase Off", false));
     
     // ================================================================
     // 🎛️ QUALITY SYSTEM PARAMETERS (JANUARY 2025)
