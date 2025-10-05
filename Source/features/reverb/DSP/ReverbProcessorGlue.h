@@ -1,4 +1,4 @@
-#error "Legacy path. Use engines/reverb/DSP/... and core/params/ParamIDs.h"
+#error "Legacy glue removed. Use engines/reverb/** (no feature-layer DSP)."
 // Retired by WO-22: Use modules/FieldNodes/Node_Reverb (or Adapter_ReverbGlue) instead.
 #error "ReverbProcessorGlue is retired. Replace includes with modules/FieldNodes/Node_Reverb or a minimal Adapter_ReverbGlue."
         auto getI = [&](const juce::String& id, int  def){ if (auto* v = apvts.getRawParameterValue(id)) return (int) std::lround (v->load()); return def; };
