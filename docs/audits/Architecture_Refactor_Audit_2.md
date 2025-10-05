@@ -208,6 +208,11 @@ Phase 2 hardens **stability and parity** across formats/hosts and installs **fas
 - pluginval: to be run in next matrix.
 
 **Verification**
+### Update — 2025-10-05
+- Change: Added dev parameters `dev.dsp.cut`, `dev.transport.ignore`, `dev.tempoSync.off`; implemented dryOnly/wetOnly/fdnMuted/fdnBypassed routing; added Debug-only silence contract (first-bad capture). (`Source/shared/Core/PluginProcessor.cpp`, `Source/processor/PluginProcessor.h`)
+- Reason: Fast isolation of glitch source and enforce “silence means silence”.
+- Verification: Built AU/VST3/Standalone (RelWithDebInfo); verified routing toggles and one-shot assert fire in Debug.
+- Commits: 3b2fb89
 
 - ✅ Compiles AU/VST3/Standalone (RelWithDebInfo). No new warnings.
 
@@ -262,6 +267,11 @@ rg -n "DcBlock|postWetBus" Source/engines/reverb/DSP/ReverbFDN.h
 * Dev param to disable all **tempo-sync** features temporarily (delay grid, phase sync, etc.).
 
 **Acceptance**
+### Update — 2025-10-05
+- Change: Gated AudioPlayHead usage via `dev.transport.ignore`; disabled tempo-sync behavior via `dev.tempoSync.off` in host-info propagation. (`Source/shared/Core/PluginProcessor.cpp`, `Source/processor/PluginProcessor.h`)
+- Reason: Prove/disprove transport coupling for rhythmic artifacts.
+- Verification: Build clean; ready for host litmus (Master vs Track, 64/128/512).
+- Commits: 3b2fb89
 
 * If glitches vanish with transport disabled → we localize to transport-coupled logic; else we stay in wet-path/OS.
 
