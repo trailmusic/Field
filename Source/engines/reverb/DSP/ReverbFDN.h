@@ -101,6 +101,11 @@ public:
 
 	void process (const juce::AudioBuffer<float>& in, juce::AudioBuffer<float>& tailOut)
 	{
+#if 1 // TRIAGE: force no-feedback and no taps (pure thru of engine disabled)
+		static constexpr bool kFDN_NO_FEEDBACK_TAPS = true;
+#else
+		static constexpr bool kFDN_NO_FEEDBACK_TAPS = false;
+#endif
 #if JUCE_DEBUG
 		auto dbgOnce = [](bool cond, const char* msg){ if (!cond) { DBG(msg); jassertfalse; } };
 #endif
@@ -143,7 +148,7 @@ public:
 			hadamardMixInPlace (x, numLines);
 			static constexpr float W[8] = { +0.50f, -0.35f, +0.25f, -0.20f, +0.15f, -0.12f, +0.10f, -0.08f };
 			const float excite = mono.getSample(0, n);
-			const float fbScalar = feedback_.tick();
+			const float fbScalar = kFDN_NO_FEEDBACK_TAPS ? 0.0f : feedback_.tick();
 
 			for (int i=0; i<numLines; ++i)
 			{
@@ -165,19 +170,22 @@ public:
 #endif
 			}
 
-			static const int Lset[4] = {1,3,6,7};
-			static const int Rset[4] = {0,2,4,5};
 			float l=0.f, r=0.f;
-			for (int k=0; k<4; ++k)
+			if (!kFDN_NO_FEEDBACK_TAPS)
 			{
-				const int Li = Lset[k] % numLines;
-				const int Ri = Rset[k] % numLines;
-				const int lenL = logicalLen(delay[Li]);
-				const int lenR = logicalLen(delay[Ri]);
-				l += delay[Li][ wrappedRead(writeIdx[Li], (3+2*k), lenL) ];
-				r += delay[Ri][ wrappedRead(writeIdx[Ri], (5+2*k), lenR) ];
+				static const int Lset[4] = {1,3,6,7};
+				static const int Rset[4] = {0,2,4,5};
+				for (int k=0; k<4; ++k)
+				{
+					const int Li = Lset[k] % numLines;
+					const int Ri = Rset[k] % numLines;
+					const int lenL = logicalLen(delay[Li]);
+					const int lenR = logicalLen(delay[Ri]);
+					l += delay[Li][ wrappedRead(writeIdx[Li], (3+2*k), lenL) ];
+					r += delay[Ri][ wrappedRead(writeIdx[Ri], (5+2*k), lenR) ];
+				}
+				l *= 0.25f; r *= 0.25f;
 			}
-			l *= 0.25f; r *= 0.25f;
 
         float vL = l, vR = r;
         if (!std::isfinite((double)vL) || std::abs (vL) < 1e-30f) vL = 0.0f;
