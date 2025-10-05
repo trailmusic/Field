@@ -574,8 +574,7 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
 void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ignoreUnused (midi);
-    // NUCLEAR MUTE (triage step A): prove host vs plugin
-    buffer.clear();
+    // DRY-ONLY PASSTHROUGH (triage step B): leave buffer untouched and return
     return;
     juce::ScopedNoDenormals _ftz;  // FTZ/DAZ for this whole block
     
@@ -1111,8 +1110,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
 void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, juce::MidiBuffer& midi)
 {
     juce::ignoreUnused (midi);
-    // NUCLEAR MUTE (triage step A): prove host vs plugin
-    buffer.clear();
+    // DRY-ONLY PASSTHROUGH (triage step B): leave buffer untouched and return
     return;
     juce::ScopedNoDenormals _ftz;  // FTZ/DAZ for this whole block
     
