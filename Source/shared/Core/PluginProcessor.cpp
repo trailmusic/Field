@@ -806,7 +806,8 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     phaseDryBuffer.makeCopyOf(buffer);
     
     // Process or bypass; allow dev.phase.off to fully disable Phase engine
-    const bool phaseOff = (bool) apvts.getParameterAsValue ("dev.phase.off").getValue();
+    constexpr bool kForcePhaseOff = true; // TRIAGE D
+    const bool phaseOff = kForcePhaseOff ? true : (bool) apvts.getParameterAsValue ("dev.phase.off").getValue();
     if (!userBypassNow && !phaseOff)
         phaseAlignmentEngine->processBlock(buffer, phaseDryBuffer);
     
@@ -1280,7 +1281,8 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
             dst[i] = static_cast<float>(src[i]);
     }
     phaseAlignmentEngine->updateParameters(apvts);
-    if (!userBypassNowD)
+    constexpr bool kForcePhaseOffD = true; // TRIAGE D
+    if (!userBypassNowD && !kForcePhaseOffD)
         phaseAlignmentEngine->processBlock(floatBuffer, phaseDryBuffer);
     for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
     {
