@@ -195,7 +195,10 @@ public:
 		}
 
         juce::dsp::AudioBlock<float> wetBlock (tailOut);
-        postWetBus (wetBlock);
+        // TRIAGE: bypass post-wet bus to isolate DC/soft-limit/fade effects
+        constexpr bool kBypassPostWetBus = true;
+        if (!kBypassPostWetBus)
+            postWetBus (wetBlock);
 #if JUCE_DEBUG
         spikeSilencer_.process(wetBlock);
 #endif
