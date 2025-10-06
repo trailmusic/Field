@@ -8,6 +8,7 @@
 #include "Mixing/Node_Gain.h"
 #include "Mixing/Node_MSMatrix.h"
 #include "Mixing/Node_Meter.h"
+#include "core/params/Snapshot.h"
 
 #include "FieldNodes/Node_Reverb.h"
 #include "FieldNodes/Node_Delay.h"
@@ -100,6 +101,30 @@ struct FieldChain
 		sum += phase_.latencySamples();
 		sum += imager_.latencySamples();
 		latencySum_ = sum;
+	}
+
+	// Parameter fan-out (POD, no locks/trees)
+	void setParameters (const field::params::ChainParamSnapshot& s) noexcept
+	{
+		gainP_.outGainLin      = s.outGainLin;
+		gainP_.balance         = s.panBalance;
+
+		toneP_.tilt_dB_per_oct  = s.toneTilt_dB_per_oct;
+		toneP_.bass_dB          = s.toneBass_dB;
+
+		rvP_.enabled            = s.enableReverb;
+		rvP_.preDelaySec        = s.rvPreDelaySec;
+		rvP_.sizeNorm           = s.rvSizeNorm;
+		rvP_.dampingHz          = s.rvDampingHz;
+		rvP_.wet01              = s.wet01;
+
+		dlP_.enabled            = s.enableDelay;
+		dlP_.lookaheadMs        = s.delayLookAheadMs;
+
+		deP_.enabled            = s.enableDynEq;
+		deP_.lookaheadMs        = s.dynEqLookAheadMs;
+
+		imP_.width              = s.imagerWidth;
 	}
 
 	template <typename Sample>
@@ -200,6 +225,14 @@ struct FieldChain
 	int latencySamples() const noexcept { return latencySum_; }
 
 private:
+	// POD parameter holders (consumed by nodes/engines)
+	struct GainParams  { float outGainLin{1.f}; float balance{0.f}; };
+	struct ToneParams  { float tilt_dB_per_oct{0.f}; float bass_dB{0.f}; };
+	struct ReverbParams{ bool enabled{false}; float preDelaySec{0.f}; float sizeNorm{0.f}; float dampingHz{6000.f}; float wet01{0.33f}; };
+	struct DelayParams { bool enabled{false}; float lookaheadMs{0.f}; };
+    struct DynEqParams { bool enabled{false}; float lookaheadMs{0.f}; };
+	struct ImagerParams{ float width{1.0f}; };
+
     mixing::Node_Meter<>  meter_{};
     mixing::Node_MSMatrix ms_{};
     mixing::Node_Gain     gain_{};
@@ -208,6 +241,13 @@ private:
 	nodes::Node_Reverb    reverb_{};
 	nodes::Node_Phase     phase_{};
 	nodes::Node_Imager    imager_{};
+
+	GainParams   gainP_{};
+	ToneParams   toneP_{};
+	ReverbParams rvP_{};
+	DelayParams  dlP_{};
+    DynEqParams deP_{};
+	ImagerParams imP_{};
 
 	double sr_ = 48000.0;
 	int    maxBlock_ = 512;
