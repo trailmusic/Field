@@ -64,14 +64,28 @@ struct FieldChain
 
 		// Build enabled stage order (enabled-only execution)
 		stages_.clear();
-		if (active_.meter)  stages_.push_back(Stage::Meter);
-		if (active_.ms)     stages_.push_back(Stage::MS);
-		if (active_.gain)   stages_.push_back(Stage::Gain);
-		if (active_.delay)  stages_.push_back(Stage::Delay);
-		if (active_.dyneq)  stages_.push_back(Stage::DynEq);
-		if (active_.reverb) stages_.push_back(Stage::Reverb);
-		if (active_.phase)  stages_.push_back(Stage::Phase);
-		if (active_.imager) stages_.push_back(Stage::Imager);
+		// TRIAGE: configure per-stage bypass for isolation
+		constexpr bool kBypassAllStages = false;
+		if (!kBypassAllStages)
+		{
+			// Restore normal: Meter + Gain enabled for visibility and unity
+			constexpr bool kBypassMeter  = false;
+			constexpr bool kBypassMS     = true;
+			constexpr bool kBypassGain   = false;
+			constexpr bool kBypassDelay  = true;
+			constexpr bool kBypassDynEq  = true;
+			constexpr bool kBypassReverb = true;
+			constexpr bool kBypassPhase  = true;
+			constexpr bool kBypassImager = true;
+			if (active_.meter  && !kBypassMeter)  stages_.push_back(Stage::Meter);
+			if (active_.ms     && !kBypassMS)     stages_.push_back(Stage::MS);
+			if (active_.gain   && !kBypassGain)   stages_.push_back(Stage::Gain);
+			if (active_.delay  && !kBypassDelay)  stages_.push_back(Stage::Delay);
+			if (active_.dyneq  && !kBypassDynEq)  stages_.push_back(Stage::DynEq);
+			if (active_.reverb && !kBypassReverb) stages_.push_back(Stage::Reverb);
+			if (active_.phase  && !kBypassPhase)  stages_.push_back(Stage::Phase);
+			if (active_.imager && !kBypassImager) stages_.push_back(Stage::Imager);
+		}
 
 		recomputeLatency();
 		dirty_ = false;

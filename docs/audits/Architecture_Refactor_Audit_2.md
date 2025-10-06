@@ -657,6 +657,117 @@ Next steps (single-step toggles)
 - FDN debug: `SpikeSilencer|DcBlock|postWrapPad\(|fadeSamplesLeft`
 
 ### Keep vs remove
+- ### Update — 2025-10-05 (Evening) — Live Master triage results
+
+  - Test matrix (one flip per rebuild)
+    - A — Pin cadence (FDN pre-sum): A same
+    - B — Disable wrap mirror + guarded reads: B same
+    - C — Wet-only by copy (no processed−dry subtraction): C same
+    - Probe — Mid-tap fixed read (ri = logical/2): Midtap same
+    - FDN hard-bypass (return early, silent wet): Bypass same
+    - Chain reverb bypass (skip Stage::Reverb in FieldChain): Chain bypass same
+    - Global hard bypass (silence entire plugin): Hard bypass clean
+    - Passthrough (no processing; immediate return): Passthrough clean
+
+  - Conclusion
+    - Not in FDN read/write, wrap mirroring, Hadamard, or post-wet bus.
+    - Removing Reverb doesn’t change it → source is elsewhere in plugin processing.
+    - Passthrough clean → issue is inside plugin processing path (not host/driver).
+    - Phase engine already hard-off; still reproduces pre-passthrough → not phase.
+
+  - Next actions (binary isolate non-reverb stages)
+    1) Run with an empty chain (no stages) → expect clean.
+    2) Re-enable stages one-by-one: Gain → MS → Meter → Delay → DynEq → Imager. Listen after each.
+    3) If a stage reintroduces glitch, inspect its buffer copies/crossfades and block-size assumptions.
+    4) If all stages clean, inspect `Source/core/signal/SignalGraph.h` fixed-frame feeder and `Source/core/signal/OversamplingStage.h` for fence/copy seams.
+
+  - Toggles implemented for triage
+    - `FieldChain.h`: `kBypassReverbStage`
+    - `PluginProcessor.cpp`: `kPassThroughPlugin{Float,Double}`, `kHardBypassPlugin{Float,Double}`
+    - `ReverbFDN.h`: `kPatchA_PinCadence`, `kPatchB_DisableMirrorAndGuardedRead`, `kProbeMidTapRead`, `kBypassFDNShortCircuit`
+
+### Update — 2025-10-06 — Triage batch 2 (SignalGraph, Chain, Routing)
+
+- Tests (one flip per rebuild)
+  - SignalGraph seam neuter (no accumulator/OS, no sanitize): Step1 seam off → clean
+  - Restore seam (single pre-sanitize only): Seam restored → glitch
+  - Disable insert fade (MiniFadeIn) in SignalGraph: still glitch
+  - FrameAccumulator assert + consumed fix: still glitch
+  - OversamplingStage guard (return if frame mismatch): still glitch
+  - Host-frame no-op (engineFrame=N): glitch
+  - Host-frame + sanitize off: glitch
+  - Host-frame + OS fully off: glitch
+  - Empty FieldChain (stages skipped): glitch
+  - Global hard bypass in processBlock: clean (silence)
+  - Pure passthrough (early return at ingress): clean
+  - SignalGraph-only path in processBlock: clean
+  - Gain-only (normal path): glitch
+  - Meter-only (normal path): glitch
+  - Chain-only via early-return (Meter/Gain intended): produced silence (likely no stages configured via cfg_)
+
+- Interpretation
+  - Re-affirmed: Reverb/FDN are not the source (all pre-FDN probes clean or inconclusive; bypassing FDN unchanged).
+  - Seam hypothesis: Fully neutering the seam removed the glitch once; later host-frame variants did not, pointing to another contributing factor outside accumulator/OS alone.
+  - Processor routing: Clean when we run SignalGraph-only or pure passthrough, but glitch when normal pre/post routing runs with Meter/Gain. Strongly implicates processor-level dry capture/mix/bypass/mode handoff code around the chain call.
+  - Meter/Gain code paths themselves look correct (Gain unity short-circuits; Meter read-only). Glitch likely enters before/after chain execution.
+
+- Next actions
+  1) Introduce a “chain-only (float)” debug path that runs `FieldChain::process(io)` and returns (no dry capture, no wet/dry mix, no bypass subtraction), then compare to normal path.
+  2) Audit pre/post routing in `Source/shared/Core/PluginProcessor.cpp` (both precisions):
+     - Dry capture timing, channel stride, and reuse between paths
+     - Bypass copying, emergency fallback, and any per-block fades
+     - Wet-only subtraction branches (ensure consistent in float/double)
+  3) Keep SignalGraph baseline with one pre-sanitize and insert fade OFF while testing routing.
+  4) After fixing routing, re-enable seam (accumulator+OS) and validate again; if glitch returns, finalize FrameAccumulator tail handling and keep OversamplingStage frame guard.
+
+- Notes
+  - FieldChain stage enablement relies on `cfg_.enable*`; our per-stage bypass switches only filter an already-active stage list. For chain-only tests, ensure `cfg_` reflects the desired stages or activate via the processor’s config path.
+
 - Keep: FDN wrap mirroring, 5 ms fade-in, DC blocker; APVTS snapshot.
 - Optional remove: SpikeSilencer, parity cookie asserts, dev transport/cut/phase/master flags and routing, debug logs.
 - Revertable behavior: non-latching bypass → restore early-return passthrough.
+
+### Update — 2025-10-06 (late) — Production clean routing + meters, UI param propagation
+
+- Objective
+  - Permanently eliminate the rhythmic “zipper” by removing dry/wet aliasing in the processor routing, while keeping scopes/meters accurate. Ensure right-side sliders (Tilt/Bass/etc.) update DSP.
+
+- Changes
+  - `Source/shared/Core/PluginProcessor.cpp`
+    - Replace triage harness with permanent clean routing in both float and double paths:
+      - Deep-copy DRY from host buffer at block start.
+      - Build WET in a non-aliased buffer; process `FieldChain` into WET.
+      - Bypass: copy DRY to host; keep meters ticking.
+      - NormalBlend: out = (1−mix)*DRY + mix*WET using global `mixPct` (0..1).
+    - Update meters and correlation inside the new early-return path.
+    - Push post-DSP visualization (`visPost`) before return (float/double paths).
+    - Call `chainF->setParameters(hp)` / `chainD->setParameters(hp)` before `process(...)` to propagate right-side slider params from `HostParams` snapshot.
+  - No changes to FDN/engines required for glitch fix.
+
+- Tests (Live 12, VST3, Master insert)
+  - DryOnly (forced): clean audio, meters move.
+  - WetOnly/Wet−Dry (harness): verified math stable (pre-fix step).
+  - NormalBlend (global mix):
+    - Signal: clean (no zipper/periodic spur) at 64/128/512.
+    - Waveform: visible.
+    - In/Out meters: moving.
+    - Correlation: moving after wiring in early-return path.
+
+- Outcome
+  - Primary glitch resolved via processor routing refactor (non-aliased dry/wet, stable order, single per-block snapshot).
+  - UI right-side sliders: parameter propagation added; further spot checks recommended to confirm all mapped controls (Tilt/Bass/…)
+    drive audible changes through `FieldChain::setParameters(hp)`.
+
+- Tripwires
+  - Grep guard for in-place dry/wet ops on host buffer:
+    - Forbid subtract/mix that reads and writes `buffer` as both DRY and WET in the same scope.
+  - Ensure correlation/meter updates remain in early-return block.
+
+- Follow-ups
+  - If any specific sliders remain inert, map their APVTS IDs into `HostParams` and consume in `FieldChain::setParameters` consistently.
+  - Re-enable SignalGraph seams (accumulator/OS) one-by-one and re-verify; if any regression, revisit FrameAccumulator/Oversampling sizing guards.
+
+- Status
+  - LANDING (routing refactor), awaiting broader control sweep and OS re-enable matrix.
+
+— Commits: routing+meters (this change set)

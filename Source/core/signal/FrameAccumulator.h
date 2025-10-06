@@ -60,6 +60,9 @@ struct FrameAccumulator
 				fill = 0;
 			}
 		}
-		return N;
+		#if JUCE_DEBUG
+		jassert (fill >= 0 && fill < frame);
+		#endif
+		return consumed;
 	}
 };

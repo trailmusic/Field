@@ -49,6 +49,22 @@ static inline float mapDampHzToParam01 (float hz)
     return juce::jlimit (0.0f, 1.0f, (hz - lo) / (hi - lo));
 }
 
+// TRIAGE C: Wet-only probe visible to both float and double paths
+static constexpr bool kWetOnlyByCopy = true;
+
+// === TRIAGE LOGGING UTIL ===
+static void initTriageLoggerOnce()
+{
+    static std::atomic<bool> done { false };
+    if (done.exchange(true)) return;
+    auto logsRoot = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
+                        .getChildFile ("Logs").getChildFile ("Field");
+    logsRoot.createDirectory();
+    auto logFile = logsRoot.getChildFile ("Field_Triage.log");
+    if (juce::Logger::getCurrentLogger() == nullptr)
+        juce::Logger::setCurrentLogger (new juce::FileLogger (logFile, "[Field] triage start", 0));
+}
+
 
 // HostParams is declared in PluginProcessor.h
 
@@ -62,7 +78,8 @@ MyPluginAudioProcessor::MyPluginAudioProcessor()
                                   .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
 , apvts (*this, nullptr, "PARAMS", createParameterLayout())
 {
-    // Constructor - removed logging to prevent file I/O issues
+    // Constructor - debug banner to ensure Live loads fresh binary
+    DBG("[Field] TRIAGE build r1");
     
     // FieldChain instances
     
@@ -134,7 +151,8 @@ bool MyPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 
 void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // prepareToPlay started
+    initTriageLoggerOnce();
+    juce::Logger::writeToLog ("[Field] prepareToPlay begin");
     
     juce::FloatVectorOperations::disableDenormalisedNumberSupport();
     currentSR = sampleRate;
@@ -326,7 +344,6 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     // Motion parameter setup complete
     
     // Engines are now handled by FieldChain template for consistent architecture
-
     // Prepare delay UI bridge
     
     // Prepare delay UI bridge
@@ -350,7 +367,6 @@ void MyPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     
     // prepareToPlay complete
 }
-
 // Utility: build a HostParams snapshot each block
 static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
 {
@@ -514,7 +530,6 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
     // ================================================================
     p.rvDecayProfileMode     = (int) std::round(getRawOr(apvts, "decay_profile_mode", 0.0f));
     p.rvDecayProfileCoupling = (int) std::round(getRawOr(apvts, "decay_profile_coupling", 0.0f));
-    
     // ================================================================
     // 🎯 SIDECHAIN LEARN SYSTEM (JANUARY 2025)
     // ================================================================
@@ -574,7 +589,115 @@ static HostParams makeHostParams (juce::AudioProcessorValueTreeState& apvts)
 void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ignoreUnused (midi);
-    // DRY-ONLY PASSTHROUGH (triage step B): disabled
+    // ---- PRODUCTION CLEAN ROUTING (float) ----
+    {
+        // Snapshot once per block
+        const HostParams* hpPtr = snapshotPtr_.load (std::memory_order_acquire);
+        HostParams hp = hpPtr ? *hpPtr : makeHostParams (apvts);
+
+        juce::dsp::AudioBlock<float> hostOut (buffer);
+        const int C = (int) hostOut.getNumChannels();
+        const int N = (int) hostOut.getNumSamples();
+
+        // Deep-copy DRY
+        juce::AudioBuffer<float> dryCopy (C, N);
+        for (int c = 0; c < C; ++c)
+            dryCopy.copyFrom (c, 0, buffer, c, 0, N);
+
+        // Prepare WET in a separate buffer and process chain into it
+        juce::AudioBuffer<float> wetBuf (C, N);
+        for (int c = 0; c < C; ++c)
+            wetBuf.copyFrom (c, 0, buffer, c, 0, N);
+        juce::dsp::AudioBlock<float> wetBlock (wetBuf);
+        if (chainF)
+        {
+            chainF->setParameters (hp);
+            chainF->process (wetBlock);
+        }
+
+        // Bypass: copy dry and return
+        if (hp.bypass)
+        {
+            for (int c = 0; c < C; ++c) buffer.copyFrom (c, 0, dryCopy, c, 0, N);
+            return;
+        }
+
+        // Normal blend using global MIX (0..1)
+        const float mix = (float) juce::jlimit (0.0, 1.0, hp.mixPct * 0.01);
+        for (int c = 0; c < C; ++c)
+        {
+            float* out = buffer.getWritePointer (c);
+            const float* d = dryCopy.getReadPointer (c);
+            const float* w = wetBuf.getReadPointer (c);
+            for (int n = 0; n < N; ++n)
+                out[n] = (float) ((1.0f - mix) * d[n] + mix * w[n]);
+        }
+
+        // Post-DSP visualization feed (ensure UI sees scopes despite early return)
+        if (buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
+        {
+            const int chL = 0;
+            const int chR = buffer.getNumChannels() > 1 ? 1 : 0;
+            visPost.push (buffer.getReadPointer (chL),
+                          buffer.getNumChannels() > 1 ? buffer.getReadPointer (chR) : nullptr,
+                          buffer.getNumSamples());
+        }
+
+        // Update meters (in/out + correlation) here since we return early
+        {
+            const int cN = juce::jmin (C, getTotalNumOutputChannels());
+            if (cN > 0 && N > 0)
+            {
+                long double sIn = 0;
+                for (int c = 0; c < cN; ++c) { const float* d = dryCopy.getReadPointer (c); for (int i = 0; i < N; ++i) { long double v = d[i]; sIn += v * v; } }
+                const float rmsIn = (float) std::sqrt ((double) (sIn / juce::jmax (1, cN * N)));
+                float oi = meterInRms.load(); meterInRms.store (oi + 0.2f * (rmsIn - oi));
+
+                long double sOut = 0;
+                for (int c = 0; c < cN; ++c) { const float* dptr = buffer.getReadPointer (c); for (int i = 0; i < N; ++i) { long double v = dptr[i]; sOut += v * v; } }
+                const float rmsOut = (float) std::sqrt ((double) (sOut / juce::jmax (1, cN * N)));
+                float oo = meterOutRms.load(); meterOutRms.store (oo + 0.2f * (rmsOut - oo));
+
+                // Correlation on current output block (requires stereo)
+                if (buffer.getNumChannels() >= 2)
+                {
+                    const float* L = buffer.getReadPointer(0);
+                    const float* R = buffer.getReadPointer(1);
+                    long double sLL=0, sRR=0, sLR=0;
+                    for (int i=0;i<N;++i){ const long double l=L[i], r=R[i]; sLL+=l*l; sRR+=r*r; sLR+=l*r; }
+                    const long double denom = std::sqrt (sLL * sRR) + 1e-18L;
+                    const float corr = (float) juce::jlimit (-1.0, 1.0, (double)(sLR / denom));
+                    const float old = meterCorrelation.load();
+                    meterCorrelation.store (old + 0.1f * (corr - old));
+                }
+            }
+        }
+        return;
+    }
+    // ---- END PRODUCTION CLEAN ROUTING ----
+    // TRIAGE: Chain-only (float) — skip pre/post routing/mix
+    {
+        juce::ScopedNoDenormals _ftz;
+        if (chainF)
+        {
+            juce::dsp::AudioBlock<float> io (buffer);
+            chainF->process (io);
+        }
+        return;
+    }
+    // TRIAGE: disabled (restore normal processing path)
+    // TRIAGE: passthrough (no processing) to test host/driver vs plugin
+    constexpr bool kPassThroughPluginFloat = false; // set true to pass input straight through
+    if (kPassThroughPluginFloat)
+        return;
+    // TRIAGE: global hard bypass to prove glitch origin outside plugin
+    constexpr bool kHardBypassPluginFloat = false; // set true to silence output
+    if (kHardBypassPluginFloat)
+    {
+        buffer.clear();
+        return;
+    }
+    // TRIAGE: disabled (restore normal processing path)
     juce::ScopedNoDenormals _ftz;  // FTZ/DAZ for this whole block
     
     const int N = buffer.getNumSamples();
@@ -596,7 +719,6 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     #if defined(__SSE2__)
         _mm_setcsr(_mm_getcsr() | 0x8040); // DAZ|FTZ
     #endif
-    
     isDoublePrecEnabled = false;
 
     // Fail-safe: if chain not prepared, return early (pass-through if your graph is in-place)
@@ -625,7 +747,6 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     }
 
     // (Bypass state updated in parameterChanged)
-
     // Optional internal 64f hop on 32f hosts based on Precision parameter
     const int pMode = precisionMode.load(); // 0 Auto, 1 Force32, 2 Force64
     const bool want64Internal = (pMode == 2);
@@ -859,13 +980,24 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         }
     }
     
-    // TRIAGE C: Wet-only hard output (processed - dry)
-    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+    // TRIAGE C: Wet-only probe
+    // Set true to output raw processed (no dry subtraction) to isolate routing/capture issues
+    constexpr bool kWetOnlyByCopy = false;
+    if (kWetOnlyByCopy)
     {
-        auto* data = buffer.getWritePointer (ch);
-        const float* d0 = drySignal[ch].data();
-        for (int s = 0; s < buffer.getNumSamples(); ++s)
-            data[s] = data[s] - d0[s];
+        // Exact processed; do NOT subtract dry
+        // buffer already holds processed content, so just leave as-is
+    }
+    else
+    {
+        // processed - dry
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            auto* data = buffer.getWritePointer (ch);
+            const float* d0 = drySignal[ch].data();
+            for (int s = 0; s < buffer.getNumSamples(); ++s)
+                data[s] = data[s] - d0[s];
+        }
     }
 
     // Apply MIX control (blend between dry and wet)
@@ -1147,6 +1279,100 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
 void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, juce::MidiBuffer& midi)
 {
     juce::ignoreUnused (midi);
+    // ---- PRODUCTION CLEAN ROUTING (double) ----
+    {
+        const HostParams* hpPtrD = snapshotPtr_.load (std::memory_order_acquire);
+        HostParams hp = hpPtrD ? *hpPtrD : makeHostParams (apvts);
+
+        juce::dsp::AudioBlock<double> hostOut (buffer);
+        const int C = (int) hostOut.getNumChannels();
+        const int N = (int) hostOut.getNumSamples();
+
+        juce::AudioBuffer<double> dryCopy (C, N);
+        for (int c = 0; c < C; ++c)
+            dryCopy.copyFrom (c, 0, buffer, c, 0, N);
+
+        juce::AudioBuffer<double> wetBuf (C, N);
+        for (int c = 0; c < C; ++c)
+            wetBuf.copyFrom (c, 0, buffer, c, 0, N);
+        juce::dsp::AudioBlock<double> wetBlock (wetBuf);
+        if (chainD)
+        {
+            chainD->setParameters (hp);
+            chainD->process (wetBlock);
+        }
+
+        if (hp.bypass)
+        {
+            for (int c = 0; c < C; ++c) buffer.copyFrom (c, 0, dryCopy, c, 0, N);
+            return;
+        }
+
+        // Normal blend using global MIX (0..1)
+        const double mix = juce::jlimit (0.0, 1.0, hp.mixPct * 0.01);
+        for (int c = 0; c < C; ++c)
+        {
+            const double* dry = dryCopy.getReadPointer (c);
+            const double* wet = wetBuf.getReadPointer (c);
+            double* out = buffer.getWritePointer (c);
+            for (int i = 0; i < N; ++i)
+                out[i] = (1.0 - mix) * dry[i] + mix * wet[i];
+        }
+
+        // Post-DSP visualization feed (double path)
+        if (buffer.getNumSamples() > 0 && buffer.getNumChannels() > 0)
+        {
+            const int chL = 0;
+            const int chR = buffer.getNumChannels() > 1 ? 1 : 0;
+            const int n = buffer.getNumSamples();
+            static thread_local std::vector<float> dL, dR; dL.resize((size_t)n); dR.resize((size_t)n);
+            const double* srcL = buffer.getReadPointer (chL);
+            const double* srcR = buffer.getNumChannels() > 1 ? buffer.getReadPointer (chR) : srcL;
+            for (int i = 0; i < n; ++i) { dL[(size_t)i] = (float) srcL[i]; dR[(size_t)i] = (float) srcR[i]; }
+            visPost.push (dL.data(), dR.data(), n);
+        }
+
+        // Update meters (in/out + correlation) here since we return early
+        {
+            const int cN = juce::jmin (C, getTotalNumOutputChannels());
+            if (cN > 0 && N > 0)
+            {
+                long double sIn = 0;
+                for (int c = 0; c < cN; ++c) { const double* d = dryCopy.getReadPointer (c); for (int i = 0; i < N; ++i) { long double v = d[i]; sIn += v * v; } }
+                const float rmsIn = (float) std::sqrt ((double) (sIn / juce::jmax (1, cN * N)));
+                float oi = meterInRms.load(); meterInRms.store (oi + 0.2f * (rmsIn - oi));
+
+                long double sOut = 0;
+                for (int c = 0; c < cN; ++c) { const double* dptr = buffer.getReadPointer (c); for (int i = 0; i < N; ++i) { long double v = dptr[i]; sOut += v * v; } }
+                const float rmsOut = (float) std::sqrt ((double) (sOut / juce::jmax (1, cN * N)));
+                float oo = meterOutRms.load(); meterOutRms.store (oo + 0.2f * (rmsOut - oo));
+
+                // Correlation (stereo only)
+                if (buffer.getNumChannels() >= 2)
+                {
+                    const double* L = buffer.getReadPointer(0);
+                    const double* R = buffer.getReadPointer(1);
+                    long double sLL=0, sRR=0, sLR=0;
+                    for (int i=0;i<N;++i){ const long double l=L[i], r=R[i]; sLL+=l*l; sRR+=r*r; sLR+=l*r; }
+                    const long double denom = std::sqrt (sLL * sRR) + 1e-18L;
+                    const float corr = (float) juce::jlimit (-1.0, 1.0, (double)(sLR / denom));
+                    const float old = meterCorrelation.load();
+                    meterCorrelation.store (old + 0.1f * (corr - old));
+                }
+            }
+        }
+        return;
+    }
+    // ---- END PRODUCTION CLEAN ROUTING ----
+    constexpr bool kPassThroughPluginDouble = false;
+    if (kPassThroughPluginDouble)
+        return;
+    constexpr bool kHardBypassPluginDouble = false;
+    if (kHardBypassPluginDouble)
+    {
+        buffer.clear();
+        return;
+    }
     // DRY-ONLY PASSTHROUGH (triage step B): disabled
     juce::ScopedNoDenormals _ftz;  // FTZ/DAZ for this whole block
     
@@ -1327,7 +1553,7 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
             dst[i] = static_cast<float>(src[i]);
     }
     phaseAlignmentEngine->updateParameters(apvts);
-    constexpr bool kForcePhaseOffD = true; // TRIAGE D
+    constexpr bool kForcePhaseOffD = false; // TRIAGE D
     if (!userBypassNowD && !kForcePhaseOffD)
         phaseAlignmentEngine->processBlock(floatBuffer, phaseDryBuffer);
     for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
@@ -1337,7 +1563,6 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         for (int i = 0; i < buffer.getNumSamples(); ++i)
             dst[i] = static_cast<double>(src[i]);
     }
-    
     // ================================================================
     // 🎯 PRODUCTION-GRADE BUFFER TILING (JANUARY 2025)
     // ================================================================
@@ -1386,12 +1611,19 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         }
     }
     
-    // TRIAGE C: Wet-only hard output (processed - dry) — double path
-    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+    // TRIAGE C: Wet-only probe — double path
+    if (kWetOnlyByCopy)
     {
-        auto* dst = buffer.getWritePointer (ch);
-        const auto* d0 = drySignalD[ch].data();
-        for (int i = 0; i < buffer.getNumSamples(); ++i) dst[i] = dst[i] - d0[i];
+        // leave processed buffer as-is (no subtraction)
+    }
+    else
+    {
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        {
+            auto* dst = buffer.getWritePointer (ch);
+            const auto* d0 = drySignalD[ch].data();
+            for (int i = 0; i < buffer.getNumSamples(); ++i) dst[i] = dst[i] - d0[i];
+        }
     }
 
     // Apply MIX control (blend between dry and wet) - double precision
@@ -1525,7 +1757,6 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         for (int i = 0; i < n; ++i) { dstL[i] = (float) srcL[i]; dstR[i] = (float) srcR[i]; }
         visPost.push (dstL, dstR, n);
     }
-
     // Feed Delay UI metrics (double path)
     {
         DelayMetricsFrame f;
@@ -1634,7 +1865,6 @@ void MyPluginAudioProcessor::refreshReportedLatency()
         DBG("[PDC] reverbLatency=" << newLatency << " samples @ " << getSampleRate() << " Hz");
     }
 }
-
 // Removed broken dynamic re-preparation logic
 // Engines are now prepared once in prepareToPlay with max block size
 
@@ -1832,7 +2062,6 @@ void MyPluginAudioProcessor::applyQualityFromParams()
     if (osFollowQuality.load())    setChoiceIndex (IDs::osMode,    recOs);
     // Phase alignment handled by PhaseAlignmentEngine
 }
-
 // ================================================================
 // 🎛️ QUALITY SYSTEM PARAMETER HANDLERS (JANUARY 2025)
 // ================================================================
@@ -1879,7 +2108,6 @@ void MyPluginAudioProcessor::onOSOfflineChanged(int os)
     juce::ignoreUnused (os);
     scheduleDspRebuildIfNeeded();
 }
-
 void MyPluginAudioProcessor::onOSFilterTypeChanged(int type)
 {
     juce::ignoreUnused (type);
@@ -2033,7 +2261,6 @@ inline int MyPluginAudioProcessor::osLatencySamples(int factor)
         default: return 0; 
     }
 }
-
 void MyPluginAudioProcessor::startTopologyCrossfadeMs(float ms)
 {
     const int samples = juce::roundToInt(ms * getSampleRate() * 0.001f);
@@ -2218,7 +2445,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
         juce::ParameterID{ "dev.master.safe", 1 }, "Dev Master Safe", false));
     params.push_back (std::make_unique<juce::AudioParameterBool>(
         juce::ParameterID{ "dev.phase.off", 1 }, "Dev Phase Off", false));
-    
     // ================================================================
     // 🎛️ QUALITY SYSTEM PARAMETERS (JANUARY 2025)
     // ================================================================
@@ -2227,7 +2453,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     // DO NOT REMOVE or modify without understanding the quality system.
     // Documentation: docs/audits/PluginProcessor_Audit.md
     // ================================================================
-    
     // SR-aware oversampling parameters (Gold Clip parity)
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osRealtime, 1 }, "Oversampling Realtime", juce::StringArray { "Auto by Quality", "Off", "2x", "4x", "8x", "16x" }, 0));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::osOffline, 1 }, "Oversampling Offline", juce::StringArray { "Auto by Quality", "Off", "2x", "4x", "8x", "16x" }, 1));
@@ -2413,53 +2638,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout MyPluginAudioProcessor::crea
     // Phase alignment handled by PhaseAlignmentEngine
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::centerLockOn, 1 }, "Center Lock On", false));
     params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::centerLockDb, 1 }, "Center Lock (dB)", juce::NormalisableRange<float> (0.0f, 6.0f, 0.01f), 0.0f));
-
-    // Delay parameters
-    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayEnabled, 1 }, "Delay Enabled", false));
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayMode, 1 }, "Delay Mode", juce::StringArray { "Digital", "Analog", "Tape" }, 0));
-    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delaySync, 1 }, "Delay Sync", false));
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayGridFlavor, 1 }, "Delay Grid Flavor", juce::StringArray { "1/4", "1/8", "1/16", "1/32", "1/64" }, 0));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayTimeMs, 1 }, "Delay Time (ms)", juce::NormalisableRange<float> (1.0f, 2000.0f, 0.1f), 250.0f));
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayTimeDiv, 1 }, "Delay Time Div", juce::StringArray { "1/4", "1/8", "1/16", "1/32", "1/64" }, 0));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayFeedbackPct, 1 }, "Delay Feedback %", juce::NormalisableRange<float> (0.0f, 95.0f, 0.1f), 30.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayWet, 1 }, "Delay Wet", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.3f));
-    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayKillDry, 1 }, "Delay Kill Dry", false));
-    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayFreeze, 1 }, "Delay Freeze", false));
-    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayPingpong, 1 }, "Delay Pingpong", false));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayCrossfeedPct, 1 }, "Delay Crossfeed %", juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayStereoSpreadPct, 1 }, "Delay Stereo Spread %", juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayWidth, 1 }, "Delay Width", juce::NormalisableRange<float> (0.0f, 2.0f, 0.001f), 1.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayModRateHz, 1 }, "Delay Mod Rate (Hz)", juce::NormalisableRange<float> (0.1f, 10.0f, 0.01f), 0.5f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayModDepthMs, 1 }, "Delay Mod Depth (ms)", juce::NormalisableRange<float> (0.0f, 50.0f, 0.1f), 5.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayWowflutter, 1 }, "Delay Wow/Flutter", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayJitterPct, 1 }, "Delay Jitter %", juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayHpHz, 1 }, "Delay HP (Hz)", juce::NormalisableRange<float> (20.0f, 20000.0f, 1.0f, 0.5f), 20.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayLpHz, 1 }, "Delay LP (Hz)", juce::NormalisableRange<float> (20.0f, 20000.0f, 1.0f, 0.5f), 20000.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayTiltDb, 1 }, "Delay Tilt (dB)", juce::NormalisableRange<float> (-12.0f, 12.0f, 0.01f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delaySat, 1 }, "Delay Saturation", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDiffusion, 1 }, "Delay Diffusion", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDiffuseSizeMs, 1 }, "Delay Diffuse Size (ms)", juce::NormalisableRange<float> (1.0f, 100.0f, 0.1f), 10.0f));
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayDuckSource, 1 }, "Delay Duck Source", juce::StringArray { "Input", "Output" }, 0));
-    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayDuckPost, 1 }, "Delay Duck Post", false));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckDepth, 1 }, "Delay Duck Depth", juce::NormalisableRange<float> (0.0f, 1.0f, 0.001f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckAttackMs, 1 }, "Delay Duck Attack (ms)", juce::NormalisableRange<float> (0.1f, 100.0f, 0.1f), 10.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckReleaseMs, 1 }, "Delay Duck Release (ms)", juce::NormalisableRange<float> (10.0f, 1000.0f, 0.1f), 100.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckThresholdDb, 1 }, "Delay Duck Threshold (dB)", juce::NormalisableRange<float> (-60.0f, 0.0f, 0.01f), -12.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckRatio, 1 }, "Delay Duck Ratio", juce::NormalisableRange<float> (1.0f, 20.0f, 0.01f), 4.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayDuckLookaheadMs, 1 }, "Delay Duck Lookahead (ms)", juce::NormalisableRange<float> (0.0f, 50.0f, 0.1f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::delayPreDelayMs, 1 }, "Delay Pre-Delay (ms)", juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f), 0.0f));
-    params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayFilterType, 1 }, "Delay Filter Type", juce::StringArray { "None", "HP", "LP", "BP" }, 0));
-    params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayDuckLinkGlobal, 1 }, "Delay Duck Link Global", false));
-
-    // EQ shape/Q additions
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqShelfShape, 1 }, "Shelf Shape (S)", juce::NormalisableRange<float> (0.25f, 1.50f, 0.001f), 0.90f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::eqFilterQ,    1 }, "Filter Q",        juce::NormalisableRange<float> (0.50f, 1.20f, 0.001f), 0.7071f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::mix,         1 }, "Mix",             juce::NormalisableRange<float> (0.0f, 100.0f, 0.1f), 100.0f));
-    params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID{ IDs::tiltLinkS,    1 }, "Tilt Uses Shelf S", true));
-    params.push_back (std::make_unique<juce::AudioParameterBool> (juce::ParameterID{ IDs::eqQLink,      1 }, "Link HP/LP Q",      true));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::hpQ,          1 }, "HP Q",             juce::NormalisableRange<float> (0.50f, 1.20f, 0.001f), 0.7071f));
-    params.push_back (std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ IDs::lpQ,          1 }, "LP Q",             juce::NormalisableRange<float> (0.50f, 1.20f, 0.001f), 0.7071f));
-
     // Delay parameters
     params.push_back (std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ IDs::delayEnabled, 1 }, "Delay Enabled", false));
     params.push_back (std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ IDs::delayMode, 1 }, "Delay Mode", juce::StringArray { "Digital", "Analog", "Tape" }, 0));
@@ -2583,9 +2761,7 @@ static inline Sample softClipT (Sample x)
     // atan clip scaled for ~unity at +/-1
     return std::atan (x) * (Sample) (1.0 / 1.2533141373155);
 }
-
 // --------- prepare/reset ---------
-
 template <typename Sample>
 void FieldChain<Sample>::prepare (const juce::dsp::ProcessSpec& spec)
 {
@@ -2753,7 +2929,6 @@ void FieldChain<Sample>::reset()
     lastHpLR = (Sample) -1;
     lastLpLR = (Sample) -1;
 }
-
 // --------- parameter ingress ---------
 
 template <typename Sample>
@@ -2915,7 +3090,6 @@ void FieldChain<Sample>::setParameters (const HostParams& hp)
     
     // Note: Engine preparation moved to main processBlock functions
     // where buffer information is available
-    
     params.delayMode = hp.delayMode;
     params.delaySync = hp.delaySync;
     params.delayTimeMs = (Sample)hp.delayTimeMs;
@@ -3230,7 +3404,6 @@ void FieldChain<Sample>::applyHP_LP (Block block, Sample hpHz, Sample lpHz)
         lastAppliedHpHz = hpHz;
         if (hpLpPinchState == 0) lastAppliedLpHz = lpHz; else lastAppliedLpHz = (Sample) -1;
     }
-
     // Process in small slices and crossfade banks when retuning
     const int slice = 16;
     for (int i = 0; i < N; i += slice)
@@ -3297,7 +3470,6 @@ void FieldChain<Sample>::applyHP_LP (Block block, Sample hpHz, Sample lpHz)
         }
     }
 }
-
 template <typename Sample>
 void FieldChain<Sample>::updateTiltEQ (Sample tiltDb, Sample pivotHz)
 {
@@ -3495,7 +3667,6 @@ void FieldChain<Sample>::applyThreeBandWidth (Block block,
     applyWidthToBuffer (low, wLo);
     applyWidthToBuffer (mid, wMid);
     applyWidthToBuffer (high, wHi);
-
     // sum back
     for (int c = 0; c < 2; ++c)
     {
@@ -3563,7 +3734,6 @@ void FieldChain<Sample>::applyShufflerWidth (Block block, Sample xoverHz, Sample
         for (int i = 0; i < n; ++i) dst[i] = lo[i] + hi[i];
     }
 }
-
 template <typename Sample>
 void FieldChain<Sample>::applyRotationAsym (Block block, Sample rotationRad, Sample asym)
 {
@@ -3684,7 +3854,6 @@ void FieldChain<Sample>::applySplitPan (Block block, Sample panL, Sample panR)
         R[i] = gRL * l + gRR * r;
     }
 }
-
 template <typename Sample>
 void FieldChain<Sample>::applySaturationOnBlock (juce::dsp::AudioBlock<Sample> b, Sample driveLin)
 {
@@ -3858,7 +4027,6 @@ void FieldChain<Sample>::process (Block block)
     block.multiplyBy (params.gainLin);
 
     // eco path removed
-
     // [PHASE][core] Modes: 2=Hybrid FIR HP/LP, 3=Full FIR (tone+HP/LP). 0/1 use IIR (LR4).
     // Optional auto-linear during edits: force Full Linear while autoLinearSamplesLeft > 0
     const bool autoLinearActive = (autoLinearSamplesLeft > 0);
@@ -3888,7 +4056,7 @@ void FieldChain<Sample>::process (Block block)
             }
         }
     }
-    // else useIIR -> handled later in sub-block loop; no-op here
+    // else useIIR -> handled later in sub-block pipeline; no-op here
 
     // Imaging & placement
     if (params.splitMode) applySplitPan (block, params.panL, params.panR);
@@ -3909,7 +4077,6 @@ void FieldChain<Sample>::process (Block block)
 
     // Core tone using smoothed, gated sub-block path (below)
     // (no early return; continue into sub-block pipeline)
-
     // (skipped while diagnosing)
     // Width Designer: frequency-tilted S (before rotation) when Designer mode only
     if (params.widthMode == 1)
@@ -4235,9 +4402,7 @@ void FieldChain<Sample>::process (Block block)
         // Note: Motion parameters need to be set up properly with APVTS parameter pointers
         // Motion processing handled by MotionController
     }
-    
     // Reverb processing is now handled by FieldChain
-    
     // Delay processing (render to dedicated delayWetBuf; mixed later independently of reverb wet)
     if (params.delayEnabled)
     {
@@ -4421,7 +4586,6 @@ void FieldChain<Sample>::process (Block block)
     {
         applyDynamicEq(block);
     }
-    
     // ================================================================
     // 🎯 REVERB PROCESSING (JANUARY 2025)
     // ================================================================
@@ -4579,7 +4743,6 @@ void FieldChain<Sample>::process (Block block)
     lastOutR = outR;
     #endif
 }
-
 template <typename Sample>
 void FieldChain<Sample>::ensureLinearPhaseKernel (double sampleRate, Sample hpHz, Sample lpHz, int maxBlock, int numChannels)
 {
@@ -4929,7 +5092,6 @@ double FieldChain<Sample>::getDelayLastSamplesL() const { return 0.0; } // Simpl
 
 template <typename Sample>
 double FieldChain<Sample>::getDelayLastSamplesR() const { return 0.0; } // Simplified - no longer tracking individual delay samples
-
 // Explicit instantiation
 template struct FieldChain<float>;
 template struct FieldChain<double>;

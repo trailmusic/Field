@@ -44,7 +44,8 @@ public:
 	void processFrame (juce::dsp::AudioBlock<Sample> frameBlock)
 	{
 		jassert ((int) frameBlock.getNumChannels() == chans);
-		jassert ((int) frameBlock.getNumSamples () == frame);
+		if ((int) frameBlock.getNumSamples () != frame)
+			return; // guard: never process mismatched frame sizes
 
 		if (!enabled || power == 0 || oversampling == nullptr)
 			return; // 1x unity

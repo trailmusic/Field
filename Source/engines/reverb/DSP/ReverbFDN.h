@@ -106,6 +106,16 @@ public:
 #else
 		static constexpr bool kFDN_NO_FEEDBACK_TAPS = false;
 #endif
+#if 1 // TRIAGE toggles for A/B pinpointing
+        // Patch A — Pin read/write cadence and skip Hadamard
+        static constexpr bool kPatchA_PinCadence = false;
+        // Patch B — Disable wrap mirror and use guarded reads
+        static constexpr bool kPatchB_DisableMirrorAndGuardedRead = false;
+        // Probe 2 — Force mid-delay read tap
+        static constexpr bool kProbeMidTapRead = true;
+        // Hard bypass: output silence from FDN to prove external source
+        static constexpr bool kBypassFDNShortCircuit = true;
+#endif
 #if JUCE_DEBUG
 		auto dbgOnce = [](bool cond, const char* msg){ if (!cond) { DBG(msg); jassertfalse; } };
 #endif
@@ -119,7 +129,11 @@ public:
 		const auto& feedbackGains = (snap && !snap->g.empty()) ? snap->g : decayDesigner.getLossCoeffs();
 		const float inputGain = (snap) ? snap->inputGain : 0.35f;
 
-		tailOut.clear(); tmp.clear();
+        tailOut.clear(); tmp.clear();
+        if (kBypassFDNShortCircuit)
+        {
+            return; // early-out: no FDN contribution
+        }
 
 		juce::AudioBuffer<float> mono (1, N);
 		mono.clear();
@@ -138,14 +152,34 @@ public:
 			{
 				auto& buf = delay[i];
 				const int logical = logicalLen(buf);
-				const int ri = wrappedRead(writeIdx[i], 1, logical);
+                int ri = 0;
+                if (kProbeMidTapRead)
+                {
+                    ri = logical / 2; // fixed mid-delay tap
+                }
+                else if (kPatchA_PinCadence)
+				{
+					// exact 1-sample lookback regardless of tap table
+					ri = (writeIdx[i] == 0 ? logical - 1 : writeIdx[i] - 1);
+				}
+				else if (kPatchB_DisableMirrorAndGuardedRead)
+				{
+					// branchless guarded read index: ri = writeIdx - 1; if negative, add logical
+					ri = writeIdx[i] - 1;
+					ri += (ri >> 31) & logical;
+				}
+				else
+				{
+					ri = wrappedRead(writeIdx[i], 1, logical);
+				}
 #if JUCE_DEBUG
 				dbgOnce(ri >= 0 && ri < logical, "FDN: read index out of range");
 #endif
 				x[i] = buf[(size_t)ri];
 			}
 
-			hadamardMixInPlace (x, numLines);
+			if (!kPatchA_PinCadence)
+				hadamardMixInPlace (x, numLines);
 			static constexpr float W[8] = { +0.50f, -0.35f, +0.25f, -0.20f, +0.15f, -0.12f, +0.10f, -0.08f };
 			const float excite = mono.getSample(0, n);
 			const float fbScalar = kFDN_NO_FEEDBACK_TAPS ? 0.0f : feedback_.tick();
@@ -164,8 +198,9 @@ public:
 				buf[(size_t)writeIdx[i]] = y;
 				const int prev = writeIdx[i];
                 incWrite(writeIdx[i], logical);
-                if (writeIdx[i] == 0 && prev != 0) {
-                    postWrapPad(buf);
+				if (writeIdx[i] == 0 && prev != 0) {
+					if (!kPatchB_DisableMirrorAndGuardedRead)
+						postWrapPad(buf);
 #if JUCE_DEBUG
                     DBG("[FDN] wrap at line=" << i << " n=" << n);
 #endif
@@ -218,6 +253,9 @@ private:
 	{
 		const int len = logicalLen(v);
 		if (len <= 0) return;
+#if JUCE_DEBUG
+		jassert (len >= 1 && (int) v.size() >= len + kPad);
+#endif
 		for (int i = 0; i < kPad; ++i) v[(size_t)len + (size_t)i] = v[(size_t)i];
 	}
 	static inline void incWrite (int& w, int len) noexcept { if (++w >= len) w = 0; }

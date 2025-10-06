@@ -28,13 +28,15 @@ struct SignalGraph
 		// Prepare accumulators and stages (float/double variants)
 		accF.prepare (numChans, engineFrame);
 		accD.prepare (numChans, engineFrame);
-		const int osPower = 1; // 2x for testing later
-		osF.prepare (sampleRate, numChans, osPower, engineFrame);
-		osD.prepare (sampleRate, numChans, osPower, engineFrame);
-		osF.setEnabled (useOversampling.load() && !forceOSOff.load());
-		osD.setEnabled (useOversampling.load() && !forceOSOff.load());
-		insertFadeF.arm(128);
-		insertFadeD.arm(128);
+        const int osPower = 1; // restore default
+        osF.prepare (sampleRate, numChans, osPower, engineFrame);
+        osD.prepare (sampleRate, numChans, osPower, engineFrame);
+        osF.setEnabled (useOversampling.load() && !forceOSOff.load());
+        osD.setEnabled (useOversampling.load() && !forceOSOff.load());
+        // TRIAGE: optional disable of insert fades
+        constexpr bool kDisableInsertFade = true;
+        insertFadeF.arm(kDisableInsertFade ? 0 : 128);
+        insertFadeD.arm(kDisableInsertFade ? 0 : 128);
 		firstProcessF = firstProcessD = true;
 		reset();
 	}
@@ -52,40 +54,65 @@ struct SignalGraph
 
 	void process (juce::dsp::AudioBlock<float> block) noexcept
 	{
+        // Host-frame no-op mode: make engineFrame match host N, skip accumulator
+        constexpr bool kHostFrameNoop = false;
+        const int N = (int) block.getNumSamples();
+        if (kHostFrameNoop)
+        {
+            if (engineFrame != N)
+            {
+                engineFrame = N;
+                accF.prepare (numChans, engineFrame);
+                const int osPower = 1;
+                osF.prepare (sampleRate, numChans, osPower, engineFrame);
+                osF.setEnabled (useOversampling.load() && !forceOSOff.load());
+            }
+            constexpr bool kDisableSanitize = true;
+            if (!kDisableSanitize)
                 sanitize (block);
-		insertFadeF.apply (block);
-		const bool osOn = (useOversampling.load() && !forceOSOff.load());
-		if (osOn)
-		{
-			accF.pushAndConsume (block, [this](juce::dsp::AudioBlock<float> fixed){
-				osF.processFrame (fixed);
-			});
-		}
-		FIELD_TELEM_THROTTLED ("[SG] sr=" << (int) sampleRate
-								<< " hostN=" << (int) block.getNumSamples()
-								<< " frame=" << engineFrame
-								<< " chans=" << (int) block.getNumChannels()
-								<< " OS=" << (osOn ? "ON" : "OFF"));
-                sanitize (block);
+            // TRIAGE: disable OS entirely in host-frame mode
+            juce::ignoreUnused (osF);
+            return;
+        }
+        sanitize (block);
+        const bool osOn = (useOversampling.load() && !forceOSOff.load());
+        if (osOn)
+        {
+            accF.pushAndConsume (block, [this](juce::dsp::AudioBlock<float> fixed){
+                osF.processFrame (fixed);
+            });
+        }
 	}
 
 	void process (juce::dsp::AudioBlock<double> block) noexcept
 	{
+        // Host-frame no-op mode: make engineFrame match host N, skip accumulator
+        constexpr bool kHostFrameNoop = false;
+        const int N = (int) block.getNumSamples();
+        if (kHostFrameNoop)
+        {
+            if (engineFrame != N)
+            {
+                engineFrame = N;
+                accD.prepare (numChans, engineFrame);
+                const int osPower = 1;
+                osD.prepare (sampleRate, numChans, osPower, engineFrame);
+                osD.setEnabled (useOversampling.load() && !forceOSOff.load());
+            }
+            constexpr bool kDisableSanitize = true;
+            if (!kDisableSanitize)
                 sanitize (block);
-		insertFadeD.apply (block);
-		const bool osOn = (useOversampling.load() && !forceOSOff.load());
-		if (osOn)
-		{
-			accD.pushAndConsume (block, [this](juce::dsp::AudioBlock<double> fixed){
-				osD.processFrame (fixed);
-			});
-		}
-		FIELD_TELEM_THROTTLED ("[SGD] sr=" << (int) sampleRate
-								<< " hostN=" << (int) block.getNumSamples()
-								<< " frame=" << engineFrame
-								<< " chans=" << (int) block.getNumChannels()
-								<< " OS=" << (osOn ? "ON" : "OFF"));
-                sanitize (block);
+            juce::ignoreUnused (osD);
+            return;
+        }
+        sanitize (block);
+        const bool osOn = (useOversampling.load() && !forceOSOff.load());
+        if (osOn)
+        {
+            accD.pushAndConsume (block, [this](juce::dsp::AudioBlock<double> fixed){
+                osD.processFrame (fixed);
+            });
+        }
 	}
 
 	int getPreparedBlockSize() const noexcept { return preparedMax; }
