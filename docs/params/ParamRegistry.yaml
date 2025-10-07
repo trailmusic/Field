@@ -167,4 +167,514 @@ params:
     owner: dev
     build: debug
 
+  # --- UI legacy/feature IDs observed in panes (to be harmonized) ---
+  # Reverb UI controls
+  - id: reverb.enabled
+    name: Reverb Enable
+    type: bool
+    default: false
+    owner: reverb
+    used_by: [ReverbControlsPane]
+  - id: reverb.preDelayMs
+    name: Pre-Delay (ms)
+    type: float
+    range: { min: 0.0, max: 120.0, step: 0.01 }
+    default: 20.0
+    display: ms
+    owner: reverb
+  - id: reverb.er.levelDb
+    name: ER Level
+    type: float
+    range: { min: -24.0, max: +24.0, step: 0.01 }
+    default: 0.0
+    display: dB
+    owner: reverb
+  - id: reverb.er.densityPct
+    name: ER Density
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 50.0
+    owner: reverb
+  - id: reverb.er.widthPct
+    name: ER Width
+    type: float
+    range: { min: 0.0, max: 200.0 }
+    default: 100.0
+    owner: reverb
+  - id: reverb.er.timeMs
+    name: ER Time
+    type: float
+    range: { min: 0.0, max: 250.0, step: 0.1 }
+    default: 60.0
+    display: ms
+    owner: reverb
+  - id: reverb.er.toTailPct
+    name: ER→Tail
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 50.0
+    owner: reverb
+  - id: reverb.diffusionPct
+    name: Diffusion
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 50.0
+    owner: reverb
+  - id: reverb.densityPct
+    name: Density
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 62.0
+    owner: reverb
+  - id: reverb.mod.depthCents
+    name: Mod Depth
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    owner: reverb
+  - id: reverb.mod.rateHz
+    name: Mod Rate
+    type: float
+    range: { min: 0.1, max: 10.0 }
+    default: 1.0
+    display: Hz
+    owner: reverb
+  - id: reverb.widthPct
+    name: Width (tail)
+    type: float
+    range: { min: 0.0, max: 200.0 }
+    default: 115.0
+    owner: reverb
+  - id: reverb.rotationDeg
+    name: Rotation
+    type: float
+    range: { min: -180.0, max: 180.0 }
+    default: 0.0
+    display: deg
+    owner: reverb
+  - id: reverb.sizePct
+    name: Size (legacy)
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 62.0
+    owner: reverb
+  - id: reverb.decaySec
+    name: Decay
+    type: float
+    range: { min: 0.1, max: 20.0 }
+    default: 3.0
+    display: s
+    owner: reverb
+  - id: reverb.killDry
+    name: Wet Only
+    type: bool
+    default: false
+    owner: reverb
+  - id: reverb.wet01
+    name: Wet Mix (engine)
+    type: float
+    range: { min: 0.0, max: 1.0 }
+    default: 0.33
+    owner: reverb
+  - id: reverb.bloomPct
+    name: Bloom
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    owner: reverb
+  - id: reverb.distancePct
+    name: Distance
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    owner: reverb
+  - id: reverb.shimmer.amtPct
+    name: Shimmer Amount
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    owner: reverb
+  - id: reverb.shimmer.intPct
+    name: Shimmer Intensity
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    owner: reverb
+  - id: reverb.gateAmtPct
+    name: Gate Amount
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    owner: reverb
+  - id: reverb.dreq.xoverLoHz
+    name: DREQ XO Low
+    type: float
+    range: { min: 20.0, max: 20000.0, curve: log }
+    default: 200.0
+    display: Hz
+    owner: reverb
+  - id: reverb.dreq.xoverHiHz
+    name: DREQ XO High
+    type: float
+    range: { min: 20.0, max: 20000.0, curve: log }
+    default: 2000.0
+    display: Hz
+    owner: reverb
+  - id: reverb.follow.width
+    name: Follow Width
+    type: bool
+    default: false
+    owner: reverb
+  - id: reverb.follow.widthAmt
+    name: Follow Width Amount
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    owner: reverb
+  - id: reverb.follow.rot
+    name: Follow Rotation
+    type: bool
+    default: false
+    owner: reverb
+  - id: reverb.follow.rotAmt
+    name: Follow Rotation Amount
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    owner: reverb
+  - id: reverb.outTrimDb
+    name: Output Trim
+    type: float
+    range: { min: -24.0, max: +24.0, step: 0.01 }
+    default: 0.0
+    display: dB
+    owner: reverb
+  - id: reverb.duck.on
+    name: Duck Enable
+    type: bool
+    default: false
+    owner: reverb
+  - id: reverb.freeze
+    name: Freeze
+    type: bool
+    default: false
+    owner: reverb
+  - id: reverb.dreq.apply
+    name: DREQ Apply
+    type: choice
+    choices: [Off, ER, Tail, Both]
+    default: Off
+    owner: reverb
+
+  # Delay UI controls
+  - id: delay_enabled
+    name: Delay Enable
+    type: bool
+    default: false
+    owner: delay
+  - id: delay_sync
+    name: Delay Sync
+    type: bool
+    default: false
+    owner: delay
+  - id: delay_kill_dry
+    name: Kill Dry
+    type: bool
+    default: false
+    owner: delay
+  - id: delay_freeze
+    name: Freeze
+    type: bool
+    default: false
+    owner: delay
+  - id: delay_pingpong
+    name: Pingpong
+    type: bool
+    default: false
+    owner: delay
+  - id: delay_duck_post
+    name: Duck Post
+    type: bool
+    default: false
+    owner: delay
+  - id: delay_mode
+    name: Delay Mode
+    type: choice
+    choices: [Digital, Analog, Tape]
+    default: Digital
+    owner: delay
+  - id: delay_grid_flavor
+    name: Grid Flavor
+    type: choice
+    choices: [Straight, Dotted, Triplet]
+    default: Straight
+    owner: delay
+  - id: delay_duck_source
+    name: Duck Source
+    type: choice
+    choices: [Pre, Post, External]
+    default: Pre
+    owner: delay
+  - id: delay_filter_type
+    name: Filter Type
+    type: choice
+    choices: [Off, HP, LP, BP]
+    default: Off
+    owner: delay
+  - id: delay_time_ms
+    name: Time
+    type: float
+    range: { min: 0.0, max: 4000.0, step: 0.1 }
+    default: 400.0
+    display: ms
+    owner: delay
+  - id: delay_feedback_pct
+    name: Feedback
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 30.0
+    owner: delay
+  - id: delay_wet
+    name: Wet
+    type: float
+    range: { min: 0.0, max: 1.0 }
+    default: 0.33
+    owner: delay
+  - id: delay_mod_rate_hz
+    name: Mod Rate
+    type: float
+    range: { min: 0.1, max: 10.0 }
+    default: 1.0
+    display: Hz
+    owner: delay
+  - id: delay_mod_depth_ms
+    name: Mod Depth
+    type: float
+    range: { min: 0.0, max: 50.0 }
+    default: 0.0
+    display: ms
+    owner: delay
+  - id: delay_crossfeed_pct
+    name: Crossfeed
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    owner: delay
+  - id: delay_width
+    name: Width
+    type: float
+    range: { min: 0.0, max: 2.0 }
+    default: 1.0
+    owner: delay
+  - id: delay_pre_delay_ms
+    name: Pre-Delay
+    type: float
+    range: { min: 0.0, max: 120.0 }
+    default: 0.0
+    display: ms
+    owner: delay
+  - id: delay_sat
+    name: Saturation
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    owner: delay
+  - id: delay_diffusion
+    name: Diffusion
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    owner: delay
+  - id: delay_diffuse_size_ms
+    name: Diffuse Size
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    display: ms
+    owner: delay
+  - id: delay_hp_hz
+    name: HP
+    type: float
+    range: { min: 20.0, max: 20000.0, curve: log }
+    default: 20.0
+    display: Hz
+    owner: delay
+  - id: delay_lp_hz
+    name: LP
+    type: float
+    range: { min: 20.0, max: 20000.0, curve: log }
+    default: 20000.0
+    display: Hz
+    owner: delay
+  - id: delay_tilt_db
+    name: Tilt (dB)
+    type: float
+    range: { min: -12.0, max: +12.0 }
+    default: 0.0
+    display: dB
+    owner: delay
+  - id: delay_wowflutter
+    name: Wow/Flutter
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    owner: delay
+  - id: delay_jitter_pct
+    name: Jitter
+    type: float
+    range: { min: 0.0, max: 100.0 }
+    default: 0.0
+    owner: delay
+  - id: delay_duck_threshold_db
+    name: Duck Threshold
+    type: float
+    range: { min: -60.0, max: 0.0 }
+    default: -24.0
+    display: dB
+    owner: delay
+  - id: delay_duck_depth
+    name: Duck Depth
+    type: float
+    range: { min: 0.0, max: 24.0 }
+    default: 6.0
+    display: dB
+    owner: delay
+  - id: delay_duck_attack_ms
+    name: Duck Attack
+    type: float
+    range: { min: 0.0, max: 200.0 }
+    default: 10.0
+    display: ms
+    owner: delay
+  - id: delay_duck_release_ms
+    name: Duck Release
+    type: float
+    range: { min: 10.0, max: 2000.0 }
+    default: 200.0
+    display: ms
+    owner: delay
+  - id: delay_duck_lookahead_ms
+    name: Duck Lookahead
+    type: float
+    range: { min: 0.0, max: 10.0 }
+    default: 0.0
+    display: ms
+    owner: delay
+  - id: delay_duck_ratio
+    name: Duck Ratio
+    type: float
+    range: { min: 1.0, max: 20.0 }
+    default: 4.0
+    owner: delay
+
+  # XY legacy controls
+  - id: pan
+    name: Pan (legacy)
+    type: float
+    range: { min: -1.0, max: 1.0 }
+    default: 0.0
+    owner: core
+  - id: rotation_deg
+    name: Rotation (deg)
+    type: float
+    range: { min: -180.0, max: 180.0 }
+    default: 0.0
+    owner: core
+  - id: asymmetry
+    name: Asymmetry
+    type: float
+    range: { min: -1.0, max: 1.0 }
+    default: 0.0
+    owner: core
+  - id: mono_hz
+    name: Mono Lowpass
+    type: float
+    range: { min: 20.0, max: 20000.0, curve: log }
+    default: 120.0
+    owner: core
+  - id: hp_hz
+    name: HP Hz
+    type: float
+    range: { min: 20.0, max: 20000.0, curve: log }
+    default: 20.0
+    owner: core
+  - id: lp_hz
+    name: LP Hz
+    type: float
+    range: { min: 20.0, max: 20000.0, curve: log }
+    default: 20000.0
+    owner: core
+  - id: eq_filter_q
+    name: EQ Q
+    type: float
+    range: { min: 0.1, max: 10.0 }
+    default: 0.7
+    owner: core
+  - id: hp_q
+    name: HP Q
+    type: float
+    range: { min: 0.1, max: 10.0 }
+    default: 0.7
+    owner: core
+  - id: lp_q
+    name: LP Q
+    type: float
+    range: { min: 0.1, max: 10.0 }
+    default: 0.7
+    owner: core
+  - id: eq_shelf_shape
+    name: Shelf Shape
+    type: float
+    range: { min: 0.0, max: 1.0 }
+    default: 0.5
+    owner: core
+  - id: bass_db
+    name: Bass dB
+    type: float
+    range: { min: -12.0, max: +12.0 }
+    default: 0.0
+    owner: core
+  - id: bass_freq
+    name: Bass Freq
+    type: float
+    range: { min: 20.0, max: 500.0, curve: log }
+    default: 120.0
+    owner: core
+  - id: tilt
+    name: Tilt (legacy)
+    type: float
+    range: { min: -6.0, max: +6.0 }
+    default: 0.0
+    owner: core
+  - id: tilt_freq
+    name: Tilt Pivot
+    type: float
+    range: { min: 100.0, max: 8000.0, curve: log }
+    default: 1000.0
+    owner: core
+  - id: scoop
+    name: Scoop (legacy)
+    type: float
+    range: { min: -12.0, max: +12.0 }
+    default: 0.0
+    owner: core
+  - id: scoop_freq
+    name: Scoop Freq
+    type: float
+    range: { min: 100.0, max: 8000.0, curve: log }
+    default: 1000.0
+    owner: core
+  - id: air_db
+    name: Air dB
+    type: float
+    range: { min: -12.0, max: +12.0 }
+    default: 0.0
+    owner: core
+  - id: air_freq
+    name: Air Freq
+    type: float
+    range: { min: 4000.0, max: 20000.0, curve: log }
+    default: 8000.0
+    owner: core
+
 
