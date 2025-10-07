@@ -34,6 +34,8 @@ Absolutely. Here’s a single, consolidated “master doc” that merges the two
 18. [Ownership & Cadence](#ownership--cadence)
 19. [Appendix A — Code Sketches](#appendix-a--code-sketches)
 20. [Appendix B — Tripwire Patterns](#appendix-b--tripwire-patterns)
+21. [CI — Param ID Drift Check](#ci--param-id-drift-check)
+22. [DynEQ — 24-band Spec & Wiring Plan](#dyneq--24-band-spec--wiring-plan)
 
 ---
 
@@ -682,6 +684,47 @@ mutable PrepCookie cookieF_{}, cookieD_{};
 * Legacy scope: `\bDspRuntimeConfig\b|#include\s*"shared/Core/|#include\s*"features/.*/DSP/`
 * Audio thread param reads: `AudioProcessorValueTreeState|getRawParameterValue\s*\(.*\).*process(Block|\()`
 * Dry/Wet alias heuristic: `(AudioBlock<[^>]+>\s*\(\s*buffer\s*\).*(\+=|-=)|=\s*.+\bbuffer\b.*\bbuffer\b)`
+
+---
+
+## CI — Param ID Drift Check
+
+We enforce that `docs/params/ParamRegistry.yaml` stays in lockstep with code IDs.
+
+- Script: `tools/check_param_ids.py` (Python 3.11+)
+- CMake target: `check_param_ids` (runs on build if Python found)
+- CI: optional GitHub Action job to run the script on push/PR
+
+Behavior:
+- Scans YAML `params[].id` and string literals in `Source/**` that look like `group.id` paths
+- Reports and fails on drift (IDs in YAML not in code, or vice-versa)
+- Ignores templated IDs like `dyneq.b[i].*` (expanded by code)
+
+This prevents “phantom” parameters in docs or stale IDs in code.
+
+---
+
+## DynEQ — 24-band Spec & Wiring Plan
+
+Goal: Best-in-class dynamic EQ with 24 bands, surgical yet musical; fast automation, clean lookahead, and robust null tests.
+
+Spec highlights:
+- 24 bands, types: bell / low-shelf / high-shelf / notch / bandpass / tilt
+- Per-band: freq (20–20k, log), Q (0.1–24, log), static gain, range dB, ratio,
+  threshold (dBFS), soft knee, attack (0.1–200 ms), release (5–2000 ms), hold, makeup,
+  sidechain (band/wide/external), per-band wet, direction (down/up/both)
+- Global: enable, mode (down/up/split/expand), channel link (stereo/dualMono/MS), lookahead (ms)
+
+Wiring plan:
+- Registry: add `dyneq.enabled`, `dyneq.global.*`, and `dyneq.b[i].*` IDs
+- Snapshot: `DynEqSnap { enabled, globalMode, link, lookaheadSamples, band[24] }`
+- FieldChain: map snapshot → `Node_DynEq::DynEqParams` and call `setParameters`
+- Node DSP (follow-ups): RBJ filters; band/wide sidechain; hybrid RMS/peak; soft knee; PDR release;
+  single global lookahead FIFO; per-band makeup; equal-power band wet
+
+Done criteria:
+- Lookahead adds correct host-rate latency via message thread
+- Automation is zipper-free; nulls clean; per-band GR behaves for down/up/split
 
 ---
 
