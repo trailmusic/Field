@@ -767,6 +767,11 @@ Verification:
 - Build OK across Standalone/AU/VST3. No change to reported latency (hold/rel are dynamic only).
 - Visual: existing dyn handle shows range; follow-up will add explicit GR meter/overlay.
 
+UI bindings expanded (2025-10-07):
+- Added parameter IDs for ratio, knee, makeup, wet to `DynamicEqParamIDs.h`.
+- Node: implemented sidechain HP/LP filters, applied makeup and wet scaling to dynamic gain.
+- Next: bind per-band Ratio/Knee/Threshold/Direction/Makeup/Wet/SC HP/LP/Detector Source controls in `DynEqTab`.
+
 Follow-ups (tracked in `docs/FIELD_CURRENT_TODO.md`):
 - Upgrade DynEQ UI to expose Attack/Release/Hold comprehensively (labels, ranges, presets).
 - Audit full DynEQ UI coverage vs backend (bands, modes, sidechain, lookahead).

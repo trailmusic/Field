@@ -33,6 +33,10 @@ namespace Band
     static constexpr const char* dynAtkMs    = "b_dynAtkMs";
     static constexpr const char* dynRelMs    = "b_dynRelMs";
     static constexpr const char* dynHoldMs   = "b_dynHoldMs";
+    static constexpr const char* dynRatio    = "b_dynRatio";
+    static constexpr const char* dynKneeDb   = "b_dynKneeDb";
+    static constexpr const char* dynMakeupDb = "b_dynMakeupDb";
+    static constexpr const char* dynWet01    = "b_dynWet01";
     static constexpr const char* dynLookAheadMs = "b_dynLookAheadMs"; // 0/3/6
     static constexpr const char* dynDetectorSrc = "b_dynDetectorSrc"; // 0=PreXY,1=PostXY,2=External1,3=External2
     static constexpr const char* dynDetHPHz  = "b_dynDetHPHz";
@@ -109,6 +113,10 @@ inline void addDynamicEqParameters (std::vector<std::unique_ptr<juce::RangedAudi
         params.push_back (floatp (S(Band::dynAtkMs),    "Dyn Attack", {0.1f, 200.f, 0.f}, 10.f));
         params.push_back (floatp (S(Band::dynRelMs),    "Dyn Release",{5.f, 1000.f, 0.f}, 120.f));
         params.push_back (floatp (S(Band::dynHoldMs),   "Dyn Hold",   {0.f, 500.f, 0.f}, 0.f));
+        params.push_back (floatp (S(Band::dynRatio),    "Dyn Ratio",  {1.f, 10.f, 0.f}, 3.f));
+        params.push_back (floatp (S(Band::dynKneeDb),   "Dyn Knee",   {0.f, 24.f, 0.f}, 6.f));
+        params.push_back (floatp (S(Band::dynMakeupDb), "Dyn Makeup", {-24.f, 24.f, 0.f}, 0.f));
+        params.push_back (floatp (S(Band::dynWet01),    "Dyn Wet",    {0.f, 1.f, 0.f}, 1.f));
         params.push_back (choice (S(Band::dynLookAheadMs), "Dyn LookAhead", StringArray{ "0","3","6" }, 0));
         params.push_back (choice (S(Band::dynDetectorSrc),"Dyn Detector",  StringArray{ "PreXY","PostXY","External1","External2" }, 1));
         params.push_back (floatp (S(Band::dynDetHPHz),   "Dyn Det HP", {20.f, 2000.f, 0.f, 0.3f}, 20.f));
