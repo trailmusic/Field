@@ -125,6 +125,9 @@ struct FieldChain
 		deP_.lookaheadMs        = s.dynEqLookAheadMs;
 
 		imP_.width              = s.imagerWidth;
+
+		// Push simple realtime params into nodes that support direct handoff
+		imager_.setWidth (imP_.width);
 	}
 
 	template <typename Sample>

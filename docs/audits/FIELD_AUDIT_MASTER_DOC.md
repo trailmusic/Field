@@ -27,10 +27,11 @@ Absolutely. Here’s a single, consolidated “master doc” that merges the two
 12. [Rollback Plan](#rollback-plan)
 13. [Cleanup Map (dev artifacts)](#cleanup-map-dev-artifacts)
 14. [Editor Lifecycle — UI Close Suspension Fix](#editor-lifecycle--ui-close-suspension-fix)
-15. [Live Glitch Triage Log](#live-glitch-triage-log)
-16. [Ownership & Cadence](#ownership--cadence)
-17. [Appendix A — Code Sketches](#appendix-a--code-sketches)
-18. [Appendix B — Tripwire Patterns](#appendix-b--tripwire-patterns)
+15. [UI Stability — BandTab Width Crash Fix](#ui-stability--bandtab-width-crash-fix)
+16. [Live Glitch Triage Log](#live-glitch-triage-log)
+17. [Ownership & Cadence](#ownership--cadence)
+18. [Appendix A — Code Sketches](#appendix-a--code-sketches)
+19. [Appendix B — Tripwire Patterns](#appendix-b--tripwire-patterns)
 
 ---
 
@@ -533,6 +534,30 @@ for (int c=0; c<C; ++c) {
 **Verification:** Close the editor during playback in Live; audio continues, playhead advances, no mute. Build matrix unchanged.
 
 **Follow-up:** Consider an offline harness test that simulates editor open/close and asserts `isSuspended()==false` post-close when processor remains active.
+
+---
+
+## UI Stability — BandTab Width Crash Fix
+
+**Symptom:** Scrolling the Width knob in BandTab crashed Live with `EXC_BAD_ACCESS` in `juce::CharPointer_ASCII::isEmpty()` from a `String(const char*)` path inside `BandControlsPane::makeCell`.
+
+**Root cause:** The UI code captured a raw `const char*` parameter ID (`pid`) by reference in lambdas and used it to build `juce::String` later, after the original pointer’s lifetime was not guaranteed — causing invalid memory access.
+
+**Fix (landed):** Copy `pid` into a stable `juce::String paramId` immediately and capture only values in callbacks.
+
+- File: `Source/features/band/BandControlsPane.h`
+- Function: `makeCell(...)`
+- Changes:
+  - `const juce::String paramId = (pid != nullptr ? juce::String(pid) : juce::String());`
+  - Validate `paramId` exists in APVTS before creating attachments
+  - Compute `valueDecimals` once and capture by value in `applyLabel` lambda
+  - `s.onValueChange = [applyLabel]() { applyLabel(); };`
+
+**Why safe:** Eliminates dangling pointer risk; all captured data are value-captured and independent of external lifetimes.
+
+**Verification:** Build succeeded; Live test should no longer crash when adjusting Width.
+
+**Follow-up:** Consider centralizing a safe `makeSliderAttachment(apvts, juce::String id, juce::Slider&)` helper to standardize this pattern across panes.
 
 ---
 

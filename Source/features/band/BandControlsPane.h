@@ -63,8 +63,10 @@ private:
     }
     void makeCell (juce::Slider& s, juce::Label& v, const juce::String& cap, const char* pid)
     {
+        // Copy parameter ID into a stable String to avoid dangling pointer captures
+        const juce::String paramId = (pid != nullptr ? juce::String(pid) : juce::String());
         // Safety check: ensure parameter exists before creating attachment
-        if (pid == nullptr || apvts.getParameter(juce::String(pid)) == nullptr)
+        if (paramId.isEmpty() || apvts.getParameter(paramId) == nullptr)
         {
             // Skip this cell if parameter doesn't exist
             return;
@@ -81,23 +83,24 @@ private:
         addAndMakeVisible (*cell);
         knobCells.emplace_back (cell.get());
         ownedCells.emplace_back (std::move (cell));
-        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, pid, s));
+        sAtts.push_back (std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment> (apvts, paramId, s));
 
-        auto applyLabel = [&]()
+        // Compute decimal places based on parameter ID once; avoid capturing paramId by reference
+        int valueDecimals = 2;
+        if (paramId.containsIgnoreCase ("_hz")) valueDecimals = 0;
+        else if (paramId.equalsIgnoreCase ("width")) valueDecimals = 2;
+        else if (paramId.containsIgnoreCase ("_db")) valueDecimals = 1;
+        else if (paramId.containsIgnoreCase ("_ms")) valueDecimals = 0;
+        else if (paramId.containsIgnoreCase ("auto_depth")) valueDecimals = 2;
+        else if (paramId.containsIgnoreCase ("width_max")) valueDecimals = 2;
+        else if (paramId.containsIgnoreCase ("_pct")) valueDecimals = 0;
+
+        auto applyLabel = [&s, &v, valueDecimals]()
         {
-            int decimals = 2;
-            juce::String id (pid);
-            if (id.containsIgnoreCase ("_hz")) decimals = 0;
-            else if (id.equalsIgnoreCase ("width")) decimals = 2;
-            else if (id.containsIgnoreCase ("_db")) decimals = 1;
-            else if (id.containsIgnoreCase ("_ms")) decimals = 0;
-            else if (id.containsIgnoreCase ("auto_depth")) decimals = 2;
-            else if (id.containsIgnoreCase ("width_max")) decimals = 2;
-            else if (id.containsIgnoreCase ("_pct")) decimals = 0;
-            v.setText (juce::String (s.getValue(), decimals), juce::dontSendNotification);
+            v.setText (juce::String (s.getValue(), valueDecimals), juce::dontSendNotification);
         };
         applyLabel();
-        s.onValueChange = [&, applyLabel]() { applyLabel(); };
+        s.onValueChange = [applyLabel]() { applyLabel(); };
     }
 
     void buildControls()
