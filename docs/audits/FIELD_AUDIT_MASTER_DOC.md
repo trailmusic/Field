@@ -600,11 +600,14 @@ for (int c=0; c<C; ++c) {
 - Snapshot captures values; `FieldChain::setParameters(...)` fans-out PODs
 - `imager.width` consumed by `Node_Imager`
 - Equal-power blend + post-blend output gain live in processor
+- CI Param ID drift check added (`tools/check_param_ids.py`, CMake target `check_param_ids`)
+- DynEQ registry appended (global + templated per-band), snapshot structs and fan-out stubs landed
 
 **Next:**
 - CI: grep/diff code IDs against YAML; fail on mismatch
 - Wire `tone.tilt.dbPerOct` / `tone.bass.db` into node/engine
 - Wire `reverb.preDelay.ms`, `reverb.size.norm`, `reverb.damping.hz` into `Node_Reverb`
+- Build DynEQ snapshot builder and full `Node_DynEq` parameter map; add per-band UI bindings
 
 ---
 
