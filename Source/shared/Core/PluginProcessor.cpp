@@ -634,19 +634,27 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
             return;
         }
 
-        // Equal-power blend using global MIX (0..1)
+        // Equal-power blend using global MIX (smoothed) and smoothed post gain
         const float wet01 = (float) juce::jlimit (0.0, 1.0, hp.mixPct * 0.01);
-        const float theta = wet01 * juce::MathConstants<float>::halfPi;
-        const float gDry = std::cos (theta);
-        const float gWet = std::sin (theta);
-        const float outGain = juce::Decibels::decibelsToGain ((float) hp.outputGainDb);
+        static thread_local float s_gd = 1.0f, s_gw = 0.0f, s_out = 1.0f;
+        const float mixTauA = std::exp (-1.0f / (0.002f * (float) currentSR));
+        const float outTauA = std::exp (-1.0f / (0.007f * (float) currentSR));
+        const float t = wet01 * juce::MathConstants<float>::halfPi;
+        const float gdT = std::cos (t);
+        const float gwT = std::sin (t);
+        const float outT = juce::Decibels::decibelsToGain ((float) hp.outputGainDb);
         for (int c = 0; c < C; ++c)
         {
             float* out = buffer.getWritePointer (c);
             const float* d = dryCopy.getReadPointer (c);
             const float* w = wetBuf.getReadPointer (c);
             for (int n = 0; n < N; ++n)
-                out[n] = (gDry * d[n] + gWet * w[n]) * outGain;
+            {
+                s_gd  = gdT  + mixTauA * (s_gd  - gdT);
+                s_gw  = gwT  + mixTauA * (s_gw  - gwT);
+                s_out = outT + outTauA * (s_out - outT);
+                out[n] = (s_gd * d[n] + s_gw * w[n]) * s_out;
+            }
         }
         // Apply constant-power balance (post-blend)
         if (C >= 2)

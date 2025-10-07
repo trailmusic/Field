@@ -116,7 +116,6 @@ struct FieldChain
 		rvP_.preDelaySec        = s.rvPreDelaySec;
 		rvP_.sizeNorm           = s.rvSizeNorm;
 		rvP_.dampingHz          = s.rvDampingHz;
-		rvP_.wet01              = s.wet01;
 
 		dlP_.enabled            = s.enableDelay;
 		dlP_.lookaheadMs        = s.delayLookAheadMs;
@@ -231,7 +230,7 @@ private:
 	// POD parameter holders (consumed by nodes/engines)
 	struct GainParams  { float outGainLin{1.f}; float balance{0.f}; };
 	struct ToneParams  { float tilt_dB_per_oct{0.f}; float bass_dB{0.f}; };
-	struct ReverbParams{ bool enabled{false}; float preDelaySec{0.f}; float sizeNorm{0.f}; float dampingHz{6000.f}; float wet01{0.33f}; };
+    struct ReverbParams{ bool enabled{false}; float preDelaySec{0.f}; float sizeNorm{0.f}; float dampingHz{6000.f}; };
 	struct DelayParams { bool enabled{false}; float lookaheadMs{0.f}; };
     struct DynEqParams { bool enabled{false}; float lookaheadMs{0.f}; };
 	struct ImagerParams{ float width{1.0f}; };
