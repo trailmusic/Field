@@ -28,10 +28,11 @@ Absolutely. Here’s a single, consolidated “master doc” that merges the two
 13. [Cleanup Map (dev artifacts)](#cleanup-map-dev-artifacts)
 14. [Editor Lifecycle — UI Close Suspension Fix](#editor-lifecycle--ui-close-suspension-fix)
 15. [UI Stability — BandTab Width Crash Fix](#ui-stability--bandtab-width-crash-fix)
-16. [Live Glitch Triage Log](#live-glitch-triage-log)
-17. [Ownership & Cadence](#ownership--cadence)
-18. [Appendix A — Code Sketches](#appendix-a--code-sketches)
-19. [Appendix B — Tripwire Patterns](#appendix-b--tripwire-patterns)
+16. [Master Param Registry (Source of Truth)](#master-param-registry-source-of-truth)
+17. [Live Glitch Triage Log](#live-glitch-triage-log)
+18. [Ownership & Cadence](#ownership--cadence)
+19. [Appendix A — Code Sketches](#appendix-a--code-sketches)
+20. [Appendix B — Tripwire Patterns](#appendix-b--tripwire-patterns)
 
 ---
 
@@ -558,6 +559,31 @@ for (int c=0; c<C; ++c) {
 **Verification:** Build succeeded; Live test should no longer crash when adjusting Width.
 
 **Follow-up:** Consider centralizing a safe `makeSliderAttachment(apvts, juce::String id, juce::Slider&)` helper to standardize this pattern across panes.
+
+---
+
+## Master Param Registry (Source of Truth)
+
+**Location:** `docs/params/ParamRegistry.yaml`
+
+**Purpose:** Single authoritative registry for parameter IDs, names, ranges/tapers, defaults, owners, and consumers. This file drives:
+
+- Documentation and UI copy
+- Sanity checks vs code (CI tripwire planned)
+- Uniform wiring from APVTS → Snapshot → FieldChain → Nodes/Engines
+
+**Contents:** Core enable toggles, oversampling, mix/output, tone tilt/bass, reverb voicing, imager width, and guarded dev flags. Defaults align with “bold & musical” settings.
+
+**Integration status:**
+- IDs and ranges mirrored in `core/params/ParamIDs.h` and `ParamLayout.cpp`
+- Snapshot captures values; `FieldChain::setParameters(...)` fans-out PODs
+- `imager.width` consumed by `Node_Imager`
+- Equal-power blend + post-blend output gain live in processor
+
+**Next:**
+- CI: grep/diff code IDs against YAML; fail on mismatch
+- Wire `tone.tilt.dbPerOct` / `tone.bass.db` into node/engine
+- Wire `reverb.preDelay.ms`, `reverb.size.norm`, `reverb.damping.hz` into `Node_Reverb`
 
 ---
 
