@@ -2,6 +2,7 @@
 #include <juce_dsp/juce_dsp.h>
 #include <array>
 #include "NodeLatency.h"
+#include "../../core/telemetry/DynEqTelemetry.h"
 
 namespace field { namespace modules { namespace nodes {
 struct Node_DynEq : NodeLatencyMixin<Node_DynEq>
@@ -137,6 +138,8 @@ struct Node_DynEq : NodeLatencyMixin<Node_DynEq>
                 }
             }
             grDbZ_[b] = grZ;
+            // publish GR for UI (negative for downward)
+            field::core::telemetry::setDynEqGrDb (b, grZ);
             // Apply makeup and wet scaling of dynamic gain
             const float tgtDb = staticDb + makeupDb + (grZ * juce::jlimit (0.0f, 1.0f, (float) band.wet01));
 			const float tgtLin = std::pow (10.0f, tgtDb * 0.05f);

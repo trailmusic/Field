@@ -7,6 +7,7 @@
 #include "shared/ui/Controls/ZoomState.h"
 #include "DynEqZoomSideRail.h"
 #include "shared/ui/Components/BandDetectorHUDView.h"
+#include "core/telemetry/DynEqTelemetry.h"
 
 class MyPluginAudioProcessor; // fwd
 class MyPluginAudioProcessorEditor; // fwd
@@ -380,6 +381,11 @@ public:
     void timerCallback() override
     {
         // Drive delayed ghost repaint and hover HUD updates at 30Hz
+        if (selected >= 0 && selected < (int) points.size())
+        {
+            const int bi = points[(size_t) selected].bandIdx;
+            if (bi >= 0) detHud.setGR (field::core::telemetry::getDynEqGrDb (bi));
+        }
         repaint();
     }
 
@@ -1580,6 +1586,8 @@ private:
                 st.hpHz = getBandParamFloat (st.bandIndex, dynEq::Band::dynDetHPHz, 60.0f);
                 st.lpHz = getBandParamFloat (st.bandIndex, dynEq::Band::dynDetLPHz, 8000.0f);
                 st.adaptive = getBandParamFloat (st.bandIndex, dynEq::Band::specAdaptive, 0.0f) > 0.5f;
+                // Pull GR preview from telemetry
+                st.grPreviewDb = field::core::telemetry::getDynEqGrDb (st.bandIndex);
                 detHud.setState (st);
                 detHud.setVisible (true);
             }

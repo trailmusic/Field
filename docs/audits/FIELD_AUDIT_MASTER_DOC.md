@@ -39,6 +39,7 @@ Absolutely. Here’s a single, consolidated “master doc” that merges the two
 23. [DynEQ — Hold/Program-Dependent Release + UI bindings](#dyneq--holdprogram-dependent-release--ui-bindings)
 24. [Parameter Integration — Updated Next Steps](#parameter-integration--updated-next-steps)
 25. [DynEQ — Detector HUD (source + SC HP/LP)](#dyneq--detector-hud-source--sc-hplp)
+26. [DynEQ — Per-band bindings + GR telemetry](#dyneq--per-band-bindings--gr-telemetry)
 
 ---
 
@@ -801,6 +802,27 @@ Screenshots:
 Follow-ups:
 - Wire live GR telemetry from `Node_DynEq` to HUD mini meter.
 - Add subtle hold/LA indicator and polish adaptive behavior.
+
+## DynEQ — Per-band bindings + GR telemetry
+
+Date: 2025-10-07
+
+Summary:
+- Bound per-band Ratio, Knee, Makeup, and Wet controls in `DynEqTab` overlay directly to APVTS IDs:
+  - `b_dynRatio`, `b_dynKneeDb`, `b_dynMakeupDb`, `b_dynWet01`.
+- Added low-latency GR telemetry pipe from audio thread to UI:
+  - `Source/core/telemetry/DynEqTelemetry.h`: static per-band atomic `grDb[24]` and helpers.
+  - `Source/modules/FieldNodes/Node_DynEq.h`: publish smoothed GR per band each block.
+  - `Source/features/dynEq/DynEqTab.h`: fetch current band GR in `timerCallback()` and feed the HUD.
+  - `Source/shared/ui/Components/BandDetectorHUDView.*`: displays a 3-bar GR stub and updates live.
+
+Behavior:
+- Overlay edits write-through to APVTS; Node receives via snapshot→FieldChain as before.
+- HUD now reflects live GR for selected band; visualization is intentionally minimal for now.
+
+Notes:
+- Telemetry uses `std::atomic<float>` with relaxed ordering; UI polls at ~30 Hz.
+- Next iteration can expand to per-band mini meters on-curve and hold/LA indicators.
 
 Follow-ups (tracked in `docs/FIELD_CURRENT_TODO.md`):
 - Upgrade DynEQ UI to expose Attack/Release/Hold comprehensively (labels, ranges, presets).

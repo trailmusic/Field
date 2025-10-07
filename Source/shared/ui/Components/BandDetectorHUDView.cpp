@@ -81,7 +81,7 @@ void BandDetectorHUDView::paint(Graphics& g) {
 	drawChip(rLp_,  "LP " + String(st_.lpHz/1000.0f, 1) + " kHz", Colours::darkgrey, true);
 
 	// GR mini meter (3 bars)
-	auto gr = juce::jlimit(0.f, 18.f, -st_.grPreviewDb); // 0..18 dB reduction
+    auto gr = juce::jlimit(0.f, 18.f, -st_.grPreviewDb); // 0..18 dB reduction
 	int lit = (int) juce::jmap(gr, 0.f, 18.f, 0.f, 3.f);
 	auto rr = rGr_; rr.reduce(8, 2);
 	int w = rr.getWidth()/3 - 3;

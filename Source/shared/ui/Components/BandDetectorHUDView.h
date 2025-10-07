@@ -24,6 +24,7 @@ public:
 	BandDetectorHUDView();
 
 	void setState(const DetectorHUDState& s);
+    void setGR(float grDb) { st_.grPreviewDb = grDb; repaint(); }
 	void setPinned(bool on) { pinned_ = on; repaint(); }
 	void setMaxWidth(int px) { maxWidth_ = px; resized(); }
 	int  getCollapsedHeight() const { return 28; }
