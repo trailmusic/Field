@@ -315,3 +315,14 @@ add_custom_target(ci_tripwire_legacy_includes ALL
                (! grep -R --line-number '#include\\s*\".*(features/|shared/).*\"' Source/engines || (echo '❌ engines code must not include features/ or shared/' && false)) && \
                (! grep -R --line-number '#include\\s*\"engines/EngineScope.h\"' Source/features || (echo '❌ features code must not include engines/EngineScope.h' && false))"
 ) 
+
+# --- Param Registry drift check ---
+find_package(Python3 COMPONENTS Interpreter)
+if (Python3_Interpreter_FOUND)
+  add_custom_target(check_param_ids ALL
+    COMMAND ${CMAKE_COMMAND} -E env LC_ALL=C LANG=C
+      ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/check_param_ids.py
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Checking ParamRegistry.yaml ↔ code param IDs"
+  )
+endif()
