@@ -55,6 +55,33 @@ public:
                 positionOverlay();
             }
         };
+        overlay.onAttackMsChanged = [this](float ms)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynAtkMs, juce::jlimit (0.1f, 2000.0f, ms));
+                repaint();
+            }
+        };
+        overlay.onReleaseMsChanged = [this](float ms)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynRelMs, juce::jlimit (5.0f, 5000.0f, ms));
+                repaint();
+            }
+        };
+        overlay.onHoldMsChanged = [this](float ms)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynHoldMs, juce::jlimit (0.0f, 1000.0f, ms));
+                repaint();
+            }
+        };
         overlay.onQChanged = [this](float qv)
         {
             if (selected >= 0 && selected < (int) points.size())
@@ -699,6 +726,25 @@ private:
             
             setAreaMetallicForCell (dynToggle, MetallicKind::Band); // Use Band metallic for DynEQ buttons
             setAreaMetallicForCell (specToggle, MetallicKind::Band);
+
+            // Attack / Release / Hold sliders
+            atkMs.setSliderStyle (juce::Slider::LinearHorizontal);
+            atkMs.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            atkMs.setRange (0.1, 2000.0, 0.1);
+            atkMs.onValueChange = [this]{ if (!updating && onAttackMsChanged) onAttackMsChanged ((float) atkMs.getValue()); };
+            addAndMakeVisible (atkMs);
+
+            relMs.setSliderStyle (juce::Slider::LinearHorizontal);
+            relMs.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            relMs.setRange (5.0, 5000.0, 0.1);
+            relMs.onValueChange = [this]{ if (!updating && onReleaseMsChanged) onReleaseMsChanged ((float) relMs.getValue()); };
+            addAndMakeVisible (relMs);
+
+            holdMs.setSliderStyle (juce::Slider::LinearHorizontal);
+            holdMs.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            holdMs.setRange (0.0, 1000.0, 0.1);
+            holdMs.onValueChange = [this]{ if (!updating && onHoldMsChanged) onHoldMsChanged ((float) holdMs.getValue()); };
+            addAndMakeVisible (holdMs);
         }
         void paint (juce::Graphics& g) override
         {
@@ -746,6 +792,11 @@ private:
             auto half2 = r.removeFromTop (24);
             chanLabel.setBounds (half2.removeFromLeft (40));
             chanCb.setBounds (half2.removeFromLeft (120));
+            // Attack / Release / Hold row
+            auto half3 = r.removeFromTop (24);
+            atkMs.setBounds (half3.removeFromLeft (120));
+            relMs.setBounds (half3.removeFromLeft (120));
+            holdMs.setBounds (half3.removeFromLeft (120));
         }
         void setValues (float gainDb, float qVal, float freqHz, int typeIdx, int phaseIdx, int chanIdx, bool dynOn, bool specOn)
         {
@@ -761,8 +812,13 @@ private:
             specToggle.setToggleState (specOn, juce::dontSendNotification);
         }
         void setAccentColour (juce::Colour c) { overlayAccent = c; repaint(); }
+        // Hooks to parent for parameter binding
+        std::function<void(float)> onAttackMsChanged;
+        std::function<void(float)> onReleaseMsChanged;
+        std::function<void(float)> onHoldMsChanged;
     private:
         juce::Slider gain, q, freq;
+        juce::Slider atkMs, relMs, holdMs;
         juce::Label gainLabel, qLabel, freqLabel, /*typeLabel, phaseLabel,*/ chanLabel;
         juce::ComboBox typeCb, phaseCb, chanCb;
         juce::ToggleButton dynToggle, specToggle;

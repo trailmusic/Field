@@ -7,7 +7,7 @@ Absolutely. Here’s a single, consolidated “master doc” that merges the two
 > **Dev Note (read first):**
 > This doc is the **authoritative** reference for Field’s code structure, DSP routing, dev toggles, and the Live glitch triage. Legacy include paths still on disk are **poisoned** and must not be used. Audio thread reads from APVTS are **forbidden**; use `HostParams` snapshots only. The clean signal path is **locked in** (non-aliased DRY/WET + ordered blend). All dev-only scaffolding compiles out in Release.
 
-**Last updated:** 2025-10-06 • **Branch:** `feature` • **Maintainers:** @trail @grant
+**Last updated:** 2025-10-07 • **Branch:** `feature` • **Maintainers:** @trail @grant
 
 ---
 
@@ -36,6 +36,7 @@ Absolutely. Here’s a single, consolidated “master doc” that merges the two
 20. [Appendix B — Tripwire Patterns](#appendix-b--tripwire-patterns)
 21. [CI — Param ID Drift Check](#ci--param-id-drift-check)
 22. [DynEQ — 24-band Spec & Wiring Plan](#dyneq--24-band-spec--wiring-plan)
+23. [DynEQ — Hold/Program-Dependent Release + UI bindings](#dyneq--holdprogram-dependent-release--ui-bindings)
 
 ---
 
@@ -741,6 +742,35 @@ Next steps:
 - Add offline tests: band GR correctness across modes; lookahead latency verification; null/parity checks.
 
 ---
+
+## DynEQ — Hold/Program-Dependent Release + UI bindings
+
+Date: 2025-10-07
+
+Summary:
+- Implemented per-band envelope with Hold and program-dependent Release in `Node_DynEq`.
+- Added sidechain bandpass per-band, tracked envelope with attack/release one-pole, and smoothed GR with hold latch.
+- Program-dependent release scales release time with current reduction fraction to avoid pumping and improve musical decay.
+- UI overlay gained Attack/Release/Hold sliders; wired to per-band IDs (`b_dynAtkMs`, `b_dynRelMs`, `b_dynHoldMs`).
+
+Code:
+- `Source/modules/FieldNodes/Node_DynEq.h`:
+  - New state: `env_[24]`, `grDbZ_[24]`, `holdCount_[24]`.
+  - Hold logic: sample counter from `holdSec * sr`; inhibits release until exhausted.
+  - Program-dependent release: `relEff = rel * (0.5 + 1.5 * |GR|/|range|)`.
+  - Per-band sidechain BPF follows band center/Q.
+- `Source/features/dynEq/DynEqTab.h`:
+  - Overlay sliders for Attack/Release/Hold with on-change hooks binding to `dynEq::Band::dynAtkMs`, `dynRelMs`, `dynHoldMs`.
+
+Verification:
+- Build OK across Standalone/AU/VST3. No change to reported latency (hold/rel are dynamic only).
+- Visual: existing dyn handle shows range; follow-up will add explicit GR meter/overlay.
+
+Follow-ups (tracked in `docs/FIELD_CURRENT_TODO.md`):
+- Upgrade DynEQ UI to expose Attack/Release/Hold comprehensively (labels, ranges, presets).
+- Audit full DynEQ UI coverage vs backend (bands, modes, sidechain, lookahead).
+- Add GR visualization (per-band attenuation path/handle or mini meters).
+
 
 **End of Master Doc**
 (Keep this file in-repo, update alongside code. All paths match your current tree.)
