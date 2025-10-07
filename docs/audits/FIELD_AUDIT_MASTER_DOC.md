@@ -92,6 +92,14 @@ Source/
 
 **Don’ts:** no in-place “processed − dry”, no reuse of `buffer` as both DRY source and WET destination.
 
+### 2025-10-07 — Routing Update
+
+- Input gain now applied pre-chain to both DRY and WET paths (float and double).
+- Equal-power blend retained; `gain.output.db` applied post-blend.
+- Constant-power balance applied post-blend on stereo output.
+- `global.bypass` returns DRY-only while meters/viz still tap the returned buffer.
+- Float/double parity maintained; build verified across AU/VST3/Standalone.
+
 ---
 
 ## Phase 1 Results
