@@ -1354,19 +1354,27 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
             return;
         }
 
-        // Equal-power blend using global MIX (0..1)
+        // Equal-power blend using global MIX (smoothed) and smoothed post gain
         const double wet01 = juce::jlimit (0.0, 1.0, hp.mixPct * 0.01);
-        const double theta = wet01 * juce::MathConstants<double>::halfPi;
-        const double gDry = std::cos (theta);
-        const double gWet = std::sin (theta);
-        const double outGain = juce::Decibels::decibelsToGain (hp.outputGainDb);
+        static thread_local double s_gd = 1.0, s_gw = 0.0, s_out = 1.0;
+        const double mixTauA = std::exp (-1.0 / (0.002 * currentSR));
+        const double outTauA = std::exp (-1.0 / (0.007 * currentSR));
+        const double t = wet01 * juce::MathConstants<double>::halfPi;
+        const double gdT = std::cos (t);
+        const double gwT = std::sin (t);
+        const double outT = juce::Decibels::decibelsToGain (hp.outputGainDb);
         for (int c = 0; c < C; ++c)
         {
             const double* dry = dryCopy.getReadPointer (c);
             const double* wet = wetBuf.getReadPointer (c);
             double* out = buffer.getWritePointer (c);
             for (int i = 0; i < N; ++i)
-                out[i] = (gDry * dry[i] + gWet * wet[i]) * outGain;
+            {
+                s_gd  = gdT  + mixTauA * (s_gd  - gdT);
+                s_gw  = gwT  + mixTauA * (s_gw  - gwT);
+                s_out = outT + outTauA * (s_out - outT);
+                out[i] = (s_gd * dry[i] + s_gw * wet[i]) * s_out;
+            }
         }
         // Apply constant-power balance (post-blend)
         if (C >= 2)
@@ -2065,6 +2073,12 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
         HostParams* back = (live == snapshotA_.get()) ? snapshotB_.get() : snapshotA_.get();
         *back = fresh;
         snapshotPtr_.store(back, std::memory_order_release);
+        // Message-thread latency: lookahead-only (host-rate samples)
+        const int lookDelay  = (int) std::round (juce::jlimit (0.0,  10.0, fresh.delayDuckLookaheadMs) * 0.001 * currentSR);
+        const int lookDynEq  = (int) std::round (juce::jlimit (0.0,  10.0, fresh.duckLookaheadMs)      * 0.001 * currentSR);
+        const int reported   = juce::jmax (lookDelay, lookDynEq);
+        latency.setDesired (reported);
+        latency.applyIfChanged (*this);
     }
 
     // Rebuild parameter snapshot for dev toggles (WO-57/62) and other param changes
@@ -2074,6 +2088,11 @@ void MyPluginAudioProcessor::parameterChanged (const juce::String& parameterID, 
         HostParams* back = (live == snapshotA_.get()) ? snapshotB_.get() : snapshotA_.get();
         *back = fresh;
         snapshotPtr_.store(back, std::memory_order_release);
+        const int lookDelay2  = (int) std::round (juce::jlimit (0.0,  10.0, fresh.delayDuckLookaheadMs) * 0.001 * currentSR);
+        const int lookDynEq2  = (int) std::round (juce::jlimit (0.0,  10.0, fresh.duckLookaheadMs)      * 0.001 * currentSR);
+        const int reported2   = juce::jmax (lookDelay2, lookDynEq2);
+        latency.setDesired (reported2);
+        latency.applyIfChanged (*this);
     }
 }
 

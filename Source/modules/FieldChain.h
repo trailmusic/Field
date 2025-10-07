@@ -112,10 +112,10 @@ struct FieldChain
 		toneP_.tilt_dB_per_oct  = s.toneTilt_dB_per_oct;
 		toneP_.bass_dB          = s.toneBass_dB;
 
-		rvP_.enabled            = s.enableReverb;
-		rvP_.preDelaySec        = s.rvPreDelaySec;
-		rvP_.sizeNorm           = s.rvSizeNorm;
-		rvP_.dampingHz          = s.rvDampingHz;
+        rvP_.enabled            = s.enableReverb;
+        rvP_.preDelaySec        = s.rvPreDelaySec;
+        rvP_.sizeNorm           = s.rvSizeNorm;
+        rvP_.dampingHz          = s.rvDampingHz;
 
 		dlP_.enabled            = s.enableDelay;
 		dlP_.lookaheadMs        = s.delayLookAheadMs;
@@ -125,8 +125,17 @@ struct FieldChain
 
 		imP_.width              = s.imagerWidth;
 
-		// Push simple realtime params into nodes that support direct handoff
+        // Push simple realtime params into nodes that support direct handoff
 		imager_.setWidth (imP_.width);
+        // Reverb voicing fan-out (engine should not apply its own dry/wet)
+        {
+            nodes::Node_Reverb::Params p{};
+            p.enabled     = rvP_.enabled;
+            p.preDelaySec = rvP_.preDelaySec;
+            p.sizeNorm    = rvP_.sizeNorm;
+            p.dampingHz   = rvP_.dampingHz;
+            reverb_.setParameters (p);
+        }
 	}
 
 	template <typename Sample>
