@@ -41,6 +41,7 @@ Absolutely. Here’s a single, consolidated “master doc” that merges the two
 25. [DynEQ — Detector HUD (source + SC HP/LP)](#dyneq--detector-hud-source--sc-hplp)
 26. [DynEQ — Per-band bindings + GR telemetry](#dyneq--per-band-bindings--gr-telemetry)
 27. [DynEQ — Adaptive detector + External SC activation UX](#dyneq--adaptive-detector--external-sc-activation-ux)
+28. [DynEQ — HUD theming & sizing pass](#dyneq--hud-theming--sizing-pass)
 
 ---
 
@@ -826,6 +827,40 @@ Behavior:
 
 Next:
 - Wire real host external SC activation state and feeds into `FieldChain` taps; update HUD `extActive=true` when connected.
+
+## DynEQ — HUD theming & sizing pass
+
+Date: 2025-10-07
+
+Summary:
+- Unified Detector HUD visuals under the app theme and fixed sizing/placement issues.
+- Increased layout density for legibility and click targets.
+
+Files:
+- `Source/shared/Core/FieldTheme.h`: added HUD/Drawer tokens:
+  - `drawerBg`, `drawerBorder`, `chipBg`, `chipBgHover`, `chipBgActive`
+  - `textPrimary` (explicit alias), `srcPre`, `srcPost`, `srcExt`, `srcExtInactive`
+  - `grOff`, `grOn`, `scRail`
+- `Source/shared/ui/Components/BandDetectorHUDView.h/.cpp`:
+  - Routed all colours through `FieldLNF::theme` with sensible fallbacks when LNF missing
+  - Layout constants: rows 28 px, gutters 8 px, padding 12 px, radius 8 px
+  - Source chip now reflects Pre/Post/Ext with Ext dim/asterisk when inactive
+  - Adaptive label updated to “Adaptive •/○”
+  - HP/LP chips show Hz/kHz dynamically; log sliders launched via popovers
+  - GR 3-bar meter uses theme `grOn/grOff` and dims when Ext inactive
+  - Menus: min width 240 px, standard item height 28 px, anchored to component; HP/LP popovers 300×80
+
+Behavior/UX:
+- HUD background/outline now match theme drawers (opaque, high contrast against spectrum).
+- Click targets are larger; text uses 12 pt with theme text colour.
+- Menus/popovers are clamped and sized properly; no more tiny off-screen menus.
+
+Verification:
+- Built across Standalone/AU/VST3; Field app relaunched automatically for manual smoke test.
+- Visual inspection confirms theme parity and corrected sizing.
+
+Follow-ups:
+- Apply the same theme sweep to `DynEqTab` and `DynEqZoomSideRail` (replace hardcoded whites/greys with theme tokens).
 
 Date: 2025-10-07
 

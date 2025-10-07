@@ -53,15 +53,29 @@ public:
         addAndMakeVisible (badge);
         badge.setVisible (false);
 
-        // Detector HUD (pinned to badge bottom)
+        // Detector HUD (drawer content; initially hidden)
         addAndMakeVisible (detHud);
         detHud.setVisible (false);
         detHud.setMaxWidth (200);
+        // HUD drawer toggle button (sits to the right of the badge)
+        addAndMakeVisible (hudButton);
+        hudButton.setVisible (false);
+        hudButton.setButtonText ("SC");
+        hudButton.setClickingTogglesState (true);
+        hudButton.onClick = [this]
+        {
+            hudOpen = !hudOpen;
+            hudButton.setToggleState (hudOpen, juce::dontSendNotification);
+            if (selected >= 0) positionBadgeFor (selected); else detHud.setVisible (false);
+        };
         detHud.onChangeSource = [this](int src)
         {
             if (selected >= 0 && selected < (int) points.size())
                 if (points[(size_t) selected].bandIdx >= 0)
                     setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynDetectorSrc, (float) juce::jlimit (0, 3, src));
+            // Reassert HUD above everything after source change
+            badge.toFront (true);
+            detHud.toFront (true);
         };
         detHud.onChangeHP = [this](float hz)
         {
@@ -218,9 +232,19 @@ public:
         {
             overlayFrozen = dragging;
             if (dragging)
+            {
                 overlayLastBounds = overlay.getBounds();
+                // Ensure overlay/controls sit above hud and badge while dragging
+                overlay.toFront (true);
+            }
             else
+            {
                 positionOverlay();
+                // Reassert desired z-order: badge above overlay, HUD above badge
+                overlay.toFront (false);
+                badge.toFront (true);
+                detHud.toFront (true);
+            }
         };
         overlay.onTypeChanged = [this](int tp)
         {
@@ -1296,7 +1320,7 @@ private:
             const float signedRange = (ptDynModeUp (i) ? +1.0f : -1.0f) * ptDynRangeDb (i);
             const float offsetY = mapDbToY (signedRange + 18.0f) - mapDbToY (18.0f);
             const float cy = baseY + offsetY;
-            if (juce::Point<float> (cx, cy).getDistanceFrom (p.toFloat()) <= 10.0f)
+            if (juce::Point<float> (cx, cy).getDistanceFrom (p.toFloat()) <= 14.0f)
                 return i;
         }
         return -1;
@@ -1314,7 +1338,7 @@ private:
             const float specRange = ptSpecRangeDb (i);
             const float offsetY = mapDbToY (-specRange + 18.0f) - mapDbToY (18.0f);
             const float cy = baseY + offsetY;
-            if (juce::Point<float> (cx, cy).getDistanceFrom (p.toFloat()) <= 10.0f)
+            if (juce::Point<float> (cx, cy).getDistanceFrom (p.toFloat()) <= 14.0f)
                 return i;
         }
         return -1;
@@ -1540,6 +1564,8 @@ private:
             points.push_back (bp);
             selected = (int) points.size() - 1;
             rebuildEqPath(); repaint();
+            // Do not auto-open HUD on new point
+            hudOpen = false; detHud.setVisible (false); if (hudButton.getToggleState()) hudButton.setToggleState(false, juce::dontSendNotification);
         }
         if (e.mods.isPopupMenu())
         {
@@ -1599,6 +1625,7 @@ private:
             overlay.setVisible (false);
             badge.setVisible (false);
             detHud.setVisible (false);
+            hudOpen = false; hudButton.setVisible(false); hudButton.setToggleState(false, juce::dontSendNotification);
         }
     }
 
@@ -1725,7 +1752,7 @@ private:
             if (selected < 0)
             {
                 if (hover >= 0) positionBadgeFor (hover);
-                else badge.setVisible (false);
+                else { badge.setVisible (false); detHud.setVisible(false); hudOpen = false; hudButton.setVisible(false); hudButton.setToggleState(false, juce::dontSendNotification); }
             }
             else
             {
@@ -1900,17 +1927,29 @@ private:
         overlay.setAccentColour (accent);
         badge.toFront (true);
 
-        // Position HUD pinned to bottom of badge
-        const int hudW = 200;
-        const int hudH = detHud.getCollapsedHeight();
-        int hudX = ox + (w - hudW) / 2;
-        int hudY = oy + h + 4;
-        // Keep within pane
-        if (hudX < pane.getX()) hudX = pane.getX() + 8;
-        if (hudX + hudW > pane.getRight()) hudX = pane.getRight() - hudW - 8;
-        if (hudY + hudH > pane.getBottom()) hudY = oy - hudH - 4;
-        detHud.setBounds (hudX, hudY, hudW, hudH);
-        detHud.toFront (true);
+        // Drawer toggle button on the right of badge
+        const int btnGap = 6;
+        hudButton.setBounds (ox + w + btnGap, oy, 10, h); // vertical bar button full badge height
+        hudButton.setVisible (true);
+
+        // Position HUD as a drawer to the right of the badge when open
+        if (hudOpen)
+        {
+            const int hudW = 220;
+            const int hudH = juce::jmax (detHud.getCollapsedHeight(), h);
+            int hudX = ox + w + btnGap + hudButton.getWidth() + 6;
+            int hudY = oy;
+            if (hudX + hudW > pane.getRight()) hudX = pane.getRight() - hudW - 8;
+            if (hudY + hudH > pane.getBottom()) hudY = pane.getBottom() - hudH - 8;
+            detHud.setBounds (hudX, hudY, hudW, hudH);
+            detHud.setVisible (true);
+            detHud.toFront (true);
+            hudButton.toFront (true);
+        }
+        else
+        {
+            detHud.setVisible (false);
+        }
     }
 
     static juce::String channelLabel (int ch)
@@ -2070,6 +2109,8 @@ private:
     ZoomState zoomState;
     DynEqZoomSideRail zoomRail;
     BandDetectorHUDView detHud;
+    juce::TextButton hudButton;
+    bool hudOpen { false };
 };
 
 // Tooltip implementation for Dynamic EQ controls

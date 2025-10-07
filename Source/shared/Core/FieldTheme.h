@@ -136,6 +136,22 @@ struct FieldTheme
         juce::Colour panelDark    { 0xFF2A2C30 }; // Dark grey panel
         juce::Colour panelBorder  { 0xFF1A1C20 }; // Darkest border
     } meters;
+
+    // HUD / drawers and DynEQ detector accents
+    juce::Colour drawerBg        { juce::Colour::fromRGB(10,10,12).withAlpha(0.95f) };
+    juce::Colour drawerBorder    { juce::Colours::white.withAlpha(0.20f) };
+    juce::Colour chipBg          { juce::Colour(0xFF2B2E34) };
+    juce::Colour chipBgHover     { juce::Colour(0xFF2B2E34).brighter(0.06f) };
+    juce::Colour chipBgActive    { juce::Colour(0xFF2B2E34).brighter(0.10f) };
+    juce::Colour textPrimary     { juce::Colours::white.withAlpha(0.95f) };
+    // textMuted already exists above; alias kept for clarity
+    juce::Colour srcPre          { juce::Colour(0xFF2C2F36) };
+    juce::Colour srcPost         { juce::Colour(0xFFFFB340) }; // brand amber/orange
+    juce::Colour srcExt          { juce::Colour(0xFF5B86FF) };
+    juce::Colour srcExtInactive  { juce::Colour(0xFF5B86FF).withAlpha(0.65f) };
+    juce::Colour grOff           { juce::Colour(0xFF551A1A) };
+    juce::Colour grOn            { juce::Colour(0xFFDA3B3B) };
+    juce::Colour scRail          { juce::Colour(0xFF464A53) };
 };
 
 // Theme variants - all 5 original themes preserved

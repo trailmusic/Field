@@ -1,15 +1,16 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "shared/Core/FieldLookAndFeel.h"
 
 struct DetectorHUDState {
-	int bandIndex{};
-	juce::String source;   // "pre"|"post"|"ext1"|"ext2"
-	float hpHz{60.f};
-	float lpHz{8000.f};
-	bool adaptive{false};
-	bool extActive{false};
-	float grPreviewDb{0.f};
-	float scOverDb{0.f};
+    int bandIndex{};
+    juce::String source;   // "pre"|"post"|"ext1"|"ext2"
+    float hpHz{60.f};
+    float lpHz{8000.f};
+    bool adaptive{false};
+    bool extActive{false};
+    float grPreviewDb{0.f};
+    float scOverDb{0.f};
 };
 
 class BandDetectorHUDView : public juce::Component,
@@ -34,17 +35,22 @@ public:
 
 	bool keyPressed(const juce::KeyPress& kp) override;
 
-	void paint(juce::Graphics& g) override;
+    void paint(juce::Graphics& g) override;
 	void resized() override;
     void mouseEnter (const juce::MouseEvent&) override;
     void mouseExit  (const juce::MouseEvent&) override;
+    bool hitTest (int x, int y) override;
+    void mouseDown (const juce::MouseEvent& e) override;
 
 private:
 	void timerCallback() override { if (hover_ || pinned_) repaint(); }
-	void layoutRows();
-	void showSourceMenu();
-	void launchHpPopover();
-	void launchLpPopover();
+    void layoutRows();
+    void showSourceMenu();
+    void launchHpPopover();
+    void launchLpPopover();
+
+    // theme helpers
+    FieldLNF* getLF() const noexcept { return dynamic_cast<FieldLNF*>(&getLookAndFeel()); }
 
 	// UI state
 	DetectorHUDState st_{};
@@ -54,8 +60,8 @@ private:
 	int  maxWidth_{200};
 	int  expandedH_{64};
 
-	// cached layout rects
-	juce::Rectangle<int> rPill_, rAdaptive_, rHp_, rLp_, rGr_;
+    // cached layout rects
+    juce::Rectangle<int> rPill_, rAdaptive_, rHp_, rLp_, rGr_;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BandDetectorHUDView)
 };
