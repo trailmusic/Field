@@ -677,4 +677,177 @@ params:
     default: 8000.0
     owner: core
 
+# ===== DynEQ (24-band, surgical + musical) =====
+  - id: dyneq.enabled
+    name: DynEQ Enable
+    type: bool
+    default: false
+    owner: dyneq
+    used_by: [FieldChain, Node_DynEq]
+
+  - id: dyneq.global.mode
+    name: DynEQ Global Mode
+    type: choice
+    choices: [downward, upward, split, expand]
+    default: downward
+    owner: dyneq
+
+  - id: dyneq.global.link
+    name: Channel Link
+    type: choice
+    choices: [stereo, dualMono, mid, side]
+    default: stereo
+    owner: dyneq
+
+  - id: dyneq.global.lookahead.ms
+    name: Global Look-Ahead
+    type: float
+    range: { min: 0.0, max: 10.0, step: 0.01 }
+    default: 1.5
+    owner: dyneq
+    latency_affects: true
+
+  - id: dyneq.band.count
+    name: DynEQ Bands
+    type: int
+    default: 24
+    owner: dyneq
+
+  # Template (indices 0..23): dyneq.b[i].*
+  - id: dyneq.b[i].enabled
+    name: Band Enabled
+    type: bool
+    default: false
+    owner: dyneq
+    used_by: [Node_DynEq]
+
+  - id: dyneq.b[i].type
+    name: Band Type
+    type: choice
+    choices: [bell, low_shelf, high_shelf, notch, bandpass, tilt]
+    default: bell
+    owner: dyneq
+
+  - id: dyneq.b[i].freq.hz
+    name: Frequency
+    type: float
+    range: { min: 20.0, max: 20000.0, curve: log }
+    default: 1000.0
+    display: Hz
+    owner: dyneq
+
+  - id: dyneq.b[i].q
+    name: Q
+    type: float
+    range: { min: 0.1, max: 24.0, curve: log }
+    default: 1.2
+    owner: dyneq
+
+  - id: dyneq.b[i].gain.db
+    name: Static Gain
+    type: float
+    range: { min: -18.0, max: +18.0, step: 0.1 }
+    default: 0.0
+    display: dB
+    owner: dyneq
+
+  - id: dyneq.b[i].range.db
+    name: Dynamic Range
+    type: float
+    range: { min: 0.0, max: 24.0, step: 0.1 }
+    default: 6.0
+    display: dB
+    owner: dyneq
+
+  - id: dyneq.b[i].ratio
+    name: Ratio
+    type: float
+    range: { min: 1.0, max: 10.0, step: 0.05 }
+    default: 3.0
+    owner: dyneq
+
+  - id: dyneq.b[i].threshold.dbfs
+    name: Threshold
+    type: float
+    range: { min: -72.0, max: 0.0, step: 0.1 }
+    default: -24.0
+    display: dBFS
+    owner: dyneq
+
+  - id: dyneq.b[i].knee.db
+    name: Knee
+    type: float
+    range: { min: 0.0, max: 24.0, step: 0.1 }
+    default: 6.0
+    display: dB
+    owner: dyneq
+
+  - id: dyneq.b[i].attack.ms
+    name: Attack
+    type: float
+    range: { min: 0.1, max: 200.0, curve: log }
+    default: 8.0
+    display: ms
+    owner: dyneq
+
+  - id: dyneq.b[i].release.ms
+    name: Release
+    type: float
+    range: { min: 5.0, max: 2000.0, curve: log }
+    default: 120.0
+    display: ms
+    owner: dyneq
+
+  - id: dyneq.b[i].hold.ms
+    name: Hold
+    type: float
+    range: { min: 0.0, max: 200.0, step: 0.1 }
+    default: 0.0
+    display: ms
+    owner: dyneq
+
+  - id: dyneq.b[i].makeup.db
+    name: Makeup
+    type: float
+    range: { min: -18.0, max: +18.0, step: 0.1 }
+    default: 0.0
+    display: dB
+    owner: dyneq
+
+  - id: dyneq.b[i].direction
+    name: Direction
+    type: choice
+    choices: [down, up, both]
+    default: down
+    owner: dyneq
+
+  - id: dyneq.b[i].sidechain
+    name: Sidechain
+    type: choice
+    choices: [band, wide, external]
+    default: band
+    owner: dyneq
+
+  - id: dyneq.b[i].sc.hp.hz
+    name: SC HP
+    type: float
+    range: { min: 20.0, max: 2000.0, curve: log }
+    default: 20.0
+    owner: dyneq
+
+  - id: dyneq.b[i].sc.lp.hz
+    name: SC LP
+    type: float
+    range: { min: 2000.0, max: 20000.0, curve: log }
+    default: 20000.0
+    owner: dyneq
+
+  - id: dyneq.b[i].mix.wet01
+    name: Band Mix
+    type: float
+    range: { min: 0.0, max: 1.0 }
+    default: 1.0
+    owner: dyneq
+    curve: equal_power
+
 
