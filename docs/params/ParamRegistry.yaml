@@ -1,0 +1,143 @@
+version: 0
+updated: 2025-10-07
+owner: core
+
+params:
+  - id: chain.delay.enable
+    name: Delay Enable
+    type: bool
+    default: false
+    owner: core
+    used_by: [FieldChain, Node_Delay]
+
+  - id: chain.dyneq.enable
+    name: DynEQ Enable
+    type: bool
+    default: false
+    owner: core
+    used_by: [FieldChain, Node_DynEq]
+
+  - id: chain.reverb.enable
+    name: Reverb Enable
+    type: bool
+    default: false
+    owner: core
+    used_by: [FieldChain, Node_Reverb]
+
+  - id: quality.os.factor
+    name: Oversampling
+    type: choice
+    choices: [1x, 2x, 4x, 8x]
+    default: 1x
+    owner: core
+    latency_affects: true
+
+  - id: reverb.linearPhase
+    name: Reverb Linear-Phase
+    type: bool
+    default: false
+    owner: reverb
+
+  - id: reverb.fir.halfLenSamples
+    name: Reverb FIR HalfLen
+    type: int
+    range: { min: 0, max: 4096, step: 1 }
+    default: 0
+    owner: reverb
+    latency_affects: true
+
+  - id: dyneq.lookahead.ms
+    name: DynEQ Look-Ahead
+    type: float
+    range: { min: 0.0, max: 10.0, step: 0.01 }
+    default: 0.0
+    owner: dyneq
+    latency_affects: true
+
+  - id: delay.lookahead.ms
+    name: Delay Look-Ahead
+    type: float
+    range: { min: 0.0, max: 10.0, step: 0.01 }
+    default: 0.0
+    owner: delay
+    latency_affects: true
+
+  - id: mix.wet01
+    name: Mix
+    type: float
+    range: { min: 0.0, max: 1.0, curve: equal_power }
+    default: 0.33
+    owner: core
+    used_by: [Processor]
+
+  - id: gain.output.db
+    name: Output Gain
+    type: float
+    range: { min: -24.0, max: +24.0, step: 0.01 }
+    default: 0.0
+    display: dB
+    owner: core
+    used_by: [Processor]
+
+  - id: pan.balance
+    name: Balance
+    type: float
+    range: { min: -1.0, max: 1.0, step: 0.001 }
+    default: 0.0
+    owner: core
+
+  - id: tone.tilt.dbPerOct
+    name: Tilt
+    type: float
+    range: { min: -6.0, max: +6.0, step: 0.01 }
+    default: 1.5
+    display: dB/oct
+    owner: core
+
+  - id: tone.bass.db
+    name: Bass
+    type: float
+    range: { min: -12.0, max: +12.0, step: 0.01 }
+    default: 2.0
+    display: dB
+    owner: core
+
+  - id: reverb.preDelay.ms
+    name: Pre-Delay
+    type: float
+    range: { min: 0.0, max: 120.0, step: 0.01 }
+    default: 20.0
+    display: ms
+    owner: reverb
+
+  - id: reverb.size.norm
+    name: Size
+    type: float
+    range: { min: 0.0, max: 1.0, step: 0.01 }
+    default: 0.62
+    owner: reverb
+
+  - id: reverb.damping.hz
+    name: Damping
+    type: float
+    range: { min: 1000.0, max: 16000.0, curve: log }
+    default: 6000.0
+    display: Hz
+    owner: reverb
+
+  - id: imager.width
+    name: Width
+    type: float
+    range: { min: 0.0, max: 2.0, step: 0.01 }
+    default: 1.15
+    owner: imager
+    used_by: [Node_Imager]
+
+  - id: dev.hud.enable
+    name: Dev HUD
+    type: bool
+    default: true
+    owner: dev
+    build: debug
+
+
