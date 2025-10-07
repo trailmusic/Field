@@ -622,15 +622,18 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
             return;
         }
 
-        // Normal blend using global MIX (0..1)
-        const float mix = (float) juce::jlimit (0.0, 1.0, hp.mixPct * 0.01);
+        // Equal-power blend using global MIX (0..1)
+        const float wet01 = (float) juce::jlimit (0.0, 1.0, hp.mixPct * 0.01);
+        const float theta = wet01 * juce::MathConstants<float>::halfPi;
+        const float gDry = std::cos (theta);
+        const float gWet = std::sin (theta);
         for (int c = 0; c < C; ++c)
         {
             float* out = buffer.getWritePointer (c);
             const float* d = dryCopy.getReadPointer (c);
             const float* w = wetBuf.getReadPointer (c);
             for (int n = 0; n < N; ++n)
-                out[n] = (float) ((1.0f - mix) * d[n] + mix * w[n]);
+                out[n] = gDry * d[n] + gWet * w[n];
         }
 
         // Post-DSP visualization feed (ensure UI sees scopes despite early return)
@@ -1308,15 +1311,18 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
             return;
         }
 
-        // Normal blend using global MIX (0..1)
-        const double mix = juce::jlimit (0.0, 1.0, hp.mixPct * 0.01);
+        // Equal-power blend using global MIX (0..1)
+        const double wet01 = juce::jlimit (0.0, 1.0, hp.mixPct * 0.01);
+        const double theta = wet01 * juce::MathConstants<double>::halfPi;
+        const double gDry = std::cos (theta);
+        const double gWet = std::sin (theta);
         for (int c = 0; c < C; ++c)
         {
             const double* dry = dryCopy.getReadPointer (c);
             const double* wet = wetBuf.getReadPointer (c);
             double* out = buffer.getWritePointer (c);
             for (int i = 0; i < N; ++i)
-                out[i] = (1.0 - mix) * dry[i] + mix * wet[i];
+                out[i] = gDry * dry[i] + gWet * wet[i];
         }
 
         // Post-DSP visualization feed (double path)
