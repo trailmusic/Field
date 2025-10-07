@@ -19,6 +19,9 @@ def main():
     for p in doc.get("params", []):
         _id = p.get("id")
         if _id:
+            # Treat templated IDs (e.g. dyneq.b[i].freq.hz) as patterns; skip from strict check
+            if "[" in _id or "]" in _id:
+                continue
             yaml_ids.add(_id)
 
     # --- scrape code string-literals that look like param IDs
