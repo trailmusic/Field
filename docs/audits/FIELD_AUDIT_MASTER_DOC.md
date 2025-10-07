@@ -37,6 +37,7 @@ Absolutely. Here’s a single, consolidated “master doc” that merges the two
 21. [CI — Param ID Drift Check](#ci--param-id-drift-check)
 22. [DynEQ — 24-band Spec & Wiring Plan](#dyneq--24-band-spec--wiring-plan)
 23. [DynEQ — Hold/Program-Dependent Release + UI bindings](#dyneq--holdprogram-dependent-release--ui-bindings)
+24. [Parameter Integration — Updated Next Steps](#parameter-integration--updated-next-steps)
 
 ---
 
@@ -770,6 +771,38 @@ Follow-ups (tracked in `docs/FIELD_CURRENT_TODO.md`):
 - Upgrade DynEQ UI to expose Attack/Release/Hold comprehensively (labels, ranges, presets).
 - Audit full DynEQ UI coverage vs backend (bands, modes, sidechain, lookahead).
 - Add GR visualization (per-band attenuation path/handle or mini meters).
+
+
+## Parameter Integration — Updated Next Steps
+
+Context: Core routing is locked; mix/out gain smoothing done; reverb voicing fanned-out; lookahead latency reporting in place; DynEQ hold + program-dependent release landed with basic UI bindings (A/R/H). The following steps complete Phase 2B.
+
+1) DynEQ end-to-end wiring (code + UI)
+   - Snapshot: verify/complete population of all per-band fields: `ratio`, `kneeDb`, `threshDbfs`, `direction`, `makeupLin`, `wet01`, `scHP_Hz`, `scLP_Hz`, `sidechain`.
+   - FieldChain → Node: ensure `DynEqParams` mirrors snapshot fully; call `setParameters` each block.
+   - Node_DynEq DSP: add soft-knee detector, RBJ peak/shelf/HP/LP/Notch/BP, optional hybrid RMS/peak detector.
+   - Global: mode/link/lookahead honored; set reported latency via `LatencyManager` when lookahead changes.
+   - UI: bind per-band `ratio`, `knee`, `threshold`, `direction`, `makeup`, `wet`, `SC HP/LP`, `sidechain` source.
+
+2) DynEQ visualization
+   - Add per-band GR meter/overlay (dB scale) and optional band-wide mini meter.
+   - Show lookahead/hold state (e.g., subtle latch indicator during hold).
+
+3) Tone/Imager completeness
+   - Integrate lightweight `Tone` node in `FieldChain` pre-blend; map `tone.tilt.dbPerOct` and `tone.bass.db`.
+   - Confirm `imager.width` is applied each block in `Node_Imager`; add bypass safety for mono.
+
+4) Latency + smoothing polish
+   - Verify balance/inGain smoothing if needed (short one-pole) to avoid zipper during automation.
+   - Add unit covering lookahead latency math at 44.1/48/96 kHz; ensure message-thread update only.
+
+5) Registry/CI/tests
+   - ParamRegistry.yaml: finalize `used_by`, `curve` annotations for all DynEQ fields; defaults sanity.
+   - CI drift check: run `tools/check_param_ids.py` in local build; wire to CI job if not already.
+   - Tests: AB nulls (float/double), rate×block matrix renders, DynEQ GR behavior across modes.
+
+6) Documentation
+   - Update this doc after each landing; add screenshots of DynEQ UI with GR overlay.
 
 
 **End of Master Doc**

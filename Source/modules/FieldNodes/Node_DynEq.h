@@ -23,6 +23,12 @@ struct Node_DynEq : NodeLatencyMixin<Node_DynEq>
             scBP_L_[i].reset(); scBP_R_[i].reset();
             scBP_L_[i].coefficients = juce::dsp::IIR::Coefficients<float>::makeBandPass (sr_, 1000.0, 1.2).get();
             scBP_R_[i].coefficients = juce::dsp::IIR::Coefficients<float>::makeBandPass (sr_, 1000.0, 1.2).get();
+            scHPF_L_[i].reset(); scHPF_R_[i].reset();
+            scLPF_L_[i].reset(); scLPF_R_[i].reset();
+            scHPF_L_[i].coefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass (sr_, 20.0).get();
+            scHPF_R_[i].coefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass (sr_, 20.0).get();
+            scLPF_L_[i].coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass  (sr_, 20000.0).get();
+            scLPF_R_[i].coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass  (sr_, 20000.0).get();
             env_[i] = 0.0f;
             grDbZ_[i] = 0.0f;
             holdCount_[i] = 0;
@@ -45,10 +51,16 @@ struct Node_DynEq : NodeLatencyMixin<Node_DynEq>
 			if (band.wet01 <= 0.0001f) continue;
 			const float freq = juce::jlimit (20.0f, 20000.0f, (float) band.freqHz);
 			const float Q    = juce::jlimit (0.1f, 24.0f, (float) band.q);
-			const float staticDb = 20.0f * std::log10 (std::max (eps, (float) band.staticGainLin));
+            const float staticDb = 20.0f * std::log10 (std::max (eps, (float) band.staticGainLin));
+            const float makeupDb = 20.0f * std::log10 (std::max (eps, (float) band.makeupLin));
             // Update sidechain filters to band center/Q
             scBP_L_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeBandPass (sr_, freq, Q).get();
             scBP_R_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeBandPass (sr_, freq, Q).get();
+            // Update SC HP/LP
+            scHPF_L_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass (sr_, juce::jlimit (20.0f, 2000.0f, (float) band.scHP_Hz)).get();
+            scHPF_R_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass (sr_, juce::jlimit (20.0f, 2000.0f, (float) band.scHP_Hz)).get();
+            scLPF_L_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass  (sr_, juce::jlimit (1000.0f, 20000.0f, (float) band.scLP_Hz)).get();
+            scLPF_R_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass  (sr_, juce::jlimit (1000.0f, 20000.0f, (float) band.scLP_Hz)).get();
             // Envelope smoothing (attack/release)
             float env = env_[b];
             const float atk = std::max (1e-4f, (float) band.atkSec);
@@ -63,9 +75,14 @@ struct Node_DynEq : NodeLatencyMixin<Node_DynEq>
                 if (band.sidechain == 0 /*band*/) {
                     float lb = scBP_L_[b].processSample (l);
                     float rb = (C > 1 ? scBP_R_[b].processSample (r) : lb);
+                    // apply HP/LP on band SC as well
+                    lb = scLPF_L_[b].processSample (scHPF_L_[b].processSample (lb));
+                    rb = (C > 1 ? scLPF_R_[b].processSample (scHPF_R_[b].processSample (rb)) : lb);
                     sc = 0.5f * (std::abs(lb) + std::abs(rb));
                 } else {
-                    sc = 0.5f * (std::abs(l) + std::abs(r));
+                    float l2 = scLPF_L_[b].processSample (scHPF_L_[b].processSample (l));
+                    float r2 = (C > 1 ? scLPF_R_[b].processSample (scHPF_R_[b].processSample (r)) : l2);
+                    sc = 0.5f * (std::abs(l2) + std::abs(r2));
                 }
                 const float a = (sc > env ? aA : aRbase);
                 env = sc + a * (env - sc);
@@ -120,7 +137,8 @@ struct Node_DynEq : NodeLatencyMixin<Node_DynEq>
                 }
             }
             grDbZ_[b] = grZ;
-            const float tgtDb = staticDb + grZ;
+            // Apply makeup and wet scaling of dynamic gain
+            const float tgtDb = staticDb + makeupDb + (grZ * juce::jlimit (0.0f, 1.0f, (float) band.wet01));
 			const float tgtLin = std::pow (10.0f, tgtDb * 0.05f);
 			auto coeff = juce::dsp::IIR::Coefficients<Sample>::makePeakFilter (sr_, (Sample)freq, (Sample)Q, (Sample)tgtLin);
 			juce::dsp::IIR::Filter<Sample> filtL, filtR;
@@ -141,6 +159,10 @@ private:
     int    chans_ { 2 };
     mutable std::array<juce::dsp::IIR::Filter<float>, 24> scBP_L_{};
     mutable std::array<juce::dsp::IIR::Filter<float>, 24> scBP_R_{};
+    mutable std::array<juce::dsp::IIR::Filter<float>, 24> scHPF_L_{};
+    mutable std::array<juce::dsp::IIR::Filter<float>, 24> scHPF_R_{};
+    mutable std::array<juce::dsp::IIR::Filter<float>, 24> scLPF_L_{};
+    mutable std::array<juce::dsp::IIR::Filter<float>, 24> scLPF_R_{};
     mutable std::array<float, 24> env_{};
     mutable std::array<float, 24> grDbZ_{};
     mutable std::array<int,   24> holdCount_{};
