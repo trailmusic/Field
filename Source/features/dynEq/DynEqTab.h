@@ -1588,6 +1588,8 @@ private:
                 st.adaptive = getBandParamFloat (st.bandIndex, dynEq::Band::specAdaptive, 0.0f) > 0.5f;
                 // Pull GR preview from telemetry
                 st.grPreviewDb = field::core::telemetry::getDynEqGrDb (st.bandIndex);
+                // External activation state (stub: mark inactive for ext1/2; future: query host bus)
+                st.extActive = !(st.source.startsWithIgnoreCase ("ext"));
                 detHud.setState (st);
                 detHud.setVisible (true);
             }

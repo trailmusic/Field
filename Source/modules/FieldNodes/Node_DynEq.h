@@ -33,6 +33,8 @@ struct Node_DynEq : NodeLatencyMixin<Node_DynEq>
             env_[i] = 0.0f;
             grDbZ_[i] = 0.0f;
             holdCount_[i] = 0;
+            prevFreq_[i] = 0.0f; prevQ_[i] = 0.0f;
+            prevScHP_[i] = 0.0f; prevScLP_[i] = 0.0f;
         }
     }
 
@@ -50,18 +52,36 @@ struct Node_DynEq : NodeLatencyMixin<Node_DynEq>
 			const auto& band = params_.band[b];
 			if (!band.enabled) continue;
 			if (band.wet01 <= 0.0001f) continue;
-			const float freq = juce::jlimit (20.0f, 20000.0f, (float) band.freqHz);
-			const float Q    = juce::jlimit (0.1f, 24.0f, (float) band.q);
+            const float freq = juce::jlimit (20.0f, 20000.0f, (float) band.freqHz);
+            const float Q    = juce::jlimit (0.1f, 24.0f, (float) band.q);
             const float staticDb = 20.0f * std::log10 (std::max (eps, (float) band.staticGainLin));
             const float makeupDb = 20.0f * std::log10 (std::max (eps, (float) band.makeupLin));
-            // Update sidechain filters to band center/Q
-            scBP_L_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeBandPass (sr_, freq, Q).get();
-            scBP_R_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeBandPass (sr_, freq, Q).get();
-            // Update SC HP/LP
-            scHPF_L_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass (sr_, juce::jlimit (20.0f, 2000.0f, (float) band.scHP_Hz)).get();
-            scHPF_R_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass (sr_, juce::jlimit (20.0f, 2000.0f, (float) band.scHP_Hz)).get();
-            scLPF_L_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass  (sr_, juce::jlimit (1000.0f, 20000.0f, (float) band.scLP_Hz)).get();
-            scLPF_R_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass  (sr_, juce::jlimit (1000.0f, 20000.0f, (float) band.scLP_Hz)).get();
+            // Update sidechain filters to band center/Q only if meaningfully changed
+            auto approxChanged = [](float oldV, float newV){
+                if (oldV == 0.0f) return true;
+                float rel = std::abs((newV - oldV) / oldV);
+                return rel > 0.005f; // >0.5%
+            };
+            if (approxChanged(prevFreq_[b], freq) || approxChanged(prevQ_[b], Q))
+            {
+                prevFreq_[b] = freq; prevQ_[b] = Q;
+                scBP_L_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeBandPass (sr_, freq, Q).get();
+                scBP_R_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeBandPass (sr_, freq, Q).get();
+            }
+            const float scHP = juce::jlimit (20.0f, 2000.0f, (float) band.scHP_Hz);
+            const float scLP = juce::jlimit (1000.0f, 20000.0f, (float) band.scLP_Hz);
+            if (approxChanged(prevScHP_[b], scHP))
+            {
+                prevScHP_[b] = scHP;
+                scHPF_L_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass (sr_, scHP).get();
+                scHPF_R_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeHighPass (sr_, scHP).get();
+            }
+            if (approxChanged(prevScLP_[b], scLP))
+            {
+                prevScLP_[b] = scLP;
+                scLPF_L_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass  (sr_, scLP).get();
+                scLPF_R_[b].coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass  (sr_, scLP).get();
+            }
             // Envelope smoothing (attack/release)
             float env = env_[b];
             const float atk = std::max (1e-4f, (float) band.atkSec);
@@ -70,21 +90,17 @@ struct Node_DynEq : NodeLatencyMixin<Node_DynEq>
             const float aRbase  = std::exp (-1.0f / (rel * (float) sr_));
             for (int i = 0; i < N; ++i)
             {
-                const float l = (float) io.getSample (0, i);
-                const float r = (C > 1 ? (float) io.getSample (1, i) : l);
+                // Detector source selection: 0=Pre, 1=Post (fallback to Pre), 2=Ext1, 3=Ext2
+                float l = (float) io.getSample (0, i);
+                float r = (C > 1 ? (float) io.getSample (1, i) : l);
+                if (band.sidechain == 2 || band.sidechain == 3) { l = 0.0f; r = 0.0f; } // Ext feeds inactive → silence
                 float sc;
-                if (band.sidechain == 0 /*band*/) {
-                    float lb = scBP_L_[b].processSample (l);
-                    float rb = (C > 1 ? scBP_R_[b].processSample (r) : lb);
-                    // apply HP/LP on band SC as well
-                    lb = scLPF_L_[b].processSample (scHPF_L_[b].processSample (lb));
-                    rb = (C > 1 ? scLPF_R_[b].processSample (scHPF_R_[b].processSample (rb)) : lb);
-                    sc = 0.5f * (std::abs(lb) + std::abs(rb));
-                } else {
-                    float l2 = scLPF_L_[b].processSample (scHPF_L_[b].processSample (l));
-                    float r2 = (C > 1 ? scLPF_R_[b].processSample (scHPF_R_[b].processSample (r)) : l2);
-                    sc = 0.5f * (std::abs(l2) + std::abs(r2));
-                }
+                // Band-focused detection (BP) before HP/LP yields musical per-band sensing
+                float lb = scBP_L_[b].processSample (l);
+                float rb = (C > 1 ? scBP_R_[b].processSample (r) : lb);
+                lb = scLPF_L_[b].processSample (scHPF_L_[b].processSample (lb));
+                rb = (C > 1 ? scLPF_R_[b].processSample (scHPF_R_[b].processSample (rb)) : lb);
+                sc = 0.5f * (std::abs(lb) + std::abs(rb));
                 const float a = (sc > env ? aA : aRbase);
                 env = sc + a * (env - sc);
             }
@@ -92,20 +108,46 @@ struct Node_DynEq : NodeLatencyMixin<Node_DynEq>
             const float levelDbfs = 20.0f * std::log10 (std::max (eps, env));
 			// Compute GR (down/up/both) with cap by range
             float grDbTarget = 0.0f;
-			const float over = levelDbfs - (float) band.threshDbfs;
+            const float over = levelDbfs - (float) band.threshDbfs;
+            // Adaptive detector behavior: bias knee and ratio by program level
+            float knee = (float) band.kneeDb;
+            float ratioEff = (float) band.ratio;
+            if (levelDbfs < -36.0f) {
+                knee = juce::jmax (0.0f, knee - 6.0f);
+                ratioEff = juce::jmax (1.0f, ratioEff * 0.85f);
+            } else if (levelDbfs < -24.0f) {
+                knee = juce::jmax (0.0f, knee - 3.0f);
+            } else if (levelDbfs > -12.0f) {
+                ratioEff = juce::jmax (1.0f, ratioEff - 0.5f);
+            }
+            auto softKneeDown = [&](float x){
+                if (knee <= 1e-6f) return juce::jmax (0.0f, x);
+                if (x <= 0.0f) return 0.0f;
+                if (x >= knee) return x - knee * 0.5f;
+                // quadratic easing in knee region
+                return 0.5f * (x * x) / juce::jmax (1e-6f, knee);
+            };
+            auto softKneeUp = [&](float x){
+                if (knee <= 1e-6f) return juce::jmax (0.0f, x);
+                if (x <= 0.0f) return 0.0f;
+                if (x >= knee) return x - knee * 0.5f;
+                return 0.5f * (x * x) / juce::jmax (1e-6f, knee);
+            };
 			if (band.direction == 0 /*down*/ || band.direction == 2 /*both*/)
 			{
 				if (over > 0.0f) {
-					const float comp = over - (over / std::max(1.0f, (float) band.ratio));
-                    grDbTarget -= std::min ((float) band.rangeDb, comp);
+                    const float oEff = softKneeDown (over);
+					const float comp = oEff - (oEff / juce::jmax (1.0f, ratioEff));
+					grDbTarget -= std::min ((float) band.rangeDb, comp);
 				}
 			}
 			if (band.direction == 1 /*up*/ || band.direction == 2 /*both*/)
 			{
 				if (over < 0.0f) {
-					const float below = -over;
-					const float expn = below - (below / std::max(1.0f, (float) band.ratio));
-                    grDbTarget += std::min ((float) band.rangeDb, expn);
+                    const float below = -over;
+                    const float bEff = softKneeUp (below);
+                    const float expn = bEff - (bEff / juce::jmax (1.0f, ratioEff));
+					grDbTarget += std::min ((float) band.rangeDb, expn);
 				}
 			}
             // Smooth GR with hold and program-dependent release
@@ -169,5 +211,10 @@ private:
     mutable std::array<float, 24> env_{};
     mutable std::array<float, 24> grDbZ_{};
     mutable std::array<int,   24> holdCount_{};
+    // Cached values to avoid unnecessary filter coefficient rebuilds
+    mutable std::array<float, 24> prevFreq_{};
+    mutable std::array<float, 24> prevQ_{};
+    mutable std::array<float, 24> prevScHP_{};
+    mutable std::array<float, 24> prevScLP_{};
 };
 }}} // namespace field::modules::nodes

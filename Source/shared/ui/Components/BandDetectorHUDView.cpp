@@ -71,24 +71,31 @@ void BandDetectorHUDView::paint(Graphics& g) {
 	Colour pillCol = cPre;
 	if (st_.source == "post") pillCol = cPost;
 	else if (st_.source.startsWithIgnoreCase("ext")) pillCol = cExt;
-	drawChip(rPill_, pillText, pillCol, true);
+    // Asterisk when external selected but inactive
+    const bool showExtInactive = st_.source.startsWithIgnoreCase("ext") && !st_.extActive;
+    drawChip(rPill_, pillText + (showExtInactive ? "*" : ""), pillCol, true);
 
 	// adaptive toggle
 	drawChip(rAdaptive_, "Adapt", Colours::darkslategrey, st_.adaptive);
 
 	// HP/LP chips
-	drawChip(rHp_,  "HP " + String(roundToInt(st_.hpHz)) + " Hz", Colours::darkgrey, true);
-	drawChip(rLp_,  "LP " + String(st_.lpHz/1000.0f, 1) + " kHz", Colours::darkgrey, true);
+    drawChip(rHp_,  "HP " + String(roundToInt(st_.hpHz)) + " Hz", Colours::darkgrey, true);
+    drawChip(rLp_,  "LP " + String(st_.lpHz/1000.0f, 1) + " kHz", Colours::darkgrey, true);
 
 	// GR mini meter (3 bars)
     auto gr = juce::jlimit(0.f, 18.f, -st_.grPreviewDb); // 0..18 dB reduction
-	int lit = (int) juce::jmap(gr, 0.f, 18.f, 0.f, 3.f);
+    int lit = (int) juce::jmap(gr, 0.f, 18.f, 0.f, 3.f);
 	auto rr = rGr_; rr.reduce(8, 2);
 	int w = rr.getWidth()/3 - 3;
 	for (int i=0;i<3;++i) {
 		auto cell = rr.removeFromLeft(w);
-		g.setColour(Colours::dimgrey); g.fillRoundedRectangle(cell.toFloat(), 3.f);
-		g.setColour(i < lit ? Colours::red : Colours::darkred); g.fillRoundedRectangle(cell.reduced(1).toFloat(), 3.f);
+        g.setColour(Colours::dimgrey);
+        g.fillRoundedRectangle(cell.toFloat(), 3.f);
+        // Dim bars when external source inactive
+        Colour bar = (i < lit ? Colours::red : Colours::darkred);
+        if (showExtInactive) bar = bar.withAlpha(0.45f);
+        g.setColour(bar);
+        g.fillRoundedRectangle(cell.reduced(1).toFloat(), 3.f);
 		rr.removeFromLeft(4);
 	}
 

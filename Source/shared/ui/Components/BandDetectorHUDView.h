@@ -7,6 +7,7 @@ struct DetectorHUDState {
 	float hpHz{60.f};
 	float lpHz{8000.f};
 	bool adaptive{false};
+	bool extActive{false};
 	float grPreviewDb{0.f};
 	float scOverDb{0.f};
 };

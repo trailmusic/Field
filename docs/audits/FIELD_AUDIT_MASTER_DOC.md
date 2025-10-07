@@ -40,6 +40,7 @@ Absolutely. Here’s a single, consolidated “master doc” that merges the two
 24. [Parameter Integration — Updated Next Steps](#parameter-integration--updated-next-steps)
 25. [DynEQ — Detector HUD (source + SC HP/LP)](#dyneq--detector-hud-source--sc-hplp)
 26. [DynEQ — Per-band bindings + GR telemetry](#dyneq--per-band-bindings--gr-telemetry)
+27. [DynEQ — Adaptive detector + External SC activation UX](#dyneq--adaptive-detector--external-sc-activation-ux)
 
 ---
 
@@ -804,6 +805,27 @@ Follow-ups:
 - Add subtle hold/LA indicator and polish adaptive behavior.
 
 ## DynEQ — Per-band bindings + GR telemetry
+
+## DynEQ — Adaptive detector + External SC activation UX
+
+Date: 2025-10-07
+
+Summary:
+- Implemented adaptive detector behavior in `Node_DynEq`: program-level-biased knee/ratio (lighter at low levels, eased knee; slight ratio relax above −12 dBFS) with quadratic soft-knee. Retains hold/PDR envelope.
+- Added filter rebuild hygiene (band BP and SC HP/LP) with 0.5% relative-change threshold to avoid per-sample coeff churn.
+- External sidechain activation UX in HUD: when `Ext1/Ext2` selected and inactive, HUD pill shows asterisk and GR mini-meter is dimmed.
+
+Files:
+- `Source/modules/FieldNodes/Node_DynEq.h`: adaptive law, soft-knee, coeff-change thresholds, publish GR.
+- `Source/shared/ui/Components/BandDetectorHUDView.*`: asterisk/dim when external inactive.
+- `Source/features/dynEq/DynEqTab.h`: sets `extActive=false` for ext sources (stub; host query to follow).
+
+Behavior:
+- Quiet passages release faster and pump less; loud passages hold slightly stronger; overall feel is smoother without adding latency.
+- Selecting `Ext1/Ext2` keeps detector silent (for now) and clearly marks inactivity in the HUD.
+
+Next:
+- Wire real host external SC activation state and feeds into `FieldChain` taps; update HUD `extActive=true` when connected.
 
 Date: 2025-10-07
 
