@@ -733,18 +733,24 @@ private:
             atkMs.setRange (0.1, 2000.0, 0.1);
             atkMs.onValueChange = [this]{ if (!updating && onAttackMsChanged) onAttackMsChanged ((float) atkMs.getValue()); };
             addAndMakeVisible (atkMs);
+            atkLabel.setJustificationType (juce::Justification::centredLeft);
+            addAndMakeVisible (atkLabel);
 
             relMs.setSliderStyle (juce::Slider::LinearHorizontal);
             relMs.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
             relMs.setRange (5.0, 5000.0, 0.1);
             relMs.onValueChange = [this]{ if (!updating && onReleaseMsChanged) onReleaseMsChanged ((float) relMs.getValue()); };
             addAndMakeVisible (relMs);
+            relLabel.setJustificationType (juce::Justification::centredLeft);
+            addAndMakeVisible (relLabel);
 
             holdMs.setSliderStyle (juce::Slider::LinearHorizontal);
             holdMs.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
             holdMs.setRange (0.0, 1000.0, 0.1);
             holdMs.onValueChange = [this]{ if (!updating && onHoldMsChanged) onHoldMsChanged ((float) holdMs.getValue()); };
             addAndMakeVisible (holdMs);
+            holdLabel.setJustificationType (juce::Justification::centredLeft);
+            addAndMakeVisible (holdLabel);
         }
         void paint (juce::Graphics& g) override
         {
@@ -794,8 +800,11 @@ private:
             chanCb.setBounds (half2.removeFromLeft (120));
             // Attack / Release / Hold row
             auto half3 = r.removeFromTop (24);
+            atkLabel.setBounds (half3.removeFromLeft (36));
             atkMs.setBounds (half3.removeFromLeft (120));
+            relLabel.setBounds (half3.removeFromLeft (36));
             relMs.setBounds (half3.removeFromLeft (120));
+            holdLabel.setBounds (half3.removeFromLeft (44));
             holdMs.setBounds (half3.removeFromLeft (120));
         }
         void setValues (float gainDb, float qVal, float freqHz, int typeIdx, int phaseIdx, int chanIdx, bool dynOn, bool specOn)
@@ -812,6 +821,13 @@ private:
             specToggle.setToggleState (specOn, juce::dontSendNotification);
         }
         void setAccentColour (juce::Colour c) { overlayAccent = c; repaint(); }
+        void setDynParams (float atk_ms, float rel_ms, float hold_ms)
+        {
+            juce::ScopedValueSetter<bool> sv (updating, true);
+            atkMs.setValue (atk_ms, juce::dontSendNotification);
+            relMs.setValue (rel_ms, juce::dontSendNotification);
+            holdMs.setValue (hold_ms, juce::dontSendNotification);
+        }
         // Hooks to parent for parameter binding
         std::function<void(float)> onAttackMsChanged;
         std::function<void(float)> onReleaseMsChanged;
@@ -820,6 +836,7 @@ private:
         juce::Slider gain, q, freq;
         juce::Slider atkMs, relMs, holdMs;
         juce::Label gainLabel, qLabel, freqLabel, /*typeLabel, phaseLabel,*/ chanLabel;
+        juce::Label atkLabel { "ATK", "ATK" }, relLabel { "REL", "REL" }, holdLabel { "HOLD", "HOLD" };
         juce::ComboBox typeCb, phaseCb, chanCb;
         juce::ToggleButton dynToggle, specToggle;
         struct SmallCurveIcon : public juce::Component {

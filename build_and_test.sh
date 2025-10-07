@@ -22,14 +22,33 @@ close_field_app() {
 # Function to launch Field app
 launch_field_app() {
     echo "🚀 Launching Field app..."
-    # Try AU plugin first, then standalone
-    if open "/Users/grantedwards/Library/Audio/Plug-Ins/Components/Field.component" 2>/dev/null; then
-        echo "✅ Field AU plugin launched successfully"
-    elif open "/Users/grantedwards/Desktop/Field/build/Source/Field_artefacts/Standalone/Field.app" 2>/dev/null; then
-        echo "✅ Field Standalone app launched successfully"
-    else
-        echo "⚠️  Could not auto-launch Field app. Please launch manually."
+    # Prefer Standalone (Debug), then Standalone (non-Debug), then AU (opens in Finder)
+    local STANDALONE_DEBUG="/Users/grantedwards/Desktop/Field/build/Source/Field_artefacts/Debug/Standalone/Field.app"
+    local STANDALONE_REL="/Users/grantedwards/Desktop/Field/build/Source/Field_artefacts/Standalone/Field.app"
+    local AU_PATH="/Users/grantedwards/Library/Audio/Plug-Ins/Components/Field.component"
+
+    if [ -d "$STANDALONE_DEBUG" ]; then
+        if open -n "$STANDALONE_DEBUG" 2>/dev/null; then
+            echo "✅ Field Standalone (Debug) launched successfully"
+            return 0
+        fi
     fi
+
+    if [ -d "$STANDALONE_REL" ]; then
+        if open -n "$STANDALONE_REL" 2>/dev/null; then
+            echo "✅ Field Standalone launched successfully"
+            return 0
+        fi
+    fi
+
+    if [ -e "$AU_PATH" ]; then
+        if open "$AU_PATH" 2>/dev/null; then
+            echo "✅ Field AU component opened"
+            return 0
+        fi
+    fi
+
+    echo "⚠️  Could not auto-launch Field app. Please launch manually."
 }
 
 # Navigate to build directory
