@@ -26,10 +26,11 @@ Absolutely. Here’s a single, consolidated “master doc” that merges the two
 11. [Risk & Mitigation](#risk--mitigation)
 12. [Rollback Plan](#rollback-plan)
 13. [Cleanup Map (dev artifacts)](#cleanup-map-dev-artifacts)
-14. [Live Glitch Triage Log](#live-glitch-triage-log)
-15. [Ownership & Cadence](#ownership--cadence)
-16. [Appendix A — Code Sketches](#appendix-a--code-sketches)
-17. [Appendix B — Tripwire Patterns](#appendix-b--tripwire-patterns)
+14. [Editor Lifecycle — UI Close Suspension Fix](#editor-lifecycle--ui-close-suspension-fix)
+15. [Live Glitch Triage Log](#live-glitch-triage-log)
+16. [Ownership & Cadence](#ownership--cadence)
+17. [Appendix A — Code Sketches](#appendix-a--code-sketches)
+18. [Appendix B — Tripwire Patterns](#appendix-b--tripwire-patterns)
 
 ---
 
@@ -512,6 +513,26 @@ for (int c=0; c<C; ++c) {
 * Parity cookies: `cookieF_|cookieD_|PrepCookie`
 * Debug logs: `DBG\(\"\[Field\]`
 * FDN debug: `SpikeSilencer|DcBlock|postWrapPad\(|fadeSamplesLeft`
+
+---
+
+## Editor Lifecycle — UI Close Suspension Fix
+
+**Symptom:** Closing the plugin UI via the host’s close control muted audio while the DAW playhead continued to advance.
+
+**Root cause:** During editor teardown we suspended audio processing (`suspendProcessing(true)`) to avoid UAF during UI destruction, but didn't resume it afterward when only the editor was closing (processor still active).
+
+**Fix (landed):** Resume processing after UI teardown completes.
+
+- File: `Source/shared/ui/Managers/CleanupManager.cpp`
+- Function: `CleanupManager::performCleanup()`
+- Change: call `editor.proc.suspendProcessing(false);` at the end of cleanup.
+
+**Why safe:** Suspension still protects the teardown window; resume occurs only after attachments/listeners/timers/callbacks are cleared, so audio continues without the editor.
+
+**Verification:** Close the editor during playback in Live; audio continues, playhead advances, no mute. Build matrix unchanged.
+
+**Follow-up:** Consider an offline harness test that simulates editor open/close and asserts `isSuspended()==false` post-close when processor remains active.
 
 ---
 

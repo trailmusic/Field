@@ -82,6 +82,10 @@ void CleanupManager::performCleanup()
     cleanupUIListeners();           // Remove UI listeners
     cleanupState();                  // Reset state and destroy panes
     cleanupLookAndFeel();           // Reset look and feel
+
+    // 5. Resume audio processing after UI teardown so playback continues after closing the editor
+    // CRITICAL: Closing the editor should not mute audio; only suspend during teardown window
+    editor.proc.suspendProcessing(false);
     
     // 4. Debug assertions (only in debug builds)
     #if JUCE_DEBUG
