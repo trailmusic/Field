@@ -29,7 +29,12 @@ public:
         
         // Add zoom rail
         addAndMakeVisible (zoomRail);
-        zoomRail.onZoomChanged = [this] { repaint(); };
+        zoomRail.onZoomChanged = [this]
+        {
+            rebuildEqPath();
+            if (selected >= 0) { positionOverlay(); positionBadgeFor (selected); }
+            repaint();
+        };
         zoomRail.onAutoToggled = [this] { /* persist state if needed */ };
         zoomRail.onReset = [this] { repaint(); };
         
@@ -79,6 +84,78 @@ public:
             {
                 if (points[(size_t) selected].bandIdx >= 0)
                     setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynHoldMs, juce::jlimit (0.0f, 1000.0f, ms));
+                repaint();
+            }
+        };
+        overlay.onThreshDbChanged = [this](float db)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynThreshDb, juce::jlimit (-80.0f, 0.0f, db));
+                repaint();
+            }
+        };
+        overlay.onRatioChanged = [this](float r)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynRatio, juce::jlimit (1.0f, 10.0f, r));
+                repaint();
+            }
+        };
+        overlay.onKneeDbChanged = [this](float db)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynKneeDb, juce::jlimit (0.0f, 24.0f, db));
+                repaint();
+            }
+        };
+        overlay.onMakeupDbChanged = [this](float db)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynMakeupDb, juce::jlimit (-24.0f, 24.0f, db));
+                repaint();
+            }
+        };
+        overlay.onWetChanged = [this](float w)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynWet01, juce::jlimit (0.0f, 1.0f, w));
+                repaint();
+            }
+        };
+        overlay.onSCHPChanged = [this](float hz)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynDetHPHz, juce::jlimit (20.0f, 2000.0f, hz));
+                repaint();
+            }
+        };
+        overlay.onSCLPChanged = [this](float hz)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynDetLPHz, juce::jlimit (1000.0f, 20000.0f, hz));
+                repaint();
+            }
+        };
+        overlay.onDetSrcChanged = [this](int src)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+            {
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynDetectorSrc, (float) juce::jlimit (0, 3, src));
                 repaint();
             }
         };
@@ -653,6 +730,14 @@ private:
         std::function<void(bool)>  onDynChanged;
         std::function<void(bool)>  onSpecChanged;
         std::function<void(bool)>  onDragAny; // notify begin/end of any slider drag
+        std::function<void(float)> onThreshDbChanged;
+        std::function<void(float)> onRatioChanged;
+        std::function<void(float)> onKneeDbChanged;
+        std::function<void(float)> onMakeupDbChanged;
+        std::function<void(float)> onWetChanged;
+        std::function<void(float)> onSCHPChanged;
+        std::function<void(float)> onSCLPChanged;
+        std::function<void(int)>   onDetSrcChanged;
         BandOverlay()
         {
             setInterceptsMouseClicks (true, true);
@@ -751,6 +836,54 @@ private:
             addAndMakeVisible (holdMs);
             holdLabel.setJustificationType (juce::Justification::centredLeft);
             addAndMakeVisible (holdLabel);
+
+            // Threshold / Ratio / Knee / Makeup / Wet
+            threshDb.setSliderStyle (juce::Slider::LinearHorizontal);
+            threshDb.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            threshDb.setRange (-80.0, 0.0, 0.1);
+            threshDb.onValueChange = [this]{ if (!updating && onThreshDbChanged) onThreshDbChanged ((float) threshDb.getValue()); };
+            addAndMakeVisible (threshDb);
+
+            ratio.setSliderStyle (juce::Slider::LinearHorizontal);
+            ratio.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            ratio.setRange (1.0, 10.0, 0.1);
+            ratio.onValueChange = [this]{ if (!updating && onRatioChanged) onRatioChanged ((float) ratio.getValue()); };
+            addAndMakeVisible (ratio);
+
+            kneeDb.setSliderStyle (juce::Slider::LinearHorizontal);
+            kneeDb.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            kneeDb.setRange (0.0, 24.0, 0.1);
+            kneeDb.onValueChange = [this]{ if (!updating && onKneeDbChanged) onKneeDbChanged ((float) kneeDb.getValue()); };
+            addAndMakeVisible (kneeDb);
+
+            makeupDb.setSliderStyle (juce::Slider::LinearHorizontal);
+            makeupDb.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            makeupDb.setRange (-24.0, 24.0, 0.1);
+            makeupDb.onValueChange = [this]{ if (!updating && onMakeupDbChanged) onMakeupDbChanged ((float) makeupDb.getValue()); };
+            addAndMakeVisible (makeupDb);
+
+            wet01.setSliderStyle (juce::Slider::LinearHorizontal);
+            wet01.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            wet01.setRange (0.0, 1.0, 0.01);
+            wet01.onValueChange = [this]{ if (!updating && onWetChanged) onWetChanged ((float) wet01.getValue()); };
+            addAndMakeVisible (wet01);
+
+            // Detector source + SC HP/LP
+            detSrc.addItemList (juce::StringArray{ "PreXY","PostXY","External1","External2" }, 1);
+            detSrc.onChange = [this]{ if (!updating && onDetSrcChanged) onDetSrcChanged (detSrc.getSelectedItemIndex()); };
+            addAndMakeVisible (detSrc);
+
+            scHP.setSliderStyle (juce::Slider::LinearHorizontal);
+            scHP.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            scHP.setRange (20.0, 2000.0, 0.1);
+            scHP.onValueChange = [this]{ if (!updating && onSCHPChanged) onSCHPChanged ((float) scHP.getValue()); };
+            addAndMakeVisible (scHP);
+
+            scLP.setSliderStyle (juce::Slider::LinearHorizontal);
+            scLP.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            scLP.setRange (1000.0, 20000.0, 0.1);
+            scLP.onValueChange = [this]{ if (!updating && onSCLPChanged) onSCLPChanged ((float) scLP.getValue()); };
+            addAndMakeVisible (scLP);
         }
         void paint (juce::Graphics& g) override
         {
@@ -806,6 +939,20 @@ private:
             relMs.setBounds (half3.removeFromLeft (120));
             holdLabel.setBounds (half3.removeFromLeft (44));
             holdMs.setBounds (half3.removeFromLeft (120));
+
+            // Threshold / Ratio / Knee / Makeup / Wet row
+            auto half4 = r.removeFromTop (24);
+            threshDb.setBounds (half4.removeFromLeft (160));
+            ratio.setBounds    (half4.removeFromLeft (120));
+            kneeDb.setBounds   (half4.removeFromLeft (120));
+            makeupDb.setBounds (half4.removeFromLeft (120));
+            wet01.setBounds    (half4.removeFromLeft (120));
+
+            // Detector source + SC HP/LP row
+            auto half5 = r.removeFromTop (24);
+            detSrc.setBounds (half5.removeFromLeft (140));
+            scHP.setBounds   (half5.removeFromLeft (140));
+            scLP.setBounds   (half5.removeFromLeft (140));
         }
         void setValues (float gainDb, float qVal, float freqHz, int typeIdx, int phaseIdx, int chanIdx, bool dynOn, bool specOn)
         {
@@ -835,6 +982,9 @@ private:
     private:
         juce::Slider gain, q, freq;
         juce::Slider atkMs, relMs, holdMs;
+        juce::Slider threshDb, ratio, kneeDb, makeupDb, wet01;
+        juce::ComboBox detSrc;
+        juce::Slider scHP, scLP;
         juce::Label gainLabel, qLabel, freqLabel, /*typeLabel, phaseLabel,*/ chanLabel;
         juce::Label atkLabel { "ATK", "ATK" }, relLabel { "REL", "REL" }, holdLabel { "HOLD", "HOLD" };
         juce::ComboBox typeCb, phaseCb, chanCb;
