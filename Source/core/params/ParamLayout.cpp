@@ -60,6 +60,27 @@ Layout makeParameterLayout()
 			[] (const juce::String& s) { return s.getFloatValue(); }));
 	}
 
+	// ---- Right-side master controls ----
+	{
+		auto range = NormalisableRange<float> (-24.0f, 24.0f, 0.01f, 1.0f);
+		layout.add (std::make_unique<AudioParameterFloat>(
+			kInGainDb, "Input Gain",
+			range, 0.0f,
+			juce::String(), juce::AudioProcessorParameter::genericParameter,
+			[] (float v, int) { return juce::String (v, 1) + " dB"; },
+			[] (const juce::String& s) { return s.getFloatValue(); }));
+	}
+
+	{
+		auto range = NormalisableRange<float> (-1.0f, 1.0f, 0.001f, 1.0f);
+		layout.add (std::make_unique<AudioParameterFloat>(
+			kPanBalance, "Balance",
+			range, 0.0f));
+	}
+
+	layout.add (std::make_unique<AudioParameterBool>(
+		kGlobalBypass, "Bypass", false));
+
 	// --- Mix & Output ---
 	{
 		auto range = NormalisableRange<float> (0.0f, 1.0f, 0.0f, 0.5f);

@@ -18,6 +18,7 @@ static constexpr const char* kDevHudEnable      = "dev.hud.enable"; // bool
 // Mix / Output
 static constexpr const char* kMixWet01          = "mix.wet01";            // float 0..1
 static constexpr const char* kOutGainDb         = "gain.output.db";       // float dB
+static constexpr const char* kInGainDb          = "gain.input.db";        // float dB
 static constexpr const char* kPanBalance        = "pan.balance";          // float -1..+1 (optional)
 
 // Tone
@@ -31,4 +32,7 @@ static constexpr const char* kRvDampingHz       = "reverb.damping.hz";    // flo
 
 // Imager
 static constexpr const char* kImagerWidth       = "imager.width";         // float 0..2
+
+// Global
+static constexpr const char* kGlobalBypass      = "global.bypass";        // bool
 }} // namespace field::params
