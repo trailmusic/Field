@@ -729,6 +729,17 @@ Done criteria:
 - Lookahead adds correct host-rate latency via message thread
 - Automation is zipper-free; nulls clean; per-band GR behaves for down/up/split
 
+Status (2025-10-07):
+- Registry: global + templated per-band IDs added to `docs/params/ParamRegistry.yaml`.
+- Snapshot: `DynEqSnap` + `DynEqBandSnap` implemented; builder populates all 24 bands.
+- FieldChain: full fan-out to `Node_DynEq::DynEqParams` (global mode/link, lookahead, per-band fields).
+- Node: parameter struct + `setParameters` stub landed (DSP to follow).
+
+Next steps:
+- Implement `Node_DynEq` detection and gain law (RBJ filters, hybrid RMS/peak, soft knee, PDR release).
+- Add UI bindings for per-band controls and global mode/link/lookahead.
+- Add offline tests: band GR correctness across modes; lookahead latency verification; null/parity checks.
+
 ---
 
 **End of Master Doc**

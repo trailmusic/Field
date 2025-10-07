@@ -120,13 +120,47 @@ struct FieldChain
 		dlP_.enabled            = s.enableDelay;
 		dlP_.lookaheadMs        = s.delayLookAheadMs;
 
-		deP_.enabled            = s.enableDynEq;
-		deP_.lookaheadMs        = s.dynEqLookAheadMs;
+        deP_.enabled            = s.enableDynEq;
+        deP_.lookaheadMs        = s.dynEqLookAheadMs;
 
 		imP_.width              = s.imagerWidth;
 
         // Push simple realtime params into nodes that support direct handoff
-		imager_.setWidth (imP_.width);
+        imager_.setWidth (imP_.width);
+        // DynEQ fan-out (when snapshot expanded)
+        {
+            nodes::Node_DynEq::DynEqParams p{};
+            p.enabled = deP_.enabled;
+            p.lookaheadSamples = (int) std::round (deP_.lookaheadMs * 0.001 * sr_);
+            // Populate global mode/link if present in snapshot
+            p.globalMode = s.dyneq.globalMode;
+            p.link       = s.dyneq.link;
+            // Per-band mapping (0..23)
+            for (int i = 0; i < 24; ++i)
+            {
+                const auto& sb = s.dyneq.band[i];
+                auto& db = p.band[i];
+                db.enabled      = sb.enabled;
+                db.type         = sb.type;
+                db.direction    = sb.direction;
+                db.sidechain    = sb.sidechain;
+                db.freqHz       = sb.freqHz;
+                db.q            = sb.q;
+                db.staticGainLin= sb.staticGainLin;
+                db.rangeDb      = sb.rangeDb;
+                db.ratio        = sb.ratio;
+                db.threshDbfs   = sb.threshDbfs;
+                db.kneeDb       = sb.kneeDb;
+                db.atkSec       = sb.atkSec;
+                db.relSec       = sb.relSec;
+                db.holdSec      = sb.holdSec;
+                db.makeupLin    = sb.makeupLin;
+                db.scHP_Hz      = sb.scHP_Hz;
+                db.scLP_Hz      = sb.scLP_Hz;
+                db.wet01        = sb.wet01;
+            }
+            dyneq_.setParameters (p);
+        }
         // Reverb voicing fan-out (engine should not apply its own dry/wet)
         {
             nodes::Node_Reverb::Params p{};
@@ -241,7 +275,7 @@ private:
 	struct ToneParams  { float tilt_dB_per_oct{0.f}; float bass_dB{0.f}; };
     struct ReverbParams{ bool enabled{false}; float preDelaySec{0.f}; float sizeNorm{0.f}; float dampingHz{6000.f}; };
 	struct DelayParams { bool enabled{false}; float lookaheadMs{0.f}; };
-    struct DynEqParams { bool enabled{false}; float lookaheadMs{0.f}; };
+    struct DynEqParams { bool enabled{false}; float lookaheadMs{0.f}; uint8_t globalMode{0}; uint8_t link{0}; struct Band{ uint8_t enabled{0}, type{0}, direction{0}, sidechain{0}; float freqHz{}, q{}, staticGainLin{}, rangeDb{}, ratio{}, threshDbfs{}, kneeDb{}, atkSec{}, relSec{}, holdSec{}, makeupLin{}, scHP_Hz{}, scLP_Hz{}, wet01{}; } band[24]; };
 	struct ImagerParams{ float width{1.0f}; };
 
     mixing::Node_Meter<>  meter_{};
