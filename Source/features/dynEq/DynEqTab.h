@@ -6,6 +6,7 @@
 #include "shared/Core/FieldLookAndFeel.h"
 #include "shared/ui/Controls/ZoomState.h"
 #include "DynEqZoomSideRail.h"
+#include "shared/ui/Components/BandDetectorHUDView.h"
 
 class MyPluginAudioProcessor; // fwd
 class MyPluginAudioProcessorEditor; // fwd
@@ -50,6 +51,35 @@ public:
         overlay.setVisible (false);
         addAndMakeVisible (badge);
         badge.setVisible (false);
+
+        // Detector HUD (pinned to badge bottom)
+        addAndMakeVisible (detHud);
+        detHud.setVisible (false);
+        detHud.setMaxWidth (200);
+        detHud.onChangeSource = [this](int src)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynDetectorSrc, (float) juce::jlimit (0, 3, src));
+        };
+        detHud.onChangeHP = [this](float hz)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynDetHPHz, juce::jlimit (20.0f, 2000.0f, hz));
+        };
+        detHud.onChangeLP = [this](float hz)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynDetLPHz, juce::jlimit (1000.0f, 20000.0f, hz));
+        };
+        detHud.onToggleAdaptive = [this](bool on)
+        {
+            if (selected >= 0 && selected < (int) points.size())
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::specAdaptive, on ? 1.0f : 0.0f);
+        };
         overlay.onGainChanged = [this](float g)
         {
             if (selected >= 0 && selected < (int) points.size())
@@ -1538,12 +1568,27 @@ private:
                 overlay.setVisible (true);
                 positionOverlay();
                 positionBadgeFor (selected);
+                // Update HUD state from APVTS for selected band
+                DetectorHUDState st;
+                st.bandIndex = points[(size_t) selected].bandIdx;
+                // Source
+                {
+                    const auto id = bandId (dynEq::Band::dynDetectorSrc, st.bandIndex);
+                    int srcIdx = 0; if (auto* p = proc.apvts.getParameter (id)) srcIdx = (int) std::round (p->getValue() * 3.0f);
+                    st.source = (srcIdx == 1 ? "post" : srcIdx == 2 ? "ext1" : srcIdx == 3 ? "ext2" : "pre");
+                }
+                st.hpHz = getBandParamFloat (st.bandIndex, dynEq::Band::dynDetHPHz, 60.0f);
+                st.lpHz = getBandParamFloat (st.bandIndex, dynEq::Band::dynDetLPHz, 8000.0f);
+                st.adaptive = getBandParamFloat (st.bandIndex, dynEq::Band::specAdaptive, 0.0f) > 0.5f;
+                detHud.setState (st);
+                detHud.setVisible (true);
             }
         }
         else
         {
             overlay.setVisible (false);
             badge.setVisible (false);
+            detHud.setVisible (false);
         }
     }
 
@@ -1844,6 +1889,18 @@ private:
         badge.setAccentColour (accent);
         overlay.setAccentColour (accent);
         badge.toFront (true);
+
+        // Position HUD pinned to bottom of badge
+        const int hudW = 200;
+        const int hudH = detHud.getCollapsedHeight();
+        int hudX = ox + (w - hudW) / 2;
+        int hudY = oy + h + 4;
+        // Keep within pane
+        if (hudX < pane.getX()) hudX = pane.getX() + 8;
+        if (hudX + hudW > pane.getRight()) hudX = pane.getRight() - hudW - 8;
+        if (hudY + hudH > pane.getBottom()) hudY = oy - hudH - 4;
+        detHud.setBounds (hudX, hudY, hudW, hudH);
+        detHud.toFront (true);
     }
 
     static juce::String channelLabel (int ch)
@@ -2002,6 +2059,7 @@ private:
     // Zoom state and rail
     ZoomState zoomState;
     DynEqZoomSideRail zoomRail;
+    BandDetectorHUDView detHud;
 };
 
 // Tooltip implementation for Dynamic EQ controls

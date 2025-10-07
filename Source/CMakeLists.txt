@@ -55,6 +55,8 @@ set(SRC
     shared/ui/Components/TransportClock.cpp
     shared/ui/Components/TintMenuLNFEx.h
     shared/ui/Components/TintMenuLNFEx.cpp
+    shared/ui/Components/BandDetectorHUDView.h
+    shared/ui/Components/BandDetectorHUDView.cpp
     shared/ui/Components/UIHelpers.h
     shared/ui/Layout/LayoutManager.h
     shared/ui/Layout/LayoutManager.cpp

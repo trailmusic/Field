@@ -38,6 +38,7 @@ Absolutely. Here’s a single, consolidated “master doc” that merges the two
 22. [DynEQ — 24-band Spec & Wiring Plan](#dyneq--24-band-spec--wiring-plan)
 23. [DynEQ — Hold/Program-Dependent Release + UI bindings](#dyneq--holdprogram-dependent-release--ui-bindings)
 24. [Parameter Integration — Updated Next Steps](#parameter-integration--updated-next-steps)
+25. [DynEQ — Detector HUD (source + SC HP/LP)](#dyneq--detector-hud-source--sc-hplp)
 
 ---
 
@@ -771,6 +772,35 @@ UI bindings expanded (2025-10-07):
 - Added parameter IDs for ratio, knee, makeup, wet to `DynamicEqParamIDs.h`.
 - Node: implemented sidechain HP/LP filters, applied makeup and wet scaling to dynamic gain.
 - Next: bind per-band Ratio/Knee/Threshold/Direction/Makeup/Wet/SC HP/LP/Detector Source controls in `DynEqTab`.
+
+## DynEQ — Detector HUD (source + SC HP/LP)
+
+Date: 2025-10-07
+
+Summary:
+- Landed a lightweight Detector HUD pinned to the `BandBadge` in `DynEqTab` that exposes detector source and sidechain HP/LP controls with an adaptive toggle placeholder and a GR mini-meter stub.
+
+Files:
+- `Source/shared/ui/Components/BandDetectorHUDView.h/.cpp` (new)
+- `Source/features/dynEq/DynEqTab.h` (badge → HUD plumbing, selection updates, bounds)
+
+Behavior:
+- HUD appears when a band is selected, pinned under the `BandBadge` with auto-clamping inside the pane.
+- Source chip cycles between `Pre / Post / Ext1 / Ext2` via menu; updates APVTS `dynDetectorSrc` for the selected band.
+- HP/LP chips launch log-taper sliders in `CallOutBox`; values write to `dynDetHPHz`/`dynDetLPHz`.
+- Adaptive chip is present (toggle placeholder); writes to `specAdaptive` when used.
+- GR mini meter currently a 3-bar stub driven by preview fields; full GR wiring to follow.
+
+Verification:
+- Build OK across Standalone/AU/VST3; HUD paints and updates parameter values for selected band.
+- Bounds stay within pane; HUD tracks badge position during zoom/layout changes.
+
+Screenshots:
+- TODO: Add screenshots of HUD (collapsed/expanded) with source menu and HP/LP popovers.
+
+Follow-ups:
+- Wire live GR telemetry from `Node_DynEq` to HUD mini meter.
+- Add subtle hold/LA indicator and polish adaptive behavior.
 
 Follow-ups (tracked in `docs/FIELD_CURRENT_TODO.md`):
 - Upgrade DynEQ UI to expose Attack/Release/Hold comprehensively (labels, ranges, presets).
