@@ -28,15 +28,16 @@ params:
     name: Oversampling
     type: choice
     choices: [1x, 2x, 4x, 8x]
-    default: 1x
+    default: 2x           # demo-friendly; set 1x in CI via build flag
     owner: core
-    latency_affects: true
+    latency_affects: false  # IIR OS filters imply zero reported latency
 
   - id: reverb.linearPhase
     name: Reverb Linear-Phase
     type: bool
     default: false
     owner: reverb
+    used_by: [Node_Reverb]
 
   - id: reverb.fir.halfLenSamples
     name: Reverb FIR HalfLen
@@ -45,6 +46,8 @@ params:
     default: 0
     owner: reverb
     latency_affects: true
+    constraints:
+      requires: { param: reverb.linearPhase, equals: true }  # else treated as 0
 
   - id: dyneq.lookahead.ms
     name: DynEQ Look-Ahead
@@ -53,6 +56,7 @@ params:
     default: 0.0
     owner: dyneq
     latency_affects: true
+    used_by: [Node_DynEq]
 
   - id: delay.lookahead.ms
     name: Delay Look-Ahead
@@ -61,6 +65,7 @@ params:
     default: 0.0
     owner: delay
     latency_affects: true
+    used_by: [Node_Delay]
 
   - id: mix.wet01
     name: Mix
@@ -68,7 +73,16 @@ params:
     range: { min: 0.0, max: 1.0, curve: equal_power }
     default: 0.33
     owner: core
-    used_by: [Processor]
+    used_by: [Processor, FieldChain]
+
+  - id: gain.input.db
+    name: Input Gain
+    type: float
+    range: { min: -24.0, max: +24.0, step: 0.01 }
+    default: 0.0
+    display: dB
+    owner: core
+    used_by: [Processor, Node_Gain]
 
   - id: gain.output.db
     name: Output Gain
@@ -77,14 +91,15 @@ params:
     default: 0.0
     display: dB
     owner: core
-    used_by: [Processor]
+    used_by: [Processor, Node_Gain]
 
   - id: pan.balance
     name: Balance
     type: float
-    range: { min: -1.0, max: 1.0, step: 0.001 }
+    range: { min: -1.0, max: 1.0, step: 0.001, curve: constant_power }
     default: 0.0
     owner: core
+    used_by: [Processor, Node_Gain]
 
   - id: tone.tilt.dbPerOct
     name: Tilt
@@ -93,6 +108,7 @@ params:
     default: 1.5
     display: dB/oct
     owner: core
+    used_by: [FieldChain, Node_Reverb]
 
   - id: tone.bass.db
     name: Bass
@@ -101,6 +117,7 @@ params:
     default: 2.0
     display: dB
     owner: core
+    used_by: [FieldChain, Node_Reverb]
 
   - id: reverb.preDelay.ms
     name: Pre-Delay
@@ -109,13 +126,15 @@ params:
     default: 20.0
     display: ms
     owner: reverb
+    used_by: [Node_Reverb]
 
   - id: reverb.size.norm
     name: Size
     type: float
-    range: { min: 0.0, max: 1.0, step: 0.01 }
+    range: { min: 0.0, max: 1.0, step: 0.01, curve: perceptual }
     default: 0.62
     owner: reverb
+    used_by: [Node_Reverb]
 
   - id: reverb.damping.hz
     name: Damping
@@ -124,6 +143,7 @@ params:
     default: 6000.0
     display: Hz
     owner: reverb
+    used_by: [Node_Reverb]
 
   - id: imager.width
     name: Width
@@ -132,6 +152,13 @@ params:
     default: 1.15
     owner: imager
     used_by: [Node_Imager]
+
+  - id: global.bypass
+    name: Plugin Bypass
+    type: bool
+    default: false
+    owner: core
+    used_by: [Processor]
 
   - id: dev.hud.enable
     name: Dev HUD
