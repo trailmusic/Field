@@ -17,6 +17,7 @@ Absolutely. Here’s a single, consolidated “master doc” that merges the two
 2. [Target Topology & Source Layout](#target-topology--source-layout)
 3. [Guardrails & Principles](#guardrails--principles)
 4. [Routing Lock-In (Glitch Fix)](#routing-lockin-glitch-fix)
+   - [2025-10-07 — Routing Update (smoothing, voicing, latency)](#2025-10-07-%E2%80%94-routing-update)
 5. [Phase 1 Results](#phase-1-results)
 6. [Phase 2 Scope & Results](#phase-2-scope--results)
 7. [Work Orders (WO) Ledger](#work-orders-wo-ledger)
@@ -99,6 +100,16 @@ Source/
 - Constant-power balance applied post-blend on stereo output.
 - `global.bypass` returns DRY-only while meters/viz still tap the returned buffer.
 - Float/double parity maintained; build verified across AU/VST3/Standalone.
+
+### 2025-10-07 — Routing Update (smoothing, voicing, latency)
+
+- Added light automation smoothing:
+  - Mix equal-power gains smoothed (~2 ms) to avoid zipper during fast automation.
+  - Post output gain smoothed (~7 ms) for click-safe gain rides.
+- Reverb voicing now fanned out via `FieldChain` → `Node_Reverb::Params` (`preDelaySec`, `sizeNorm`, `dampingHz`).
+- Removed internal chain reverb wet to avoid accidental double-mix; global `mix.wet01` remains single source of DRY/WET.
+- Latency reporting hooked on the message thread using lookahead-derived samples (host-rate). FIR/engine latency remains reported by engines when applicable.
+- Verified builds; float/double paths mirror smoothing and routing.
 
 ---
 
