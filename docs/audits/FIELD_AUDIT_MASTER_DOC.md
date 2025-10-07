@@ -279,8 +279,8 @@ gDry.setTimeMs(2.0); gWet.setTimeMs(2.0);
 * In `processBlock` (float & double):
 
   * Read **once**: `const auto hp = *snapshotPtr_;`
-  * **DRY deep-copy**, **WET separate buffer**, **equal-power blend** as above.
-  * Apply `outGainLin` last (with mini smoothing).
+* **DRY deep-copy**, **WET separate buffer**, **equal-power blend** as above.
+* Apply `outGainLin` last (with mini smoothing); we currently multiply `out = (a*d + b*w) * outGainLin` in both float/double paths.
   * Meters/correlation read **post-blend**.
 
 ---

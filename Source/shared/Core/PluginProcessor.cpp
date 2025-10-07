@@ -627,13 +627,14 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         const float theta = wet01 * juce::MathConstants<float>::halfPi;
         const float gDry = std::cos (theta);
         const float gWet = std::sin (theta);
+        const float outGain = juce::Decibels::decibelsToGain ((float) hp.outputGainDb);
         for (int c = 0; c < C; ++c)
         {
             float* out = buffer.getWritePointer (c);
             const float* d = dryCopy.getReadPointer (c);
             const float* w = wetBuf.getReadPointer (c);
             for (int n = 0; n < N; ++n)
-                out[n] = gDry * d[n] + gWet * w[n];
+                out[n] = (gDry * d[n] + gWet * w[n]) * outGain;
         }
 
         // Post-DSP visualization feed (ensure UI sees scopes despite early return)
@@ -1316,13 +1317,14 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         const double theta = wet01 * juce::MathConstants<double>::halfPi;
         const double gDry = std::cos (theta);
         const double gWet = std::sin (theta);
+        const double outGain = juce::Decibels::decibelsToGain (hp.outputGainDb);
         for (int c = 0; c < C; ++c)
         {
             const double* dry = dryCopy.getReadPointer (c);
             const double* wet = wetBuf.getReadPointer (c);
             double* out = buffer.getWritePointer (c);
             for (int i = 0; i < N; ++i)
-                out[i] = gDry * dry[i] + gWet * wet[i];
+                out[i] = (gDry * dry[i] + gWet * wet[i]) * outGain;
         }
 
         // Post-DSP visualization feed (double path)
