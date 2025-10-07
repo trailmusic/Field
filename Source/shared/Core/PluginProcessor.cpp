@@ -608,6 +608,18 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         juce::AudioBuffer<float> wetBuf (C, N);
         for (int c = 0; c < C; ++c)
             wetBuf.copyFrom (c, 0, buffer, c, 0, N);
+        // Apply input gain pre-chain (and to DRY reference)
+        {
+            const float inGain = juce::Decibels::decibelsToGain ((float) hp.inputGainDb);
+            if (inGain != 1.0f)
+            {
+                for (int c = 0; c < C; ++c)
+                {
+                    juce::FloatVectorOperations::multiply (dryCopy.getWritePointer(c), inGain, N);
+                    juce::FloatVectorOperations::multiply (wetBuf .getWritePointer(c), inGain, N);
+                }
+            }
+        }
         juce::dsp::AudioBlock<float> wetBlock (wetBuf);
         if (chainF)
         {
@@ -635,6 +647,15 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
             const float* w = wetBuf.getReadPointer (c);
             for (int n = 0; n < N; ++n)
                 out[n] = (gDry * d[n] + gWet * w[n]) * outGain;
+        }
+        // Apply constant-power balance (post-blend)
+        if (C >= 2)
+        {
+            const float bal = (float) hp.pan;
+            const float t = 0.25f * juce::MathConstants<float>::pi * (juce::jlimit(-1.0f, 1.0f, bal) + 1.0f);
+            const float gL = std::cos(t), gR = std::sin(t);
+            juce::FloatVectorOperations::multiply (buffer.getWritePointer(0), gL, N);
+            juce::FloatVectorOperations::multiply (buffer.getWritePointer(1), gR, N);
         }
 
         // Post-DSP visualization feed (ensure UI sees scopes despite early return)
@@ -1299,6 +1320,19 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
         juce::AudioBuffer<double> wetBuf (C, N);
         for (int c = 0; c < C; ++c)
             wetBuf.copyFrom (c, 0, buffer, c, 0, N);
+        // Apply input gain pre-chain (and to DRY reference)
+        {
+            const double inGain = juce::Decibels::decibelsToGain (hp.inputGainDb);
+            if (inGain != 1.0)
+            {
+                for (int c = 0; c < C; ++c)
+                {
+                    auto* dptr = dryCopy.getWritePointer(c);
+                    auto* wptr = wetBuf .getWritePointer(c);
+                    for (int i = 0; i < N; ++i) { dptr[i] = dptr[i] * inGain; wptr[i] = wptr[i] * inGain; }
+                }
+            }
+        }
         juce::dsp::AudioBlock<double> wetBlock (wetBuf);
         if (chainD)
         {
@@ -1325,6 +1359,16 @@ void MyPluginAudioProcessor::processBlock (juce::AudioBuffer<double>& buffer, ju
             double* out = buffer.getWritePointer (c);
             for (int i = 0; i < N; ++i)
                 out[i] = (gDry * dry[i] + gWet * wet[i]) * outGain;
+        }
+        // Apply constant-power balance (post-blend)
+        if (C >= 2)
+        {
+            const double bal = hp.pan;
+            const double t = 0.25 * juce::MathConstants<double>::pi * (juce::jlimit(-1.0, 1.0, bal) + 1.0);
+            const double gL = std::cos(t), gR = std::sin(t);
+            auto* L = buffer.getWritePointer(0);
+            auto* R = buffer.getWritePointer(1);
+            for (int i = 0; i < N; ++i) { L[i] *= gL; R[i] *= gR; }
         }
 
         // Post-DSP visualization feed (double path)
