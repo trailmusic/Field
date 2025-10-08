@@ -1,3 +1,9 @@
+// Dev Note (2025-10-08): DynEqTab owns three surfaces: band curves (background),
+// the floating BandOverlay (mini editor), and the BandBadge + Detector HUD pairing.
+// Detector UX consolidation: HUD is the only editor for detector Source + SC HP/LP;
+// overlay shows a single SC-summary chip that opens HUD; badge shows status and will
+// open HUD when its detector entries are clicked. No APVTS reads on audio thread.
+// Keep any detector parameter edits routed via openDetectorHUD → HUD callbacks.
 #pragma once
 
 #include <JuceHeader.h>
@@ -14,9 +20,22 @@ class MyPluginAudioProcessorEditor; // fwd
 
 // Dynamic EQ tab (replaces Spectrum). In-pane experience: visuals + editor.
 // Scaffold component so we can integrate DSP/Editor incrementally.
+enum class DetectorHUDFocus { Source, HP, LP };
+
 class DynEqTab : public juce::Component, private juce::Timer
 {
 public:
+    // Opens the per-band Detector HUD and optionally focuses a control
+    void openDetectorHUD (int bandIdx, DetectorHUDFocus focus)
+    {
+        if (bandIdx < 0 || bandIdx >= (int) points.size()) return;
+        selected = bandIdx;
+        hudOpen = true;
+        // Place badge + HUD
+        positionBadgeFor (selected);
+        // Ensure on top
+        badge.toFront (true); detHud.toFront (true); hudButton.toFront (true);
+    }
     DynEqTab (MyPluginAudioProcessor& p, juce::LookAndFeel* lnf)
         : proc (p), lookAndFeelPtr (lnf), zoomState (), zoomRail (zoomState)
     {
@@ -41,6 +60,7 @@ public:
             // Keep HUD and trigger in sync with badge visibility
             if (!badge.isVisible()) { detHud.setVisible (false); hudOpen = false; }
         };
+        // Overlay entry to HUD (will be set after overlay is constructed)
         zoomRail.onAutoToggled = [this] { /* persist state if needed */ };
         zoomRail.onReset = [this] { repaint(); };
         
@@ -191,33 +211,7 @@ public:
                 repaint();
             }
         };
-        overlay.onSCHPChanged = [this](float hz)
-        {
-            if (selected >= 0 && selected < (int) points.size())
-            {
-                if (points[(size_t) selected].bandIdx >= 0)
-                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynDetHPHz, juce::jlimit (20.0f, 2000.0f, hz));
-                repaint();
-            }
-        };
-        overlay.onSCLPChanged = [this](float hz)
-        {
-            if (selected >= 0 && selected < (int) points.size())
-            {
-                if (points[(size_t) selected].bandIdx >= 0)
-                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynDetLPHz, juce::jlimit (1000.0f, 20000.0f, hz));
-                repaint();
-            }
-        };
-        overlay.onDetSrcChanged = [this](int src)
-        {
-            if (selected >= 0 && selected < (int) points.size())
-            {
-                if (points[(size_t) selected].bandIdx >= 0)
-                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynDetectorSrc, (float) juce::jlimit (0, 3, src));
-                repaint();
-            }
-        };
+        // Remove inline detector edits from overlay; use HUD instead
         overlay.onQChanged = [this](float qv)
         {
             if (selected >= 0 && selected < (int) points.size())
@@ -283,9 +277,8 @@ public:
                 repaint();
             }
         };
-        // HP/LP popover hooks
-        overlay.onClickHp = [this](juce::Rectangle<int> anchor){ showFreqPopover (anchor, true); };
-        overlay.onClickLp = [this](juce::Rectangle<int> anchor){ showFreqPopover (anchor, false); };
+        // SC entry from overlay
+        overlay.onOpenHUD = [this](DetectorHUDFocus f){ if (selected >= 0) openDetectorHUD (selected, f); };
         overlay.onChanChanged = [this](int ch)
         {
             if (selected >= 0 && selected < (int) points.size())
@@ -475,13 +468,12 @@ public:
         // Add 10px top and bottom padding for content
         auto contentR = r.reduced(0, 10.0f);
         
-        // background only; overlay drawn in paintOverChildren
+        // Draw units/grid UNDER children so controls overlay them
+        drawUnits (g);
     }
 
     void paintOverChildren (juce::Graphics& g) override
     {
-        // Units
-        drawUnits (g);
         auto rA = analyzer.getBounds().toFloat();
         // Band-wise curves with theme-driven colours and optional fills for dyn/spec
         const bool hasAreas = bandAreas.size() == bandPaths.size();
@@ -1015,22 +1007,7 @@ private:
             wet01.onValueChange = [this]{ if (!updating && onWetChanged) onWetChanged ((float) wet01.getValue()); };
             addAndMakeVisible (wet01);
 
-            // Detector source + SC HP/LP
-            detSrc.addItemList (juce::StringArray{ "PreXY","PostXY","External1","External2" }, 1);
-            detSrc.onChange = [this]{ if (!updating && onDetSrcChanged) onDetSrcChanged (detSrc.getSelectedItemIndex()); };
-            addAndMakeVisible (detSrc);
-
-            scHP.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-            scHP.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-            scHP.setRange (20.0, 2000.0, 0.1);
-            scHP.onValueChange = [this]{ if (!updating && onSCHPChanged) onSCHPChanged ((float) scHP.getValue()); };
-            addAndMakeVisible (scHP);
-
-            scLP.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-            scLP.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-            scLP.setRange (1000.0, 20000.0, 0.1);
-            scLP.onValueChange = [this]{ if (!updating && onSCLPChanged) onSCLPChanged ((float) scLP.getValue()); };
-            addAndMakeVisible (scLP);
+            // (detector controls removed; SC chip opens HUD)
         }
         void paint (juce::Graphics& g) override
         {
@@ -1060,6 +1037,19 @@ private:
             IconSystem::drawIcon (g, IconSystem::Audition, hdrAudR_.toFloat(), fg);
             IconSystem::drawIcon (g, IconSystem::X, hdrCloseR_.toFloat(), fg);
 
+            // SC chip (status)
+            if (! scChipRect_.isEmpty())
+            {
+                auto chip = scChipRect_.toFloat();
+                auto* lf2 = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+                auto bgc = lf2 ? lf2->theme.chipBg : juce::Colours::darkgrey;
+                auto fgc = lf2 ? lf2->theme.textPrimary : juce::Colours::white;
+                g.setColour (bgc.withAlpha (0.28f)); g.fillRoundedRectangle (chip.reduced (1.f), 6.f);
+                g.setColour (bgc.withAlpha (0.85f)); g.drawRoundedRectangle (chip.reduced (1.f), 6.f, 1.f);
+                g.setColour (fgc.withAlpha (0.95f));
+                g.drawFittedText ("SC  " + scSummary_, scChipRect_, juce::Justification::centred, 1);
+            }
+
             // Channel chips row (bottom) — paint from rects computed in resized()
             auto paintChip = [&](juce::Rectangle<int> b, const juce::String& t, bool on)
             {
@@ -1079,21 +1069,10 @@ private:
         void resized() override
         {
             auto r = getLocalBounds().reduced (8);
-            const int kRow = 28; const int kG = 6; const int kKnob = 22; const int kLabW = 40;
+            const int kRow = 28; const int kG = 6; const int kKnob = 22; const int kLabW = 40; const int kGap = 10;
             auto placeKnob = [&](juce::Rectangle<int> area, juce::Slider& s){
                 auto c = area.getCentre(); s.setBounds (c.x - kKnob/2, c.y - kKnob/2, kKnob, kKnob);
             };
-            auto row = r.removeFromTop (kRow);
-            gainLabel.setBounds (row.removeFromLeft (kLabW));
-            placeKnob (row.removeFromLeft (kRow), gain);
-            r.removeFromTop (kG);
-            row = r.removeFromTop (kRow);
-            qLabel.setBounds (row.removeFromLeft (kLabW));
-            placeKnob (row.removeFromLeft (kRow), q);
-            r.removeFromTop (kG);
-            row = r.removeFromTop (kRow);
-            freqLabel.setBounds (row.removeFromLeft (kLabW));
-            placeKnob (row.removeFromLeft (kRow), freq);
 
             r.removeFromTop (8);
             // Top control bar
@@ -1111,6 +1090,22 @@ private:
             phaseCb.setBounds (half.removeFromLeft (160));
             dynToggle.setBounds (half.removeFromLeft (64));
             specToggle.setBounds (half.removeFromLeft (64));
+
+            // Row: Gain, Q, Freq (third row)
+            {
+                auto row = r.removeFromTop (kRow);
+                // Gain
+                gainLabel.setBounds (row.removeFromLeft (kLabW));
+                placeKnob (row.removeFromLeft (kKnob), gain);
+                row.removeFromLeft (kGap);
+                // Q
+                qLabel.setBounds (row.removeFromLeft (kLabW));
+                placeKnob (row.removeFromLeft (kKnob), q);
+                row.removeFromLeft (kGap);
+                // Freq
+                freqLabel.setBounds (row.removeFromLeft (kLabW));
+                placeKnob (row.removeFromLeft (kKnob), freq);
+            }
 
             auto half2 = r.removeFromTop (24);
             chanLabel.setBounds (half2.removeFromLeft (40));
@@ -1132,13 +1127,11 @@ private:
             placeKnob (half4.removeFromLeft (kRow), makeupDb);
             placeKnob (half4.removeFromLeft (kRow), wet01);
 
-            // Detector source + SC HP/LP row
-            auto half5 = r.removeFromTop (kRow);
-            detSrc.setBounds (half5.removeFromLeft (140));
-            placeKnob (half5.removeFromLeft (kRow), scHP);
-            placeKnob (half5.removeFromLeft (kRow), scLP);
-            scHpRect_ = scHP.getBounds();
-            scLpRect_ = scLP.getBounds();
+            // SC chip row (status-only) — opens HUD on click
+            auto scRow = r.removeFromTop (kRow);
+            auto chip  = scRow.removeFromLeft (200);
+            scChipRect_ = chip.toNearestInt();
+            // Paint happens in paint(); here we just set bounds
 
             // Bottom channel row (28 px)
             const int rowH = 28, gutter = 8;
@@ -1177,8 +1170,7 @@ private:
         juce::Slider gain, q, freq;
         juce::Slider atkMs, relMs, holdMs;
         juce::Slider threshDb, ratio, kneeDb, makeupDb, wet01;
-        juce::ComboBox detSrc;
-        juce::Slider scHP, scLP;
+        // Removed inline detector controls; use HUD via SC chip
         juce::Label gainLabel, qLabel, freqLabel, /*typeLabel, phaseLabel,*/ chanLabel;
         juce::Label atkLabel { "ATK", "ATK" }, relLabel { "REL", "REL" }, holdLabel { "HOLD", "HOLD" };
         juce::ComboBox typeCb, phaseCb, chanCb;
@@ -1290,14 +1282,14 @@ private:
     private:
         // External hooks
     public:
-        std::function<void(juce::Rectangle<int>)> onClickHp;
-        std::function<void(juce::Rectangle<int>)> onClickLp;
-        void setSidechainHP (float hz) { juce::ScopedValueSetter<bool> sv (updating, true); scHP.setValue (hz, juce::dontSendNotification); repaint(); }
-        void setSidechainLP (float hz) { juce::ScopedValueSetter<bool> sv (updating, true); scLP.setValue (hz, juce::dontSendNotification); repaint(); }
+        // HUD entry
+        std::function<void(DetectorHUDFocus)> onOpenHUD;
+        void setDetectorSummaryText (const juce::String& txt) { scSummary_ = txt; repaint (scChipRect_); }
     private:
         int channel { 0 };
         juce::Rectangle<int> rSt_, rM_, rS_, rL_, rR_;
-        juce::Rectangle<int> scHpRect_, scLpRect_;
+        juce::Rectangle<int> scChipRect_;
+        juce::String scSummary_ { "Pre • HP — • LP —" };
         juce::Rectangle<int> hdrPowerR_, hdrAudR_, hdrCloseR_;
         void mouseUp (const juce::MouseEvent& e) override
         {
@@ -1305,8 +1297,7 @@ private:
             if (hdrPowerR_.contains (p)) { if (onDynChanged) onDynChanged (false); return; }
             if (hdrAudR_.contains   (p)) { /* audition (overlay) TODO */ return; }
             if (hdrCloseR_.contains (p)) { this->setVisible (false); return; }
-            if (scHpRect_.contains (p)) { if (onClickHp) onClickHp (scHpRect_); return; }
-            if (scLpRect_.contains (p)) { if (onClickLp) onClickLp (scLpRect_); return; }
+            if (scChipRect_.contains (p)) { if (onOpenHUD) onOpenHUD (DetectorHUDFocus::Source); return; }
             if (rSt_.contains (p)) { if (onChanChanged) onChanChanged (0); return; }
             if (rM_.contains  (p)) { if (onChanChanged) onChanChanged (1); return; }
             if (rS_.contains  (p)) { if (onChanChanged) onChanChanged (2); return; }
@@ -1389,9 +1380,9 @@ private:
                                                 header.getY() + (header.getHeight() - typeW) * 0.5f,
                                                 typeW, typeW);
                 typeRect = typeBox.toNearestInt();
-                bool overType = typeRect.contains (getMouseXYRelative());
-                juce::Colour glyphCol = juce::Colours::white.withAlpha (0.75f);
-                if (overType)
+            bool overType = typeRect.contains (getMouseXYRelative());
+            juce::Colour glyphCol = juce::Colours::white.withAlpha (0.75f);
+            if (overType)
                 {
                     if (auto* lf2 = dynamic_cast<FieldLNF*>(&getLookAndFeel())) glyphCol = lf2->theme.accent.withAlpha (0.95f);
                     // highlight only the glyph bounds
@@ -2373,19 +2364,19 @@ private:
             g.drawFittedText (lbl, juce::Rectangle<int> ((int) r.getX()+4, (int) y-8, 44, 16), juce::Justification::centredLeft, 1);
         }
 
-        // Hz ticks (moved down slightly to avoid control bar)
+        // Hz ticks (full analyzer height; keep labels near bottom)
         const double hzTicks[] = { 20, 50, 100, 200, 500, 1000, 1500, 2000, 3000, 4000, 5000, 7000, 8000, 10000, 20000 };
         for (double hz : hzTicks)
         {
             const float x = mapHzToX ((float) hz);
             g.setColour (gridCol);
-            g.drawLine (x, r.getBottom()-16.0f, x, r.getBottom(), 0.8f); // Moved down 4px
+            g.drawLine (x, r.getY(), x, r.getBottom(), 0.6f);
             g.setColour (textCol);
             juce::String lbl;
             if (hz >= 1000.0 && hz < 10000.0) lbl = juce::String (hz/1000.0, 1) + "k";
             else if (hz >= 10000.0) lbl = juce::String ((int) std::round (hz/1000.0)) + "k";
             else lbl = juce::String ((int) hz);
-            g.drawFittedText (lbl, juce::Rectangle<int> ((int) x-18, (int) r.getBottom()-30, 36, 14), juce::Justification::centred, 1); // Moved down 4px
+            g.drawFittedText (lbl, juce::Rectangle<int> ((int) x-18, (int) r.getBottom()-18, 36, 14), juce::Justification::centred, 1);
         }
     }
 

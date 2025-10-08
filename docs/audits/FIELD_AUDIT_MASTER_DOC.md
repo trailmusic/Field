@@ -864,6 +864,26 @@ Follow-ups:
 - Apply the same theme sweep to `DynEqTab` and `DynEqZoomSideRail` (replace hardcoded whites/greys with theme tokens).
 
 ## DynEQ — Channel row + Badge/Overlay sizing + HP/LP popovers
+## DynEQ — Detector UX consolidation (HUD as sole editor; badge status only)
+
+Date: 2025-10-08
+
+Summary:
+- Removed redundant detector editors. The Detector HUD is now the only place to edit detector Source and sidechain HP/LP. The floating BandOverlay shows a single SC summary chip that opens the HUD; no inline Source/HP/LP editing.
+- The BandBadge continues to show detector “Tap/Source” status and will add an HP/LP status row; clicking those entries opens the HUD focused to Source or HP/LP respectively. The standalone HUD drawer button is removed.
+
+Files:
+- `Source/features/dynEq/DynEqTab.h`: removed inline detector source + HP/LP widgets from the overlay; added SC summary chip and HUD entry; left badge as status (source) with HUD handoff; removed HUD toggle button component.
+- `Source/shared/ui/Components/BandDetectorHUDView.*`: unchanged behavior; remains sole editor for Source/HP/LP; labels standardized to “Pre, Post, External 1, External 2”.
+
+Behavior/UX:
+- Single-source-of-truth for detector parameters: `dynDetectorSrc` (0=Pre,1=Post,2=Ext1,3=Ext2), `dynDetHPHz`, `dynDetLPHz` edited only in HUD. Overlay and badge display status and open HUD.
+- Badge/Overlay status mirrors HUD immediately after edits; no APVTS reads on audio thread.
+
+Follow-ups:
+- Update Badge source menu to show 4 options (Pre, Post, External 1, External 2) and add HP/LP status row that opens HUD (focus HP/LP).
+- Remove any lingering references to the HUD drawer button.
+
 
 Date: 2025-10-08
 
