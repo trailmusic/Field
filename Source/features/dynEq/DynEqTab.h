@@ -293,7 +293,8 @@ public:
                 points[(size_t) selected].channel = ch;
                 if (points[(size_t) selected].bandIdx >= 0)
                     setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::channel, (float) ch);
-                repaint();
+                badge.setChannel (ch);
+                repaint(); positionBadgeFor (selected);
             }
         };
         overlay.onDynChanged = [this](bool on)
@@ -620,7 +621,7 @@ public:
         g.setColour (macroColour());
         g.strokePath (eqPath, juce::PathStrokeType (3.0f));
 
-        // Channel-aware band points (single glyph; ring pattern encodes St/M/S/L/R)
+        // Channel-aware band points (single glyph; ring pattern encodes St/M/S/L/R) + persistent channel micro-label
         for (size_t i = 0; i < points.size(); ++i)
         {
             const auto& pt = points[i];
@@ -628,7 +629,7 @@ public:
             const float y = mapDbToY (pt.db);
             const float rRing = 8.0f;
             const float rCore = 5.0f;
-            const float stroke = (selected == (int) i ? 2.0f : 1.6f);
+            const float stroke = (selected == (int) i ? 2.0f : 1.4f);
 
             juce::Colour accent = applyChannelTint (bandColourFor ((int) i), pt.channel);
             // Halo
@@ -677,15 +678,14 @@ public:
                     break;
             }
 
-            // High-zoom micro label for clarity
-            if (zoomState.getCurrent() <= 12.0f)
+            // Persistent channel micro-label
             {
                 static const char* lab[5] = { "St","M","S","L","R" };
                 const int ch = juce::jlimit (0, 4, pt.channel);
-                g.setColour (juce::Colours::black.withAlpha (0.55f));
-                auto tb = juce::Rectangle<float> (x - 9.0f, y - 6.0f, 18.0f, 12.0f);
+                auto tb = juce::Rectangle<float> (x + 10.0f, y - 8.0f, 20.0f, 14.0f);
+                g.setColour (juce::Colours::black.withAlpha (0.40f));
                 g.fillRoundedRectangle (tb, 3.0f);
-                g.setColour (juce::Colours::white.withAlpha (0.92f));
+                g.setColour (applyChannelTint (bandColourFor ((int) i), pt.channel).withAlpha (0.92f));
                 g.setFont (juce::Font (10.0f));
                 g.drawFittedText (lab[ch], tb.toNearestInt(), juce::Justification::centred, 1);
             }
@@ -1290,6 +1290,13 @@ private:
     {
     public:
         BandBadge() { setOpaque (true); }
+        void setChannel (int ch)
+        {
+            channel_ = juce::jlimit (0, 4, ch);
+            static const char* lab[5] = { "St","M","S","L","R" };
+            chanLabel = juce::String (lab[channel_]);
+            repaint();
+        }
         std::function<void()> onDelete;
         std::function<void(bool)> onBypass;
         std::function<void(int)> onSetType;
@@ -1448,7 +1455,7 @@ private:
             else if (typeRect.contains (e.getPosition())) { showTypeMenu(); }
             else if (slopeRect.contains (e.getPosition())) { showSlopeMenu(); }
             else if (tapRect.contains (e.getPosition())) { showTapMenu(); }
-            else if (chanRect.contains (e.getPosition())) { if (onSetChannel) onSetChannel (((channel_ + 1) % 5)); }
+            else if (chanRect.contains (e.getPosition())) { showChanMenu(); }
         }
         void mouseDown (const juce::MouseEvent& e) override
         {
@@ -1507,6 +1514,22 @@ private:
         {
             if (!onSetTapMode) return; juce::PopupMenu m; m.addItem (1, "Pre XY"); m.addItem (2, "Post XY"); m.addItem (3, "External");
             m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this), [this](int r){ if (r > 0 && onSetTapMode) onSetTapMode (r-1); });
+        }
+        void showChanMenu()
+        {
+            juce::PopupMenu m; juce::StringArray names { "Stereo","Mid","Side","Left","Right" };
+            for (int i = 0; i < names.size(); ++i) m.addItem (i+1, names[i]);
+            auto screenRect = localAreaToGlobal (chanRect).expanded (2);
+            m.showMenuAsync (juce::PopupMenu::Options().withTargetScreenArea (screenRect),
+                             [this](int r)
+                             {
+                                 if (r > 0)
+                                 {
+                                     const int ch = r - 1;
+                                     setChannel (ch); // immediate UI update
+                                     if (onSetChannel) onSetChannel (ch);
+                                 }
+                             });
         }
         void mouseWheelMove (const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel) override
         {

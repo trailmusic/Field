@@ -896,6 +896,26 @@ Follow-ups:
 - Optional: menu-based channel selection on badge (current is cycle-on-click); add tooltips for chips.
 - Consider tiny crossfade when switching channel under signal to avoid micro-clicks (2 ms ramp).
 
+### 2025-10-08 — Badge channel dropdown + overlay sync + labels (polish)
+
+Summary:
+- Replaced badge channel chip cycle with a dropdown (like Slope). Options: Stereo, Mid, Side, Left, Right.
+- Channel selection now syncs both ways: picking in Overlay chips updates the Badge (and vice-versa), and writes APVTS `b_channel`.
+- Band points render persistent micro-labels (St/M/S/L/R) near the point; non-selected points use a slightly thinner stroke for clarity.
+
+Files:
+- `Source/features/dynEq/DynEqTab.h`:
+  - Badge: `showChanMenu()` opens a dropdown anchored to the chip; `setChannel(int)` updates label and repaints.
+  - Overlay: `onChanChanged` also updates Badge and repositions; HP/LP popovers unchanged.
+  - Band point paint: added persistent channel micro-labels and reduced stroke on non-selected points.
+
+Behavior/UX:
+- Channel state is consistently reflected in both Badge and Overlay; selection is unambiguous.
+- Visuals are cleaner with persistent labels and thinner non-selected glyphs.
+
+Next:
+- Optional: per-channel EQ path tint/stroke variation along the curve for advanced visual guidance.
+
 Date: 2025-10-07
 
 Summary:
