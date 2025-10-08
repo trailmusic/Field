@@ -36,9 +36,9 @@ void BandDetectorHUDView::layoutRows() {
     auto r = getLocalBounds().reduced(12);
     const int rowH = 28;
 
-	// Row 1: pill + adaptive
-	auto row1 = r.removeFromTop(rowH);
-    rPill_     = row1.removeFromLeft(jmin(160, maxWidth_ - 96)).reduced(0);
+    // Row 1: source pill + adaptive chip
+    auto row1 = r.removeFromTop(rowH);
+    rPill_     = row1.removeFromLeft(jmin(180, maxWidth_ - 96)).reduced(0);
     rAdaptive_ = row1.removeFromLeft(96).reduced(0);
 
 	// Row 2: HP | LP chips
@@ -65,13 +65,20 @@ void BandDetectorHUDView::paint(Graphics& g) {
     g.setColour(bg); g.fillRoundedRectangle(b, 8.f);
     g.setColour(bord); g.drawRoundedRectangle(b, 8.f, 1.0f);
 
-	// pill
-    auto drawChip = [&](Rectangle<int> r, const String& text, Colour bg, bool on) {
-        g.setColour(on ? bg : bg.darker(0.6f)); g.fillRoundedRectangle(r.toFloat(), 8.f);
-        g.setColour(txtP.withAlpha(on ? 0.95f : 0.6f));
-        g.setFont(Font(12.0f));
-        g.drawText(text, r.reduced(10, 0), Justification::centredLeft);
-	};
+    // chip with optional icon
+    auto drawChip = [&](Rectangle<int> r, const String& text, Colour bg, bool on, IconSystem::IconType icon = IconSystem::None) {
+        g.setColour((on ? bg : bg.darker(0.6f)).withAlpha(0.95f));
+        g.fillRoundedRectangle(r.toFloat(), 7.f);
+        g.setColour(txtP.withAlpha(on ? 0.90f : 0.65f));
+        g.setFont(Font(11.0f));
+        auto inner = r.reduced(8, 0);
+        if (icon != IconSystem::None) {
+            auto ib = inner.removeFromLeft(16).toFloat().reduced(1.5f, 6.f);
+            IconSystem::drawIcon(g, icon, ib, txtP.withAlpha(on ? 0.90f : 0.65f));
+            inner.removeFromLeft(6);
+        }
+        g.drawText(text, inner, Justification::centredLeft);
+    };
 
 	const auto pillText = sourceToLabel(st_.source);
     Colour cPre = lf ? lf->theme.srcPre : Colours::grey;
@@ -83,31 +90,46 @@ void BandDetectorHUDView::paint(Graphics& g) {
     // Asterisk when external selected but inactive
     const bool showExtInactive = st_.source.startsWithIgnoreCase("ext") && !st_.extActive;
     if (showExtInactive && lf) pillCol = lf->theme.srcExtInactive;
-    drawChip(rPill_, pillText + (showExtInactive ? "*" : ""), pillCol, true);
+    {
+        // compact pill
+        auto pill = rPill_.withWidth(jmin(rPill_.getWidth(), 120));
+        drawChip(pill, pillText + (showExtInactive ? " *" : ""), pillCol.withAlpha(0.85f), true, IconSystem::SidechainKey);
+    }
 
 	// adaptive toggle
-    drawChip(rAdaptive_, st_.adaptive ? "Adaptive •" : "Adaptive ○", chip, st_.adaptive);
+    // adaptive chip with icon
+    drawChip(rAdaptive_, String(), chip.withAlpha(0.9f), st_.adaptive, st_.adaptive ? IconSystem::Auto : IconSystem::Manual);
 
 	// HP/LP chips
-    drawChip(rHp_,  String("HP ") + (st_.hpHz >= 1000.0f ? String(st_.hpHz/1000.0, 1) + " kHz" : String(roundToInt(st_.hpHz)) + " Hz"), chip, true);
-    drawChip(rLp_,  String("LP ") + (st_.lpHz >= 1000.0f ? String(st_.lpHz/1000.0, 1) + " kHz" : String(roundToInt(st_.lpHz)) + " Hz"), chip, true);
+    drawChip(rHp_,  (st_.hpHz >= 1000.0f ? String(st_.hpHz/1000.0, 1) + " kHz" : String(roundToInt(st_.hpHz)) + " Hz"), chip.withAlpha(0.9f), true, IconSystem::HP);
+    drawChip(rLp_,  (st_.lpHz >= 1000.0f ? String(st_.lpHz/1000.0, 1) + " kHz" : String(roundToInt(st_.lpHz)) + " Hz"), chip.withAlpha(0.9f), true, IconSystem::LP);
 
-	// GR mini meter (3 bars)
+    // GR mini meter (Duck-style): themed track + error bar fill, subtle border
     auto gr = juce::jlimit(0.f, 18.f, -st_.grPreviewDb); // 0..18 dB reduction
     int lit = (int) juce::jmap(gr, 0.f, 18.f, 0.f, 3.f);
-	auto rr = rGr_; rr.reduce(8, 2);
-	int w = rr.getWidth()/3 - 3;
-	for (int i=0;i<3;++i) {
-		auto cell = rr.removeFromLeft(w);
-        g.setColour(lf ? lf->theme.grOff : Colours::dimgrey);
-        g.fillRoundedRectangle(cell.toFloat(), 3.f);
-        // Dim bars when external source inactive
-        Colour bar = (i < lit ? (lf ? lf->theme.grOn : Colours::red) : (lf ? lf->theme.grOff : Colours::darkred));
-        if (showExtInactive) bar = bar.withAlpha(0.45f);
-        g.setColour(bar);
-        g.fillRoundedRectangle(cell.reduced(1).toFloat(), 3.f);
-		rr.removeFromLeft(4);
-	}
+    auto rr = rGr_.reduced(8, 2);
+    const int gap = 4;
+    const int w = (rr.getWidth() - gap * 2) / 3;
+    const float rad = 3.f;
+    const auto track = lf ? lf->theme.meters.trackBase.withAlpha(0.35f) : Colours::dimgrey.withAlpha(0.35f);
+    auto onCol = lf ? lf->theme.meters.error.withAlpha(0.90f) : Colours::red.withAlpha(0.90f);
+    auto offBorder = lf ? lf->theme.drawerBorder.withAlpha(0.35f) : Colours::white.withAlpha(0.35f);
+    if (showExtInactive) { onCol = onCol.withAlpha(0.45f); }
+    for (int i = 0; i < 3; ++i) {
+        auto cell = rr.removeFromLeft(w);
+        // track
+        g.setColour(track);
+        g.fillRoundedRectangle(cell.toFloat(), rad);
+        // border
+        g.setColour(offBorder);
+        g.drawRoundedRectangle(cell.toFloat(), rad, 1.0f);
+        // fill if lit
+        if (i < lit) {
+            g.setColour(onCol);
+            g.fillRoundedRectangle(cell.reduced(1).toFloat(), rad);
+        }
+        if (i < 2) rr.removeFromLeft(gap);
+    }
 
 	setTooltip("Source / Adaptive / Sidechain HP-LP");
 }
@@ -124,7 +146,17 @@ void BandDetectorHUDView::showSourceMenu() {
                   .withMinimumWidth(240)
                   .withStandardItemHeight(28)
                   .withPreferredPopupDirection(juce::PopupMenu::Options::PopupDirection::downwards);
-    m.showMenuAsync(opts, [this](int id){ if (onChangeSource && id>=1) onChangeSource(id-1); });
+    m.showMenuAsync(opts, [this](int id){
+        if (id>=1) {
+            if (onChangeSource) onChangeSource(id-1);
+            // update label immediately
+            if (id==1) st_.source = "pre";
+            else if (id==2) st_.source = "post";
+            else if (id==3) st_.source = "ext1";
+            else if (id==4) st_.source = "ext2";
+            repaint();
+        }
+    });
 }
 
 void BandDetectorHUDView::launchHpPopover() {
@@ -176,7 +208,7 @@ bool BandDetectorHUDView::hitTest (int x, int y)
 void BandDetectorHUDView::mouseDown (const juce::MouseEvent& e)
 {
     if (rPill_.contains(e.getPosition())) { showSourceMenu(); return; }
-    if (rAdaptive_.contains(e.getPosition())) { if (onToggleAdaptive) onToggleAdaptive(!st_.adaptive); return; }
+    if (rAdaptive_.contains(e.getPosition())) { st_.adaptive = !st_.adaptive; if (onToggleAdaptive) onToggleAdaptive(st_.adaptive); repaint(); return; }
     if (rHp_.contains(e.getPosition())) { launchHpPopover(); return; }
     if (rLp_.contains(e.getPosition())) { launchLpPopover(); return; }
 }

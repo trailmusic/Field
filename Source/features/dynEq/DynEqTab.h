@@ -34,8 +34,12 @@ public:
         zoomRail.onZoomChanged = [this]
         {
             rebuildEqPath();
-            if (selected >= 0) { positionOverlay(); positionBadgeFor (selected); }
+            if (selected >= 0) positionOverlay(); positionBadgeFor (selected);
             repaint();
+            badge.toFront (false);
+            detHud.toFront (false);
+            // Keep HUD and trigger in sync with badge visibility
+            if (!badge.isVisible()) { detHud.setVisible (false); hudOpen = false; }
         };
         zoomRail.onAutoToggled = [this] { /* persist state if needed */ };
         zoomRail.onReset = [this] { repaint(); };
@@ -52,21 +56,28 @@ public:
         overlay.setVisible (false);
         addAndMakeVisible (badge);
         badge.setVisible (false);
+        overlay.setAlwaysOnTop (false);
+        badge.setAlwaysOnTop (true);
 
         // Detector HUD (drawer content; initially hidden)
         addAndMakeVisible (detHud);
         detHud.setVisible (false);
+        detHud.setAlwaysOnTop (true);
         detHud.setMaxWidth (200);
         // HUD drawer toggle button (sits to the right of the badge)
         addAndMakeVisible (hudButton);
         hudButton.setVisible (false);
-        hudButton.setButtonText ("SC");
+        hudButton.setButtonText ("");
         hudButton.setClickingTogglesState (true);
         hudButton.onClick = [this]
         {
             hudOpen = !hudOpen;
             hudButton.setToggleState (hudOpen, juce::dontSendNotification);
             if (selected >= 0) positionBadgeFor (selected); else detHud.setVisible (false);
+            // Reassert HUD z-order robustly
+            badge.toFront (false);
+            detHud.toFront (false);
+            hudButton.toFront (false);
         };
         detHud.onChangeSource = [this](int src)
         {
@@ -74,8 +85,8 @@ public:
                 if (points[(size_t) selected].bandIdx >= 0)
                     setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::dynDetectorSrc, (float) juce::jlimit (0, 3, src));
             // Reassert HUD above everything after source change
-            badge.toFront (true);
-            detHud.toFront (true);
+            badge.toFront (false);
+            detHud.toFront (false);
         };
         detHud.onChangeHP = [this](float hz)
         {
@@ -99,7 +110,10 @@ public:
         {
             if (selected >= 0 && selected < (int) points.size())
             {
-                points[(size_t) selected].db = juce::jlimit (-24.f, 24.f, g);
+                const float clamped = juce::jlimit (-24.f, 24.f, g);
+                points[(size_t) selected].db = clamped;
+                if (points[(size_t) selected].bandIdx >= 0)
+                    setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::gainDb, clamped);
                 rebuildEqPath();
                 repaint();
                 positionOverlay();
@@ -390,7 +404,7 @@ public:
             if (idx >= 0 && idx < (int) points.size())
             {
                 auto& p = points[(size_t) idx];
-                if (p.bandIdx >= 0) setBandParam (p.bandIdx, dynEq::Band::dynRangeDb, juce::jlimit (-24.f, 24.f, r));
+                if (p.bandIdx >= 0) setBandParam (p.bandIdx, dynEq::Band::dynRangeDb, juce::jlimit (-24.0f, 24.0f, r));
                 rebuildEqPath(); repaint(); positionBadgeFor (idx);
             }
         };
@@ -694,24 +708,7 @@ public:
             auto tooltipRect = currentTooltipRect.expanded (8, 8);
             tooltipRect = tooltipRect.translated (0, -tooltipRect.getHeight() - 8);
             
-            // Ensure tooltip stays within bounds
-            if (tooltipRect.getY() < getLocalBounds().getY())
-                tooltipRect = tooltipRect.translated (0, tooltipRect.getHeight() + 16);
-            if (tooltipRect.getX() < getLocalBounds().getX())
-                tooltipRect = tooltipRect.translated (getLocalBounds().getX() - tooltipRect.getX(), 0);
-            if (tooltipRect.getRight() > getLocalBounds().getRight())
-                tooltipRect = tooltipRect.translated (getLocalBounds().getRight() - tooltipRect.getRight(), 0);
-            
-            // Draw tooltip background
-            g.setColour (juce::Colours::black.withAlpha (0.85f));
-            g.fillRoundedRectangle (tooltipRect.toFloat(), 4.0f);
-            g.setColour (juce::Colours::white.withAlpha (0.9f));
-            g.drawRoundedRectangle (tooltipRect.toFloat(), 4.0f, 1.0f);
-            
-            // Draw tooltip text
-            g.setColour (juce::Colours::white);
-            g.setFont (12.0f);
-            g.drawFittedText (currentTooltipText, tooltipRect, juce::Justification::centred, 1);
+            // Legacy band-point tooltip removed
         }
     }
 
@@ -1110,6 +1107,7 @@ private:
     class BandBadge : public juce::Component
     {
     public:
+        BandBadge() { setOpaque (true); }
         std::function<void()> onDelete;
         std::function<void(bool)> onBypass;
         std::function<void(int)> onSetType;
@@ -1121,6 +1119,7 @@ private:
         std::function<void(float)> onSetQ;
         std::function<void(float)> onSetGainDb;
         std::function<void(float)> onSetDynRangeDb;
+        std::function<void()> onClose; // close badge without deleting
         void setValues (float grDb, float freqHz, int typeIdx, bool bypass)
         {
             gainReductionDb = grDb; freq = freqHz; type = typeIdx; bypassed = bypass; repaint();
@@ -1129,39 +1128,99 @@ private:
         void paint (juce::Graphics& g) override
         {
             auto r = getLocalBounds().toFloat();
-            // Lighter dark background for badge
-            juce::Colour bg = juce::Colours::darkgrey.darker (0.22f);
-            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) bg = lf->theme.shadowDark.brighter (0.18f);
-            g.setColour (bg.withAlpha (0.96f));
+            // Opaque background for badge (theme-driven)
+            juce::Colour bg = juce::Colours::black;
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) bg = lf->theme.drawerBg;
+            g.setColour (bg);
             g.fillRoundedRectangle (r, 5.0f);
-            g.setColour (juce::Colours::white.withAlpha (0.18f));
+            if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) g.setColour (lf->theme.drawerBorder);
+            else g.setColour (juce::Colours::white.withAlpha (0.25f));
             g.drawRoundedRectangle (r, 5.0f, 0.9f);
             // Accent vertical strip on the left
             juce::Rectangle<float> strip = r.withX (r.getX()).withWidth (2.0f).reduced (0.5f, 1.5f);
             // Top-down gradient for border accent
-            juce::Colour a0 = badgeAccent.withAlpha (0.32f);
-            juce::Colour a1 = badgeAccent.withAlpha (0.10f);
+            juce::Colour a0 = badgeAccent.withAlpha (0.65f);
+            juce::Colour a1 = badgeAccent.withAlpha (0.25f);
             juce::ColourGradient grad (a0, strip.getCentreX(), strip.getY(), a1, strip.getCentreX(), strip.getBottom(), false);
             g.setGradientFill (grad);
             g.fillRect (strip);
             auto area = r.reduced (6.0f);
-            auto row1 = area.removeFromTop (16.0f);
-            auto row2 = area.removeFromTop (16.0f);
+            // Header: power (left) and close X (right)
+            const float headerH = 20.0f;
+            auto header = area.removeFromTop (headerH);
+            // separator line under header (avoid touching outside badge)
+            juce::Colour borderCol = (dynamic_cast<FieldLNF*>(&getLookAndFeel()) ? ((FieldLNF&) getLookAndFeel()).theme.drawerBorder
+                                                                                : juce::Colours::white.withAlpha (0.25f));
+            g.setColour (borderCol.withAlpha (0.6f));
+            g.fillRect (juce::Rectangle<float> (r.getX()+6.0f, header.getBottom()+5.0f, r.getWidth()-12.0f, 1.0f));
+            const float headerIconSz = juce::jmax (14.0f, headerH * 0.9f);
+            powerRect = header.removeFromLeft (headerIconSz).toNearestInt();
+            xRect     = header.removeFromRight (headerIconSz).toNearestInt();
+            auto iconCol = juce::Colours::white.withAlpha (0.90f);
+            IconSystem::drawIcon (g, IconSystem::Power, powerRect.toFloat(), bypassed ? juce::Colours::orange : iconCol);
+            IconSystem::drawIcon (g, IconSystem::X,     xRect.toFloat(), iconCol);
+            // Centered type glyph button
+            {
+                const float typeW = header.getHeight() * 0.9f;
+                juce::Rectangle<float> typeBox (header.getCentreX() - typeW * 0.5f,
+                                                header.getY() + (header.getHeight() - typeW) * 0.5f,
+                                                typeW, typeW);
+                typeRect = typeBox.toNearestInt();
+                bool overType = typeRect.contains (getMouseXYRelative());
+                juce::Colour glyphCol = juce::Colours::white.withAlpha (0.75f);
+                if (overType)
+                {
+                    if (auto* lf2 = dynamic_cast<FieldLNF*>(&getLookAndFeel())) glyphCol = lf2->theme.accent.withAlpha (0.95f);
+                    // highlight only the glyph bounds
+                    g.setColour (glyphCol.withAlpha (0.12f));
+                    g.fillRoundedRectangle (typeBox.expanded (2.0f), 3.0f);
+                }
+                drawTypeGlyphWithColour (g, typeBox, glyphCol);
+            }
+            area.removeFromTop (4.0f);
+            // Responsive rows based on available height
+            const float gap = 6.0f;
+            const float totalH = area.getHeight();
+            const float rowH  = juce::jmax (14.0f, (totalH - gap) * 0.5f);
+            auto row1 = area.removeFromTop (rowH);
+            area.removeFromTop (gap);
+            auto row2 = area.removeFromTop (rowH);
 
             // Row 1: Type glyph | FREQ | Q | GAIN | GR | (spacer) | Power | X
-            g.setColour (juce::Colours::white.withAlpha (0.90f));
-            g.setFont (juce::Font (juce::FontOptions (11.0f).withStyle ("Bold")));
+            g.setColour (juce::Colours::white.withAlpha (0.97f));
+            g.setFont (juce::Font (juce::FontOptions (juce::jmax (10.0f, rowH * 0.65f)).withStyle ("Bold")));
 
-            typeRect = row1.removeFromLeft (24).toNearestInt();
-            // clickable type glyph with hover accent
-            bool overType = typeRect.contains (getMouseXYRelative());
-            juce::Colour glyphCol = juce::Colours::white.withAlpha (0.75f);
-            if (overType)
-                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) glyphCol = lf->theme.accent.withAlpha (0.95f);
-            drawTypeGlyphWithColour (g, typeRect.toFloat(), glyphCol);
+            // Type glyph moved to header; leave initial spacing tighter
             // invisible popup trigger areas: we handle showing menus in mouseDown to avoid accidental drags
 
-            auto cell = [&](juce::Rectangle<float>& row, const juce::String& label){ auto c = row.removeFromLeft (48.0f); g.drawText (label, c, juce::Justification::centredLeft); return c.toNearestInt(); };
+            // Distribute four cells across remaining width (freq, Q, Gain, GR)
+            const int numCells = 4;
+            const float colGap = 6.0f;
+            float rw = row1.getWidth() - (colGap * (numCells - 1));
+            float cellW = juce::jmax (44.0f, rw / (float) numCells);
+            auto cell = [&](juce::Rectangle<float>& row, const juce::String& label)
+            {
+                auto c  = row.removeFromLeft (cellW);
+                auto ci = c.toNearestInt();
+                // subtle cell background to align top row
+                juce::Colour cellBg = juce::Colours::white.withAlpha (0.06f);
+                juce::Colour cellBorder = juce::Colours::white.withAlpha (0.18f);
+                juce::Colour cellFg = juce::Colours::white.withAlpha (0.90f);
+                if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel())) { cellBg = lf->theme.chipBg; cellBorder = lf->theme.drawerBorder; cellFg = lf->theme.textPrimary; }
+                g.setColour (cellBg.withAlpha (0.28f));
+                g.fillRoundedRectangle (c.reduced (1.0f), 4.0f);
+                // accent top border
+                juce::Colour accent = (dynamic_cast<FieldLNF*>(&getLookAndFeel()) ? ((FieldLNF&) getLookAndFeel()).theme.accent
+                                                                                   : juce::Colours::deepskyblue);
+                g.setColour (accent.withAlpha (0.55f));
+                g.fillRect (juce::Rectangle<float> (c.getX()+1.0f, c.getY()+1.0f, c.getWidth()-2.0f, 1.0f));
+                g.setColour (cellBorder.withAlpha (0.95f));
+                g.drawRoundedRectangle (c.reduced (1.0f), 4.0f, 0.8f);
+                g.setColour (cellFg);
+                g.drawFittedText (label, ci, juce::Justification::centredLeft, 1);
+                if (row.getWidth() > 0) row.removeFromLeft (colGap);
+                return ci;
+            };
             juce::String f;
             if (freq >= 1000.f && freq < 10000.f) f = juce::String (freq / 1000.0f, 1) + "k";
             else if (freq >= 10000.f) f = juce::String ((int) std::round (freq/1000.f)) + "k";
@@ -1171,15 +1230,25 @@ private:
             gainRect = cell (row1, juce::String (gainDb, 1) + " dB");
             grRect   = cell (row1, juce::String (gainReductionDb, 1) + " dB");
 
-            row1.removeFromLeft (4.0f);
-            powerRect = row1.removeFromRight (18.0f).toNearestInt();
-            xRect     = row1.removeFromRight (18.0f).toNearestInt();
-            IconSystem::drawIcon (g, IconSystem::Power, powerRect.toFloat(), bypassed ? juce::Colours::orange : juce::Colours::white.withAlpha (0.90f));
-            IconSystem::drawIcon (g, IconSystem::X,     xRect.toFloat(), juce::Colours::white.withAlpha (0.90f));
+            row1.removeFromLeft (4.0f); // header holds icons now
 
             // Row 2 chips: Dyn | Spec | Chan | Slope | Tap
-            g.setFont (juce::Font (juce::FontOptions (10.0f).withStyle ("Bold")));
-            auto chip = [&](juce::Rectangle<float>& row, const juce::String& txt, juce::Colour col){ auto c = row.removeFromLeft (54.0f).reduced (1.0f); g.setColour (col.withAlpha (0.22f)); g.fillRoundedRectangle (c, 4.0f); g.setColour (col.withAlpha (0.85f)); g.drawRoundedRectangle (c, 4.0f, 1.0f); g.drawText (txt, c, juce::Justification::centred); return c.toNearestInt(); };
+            g.setFont (juce::Font (juce::FontOptions (juce::jmax (9.0f, rowH * 0.52f)).withStyle ("Bold")));
+            const int numChips = 5;
+            const float chipGap = 6.0f;
+            float rw2 = row2.getWidth() - chipGap * (numChips - 1);
+            float chipW = juce::jmax (52.0f, rw2 / (float) numChips);
+            const float chipR = 4.0f;
+            auto chip = [&](juce::Rectangle<float>& row, const juce::String& txt, juce::Colour col)
+            {
+                auto c  = row.removeFromLeft (chipW).reduced (1.0f);
+                auto ci = c.toNearestInt();
+                g.setColour (col.withAlpha (0.22f)); g.fillRoundedRectangle (c, chipR);
+                g.setColour (col.withAlpha (0.85f)); g.drawRoundedRectangle (c, chipR, 1.0f);
+                g.drawFittedText (txt, ci, juce::Justification::centred, 1);
+                if (row.getWidth() > 0) row.removeFromLeft (chipGap);
+                return ci;
+            };
             auto col = juce::Colours::white;
             dynRect   = chip (row2, dynUp ? (juce::String ("Dyn ") + (dynUp?"Up":"Dn") + " " + juce::String (dynRangeDb,1)+"dB") : (juce::String ("Dyn ") + (dynUp?"Up":"Dn")), col);
             specRect  = chip (row2, specOn ? juce::String ("Spec ON") : juce::String ("Spec"), col);
@@ -1203,11 +1272,17 @@ private:
             if (slopeRect.contains (e.getPosition())) { showSlopeMenu(); return; }
             if (tapRect.contains (e.getPosition())) { showTapMenu(); return; }
         }
+        void mouseDoubleClick (const juce::MouseEvent& e) override
+        {
+            if (typeRect.contains (e.getPosition())) { if (onClose) onClose(); }
+        }
         void showTypeMenu()
         {
             if (!onSetType) return; juce::PopupMenu m; juce::StringArray names { "Bell","LowShelf","HighShelf","HP","LP","Notch","BandPass","AllPass" };
             for (int i = 0; i < names.size(); ++i) m.addItem (i+1, names[i]);
-            m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this), [this](int r){ if (r > 0 && onSetType) onSetType (r-1); });
+            // Anchor at the type glyph, hinting to open upward from header
+            auto screenRect = localAreaToGlobal (typeRect).expanded (2);
+            m.showMenuAsync (juce::PopupMenu::Options().withTargetScreenArea (screenRect), [this](int r){ if (r > 0 && onSetType) onSetType (r-1); });
         }
         void showSlopeMenu()
         {
@@ -1776,7 +1851,14 @@ private:
 
     void mouseExit (const juce::MouseEvent&) override
     {
-        if (selected < 0) badge.setVisible (false);
+        if (selected < 0)
+        {
+            badge.setVisible (false);
+            detHud.setVisible (false);
+            hudOpen = false;
+            hudButton.setVisible (false);
+            hudButton.setToggleState (false, juce::dontSendNotification);
+        }
         hover = -1;
         hoverInPane = false;
         repaint();
@@ -1863,7 +1945,8 @@ private:
         const auto& pt = points[(size_t) idx];
         const float x = mapHzToX (pt.hz);
         const float y = mapDbToY (pt.db);
-        const int w = 212, h = 40;
+        // Wider badge to avoid clipping text at small zooms
+        const int w = 260, h = 86;
         auto pane = getLocalBounds();
         
         // Start with band point position
@@ -1927,20 +2010,28 @@ private:
         overlay.setAccentColour (accent);
         badge.toFront (true);
 
-        // Drawer toggle button on the right of badge
-        const int btnGap = 6;
-        hudButton.setBounds (ox + w + btnGap, oy, 10, h); // vertical bar button full badge height
+        // Drawer toggle button on the right of badge (wider for easier click)
+        const int btnGap = 8;
+        const int btnW = 26;
+        hudButton.setBounds (ox + w + btnGap, oy, btnW, h); // vertical bar button full badge height
         hudButton.setVisible (true);
+        // Style as vertical accent bar
+        if (auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel()))
+            hudButton.setColour (juce::TextButton::buttonColourId, lf->theme.accent.withAlpha (hudOpen ? 0.85f : 0.35f));
+        else
+            hudButton.setColour (juce::TextButton::buttonColourId, juce::Colours::deepskyblue.withAlpha (hudOpen ? 0.85f : 0.35f));
+        hudButton.toFront (true);
 
-        // Position HUD as a drawer to the right of the badge when open
+        // Position HUD as a drawer coming off the bottom of the badge when open
         if (hudOpen)
         {
             const int hudW = 220;
             const int hudH = juce::jmax (detHud.getCollapsedHeight(), h);
-            int hudX = ox + w + btnGap + hudButton.getWidth() + 6;
-            int hudY = oy;
+            int hudX = ox; // align to badge left by default
+            int hudY = oy + h + 8; // below badge
             if (hudX + hudW > pane.getRight()) hudX = pane.getRight() - hudW - 8;
-            if (hudY + hudH > pane.getBottom()) hudY = pane.getBottom() - hudH - 8;
+            if (hudX < pane.getX()) hudX = pane.getX() + 8;
+            if (hudY + hudH > pane.getBottom()) hudY = oy - hudH - 8; // if off bottom, place above badge
             detHud.setBounds (hudX, hudY, hudW, hudH);
             detHud.setVisible (true);
             detHud.toFront (true);

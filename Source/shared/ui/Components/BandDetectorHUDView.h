@@ -1,6 +1,7 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "shared/Core/FieldLookAndFeel.h"
+#include "shared/Core/IconSystem.h"
 
 struct DetectorHUDState {
     int bandIndex{};
@@ -29,7 +30,7 @@ public:
     void setGR(float grDb) { st_.grPreviewDb = grDb; repaint(); }
 	void setPinned(bool on) { pinned_ = on; repaint(); }
 	void setMaxWidth(int px) { maxWidth_ = px; resized(); }
-	int  getCollapsedHeight() const { return 28; }
+    int  getCollapsedHeight() const { return 108; }
 	int  getExpandedHeight()  const { return expanded_ ? expandedH_ : getCollapsedHeight(); }
 	void show(bool on) { setVisible(on); }
 
@@ -58,7 +59,7 @@ private:
 	bool expanded_{false};
 	bool hover_{false};
 	int  maxWidth_{200};
-	int  expandedH_{64};
+    int  expandedH_{108};
 
     // cached layout rects
     juce::Rectangle<int> rPill_, rAdaptive_, rHp_, rLp_, rGr_;
