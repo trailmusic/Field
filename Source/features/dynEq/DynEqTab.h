@@ -56,7 +56,7 @@ public:
         overlay.setVisible (false);
         addAndMakeVisible (badge);
         badge.setVisible (false);
-        overlay.setAlwaysOnTop (false);
+        overlay.setAlwaysOnTop (true);
         badge.setAlwaysOnTop (true);
 
         // Detector HUD (drawer content; initially hidden)
@@ -268,6 +268,8 @@ public:
                 if (points[(size_t) selected].bandIdx >= 0)
                     setBandParam (points[(size_t) selected].bandIdx, dynEq::Band::type, (float) tp);
                 rebuildEqPath();
+                // reflect in badge immediately
+                positionBadgeFor (selected);
                 repaint();
             }
         };
@@ -281,6 +283,9 @@ public:
                 repaint();
             }
         };
+        // HP/LP popover hooks
+        overlay.onClickHp = [this](juce::Rectangle<int> anchor){ showFreqPopover (anchor, true); };
+        overlay.onClickLp = [this](juce::Rectangle<int> anchor){ showFreqPopover (anchor, false); };
         overlay.onChanChanged = [this](int ch)
         {
             if (selected >= 0 && selected < (int) points.size())
@@ -334,7 +339,23 @@ public:
                 auto& p = points[(size_t) idx];
                 p.type = juce::jlimit (0, 6, tp);
                 if (p.bandIdx >= 0) setBandParam (p.bandIdx, dynEq::Band::type, (float) p.type);
-                rebuildEqPath(); repaint(); positionBadgeFor (idx);
+                rebuildEqPath();
+                // reflect in overlay immediately
+                if (idx == selected) { overlay.setTypeVisual (p.type); }
+                repaint(); positionBadgeFor (idx);
+            }
+        };
+        // Badge channel change mirroring
+        badge.onSetChannel = [this](int ch)
+        {
+            const int idx = (badgeFor >= 0 ? badgeFor : selected);
+            if (idx >= 0 && idx < (int) points.size())
+            {
+                auto& p = points[(size_t) idx];
+                p.channel = juce::jlimit (0, 4, ch);
+                if (p.bandIdx >= 0) setBandParam (p.bandIdx, dynEq::Band::channel, (float) p.channel);
+                if (idx == selected) overlay.setChannelVisual (p.channel);
+                repaint(); positionBadgeFor (idx);
             }
         };
         badge.onSetSlopeDb = [this](int slopeDb)
@@ -599,12 +620,75 @@ public:
         g.setColour (macroColour());
         g.strokePath (eqPath, juce::PathStrokeType (3.0f));
 
-        g.setColour (juce::Colours::yellow.withAlpha (0.95f));
-        for (const auto& pt : points)
+        // Channel-aware band points (single glyph; ring pattern encodes St/M/S/L/R)
+        for (size_t i = 0; i < points.size(); ++i)
         {
+            const auto& pt = points[i];
             const float x = mapHzToX (pt.hz);
             const float y = mapDbToY (pt.db);
-            g.fillEllipse (x-8, y-8, 16, 16);
+            const float rRing = 8.0f;
+            const float rCore = 5.0f;
+            const float stroke = (selected == (int) i ? 2.0f : 1.6f);
+
+            juce::Colour accent = applyChannelTint (bandColourFor ((int) i), pt.channel);
+            // Halo
+            g.setColour (accent.withAlpha (0.22f));
+            g.fillEllipse (juce::Rectangle<float> (x - rRing, y - rRing, rRing * 2.0f, rRing * 2.0f));
+
+            // Core
+            g.setColour (juce::Colours::white.withAlpha (0.95f));
+            g.fillEllipse (juce::Rectangle<float> (x - rCore, y - rCore, rCore * 2.0f, rCore * 2.0f));
+            g.setColour (accent.withAlpha (0.95f));
+            g.drawEllipse (juce::Rectangle<float> (x - rCore, y - rCore, rCore * 2.0f, rCore * 2.0f), 1.0f);
+
+            // Channel ring pattern
+            g.setColour (accent.withAlpha (0.95f));
+            juce::Path ring;
+            const float pi = juce::MathConstants<float>::pi;
+            switch (pt.channel)
+            {
+                case 0: // Stereo: full ring
+                {
+                    g.drawEllipse (juce::Rectangle<float> (x - rRing, y - rRing, rRing * 2.0f, rRing * 2.0f), stroke);
+                } break;
+                case 1: // Mid: full ring + inner crossbar
+                {
+                    g.drawEllipse (juce::Rectangle<float> (x - rRing, y - rRing, rRing * 2.0f, rRing * 2.0f), stroke);
+                    g.drawLine (x - rRing * 0.55f, y, x + rRing * 0.55f, y, stroke);
+                } break;
+                case 2: // Side: ticks at 3/9 o'clock
+                {
+                    g.drawEllipse (juce::Rectangle<float> (x - rRing, y - rRing, rRing * 2.0f, rRing * 2.0f), 1.2f);
+                    g.drawLine (x + rRing, y, x + rRing - rRing * 0.28f, y, stroke);
+                    g.drawLine (x - rRing, y, x - rRing + rRing * 0.28f, y, stroke);
+                } break;
+                case 3: // Left: left semicircle
+                {
+                    ring.addCentredArc (x, y, rRing, rRing, 0.0f, pi * 0.5f, pi * 1.5f, true);
+                    g.strokePath (ring, juce::PathStrokeType (stroke));
+                } break;
+                case 4: // Right: right semicircle
+                {
+                    ring.addCentredArc (x, y, rRing, rRing, 0.0f, -pi * 0.5f, pi * 0.5f, true);
+                    g.strokePath (ring, juce::PathStrokeType (stroke));
+                } break;
+                default:
+                    g.drawEllipse (juce::Rectangle<float> (x - rRing, y - rRing, rRing * 2.0f, rRing * 2.0f), stroke);
+                    break;
+            }
+
+            // High-zoom micro label for clarity
+            if (zoomState.getCurrent() <= 12.0f)
+            {
+                static const char* lab[5] = { "St","M","S","L","R" };
+                const int ch = juce::jlimit (0, 4, pt.channel);
+                g.setColour (juce::Colours::black.withAlpha (0.55f));
+                auto tb = juce::Rectangle<float> (x - 9.0f, y - 6.0f, 18.0f, 12.0f);
+                g.fillRoundedRectangle (tb, 3.0f);
+                g.setColour (juce::Colours::white.withAlpha (0.92f));
+                g.setFont (juce::Font (10.0f));
+                g.drawFittedText (lab[ch], tb.toNearestInt(), juce::Justification::centred, 1);
+            }
         }
 
         if (selected >= 0 && selected < (int) points.size())
@@ -847,10 +931,10 @@ private:
 
             chanLabel.setText ("CHAN", juce::dontSendNotification);
             chanLabel.setJustificationType (juce::Justification::centredLeft);
-            addAndMakeVisible (chanLabel);
+            // Hide legacy combo; we will render channel chips in paint()
             chanCb.addItemList (juce::StringArray{ "Stereo","Mid","Side","Left","Right" }, 1);
             chanCb.onChange = [this]{ if (!updating && onChanChanged) onChanChanged (chanCb.getSelectedItemIndex()); };
-            addAndMakeVisible (chanCb);
+            chanCb.setVisible (false);
 
             // Dynamic / Spectral toggles
             dynToggle.setButtonText ("DYN");
@@ -961,6 +1045,23 @@ private:
             juce::ColourGradient grad (a0, strip.getCentreX(), strip.getY(), a1, strip.getCentreX(), strip.getBottom(), false);
             g.setGradientFill (grad);
             g.fillRect (strip);
+
+            // Channel chips row (bottom) — paint from rects computed in resized()
+            auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+            auto paintChip = [&](juce::Rectangle<int> b, const juce::String& t, bool on)
+            {
+                auto bgc = lf ? lf->theme.chipBg : juce::Colours::darkgrey;
+                auto fgc = lf ? lf->theme.textPrimary : juce::Colours::white;
+                if (on) bgc = lf ? lf->theme.chipBgActive : bgc.brighter (0.25f);
+                g.setColour (bgc); g.fillRoundedRectangle (b.toFloat(), 6.f);
+                g.setColour (fgc.withAlpha (on ? 0.95f : 0.75f));
+                g.drawFittedText (t, b, juce::Justification::centred, 1);
+            };
+            paintChip (rSt_, "St", channel == 0);
+            paintChip (rM_,  "M",  channel == 1);
+            paintChip (rS_,  "S",  channel == 2);
+            paintChip (rL_,  "L",  channel == 3);
+            paintChip (rR_,  "R",  channel == 4);
         }
         void resized() override
         {
@@ -1010,6 +1111,15 @@ private:
             detSrc.setBounds (half5.removeFromLeft (140));
             scHP.setBounds   (half5.removeFromLeft (140));
             scLP.setBounds   (half5.removeFromLeft (140));
+            scHpRect_ = scHP.getBounds();
+            scLpRect_ = scLP.getBounds();
+
+            // Bottom channel row (28 px)
+            const int rowH = 28, gutter = 8;
+            auto rAll = getLocalBounds().reduced (12);
+            auto rowChan = rAll.removeFromBottom (rowH);
+            auto slice = [&](int w){ auto s = rowChan.removeFromLeft (w); if (rowChan.getWidth() > 0) rowChan.removeFromLeft (gutter); return s; };
+            rSt_ = slice (48); rM_ = slice (40); rS_ = slice (40); rL_ = slice (40); rR_ = slice (40);
         }
         void setValues (float gainDb, float qVal, float freqHz, int typeIdx, int phaseIdx, int chanIdx, bool dynOn, bool specOn)
         {
@@ -1020,6 +1130,7 @@ private:
             typeCb.setSelectedItemIndex (juce::jlimit (0, juce::jmax (0, typeCb.getNumItems()-1), typeIdx), juce::dontSendNotification);
             phaseCb.setSelectedItemIndex (juce::jlimit (0, juce::jmax (0, phaseCb.getNumItems()-1), phaseIdx), juce::dontSendNotification);
             chanCb.setSelectedItemIndex (juce::jlimit (0, juce::jmax (0, chanCb.getNumItems()-1), chanIdx), juce::dontSendNotification);
+            channel = juce::jlimit (0, 4, chanIdx);
             typeIcon.setType (typeIdx);
             dynToggle.setToggleState (dynOn, juce::dontSendNotification);
             specToggle.setToggleState (specOn, juce::dontSendNotification);
@@ -1080,13 +1191,52 @@ private:
                 g.strokePath (p, juce::PathStrokeType (1.2f));
             }
         } typeIcon;
+        // Expose a visual setter so outer class can sync icon without accessing private members
+    public:
+        void setTypeVisual (int t)
+        {
+            juce::ScopedValueSetter<bool> sv (updating, true);
+            typeIcon.setType (t);
+            typeCb.setSelectedItemIndex (juce::jlimit (0, juce::jmax (0, typeCb.getNumItems()-1), t), juce::dontSendNotification);
+            repaint();
+        }
+    private:
         bool updating { false };
         bool typeMenuOpen { false };
         void showTypeMenuToggle()
         {
             if (typeMenuOpen) { juce::PopupMenu::dismissAllActiveMenus(); typeMenuOpen = false; return; }
             juce::PopupMenu m; juce::StringArray names { "Bell","LowShelf","HighShelf","HP","LP","Notch","BandPass","AllPass" };
-            for (int i = 0; i < names.size(); ++i) m.addItem (i+1, names[i]);
+            struct TypeMenuComp : public juce::PopupMenu::CustomComponent {
+                juce::String text; int idx; TypeMenuComp(const juce::String& t, int i) : juce::PopupMenu::CustomComponent(true), text(t), idx(i) {}
+                void getIdealSize (int& w, int& h) override { w = 220; h = 24; }
+                void paint (juce::Graphics& g) override {
+                    auto r = getLocalBounds().toFloat();
+                    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+                    auto fg = lf ? lf->theme.textPrimary : juce::Colours::white;
+                    auto ic = r.removeFromRight (20.0f).toFloat().reduced (2.0f);
+                    g.setColour (fg);
+                    juce::Path p; const int N = 14;
+                    auto mapx = [&](int i){ return ic.getX() + (float) i / (float) (N-1) * ic.getWidth(); };
+                    auto mapy = [&](float v01){ return juce::jmap (v01, 0.0f, 1.0f, ic.getBottom(), ic.getY()); };
+                    auto shape = [&](float t){
+                        if (idx == 0) return 0.5f + 0.35f * std::sin ((t-0.5f) * juce::MathConstants<float>::pi);
+                        if (idx == 1) return 0.35f + 0.5f * 1.0f / (1.0f + std::exp (-10.0f*(t-0.45f)));
+                        if (idx == 2) return 0.65f - 0.5f * 1.0f / (1.0f + std::exp (-10.0f*(t-0.55f)));
+                        if (idx == 3) return juce::jlimit (0.0f,1.0f, (t*1.6f));
+                        if (idx == 4) return juce::jlimit (0.0f,1.0f, 1.0f-(t*1.6f));
+                        if (idx == 5) return 0.5f + 0.45f * std::sin ((t-0.5f) * juce::MathConstants<float>::twoPi);
+                        if (idx == 6) return 0.5f + 0.45f * std::abs (std::sin ((t-0.5f) * juce::MathConstants<float>::twoPi));
+                        return 0.5f;
+                    };
+                    p.startNewSubPath (mapx(0), mapy (shape(0)));
+                    for (int i=1;i<N;++i) p.lineTo (mapx(i), mapy (shape((float) i/(N-1))));
+                    g.strokePath (p, juce::PathStrokeType (1.2f));
+                    g.setColour (fg);
+                    g.drawFittedText (text, getLocalBounds().withTrimmedRight (24), juce::Justification::centredLeft, 1);
+                }
+            };
+            for (int i = 0; i < names.size(); ++i) m.addCustomItem (i+1, std::make_unique<TypeMenuComp>(names[i], i));
             typeMenuOpen = true;
             m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this),
                              [this](int r)
@@ -1095,12 +1245,44 @@ private:
                                  if (r > 0 && !updating)
                                  {
                                      const int idx = r-1;
-                                     typeIcon.setType (idx);
+                                     setTypeVisual (idx);
                                      if (onTypeChanged) onTypeChanged (idx);
                                  }
                              });
         }
         juce::Colour overlayAccent { juce::Colours::white.withAlpha (0.4f) };
+        
+        // --- Channel chips (bottom row) ---
+    public:
+        void setChannelVisual (int ch)
+        {
+            juce::ScopedValueSetter<bool> sv (updating, true);
+            channel = juce::jlimit (0, 4, ch);
+            chanCb.setSelectedItemIndex (channel, juce::dontSendNotification);
+            repaint();
+        }
+    private:
+        // External hooks
+    public:
+        std::function<void(juce::Rectangle<int>)> onClickHp;
+        std::function<void(juce::Rectangle<int>)> onClickLp;
+        void setSidechainHP (float hz) { juce::ScopedValueSetter<bool> sv (updating, true); scHP.setValue (hz, juce::dontSendNotification); repaint(); }
+        void setSidechainLP (float hz) { juce::ScopedValueSetter<bool> sv (updating, true); scLP.setValue (hz, juce::dontSendNotification); repaint(); }
+    private:
+        int channel { 0 };
+        juce::Rectangle<int> rSt_, rM_, rS_, rL_, rR_;
+        juce::Rectangle<int> scHpRect_, scLpRect_;
+        void mouseUp (const juce::MouseEvent& e) override
+        {
+            auto p = e.getPosition();
+            if (scHpRect_.contains (p)) { if (onClickHp) onClickHp (scHpRect_); return; }
+            if (scLpRect_.contains (p)) { if (onClickLp) onClickLp (scLpRect_); return; }
+            if (rSt_.contains (p)) { if (onChanChanged) onChanChanged (0); return; }
+            if (rM_.contains  (p)) { if (onChanChanged) onChanChanged (1); return; }
+            if (rS_.contains  (p)) { if (onChanChanged) onChanChanged (2); return; }
+            if (rL_.contains  (p)) { if (onChanChanged) onChanChanged (3); return; }
+            if (rR_.contains  (p)) { if (onChanChanged) onChanChanged (4); return; }
+        }
     } overlay;
 
     // Compact per-band badge (GR, freq, type, delete, bypass)
@@ -1113,6 +1295,7 @@ private:
         std::function<void(int)> onSetType;
         std::function<void(int)> onSetSlopeDb;
         std::function<void(int)> onSetTapMode;
+        std::function<void(int)> onSetChannel;
         std::function<void()> onToggleDyn;
         std::function<void()> onToggleSpec;
         std::function<void(float)> onSetFreq;
@@ -1265,6 +1448,7 @@ private:
             else if (typeRect.contains (e.getPosition())) { showTypeMenu(); }
             else if (slopeRect.contains (e.getPosition())) { showSlopeMenu(); }
             else if (tapRect.contains (e.getPosition())) { showTapMenu(); }
+            else if (chanRect.contains (e.getPosition())) { if (onSetChannel) onSetChannel (((channel_ + 1) % 5)); }
         }
         void mouseDown (const juce::MouseEvent& e) override
         {
@@ -1279,7 +1463,36 @@ private:
         void showTypeMenu()
         {
             if (!onSetType) return; juce::PopupMenu m; juce::StringArray names { "Bell","LowShelf","HighShelf","HP","LP","Notch","BandPass","AllPass" };
-            for (int i = 0; i < names.size(); ++i) m.addItem (i+1, names[i]);
+            struct TypeMenuComp : public juce::PopupMenu::CustomComponent {
+                juce::String text; int idx; TypeMenuComp(const juce::String& t, int i) : juce::PopupMenu::CustomComponent(true), text(t), idx(i) {}
+                void getIdealSize (int& w, int& h) override { w = 220; h = 24; }
+                void paint (juce::Graphics& g) override {
+                    auto r = getLocalBounds().toFloat();
+                    auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+                    auto fg = lf ? lf->theme.textPrimary : juce::Colours::white;
+                    auto ic = r.removeFromLeft (20.0f).toFloat().reduced (2.0f);
+                    g.setColour (fg);
+                    juce::Path p; const int N = 14;
+                    auto mapx = [&](int i){ return ic.getX() + (float) i / (float) (N-1) * ic.getWidth(); };
+                    auto mapy = [&](float v01){ return juce::jmap (v01, 0.0f, 1.0f, ic.getBottom(), ic.getY()); };
+                    auto shape = [&](float t){
+                        if (idx == 0) return 0.5f + 0.35f * std::sin ((t-0.5f) * juce::MathConstants<float>::pi);
+                        if (idx == 1) return 0.35f + 0.5f * 1.0f / (1.0f + std::exp (-10.0f*(t-0.45f)));
+                        if (idx == 2) return 0.65f - 0.5f * 1.0f / (1.0f + std::exp (-10.0f*(t-0.55f)));
+                        if (idx == 3) return juce::jlimit (0.0f,1.0f, (t*1.6f));
+                        if (idx == 4) return juce::jlimit (0.0f,1.0f, 1.0f-(t*1.6f));
+                        if (idx == 5) return 0.5f + 0.45f * std::sin ((t-0.5f) * juce::MathConstants<float>::twoPi);
+                        if (idx == 6) return 0.5f + 0.45f * std::abs (std::sin ((t-0.5f) * juce::MathConstants<float>::twoPi));
+                        return 0.5f;
+                    };
+                    p.startNewSubPath (mapx(0), mapy (shape(0)));
+                    for (int i=1;i<N;++i) p.lineTo (mapx(i), mapy (shape((float) i/(N-1))));
+                    g.strokePath (p, juce::PathStrokeType (1.2f));
+                    g.setColour (fg);
+                    g.drawFittedText (text, getLocalBounds().withTrimmedLeft (24), juce::Justification::centredLeft, 1);
+                }
+            };
+            for (int i = 0; i < names.size(); ++i) m.addCustomItem (i+1, std::make_unique<TypeMenuComp>(names[i], i));
             // Anchor at the type glyph, hinting to open upward from header
             auto screenRect = localAreaToGlobal (typeRect).expanded (2);
             m.showMenuAsync (juce::PopupMenu::Options().withTargetScreenArea (screenRect), [this](int r){ if (r > 0 && onSetType) onSetType (r-1); });
@@ -1334,7 +1547,7 @@ private:
         float qVal { 0.707f }, gainDb { 0.0f };
         bool dynOn { false }, dynUp { false }, specOn { false };
         float dynRangeDb { 0.0f };
-        juce::String chanLabel { "St" }; int slopeDb { 12 }; juce::String tapLabel { "Post" };
+        juce::String chanLabel { "St" }; int channel_ { 0 }; int slopeDb { 12 }; juce::String tapLabel { "Post" };
         juce::Rectangle<int> powerRect, xRect, typeRect, freqRect, qRect, gainRect, grRect;
         juce::Rectangle<int> dynRect, specRect, chanRect, slopeRect, tapRect;
         juce::Colour badgeAccent { juce::Colours::white.withAlpha (0.4f) };
@@ -1887,11 +2100,27 @@ private:
         const float x = mapHzToX (pt.hz);
         const float y = mapDbToY (pt.db);
         auto pane = getLocalBounds();
-        const int w = 360, h = 132;
+
+        // Compute dynamic overlay size from row specs
+        const int pad = 12, gutter = 8;
+        const int row22 = 22, row24 = 24, row28 = 28;
+        const int rowsH = row22 + gutter + row22 + gutter + row22 + gutter
+                        + row24 + gutter + row24 + gutter + row24 + gutter
+                        + row24 + gutter + row28;
+        // Row width requirements (fixed controls)
+        const int wTypeRow = 28 + gutter + 160 + gutter + 64 + gutter + 64;            // 28|160|64|64 with 3 gutters
+        const int wAtkRow  = (36+120) + gutter + (36+120) + gutter + (44+120);         // labels+sliders with 2 gutters
+        const int wTRKMW   = (120*5) + (gutter*4);                                     // THR/RATIO/KNEE/MAKEUP/WET
+        const int wDetRow  = (140*3) + (gutter*2);                                     // SRC + HP + LP
+        const int wChanRow = 48 + gutter + 40 + gutter + 40 + gutter + 40 + gutter + 40; // St M S L R
+        const int contentW = juce::jmax (wTypeRow, juce::jmax (wAtkRow, juce::jmax (wTRKMW, juce::jmax (wDetRow, wChanRow))));
+        const int minW = 360; // floor for readability
+        const int w = juce::jmax (minW, pad + contentW + pad);
+        const int h = pad + rowsH + pad;
         
         // Start with band point position
         int ox = (int) x - (w / 2);
-        int oy = pane.getBottom() - h - 60; // Fixed Y higher up to avoid Hz units
+        int oy = pane.getBottom() - h - 60; // prefer lower area but above Hz labels
         
         // Smart positioning to avoid overlap with band point
         const int bandRadius = 12; // Band point click radius
@@ -1945,8 +2174,21 @@ private:
         const auto& pt = points[(size_t) idx];
         const float x = mapHzToX (pt.hz);
         const float y = mapDbToY (pt.db);
-        // Wider badge to avoid clipping text at small zooms
-        const int w = 260, h = 86;
+        // Compute badge size from content (two rows + header)
+        const int pad = 6;
+        const int headerH = 20;
+        const int gap = 6;
+        // Row widths
+        const int numCells = 4; const int colGap = 6; const int minCellW = 44; // Row1
+        const int row1W = (minCellW * numCells) + (colGap * (numCells - 1));
+        const int numChips = 5; const int chipGap = 6; const int minChipW = 52; // Row2
+        const int row2W = (minChipW * numChips) + (chipGap * (numChips - 1));
+        const int contentW = juce::jmax (row1W, row2W);
+        const int minW = 260; // floor
+        const int w = juce::jmax (minW, pad + contentW + pad);
+        // Height: header + sep + row1 + gap + row2 + pads
+        const int rowH = 22; // approximate dynamic row height
+        const int h = pad + headerH + 5 /*sep+margin*/ + rowH + gap + rowH + pad;
         auto pane = getLocalBounds();
         
         // Start with band point position
@@ -2202,6 +2444,54 @@ private:
     BandDetectorHUDView detHud;
     juce::TextButton hudButton;
     bool hudOpen { false };
+
+    // Helper: launch HP/LP popover anchored to overlay chip
+    void showFreqPopover (juce::Rectangle<int> chipLocalToOverlay, bool isHP)
+    {
+        const int bi = (selected >= 0 ? points[(size_t) selected].bandIdx : -1); if (bi < 0) return;
+        auto anchor = chipLocalToOverlay; // chip rect in overlay space
+        auto screen = overlay.getScreenBounds();
+        anchor.setPosition (screen.getX() + chipLocalToOverlay.getX(), screen.getY() + chipLocalToOverlay.getY());
+        struct FreqPane : juce::Component
+        {
+            juce::Slider s; juce::Label title, val;
+            std::function<void(float)> onCommit;
+            void resized() override {
+                auto r = getLocalBounds().reduced(12);
+                title.setBounds(r.removeFromTop(18));
+                r.removeFromTop(6);
+                s.setBounds(r.removeFromTop(28));
+                r.removeFromTop(6);
+                val.setBounds(r.removeFromTop(18));
+            }
+            FreqPane(const juce::String& t, float startHz, std::function<void(float)> commit)
+            {
+                onCommit = std::move(commit);
+                title.setText(t, juce::dontSendNotification);
+                addAndMakeVisible(title);
+                s.setRange(20.0, 20000.0, 0.01);
+                s.setSkewFactorFromMidPoint(1000.0);
+                s.setValue(startHz, juce::dontSendNotification);
+                s.onValueChange = [this]{ val.setText(hzText((float)s.getValue()), juce::dontSendNotification); };
+                s.onDragEnd = [this]{ if (onCommit) onCommit((float) s.getValue()); };
+                addAndMakeVisible(s);
+                val.setJustificationType(juce::Justification::centredRight);
+                addAndMakeVisible(val);
+                setSize(300, 80);
+            }
+            static juce::String hzText(float hz){
+                return hz >= 1000.f ? juce::String(hz/1000.f, hz<10000?1:0) + " kHz" : juce::String((int)hz) + " Hz";
+            }
+        };
+        const float startHz = (isHP ? currentHpHz(bi) : currentLpHz(bi));
+        auto pane = std::make_unique<FreqPane>(isHP ? "High-pass" : "Low-pass", startHz,
+            [this, bi, isHP](float hz){ setBandParam(bi, isHP ? dynEq::Band::dynDetHPHz : dynEq::Band::dynDetLPHz, hz); });
+        juce::CallOutBox::launchAsynchronously(std::move(pane), anchor, nullptr);
+    }
+
+    private:
+    float currentHpHz (int bandIdx) const { return getBandParamFloat (bandIdx, dynEq::Band::dynDetHPHz, 20.0f); }
+    float currentLpHz (int bandIdx) const { return getBandParamFloat (bandIdx, dynEq::Band::dynDetLPHz, 20000.0f); }
 };
 
 // Tooltip implementation for Dynamic EQ controls

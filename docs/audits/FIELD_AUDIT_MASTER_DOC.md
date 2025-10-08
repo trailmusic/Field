@@ -42,6 +42,7 @@ Absolutely. Here’s a single, consolidated “master doc” that merges the two
 26. [DynEQ — Per-band bindings + GR telemetry](#dyneq--per-band-bindings--gr-telemetry)
 27. [DynEQ — Adaptive detector + External SC activation UX](#dyneq--adaptive-detector--external-sc-activation-ux)
 28. [DynEQ — HUD theming & sizing pass](#dyneq--hud-theming--sizing-pass)
+29. [DynEQ — Channel row + Badge/Overlay sizing + HP/LP popovers](#dyneq--channel-row--badgeoverlay-sizing--hplp-popovers)
 
 ---
 
@@ -861,6 +862,39 @@ Verification:
 
 Follow-ups:
 - Apply the same theme sweep to `DynEqTab` and `DynEqZoomSideRail` (replace hardcoded whites/greys with theme tokens).
+
+## DynEQ — Channel row + Badge/Overlay sizing + HP/LP popovers
+
+Date: 2025-10-08
+
+Summary:
+- Added a dedicated bottom Channel row (chips: St/M/S/L/R) to the floating BandOverlay; click-to-select channel with immediate APVTS write (`b_channel`) and overlay/badge mirroring.
+- Converted BandOverlay sizing to dynamic width/height based on row inventory; no more row clipping/overlap. Rows rendered: GAIN, Q, FREQ, Type/Phase/Dyn/Spec, ATK/REL/HOLD, THR/RATIO/KNEE/MAKEUP/WET, Detector Source + SC HP/LP, Channel chips.
+- Made BandBadge width/height dynamic based on header + two rows and gaps; prevents chip/cell clipping at small zooms.
+- Implemented HP/LP popover sliders (300×80, log-taper) anchored to chip screen-bounds using `CallOutBox::launchAsynchronously`; writes to `b_dynDetHPHz` / `b_dynDetLPHz`.
+- Moved hit-rect computation for chips from `paint()` to `resized()` to fix click-miss issues; paint now only draws.
+- Reasserted z-order in placement: badge/overlay/HUD/button marked always-on-top, with `toFront(true)` on layout changes.
+
+Files:
+- `Source/features/dynEq/DynEqTab.h`:
+  - Overlay: bottom channel chips row; hit-rects computed in `resized()`; dedicated painting; `onChanChanged` writes APVTS and mirrors badge.
+  - Dynamic overlay sizing in `positionOverlay()`: computes required width/height from row specs (22/24/28 px rows, 8 px gutters, 12 px padding), clamps to min width; positions away from band point and clamps to pane.
+  - Dynamic badge sizing in `positionBadgeFor()`: computes width from content (row1 cells + row2 chips), height from header + two rows + gaps; clamps inside pane.
+  - HP/LP chips: added `onClickHp/onClickLp` hooks and `showFreqPopover(...)` helper; sliders update live value label and commit APVTS on drag end.
+  - Accessors `currentHpHz/currentLpHz` read APVTS via helpers for selected band; used to seed popover slider.
+
+Behavior/UX:
+- All overlay rows are visible and no longer overlap; channel selection is obvious and responsive.
+- Badge and HUD reliably appear above band curves; click targets land consistently.
+- HP/LP adjustments feel natural (log-taper), values reflect immediately in overlay chips.
+
+Verification:
+- Built across Standalone/AU/VST3; Field app relaunched for manual smoke.
+- Visual/manual checks confirm dynamic expansion, correct anchoring, and z-order.
+
+Follow-ups:
+- Optional: menu-based channel selection on badge (current is cycle-on-click); add tooltips for chips.
+- Consider tiny crossfade when switching channel under signal to avoid micro-clicks (2 ms ramp).
 
 Date: 2025-10-07
 
