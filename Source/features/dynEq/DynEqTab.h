@@ -953,58 +953,64 @@ private:
             setAreaMetallicForCell (dynToggle, MetallicKind::Band); // Use Band metallic for DynEQ buttons
             setAreaMetallicForCell (specToggle, MetallicKind::Band);
 
-            // Attack / Release / Hold sliders
-            atkMs.setSliderStyle (juce::Slider::LinearHorizontal);
-            atkMs.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            // Attack / Release / Hold sliders → mini knobs
+            auto makeMiniKnob = [this](juce::Slider& s){
+                s.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+                s.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+                if (auto* lf2 = dynamic_cast<FieldLNF*>(&getLookAndFeel())) s.setLookAndFeel (lf2);
+            };
+            makeMiniKnob (gain); makeMiniKnob (q); makeMiniKnob (freq);
+            atkMs.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+            atkMs.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
             atkMs.setRange (0.1, 2000.0, 0.1);
             atkMs.onValueChange = [this]{ if (!updating && onAttackMsChanged) onAttackMsChanged ((float) atkMs.getValue()); };
             addAndMakeVisible (atkMs);
             atkLabel.setJustificationType (juce::Justification::centredLeft);
             addAndMakeVisible (atkLabel);
 
-            relMs.setSliderStyle (juce::Slider::LinearHorizontal);
-            relMs.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            relMs.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+            relMs.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
             relMs.setRange (5.0, 5000.0, 0.1);
             relMs.onValueChange = [this]{ if (!updating && onReleaseMsChanged) onReleaseMsChanged ((float) relMs.getValue()); };
             addAndMakeVisible (relMs);
             relLabel.setJustificationType (juce::Justification::centredLeft);
             addAndMakeVisible (relLabel);
 
-            holdMs.setSliderStyle (juce::Slider::LinearHorizontal);
-            holdMs.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            holdMs.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+            holdMs.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
             holdMs.setRange (0.0, 1000.0, 0.1);
             holdMs.onValueChange = [this]{ if (!updating && onHoldMsChanged) onHoldMsChanged ((float) holdMs.getValue()); };
             addAndMakeVisible (holdMs);
             holdLabel.setJustificationType (juce::Justification::centredLeft);
             addAndMakeVisible (holdLabel);
 
-            // Threshold / Ratio / Knee / Makeup / Wet
-            threshDb.setSliderStyle (juce::Slider::LinearHorizontal);
-            threshDb.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            // Threshold / Ratio / Knee / Makeup / Wet → mini knobs
+            threshDb.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+            threshDb.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
             threshDb.setRange (-80.0, 0.0, 0.1);
             threshDb.onValueChange = [this]{ if (!updating && onThreshDbChanged) onThreshDbChanged ((float) threshDb.getValue()); };
             addAndMakeVisible (threshDb);
 
-            ratio.setSliderStyle (juce::Slider::LinearHorizontal);
-            ratio.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            ratio.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+            ratio.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
             ratio.setRange (1.0, 10.0, 0.1);
             ratio.onValueChange = [this]{ if (!updating && onRatioChanged) onRatioChanged ((float) ratio.getValue()); };
             addAndMakeVisible (ratio);
 
-            kneeDb.setSliderStyle (juce::Slider::LinearHorizontal);
-            kneeDb.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            kneeDb.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+            kneeDb.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
             kneeDb.setRange (0.0, 24.0, 0.1);
             kneeDb.onValueChange = [this]{ if (!updating && onKneeDbChanged) onKneeDbChanged ((float) kneeDb.getValue()); };
             addAndMakeVisible (kneeDb);
 
-            makeupDb.setSliderStyle (juce::Slider::LinearHorizontal);
-            makeupDb.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            makeupDb.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+            makeupDb.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
             makeupDb.setRange (-24.0, 24.0, 0.1);
             makeupDb.onValueChange = [this]{ if (!updating && onMakeupDbChanged) onMakeupDbChanged ((float) makeupDb.getValue()); };
             addAndMakeVisible (makeupDb);
 
-            wet01.setSliderStyle (juce::Slider::LinearHorizontal);
-            wet01.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            wet01.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+            wet01.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
             wet01.setRange (0.0, 1.0, 0.01);
             wet01.onValueChange = [this]{ if (!updating && onWetChanged) onWetChanged ((float) wet01.getValue()); };
             addAndMakeVisible (wet01);
@@ -1014,14 +1020,14 @@ private:
             detSrc.onChange = [this]{ if (!updating && onDetSrcChanged) onDetSrcChanged (detSrc.getSelectedItemIndex()); };
             addAndMakeVisible (detSrc);
 
-            scHP.setSliderStyle (juce::Slider::LinearHorizontal);
-            scHP.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            scHP.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+            scHP.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
             scHP.setRange (20.0, 2000.0, 0.1);
             scHP.onValueChange = [this]{ if (!updating && onSCHPChanged) onSCHPChanged ((float) scHP.getValue()); };
             addAndMakeVisible (scHP);
 
-            scLP.setSliderStyle (juce::Slider::LinearHorizontal);
-            scLP.setTextBoxStyle (juce::Slider::TextBoxRight, false, 48, 18);
+            scLP.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
+            scLP.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
             scLP.setRange (1000.0, 20000.0, 0.1);
             scLP.onValueChange = [this]{ if (!updating && onSCLPChanged) onSCLPChanged ((float) scLP.getValue()); };
             addAndMakeVisible (scLP);
@@ -1046,8 +1052,15 @@ private:
             g.setGradientFill (grad);
             g.fillRect (strip);
 
-            // Channel chips row (bottom) — paint from rects computed in resized()
+            // Draw top control bar icons
             auto* lf = dynamic_cast<FieldLNF*>(&getLookAndFeel());
+            auto fg = lf ? lf->theme.textPrimary : juce::Colours::white;
+            g.setColour (fg.withAlpha (0.9f));
+            IconSystem::drawIcon (g, IconSystem::Power, hdrPowerR_.toFloat(), fg);
+            IconSystem::drawIcon (g, IconSystem::Audition, hdrAudR_.toFloat(), fg);
+            IconSystem::drawIcon (g, IconSystem::X, hdrCloseR_.toFloat(), fg);
+
+            // Channel chips row (bottom) — paint from rects computed in resized()
             auto paintChip = [&](juce::Rectangle<int> b, const juce::String& t, bool on)
             {
                 auto bgc = lf ? lf->theme.chipBg : juce::Colours::darkgrey;
@@ -1066,19 +1079,32 @@ private:
         void resized() override
         {
             auto r = getLocalBounds().reduced (8);
-            auto row = r.removeFromTop (22);
-            gainLabel.setBounds (row.removeFromLeft (40));
-            gain.setBounds (row);
-            r.removeFromTop (6);
-            row = r.removeFromTop (22);
-            qLabel.setBounds (row.removeFromLeft (40));
-            q.setBounds (row);
-            r.removeFromTop (6);
-            row = r.removeFromTop (22);
-            freqLabel.setBounds (row.removeFromLeft (40));
-            freq.setBounds (row);
+            const int kRow = 28; const int kG = 6; const int kKnob = 22; const int kLabW = 40;
+            auto placeKnob = [&](juce::Rectangle<int> area, juce::Slider& s){
+                auto c = area.getCentre(); s.setBounds (c.x - kKnob/2, c.y - kKnob/2, kKnob, kKnob);
+            };
+            auto row = r.removeFromTop (kRow);
+            gainLabel.setBounds (row.removeFromLeft (kLabW));
+            placeKnob (row.removeFromLeft (kRow), gain);
+            r.removeFromTop (kG);
+            row = r.removeFromTop (kRow);
+            qLabel.setBounds (row.removeFromLeft (kLabW));
+            placeKnob (row.removeFromLeft (kRow), q);
+            r.removeFromTop (kG);
+            row = r.removeFromTop (kRow);
+            freqLabel.setBounds (row.removeFromLeft (kLabW));
+            placeKnob (row.removeFromLeft (kRow), freq);
 
             r.removeFromTop (8);
+            // Top control bar
+            {
+                auto header = r.removeFromTop (20);
+                const int icon = 16;
+                hdrPowerR_ = header.removeFromLeft (icon);
+                header.removeFromLeft (4);
+                hdrAudR_   = header.removeFromLeft (icon);
+                hdrCloseR_ = header.removeFromRight (icon);
+            }
             auto half = r.removeFromTop (24);
             typeIcon.setBounds (half.removeFromLeft (28));
             // Expand remaining controls into freed space
@@ -1090,27 +1116,27 @@ private:
             chanLabel.setBounds (half2.removeFromLeft (40));
             chanCb.setBounds (half2.removeFromLeft (120));
             // Attack / Release / Hold row
-            auto half3 = r.removeFromTop (24);
+            auto half3 = r.removeFromTop (kRow);
             atkLabel.setBounds (half3.removeFromLeft (36));
-            atkMs.setBounds (half3.removeFromLeft (120));
+            placeKnob (half3.removeFromLeft (kRow), atkMs);
             relLabel.setBounds (half3.removeFromLeft (36));
-            relMs.setBounds (half3.removeFromLeft (120));
+            placeKnob (half3.removeFromLeft (kRow), relMs);
             holdLabel.setBounds (half3.removeFromLeft (44));
-            holdMs.setBounds (half3.removeFromLeft (120));
+            placeKnob (half3.removeFromLeft (kRow), holdMs);
 
             // Threshold / Ratio / Knee / Makeup / Wet row
-            auto half4 = r.removeFromTop (24);
-            threshDb.setBounds (half4.removeFromLeft (160));
-            ratio.setBounds    (half4.removeFromLeft (120));
-            kneeDb.setBounds   (half4.removeFromLeft (120));
-            makeupDb.setBounds (half4.removeFromLeft (120));
-            wet01.setBounds    (half4.removeFromLeft (120));
+            auto half4 = r.removeFromTop (kRow);
+            placeKnob (half4.removeFromLeft (kRow), threshDb);
+            placeKnob (half4.removeFromLeft (kRow), ratio);
+            placeKnob (half4.removeFromLeft (kRow), kneeDb);
+            placeKnob (half4.removeFromLeft (kRow), makeupDb);
+            placeKnob (half4.removeFromLeft (kRow), wet01);
 
             // Detector source + SC HP/LP row
-            auto half5 = r.removeFromTop (24);
+            auto half5 = r.removeFromTop (kRow);
             detSrc.setBounds (half5.removeFromLeft (140));
-            scHP.setBounds   (half5.removeFromLeft (140));
-            scLP.setBounds   (half5.removeFromLeft (140));
+            placeKnob (half5.removeFromLeft (kRow), scHP);
+            placeKnob (half5.removeFromLeft (kRow), scLP);
             scHpRect_ = scHP.getBounds();
             scLpRect_ = scLP.getBounds();
 
@@ -1272,9 +1298,13 @@ private:
         int channel { 0 };
         juce::Rectangle<int> rSt_, rM_, rS_, rL_, rR_;
         juce::Rectangle<int> scHpRect_, scLpRect_;
+        juce::Rectangle<int> hdrPowerR_, hdrAudR_, hdrCloseR_;
         void mouseUp (const juce::MouseEvent& e) override
         {
             auto p = e.getPosition();
+            if (hdrPowerR_.contains (p)) { if (onDynChanged) onDynChanged (false); return; }
+            if (hdrAudR_.contains   (p)) { /* audition (overlay) TODO */ return; }
+            if (hdrCloseR_.contains (p)) { this->setVisible (false); return; }
             if (scHpRect_.contains (p)) { if (onClickHp) onClickHp (scHpRect_); return; }
             if (scLpRect_.contains (p)) { if (onClickLp) onClickLp (scLpRect_); return; }
             if (rSt_.contains (p)) { if (onChanChanged) onChanChanged (0); return; }
@@ -1303,6 +1333,7 @@ private:
         std::function<void(int)> onSetSlopeDb;
         std::function<void(int)> onSetTapMode;
         std::function<void(int)> onSetChannel;
+        std::function<void(bool)> onToggleAudition;
         std::function<void()> onToggleDyn;
         std::function<void()> onToggleSpec;
         std::function<void(float)> onSetFreq;
@@ -1345,9 +1376,11 @@ private:
             g.fillRect (juce::Rectangle<float> (r.getX()+6.0f, header.getBottom()+5.0f, r.getWidth()-12.0f, 1.0f));
             const float headerIconSz = juce::jmax (14.0f, headerH * 0.9f);
             powerRect = header.removeFromLeft (headerIconSz).toNearestInt();
+            auditionRect = header.removeFromLeft (headerIconSz).toNearestInt();
             xRect     = header.removeFromRight (headerIconSz).toNearestInt();
             auto iconCol = juce::Colours::white.withAlpha (0.90f);
             IconSystem::drawIcon (g, IconSystem::Power, powerRect.toFloat(), bypassed ? juce::Colours::orange : iconCol);
+            IconSystem::drawIcon (g, IconSystem::Audition, auditionRect.toFloat(), auditionOn ? juce::Colours::deepskyblue : iconCol);
             IconSystem::drawIcon (g, IconSystem::X,     xRect.toFloat(), iconCol);
             // Centered type glyph button
             {
@@ -1450,6 +1483,7 @@ private:
         {
             if (xRect.contains (e.getPosition())) { if (onDelete) onDelete(); }
             else if (powerRect.contains (e.getPosition())) { bypassed = !bypassed; if (onBypass) onBypass (bypassed); repaint(); }
+            else if (auditionRect.contains (e.getPosition())) { auditionOn = !auditionOn; if (onToggleAudition) onToggleAudition (auditionOn); repaint(); }
             else if (dynRect.contains (e.getPosition())) { if (onToggleDyn) onToggleDyn(); }
             else if (specRect.contains (e.getPosition())) { if (onToggleSpec) onToggleSpec(); }
             else if (typeRect.contains (e.getPosition())) { showTypeMenu(); }
@@ -1571,9 +1605,10 @@ private:
         bool dynOn { false }, dynUp { false }, specOn { false };
         float dynRangeDb { 0.0f };
         juce::String chanLabel { "St" }; int channel_ { 0 }; int slopeDb { 12 }; juce::String tapLabel { "Post" };
-        juce::Rectangle<int> powerRect, xRect, typeRect, freqRect, qRect, gainRect, grRect;
+        juce::Rectangle<int> powerRect, auditionRect, xRect, typeRect, freqRect, qRect, gainRect, grRect;
         juce::Rectangle<int> dynRect, specRect, chanRect, slopeRect, tapRect;
         juce::Colour badgeAccent { juce::Colours::white.withAlpha (0.4f) };
+        bool auditionOn { false };
     } badge;
 
     // Simple mapping helpers (20..20k Hz, -36..+18 dB)
@@ -2127,7 +2162,8 @@ private:
         // Compute dynamic overlay size from row specs
         const int pad = 12, gutter = 8;
         const int row22 = 22, row24 = 24, row28 = 28;
-        const int rowsH = row22 + gutter + row22 + gutter + row22 + gutter
+        const int headerH = 20;
+        const int rowsH = headerH + gutter + row22 + gutter + row22 + gutter + row22 + gutter
                         + row24 + gutter + row24 + gutter + row24 + gutter
                         + row24 + gutter + row28;
         // Row width requirements (fixed controls)
